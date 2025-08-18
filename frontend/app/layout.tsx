@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
-import { NextAuthProvider } from '@/components/auth/NextAuthProvider'
+// NextAuth removed - using Supabase only
 import Analytics from '@/components/analytics/Analytics'
 import { CustomHead } from './head'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
@@ -146,7 +146,6 @@ export default function RootLayout({
       <body className="h-full antialiased font-sans">
         <CustomHead />
         <ErrorBoundary>
-          <NextAuthProvider>
             <NotificationsProvider>
               <FontOptimizer>
                 <div 
@@ -166,7 +165,6 @@ export default function RootLayout({
               <ServiceWorkerRegistration />
               {process.env.NEXT_PUBLIC_ENV !== "prod" ? <HeadGuard /> : null}
             </NotificationsProvider>
-          </NextAuthProvider>
         </ErrorBoundary>
       </body>
     </html>

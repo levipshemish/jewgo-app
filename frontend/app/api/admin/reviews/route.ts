@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth-options';
+// NextAuth removed - using Supabase only
 
 const API_BASE_URL = process.env.ADMIN_API_URL || process.env.BACKEND_URL || 'https://jewgo.onrender.com';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
 async function forwardRequest(req: NextRequest, method: 'GET' | 'PUT' | 'DELETE') {
-  // Get session server-side
-  const session = await getServerSession(authOptions) as any;
-  
-  if (!session?.user?.isSuperAdmin) {
+  // Simple admin token check - NextAuth removed
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

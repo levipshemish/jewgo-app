@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, MessageCircle, ExternalLink } from 'lucide-react';
 import { StarRating } from '@/components/ui/StarRating';
-import { useSession } from 'next-auth/react';
+// NextAuth removed - using Supabase only
 import { Restaurant } from '@/lib/types/restaurant';
 import ReviewForm, { ReviewData } from './ReviewForm';
 import ReviewCard, { Review } from './ReviewCard';
@@ -56,7 +56,8 @@ interface ReviewsSectionProps {
 export default function ReviewsSection({
   restaurantId, restaurantName, restaurant, className = ''
 }: ReviewsSectionProps) {
-  const { data: session } = useSession();
+  // NextAuth removed - using Supabase only
+  const session = null; // TODO: Replace with Supabase session
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

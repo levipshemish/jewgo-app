@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Star, ThumbsUp, Flag, User, Clock, Shield, MoreVertical } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+// NextAuth removed - using Supabase only
 import { formatDate } from '@/lib/utils/dateUtils';
 
 export interface Review {
@@ -35,7 +35,8 @@ interface ReviewCardProps {
 export default function ReviewCard({
   review, onHelpful, onFlag, onEdit, onDelete, showActions = true, className = ''
 }: ReviewCardProps) {
-  const { data: session } = useSession();
+  // NextAuth removed - using Supabase only
+  const session = null; // TODO: Replace with Supabase session
   const [isHelpfulLoading, setIsHelpfulLoading] = useState(false);
   const [isFlagLoading, setIsFlagLoading] = useState(false);
   const [showFlagModal, setShowFlagModal] = useState(false);

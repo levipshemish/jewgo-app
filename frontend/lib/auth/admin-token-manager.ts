@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth-options';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface AdminToken {
   id: string;
@@ -126,8 +125,10 @@ export class AdminTokenManager {
     error?: string;
   }> {
     try {
-      // Check NextAuth session
-      const session = await getServerSession(authOptions) as any;
+      // Check Supabase session
+      const supabase = await createSupabaseServerClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session?.user?.email) {
         return { isValid: false, error: 'No valid session' };
       }

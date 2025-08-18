@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Star, Upload, X, Send } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+// NextAuth removed - using Supabase only
 import { useRouter } from 'next/navigation';
 
 interface ReviewFormProps {
@@ -24,7 +24,8 @@ export interface ReviewData {
 export default function ReviewForm({
   restaurantId, restaurantName, onSubmit, onCancel, className = ''
 }: ReviewFormProps) {
-  const { data: session } = useSession();
+  // NextAuth removed - using Supabase only
+  const session = null; // TODO: Replace with Supabase session
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');

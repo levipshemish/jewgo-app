@@ -1,1 +1,1 @@
-export { NextAuthProvider } from './NextAuthProvider'; 
+// NextAuth removed - using Supabase only

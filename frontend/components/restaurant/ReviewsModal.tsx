@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, MessageCircle, ExternalLink, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
 import { StarRating } from '@/components/ui/StarRating';
-import { useSession } from 'next-auth/react';
+// NextAuth removed - using Supabase only
 import { Restaurant } from '@/lib/types/restaurant';
 import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
 import { Review } from '@/components/reviews/ReviewCard';
@@ -53,7 +53,8 @@ interface ReviewsModalProps {
 }
 
 export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsModalProps) {
-  const { data: session } = useSession();
+  // NextAuth removed - using Supabase only
+  const session = null; // TODO: Replace with Supabase session
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
