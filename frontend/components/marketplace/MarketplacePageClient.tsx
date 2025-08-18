@@ -51,7 +51,7 @@ function getTimeAgo(dateString: string): string {
   return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
 }
 
-// Product grid component matching marketplace-app design
+// Product grid component matching unified eatery sizing
 function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
   products: MarketplaceProduct[];
   onAddToCart: (product: MarketplaceProduct) => void;
@@ -83,7 +83,7 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-purple-600">Today&apos;s Picks</h2>
-        <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+        <button className="text-gray-700 hover:text-gray-900 text-sm font-medium">
           View All
         </button>
       </div>
@@ -91,14 +91,14 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
         {products.map((product) => (
           <div key={product.id} className="bg-white rounded-lg overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
             <div className="aspect-square bg-gray-100 relative">
-                             <img
-                 src={product.thumbnail || product.images?.[0] || "/placeholder.svg"}
-                 alt={product.name}
-                 className="w-full h-full object-cover"
-               />
-                             <div className="absolute top-2 left-2 bg-white/90 text-gray-700 px-2 py-1 rounded text-xs">
-                 {product.isOnSale ? 'Sale' : 'New'}
-               </div>
+              <img
+                src={product.thumbnail || product.images?.[0] || "/placeholder.svg"}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-2 left-2 bg-white/90 text-gray-700 px-2 py-1 rounded text-xs">
+                {product.isOnSale ? 'Sale' : 'New'}
+              </div>
               <button
                 className="absolute top-2 right-2 bg-white/90 hover:bg-white p-2 rounded"
                 onClick={() => toggleFavorite(product.id)}
@@ -107,41 +107,41 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                   className={`w-4 h-4 ${favorites.has(product.id) ? "fill-red-500 text-red-500" : "text-gray-600"}`}
                 />
               </button>
-                             {product.price === 0 && (
-                 <div className="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                   FREE
-                 </div>
-               )}
+              {product.price === 0 && (
+                <div className="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
+                  FREE
+                </div>
+              )}
             </div>
             <div className="p-3 space-y-2">
-                             <div className="flex items-start justify-between gap-2">
-                 <div className="flex-1 min-w-0">
-                   <div className="flex items-center gap-2 mb-1">
-                     <span className="font-semibold text-gray-900">
-                       {product.price === 0 ? 'Free' : `$${product.price}`}
-                     </span>
-                     {product.originalPrice && product.originalPrice > product.price && (
-                       <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
-                     )}
-                   </div>
-                   <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">{product.name}</h3>
-                 </div>
-               </div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-900">
+                      {product.price === 0 ? 'Free' : `$${product.price}`}
+                    </span>
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">{product.name}</h3>
+                </div>
+              </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
-                                 <div className="flex items-center gap-1">
-                   <MapPin className="w-3 h-3" />
-                   <span className="truncate">
-                     {product.vendor?.city && product.vendor?.state 
-                       ? `${product.vendor.city}, ${product.vendor.state}` 
-                       : 'Miami Gardens, FL'}
-                   </span>
-                 </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span className="truncate">
+                    {product.vendor?.city && product.vendor?.state 
+                      ? `${product.vendor.city}, ${product.vendor.state}` 
+                      : 'Miami Gardens, FL'}
+                  </span>
+                </div>
                 <div className="flex items-center gap-3">
-                                     <div className="flex items-center gap-1">
-                     <Clock className="w-3 h-3" />
-                     <span>{getTimeAgo(product.createdAt)}</span>
-                   </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{getTimeAgo(product.createdAt)}</span>
+                  </div>
                   <div className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     <span>{product.views || 45}</span>
@@ -149,15 +149,15 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                 </div>
               </div>
 
-                             <div className="flex items-center justify-between">
-                 <div className="px-2 py-1 border border-gray-300 rounded text-xs">
-                   {product.category?.name || 'General'}
-                 </div>
-                 <div className="flex items-center gap-1">
-                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                   <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
-                 </div>
-               </div>
+              <div className="flex items-center justify-between">
+                <div className="px-2 py-1 border border-gray-300 rounded text-xs">
+                  {product.category?.name || 'General'}
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -295,18 +295,20 @@ export default function MarketplacePageClient() {
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
         <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
-      <div className="px-4 py-4 space-y-4">
-        <ActionButtons 
-          onShowFilters={() => {/* TODO: Implement filters */}}
-          onShowMap={() => router.push('/live-map')}
-          onAddEatery={() => router.push('/add-eatery')}
-        />
-        <LocationDisplay />
-        <ProductGrid 
-          products={products} 
-          onAddToCart={handleAddToCart}
-          onAddToWishlist={handleAddToWishlist}
-        />
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <ActionButtons 
+            onShowFilters={() => {/* TODO: Implement filters */}}
+            onShowMap={() => router.push('/live-map')}
+            onAddEatery={() => router.push('/add-eatery')}
+          />
+          <LocationDisplay />
+          <ProductGrid 
+            products={products} 
+            onAddToCart={handleAddToCart}
+            onAddToWishlist={handleAddToWishlist}
+          />
+        </div>
       </div>
       <BottomNavigation />
     </div>

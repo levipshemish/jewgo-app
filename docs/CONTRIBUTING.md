@@ -69,6 +69,7 @@ If you prefer to run tests manually:
 - [Global Development Rule](#-global-development-rule)
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
+- [Model Context Protocol (MCP) Standards](#model-context-protocol-mcp-standards)
 - [Code Style](#code-style)
 - [Testing](#testing)
 - [Pull Request Process](#pull-request-process)
@@ -177,6 +178,249 @@ Run the automated setup script:
 ```bash
 # Start both backend and frontend
 ./start-dev.sh
+```
+
+## Model Context Protocol (MCP) Standards
+
+### Overview
+
+We use Model Context Protocol (MCP) servers to enhance our development workflow with AI-powered tools for code quality, schema validation, and deployment readiness.
+
+### MCP Server Setup
+
+#### Prerequisites
+
+1. **Install MCP servers:**
+   ```bash
+   # Install and build all MCP servers
+   pnpm mcp:setup
+   ```
+
+2. **Verify installation:**
+   ```bash
+   # Check that all servers are working
+   pnpm mcp:strict  # TypeScript/ESLint checker
+   pnpm mcp:schema  # Schema drift detection
+   pnpm mcp:guard   # CI guard and health checks
+   ```
+
+#### Cursor Configuration
+
+Add MCP servers to your Cursor configuration (`~/.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "ts-next-strict": {
+      "command": "node",
+      "args": ["./tools/ts-next-strict-mcp/dist/index.js"],
+      "cwd": "/path/to/your/project"
+    },
+    "schema-drift": {
+      "command": "schema-drift-mcp"
+    },
+    "ci-guard": {
+      "command": "node",
+      "args": ["./tools/ci-guard-mcp/dist/index.js"],
+      "cwd": "/path/to/your/project"
+    }
+  }
+}
+```
+
+### MCP Usage Guidelines
+
+#### 1. TypeScript/Next.js Strict Checking
+
+**When to use:**
+- Before committing TypeScript/JavaScript changes
+- When debugging build issues
+- During code reviews
+
+**Available tools:**
+- `tsc_check`: Run TypeScript type checking
+- `eslint_check`: Run ESLint with fix options
+
+**Usage examples:**
+```typescript
+// In Cursor, call these tools:
+tsc_check { cwd: "frontend" }
+eslint_check { cwd: "frontend", pattern: "app/**/*.tsx", fix: true }
+```
+
+#### 2. Schema Drift Detection
+
+**When to use:**
+- Before database migrations
+- After schema changes
+- During deployment preparation
+
+**Available tools:**
+- `schema_diff`: Compare SQLAlchemy models with live database
+
+**Usage examples:**
+```python
+# In Cursor, call this tool:
+schema_diff {
+  "db_url": "postgresql+psycopg://user:pass@host:5432/db",
+  "metadata_module": "backend.database.models"
+}
+```
+
+#### 3. CI Guard and Health Checks
+
+**When to use:**
+- Before merging pull requests
+- Before production deployments
+- During performance optimization
+
+**Available tools:**
+- `premerge_guard`: Run Next.js build with performance budgets and health checks
+
+**Usage examples:**
+```typescript
+// In Cursor, call this tool:
+premerge_guard {
+  "cwd": "frontend",
+  "feHealthUrl": "https://jewgo-app.vercel.app/health",
+  "beHealthUrl": "https://jewgo.onrender.com/health",
+  "budgets": {
+    "mainKB": 500,
+    "initialTotalMB": 2
+  }
+}
+```
+
+### MCP Integration Rules
+
+#### Pre-Commit MCP Checks
+
+**Required for all commits:**
+1. Run TypeScript strict checking
+2. Run ESLint with auto-fix
+3. Verify no critical errors
+
+```bash
+# Automated MCP pre-commit check
+./scripts/mcp-pre-commit.sh
+```
+
+#### Pre-Merge MCP Validation
+
+**Required for all pull requests:**
+1. Run CI guard with performance budgets
+2. Check schema drift (if database changes)
+3. Verify health endpoints
+
+```bash
+# Automated MCP pre-merge check
+./scripts/mcp-pre-merge.sh
+```
+
+### MCP Server Maintenance
+
+#### Updating MCP Servers
+
+```bash
+# Update all MCP servers
+pnpm mcp:update
+
+# Update individual servers
+pnpm -C tools/ts-next-strict-mcp update
+pnpm -C tools/ci-guard-mcp update
+pipx upgrade schema-drift-mcp
+```
+
+#### Troubleshooting MCP Issues
+
+**Common issues and solutions:**
+
+1. **Server not starting:**
+   ```bash
+   # Rebuild servers
+   pnpm mcp:build
+   
+   # Check server status
+   pnpm mcp:status
+   ```
+
+2. **Permission errors:**
+   ```bash
+   # Fix Python server permissions
+   pipx reinstall schema-drift-mcp
+   
+   # Fix Node.js server permissions
+   chmod +x tools/*/dist/index.js
+   ```
+
+3. **Configuration issues:**
+   ```bash
+   # Validate MCP configuration
+   ./scripts/validate-mcp-config.sh
+   ```
+
+### MCP Best Practices
+
+#### Code Quality Standards
+
+1. **Always run MCP checks before committing**
+2. **Fix all critical errors before pushing**
+3. **Use MCP tools during code reviews**
+4. **Monitor performance budgets in CI guard**
+
+#### Performance Standards
+
+1. **Main bundle size: < 500KB**
+2. **Initial load: < 2MB**
+3. **Health check response: < 2s**
+4. **Build time: < 30s**
+
+#### Schema Standards
+
+1. **No schema drift in production**
+2. **All migrations tested in staging**
+3. **Backup database before schema changes**
+4. **Document all schema modifications**
+
+### MCP Error Handling
+
+#### Error Severity Levels
+
+- **Critical**: Block deployment (TypeScript errors, build failures)
+- **Warning**: Should be addressed (ESLint warnings, performance regressions)
+- **Info**: Informational (unused variables, style issues)
+
+#### Error Resolution Workflow
+
+1. **Identify error source using MCP tools**
+2. **Fix critical errors immediately**
+3. **Address warnings before next release**
+4. **Document resolution for future reference**
+
+### MCP Monitoring
+
+#### Health Checks
+
+```bash
+# Monitor MCP server health
+./scripts/mcp-health-check.sh
+
+# Check MCP tool availability
+./scripts/mcp-tool-test.sh
+```
+
+#### Performance Monitoring
+
+```bash
+# Monitor build performance
+./scripts/mcp-performance-monitor.sh
+
+# Track schema drift over time
+./scripts/mcp-schema-monitor.sh
 ```
 
 ## Code Style

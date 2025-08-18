@@ -15,9 +15,6 @@ const nextConfig = {
     ignoreBuildErrors: !isCI,
   },
   env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'https://jewgo-app.vercel.app',
-    // Do not provide a fallback for NEXTAUTH_SECRET in production. Fail build if missing.
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || '5060e374c6d88aacf8fea324',
     NEXT_PUBLIC_BACKEND_URL: process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com',
@@ -54,7 +51,7 @@ const nextConfig = {
         type: 'javascript/auto',
       });
 
-      const required = ['NEXTAUTH_SECRET', 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY', 'NEXT_PUBLIC_BACKEND_URL'];
+      const required = ['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY', 'NEXT_PUBLIC_BACKEND_URL'];
       const missing = required.filter((k) => !process.env[k] || String(process.env[k]).trim() === '');
       if (missing.length > 0) {
         // In dev, warn; in prod (Vercel/CI), fail build
@@ -82,22 +79,10 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
-          },
+          { key: 'X-Frame-Options', value: 'ALLOWALL' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
         ],
       },
       {
@@ -112,20 +97,14 @@ const nextConfig = {
       {
         source: '/_next/static/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
       // Only add specific headers for non-Next.js static files
       {
         source: '/static/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];
@@ -133,31 +112,11 @@ const nextConfig = {
   // Image optimization configuration
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'maps.googleapis.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'jewgo.com',
-        pathname: '/**',
-      },
+      { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'maps.googleapis.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'jewgo.com', pathname: '/**' },
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -179,104 +138,32 @@ const nextConfig = {
   async redirects() {
     return [
       // Only redirect non-Next.js API routes to backend
-      {
-        source: '/api/specials/:path*',
-        destination: `${BACKEND_URL}/api/specials/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/health/:path*',
-        destination: `${BACKEND_URL}/api/health/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/admin/:path*',
-        destination: `${BACKEND_URL}/api/admin/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/feedback/:path*',
-        destination: `${BACKEND_URL}/api/feedback/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/statistics/:path*',
-        destination: `${BACKEND_URL}/api/statistics/:path*`,
-        permanent: false,
-      },
-
-      {
-        source: '/api/kosher-types/:path*',
-        destination: `${BACKEND_URL}/api/kosher-types/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/migrate/:path*',
-        destination: `${BACKEND_URL}/api/migrate/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/remove-duplicates/:path*',
-        destination: `${BACKEND_URL}/api/remove-duplicates/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/update-database/:path*',
-        destination: `${BACKEND_URL}/api/update-database/:path*`,
-        permanent: false,
-      },
-      {
-        source: '/api/test/:path*',
-        destination: `${BACKEND_URL}/api/test/:path*`,
-        permanent: false,
-      },
+      { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*`, permanent: false },
+      { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*`, permanent: false },
+      { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*`, permanent: false },
+      { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*`, permanent: false },
+      { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*`, permanent: false },
+      { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*`, permanent: false },
+      { source: '/api/migrate/:path*', destination: `${BACKEND_URL}/api/migrate/:path*`, permanent: false },
+      { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*`, permanent: false },
+      { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*`, permanent: false },
+      { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*`, permanent: false },
     ];
   },
   // Rewrites configuration
   async rewrites() {
     return [
       // Only rewrite non-Next.js API routes to backend
-      {
-        source: '/api/specials/:path*',
-        destination: `${BACKEND_URL}/api/specials/:path*`,
-      },
-      {
-        source: '/api/health/:path*',
-        destination: `${BACKEND_URL}/api/health/:path*`,
-      },
-      {
-        source: '/api/admin/:path*',
-        destination: `${BACKEND_URL}/api/admin/:path*`,
-      },
-      {
-        source: '/api/feedback/:path*',
-        destination: `${BACKEND_URL}/api/feedback/:path*`,
-      },
-      {
-        source: '/api/statistics/:path*',
-        destination: `${BACKEND_URL}/api/statistics/:path*`,
-      },
-
-      {
-        source: '/api/kosher-types/:path*',
-        destination: `${BACKEND_URL}/api/kosher-types/:path*`,
-      },
-      {
-        source: '/api/migrate/:path*',
-        destination: `${BACKEND_URL}/api/migrate/:path*`,
-      },
-      {
-        source: '/api/remove-duplicates/:path*',
-        destination: `${BACKEND_URL}/api/remove-duplicates/:path*`,
-      },
-      {
-        source: '/api/update-database/:path*',
-        destination: `${BACKEND_URL}/api/update-database/:path*`,
-      },
-      {
-        source: '/api/test/:path*',
-        destination: `${BACKEND_URL}/api/test/:path*`,
-      },
+      { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*` },
+      { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*` },
+      { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*` },
+      { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*` },
+      { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*` },
+      { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*` },
+      { source: '/api/migrate/:path*', destination: `${BACKEND_URL}/api/migrate/:path*` },
+      { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*` },
+      { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*` },
+      { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*` },
     ];
   },
 };
