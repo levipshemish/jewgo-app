@@ -1,0 +1,58 @@
+name: Pre-Merge Guard
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm mcp:install
+
+      - name: Build MCP servers
+        run: pnpm mcp:build
+
+      - name: Run TypeScript strict check
+        run: |
+          echo '{"type":"tool","name":"tsc_check","params":{"cwd":"frontend"}}' | node tools/ts-next-strict-mcp/dist/index.js
+
+      - name: Run ESLint check
+        run: |
+          echo '{"type":"tool","name":"eslint_check","params":{"cwd":"frontend","pattern":"app/**/*.tsx"}}' | node tools/ts-next-strict-mcp/dist/index.js
+
+      - name: Run pre-merge guard
+        run: |
+          echo '{"type":"tool","name":"premerge_guard","params":{
+            "cwd":"frontend",
+            "feHealthUrl":"https://jewgo-app.vercel.app/health",
+            "beHealthUrl":"https://jewgo.onrender.com/health",
+            "budgets":{"mainKB":500,"initialTotalMB":2}
+          }}' | node tools/ci-guard-mcp/dist/index.js
+
+      - name: Check schema drift (if DB URL available)
+        if: env.DATABASE_URL
+        run: |
+          echo '{"type":"tool","name":"schema_diff","params":{
+            "db_url":"${{ env.DATABASE_URL }}",
+            "metadata_module":"backend.database.models"
+          }}' | schema-drift-mcp
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

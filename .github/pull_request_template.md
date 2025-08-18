@@ -136,7 +136,7 @@
 ## CI/CD
 - [ ] Build/lint/tests pass locally
 - [ ] CI pipeline green before merge
-- [ ] All Mendel Mode v4.3 checks passed
+- [ ] All Mendel Mode v4.2 checks passed
 - [ ] Performance regression tests completed
 - [ ] Security scans passed
 

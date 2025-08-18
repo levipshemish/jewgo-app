@@ -12,11 +12,17 @@
 - **Sentry**: ✅ Configured (DSN added)
 
 #### Frontend (.env.local)
-- **Google OAuth**: ✅ Configured (Client ID & Secret available)
-- **NextAuth**: ✅ Configured
+- **Supabase Authentication**: ✅ Configured (Primary auth system)
+- **Google OAuth**: ✅ Configured (via Supabase)
 - **Google Maps API**: ✅ Configured
 
-### 🔧 Recently Fixed
+### 🔧 Recently Updated
+
+#### Authentication System
+- ✅ **Migrated from NextAuth to Supabase-only authentication**
+- ✅ **Removed NextAuth dependencies and configuration**
+- ✅ **Updated all components to use Supabase authentication**
+- ✅ **Maintained Google OAuth integration via Supabase**
 
 #### Environment Configuration Files
 - ✅ Created `backend/env.example` with comprehensive configuration
@@ -29,10 +35,6 @@
 - ✅ Created `sentry.edge.config.ts`
 - ✅ Created `instrumentation.ts`
 - ✅ Added Sentry DSN to backend config
-
-#### OAuth Providers
-- ✅ Added Google Provider to NextAuth configuration
-- ✅ Google OAuth credentials are available and configured
 
 ## Quick Setup Instructions
 
@@ -143,17 +145,24 @@ RENDER=false
 
 ### Frontend (.env.local)
 ```bash
+# Supabase Configuration (Primary Authentication System)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Database URL (for backend integration)
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.your-project.supabase.co:5432/postgres
+
 # Backend URL
 NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8081
 
 # Google Maps API
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=your-google-maps-map-id
 
-# NextAuth Configuration
-NEXTAUTH_URL=https://jewgo-app.vercel.app
-NEXTAUTH_SECRET=your-nextauth-secret
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+# reCAPTCHA v3 Configuration
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-recaptcha-site-key
+RECAPTCHA_SECRET_KEY=your-recaptcha-secret-key
 
 # Google Analytics
 NEXT_PUBLIC_GA_MEASUREMENT_ID=your-google-analytics-measurement-id
@@ -161,6 +170,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=your-google-analytics-measurement-id
 # Admin Configuration
 NEXT_PUBLIC_ADMIN_EMAIL=admin@jewgo.com
 ADMIN_TOKEN=your-admin-token-here
+ADMIN_API_URL=https://jewgo.onrender.com
 ADMIN_EMAIL=admin@jewgo.com
 
 # Scraper Configuration
@@ -186,6 +196,9 @@ ANALYZE=false
 
 # Testing Configuration
 NEXT_PUBLIC_ADMIN_TOKEN=test-admin-token
+
+# Production URLs
+# NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
 ```
 
 ## 📋 TODO Items
@@ -204,20 +217,22 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=your_google_analytics_id
 3. Get the Measurement ID (format: G-XXXXXXXXXX)
 4. Add to environment variables
 
-#### 2. Google OAuth Credentials
+#### 2. Supabase Configuration
 **Status**: Need to configure
 **Action Required**:
 ```bash
 # Add to frontend/.env.local
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
 
 **Setup Steps**:
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create OAuth 2.0 credentials
-3. Add authorized redirect URIs
-4. Get Client ID and Secret
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Create a new project
+3. Get the project URL and API keys
+4. Configure Google OAuth in Supabase Auth settings
+5. Add authorized redirect URIs for OAuth
 
 #### 3. Security Tokens
 **Status**: Need to generate
@@ -251,11 +266,10 @@ CRONITOR_API_KEY=your_cronitor_api_key
 
 ### Vercel (Frontend)
 Add these environment variables in Vercel dashboard:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
 - `NEXT_PUBLIC_BACKEND_URL`
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID`
 
@@ -273,11 +287,13 @@ Add these environment variables in Render dashboard:
 
 ## Testing Configuration
 
-### Test OAuth Flow
+### Test Supabase Authentication Flow
 1. Start the development server
-2. Navigate to `/auth/signin`
-3. Click "Sign in with Google"
-4. Verify OAuth flow works correctly
+2. Navigate to `/auth/supabase-signin`
+3. Test email/password authentication
+4. Test Google OAuth via Supabase
+5. Test magic link authentication
+6. Verify session management
 
 ### Test Sentry Integration
 1. Check browser console for Sentry initialization
@@ -289,6 +305,22 @@ Add these environment variables in Render dashboard:
 2. Verify maps load correctly
 3. Test place search functionality
 
+## Authentication System
+
+### Supabase Authentication Features
+- **Email/Password Authentication**: ✅ Configured
+- **Google OAuth Integration**: ✅ Configured via Supabase
+- **Magic Link Authentication**: ✅ Configured
+- **Session Management**: ✅ Auto-refresh tokens
+- **Row Level Security (RLS)**: ✅ Configured
+- **User Data Synchronization**: ✅ With Neon PostgreSQL
+
+### Migration Status
+- **NextAuth Removal**: ✅ Complete
+- **Supabase Integration**: ✅ Complete
+- **User Migration**: ✅ System in place
+- **Cleanup Operations**: ✅ Ready to run
+
 ## Security Notes
 
 ⚠️ **Important**: The API keys shown in this document are for reference only. In production:
@@ -298,13 +330,15 @@ Add these environment variables in Render dashboard:
 - Set up proper rate limiting
 - Use API key restrictions in Google Cloud Console
 - Generate secure random tokens for ADMIN_TOKEN and SCRAPER_TOKEN
+- Keep Supabase service role key secure (server-side only)
 
 ## Next Steps
 
 1. **Complete Analytics Setup**: Configure Google Analytics
-2. **Set up OAuth**: Configure Google OAuth credentials
+2. **Set up Supabase**: Configure Supabase project and OAuth
 3. **Generate Security Tokens**: Create secure admin and scraper tokens
 4. **Set up Monitoring**: Configure Cronitor for uptime monitoring
 5. **Production Testing**: Test all integrations in production environment
 6. **Security Review**: Audit API key permissions and usage
-7. **Documentation**: Update API documentation with new endpoints 
+7. **Documentation**: Update API documentation with new endpoints
+8. **Run Cleanup Operations**: Optimize database after migration 

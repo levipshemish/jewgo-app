@@ -115,8 +115,8 @@ function processFile(filePath) {
           }
         }
       
-              // Check for DEPRECATED markers (skip examples in comments)
-        if (line.includes('// DEPRECATED:') && !line.includes('Example')) {
+              // Check for DEPRECATED markers (skip examples and documentation comments)
+        if (line.includes('// DEPRECATED:') && !line.includes('Example') && !line.includes('* - New // DEPRECATED:')) {
           const deadline = parseISODate(line);
           
           if (!deadline) {

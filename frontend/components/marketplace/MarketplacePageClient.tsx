@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, Heart, Filter, Grid, List, Star, TrendingUp, Sparkles } from 'lucide-react';
-import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { Search, Heart, MapPin, Clock, Eye, Building2, Church, Ticket, Store, ShoppingCart, Zap, ChevronDown, MessageCircle } from 'lucide-react';
+import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
+import MarketplaceHeader from './MarketplaceHeader';
 import { 
   MarketplaceProduct, 
   MarketplaceCategory, 
@@ -16,9 +16,237 @@ import ProductCard from './ProductCard';
 import CategoryCard from './CategoryCard';
 import MarketplaceFiltersComponent from './MarketplaceFilters';
 
-export default function MarketplacePageClient() {
+// Category navigation component matching marketplace-app design
+function CategoryNav() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('marketplace');
+
+  const categories = [
+    { name: "Mikvahs", icon: Building2, slug: "mikvahs" },
+    { name: "Shuls", icon: Church, slug: "shuls" },
+    { name: "Specials", icon: Ticket, slug: "specials" },
+    { name: "Marketplace", icon: Store, slug: "marketplace" },
+    { name: "Stores", icon: ShoppingCart, slug: "stores" },
+  ];
+
+  const handleTabChange = (slug: string) => {
+    setActiveTab(slug);
+    
+    switch (slug) {
+      case 'mikvahs':
+        router.push('/mikvahs');
+        break;
+      case 'shuls':
+        router.push('/shuls');
+        break;
+      case 'marketplace':
+        // Already on marketplace page
+        break;
+      case 'specials':
+        router.push('/specials');
+        break;
+      case 'stores':
+        router.push('/stores');
+        break;
+      default:
+        break;
+    }
+  };
+
+  return (
+    <nav className="bg-white px-4 py-4">
+      <div className="flex justify-between items-center">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const active = activeTab === category.slug;
+
+          return (
+            <button
+              key={category.name}
+              onClick={() => handleTabChange(category.slug)}
+              className="flex flex-col items-center gap-2"
+            >
+              <div
+                className={`p-3 rounded-2xl transition-colors ${
+                  active ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Icon className="w-6 h-6" />
+              </div>
+              <span className={`text-sm transition-colors ${active ? "text-purple-600 font-medium" : "text-gray-600"}`}>
+                {category.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {/* Active indicator line */}
+      <div className="mt-4 flex justify-center">
+        <div className="w-12 h-1 bg-purple-600 rounded-full"></div>
+      </div>
+    </nav>
+  );
+}
+
+// Action buttons component matching marketplace-app design
+function ActionButtons() {
+  const router = useRouter();
+
+  const handleSellClick = () => {
+    router.push('/marketplace/sell');
+  };
+
+  const handleMessagesClick = () => {
+    router.push('/marketplace/messages');
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <button 
+        onClick={handleSellClick}
+        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6 py-2 font-medium flex items-center gap-2 transition-colors"
+      >
+        <Zap className="w-4 h-4" />
+        Sell
+      </button>
+      <button className="rounded-full px-4 py-2 border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+        Category
+        <ChevronDown className="w-4 h-4" />
+      </button>
+      <button 
+        onClick={handleMessagesClick}
+        className="rounded-full px-4 py-2 border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 ml-auto"
+      >
+        <MessageCircle className="w-4 h-4" />
+        My messages
+      </button>
+    </div>
+  );
+}
+
+// Location display component
+function LocationDisplay() {
+  return (
+    <div className="flex items-center gap-1 text-sm text-gray-500">
+      <MapPin className="w-4 h-4" />
+      <span>Miami Gardens, FL</span>
+    </div>
+  );
+}
+
+// Product grid component matching marketplace-app design
+function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
+  products: MarketplaceProduct[];
+  onAddToCart: (product: MarketplaceProduct) => void;
+  onAddToWishlist: (product: MarketplaceProduct) => void;
+}) {
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  const toggleFavorite = (productId: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(productId)) {
+      newFavorites.delete(productId);
+    } else {
+      newFavorites.add(productId);
+    }
+    setFavorites(newFavorites);
+  };
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-4xl mb-3">🛍️</div>
+        <h3 className="text-base font-semibold text-gray-900 mb-2">No products found</h3>
+        <p className="text-sm text-gray-600">No products available at the moment</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-purple-600">Today&apos;s Picks</h2>
+        <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+          View All
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {products.map((product) => (
+          <div key={product.id} className="bg-white rounded-lg overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+            <div className="aspect-square bg-gray-100 relative">
+                             <img
+                 src={product.thumbnail || product.images?.[0] || "/placeholder.svg"}
+                 alt={product.name}
+                 className="w-full h-full object-cover"
+               />
+                             <div className="absolute top-2 left-2 bg-white/90 text-gray-700 px-2 py-1 rounded text-xs">
+                 {product.isOnSale ? 'Sale' : 'New'}
+               </div>
+              <button
+                className="absolute top-2 right-2 bg-white/90 hover:bg-white p-2 rounded"
+                onClick={() => toggleFavorite(product.id)}
+              >
+                <Heart
+                  className={`w-4 h-4 ${favorites.has(product.id) ? "fill-red-500 text-red-500" : "text-gray-600"}`}
+                />
+              </button>
+                             {product.price === 0 && (
+                 <div className="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
+                   FREE
+                 </div>
+               )}
+            </div>
+            <div className="p-3 space-y-2">
+                             <div className="flex items-start justify-between gap-2">
+                 <div className="flex-1 min-w-0">
+                   <div className="flex items-center gap-2 mb-1">
+                     <span className="font-semibold text-gray-900">
+                       {product.price === 0 ? 'Free' : `$${product.price}`}
+                     </span>
+                     {product.originalPrice && product.originalPrice > product.price && (
+                       <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
+                     )}
+                   </div>
+                   <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">{product.name}</h3>
+                 </div>
+               </div>
+
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span className="truncate">{product.location || 'Miami Gardens, FL'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{product.timeAgo || '2 hours ago'}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    <span>{product.views || 45}</span>
+                  </div>
+                </div>
+              </div>
+
+                             <div className="flex items-center justify-between">
+                 <div className="px-2 py-1 border border-gray-300 rounded text-xs">
+                   {product.category?.name || 'General'}
+                 </div>
+                 <div className="flex items-center gap-1">
+                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                   <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
+                 </div>
+               </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function MarketplacePageClient() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
@@ -26,8 +254,6 @@ export default function MarketplacePageClient() {
   const [stats, setStats] = useState<MarketplaceStats | null>(null);
   const [filters, setFilters] = useState<MarketplaceFiltersType>({});
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
   const [cart, setCart] = useState<MarketplaceProduct[]>([]);
   const [wishlist, setWishlist] = useState<MarketplaceProduct[]>([]);
 
@@ -85,33 +311,8 @@ export default function MarketplacePageClient() {
     }
   };
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    
-    switch (tab) {
-      case 'mikvahs':
-        router.push('/mikvahs');
-        break;
-      case 'shuls':
-        router.push('/shuls');
-        break;
-      case 'marketplace':
-        // Already on marketplace page
-        break;
-      case 'eatery':
-        router.push('/eatery');
-        break;
-      case 'stores':
-        router.push('/stores');
-        break;
-      default:
-        break;
-    }
-  };
-
   const handleAddToCart = (product: MarketplaceProduct) => {
     setCart(prev => [...prev, product]);
-    // You could also show a toast notification here
   };
 
   const handleAddToWishlist = (product: MarketplaceProduct) => {
@@ -124,28 +325,14 @@ export default function MarketplacePageClient() {
     });
   };
 
-  const handleCategoryClick = (category: MarketplaceCategory) => {
-    router.push(`/marketplace/category/${category.id}`);
-  };
-
-  const handleClearFilters = () => {
-    setFilters({});
-  };
-
-  const handleFiltersChange = (newFilters: MarketplaceFiltersType) => {
-    setFilters(newFilters);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f4f4f4]">
-        <Header />
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <MarketplaceHeader onSearch={handleSearch} />
+        <CategoryNav />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading marketplace...</p>
           </div>
         </div>
@@ -155,228 +342,18 @@ export default function MarketplacePageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4]">
-      <Header />
-      
-      {/* Navigation Tabs */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+    <div className="min-h-screen bg-gray-50">
+      <MarketplaceHeader onSearch={handleSearch} />
+      <CategoryNav />
+      <div className="px-4 py-4 space-y-4">
+        <ActionButtons />
+        <LocationDisplay />
+        <ProductGrid 
+          products={products} 
+          onAddToCart={handleAddToCart}
+          onAddToWishlist={handleAddToWishlist}
+        />
       </div>
-
-      {/* Search and Actions Bar */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="What do you want to find?"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-lg border transition-colors ${
-              showFilters 
-                ? 'bg-blue-600 text-white border-blue-600' 
-                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Filter className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Bar - Sell, Category, My Messages */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            Sell
-          </button>
-          
-          <button className="flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 transition-colors">
-            Category
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          <button className="flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 border border-gray-300 hover:bg-gray-50 transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            My messages
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="bg-white border-b border-gray-100 px-4 py-4">
-          <div className="max-w-7xl mx-auto">
-            <MarketplaceFiltersComponent
-              filters={filters}
-              categories={categories}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={handleClearFilters}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Stats Banner - Simplified */}
-        {stats && (
-          <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-100">
-            <div className="grid grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-lg font-bold text-gray-900">{stats.totalProducts}</div>
-                <div className="text-xs text-gray-500">Products</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-900">{stats.totalVendors}</div>
-                <div className="text-xs text-gray-500">Vendors</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-900">{stats.totalCategories}</div>
-                <div className="text-xs text-gray-500">Categories</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-gray-900">{stats.averageRating.toFixed(1)}</div>
-                <div className="text-xs text-gray-500">Rating</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Categories Section - More compact */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Categories</h2>
-            <button 
-              onClick={() => router.push('/marketplace/categories')}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              View All
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {categories.slice(0, 4).map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onClick={handleCategoryClick}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Featured Products - Tighter grid */}
-        {featuredProducts.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
-              <h2 className="text-lg font-semibold text-gray-900">Featured</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {featuredProducts.slice(0, 4).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  variant="featured"
-                  onAddToCart={handleAddToCart}
-                  onAddToWishlist={handleAddToWishlist}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Products - Marketplace style grid */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-                          <h2 className="text-lg font-semibold text-gray-900">
-                Today&apos;s Picks
-              </h2>
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Miami Gardens, FL</span>
-            </div>
-          </div>
-          
-          {products.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-3">🛍️</div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">No products found</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {searchQuery 
-                  ? `No products match "${searchQuery}"`
-                  : 'No products available'
-                }
-              </p>
-              {searchQuery && (
-                <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    loadMarketplaceData();
-                  }}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                >
-                  Clear search
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={`grid gap-3 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' 
-                : 'grid-cols-1'
-            }`}>
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  variant={viewMode === 'list' ? 'compact' : 'default'}
-                  onAddToCart={handleAddToCart}
-                  onAddToWishlist={handleAddToWishlist}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   );

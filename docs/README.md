@@ -104,7 +104,7 @@ python app.py
 - **Styling**: Tailwind CSS 3.3.0
 - **State Management**: React hooks and Context API
 - **Maps**: Google Maps API with Leaflet integration
-- **Authentication**: NextAuth.js 4.24.11
+- **Authentication**: Supabase Auth (Email/Password, Google OAuth, Magic Links)
 - **Validation**: Zod schema validation
 - **Testing**: Jest 30.0.5, React Testing Library 16.3.0
 

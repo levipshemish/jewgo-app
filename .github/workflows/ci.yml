@@ -86,16 +86,24 @@ jobs:
         npm run build
         
     - name: Mendel Mode v4.2 - Progressive Enhancement Tracking
-      run: bash ci-scripts/phase_tracking.sh
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash ci-scripts/phase_tracking.sh
       
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement
-      run: node ci-scripts/temp_deprecated_check.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan
-      run: node ci-scripts/dup_scan.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/dup_scan.js
       
     - name: Mendel Mode v4.2 - Root Litter Check
-      run: bash ci-scripts/root_litter_check.sh
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash ci-scripts/root_litter_check.sh
       
     - name: Mendel Mode v4.2 - Coverage Gate Enforcement (Global 80% + Module 70%)
       run: |
@@ -178,6 +186,13 @@ jobs:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
         cache-dependency-path: 'backend/requirements.txt'
+        
+    - name: Setup Node.js (for Mendel Mode scripts)
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package-lock.json'
           
     - name: Install Python dependencies
       working-directory: backend
@@ -232,37 +247,59 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Mendel Mode v4.2 - Progressive Enhancement Tracking (Backend)
-      run: bash ci-scripts/phase_tracking.sh
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash ci-scripts/phase_tracking.sh
       
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement (Backend)
-      run: node ci-scripts/temp_deprecated_check.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan (Backend)
-      run: node ci-scripts/dup_scan.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/dup_scan.js
       
     - name: Mendel Mode v4.2 - Deprecation Check
-      run: bash ci-scripts/deprecation_check.sh
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash ci-scripts/deprecation_check.sh
       
     - name: Mendel Mode v4.2 - Database Performance Guardrails
-      run: node ci-scripts/db_performance_check.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/db_performance_check.js
       
     - name: Mendel Mode v4.2 - Deprecation Ownership Enforcement
-      run: node ci-scripts/deprecation_ownership_check.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/deprecation_ownership_check.js
       
     - name: Mendel Mode v4.2 - Context7 Validation
-      run: node ci-scripts/context7_validation.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/context7_validation.js
       
     - name: Mendel Mode v4.2 - Duplication Prevention
-      run: node ci-scripts/duplication_prevention.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/duplication_prevention.js
       
     - name: Mendel Mode v4.2 - Rollback Script Validation
-      run: node ci-scripts/rollback_validation.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/rollback_validation.js
       
     - name: Mendel Mode v4.2 - File Placement Validation
-      run: node ci-scripts/file_placement_check.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/file_placement_check.js
       
     - name: Mendel Mode v4.2 - PR Template Validation
-      run: node ci-scripts/pr_template_validation.js
+      run: |
+        cd $GITHUB_WORKSPACE
+        node ci-scripts/pr_template_validation.js
 
   # Integration Tests
   integration:
@@ -515,4 +552,6 @@ jobs:
     - name: Ensure PR contains Context7 acknowledgment
       env:
         EVENT_PATH: ${{ github.event_path }}
-      run: bash ci-scripts/context7_guard.sh "$EVENT_PATH" 
+      run: |
+        cd $GITHUB_WORKSPACE
+        bash ci-scripts/context7_guard.sh "$EVENT_PATH" 
