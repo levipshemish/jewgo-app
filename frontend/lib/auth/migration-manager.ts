@@ -148,7 +148,7 @@ export class MigrationManager {
     
     // Check if user already exists in Supabase
     const { data: existingSupabaseUser } = await supabase.auth.admin.listUsers();
-    const supabaseUser = existingSupabaseUser.users.find(u => u.email === user.email);
+    const supabaseUser = existingSupabaseUser?.users?.find((u: any) => u.email === user.email);
     
     let supabaseId: string;
     
