@@ -8,8 +8,15 @@
     "mcp:schema": "schema-drift-mcp",
     "mcp:guard": "node ./tools/ci-guard-mcp/dist/index.js",
     "mcp:build": "pnpm -C tools/ts-next-strict-mcp build && pnpm -C tools/ci-guard-mcp build",
-    "mcp:install": "pnpm -C tools/ts-next-strict-mcp install && pnpm -C tools/ci-guard-mcp install && pip install -e tools/schema-drift-mcp",
-    "mcp:setup": "pnpm mcp:install && pnpm mcp:build"
+    "mcp:install": "pnpm -C tools/ts-next-strict-mcp install && pnpm -C tools/ci-guard-mcp install && pipx install -e tools/schema-drift-mcp",
+    "mcp:setup": "chmod +x scripts/mcp-*.sh && ./scripts/mcp-setup.sh",
+    "mcp:pre-commit": "./scripts/mcp-pre-commit.sh",
+    "mcp:pre-merge": "./scripts/mcp-pre-merge.sh",
+    "mcp:health": "./scripts/mcp-health-check.sh",
+    "mcp:schema-check": "./scripts/mcp-schema-check.sh",
+    "mcp:update": "pnpm -C tools/ts-next-strict-mcp update && pnpm -C tools/ci-guard-mcp update && pipx upgrade schema-drift-mcp",
+    "mcp:cleanup": "rm -rf tools/*/node_modules tools/*/dist",
+    "mcp:reset": "pnpm mcp:cleanup && pnpm mcp:setup"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"
