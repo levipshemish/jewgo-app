@@ -9,7 +9,7 @@ import {
 } from '@/lib/types/marketplace';
 
 export class MarketplaceAPI {
-  private static baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  private static baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   private static apiVersion = 'v4';
 
   private static async makeRequest<T>(
@@ -229,8 +229,8 @@ export class MarketplaceAPI {
         currency: 'USD',
         category: this.getMockCategories()[0],
         vendor: this.getMockVendors()[0],
-        images: ['/images/products/brisket-1.jpg', '/images/products/brisket-2.jpg'],
-        thumbnail: '/images/products/brisket-thumb.jpg',
+        images: ['https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Brisket', 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Brisket+2'],
+        thumbnail: 'https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Brisket',
         stock: 15,
         isAvailable: true,
         isFeatured: true,
@@ -255,8 +255,8 @@ export class MarketplaceAPI {
         currency: 'USD',
         category: this.getMockCategories()[1],
         vendor: this.getMockVendors()[1],
-        images: ['/images/products/challah-1.jpg'],
-        thumbnail: '/images/products/challah-thumb.jpg',
+        images: ['https://via.placeholder.com/400x300/F59E0B/FFFFFF?text=Challah'],
+        thumbnail: 'https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Challah',
         stock: 50,
         isAvailable: true,
         isFeatured: false,
@@ -289,7 +289,7 @@ export class MarketplaceAPI {
         id: '1',
         name: 'Kosher Delights Market',
         description: 'Premium kosher meats and deli products',
-        logo: '/images/vendors/kosher-delights-logo.jpg',
+        logo: 'https://via.placeholder.com/150x150/3B82F6/FFFFFF?text=KD',
         address: '123 Main Street',
         city: 'Miami',
         state: 'FL',
@@ -311,7 +311,7 @@ export class MarketplaceAPI {
         id: '2',
         name: 'Bakery Express',
         description: 'Fresh kosher baked goods and pastries',
-        logo: '/images/vendors/bakery-express-logo.jpg',
+        logo: 'https://via.placeholder.com/150x150/F59E0B/FFFFFF?text=BE',
         address: '456 Oak Avenue',
         city: 'Miami',
         state: 'FL',
@@ -417,7 +417,7 @@ export class MarketplaceAPI {
             quantity: 2,
             price: 45.99,
             total: 91.98,
-            image: '/images/products/brisket-thumb.jpg'
+            image: 'https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Brisket'
           }
         ],
         status: 'confirmed',
