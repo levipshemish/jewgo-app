@@ -20,6 +20,8 @@ export interface MarketplaceProduct {
   shippingInfo?: ShippingInfo;
   rating: number;
   reviewCount: number;
+  views?: number;
+  timeAgo?: string;
   createdAt: string;
   updatedAt: string;
   expiryDate?: string;

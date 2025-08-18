@@ -1,4 +1,6 @@
-import { StdioServerTransport, Server } from "@modelcontextprotocol/sdk/server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import fetch from "node-fetch";
 import { execa } from "execa";
 
@@ -43,61 +45,63 @@ async function checkHealth(url: string, timeoutMs = 8000) {
   }
 }
 
-const server = new Server(
-  { name: "ci-guard-mcp", version: "0.1.0", description: "Next build + perf budgets + health checks" },
-  { capabilities: { tools: {} } }
-);
+const server = new McpServer({
+  name: "ci-guard-mcp",
+  version: "0.1.0",
+  description: "Next build + perf budgets + health checks"
+});
 
-server.tool(
+server.registerTool(
+  "premerge_guard",
   {
-    name: "premerge_guard",
     description: "Run Next build, enforce perf budgets, hit FE/BE health urls.",
     inputSchema: {
-      type: "object",
-      properties: {
-        cwd: { type: "string", default: "frontend" },
-        feHealthUrl: { type: "string", description: "e.g. https://jewgo.app/health" },
-        beHealthUrl: { type: "string", description: "e.g. https://jewgo.onrender.com/health" },
-        budgets: {
-          type: "object",
-          properties: {
-            mainKB: { type: "number", default: 500 },
-            initialTotalMB: { type: "number", default: 2 }
-          }
-        }
-      }
+      cwd: z.string().default("frontend"),
+      feHealthUrl: z.string().optional().describe("e.g. https://jewgo.app/health"),
+      beHealthUrl: z.string().optional().describe("e.g. https://jewgo.onrender.com/health"),
+      budgets: z.object({
+        mainKB: z.number().default(500),
+        initialTotalMB: z.number().default(2)
+      }).optional()
     }
   },
-  async (args) => {
-    const cwd = (args?.cwd as string) ?? "frontend";
-    const budgets = (args?.budgets as Budgets) ?? { mainKB: 500, initialTotalMB: 2 };
+  async ({ cwd, feHealthUrl, beHealthUrl, budgets }) => {
+    const budgetsConfig = budgets ?? { mainKB: 500, initialTotalMB: 2 };
 
     const build = await runNextBuild(cwd);
     const sizes = parseNextBuildSizes(build.stdout || "");
     const sizeViolations = [];
-    if (sizes.mainKB && budgets.mainKB && sizes.mainKB > budgets.mainKB) sizeViolations.push({ metric: "mainKB", actual: sizes.mainKB, budget: budgets.mainKB });
-    if (sizes.initialTotalMB && budgets.initialTotalMB && sizes.initialTotalMB > budgets.initialTotalMB) sizeViolations.push({ metric: "initialTotalMB", actual: sizes.initialTotalMB, budget: budgets.initialTotalMB });
+    if (sizes.mainKB && budgetsConfig.mainKB && sizes.mainKB > budgetsConfig.mainKB) sizeViolations.push({ metric: "mainKB", actual: sizes.mainKB, budget: budgetsConfig.mainKB });
+    if (sizes.initialTotalMB && budgetsConfig.initialTotalMB && sizes.initialTotalMB > budgetsConfig.initialTotalMB) sizeViolations.push({ metric: "initialTotalMB", actual: sizes.initialTotalMB, budget: budgetsConfig.initialTotalMB });
 
-    const fe = args?.feHealthUrl ? await checkHealth(String(args.feHealthUrl)) : undefined;
-    const be = args?.beHealthUrl ? await checkHealth(String(args.beHealthUrl)) : undefined;
+    const fe = feHealthUrl ? await checkHealth(feHealthUrl) : undefined;
+    const be = beHealthUrl ? await checkHealth(beHealthUrl) : undefined;
 
     const ok = build.ok && sizeViolations.length === 0 && (!fe || fe.ok) && (!be || be.ok);
 
     return {
       content: [{
-        type: "json",
-        data: {
+        type: "text",
+        text: JSON.stringify({
           ok,
           buildOk: build.ok,
           sizeViolations,
           sizes,
           feHealth: fe,
           beHealth: be
-        }
+        }, null, 2)
       }]
     };
   }
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.log("CI Guard MCP server is running...");
+}
+
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});

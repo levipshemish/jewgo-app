@@ -1,45 +1,51 @@
-import { StdioServerTransport, Server } from "@modelcontextprotocol/sdk/server";
-import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
 import { runTSC, runESLint } from "./run.js";
 
-const server = new Server(
-  {
-    name: "ts-next-strict-mcp",
-    version: "0.1.0",
-    description: "Runs tsc --noEmit and ESLint; returns structured diagnostics."
-  },
-  { capabilities: { tools: {} } }
-);
+const server = new McpServer({
+  name: "ts-next-strict-mcp",
+  version: "0.1.0",
+  description: "Runs tsc --noEmit and ESLint; returns structured diagnostics."
+});
 
-server.tool(
+server.registerTool(
+  "tsc_check",
   {
-    name: "tsc_check",
     description: "Run TypeScript type check with --noEmit in cwd",
     inputSchema: {
-      type: "object",
-      properties: { cwd: { type: "string", description: "project dir", default: "." } },
-      required: []
+      cwd: z.string().default(".").describe("project dir")
     }
   },
-  async (args) => ({ content: [{ type: "json", data: await runTSC(args?.cwd ?? ".") }] })
+  async ({ cwd }) => {
+    const result = await runTSC(cwd);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
 );
 
-server.tool(
+server.registerTool(
+  "eslint_check",
   {
-    name: "eslint_check",
     description: "Run ESLint and return issues",
     inputSchema: {
-      type: "object",
-      properties: {
-        cwd: { type: "string", default: "." },
-        pattern: { type: "string", default: "." },
-        fix: { type: "boolean", default: false }
-      },
-      required: []
+      cwd: z.string().default("."),
+      pattern: z.string().default("."),
+      fix: z.boolean().default(false)
     }
   },
-  async (args) => ({ content: [{ type: "json", data: await runESLint(args?.cwd ?? ".", args?.pattern ?? ".", !!args?.fix) }] })
+  async ({ cwd, pattern, fix }) => {
+    const result = await runESLint(cwd, pattern, fix);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
 );
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.log("TS/Next Strict MCP server is running...");
+}
+
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});

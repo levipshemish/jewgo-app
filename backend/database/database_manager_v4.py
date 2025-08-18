@@ -1,6 +1,7 @@
 from utils.logging_config import get_logger
 from utils.error_handler import handle_database_operation, handle_operation_with_fallback
 
+import ast
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -502,7 +503,7 @@ class DatabaseManager:
             return {}
 
     def _safe_json_loads(self, json_str: Optional[str], default_value: Any) -> Any:
-        """Safely parse JSON string with fallback to default value."""
+        """Safely parse JSON string or Python literal with fallback to default value."""
         if not json_str:
             return default_value
         
@@ -521,15 +522,21 @@ class DatabaseManager:
         if not json_str:
             return default_value
         
+        # First try to parse as JSON
         try:
             return json.loads(json_str)
-        except (json.JSONDecodeError, TypeError) as e:
-            # Log the specific error and the problematic JSON string (truncated)
-            json_preview = json_str[:100] + "..." if len(json_str) > 100 else json_str
-            logger.warning(
-                f"Failed to parse JSON: {e}, using default value. JSON preview: {json_preview}"
-            )
-            return default_value
+        except (json.JSONDecodeError, TypeError):
+            # If JSON parsing fails, try to parse as Python literal (handles single quotes)
+            try:
+                parsed_data = ast.literal_eval(json_str)
+                return parsed_data
+            except (ValueError, SyntaxError) as e:
+                # Log the specific error and the problematic string (truncated)
+                json_preview = json_str[:100] + "..." if len(json_str) > 100 else json_str
+                logger.warning(
+                    f"Failed to parse JSON or Python literal: {e}, using default value. JSON preview: {json_preview}"
+                )
+                return default_value
 
     def _image_to_dict(self, image) -> Dict[str, Any]:
         """Convert image model to dictionary."""
