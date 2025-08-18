@@ -3,7 +3,7 @@ import os
 import importlib
 from typing import Dict, Any
 from mcp.server import Server
-from mcp.types import Tool, ToolRequest
+from mcp.types import Tool, CallToolRequest
 from sqlalchemy import create_engine, inspect, MetaData
 from sqlalchemy.engine.reflection import Inspector
 
@@ -54,8 +54,7 @@ def db_signature(inspector: Inspector) -> Dict[str, Any]:
 
 server = Server(
     name="schema-drift-mcp", 
-    version="0.1.0", 
-    description="Compares SQLAlchemy metadata vs live Postgres schema."
+    version="0.1.0"
 )
 
 @server.tool(
@@ -72,7 +71,7 @@ server = Server(
         }
     )
 )
-def schema_diff(req: ToolRequest):
+def schema_diff(req: CallToolRequest):
     """Compare declared schema with live database schema."""
     db_url = req.params["db_url"]
     metadata_module = req.params["metadata_module"]
@@ -105,13 +104,13 @@ def schema_diff(req: ToolRequest):
                 "columns": diff_dicts(declared[t]["columns"], live[t]["columns"])
             }
 
-        return {"content": [{"type": "json", "data": out}]}
+        return {"content": [{"type": "text", "text": json.dumps(out, indent=2)}]}
     
     except Exception as e:
         return {
             "content": [{
-                "type": "json", 
-                "data": {"error": str(e), "type": type(e).__name__}
+                "type": "text", 
+                "text": json.dumps({"error": str(e), "type": type(e).__name__}, indent=2)
             }]
         }
 
