@@ -1,0 +1,120 @@
+# Dependencies
+node_modules/
+jewgo-frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+scraper_env/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js
+jewgo-frontend/.next/
+frontend/.next/
+jewgo-frontend/out/
+frontend/out/
+jewgo-frontend/build/
+frontend/build/
+
+# Production
+jewgo-frontend/build/
+frontend/build/
+
+# Misc
+.DS_Store
+*.pem
+.vercel
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+frontend/tsconfig.tsbuildinfo
+frontend/.next_dev_pid
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+restaurants.db
+
+# Data exports (may contain API keys)
+restaurant_data_export_*.json
+*_export_*.json
+*_backup_*.json
+
+# Logs
+*.log
+localtunnel_backend.log
+localtunnel_frontend.log
+ngrok_all.log
+ngrok_backend.log
+ngrok_frontend.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Development artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cursor AI Configuration (Development Tool)
+.cursor/ backend/venv_py311/
+backend/venv_py311/

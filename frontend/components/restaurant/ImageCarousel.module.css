@@ -1,0 +1,124 @@
+/* Custom styles for the image carousel */
+
+.carouselContainer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+
+/* Hide scrollbars for the scrollable container */
+.scrollContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollContainer {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ensure proper touch behavior */
+.scrollContainer {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Custom range slider styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: #e5e7eb;
+  height: 0.75rem;
+  border-radius: 9999px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #8b5cf6;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-track {
+  background: #e5e7eb;
+  height: 0.75rem;
+  border-radius: 9999px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  background: #8b5cf6;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+}
+
+/* Image transition animations */
+.imageTransition {
+  transition: all 0.3s ease-in-out;
+}
+
+.imageTransition:hover {
+  transform: scale(1.02);
+}
+
+/* Navigation button hover effects */
+.navButton {
+  transition: all 0.2s ease-in-out;
+}
+
+.navButton:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dot indicator animations */
+.dotIndicator {
+  transition: all 0.2s ease-in-out;
+}
+
+.dotIndicator:hover {
+  transform: scale(1.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .carouselContainer {
+    height: 16rem; /* 256px on mobile */
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .carouselContainer {
+    height: 20rem; /* 320px on tablet */
+  }
+}
+
+@media (min-width: 1025px) {
+  .carouselContainer {
+    height: 24rem; /* 384px on desktop */
+  }
+} 

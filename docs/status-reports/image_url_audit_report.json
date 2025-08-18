@@ -1,0 +1,28 @@
+{
+  "total_restaurants": 3000,
+  "checked_image_urls": 2940,
+  "failing_count": 3,
+  "failing": [
+    {
+      "id": 1482,
+      "name": "Bagel Boss Boca Raton",
+      "url": "https://res.cloudinary.com/dcpuqbnrm/image/upload/v1754361130/jewgo/restaurants/bagel_boss_boca_raton/image_1.jpg",
+      "status": null,
+      "meta": "HTTPSConnectionPool(host='res.cloudinary.com', port=443): Max retries exceeded with url: /dcpuqbnrm/image/upload/v1754361130/jewgo/restaurants/bagel_boss_boca_raton/image_1.jpg (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x1049f1bd0>: Failed to resolve 'res.cloudinary.com' ([Errno 8] nodename nor servname provided, or not known)\"))"
+    },
+    {
+      "id": 1502,
+      "name": "The Cafe Maison la Fleur & Dunwell Pizza",
+      "url": "https://res.cloudinary.com/dcpuqbnrm/image/upload/v1754350183/jewgo/restaurants/the_cafe_maison_la_fleur_dunwell_pizza/image_1.jpg",
+      "status": null,
+      "meta": "HTTPSConnectionPool(host='res.cloudinary.com', port=443): Max retries exceeded with url: /dcpuqbnrm/image/upload/v1754350183/jewgo/restaurants/the_cafe_maison_la_fleur_dunwell_pizza/image_1.jpg (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x1049f1d10>: Failed to resolve 'res.cloudinary.com' ([Errno 8] nodename nor servname provided, or not known)\"))"
+    },
+    {
+      "id": 1801,
+      "name": "Dulceria Events",
+      "url": "https://res.cloudinary.com/dcpuqbnrm/image/upload/v1754361159/jewgo/restaurants/dulceria_events/image_1.jpg",
+      "status": null,
+      "meta": "HTTPSConnectionPool(host='res.cloudinary.com', port=443): Max retries exceeded with url: /dcpuqbnrm/image/upload/v1754361159/jewgo/restaurants/dulceria_events/image_1.jpg (Caused by NameResolutionError(\"<urllib3.connection.HTTPSConnection object at 0x1049f39d0>: Failed to resolve 'res.cloudinary.com' ([Errno 8] nodename nor servname provided, or not known)\"))"
+    }
+  ]
+}

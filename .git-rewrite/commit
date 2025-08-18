@@ -1,0 +1,6 @@
+tree ca422d7425e8052d159ec6a649fc03b378464818
+parent df534cc7d287c259a308589aed93a36f29177980
+author mml555 <mendel1023@gmail.com> 1755548990 -0400
+committer mml555 <mendel1023@gmail.com> 1755548990 -0400
+
+fix: resolve psycopg2 dependency issue by using postgresql+psycopg:// dialect

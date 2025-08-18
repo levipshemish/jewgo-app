@@ -1,0 +1,119 @@
+{
+  "failed": [
+    {
+      "id": 1780,
+      "name": "BobaTbot",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1781,
+      "name": "Bourekas, Etc.",
+      "message": "Restaurant not found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1897,
+      "name": "Bunnie Cakes",
+      "message": "Restaurant not found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1900,
+      "name": "Carnicery",
+      "message": "Invalid website URL",
+      "website_candidate": "http://woodfiredmeat.com/?utm_source=gmb&utm_medium=referral"
+    },
+    {
+      "id": 1808,
+      "name": "Fleisch 41",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1813,
+      "name": "Gallery of Cakes",
+      "message": "Invalid website URL",
+      "website_candidate": "https://motekcafe.com/"
+    },
+    {
+      "id": 1814,
+      "name": "Gourmet Event / Magician Chef@Alexander Hotel",
+      "message": "Invalid website URL",
+      "website_candidate": "https://www.alexandereventsmiami.com/"
+    },
+    {
+      "id": 1833,
+      "name": "Lili's Prime Catering",
+      "message": "Invalid website URL",
+      "website_candidate": "https://lilisprimecatering.com/contact-us"
+    },
+    {
+      "id": 1854,
+      "name": "Roast",
+      "message": "Invalid website URL",
+      "website_candidate": "http://roastsurfside.com/"
+    },
+    {
+      "id": 1858,
+      "name": "Serendipity Yogurt Cafe",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1861,
+      "name": "Soho Asian Bar and Grill",
+      "message": "Invalid website URL",
+      "website_candidate": "http://sohoasiangrill.com/"
+    },
+    {
+      "id": 1862,
+      "name": "Sonnys Bakery",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1864,
+      "name": "Stella's Bakery",
+      "message": "Invalid website URL",
+      "website_candidate": "http://www.stelaskitchen.com/"
+    },
+    {
+      "id": 1567,
+      "name": "Street Bar Surfside",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1867,
+      "name": "Tasty Beach Cafe",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1868,
+      "name": "Temptings, LLC",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    },
+    {
+      "id": 1502,
+      "name": "The Cafe Maison la Fleur & Dunwell Pizza",
+      "message": "Invalid website URL",
+      "website_candidate": "http://dunwellpizza.com/"
+    },
+    {
+      "id": 1874,
+      "name": "Whipped By Judith",
+      "message": "Invalid website URL",
+      "website_candidate": "https://www.getsauce.com/order/hummus-vegas-and-grill-aventura/menu?dispatch-type=pickup&utm_source=GMB&utm_medium=Order%20Now%20button%20pickup&utm_id=Ben%20Yehuda%20Grill"
+    },
+    {
+      "id": 1880,
+      "name": "Zohars Gelato Surfside",
+      "message": "No website found in Google Places",
+      "website_candidate": null
+    }
+  ],
+  "generated_at": "2025-08-10 00:23:32"
+}

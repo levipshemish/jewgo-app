@@ -1,0 +1,137 @@
+{
+  "timestamp": "2025-08-08T05:20:31.518Z",
+  "summary": {
+    "totalImages": 7,
+    "totalOriginalSize": "71.92 KB",
+    "optimizedCount": 4,
+    "totalSaved": "19.07 KB"
+  },
+  "analysis": {
+    "totalImages": 7,
+    "totalSize": 73646,
+    "byExtension": {
+      ".svg": [
+        {
+          "name": "default-avatar.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/default-avatar.svg",
+          "size": 304,
+          "extension": ".svg",
+          "relativePath": "public/default-avatar.svg"
+        },
+        {
+          "name": "favicon.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/favicon.svg",
+          "size": 4051,
+          "extension": ".svg",
+          "relativePath": "public/favicon.svg"
+        },
+        {
+          "name": "icon.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/icon.svg",
+          "size": 4051,
+          "extension": ".svg",
+          "relativePath": "public/icon.svg"
+        },
+        {
+          "name": "logo-dark.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/logo-dark.svg",
+          "size": 11149,
+          "extension": ".svg",
+          "relativePath": "public/logo-dark.svg"
+        },
+        {
+          "name": "logo.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/logo.svg",
+          "size": 11154,
+          "extension": ".svg",
+          "relativePath": "public/logo.svg"
+        },
+        {
+          "name": "tools-kitchen-2.svg",
+          "path": "/Users/mendell/jewgo app/frontend/public/tools-kitchen-2.svg",
+          "size": 429,
+          "extension": ".svg",
+          "relativePath": "public/tools-kitchen-2.svg"
+        }
+      ],
+      ".jpg": [
+        {
+          "name": "default-restaurant.jpg",
+          "path": "/Users/mendell/jewgo app/frontend/public/images/default-restaurant.jpg",
+          "size": 42508,
+          "extension": ".jpg",
+          "relativePath": "public/images/default-restaurant.jpg"
+        }
+      ]
+    },
+    "largeImages": [],
+    "recommendations": [
+      "1 JPEG images could be converted to WebP for better compression"
+    ]
+  },
+  "results": [
+    {
+      "original": {
+        "name": "default-restaurant.jpg",
+        "path": "/Users/mendell/jewgo app/frontend/public/images/default-restaurant.jpg",
+        "size": 42508,
+        "extension": ".jpg",
+        "relativePath": "public/images/default-restaurant.jpg"
+      },
+      "optimized": {
+        "path": "/Users/mendell/jewgo app/frontend/optimized-images/default-restaurant.webp",
+        "size": 25462,
+        "savings": 17046,
+        "savingsPercent": "40.1"
+      }
+    },
+    {
+      "original": {
+        "name": "logo-dark.svg",
+        "path": "/Users/mendell/jewgo app/frontend/public/logo-dark.svg",
+        "size": 11149,
+        "extension": ".svg",
+        "relativePath": "public/logo-dark.svg"
+      },
+      "optimized": {
+        "path": "/Users/mendell/jewgo app/frontend/optimized-images/logo-dark.webp",
+        "size": 10018,
+        "savings": 1131,
+        "savingsPercent": "10.1"
+      }
+    },
+    {
+      "original": {
+        "name": "logo.svg",
+        "path": "/Users/mendell/jewgo app/frontend/public/logo.svg",
+        "size": 11154,
+        "extension": ".svg",
+        "relativePath": "public/logo.svg"
+      },
+      "optimized": {
+        "path": "/Users/mendell/jewgo app/frontend/optimized-images/logo.webp",
+        "size": 10018,
+        "savings": 1136,
+        "savingsPercent": "10.2"
+      }
+    },
+    {
+      "original": {
+        "name": "tools-kitchen-2.svg",
+        "path": "/Users/mendell/jewgo app/frontend/public/tools-kitchen-2.svg",
+        "size": 429,
+        "extension": ".svg",
+        "relativePath": "public/tools-kitchen-2.svg"
+      },
+      "optimized": {
+        "path": "/Users/mendell/jewgo app/frontend/optimized-images/tools-kitchen-2.webp",
+        "size": 216,
+        "savings": 213,
+        "savingsPercent": "49.7"
+      }
+    }
+  ],
+  "recommendations": [
+    "1 JPEG images could be converted to WebP for better compression"
+  ]
+}

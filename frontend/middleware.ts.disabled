@@ -1,0 +1,68 @@
+import { createClient } from '@/lib/supabase/middleware'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  try {
+    // Create a response object that we can modify
+    const { supabase, response } = createClient(request)
+
+    // Refresh session if expired - required for Server Components
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    // Define protected routes
+    const protectedRoutes = [
+      '/profile',
+      '/favorites',
+      '/reviews',
+      '/admin'
+    ]
+
+    const isProtectedRoute = protectedRoutes.some(route => 
+      request.nextUrl.pathname.startsWith(route)
+    )
+
+    // Define admin routes
+    const adminRoutes = ['/admin']
+    const isAdminRoute = adminRoutes.some(route => 
+      request.nextUrl.pathname.startsWith(route)
+    )
+
+    // If accessing protected route without session, redirect to sign in
+    if (isProtectedRoute && !session) {
+      const redirectUrl = new URL('/auth/signin', request.url)
+      redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // For admin routes, we'll need to check user role from our database
+    // This will be implemented in Phase 3 when we connect to the backend
+    if (isAdminRoute && session) {
+      // TODO: Check user role from backend API
+      // For now, allow access if authenticated
+      // In Phase 3, we'll add role-based access control
+    }
+
+    return response
+  } catch (e) {
+    // If you are here, a Supabase client could not be created!
+    // This is likely because you have not set up environment variables.
+    return NextResponse.next({
+      request,
+    })
+  }
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

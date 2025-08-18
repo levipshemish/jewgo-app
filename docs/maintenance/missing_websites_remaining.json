@@ -1,0 +1,142 @@
+{
+  "remaining_count": 17,
+  "restaurants": [
+    {
+      "id": 1780,
+      "name": "BobaTbot",
+      "address": "754 - 41Street",
+      "city": "Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1781,
+      "name": "Bourekas, Etc.",
+      "address": "18671 W. Dixie Hwy",
+      "city": "North Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1900,
+      "name": "Carnicery",
+      "address": "Address not provided",
+      "city": "Hollywood",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1808,
+      "name": "Fleisch 41",
+      "address": "726-41st Street",
+      "city": "Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1814,
+      "name": "Gourmet Event / Magician Chef@Alexander Hotel",
+      "address": "5225 Collins Avenue",
+      "city": "Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1833,
+      "name": "Lili's Prime Catering",
+      "address": "17100 NE 6th Ave",
+      "city": "North Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1854,
+      "name": "Roast",
+      "address": "9441 Harding Ave",
+      "city": "Surfside",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1858,
+      "name": "Serendipity Yogurt Cafe",
+      "address": "9457 Harding Ave",
+      "city": "Surfside",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1861,
+      "name": "Soho Asian Bar and Grill",
+      "address": "19004 NE 29th Ave",
+      "city": "Aventura",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1862,
+      "name": "Sonnys Bakery",
+      "address": "18445 NE 19th Ave",
+      "city": "North Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1864,
+      "name": "Stella's Bakery",
+      "address": "31 NW 9th Street",
+      "city": "Miami",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1567,
+      "name": "Street Bar Surfside",
+      "address": "9561 Harding Ave",
+      "city": "Surfside",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1867,
+      "name": "Tasty Beach Cafe",
+      "address": "4041 Royal Palm Ave",
+      "city": "Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1868,
+      "name": "Temptings, LLC",
+      "address": "Address not provided",
+      "city": "North Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1502,
+      "name": "The Cafe Maison la Fleur & Dunwell Pizza",
+      "address": "2906 NE 207th St",
+      "city": "Aventura",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1874,
+      "name": "Whipped By Judith",
+      "address": "Address not provided",
+      "city": "Miami Beach",
+      "state": "FL",
+      "website": null
+    },
+    {
+      "id": 1880,
+      "name": "Zohars Gelato Surfside",
+      "address": "9543 Harding Ave",
+      "city": "Surfside",
+      "state": "FL",
+      "website": null
+    }
+  ],
+  "generated_at": "2025-08-10 00:26:11"
+}

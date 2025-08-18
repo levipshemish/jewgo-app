@@ -1,0 +1,17 @@
+bf873ba7880f044f660dc7febae0b9a48666d5c2 commit	refs/heads/main
+11980276a72f8f79138eabc3e1654659ff8311f6 commit	refs/original/refs/heads/main
+76eea8c3a35b39f3a9d8e122b02c20de6221a3d7 commit	refs/remotes/origin/cursor/codebase-review-and-status-report-a999
+71f84e71994ae7104ff52dc5b8b62eef3af30e10 commit	refs/remotes/origin/cursor/debug-love-map-feature-failure-f7ec
+c34e5fb43458e37f64647ae05a333d40a4e16073 commit	refs/remotes/origin/cursor/fix-backend-deployment-import-errors-7688
+d484d3c6c07d6949451eadb751ce794d0fa910e5 commit	refs/remotes/origin/cursor/ingest-google-places-business-hours-pipeline-46a4
+c7cb5559191959b3249ef25490adbdb45503d04f commit	refs/remotes/origin/cursor/investigate-jewgo-app-loading-issue-687c
+9377225a691d110e825b266a6ae302d2a4f9f9e0 commit	refs/remotes/origin/cursor/investigate-live-map-loading-and-marker-issues-03b8
+a80dae9ae38d229e65c67ee74e4d6f1beebb1863 commit	refs/remotes/origin/cursor/investigate-map-marker-loading-and-listing-clickability-ec75
+83dcbda697b7595aa1744f3ffc75beedc0184d0e commit	refs/remotes/origin/cursor/review-account-creation-implementation-ecaf
+8312029c2217869c49405c8d2ec341c3c7a28b68 commit	refs/remotes/origin/cursor/review-code-base-for-problems-9ee6
+1fa2247205ab70c56e8d429e7149d9a09166baae commit	refs/remotes/origin/cursor/review-live-map-code-for-issues-4c9f
+9cdf831b2e662ba65bc07a3d4f10c549dad99dba commit	refs/remotes/origin/cursor/review-store-hours-handling-dc0f
+8f0e736568cdc9b7b8995d5eb37f8470f195dadb commit	refs/remotes/origin/cursor/security-and-feature-audit-for-account-and-dashboard-424d
+26897f73153816e61f38fd2f265b76208bd88e20 commit	refs/remotes/origin/cursor/security-and-feature-audit-for-account-and-dashboard-df2e
+832b5350908cc512bde8a3e8b454eb785d71e61c commit	refs/remotes/origin/main
+3cba4d75d6a08d1f6a02dde4c3c46d7033b80997 commit	refs/stash

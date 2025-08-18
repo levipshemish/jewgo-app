@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: jewgo-backend
+    env: python
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: cd backend && gunicorn --config config/gunicorn.conf.py app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: NODE_VERSION
+        value: 24.5.0
+      - key: PIP_NO_DEFAULT_INDEX
+        value: "false"
+    buildFilter:
+      paths:
+        - backend/**
+        - build.sh
+        - pyproject.toml 

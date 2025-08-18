@@ -1,0 +1,22 @@
+{
+  "name": "jewgo-monitoring",
+  "version": "1.0.0",
+  "description": "Monitoring and health check scripts for JewGo API",
+  "main": "health_checks/keep_alive.js",
+  "scripts": {
+    "start": "node health_checks/keep_alive.js",
+    "once": "node health_checks/keep_alive.js --once",
+    "test": "node health_checks/keep_alive.js --once"
+  },
+  "keywords": [
+    "monitoring",
+    "health-check",
+    "keep-alive",
+    "api"
+  ],
+  "author": "JewGo Development Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

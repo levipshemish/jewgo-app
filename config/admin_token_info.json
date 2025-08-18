@@ -1,0 +1,13 @@
+{
+  "token": "oSJtZUQN-B-gBmc9F0xemMCUuPseer30QYmVo8lde4E",
+  "type": "admin",
+  "permissions": [
+    "read",
+    "write",
+    "delete",
+    "admin"
+  ],
+  "created_at": 1754849148.9496288,
+  "description": "Admin token generated for JewGo application",
+  "usage": "Set this as ADMIN_TOKEN environment variable in backend"
+}

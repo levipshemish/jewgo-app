@@ -1,0 +1,57 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getcursor/cursor-schema/main/commands.schema.json",
+  "version": 1,
+  "commands": [
+    {
+      "name": "Mendel Mode v4 Prompt",
+      "description": "Scaffold a Mendel Mode v4 prompt for a focused change (1–3 steps) with enhanced debugging and flexibility.",
+      "prompt": "🤖 Mendel Mode v4 Agent ([AI_MODEL]): Disciplined, scoped, production-aware development with structured planning and quality enforcement. Use Mendel Mode v4. Create a scoped plan with: Priority, Task Title, Reason, Dependencies, Scope (1–3 steps), Fail Gracefully, Success Criteria, Change Impact, Mini-Changelog, Stretch Goal, Test Strategy, Commit & Push. Include error handling patterns and monitoring considerations. Respect JewGo ops blueprint (APIs, budgets, caching, security, CI/CD). Note any flexibility overrides needed and justify them.",
+      "arguments": [
+        { "name": "Priority (P0/P1/P2)", "required": true },
+        { "name": "Task Title", "required": true },
+        { "name": "Area (FE/BE/API/DB/Infra/Debug)", "required": true },
+        { "name": "Override Justification (if any)", "required": false }
+      ]
+    },
+    {
+      "name": "Debug Session Scaffold",
+      "description": "Structure a debugging session with systematic approach and common JewGo issue patterns.",
+      "prompt": "🤖 Debug Agent ([AI_MODEL]): Systematic troubleshooting with structured approach and JewGo-specific issue patterns. Create a structured debugging plan: 1) Reproduce locally, 2) Check logs/monitoring, 3) Isolate variables, 4) Common JewGo issues (CORS, 502, cache, auth), 5) Tools checklist, 6) Fix validation, 7) Rollback plan. Include specific debugging steps for the reported issue.",
+      "arguments": [
+        { "name": "Issue Description", "required": true },
+        { "name": "Affected Area (FE/BE/API/DB)", "required": true },
+        { "name": "Error Messages (if any)", "required": false }
+      ]
+    },
+    {
+      "name": "Emergency Hotfix Scaffold", 
+      "description": "Create an emergency hotfix plan with appropriate guardrail overrides.",
+      "prompt": "🤖 Emergency Agent ([AI_MODEL]): Crisis management with focus on system stability and rapid resolution. EMERGENCY MODE: Create hotfix plan with 1) Issue impact assessment, 2) Minimal viable fix, 3) Override justifications (which checks to bypass), 4) Rollback plan, 5) Post-fix cleanup tasks. Use 'HOTFIX:' commit prefix. Focus on system stability over code perfection.",
+      "arguments": [
+        { "name": "Critical Issue", "required": true },
+        { "name": "System Impact (users affected, revenue, etc.)", "required": true },
+        { "name": "Proposed Fix Area", "required": true }
+      ]
+    },
+    {
+      "name": "Performance Regression Analysis",
+      "description": "Analyze and create fix plan for performance issues against CWV targets.",
+      "prompt": "🤖 Performance Agent ([AI_MODEL]): Optimization-focused analysis with CWV targets and bundle size monitoring. Analyze performance regression: 1) CWV metrics affected (LCP/CLS/TTFB/FID/FCP), 2) Bundle size impact, 3) Lighthouse scores, 4) Suspected causes, 5) Fix strategy, 6) Monitoring plan. Include before/after measurements and rollback criteria.",
+      "arguments": [
+        { "name": "Performance Metric Affected", "required": true },
+        { "name": "Current vs Target Values", "required": true },
+        { "name": "Recent Changes (if known)", "required": false }
+      ]
+    },
+    {
+      "name": "Security Assessment",
+      "description": "Conduct security analysis and vulnerability assessment for code changes.",
+      "prompt": "🤖 Security Agent ([AI_MODEL]): Vulnerability assessment with security-first approach and threat modeling. Conduct security analysis: 1) Input validation review, 2) Authentication/authorization check, 3) Data exposure assessment, 4) Dependency vulnerability scan, 5) Security headers verification, 6) CORS policy review, 7) Remediation plan. Focus on OWASP Top 10 and JewGo security baseline.",
+      "arguments": [
+        { "name": "Security Concern", "required": true },
+        { "name": "Affected Components", "required": true },
+        { "name": "Risk Level (Low/Medium/High/Critical)", "required": true }
+      ]
+    }
+  ]
+}

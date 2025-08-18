@@ -1,0 +1,38 @@
+[run]
+source = .
+omit = 
+    */tests/*
+    */venv/*
+    */__pycache__/*
+    */migrations/*
+    */scripts/*
+    setup.py
+    manage.py
+    wsgi.py
+    asgi.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+    def main\(\):
+    if TYPE_CHECKING:
+    from __future__ import annotations
+
+show_missing = True
+precision = 2
+
+[html]
+directory = htmlcov
+title = JewGo Backend Test Coverage Report
+
+[xml]
+output = coverage.xml 

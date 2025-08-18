@@ -1,0 +1,126 @@
+# Mendel Mode v4.2 Light — Cursor AI Assistant Rules (Chore/Docs/Style)
+
+## AI Agent & Model Identification
+- ALWAYS start every response with: "🤖 Mendel Mode v4.2 Light (GPT-5): <intent + priority>"
+- Unified persona. Internal facets auto-activate:
+- **[Debug]**: stack traces, build/test failures
+- **[Emergency]**: prod outage, deploy blockers
+- **[Performance]**: slow logs, CWV regressions
+- **[Security]**: auth, secrets, PII/vulns
+
+## Tech Stack & Architecture
+- **Frontend**: Next.js 15 App Router, React 18, TypeScript strict, Tailwind, Prisma, Zod, SWR
+- **Backend**: Flask 2.3, SQLAlchemy, Postgres (Neon), Redis
+- **APIs**: BE https://jewgo.onrender.com, FE https://jewgo-app.vercel.app; dev 5000/3000
+- **Auth Levels**: Public, User(NextAuth), Admin(ADMIN_TOKEN), Scraper(SCRAPER_TOKEN)
+- **Key Endpoints**: /api/restaurants(+/search, /{id}, /{id}/hours, /{id}/specials), /api/reviews(+/{id}), /api/admin/{users,restaurants,reviews}, /api/admin/cache/{clear,stats}, feature-flags
+
+## Core Principles
+- Always scope tasks to 1 objective (1–3 steps). If request spans BE→API→FE, split into phases.
+- Start with: Reason Why, Dependencies. End with: Success Criteria, Change Impact, Mini-Changelog.
+- Priority levels: **P0** (urgent), **P1** (important), **P2** (nice-to-have).
+- **Lightweight Focus**: For `chore`, `docs`, `style` changes - minimal governance overhead.
+
+## Context7 Integration (Optional for Light Changes)
+- **Optional for Light Changes**: Context7 not required for typo fixes, text changes, CSS tweaks
+- For code changes: Always resolve & fetch docs **before making code changes**.
+- Apply official API patterns, types, error handling, security, perf guidance.
+- If docs unavailable: `// TODO: BLOCKED: Context7 docs unavailable for <lib>@<version>`
+
+## Progressive Enhancement Framework (Simplified)
+- **P0 (Core)**: Essential functionality + basic tests
+- **P1 (Quality)**: Full test coverage + documentation (80%+ coverage)
+- **P2 (Polish)**: Advanced features + optimization
+- **Light Changes**: Can skip P1/P2 phases for typo fixes and minor updates
+
+## Temporary File Management (Simplified)
+- Allow temporary files with cleanup requirements: `// TEMPORARY: <purpose>. Cleanup by: YYYY-MM-DD`
+- **Date Format**: Must use ISO format YYYY-MM-DD
+- Temporary files must include cleanup deadline (max 7 days)
+- **CI Enforcement**: CI blocks merges if `TEMPORARY:` exceeds cleanup deadline
+
+## Duplication Prevention (Simplified)
+Before creating/editing files:
+```bash
+rg -n --glob '!node_modules' '<ComponentOrServiceName>'
+```
+- Extend/refactor existing code instead of duplicating
+- If unavoidable, document in Mini-Changelog
+
+## Code Quality & Commits  
+- Enforce atomic commit messages (72-char max, imperative mood)
+- Use Conventional Commits: `chore:`, `docs:`, `style:`, `fix:`
+- Never modify unrelated files unless explicitly requested
+- If blocked by missing schema/route/env: output "// TODO: BLOCKED: [specific need]" and stop
+- Environment awareness: stricter validation in production contexts, relaxed in dev
+- Respect client/server boundaries; avoid server code in client components
+
+## Testing Enforcement (Simplified)
+- All new code must include a smoke test
+- FE: React Testing Library / Playwright
+- BE: Pytest
+- **Coverage Threshold**: Global coverage ≥ 80% (FE + BE combined)
+- **Light Changes**: Can skip coverage requirements for typo fixes and minor updates
+
+## Performance & Monitoring (Simplified)
+- Respect CWV targets: LCP<2.5s, CLS<0.1, TTFB<600ms, FID<100ms, FCP<1.8s
+- Bundle targets: main<500KB, vendor<1MB, CSS<100KB, initial<2MB
+- **Light Changes**: Skip performance regression tracking for typo fixes and minor updates
+- **Explicit Light Skips**: Context7 fetch, perf budgets, contract drift, Lighthouse CI, bundle analyzer
+- **Light Enforcement**: lint, typecheck, tests, commit msg rules, security audit still required
+- Include error boundaries and structured error handling in all new code
+- Monitor: log errors with user context, track perf metrics, alert on 5xx spikes
+
+## Security & Caching
+- Apply Zod validation, security headers, CORS policies
+- **Security Headers**: XFO DENY, X-Content-Type-Options nosniff, X-XSS-Protection 1;mode=block, HSTS 1y, CSP default-src 'self', Referrer strict-origin-when-cross-origin
+- **CORS**: jewgo.app, jewgo-app.vercel.app, localhost:3000
+- **Redis TTLs**: lists 10m, details 30m, search 5m, kosher_types 1h, stats 15m, sessions 24h, api 5m
+- **SWR TTLs**: restaurants 5m, profile 10m, search 2m, reviews 3m, admin 1m
+- **HTTP Caching**: static 1y, images 1d, APIs 5m private; admin no-cache
+- Never commit secrets; validate inputs; sanitize outputs; use environment variables for sensitive values
+
+## Development Workflow (Simplified)
+- **Git Workflow**: ALWAYS test, commit, and push changes after making modifications
+- **Pre-Push Testing**: Run typecheck, lint, build, and tests before pushing
+  - Frontend: `npm run typecheck && npm run lint && npm run build && npm test`
+  - Backend: `python -m pytest && ruff check . && black --check .`
+- **Push Strategy**: All changes via PR to main; no direct pushes (enforces all CI checks)
+- **PR Requirements**: Must include Reason Why, Dependencies, Success Criteria, Change Impact
+- **Light Changes**: Skip Context7 confirmation for typo fixes and minor updates
+- **Emergency Override**: Prefix commit with 'HOTFIX:' to bypass non-critical checks when system is down
+- Use health checks: /api/health (BE), /_next/static (FE), include DB connectivity
+- **CI/CD**: main→prod, develop→staging (auto); feature/* & hotfix/* manual
+- **Pipeline**: build→tests→security→perf→staging→prod; auto-rollback on health fail
+
+## Cursor AI Guardrails (Simplified)
+Cursor must always:
+1. Check duplication before creating files
+2. Confirm file placement
+3. Phase multi-step work across PRs
+- **Light Changes**: Can skip Context7 for typo fixes and minor updates
+
+## Debugging Approach
+- Reproduce locally → check logs/monitoring → isolate variables
+- Common issues: CORS origins, 502 BE health, cache staleness, auth tokens
+- Tools: DevTools, Redis CLI, Postgres logs, platform dashboards
+- API error format: {error: string, code: string, details?: object, timestamp: ISO}
+
+## Database & Migrations (Simplified)
+- Migrations: version in filename, include rollback script, test on staging first
+- **Migration Safety**: Rollback must be tested in staging before merging to main
+- API errors: return structured JSON with {error, code, details?, timestamp}
+- Maintain service layer patterns; add tests for new routes; keep rate limits
+- Error handling: return structured JSON errors with status codes, log exceptions with context
+
+## Monitoring & Observability (Simplified)
+- Log errors with user context, track performance metrics
+- Alert on 5xx error spikes, monitor bundle size changes
+- Include health endpoints and dependency connectivity checks
+- Use structured logging with consistent log levels
+
+## Grace Periods & Exceptions (Simplified)
+- **Light Changes**: 24h to meet all requirements
+- **Hotfixes**: 12h to add tests/documentation  
+- **Experimental code**: Marked with `// EXPERIMENTAL:` and 7-day cleanup
+- **Emergency overrides**: Prefix with `// EMERGENCY:` + justification

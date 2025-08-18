@@ -1,0 +1,295 @@
+// Prisma schema for NextAuth + Credentials-based user accounts
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+  // Enable better performance with binary targets
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "nextauth"]
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  // Credentials auth
+  password       String?
+  role           String    @default("user")
+  isSuperAdmin   Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  profile        UserProfile?
+  passwordResets PasswordReset[]
+
+  @@schema("nextauth")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("nextauth")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@schema("nextauth")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("nextauth")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@schema("nextauth")
+}
+
+// Extended user profile information for application features
+model UserProfile {
+  userId                 String   @id
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone                  String?
+  location               String?
+  dietaryPreferences     String[] @default([])
+  favoriteCertifications String[] @default([])
+  // Notification preferences
+  specials               Boolean  @default(true)
+  newRestaurants         Boolean  @default(true)
+  menuUpdates            Boolean  @default(true)
+  shabbatReminders       Boolean  @default(false)
+  certificationUpdates   Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@schema("nextauth")
+}
+// Restaurant data model - matches existing table structure
+model Restaurant {
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  address               String
+  city                  String
+  state                 String
+  zip_code              String
+  website               String?
+  price_range           String?
+  image_url             String?
+  is_cholov_yisroel     Boolean?
+  is_pas_yisroel        Boolean?
+  is_bishul_yisroel     Boolean?
+  created_at            DateTime?
+  updated_at            DateTime?
+  short_description     String?
+  google_listing_url    String?
+  status                String?
+  description           String?
+  latitude              Float?
+  longitude             Float?
+  rating                Float?
+  review_count          Int?
+  google_rating         Float?
+  google_review_count   Int?
+  google_reviews        String?
+  certifying_agency     String
+  timezone              String?
+  phone_number          String    @map("phone_number")
+  listing_type          String
+  hours_of_operation    String?
+  specials              String?
+  hours_json            Json?
+  hours_last_updated    DateTime?
+  kosher_category       String
+  cholov_stam           Boolean?
+  user_email            String?
+  current_time_local    DateTime?
+  hours_parsed          Boolean?
+  
+  @@map("restaurants")
+  @@schema("public")
+}
+
+// Review system models
+model Review {
+  id                String    @id @db.VarChar(50)
+  restaurant_id     Int
+  user_id           String    @db.VarChar(50)
+  user_name         String    @db.VarChar(255)
+  user_email        String?   @db.VarChar(255)
+  rating            Int
+  title             String?   @db.VarChar(255)
+  content           String    @db.Text
+  images            String?   @db.Text // JSON array of image URLs
+  status            String    @default("pending") @db.VarChar(20)
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  moderator_notes   String?   @db.Text
+  verified_purchase Boolean   @default(false)
+  helpful_count     Int       @default(0)
+  report_count      Int       @default(0)
+
+  @@map("reviews")
+  @@schema("public")
+}
+
+model ReviewFlag {
+  id               String    @id @db.VarChar(50)
+  review_id        String    @db.VarChar(50)
+  reason           String    @db.VarChar(50)
+  description      String?   @db.Text
+  reported_by      String    @db.VarChar(50)
+  reported_at      DateTime  @default(now()) @db.Timestamp(6)
+  status           String    @default("pending") @db.VarChar(20)
+  resolved_by      String?   @db.VarChar(50)
+  resolved_at      DateTime? @db.Timestamp(6)
+  resolution_notes String?   @db.Text
+
+  @@map("review_flags")
+  @@schema("public")
+}
+
+model RestaurantImage {
+  id                    Int       @id @default(autoincrement())
+  restaurant_id         Int?
+  image_url             String?   @db.VarChar
+  image_order           Int?
+  cloudinary_public_id  String?   @db.VarChar
+  created_at            DateTime? @db.Timestamp(6)
+  updated_at            DateTime? @db.Timestamp(6)
+
+  @@unique([restaurant_id, image_order])
+  @@map("restaurant_images")
+  @@schema("public")
+}
+
+model RestaurantOwner {
+  id            Int       @id @default(autoincrement())
+  restaurant_id Int
+  owner_name    String?   @db.VarChar(255)
+  email         String?   @db.VarChar(255)
+  phone         String?   @db.VarChar(50)
+  role          String?   @db.VarChar(100)
+  verified      Boolean?  @default(false)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @updatedAt @db.Timestamp(6)
+
+  @@map("restaurant_owners")
+  @@schema("public")
+}
+
+model KosherPlace {
+  id                 Int       @id @default(autoincrement())
+  name               String?   @db.Text
+  detail_url         String?   @unique @db.Text
+  category           String?   @db.Text
+  photo              String?   @db.Text
+  address            String?   @db.Text
+  phone              String?   @db.Text
+  website            String?   @db.Text
+  kosher_cert_link   String?   @db.Text
+  kosher_type        String?   @db.Text
+  extra_kosher_info  String?   @db.Text
+  created_at         DateTime? @db.Timestamptz(6)
+  short_description  String?   @db.Text
+  email              String?   @db.Text
+  google_listing_url String?   @db.Text
+  status             String?   @db.Text
+  is_cholov_yisroel  Boolean?
+  is_pas_yisroel     Boolean?
+  hours_open         String?   @db.Text
+  price_range        String?   @db.Text
+
+  @@map("kosher_places")
+  @@schema("public")
+}
+
+model FloridaSynagogue {
+  id                 Int       @id @default(autoincrement())
+  created_at         DateTime? @db.Timestamp(6)
+  updated_at         DateTime? @db.Timestamp(6)
+  name               String?   @db.VarChar
+  address            String?   @db.VarChar
+  city               String?   @db.VarChar
+  state              String?   @db.VarChar
+  zip_code           String?   @db.VarChar
+  rabbi              String?   @db.VarChar
+  affiliation        String?   @db.VarChar
+  phone              String?   @db.VarChar
+  email              String?   @db.VarChar
+  website            String?   @db.VarChar
+  social_media       String?   @db.Text
+  shacharit          String?   @db.Text
+  mincha             String?   @db.Text
+  maariv             String?   @db.Text
+  shabbat            String?   @db.Text
+  sunday             String?   @db.Text
+  weekday            String?   @db.Text
+  kosher_info        String?   @db.Text
+  parking            String?   @db.Text
+  accessibility      String?   @db.Text
+  additional_info    String?   @db.Text
+  url                String?   @db.VarChar
+  data_quality_score Int?
+  is_chabad          Boolean?
+  is_young_israel    Boolean?
+  is_sephardic       Boolean?
+  has_address        Boolean?
+  has_zip            Boolean?
+  latitude           Float?
+  longitude          Float?
+
+  @@map("florida_synagogues")
+  @@schema("public")
+}
+
+model RestaurantTodayHours {
+  id           Int     @id @default(autoincrement())
+  todays_hours String? @db.Text
+
+  @@map("restaurant_today_hours")
+  @@schema("public")
+}
+

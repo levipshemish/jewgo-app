@@ -1,0 +1,85 @@
+/* Leaflet CSS - Direct content to prevent MIME type issues */
+/* This file contains essential Leaflet styles without using @import */
+
+/* Leaflet Container */
+.leaflet-container {
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Leaflet Popup Styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Custom Marker Styles */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Ensure proper CSS parsing */
+.leaflet-container * {
+  box-sizing: border-box;
+}
+
+/* Basic Leaflet positioning */
+.leaflet-pane {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.leaflet-tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 256px;
+  height: 256px;
+}
+
+.leaflet-marker-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+
+/* Leaflet controls */
+.leaflet-control {
+  position: relative;
+  z-index: 800;
+}
+
+.leaflet-top {
+  position: absolute;
+  top: 0;
+  z-index: 1000;
+}
+
+.leaflet-bottom {
+  position: absolute;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.leaflet-left {
+  position: absolute;
+  left: 0;
+  z-index: 1000;
+}
+
+.leaflet-right {
+  position: absolute;
+  right: 0;
+  z-index: 1000;
+}

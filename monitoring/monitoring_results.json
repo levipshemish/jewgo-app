@@ -1,0 +1,59 @@
+{
+  "timestamp": "2025-08-07 15:01:22",
+  "results": [
+    {
+      "name": "API Health Check",
+      "url": "https://jewgo.onrender.com/health",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_time_ms": 1209.86,
+      "timestamp": "2025-08-07 15:01:13"
+    },
+    {
+      "name": "API Root",
+      "url": "https://jewgo.onrender.com/",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_time_ms": 234.75,
+      "timestamp": "2025-08-07 15:01:15"
+    },
+    {
+      "name": "API Restaurants",
+      "url": "https://jewgo.onrender.com/api/restaurants?limit=1",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_time_ms": 1693.35,
+      "timestamp": "2025-08-07 15:01:17"
+    },
+    {
+      "name": "API Sentry Test",
+      "url": "https://jewgo.onrender.com/test-sentry",
+      "status_code": 404,
+      "expected_status": 200,
+      "success": false,
+      "response_time_ms": 178.23,
+      "timestamp": "2025-08-07 15:01:18"
+    },
+    {
+      "name": "Frontend Home",
+      "url": "https://jewgo.app",
+      "status_code": 200,
+      "expected_status": 200,
+      "success": true,
+      "response_time_ms": 227.55,
+      "timestamp": "2025-08-07 15:01:20"
+    },
+    {
+      "name": "Frontend Auth Test",
+      "url": "https://jewgo.app/auth/test",
+      "status_code": 404,
+      "expected_status": 200,
+      "success": false,
+      "response_time_ms": 133.04,
+      "timestamp": "2025-08-07 15:01:21"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+import React from 'react';
+import { cn } from '@/lib/utils/classNames';
+
+interface AgencyFiltersProps {
+  selectedAgency: string | undefined;
+  onAgencyChange: (agency: string) => void;
+}
+
+const AGENCIES = [
+  { id: 'ORB', name: 'ORB', color: 'bg-blue-500', description: 'Orthodox Rabbinical Board' },
+  { id: 'KM', name: 'KM', color: 'bg-green-500', description: 'Kosher Miami' },
+
+];
+
+export const AgencyFilters: React.FC<AgencyFiltersProps> = ({
+  selectedAgency, onAgencyChange
+}) => {
+  return (
+    <div>
+      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+        <svg className="w-4 h-4 mr-2 text-jewgo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Certifying Agencies
+      </h4>
+      <div className="grid grid-cols-2 gap-3">
+        {AGENCIES.map((agency) => (
+          <button
+            key={agency.id}
+            onClick={() => onAgencyChange(selectedAgency === agency.id ? '' : agency.id)}
+            className={cn(
+              "p-3 rounded-lg border-2 transition-all duration-200 text-left",
+              "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
+              selectedAgency === agency.id
+                ? `${agency.color} text-white border-transparent`
+                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+            )}
+          >
+            <div className="flex items-center space-x-2 mb-1">
+              <div className={cn(
+                "w-3 h-3 rounded-full",
+                selectedAgency === agency.id ? "bg-white" : agency.color
+              )} />
+              <span className="font-semibold text-sm">{agency.name}</span>
+            </div>
+            <p className="text-xs opacity-80">{agency.description}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}; 

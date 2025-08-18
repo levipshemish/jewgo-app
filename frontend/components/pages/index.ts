@@ -1,0 +1,1 @@
+export { default as SpecialsPageClient } from './SpecialsPageClient'; 

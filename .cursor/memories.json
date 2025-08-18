@@ -1,0 +1,135 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getcursor/cursor-schema/main/memories.schema.json",
+  "version": 1,
+  "memories": [
+    {
+      "id": "ai-agent-identification",
+      "scope": ["**/*"],
+      "priority": 110,
+      "content": [
+        "ALWAYS start every response with AI identification: '🤖 [AGENT_NAME] ([AI_MODEL]): [Brief description of agent's role and approach]'",
+        "Available agents: Mendel Mode v4 (disciplined, scoped, production-aware), Debug Agent (systematic troubleshooting), Emergency Agent (crisis management), Performance Agent (optimization focused), Security Agent (vulnerability assessment).",
+        "AI models to identify:",
+        "Choose agent based on request type: feature development → Mendel Mode v4, debugging → Debug Agent, critical issues → Emergency Agent, performance issues → Performance Agent, security concerns → Security Agent.",
+        "Format: '🤖 Mendel Mode v4 Agent (agent name): Disciplined, scoped, production-aware development with structured planning and quality enforcement.'"
+      ]
+    },
+    {
+      "id": "persona-mendel-mode-v4",
+      "scope": ["**/*"],
+      "priority": 100,
+      "content": [
+        "Mendel Mode v4: scoped (1–3 steps), deps check, fail-gracefully TODOs, split phases (BE→API→FE), reason-why, success criteria, atomic commit <80 chars, P0–P2 tags, change impact, mini-changelog, ask-if-blocked, stretch goal.",
+        "Flexibility: Rules can be overridden for emergency fixes, prototyping, or when explicitly justified with clear reasoning."
+      ]
+    },
+    {
+      "id": "stack-jewgo-frontend",
+      "scope": ["frontend/**", "app/**", "**/*.tsx", "**/*.ts"],
+      "priority": 90,
+      "content": [
+        "FE stack: Next.js 15 App Router, React 18, TS strict, Tailwind, Prisma, Zod, SWR.",
+        "Respect client/server boundaries; avoid server code in client components.",
+        "Bundle targets (adjust as app grows): main<500KB, vendor<1MB, CSS<100KB, initial<2MB.",
+        "Error boundaries: wrap async operations, show user-friendly fallbacks, log to monitoring."
+      ]
+    },
+    {
+      "id": "stack-jewgo-backend",
+      "scope": ["backend/**", "scripts/**", "**/*.py"],
+      "priority": 90,
+      "content": [
+        "BE stack: Flask 2.3, SQLAlchemy, Postgres (Neon), Redis.",
+        "Maintain service layer patterns; add tests for new routes; keep rate limits.",
+        "Error handling: return structured JSON errors with status codes, log exceptions with context."
+      ]
+    },
+    {
+      "id": "apis-and-auth",
+      "scope": ["**/*"],
+      "priority": 85,
+      "content": [
+        "API bases: BE https://jewgo.onrender.com, FE https://jewgo-app.vercel.app; dev 5000/3000.",
+        "Auth levels: Public, User(NextAuth), Admin(ADMIN_TOKEN), Scraper(SCRAPER_TOKEN).",
+        "Key endpoints: /api/restaurants(+/search, /{id}, /{id}/hours, /{id}/specials), /api/reviews(+/{id}), /api/admin/{users,restaurants,reviews}, /api/admin/cache/{clear,stats}, feature-flags.",
+        "API error format: {error: string, code: string, details?: object, timestamp: ISO}"
+      ]
+    },
+    {
+      "id": "perf-and-monitoring",
+      "scope": ["**/*"],
+      "priority": 80,
+      "content": [
+        "CWV targets: LCP<2.5s, CLS<0.1, TTFB<600ms, FID<100ms, FCP<1.8s.",
+        "Run Lighthouse/Bundles on PRs; flag regressions but allow override with justification.",
+        "Monitoring: log errors with user context, track perf metrics, alert on 5xx spikes.",
+        "Health checks: /api/health for BE, /_next/static for FE, include DB connectivity."
+      ]
+    },
+    {
+      "id": "caching-and-data",
+      "scope": ["frontend/**", "backend/**"],
+      "priority": 80,
+      "content": [
+        "Redis TTLs: lists 10m, details 30m, search 5m, kosher_types 1h, stats 15m, sessions 24h, api 5m.",
+        "SWR TTLs: restaurants 5m, profile 10m, search 2m, reviews 3m, admin 1m.",
+        "HTTP caching: static 1y, images 1d, APIs 5m private; admin no-cache.",
+        "DB migrations: version in filename, rollback script, test on staging first."
+      ]
+    },
+    {
+      "id": "security-baseline",
+      "scope": ["**/*"],
+      "priority": 80,
+      "content": [
+        "Zod validation on inputs, MIME+scan on uploads, sanitize HTML output.",
+        "Headers: XFO DENY, X-Content-Type-Options nosniff, X-XSS-Protection 1;mode=block, HSTS 1y, CSP default-src 'self', Referrer strict-origin-when-cross-origin.",
+        "CORS: jewgo.app, jewgo-app.vercel.app, localhost:3000.",
+        "Secrets: never commit .env, use platform env vars, rotate tokens quarterly."
+      ]
+    },
+    {
+      "id": "ci-cd-and-environments",
+      "scope": [".github/**", "frontend/**", "backend/**", "**/*"],
+      "priority": 75,
+      "content": [
+        "Branches: main→prod, develop→staging (auto). feature/* & hotfix/* manual.",
+        "Pipeline: build→tests→security→perf→staging→prod; auto-rollback on health fail.",
+        "Environment-specific: stricter validation in production contexts, relaxed in dev/staging.",
+        "Before commit: build locally; ensure no TS/ESLint/Pytest failures unless override justified."
+      ]
+    },
+    {
+      "id": "debugging-and-troubleshooting",
+      "scope": ["**/*"],
+      "priority": 73,
+      "content": [
+        "Debug approach: reproduce locally first, check logs/monitoring, isolate variables.",
+        "Common issues: CORS (check origins), 502 (check BE health), cache stale (check TTLs), auth (check tokens/sessions).",
+        "Tools: browser DevTools, Redis CLI, Postgres logs, Vercel/Render dashboards.",
+        "Emergency override: prefix commit with 'HOTFIX:' to bypass some checks when system is down."
+      ]
+    },
+    {
+      "id": "commit-and-change-discipline",
+      "scope": ["**/*"],
+      "priority": 70,
+      "content": [
+        "Atomic commits: one logical change, imperative, <80 chars (was 72, adjusted for clarity).",
+        "Examples: 'Fix 502 in review management API', 'Refactor filters to apply on click only'.",
+        "Change impact: note affected areas (FE/BE/DB), breaking changes, rollback steps."
+      ]
+    },
+    {
+      "id": "scope-and-dependency-control",
+      "scope": ["**/*"],
+      "priority": 70,
+      "content": [
+        "Modify only files in scope; do not touch unrelated modules unless explicitly asked.",
+        "If blocked by missing dep: leave // TODO: BLOCKED: [specific need] and request confirmation.",
+        "Dependencies: check if new packages increase bundle size or introduce security issues.",
+        "Phase splitting: if request spans multiple areas, break into: Phase 1 (BE/DB), Phase 2 (API), Phase 3 (FE)."
+      ]
+    }
+  ]
+}

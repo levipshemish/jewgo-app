@@ -1,0 +1,2071 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+/* Leaflet CSS import - moved to separate file to prevent MIME type issues */
+/* @import './leaflet.css'; - Removed to prevent circular import issues */
+
+/* Global Background Color */
+html, body {
+  background-color: #f4f4f4 !important;
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Font optimization to prevent preload warnings */
+html.font-applied {
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Ensure fonts are used immediately when loaded */
+@font-face {
+  font-family: 'Roboto';
+  font-display: swap;
+}
+
+/* Font loading optimization */
+.font-roboto-non-critical {
+  font-family: var(--font-roboto-non-critical), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.font-roboto-critical {
+  font-family: var(--font-roboto-critical), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Immediate font application to prevent preload warnings */
+body {
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Ensure all text elements use the font immediately */
+p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Design System CSS Variables */
+:root {
+  /* Font Family */
+  --font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  
+  /* Primary JewGo Brand Colors */
+  --jewgo-50: #f0fdf4;
+  --jewgo-100: #dcfce7;
+  --jewgo-200: #bbf7d0;
+  --jewgo-300: #86efac;
+  --jewgo-400: #4ade80;
+  --jewgo-500: #22c55e;
+  --jewgo-600: #16a34a;
+  --jewgo-700: #15803d;
+  --jewgo-800: #166534;
+  --jewgo-900: #14532d;
+  --jewgo-950: #052e16;
+  
+  /* Neutral Colors */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+  --neutral-950: #0a0a0a;
+  
+  /* Accent Colors */
+  --accent-blue: #3B82F6;
+  --accent-blue-dark: #2563EB;
+  --accent-green: #10B981;
+  --accent-green-dark: #059669;
+  --accent-yellow: #F59E0B;
+  --accent-yellow-dark: #D97706;
+  --accent-purple: #8B5CF6;
+  --accent-purple-dark: #7C3AED;
+  --accent-orange: #F97316;
+  --accent-orange-dark: #EA580C;
+  
+  /* Kosher Category Colors */
+  --kosher-meat: #A70000;
+  --kosher-meat-light: #fef2f2;
+  --kosher-meat-dark: #8B0000;
+  --kosher-dairy: #ADD8E6;
+  --kosher-dairy-light: #f0f8ff;
+  --kosher-dairy-dark: #87CEEB;
+  --kosher-pareve: #FFCE6D;
+  --kosher-pareve-light: #fffbf0;
+  --kosher-pareve-dark: #FFB347;
+  --kosher-unknown: #6b7280;
+  --kosher-unknown-light: #f9fafb;
+  --kosher-unknown-dark: #374151;
+  
+  /* Certification Agency Colors */
+  --agency-orb: #ADD8E6;
+  --agency-orb-light: #f0f8ff;
+  --agency-km: #FCC0C5;
+  --agency-km-light: #fef7f7;
+  --agency-kdm: #BBBBBB;
+  --agency-kdm-light: #f5f5f5;
+  --agency-diamond-k: #8b5cf6;
+  --agency-diamond-k-light: #ede9fe;
+  
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-success-light: #d1fae5;
+  --status-warning: #f59e0b;
+  --status-warning-light: #fef3c7;
+  --status-error: #ef4444;
+  --status-error-light: #fef2f2;
+  --status-info: #3b82f6;
+  --status-info-light: #dbeafe;
+  
+  /* Legacy aliases for backward compatibility */
+  --jewgo-primary: var(--jewgo-400);
+  --jewgo-primary-dark: var(--jewgo-600);
+  --jewgo-secondary: var(--neutral-700);
+  --jewgo-accent: var(--accent-green);
+  --jewgo-purple: var(--accent-purple);
+  --jewgo-gray: var(--neutral-500);
+  --jewgo-light: var(--jewgo-50);
+  --jewgo-dark: var(--neutral-800);
+  --mint-green: #A8E6CF;
+}
+
+/* Leaflet Map Customizations - Moved to leaflet.css */
+
+/* Kosher Badge Styles - Updated with new color system */
+.kosher-badge {
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.bg-kosher-orb {
+  @apply bg-agency-orb-light text-agency-orb;
+}
+
+.bg-kosher-km {
+  @apply bg-agency-km-light text-agency-km;
+}
+
+.bg-kosher-kdm {
+  @apply bg-agency-kdm-light text-agency-kdm;
+}
+
+.bg-kosher-diamond-k {
+  @apply bg-agency-diamond-k-light text-agency-diamond-k;
+}
+
+.bg-kosher-unknown {
+  @apply bg-kosher-unknown-light text-kosher-unknown;
+}
+
+/* Restaurant Card Styles - Updated with new color system */
+.restaurant-card {
+  @apply bg-transparent rounded-3xl overflow-hidden transition-all duration-300;
+}
+
+.restaurant-card:hover {
+  @apply scale-[1.02];
+}
+
+/* Search Bar Styles - Updated with new color system */
+.search-bar {
+  @apply w-full px-4 py-3 rounded-xl bg-white border border-neutral-300 focus:border-jewgo-400 focus:ring-jewgo-400/20 focus:outline-none transition-all duration-200 shadow-soft;
+}
+
+/* Filter Button Styles - Updated with new color system */
+.filter-button {
+  @apply px-2 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-soft flex flex-col items-center justify-center gap-1 min-h-[50px];
+}
+
+.filter-button.active {
+  @apply bg-gradient-jewgo text-white shadow-medium;
+}
+
+.filter-button:not(.active) {
+  @apply bg-white text-neutral-700 hover:bg-neutral-50 hover:shadow-soft;
+}
+
+/* Action Button Styles - Updated with new color system */
+.action-button {
+  @apply bg-gradient-jewgo text-white px-6 py-3 rounded-xl font-medium hover:bg-jewgo-600 transition-colors shadow-soft hover:shadow-medium;
+}
+
+/* Loading Spinner - Updated with new color system */
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-neutral-300 border-t-jewgo-400;
+}
+
+/* Skeleton Loading - Updated with new color system */
+.skeleton {
+  @apply animate-pulse bg-neutral-200 rounded;
+}
+
+/* Pagination Button - Updated with new color system and rounded design */
+.pagination-button {
+  @apply px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ease-in-out;
+}
+
+.pagination-button.active {
+  @apply bg-gradient-jewgo text-white shadow-md transform scale-105;
+}
+
+.pagination-button:not(.active) {
+  @apply bg-white text-neutral-700 hover:bg-neutral-50 hover:shadow-sm border border-neutral-200 hover:border-neutral-300 hover:transform hover:scale-105;
+}
+
+/* Responsive pagination container to ensure visibility above bottom navigation */
+.pagination-container {
+  @apply relative z-10;
+}
+
+/* Ensure pagination is visible on all screen sizes */
+@media (min-width: 1441px) {
+  .pagination-container {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+  }
+}
+
+@media (min-width: 1921px) {
+  .pagination-container {
+    margin-bottom: calc(var(--spacing-unit) * 3);
+  }
+}
+
+/* Agency Badge Colors - Updated with new color system */
+.agency-badge-orb {
+  @apply bg-agency-orb-light text-agency-orb;
+}
+
+.agency-badge-km {
+  @apply bg-agency-km-light text-agency-km;
+}
+
+.agency-badge-kdm {
+  @apply bg-agency-kdm-light text-agency-kdm;
+}
+
+.agency-badge-diamond-k {
+  @apply bg-agency-diamond-k-light text-agency-diamond-k;
+}
+
+/* Header Gradient - Updated with new color system */
+.header-gradient {
+  @apply bg-gradient-jewgo;
+}
+
+/* Bottom Navigation - Updated with new color system */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 shadow-medium;
+}
+
+.bottom-nav-button {
+  @apply flex flex-col items-center justify-center py-2 px-3 text-xs font-medium transition-colors;
+}
+
+.bottom-nav-button.active {
+  @apply text-jewgo-400;
+}
+
+.bottom-nav-button:not(.active) {
+  @apply text-neutral-500 hover:text-neutral-700;
+}
+
+/* Tooltip - Updated with new color system */
+.tooltip {
+  @apply absolute z-10 px-2 py-1 text-xs text-white bg-neutral-900 rounded opacity-0 pointer-events-none transition-opacity;
+}
+
+.tooltip.show {
+  @apply opacity-100;
+}
+
+/* Focus Ring - Updated with new color system */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-jewgo-400/20 focus:ring-offset-2;
+}
+
+/* Smooth Transitions */
+.smooth-transition {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Shadow Utilities - Updated with new color system */
+.shadow-soft {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-strong {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Gradient Utilities - Updated with new color system */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--jewgo-400), var(--jewgo-600));
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--accent-green), var(--accent-green-dark));
+}
+
+/* Text Gradient - Updated with new color system */
+.text-gradient {
+  background: linear-gradient(135deg, var(--jewgo-400), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes filterPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-filter-pulse {
+  animation: filterPulse 0.3s ease-in-out;
+}
+
+/* Custom animations for better perceived performance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Loading skeleton shimmer effect */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Optimized loading states */
+.loading-optimistic {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.loading-progressive {
+  animation: slideInFromRight 0.4s ease-out;
+}
+
+.loading-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optimized focus states */
+.focus-visible:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Loading progress animations */
+.progress-bar {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Optimistic UI states */
+.optimistic-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.optimistic-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+/* Enhanced skeleton loading */
+.skeleton-item {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Loading state improvements */
+.loading-state {
+  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* Optimized button states */
+.btn-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1s infinite;
+}
+
+/* Mobile Grid Override - Force 2 columns on mobile */
+.mobile-grid-2 {
+  grid-template-columns: repeat(2, 1fr) !important;
+  max-width: 100% !important;
+}
+
+/* Restaurant grid responsive adjustments */
+@media (max-width: 640px) {
+  .restaurant-grid {
+    gap: 0.5rem !important;
+  }
+  
+  .restaurant-card {
+    @apply rounded-3xl;
+  }
+  
+  /* Ensure cards are properly sized for mobile */
+  .restaurant-grid > div {
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+  /* Force 2-column grid for mobile devices */
+  .restaurant-grid.mobile-grid-2,
+  .restaurant-grid.grid.mobile-grid-2,
+  .grid.restaurant-grid.mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  .restaurant-card {
+    @apply rounded-3xl;
+  }
+  
+  .search-bar {
+    @apply rounded-lg px-3 py-2.5 text-base;
+  }
+  
+  .filter-button {
+    @apply px-2 py-2 text-xs min-h-[44px];
+  }
+
+  /* Improve touch targets on mobile */
+  button, a {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Better spacing for mobile */
+  .container {
+    @apply px-4;
+  }
+
+  /* Optimize text sizes for mobile */
+  h1 {
+    @apply text-xl;
+  }
+
+  h2 {
+    @apply text-lg;
+  }
+
+  h3 {
+    @apply text-base;
+  }
+
+  /* Improve mobile navigation */
+  .bottom-nav {
+    @apply px-2 py-1;
+  }
+
+  .bottom-nav-button {
+    @apply py-2 px-2 min-h-[44px];
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .restaurant-card {
+    @apply rounded-3xl;
+  }
+  
+  .search-bar {
+    @apply rounded-lg px-4 py-3;
+  }
+  
+  .filter-button {
+    @apply px-3 py-2 text-sm min-h-[48px];
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1025px) {
+  .restaurant-card {
+    @apply rounded-3xl;
+  }
+  
+  .search-bar {
+    @apply rounded-xl px-4 py-3;
+  }
+  
+  .filter-button {
+    @apply px-4 py-3 text-sm min-h-[52px];
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .smooth-transition,
+  .restaurant-card,
+  .filter-button,
+  .action-button {
+    transition: none;
+  }
+  
+  .animate-fade-in-up,
+  .animate-slide-in-right,
+  .animate-filter-pulse {
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .restaurant-card {
+    @apply border-0;
+  }
+  
+  .filter-button:not(.active) {
+    @apply border-2 border-neutral-800;
+  }
+} 
+
+/* Range Slider Styles - Updated with new color system */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: var(--neutral-200);
+  height: 8px;
+  border-radius: 4px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--jewgo-400);
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: var(--jewgo-600);
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-track {
+  background: var(--neutral-200);
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  background: var(--jewgo-400);
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: var(--jewgo-600);
+  transform: scale(1.1);
+}
+
+/* Distance Slider Specific Styles */
+.distance-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.distance-slider::-webkit-slider-track {
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent !important;
+}
+
+.distance-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #8b5cf6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.distance-slider::-webkit-slider-thumb:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+}
+
+.distance-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent !important;
+}
+
+.distance-slider::-moz-range-thumb {
+  background: #8b5cf6;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.distance-slider::-moz-range-thumb:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+} 
+
+/* Line Clamp Utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Enhanced line-clamp for better browser support */
+.line-clamp-2-enhanced {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: 2.8rem;
+}
+
+/* Hide scrollbar for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Enhanced horizontal scrolling for specials section */
+.specials-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+
+.specials-scroll > * {
+  scroll-snap-align: start;
+}
+
+/* Mobile-first specials card animations */
+.specials-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.specials-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Desktop specials card hover effects */
+@media (min-width: 1024px) {
+  .specials-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Force 3-column grid for specials section */
+.specials-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+@media (min-width: 640px) {
+  .specials-grid {
+    gap: 0.75rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .specials-grid {
+    gap: 1rem !important;
+  }
+}
+
+/* Override any flex layouts that might interfere */
+.specials-grid * {
+  flex: none !important;
+}
+
+/* Ensure grid items don't shrink */
+.specials-grid > div {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* Ensure specials cards don't shrink */
+.specials-card {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* New UI Refactor Utilities */
+.card-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.search-input-focus {
+  transition: all 0.2s ease-in-out;
+}
+
+.search-input-focus:focus {
+  transform: scale(1.02);
+}
+
+.button-press {
+  transition: all 0.1s ease-in-out;
+}
+
+.button-press:active {
+  transform: scale(0.95);
+}
+
+/* Kosher type badge animations */
+.kosher-badge {
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Status indicator animations */
+.status-open {
+  animation: statusPulse 3s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+} 
+
+/* Category Tabs for Small Screens */
+.category-tabs-container {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 4px !important;
+}
+
+.category-tabs-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar utilities */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Category Tab Design System */
+.category-tab-button {
+  /* Allow equal-width expansion from flex-1 in component */
+  flex-shrink: 1;
+  border-radius: 12px; /* rounded-xl */
+  transition: all 0.2s ease-in-out;
+  margin: 0 2px; /* Minimal margin for separation */
+  /* Rely on h-14 / h-16 tailwind classes for height, and flex for width */
+}
+
+.category-tab-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-tab-button[aria-selected="true"] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Reduce gap in category tabs container */
+.category-tabs-container {
+  gap: 4px !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Enhanced Search Bar Styles */
+.search-bar-pill {
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-bar-pill:focus {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Action Button Pill Styles */
+.action-button-pill {
+  transition: all 0.2s ease-in-out;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.action-button-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  /* Keep icon/label sizing tweaks; width/height are managed by Tailwind classes on the button */
+  .category-tab-button .icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .category-tab-button .label {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .category-tab-button {
+    /* Width flows from flex-1; rely on component Tailwind for height */
+  }
+}
+
+@media (min-width: 769px) {
+  .category-tab-button {
+    /* Width flows from flex-1; rely on lg:h-16 for height */
+  }
+} 
+
+/* Mobile Map Layout Fixes */
+@media (max-width: 640px) {
+  .map-container {
+    height: calc(100vh - 280px) !important;
+    min-height: 300px;
+  }
+  
+  .map-page {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .map-page .map-component {
+    flex: 1;
+    height: calc(100vh - 280px);
+  }
+}
+
+/* Ensure map takes full available height */
+.map-full-height {
+  height: 100% !important;
+  min-height: 400px;
+}
+
+/* Mobile-friendly map controls */
+@media (max-width: 640px) {
+  .map-controls {
+    position: absolute;
+    z-index: 10;
+  }
+  
+  .map-legend {
+    display: none;
+  }
+} 
+
+/* Enhanced Search Bar Styles */
+.search-bar-pill {
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-bar-pill:focus {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Action Button Pill Styles */
+.action-button-pill {
+  transition: all 0.2s ease-in-out;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.action-button-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .search-bar-pill {
+    padding: 12px 16px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .category-tab-square {
+    min-width: 60px;
+    max-width: 75px;
+    padding: 8px 4px;
+  }
+  
+  .action-button-pill {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .action-button-pill span {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .category-tab-square {
+    min-width: 65px;
+    max-width: 80px;
+    padding: 10px 6px;
+  }
+  
+  .action-button-pill {
+    padding: 12px 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .category-tab-square {
+    min-width: 70px;
+    max-width: 90px;
+    padding: 12px 8px;
+  }
+  
+  .action-button-pill {
+    padding: 14px 20px;
+  }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .search-bar-pill,
+  .category-tab-square,
+  .action-button-pill {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .category-tab-square.active {
+    border: 2px solid #000;
+  }
+  
+  .action-button-pill {
+    border: 2px solid #000;
+  }
+  
+  .search-bar-pill {
+    border: 2px solid #000;
+  }
+} 
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Mobile search bar */
+  .mobile-search-bar {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Mobile category tabs */
+  .mobile-category-tab {
+    min-width: 64px;
+    max-width: 64px;
+    height: 64px;
+  }
+  
+  /* Mobile action buttons */
+  .mobile-action-button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  
+  /* Ensure proper touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile grid adjustments */
+  .restaurant-grid {
+    gap: 8px !important;
+  }
+  
+  .restaurant-card {
+    border-radius: 24px;
+  }
+} 
+
+/* Enhanced responsive design for larger screens */
+@media (min-width: 1024px) {
+  /* Improve content utilization on desktop */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* Better spacing for desktop */
+  .desktop-spacing {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  
+  /* Optimize specials section for desktop */
+  .specials-section-desktop {
+    max-width: none;
+    width: 100%;
+  }
+  
+  /* Improve card layouts on desktop */
+  .desktop-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Extra large screen optimizations */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1400px;
+  }
+  
+  .desktop-spacing {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+  
+  /* Ensure specials section uses full width on very large screens */
+  .specials-section-xl {
+    max-width: none;
+    width: 100%;
+  }
+}
+
+/* Ultra-wide screen support */
+@media (min-width: 1920px) {
+  .container {
+    max-width: 1600px;
+  }
+  
+  .desktop-spacing {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+} 
+
+/* Dynamic Zoom and Spacing System */
+/* Base viewport scaling */
+:root {
+  --viewport-width: 100vw;
+  --viewport-height: 100vh;
+  --base-font-size: 16px;
+  --scale-factor: 1;
+  --spacing-unit: 1rem;
+}
+
+/* Dynamic scaling based on viewport size */
+@media (max-width: 480px) {
+  :root {
+    --scale-factor: 0.85;
+    --spacing-unit: 0.75rem;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --scale-factor: 0.9;
+    --spacing-unit: 0.875rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --scale-factor: 0.95;
+    --spacing-unit: 0.9375rem;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  :root {
+    --scale-factor: 1;
+    --spacing-unit: 1rem;
+  }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  :root {
+    --scale-factor: 1.1;
+    --spacing-unit: 1.125rem;
+  }
+}
+
+@media (min-width: 1921px) {
+  :root {
+    --scale-factor: 1.2;
+    --spacing-unit: 1.25rem;
+  }
+}
+
+/* Dynamic spacing utilities */
+.dynamic-spacing-xs { margin: calc(var(--spacing-unit) * 0.25); padding: calc(var(--spacing-unit) * 0.25); }
+.dynamic-spacing-sm { margin: calc(var(--spacing-unit) * 0.5); padding: calc(var(--spacing-unit) * 0.5); }
+.dynamic-spacing-md { margin: calc(var(--spacing-unit) * 1); padding: calc(var(--spacing-unit) * 1); }
+.dynamic-spacing-lg { margin: calc(var(--spacing-unit) * 1.5); padding: calc(var(--spacing-unit) * 1.5); }
+.dynamic-spacing-xl { margin: calc(var(--spacing-unit) * 2); padding: calc(var(--spacing-unit) * 2); }
+.dynamic-spacing-2xl { margin: calc(var(--spacing-unit) * 3); padding: calc(var(--spacing-unit) * 3); }
+
+/* Dynamic text scaling */
+.dynamic-text-xs { font-size: calc(var(--base-font-size) * 0.75 * var(--scale-factor)); }
+.dynamic-text-sm { font-size: calc(var(--base-font-size) * 0.875 * var(--scale-factor)); }
+.dynamic-text-base { font-size: calc(var(--base-font-size) * var(--scale-factor)); }
+.dynamic-text-lg { font-size: calc(var(--base-font-size) * 1.125 * var(--scale-factor)); }
+.dynamic-text-xl { font-size: calc(var(--base-font-size) * 1.25 * var(--scale-factor)); }
+.dynamic-text-2xl { font-size: calc(var(--base-font-size) * 1.5 * var(--scale-factor)); }
+.dynamic-text-3xl { font-size: calc(var(--base-font-size) * 1.875 * var(--scale-factor)); }
+.dynamic-text-4xl { font-size: calc(var(--base-font-size) * 2.25 * var(--scale-factor)); }
+
+/* Dynamic component scaling */
+.dynamic-card {
+  padding: calc(var(--spacing-unit) * 1.5);
+  border-radius: calc(var(--spacing-unit) * 0.75);
+  font-size: calc(var(--base-font-size) * var(--scale-factor));
+}
+
+.dynamic-button {
+  padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+  font-size: calc(var(--base-font-size) * 0.875 * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 0.5);
+}
+
+.dynamic-input {
+  padding: calc(var(--spacing-unit) * 0.75);
+  font-size: calc(var(--base-font-size) * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 0.5);
+}
+
+/* Viewport-based scaling for specials section */
+.specials-dynamic-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: calc(var(--spacing-unit) * 1.5) !important;
+  padding: calc(var(--spacing-unit) * 1) !important;
+  width: 100% !important;
+}
+
+/* Responsive grid columns with dynamic scaling - Always 3 columns */
+@media (max-width: 480px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 1) !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 1.25) !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 1.5) !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 2) !important;
+  }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 2.5) !important;
+  }
+}
+
+@media (min-width: 1921px) {
+  .specials-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: calc(var(--spacing-unit) * 3) !important;
+  }
+}
+
+/* Force 3-column layout for specials - highest specificity */
+.specials-dynamic-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Override any flex layouts that might interfere */
+.specials-dynamic-grid {
+  display: grid !important;
+  flex-direction: unset !important;
+  flex-wrap: unset !important;
+}
+
+/* Ensure grid items don't shrink */
+.specials-dynamic-grid > div {
+  min-width: 0 !important;
+  width: 100% !important;
+  flex: none !important;
+}
+
+/* Override any Tailwind grid classes that might interfere */
+.specials-dynamic-grid.grid,
+.specials-dynamic-grid[class*="grid-cols-"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Force 3-column layout with maximum specificity */
+div.specials-dynamic-grid,
+div[class*="specials-dynamic-grid"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: calc(var(--spacing-unit) * 1.5) !important;
+  width: 100% !important;
+}
+
+/* Dynamic image scaling */
+.dynamic-image-container {
+  aspect-ratio: 4/3;
+  border-radius: calc(var(--spacing-unit) * 0.75);
+}
+
+/* Dynamic container scaling */
+.dynamic-container {
+  max-width: calc(1200px * var(--scale-factor));
+  margin: 0 auto;
+  padding: 0 calc(var(--spacing-unit) * 1.5);
+}
+
+@media (min-width: 1441px) {
+  .dynamic-container {
+    max-width: calc(1400px * var(--scale-factor));
+    padding: 0 calc(var(--spacing-unit) * 2);
+  }
+}
+
+@media (min-width: 1921px) {
+  .dynamic-container {
+    max-width: calc(1600px * var(--scale-factor));
+    padding: 0 calc(var(--spacing-unit) * 2.5);
+  }
+}
+
+/* Dynamic spacing for restaurant page */
+.restaurant-dynamic-layout {
+  padding: calc(var(--spacing-unit) * 1.5);
+}
+
+@media (max-width: 640px) {
+  .restaurant-dynamic-layout {
+    padding: calc(var(--spacing-unit) * 1);
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .restaurant-dynamic-layout {
+    padding: calc(var(--spacing-unit) * 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .restaurant-dynamic-layout {
+    padding: calc(var(--spacing-unit) * 2.5);
+  }
+}
+
+@media (min-width: 1440px) {
+  .restaurant-dynamic-layout {
+    padding: calc(var(--spacing-unit) * 3);
+  }
+}
+
+/* Dynamic hero section scaling */
+.dynamic-hero {
+  height: calc(33vh + 10px);
+  min-height: 360px;
+  max-height: 640px;
+}
+
+@media (max-width: 640px) {
+  .dynamic-hero {
+    height: calc(40vh + 10px);
+    min-height: 280px;
+    max-height: 400px;
+  }
+}
+
+@media (min-width: 768px) {
+  .dynamic-hero {
+    height: calc(36vh + 10px);
+    min-height: 520px;
+    max-height: 760px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dynamic-hero {
+    height: calc(40vh + 10px);
+    min-height: 620px;
+    max-height: 900px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .dynamic-hero {
+    height: calc(45vh + 10px);
+    min-height: 760px;
+    max-height: 1040px;
+  }
+}
+
+/* Dynamic action button scaling */
+.dynamic-action-buttons {
+  gap: calc(var(--spacing-unit) * 0.75);
+  padding: calc(var(--spacing-unit) * 1);
+}
+
+.dynamic-action-button {
+  padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+  font-size: calc(var(--base-font-size) * 0.875 * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 2);
+}
+
+/* Dynamic bottom navigation scaling */
+.dynamic-bottom-nav {
+  padding: calc(var(--spacing-unit) * 0.75);
+}
+
+.dynamic-bottom-nav-button {
+  padding: calc(var(--spacing-unit) * 0.5);
+  font-size: calc(var(--base-font-size) * 0.75 * var(--scale-factor));
+}
+
+/* Dynamic search bar scaling */
+.dynamic-search-bar {
+  padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+  font-size: calc(var(--base-font-size) * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 2);
+}
+
+/* Dynamic filter button scaling */
+.dynamic-filter-button {
+  padding: calc(var(--spacing-unit) * 0.5) calc(var(--spacing-unit) * 1);
+  font-size: calc(var(--base-font-size) * 0.75 * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 0.75);
+  min-height: calc(44px * var(--scale-factor));
+}
+
+/* Dynamic card scaling */
+.dynamic-card {
+  padding: calc(var(--spacing-unit) * 1.5);
+  border-radius: calc(var(--spacing-unit) * 0.75);
+  gap: calc(var(--spacing-unit) * 0.75);
+}
+
+.dynamic-card-title {
+  font-size: calc(var(--base-font-size) * 0.875 * var(--scale-factor));
+  margin-bottom: calc(var(--spacing-unit) * 0.5);
+}
+
+.dynamic-card-subtitle {
+  font-size: calc(var(--base-font-size) * 0.75 * var(--scale-factor));
+}
+
+/* Dynamic badge scaling */
+.dynamic-badge {
+  padding: calc(var(--spacing-unit) * 0.25) calc(var(--spacing-unit) * 0.5);
+  font-size: calc(var(--base-font-size) * 0.75 * var(--scale-factor));
+  border-radius: calc(var(--spacing-unit) * 0.5);
+}
+
+/* Dynamic icon scaling */
+.dynamic-icon-sm {
+  width: calc(16px * var(--scale-factor));
+  height: calc(16px * var(--scale-factor));
+}
+
+.dynamic-icon-md {
+  width: calc(20px * var(--scale-factor));
+  height: calc(20px * var(--scale-factor));
+}
+
+.dynamic-icon-lg {
+  width: calc(24px * var(--scale-factor));
+  height: calc(24px * var(--scale-factor));
+}
+
+.dynamic-icon-xl {
+  width: calc(32px * var(--scale-factor));
+  height: calc(32px * var(--scale-factor));
+}
+
+/* Dynamic shadow scaling */
+.dynamic-shadow-sm {
+  box-shadow: 0 calc(1px * var(--scale-factor)) calc(3px * var(--scale-factor)) rgba(0, 0, 0, 0.1);
+}
+
+.dynamic-shadow-md {
+  box-shadow: 0 calc(2px * var(--scale-factor)) calc(8px * var(--scale-factor)) rgba(0, 0, 0, 0.1);
+}
+
+.dynamic-shadow-lg {
+  box-shadow: 0 calc(4px * var(--scale-factor)) calc(12px * var(--scale-factor)) rgba(0, 0, 0, 0.15);
+}
+
+/* Dynamic border radius scaling */
+.dynamic-rounded-sm { border-radius: calc(var(--spacing-unit) * 0.25); }
+.dynamic-rounded-md { border-radius: calc(var(--spacing-unit) * 0.5); }
+.dynamic-rounded-lg { border-radius: calc(var(--spacing-unit) * 0.75); }
+.dynamic-rounded-xl { border-radius: calc(var(--spacing-unit) * 1); }
+.dynamic-rounded-2xl { border-radius: calc(var(--spacing-unit) * 1.5); }
+.dynamic-rounded-3xl { border-radius: calc(var(--spacing-unit) * 2); }
+
+/* Dynamic line height scaling */
+.dynamic-leading-tight { line-height: calc(1.25 * var(--scale-factor)); }
+.dynamic-leading-normal { line-height: calc(1.5 * var(--scale-factor)); }
+.dynamic-leading-relaxed { line-height: calc(1.75 * var(--scale-factor)); }
+
+/* Dynamic letter spacing */
+.dynamic-tracking-tight { letter-spacing: calc(-0.025em * var(--scale-factor)); }
+.dynamic-tracking-normal { letter-spacing: calc(0em * var(--scale-factor)); }
+.dynamic-tracking-wide { letter-spacing: calc(0.025em * var(--scale-factor)); }
+
+/* Dynamic animation scaling */
+@keyframes dynamicFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(calc(20px * var(--scale-factor)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dynamic-fade-in {
+  animation: dynamicFadeIn 0.5s ease-out;
+}
+
+/* Dynamic hover effects */
+.dynamic-hover-scale {
+  transition: transform 0.2s ease-in-out;
+}
+
+.dynamic-hover-scale:hover {
+  transform: scale(calc(1.02 * var(--scale-factor)));
+}
+
+/* Dynamic focus scaling */
+.dynamic-focus-ring {
+  transition: all 0.2s ease-in-out;
+}
+
+.dynamic-focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 calc(3px * var(--scale-factor)) rgba(34, 197, 94, 0.2);
+  transform: scale(calc(1.01 * var(--scale-factor)));
+}
+
+/* Dynamic loading states */
+.dynamic-skeleton {
+  animation: dynamicPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes dynamicPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: calc(0.5 * var(--scale-factor));
+  }
+}
+
+/* Dynamic responsive breakpoints with scaling */
+@media (max-width: 480px) {
+  .dynamic-responsive-hide-xs { display: none; }
+  .dynamic-responsive-show-xs { display: block; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .dynamic-responsive-hide-sm { display: none; }
+  .dynamic-responsive-show-sm { display: block; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dynamic-responsive-hide-md { display: none; }
+  .dynamic-responsive-show-md { display: block; }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .dynamic-responsive-hide-lg { display: none; }
+  .dynamic-responsive-show-lg { display: block; }
+}
+
+@media (min-width: 1441px) and (max-width: 1920px) {
+  .dynamic-responsive-hide-xl { display: none; }
+  .dynamic-responsive-show-xl { display: block; }
+}
+
+@media (min-width: 1921px) {
+  .dynamic-responsive-hide-2xl { display: none; }
+  .dynamic-responsive-show-2xl { display: block; }
+} 
+
+/* Improved Responsive Grid for Specials Section */
+.specials-responsive-grid {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Responsive grid columns */
+@media (max-width: 640px) {
+  .specials-responsive-grid {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .specials-responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .specials-responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .specials-responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .specials-responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Specials card improvements */
+.specials-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: clamp(180px, 25vw, 240px);
+  width: 100%;
+  margin: 0 auto;
+  transition: all 0.2s ease-in-out;
+}
+
+.specials-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Specials image container */
+.specials-image-container {
+  aspect-ratio: 178/186;
+  width: 100%;
+  background: #f3f4f6;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.specials-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease-in-out;
+}
+
+.specials-card:hover .specials-image {
+  transform: scale(1.05);
+}
+
+/* Specials text content */
+.specials-title {
+  font-weight: 500;
+  text-align: center;
+  color: #111827;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .specials-title {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+.specials-discount {
+  color: #dc2626;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+@media (min-width: 640px) {
+  .specials-discount {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+/* Mobile scroll snap for overflow */
+@media (max-width: 640px) {
+  .specials-scroll-container {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .specials-scroll-container > div {
+    scroll-snap-align: start;
+    min-width: 200px;
+  }
+  
+  /* Ensure restaurant details are visible on mobile */
+  .restaurant-dynamic-layout h1 {
+    font-size: 1.25rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .restaurant-dynamic-layout button,
+  .restaurant-dynamic-layout p {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Ensure proper spacing for mobile */
+  .restaurant-dynamic-layout > div {
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Make sure the details section doesn't get cut off - responsive margins */
+  .bg-white.rounded-t-\[32px\] {
+    margin-top: -1.5rem !important; /* Smaller overlap on mobile to preserve rounded corners */
+    padding-top: 1rem !important;
+  }
+  
+  /* Responsive negative margins for better overlap on larger screens */
+  @media (min-width: 640px) {
+    .bg-white.rounded-t-\[32px\] {
+      margin-top: -2.5rem !important; /* sm: equivalent to -mt-10 */
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .bg-white.rounded-t-\[32px\] {
+      margin-top: -3rem !important; /* md: equivalent to -mt-12 */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .bg-white.rounded-t-\[32px\] {
+      margin-top: -4rem !important; /* lg: equivalent to -mt-16 */
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .bg-white.rounded-t-\[32px\] {
+      margin-top: -5rem !important; /* xl: equivalent to -mt-20 */
+    }
+  }
+  
+  /* Ensure proper spacing between elements */
+  .restaurant-dynamic-layout .flex {
+    gap: 0.5rem !important;
+  }
+  
+  /* Make text more readable on mobile */
+  .restaurant-dynamic-layout .text-gray-600 {
+    color: #4b5563 !important;
+  }
+  
+  .restaurant-dynamic-layout .text-gray-900 {
+    color: #111827 !important;
+  }
+  
+  /* Ensure buttons are properly sized for mobile */
+  .restaurant-dynamic-layout button {
+    min-height: 44px !important;
+    padding: 0.5rem 1rem !important;
+  }
+} 
+
+/* SIMPLE MOBILE TOUCH FIXES - Core fixes only */
+@media (max-width: 768px) {
+  /* Ensure all clickable elements are properly touchable */
+  button, a, [role="button"], [onClick], [data-clickable="true"] {
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    pointer-events: auto !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+    /* Add immediate visual feedback */
+    transition: all 0.1s ease-out !important;
+  }
+  
+  /* Restaurant and eatery cards */
+  .restaurant-card, .eatery-card {
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+    /* Ensure cards are immediately responsive */
+    transition: transform 0.1s ease-out !important;
+  }
+  
+  /* Navigation elements */
+  .bottom-nav, .bottom-nav * {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  .header, .header * {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Prevent text selection on interactive elements */
+  button, a, [role="button"], [onClick], [data-clickable="true"] {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* Ensure framer components work properly */
+  [data-framer-component], [data-framer-component] * {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Enhanced touch feedback for buttons */
+  button:active, a:active, [role="button"]:active {
+    transform: scale(0.98) !important;
+    opacity: 0.8 !important;
+  }
+  
+  /* Ensure proper touch targets for small elements */
+  .w-6, .h-6, .w-8, .h-8 {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 8px !important;
+  }
+  
+  /* Fix for nested clickable elements */
+  .restaurant-card *, .eatery-card * {
+    pointer-events: auto !important;
+  }
+  
+  /* Ensure proper z-index stacking */
+  .restaurant-card, .eatery-card {
+    z-index: 1 !important;
+  }
+  
+  .restaurant-card:hover, .eatery-card:hover {
+    z-index: 2 !important;
+  }
+  
+  /* Reduce animation delays on mobile */
+  .transition-all, .transition-transform, .transition-opacity {
+    transition-duration: 0.1s !important;
+  }
+  
+  /* Ensure proper touch handling for images */
+  img {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Fix for absolute positioned elements */
+  .absolute {
+    pointer-events: auto !important;
+  }
+  
+  /* Ensure proper touch handling for motion components */
+  [data-framer-component] {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"], input[type="search"] {
+    font-size: 16px !important;
+  }
+  
+  /* Additional iOS touch fixes */
+  button, a, [role="button"] {
+    -webkit-touch-callout: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+  }
+  
+  /* Fix for iOS Safari button delays */
+  button {
+    -webkit-appearance: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+  }
+}
+
+/* Android Chrome specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+  }
+} 
+
+/* Google Maps stability fixes
+   Prevent global transition/animation rules from affecting map overlays and markers,
+   which can cause markers to lag or appear to float above the map during pan/zoom. */
+.gm-style *,
+.gm-style .gm-style-mtc,
+.gm-style .gm-style-iw-c,
+.gm-style .gm-style-iw-d,
+.gm-style .gm-style-cc,
+.gm-style .gm-control-active,
+.gm-style .gm-svpc {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Ensure AdvancedMarkerElement and custom marker DOM content render correctly without layout side-effects */
+.gm-style .marker,
+.gm-style .gm-style-marker,
+.gm-style .gm-cluster-marker {
+  will-change: auto !important;
+}
+
+/* Prevent content-visibility from hiding map/overlays, which causes Chrome warnings and jank */
+.map-component,
+.map-container,
+.gm-style,
+.gm-style > div {
+  content-visibility: visible !important;
+  contain: none !important;
+}
