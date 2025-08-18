@@ -26,8 +26,37 @@ export async function GET(
     });
 
     if (!response.ok) {
-      // If backend fails, fall back to mock data for development
-      if (response.status >= 500) {
+              // If backend fails, try to fetch from restaurants listing and filter by ID
+        if (response.status >= 500) {
+          try {
+            // Fetch all restaurants and find the one we need
+            const restaurantsResponse = await fetch(`${backendUrl}/api/restaurants?limit=1000`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (restaurantsResponse.ok) {
+              const restaurantsData = await restaurantsResponse.json();
+              const restaurants = restaurantsData.restaurants || [];
+              const restaurant = restaurants.find((r: any) => r.id === restaurantId);
+              
+              if (restaurant) {
+                const sanitizedRestaurant = sanitizeRestaurantData([restaurant])[0];
+                return NextResponse.json({
+                  success: true,
+                  data: sanitizedRestaurant,
+                  fallback: true,
+                  message: 'Using fallback data from restaurants listing'
+                });
+              }
+            }
+          } catch (fallbackError) {
+            // Silently handle fallback error
+          }
+        
+        // If fallback also fails, use mock data
         const mockRestaurant = {
           id: restaurantId,
           name: `Restaurant ${restaurantId}`,
