@@ -134,6 +134,19 @@ function LocationDisplay() {
   );
 }
 
+// Helper function to get relative time
+function getTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return `${Math.floor(diffInSeconds / 2592000)}mo ago`;
+}
+
 // Product grid component matching marketplace-app design
 function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
   products: MarketplaceProduct[];
@@ -221,10 +234,10 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                    </span>
                  </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{product.timeAgo || '2 hours ago'}</span>
-                  </div>
+                                     <div className="flex items-center gap-1">
+                     <Clock className="w-3 h-3" />
+                     <span>{getTimeAgo(product.createdAt)}</span>
+                   </div>
                   <div className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     <span>{product.views || 45}</span>
