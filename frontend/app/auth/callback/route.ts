@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/";
+  const redirectTo = searchParams.get("redirectTo") ?? "/";
 
   if (code) {
     try {
@@ -15,19 +16,19 @@ export async function GET(request: NextRequest) {
       
       if (error) {
         console.error('Auth callback error:', error);
-        return NextResponse.redirect(`${origin}/auth/signin?error=auth_callback_failed`);
+        return NextResponse.redirect(`${origin}/auth/signin?error=auth_callback_failed&redirectTo=${encodeURIComponent(redirectTo)}`);
       }
 
       if (data.session) {
-        // Successful authentication
-        return NextResponse.redirect(`${origin}${next}`);
+        // Successful authentication - redirect to the intended page
+        return NextResponse.redirect(`${origin}${redirectTo}`);
       }
     } catch (error) {
       console.error('Auth callback exception:', error);
-      return NextResponse.redirect(`${origin}/auth/signin?error=auth_callback_exception`);
+      return NextResponse.redirect(`${origin}/auth/signin?error=auth_callback_exception&redirectTo=${encodeURIComponent(redirectTo)}`);
     }
   }
 
   // If no code or error occurred, redirect to sign in
-  return NextResponse.redirect(`${origin}/auth/signin?error=no_code`);
+  return NextResponse.redirect(`${origin}/auth/signin?error=no_code&redirectTo=${encodeURIComponent(redirectTo)}`);
 }

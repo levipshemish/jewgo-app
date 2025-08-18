@@ -1,14 +1,20 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Get redirect URL from query params
+  const redirectTo = searchParams.get("redirectTo") || "/";
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,7 +35,7 @@ export default function SignIn() {
       
       if (data.user) {
         // Wait a moment for session to be established
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         // Verify session is established
         const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
@@ -41,8 +47,8 @@ export default function SignIn() {
         }
         
         if (session && session.user) {
-          // Redirect to home page
-          window.location.href = "/";
+          // Redirect to the intended page
+          router.push(redirectTo);
         } else {
           setError("Authentication successful but session not established. Please try again.");
         }
@@ -65,7 +71,7 @@ export default function SignIn() {
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

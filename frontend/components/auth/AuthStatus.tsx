@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface User {
   id: string;
@@ -15,6 +16,7 @@ interface User {
 export default function AuthStatus() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -46,6 +48,8 @@ export default function AuthStatus() {
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         if (session?.user) {
           setUser({
             id: session.user.id,
@@ -68,6 +72,8 @@ export default function AuthStatus() {
     try {
       await supabaseBrowser.auth.signOut();
       setUser(null);
+      // Redirect to home page after sign out
+      router.push("/");
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -116,12 +122,20 @@ export default function AuthStatus() {
           <p className="text-gray-500 text-xs">{user.provider}</p>
         </div>
       </div>
-      <button
-        onClick={handleSignOut}
-        className="text-sm font-medium text-gray-700 hover:text-gray-900"
-      >
-        Sign out
-      </button>
+      <div className="flex items-center space-x-2">
+        <Link
+          href="/profile"
+          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+        >
+          Profile
+        </Link>
+        <button
+          onClick={handleSignOut}
+          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+        >
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }

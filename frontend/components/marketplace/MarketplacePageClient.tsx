@@ -13,9 +13,6 @@ import {
   MarketplaceFilters as MarketplaceFiltersType,
   MarketplaceStats 
 } from '@/lib/types/marketplace';
-import ProductCard from './ProductCard';
-import CategoryCard from './CategoryCard';
-import MarketplaceFiltersComponent from './MarketplaceFilters';
 
 
 // Use shared ActionButtons from layout to match eatery page styling
