@@ -1,20 +1,24 @@
 "use client";
 
-import { FormEvent, useState, useEffect, Suspense } from "react";
+import { FormEvent, useState, Suspense } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
-function SignInForm() {
+// Separate component to handle search params with proper Suspense boundary
+function SignInFormWithParams() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/";
+  
+  return <SignInForm redirectTo={redirectTo} />;
+}
+
+function SignInForm({ redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
   const router = useRouter();
-
-  // Get redirect URL from query params
-  const redirectTo = searchParams.get("redirectTo") || "/";
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
@@ -221,7 +225,7 @@ export default function SignIn() {
         </div>
       </div>
     }>
-      <SignInForm />
+      <SignInFormWithParams />
     </Suspense>
   );
 }
