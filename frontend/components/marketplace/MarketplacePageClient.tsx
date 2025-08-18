@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, Clock, Eye } from 'lucide-react';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
+import ActionButtons from '@/components/layout/ActionButtons';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import MarketplaceHeader from './MarketplaceHeader';
 import { 
@@ -17,42 +18,7 @@ import CategoryCard from './CategoryCard';
 import MarketplaceFiltersComponent from './MarketplaceFilters';
 
 
-
-// Action buttons component matching marketplace-app design
-function ActionButtons() {
-  const router = useRouter();
-
-  const handleSellClick = () => {
-    router.push('/marketplace/sell');
-  };
-
-  const handleMessagesClick = () => {
-    router.push('/marketplace/messages');
-  };
-
-  return (
-    <div className="flex items-center gap-3">
-      <button 
-        onClick={handleSellClick}
-        className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6 py-2 font-medium flex items-center gap-2 transition-colors"
-      >
-        <Zap className="w-4 h-4" />
-        Sell
-      </button>
-      <button className="rounded-full px-4 py-2 border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
-        Category
-        <ChevronDown className="w-4 h-4" />
-      </button>
-      <button 
-        onClick={handleMessagesClick}
-        className="rounded-full px-4 py-2 border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 ml-auto"
-      >
-        <MessageCircle className="w-4 h-4" />
-        My messages
-      </button>
-    </div>
-  );
-}
+// Use shared ActionButtons from layout to match eatery page styling
 
 // Location display component
 function LocationDisplay() {
@@ -330,7 +296,11 @@ export default function MarketplacePageClient() {
         <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
       <div className="px-4 py-4 space-y-4">
-        <ActionButtons />
+        <ActionButtons 
+          onShowFilters={() => {/* TODO: Implement filters */}}
+          onShowMap={() => router.push('/live-map')}
+          onAddEatery={() => router.push('/add-eatery')}
+        />
         <LocationDisplay />
         <ProductGrid 
           products={products} 
