@@ -1,29 +1,19 @@
-import os
-import sys
-
-from dotenv import load_dotenv
-
-        from database_manager_v2 import EnhancedDatabaseManager
-
-            from database_manager_v2 import Base
-
-        from database_manager import DatabaseManager as OldDB
-        from database_manager_v2 import EnhancedDatabaseManager as NewDB
-
-        import subprocess
-        import time
-
-
-
-
-
-            from sqlalchemy import create_engine
-        import requests
-
 #!/usr/bin/env python3
 """Neon PostgreSQL Setup Script for JewGo
 Quick setup for Neon Tech PostgreSQL database.
 """
+
+import os
+import sys
+import subprocess
+import time
+
+import requests
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+
+from database_manager import DatabaseManager as OldDB
+from database_manager_v2 import Base, EnhancedDatabaseManager as NewDB
 
 # Load environment variables
 load_dotenv(".env")

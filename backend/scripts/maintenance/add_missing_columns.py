@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""Script to add missing columns to the restaurants table.
+This fixes the issue where the eatery page shows no listings due to schema mismatch.
+"""
+
 import os
 import sys
 
@@ -5,17 +10,7 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-
-        from database.database_manager_v3 import EnhancedDatabaseManager
-
-
-
-
-
-#!/usr/bin/env python3
-"""Script to add missing columns to the restaurants table.
-This fixes the issue where the eatery page shows no listings due to schema mismatch.
-"""
+from database.database_manager_v3 import EnhancedDatabaseManager
 
 def add_missing_columns() -> None:
     """Add missing columns to the restaurants table."""

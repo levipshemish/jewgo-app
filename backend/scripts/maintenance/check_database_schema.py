@@ -1,16 +1,15 @@
+#!/usr/bin/env python3
+"""
+Check the database schema to see if the hours columns exist.
+"""
+
 import os
 import sys
+
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-
-
-
-        from sqlalchemy import text
-
-#!/usr/bin/env python3
 """
 Check the database schema to see if the hours columns exist.
 """
