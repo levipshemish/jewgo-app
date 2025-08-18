@@ -150,10 +150,10 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="text-4xl mb-3">🛍️</div>
-        <h3 className="text-base font-semibold text-gray-900 mb-2">No products found</h3>
-        <p className="text-sm text-gray-600">No products available at the moment</p>
+      <div className="text-center py-16 lg:py-24">
+        <div className="text-gray-400 text-6xl lg:text-8xl mb-4 lg:mb-6">🛍️</div>
+        <div className="text-gray-500 text-lg lg:text-xl mb-3 font-medium">No products found</div>
+        <div className="text-gray-400 text-sm lg:text-base">No products available at the moment</div>
       </div>
     );
   }
@@ -161,80 +161,101 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-purple-600">Today&apos;s Picks</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Today&apos;s Picks</h2>
         <button className="text-gray-700 hover:text-gray-900 text-sm font-medium">
           View All
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
         {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
-            <div className="aspect-square bg-gray-100 relative">
-              <img
-                src={product.thumbnail || product.images?.[0] || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-2 left-2 bg-white/90 text-gray-700 px-2 py-1 rounded text-xs">
-                {product.isOnSale ? 'Sale' : 'New'}
-              </div>
-              <button
-                className="absolute top-2 right-2 bg-white/90 hover:bg-white p-2 rounded"
-                onClick={() => toggleFavorite(product.id)}
-              >
-                <Heart
-                  className={`w-4 h-4 ${favorites.has(product.id) ? "fill-red-500 text-red-500" : "text-gray-600"}`}
+          <div key={product.id} className="relative">
+            <div className="w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation">
+              {/* Image Container - Using balanced aspect ratio matching eatery */}
+              <div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
+                <img
+                  src={product.thumbnail || product.images?.[0] || "/placeholder.svg"}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
                 />
-              </button>
-              {product.price === 0 && (
-                <div className="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                  FREE
+                <div className="absolute top-2 left-2 bg-white/90 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                  {product.isOnSale ? 'Sale' : 'New'}
                 </div>
-              )}
-            </div>
-            <div className="p-3 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900">
-                      {product.price === 0 ? 'Free' : `$${product.price}`}
-                    </span>
-                    {product.originalPrice && product.originalPrice > product.price && (
-                      <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
-                    )}
+                <button
+                  className="absolute top-2 right-2 w-10 h-10 px-2 py-0 transition-all duration-200 hover:scale-105 z-10 flex items-start justify-center active:scale-95"
+                  onClick={() => toggleFavorite(product.id)}
+                  style={{
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation',
+                    minHeight: '44px',
+                    minWidth: '44px'
+                  }}
+                >
+                  <Heart
+                    className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
+                      favorites.has(product.id) 
+                        ? 'fill-red-500 text-red-500' 
+                        : 'fill-transparent text-white hover:fill-red-500 hover:text-red-500'
+                    }`}
+                  />
+                </button>
+                {product.price === 0 && (
+                  <div className="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    FREE
                   </div>
-                  <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-tight">{product.name}</h3>
-                </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate">
-                    {product.vendor?.city && product.vendor?.state 
-                      ? `${product.vendor.city}, ${product.vendor.state}` 
-                      : 'Miami Gardens, FL'}
-                  </span>
+              {/* Text Content Container - Separate transparent container matching eatery */}
+              <div className="p-1.5 bg-transparent">
+                {/* Product Name - Bold text with standardized height */}
+                <div className="min-h-8 mb-1 flex items-center">
+                  <h3 className="text-sm font-bold text-gray-900 leading-tight break-words">
+                    {product.name}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-3">
+                
+                {/* Price and Views - Swapped positions to match eatery */}
+                <div className="flex items-center justify-between min-w-0">
+                  <span className="text-xs text-gray-500 font-normal truncate flex-1 mr-2">
+                    {product.price === 0 ? 'Free' : `$${product.price}`}
+                    {product.originalPrice && product.originalPrice > product.price && (
+                      <span className="text-gray-400 line-through ml-1">${product.originalPrice}</span>
+                    )}
+                  </span>
+                  
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Eye className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-800">
+                      {product.views || 45}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Location and Time */}
+                <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    <span className="truncate">
+                      {product.vendor?.city && product.vendor?.state 
+                        ? `${product.vendor.city}, ${product.vendor.state}` 
+                        : 'Miami Gardens, FL'}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     <span>{getTimeAgo(product.createdAt)}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    <span>{product.views || 45}</span>
-                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="px-2 py-1 border border-gray-300 rounded text-xs">
-                  {product.category?.name || 'General'}
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
+                {/* Category and Vendor */}
+                <div className="flex items-center justify-between mt-1">
+                  <div className="px-2 py-1 border border-gray-300 rounded-full text-xs">
+                    {product.category?.name || 'General'}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
+                  </div>
                 </div>
               </div>
             </div>
