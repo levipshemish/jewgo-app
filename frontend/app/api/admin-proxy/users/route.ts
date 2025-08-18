@@ -10,7 +10,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'oSJtZUQN-B-gBmc9F0xemMCUuPseer30
 // Request timeout in milliseconds (increased for slow backend)
 const REQUEST_TIMEOUT = 30000
 
-async function forward(req: NextRequest, method: 'GET' | 'PUT' | 'DELETE') {
+async function forward(req: NextRequest, method: 'GET' | 'PUT' | 'DELETE'): Promise<Response> {
   const startTime = Date.now()
   const requestId = Math.random().toString(36).substring(7)
   
