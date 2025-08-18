@@ -212,10 +212,14 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                </div>
 
               <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  <span className="truncate">{product.location || 'Miami Gardens, FL'}</span>
-                </div>
+                                 <div className="flex items-center gap-1">
+                   <MapPin className="w-3 h-3" />
+                   <span className="truncate">
+                     {product.vendor?.city && product.vendor?.state 
+                       ? `${product.vendor.city}, ${product.vendor.state}` 
+                       : 'Miami Gardens, FL'}
+                   </span>
+                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
