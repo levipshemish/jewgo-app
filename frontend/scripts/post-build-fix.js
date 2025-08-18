@@ -65,21 +65,29 @@ function main() {
   // Copy Prisma Query Engine binaries
   copyPrismaBinaries();
   
-  // Fix CSS files
+  // Fix CSS files - Next.js 15 might have different structure
   const cssDir = path.join(process.cwd(), '.next', 'static', 'css');
+  const alternativeCssDir = path.join(process.cwd(), '.next', 'css');
   
-  if (!fs.existsSync(cssDir)) {
+  let cssDirectory = null;
+  if (fs.existsSync(cssDir)) {
+    cssDirectory = cssDir;
+  } else if (fs.existsSync(alternativeCssDir)) {
+    cssDirectory = alternativeCssDir;
+  }
+  
+  if (!cssDirectory) {
     console.log('ℹ️  No CSS directory found, skipping CSS fixes.');
     return;
   }
   
   try {
-    const files = fs.readdirSync(cssDir);
+    const files = fs.readdirSync(cssDirectory);
     let fixedCount = 0;
     
     files.forEach(file => {
       if (file.endsWith('.css')) {
-        const filePath = path.join(cssDir, file);
+        const filePath = path.join(cssDirectory, file);
         const wasFixed = fixCssFile(filePath);
         if (wasFixed) {
           fixedCount++;
