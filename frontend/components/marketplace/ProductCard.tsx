@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MapPin, Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MarketplaceProduct } from '@/lib/types/marketplace';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { titleCase } from '@/lib/utils/stringUtils';
@@ -27,6 +27,7 @@ export default function ProductCard({
 	const router = useRouter();
 	const [imageError, setImageError] = useState(false);
 	const [imageLoading, setImageLoading] = useState(true);
+	const [isFavorited, setIsFavorited] = useState(false);
 	const { handleImmediateTouch, isMobile } = useMobileTouch();
 	
 	const isMobileDevice = isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -35,10 +36,22 @@ export default function ProductCard({
 		router.push(`/marketplace/product/${product.id}`);
 	});
 
+	const handleFavoriteClick = handleImmediateTouch(() => {
+		setIsFavorited(!isFavorited);
+		if (onAddToWishlist) {
+			onAddToWishlist(product);
+		}
+	});
+
 	const formatPrice = (price: number) => {
+		if (price === 0) {
+			return 'Free';
+		}
 		return new Intl.NumberFormat('en-US', {
 			style: 'currency',
-			currency: product.currency,
+			currency: product.currency || 'USD',
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0,
 		}).format(price);
 	};
 
@@ -58,40 +71,9 @@ export default function ProductCard({
 
 	// Use regular divs on mobile to avoid framer-motion conflicts
 	const CardContainer = isMobileDevice ? 'div' : motion.div;
+	const ButtonContainer = isMobileDevice ? 'button' : motion.button;
+	const SpanContainer = isMobileDevice ? 'span' : motion.span;
 	const heroSrc = getHeroImage();
-
-	// Shared image block (OfferUp/Facebook style)
-	const ImageBlock = (
-		<div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
-			{imageLoading && (
-				<div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
-					<div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-				</div>
-			)}
-			<Image
-				src={heroSrc}
-				alt={product.name}
-				fill
-				className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-				onLoad={handleImageLoad}
-				onError={handleImageError}
-				sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-				unoptimized={heroSrc.includes('cloudinary.com')}
-			/>
-
-			{/* Price overlay (bottom-left) */}
-			<div className="absolute bottom-2 left-2 bg-black/75 text-white px-2 py-1 rounded-md text-sm font-semibold">
-				{formatPrice(product.price)}
-			</div>
-
-			{/* Discount badge (top-right) */}
-			{product.isOnSale && product.discountPercentage ? (
-				<div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-					-{product.discountPercentage}%
-				</div>
-			) : null}
-		</div>
-	);
 
 	// Default and featured share the same marketplace style with slight padding differences
 	if (variant === 'default' || variant === 'featured') {
@@ -127,20 +109,122 @@ export default function ProductCard({
 					...(isMobileDevice && { opacity: 1, transform: 'scale(1)' })
 				}}
 			>
-				{ImageBlock}
+				{/* Image Container - Using balanced aspect ratio like EateryCard */}
+				<div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
+					{/* Loading Placeholder */}
+					{imageLoading && (
+						<div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+							<div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+						</div>
+					)}
 
-				{/* Text content: title and location */}
-				<div className={variant === 'featured' ? 'p-3' : 'p-2'}>
-					<h3 className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">
-						{titleCase(product.name)}
-					</h3>
-					<div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
-						<MapPin className="w-3 h-3" />
-						<span>
-							{product.vendor?.city || ''}{product.vendor?.city && product.vendor?.state ? ', ' : ''}{product.vendor?.state || ''}
-						</span>
-					</div>
+					{/* Product Image */}
+					<Image
+						src={heroSrc}
+						alt={product.name}
+						fill
+						className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+						onLoad={handleImageLoad}
+						onError={handleImageError}
+						sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+						unoptimized={heroSrc.includes('cloudinary.com')}
+					/>
+
+					{/* Discount badge (top-right) */}
+					<AnimatePresence>
+						{product.isOnSale && product.discountPercentage ? (
+							<SpanContainer 
+								className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm"
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ delay: 0.2, duration: 0.3 }}
+							>
+								-{product.discountPercentage}%
+							</SpanContainer>
+						) : null}
+					</AnimatePresence>
+					
+					{/* Favorite Button - Top Right (if no discount) */}
+					{(!product.isOnSale || !product.discountPercentage) && (
+						<ButtonContainer
+							onClick={handleFavoriteClick}
+							className="absolute top-2 right-2 w-10 h-10 px-2 py-0 transition-all duration-200 hover:scale-105 z-10 flex items-start justify-center active:scale-95 group"
+							aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+							title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+							{...(isMobileDevice ? {} : {
+								whileHover: { scale: 1.1 },
+								whileTap: { scale: 0.9 },
+								initial: { opacity: 0, scale: 0.8 },
+								animate: { opacity: 1, scale: 1 },
+								transition: { delay: 0.3, duration: 0.3 }
+							})}
+							style={{
+								WebkitTapHighlightColor: 'transparent',
+								touchAction: 'manipulation',
+								minHeight: '44px',
+								minWidth: '44px',
+								zIndex: 10,
+								...(isMobileDevice && { opacity: 1, transform: 'scale(1)' })
+							}}
+						>
+							{isMobileDevice ? (
+								<div
+									style={{
+										transform: isFavorited ? 'scale(1.1)' : 'scale(1)',
+										transition: 'transform 0.15s ease-out'
+									}}
+								>
+									<Heart
+										className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
+											isFavorited 
+												? 'fill-red-500 text-red-500' 
+												: 'fill-transparent text-white group-hover:fill-red-500 group-hover:text-red-500'
+										}`}
+									/>
+								</div>
+							) : (
+								<motion.div
+									whileTap={{ scale: 0.8 }}
+									animate={{ scale: isFavorited ? 1.1 : 1 }}
+									transition={{ duration: 0.15, ease: "easeOut" }}
+								>
+									<Heart
+										className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
+											isFavorited 
+												? 'fill-red-500 text-red-500' 
+												: 'fill-transparent text-white group-hover:fill-red-500 group-hover:text-red-500'
+										}`}
+									/>
+								</motion.div>
+							)}
+						</ButtonContainer>
+					)}
 				</div>
+
+				{/* Text Content Container - Separate transparent container like EateryCard */}
+				<motion.div 
+					className="p-1.5 bg-transparent"
+					initial={{ opacity: 0, y: 10 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.5, duration: 0.3 }}
+				>
+					{/* Product Name and Price - Combined like reference image */}
+					<div className="min-h-8 mb-1 flex items-center">
+						<h3 className="text-sm font-bold text-gray-900 leading-tight break-words">
+							{formatPrice(product.price)} | {titleCase(product.name)}
+						</h3>
+					</div>
+					
+					{/* Location - Like EateryCard location display */}
+					<div className="flex items-center justify-between min-w-0">
+						<SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2 flex items-center gap-1">
+							<MapPin className="w-3 h-3" />
+							<span>
+								{product.vendor?.city || ''}{product.vendor?.city && product.vendor?.state ? ', ' : ''}{product.vendor?.state || ''}
+							</span>
+						</SpanContainer>
+					</div>
+				</motion.div>
 			</CardContainer>
 		);
 	}
@@ -154,10 +238,26 @@ export default function ProductCard({
 				role="button"
 				tabIndex={0}
 			>
-				{ImageBlock}
+				<div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
+					{imageLoading && (
+						<div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+							<div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+						</div>
+					)}
+					<Image
+						src={heroSrc}
+						alt={product.name}
+						fill
+						className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+						onLoad={handleImageLoad}
+						onError={handleImageError}
+						sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+						unoptimized={heroSrc.includes('cloudinary.com')}
+					/>
+				</div>
 				<div className="p-2">
 					<h3 className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">
-						{titleCase(product.name)}
+						{formatPrice(product.price)} | {titleCase(product.name)}
 					</h3>
 					<div className="mt-1 text-xs text-gray-500 flex items-center gap-1">
 						<MapPin className="w-3 h-3" />
