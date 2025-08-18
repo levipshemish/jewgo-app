@@ -54,6 +54,13 @@ python app.py
 - Code quality enforcement
 - Team collaboration guidelines
 
+### [MCP Standards](./MCP_STANDARDS.md)
+- **Model Context Protocol (MCP) integration**
+- TypeScript/ESLint validation tools
+- Schema drift detection
+- CI guard and health checks
+- Performance monitoring and budgets
+
 ### [API](./api/README.md)
 - API endpoints documentation
 - Authentication
