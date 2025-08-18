@@ -1,0 +1,160 @@
+name: MCP Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  mcp-validation:
+    name: MCP Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm mcp:install
+
+      - name: Build MCP servers
+        run: pnpm mcp:build
+
+      - name: Run TypeScript strict check
+        id: tsc-check
+        run: |
+          echo "Running TypeScript strict check..."
+          echo '{"type":"tool","name":"tsc_check","params":{"cwd":"frontend"}}' | \
+          node tools/ts-next-strict-mcp/dist/index.js > tsc-results.json
+          
+          # Parse results and set output
+          if jq -e '.ok == true' tsc-results.json > /dev/null; then
+            echo "✅ TypeScript check passed"
+            echo "tsc_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ TypeScript check failed"
+            echo "tsc_status=failure" >> $GITHUB_OUTPUT
+            echo "tsc_issues=$(jq -r '.issues | length' tsc-results.json)" >> $GITHUB_OUTPUT
+            cat tsc-results.json
+          fi
+
+      - name: Run ESLint check
+        id: eslint-check
+        run: |
+          echo "Running ESLint check..."
+          echo '{"type":"tool","name":"eslint_check","params":{"cwd":"frontend","pattern":"**/*.{ts,tsx}","fix":false}}' | \
+          node tools/ts-next-strict-mcp/dist/index.js > eslint-results.json
+          
+          # Parse results and set output
+          if jq -e '.ok == true' eslint-results.json > /dev/null; then
+            echo "✅ ESLint check passed"
+            echo "eslint_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ ESLint check failed"
+            echo "eslint_status=failure" >> $GITHUB_OUTPUT
+            echo "eslint_issues=$(jq -r '.issues | length' eslint-results.json)" >> $GITHUB_OUTPUT
+            cat eslint-results.json
+          fi
+
+      - name: Run CI Guard (if not PR)
+        id: ci-guard
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Running CI Guard..."
+          echo '{"type":"tool","name":"premerge_guard","params":{"cwd":"frontend","budgets":{"mainKB":500,"initialTotalMB":2}}}' | \
+          node tools/ci-guard-mcp/dist/index.js > ci-guard-results.json
+          
+          # Parse results and set output
+          if jq -e '.ok == true' ci-guard-results.json > /dev/null; then
+            echo "✅ CI Guard check passed"
+            echo "ci_guard_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ CI Guard check failed"
+            echo "ci_guard_status=failure" >> $GITHUB_OUTPUT
+            cat ci-guard-results.json
+          fi
+
+      - name: Run Schema Drift Check (if database changes)
+        id: schema-drift
+        if: contains(github.event.head_commit.modified, 'backend/database/') || contains(github.event.head_commit.added, 'backend/database/')
+        run: |
+          echo "Running Schema Drift check..."
+          if [ -n "${{ secrets.DATABASE_URL }}" ]; then
+            echo '{"type":"tool","name":"schema_diff","params":{"db_url":"${{ secrets.DATABASE_URL }}","metadata_module":"backend.database.models"}}' | \
+            schema-drift-mcp > schema-drift-results.json
+            
+            # Parse results and set output
+            if jq -e '.error == null' schema-drift-results.json > /dev/null; then
+              echo "✅ Schema drift check passed"
+              echo "schema_drift_status=success" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Schema drift check failed"
+              echo "schema_drift_status=failure" >> $GITHUB_OUTPUT
+              cat schema-drift-results.json
+            fi
+          else
+            echo "⚠️ DATABASE_URL not available, skipping schema drift check"
+            echo "schema_drift_status=skipped" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate MCP Report
+        run: |
+          echo "## MCP Validation Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### TypeScript Check: ${{ steps.tsc-check.outputs.tsc_status }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.tsc-check.outputs.tsc_status }}" == "failure" ]; then
+            echo "- Issues found: ${{ steps.tsc-check.outputs.tsc_issues }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ESLint Check: ${{ steps.eslint-check.outputs.eslint_status }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.eslint-check.outputs.eslint_status }}" == "failure" ]; then
+            echo "- Issues found: ${{ steps.eslint-check.outputs.eslint_issues }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "### CI Guard Check: ${{ steps.ci-guard.outputs.ci_guard_status }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.schema-drift.outputs.schema_drift_status }}" != "" ]; then
+            echo "### Schema Drift Check: ${{ steps.schema-drift.outputs.schema_drift_status }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail on MCP errors
+        if: |
+          steps.tsc-check.outputs.tsc_status == 'failure' ||
+          steps.eslint-check.outputs.eslint_status == 'failure' ||
+          (github.event_name != 'pull_request' && steps.ci-guard.outputs.ci_guard_status == 'failure') ||
+          (steps.schema-drift.outputs.schema_drift_status == 'failure')
+        run: |
+          echo "❌ MCP validation failed. Please fix the issues above."
+          exit 1
+
+      - name: Upload MCP results as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-validation-results
+          path: |
+            tsc-results.json
+            eslint-results.json
+            ci-guard-results.json
+            schema-drift-results.json
+          retention-days: 7

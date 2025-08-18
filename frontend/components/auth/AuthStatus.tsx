@@ -48,7 +48,7 @@ export default function AuthStatus() {
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        // Auth state changed: event, session?.user?.email
         
         if (session?.user) {
           setUser({
