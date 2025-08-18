@@ -1,3 +1,5 @@
+import { NextRequest } from 'next/server'
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +10,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'oSJtZUQN-B-gBmc9F0xemMCUuPseer30
 // Request timeout in milliseconds (increased for slow backend)
 const REQUEST_TIMEOUT = 30000
 
-async function forward(req: Request, method: 'GET' | 'PUT' | 'DELETE') {
+async function forward(req: NextRequest, method: 'GET' | 'PUT' | 'DELETE') {
   const startTime = Date.now()
   const requestId = Math.random().toString(36).substring(7)
   
@@ -135,15 +137,15 @@ async function forward(req: Request, method: 'GET' | 'PUT' | 'DELETE') {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   return forward(req, 'GET')
 }
 
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   return forward(req, 'PUT')
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   return forward(req, 'DELETE')
 }
 

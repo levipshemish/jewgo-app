@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -10,7 +10,7 @@ const ResetPasswordSchema = z.object({
   password: z.string().min(8).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number'),
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { token, password } = ResetPasswordSchema.parse(await request.json())
     
