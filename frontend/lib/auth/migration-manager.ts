@@ -143,7 +143,7 @@ export class MigrationManager {
   /**
    * Migrate a single user from NextAuth to Supabase
    */
-  private async migrateUser(user: any): Promise<void> {
+  private async migrateUser(user: { id: string; email: string; name?: string; image?: string }): Promise<void> {
     const supabase = await createSupabaseServerClient();
     
     // Check if user already exists in Supabase
