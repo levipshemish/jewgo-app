@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build && node scripts/post-build-fix.js",
+    "build": "prisma generate && next build",
     "export": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -26,7 +26,7 @@
     "monitor:setup": "node scripts/setup-monitoring.js",
     "monitor:test": "node scripts/test-monitoring.js",
     "seed:data": "node scripts/seed-test-data.js",
-    "optimize:apiProcedure": "node scripts/optimize-api.js",
+    "optimize:api": "node scripts/optimize-api.js",
     "analyze": "ANALYZE=true npm run build",
     "security:audit": "npm audit && npm audit fix",
     "security:fix": "npm audit fix --force",

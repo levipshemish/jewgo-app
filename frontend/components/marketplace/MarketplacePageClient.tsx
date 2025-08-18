@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Heart, MapPin, Clock, Eye } from 'lucide-react';
+import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle } from 'lucide-react';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
-import ActionButtons from '@/components/layout/ActionButtons';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import MarketplaceHeader from './MarketplaceHeader';
 import { 
@@ -14,8 +13,91 @@ import {
   MarketplaceStats 
 } from '@/lib/types/marketplace';
 
+// Marketplace-specific action buttons using eatery design style
+function MarketplaceActionButtons() {
+  const router = useRouter();
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
-// Use shared ActionButtons from layout to match eatery page styling
+  const handleSellClick = () => {
+    router.push('/marketplace/sell');
+  };
+
+  const handleCategoryClick = () => {
+    // TODO: Implement category filter
+  };
+
+  const handleMessagesClick = () => {
+    router.push('/marketplace/messages');
+  };
+
+  return (
+    <div className="bg-white px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+      <div className="max-w-screen-sm sm:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto">
+        <div className="flex items-center justify-between space-x-2 sm:space-x-3 lg:space-x-6">
+          {/* Sell Button */}
+          <button
+            type="button"
+            onClick={handleSellClick}
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            style={{
+              minHeight: '44px',
+              minWidth: '44px',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              cursor: 'pointer',
+              ...(isMobile && {
+                transition: 'all 0.1s ease-out'
+              })
+            }}
+          >
+            <Zap className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">Sell</span>
+          </button>
+          
+          {/* Category Filter Button */}
+          <button
+            type="button"
+            onClick={handleCategoryClick}
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            style={{
+              minHeight: '44px',
+              minWidth: '44px',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              cursor: 'pointer',
+              ...(isMobile && {
+                transition: 'all 0.1s ease-out'
+              })
+            }}
+          >
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">Category</span>
+            <ChevronDown className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          </button>
+          
+          {/* Messages Button */}
+          <button
+            type="button"
+            onClick={handleMessagesClick}
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            style={{
+              minHeight: '44px',
+              minWidth: '44px',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              cursor: 'pointer',
+              ...(isMobile && {
+                transition: 'all 0.1s ease-out'
+              })
+            }}
+          >
+            <MessageCircle className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">Messages</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Location display component
 function LocationDisplay() {
@@ -294,11 +376,7 @@ export default function MarketplacePageClient() {
       </div>
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto space-y-4">
-          <ActionButtons 
-            onShowFilters={() => {/* TODO: Implement filters */}}
-            onShowMap={() => router.push('/live-map')}
-            onAddEatery={() => router.push('/add-eatery')}
-          />
+          <MarketplaceActionButtons />
           <LocationDisplay />
           <ProductGrid 
             products={products} 
