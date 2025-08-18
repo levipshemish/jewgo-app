@@ -1,19 +1,3 @@
-import asyncio
-import sys
-import os
-from typing import Dict, Any
-from dotenv import load_dotenv
-
-from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
-from search.search_service import SearchService
-from search.core.search_types import SearchFilters, KosherCategory, CertifyingAgency
-
-
-        import traceback
-
-
-
-
 #!/usr/bin/env python3
 """Test Script for New Search System.
 ================================
@@ -24,6 +8,18 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
+
+import asyncio
+import os
+import sys
+import traceback
+from typing import Dict, Any
+
+from dotenv import load_dotenv
+
+from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManager
+from search.core.search_types import CertifyingAgency, KosherCategory, SearchFilters
+from search.search_service import SearchService
 
 # Load environment variables
 load_dotenv()

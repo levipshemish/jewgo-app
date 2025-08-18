@@ -1,23 +1,12 @@
+#!/usr/bin/env python3
+"""Unit tests for hours parsing functionality."""
+
 from datetime import datetime, time
 
 import pytest
+import pytz
+
 from utils.hours import HoursParser, StatusCalculator, TimezoneHelper
-
-
-        from datetime import datetime
-
-        import pytz
-
-        from datetime import datetime
-
-        import pytz
-
-        from utils.hours import (
-
-
-
-
-"""Unit tests for hours parsing functionality."""
 
 class TestHoursParser:
     """Test cases for HoursParser class."""
@@ -248,6 +237,7 @@ class TestHoursIntegration:
 
     def test_full_hours_workflow(self) -> None:
         """Test the complete hours parsing and status calculation workflow."""
+        from utils.hours import (
             get_current_time_in_timezone,
             get_timezone,
             is_restaurant_open,

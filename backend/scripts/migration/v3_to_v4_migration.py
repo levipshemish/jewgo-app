@@ -1,31 +1,23 @@
-from utils.logging_config import get_logger
+#!/usr/bin/env python3
+"""Migration script for DatabaseManager v3 to v4."""
 
+import json
 import os
 import sys
-import json
 import time
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Dict, List, Any, Optional
 
 from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManagerV3
 from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
+from services.restaurant_service_v4 import RestaurantServiceV4
+from services.review_service_v4 import ReviewServiceV4
+from services.user_service_v4 import UserServiceV4
 from utils.cache_manager_v4 import CacheManagerV4
 from utils.config_manager import ConfigManager
-
-
-
-            from services.restaurant_service_v4 import RestaurantServiceV4
-            from services.review_service_v4 import ReviewServiceV4
-            from services.user_service_v4 import UserServiceV4
-
-
-
-
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
-"""Migration script for DatabaseManager v3 to v4."""
 
 # Add the backend directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))

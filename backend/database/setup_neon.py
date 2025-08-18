@@ -33,7 +33,7 @@ def setup_neon_database() -> bool | None:
 
     # Test connection
     try:
-        db = EnhancedDatabaseManager(database_url)
+        db = NewDB(database_url)
         if db.connect():
 
             # Create tables

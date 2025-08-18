@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import SignUpPage from '@/app/auth/signup/page';
+import SignUpPage from '@/app/auth/supabase-signup/page';
 
 // Mock Next.js router
 const mockPush = vi.fn();

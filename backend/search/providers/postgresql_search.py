@@ -1,32 +1,3 @@
-from utils.logging_config import get_logger
-
-from typing import Any, Dict, List, Optional
-from datetime import datetime
-
-
-
-
-
-            
-        from database.database_manager_v3 import Restaurant
-        
-        from database.database_manager_v3 import Restaurant
-        
-            from database.database_manager_v3 import Restaurant
-
-            from database.database_manager_v3 import Restaurant
-
-
-
-
-from sqlalchemy import text, or_
-from sqlalchemy.orm import Session
-            from sqlalchemy import text
-
-from ..core.base_search import BaseSearchProvider, SearchError
-from ..core.search_types import SearchType, SearchResult, SearchFilters, SearchSuggestion, KosherCategory, CertifyingAgency
-logger = get_logger(__name__)
-
 #!/usr/bin/env python3
 """PostgreSQL Search Provider for JewGo App.
 ========================================
@@ -44,6 +15,20 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
+
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import or_, text
+from sqlalchemy.orm import Session
+
+from database.database_manager_v3 import Restaurant
+from utils.logging_config import get_logger
+
+from ..core.base_search import BaseSearchProvider, SearchError
+from ..core.search_types import CertifyingAgency, KosherCategory, SearchFilters, SearchResult, SearchSuggestion, SearchType
+
+logger = get_logger(__name__)
 
 class PostgreSQLSearchProvider(BaseSearchProvider):
     """PostgreSQL search provider using full-text search and trigram similarity."""

@@ -1,21 +1,21 @@
-import pytest
-import json
-from unittest.mock import Mock, patch, MagicMock
-from routes.api_v4 import api_v4, create_restaurant_service, create_review_service, create_user_service
-
-        from routes.api_v4 import success_response
-        
-        from routes.api_v4 import error_response
-        
-        from routes.api_v4 import not_found_response
-        
-
-
-
-from flask import Flask
-
 #!/usr/bin/env python3
 """Comprehensive tests for API v4 routes."""
+
+import json
+
+import pytest
+from flask import Flask
+from unittest.mock import Mock, patch, MagicMock
+
+from routes.api_v4 import (
+    api_v4,
+    create_restaurant_service,
+    create_review_service,
+    create_user_service,
+    error_response,
+    not_found_response,
+    success_response,
+)
 
 class TestAPIV4Routes:
     """Test the v4 API routes."""

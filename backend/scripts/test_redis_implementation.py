@@ -1,25 +1,3 @@
-import os
-import sys
-import time
-from dotenv import load_dotenv
-
-        
-        
-        from utils.cache_manager import CacheManager
-        
-        
-
-
-
-import requests
-        import redis
-        import flask_session
-        from flask import Flask
-        from flask_session import Session
-        from flask_limiter import Limiter
-        from flask_limiter.util import get_remote_address
-        from flask import Flask
-
 #!/usr/bin/env python3
 """Test Redis Implementation.
 ======================
@@ -30,6 +8,21 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
+
+import os
+import sys
+import time
+
+import flask_session
+import redis
+import requests
+from dotenv import load_dotenv
+from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_session import Session
+
+from utils.cache_manager import CacheManager
 
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
