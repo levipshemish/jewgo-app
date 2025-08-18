@@ -24,21 +24,22 @@ const colors = {
 };
 
 function log(message, color = 'reset') {
-  }
+  console.log(colors[color] + message + colors.reset);
+}
 
-function logSection(_title) {
-  );
+function logSection(title) {
+  console.log();
   log(title, 'bold');
-  );
+  console.log();
 }
 
-function logSubsection(_title) {
-  );
+function logSubsection(title) {
+  console.log();
   log(title, 'cyan');
-  );
+  console.log();
 }
 
-function getFileSize(_filePath) {
+function getFileSize(filePath) {
   try {
     const stats = fs.statSync(filePath);
     return stats.size;
@@ -47,7 +48,7 @@ function getFileSize(_filePath) {
   }
 }
 
-function formatBytes(_bytes) {
+function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];

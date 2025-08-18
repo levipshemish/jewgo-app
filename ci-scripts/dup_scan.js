@@ -331,7 +331,8 @@ for (const [sym, arr] of symbolMap.entries()) {
       !/^run$/i.test(sym) &&
       !/^connect_db$/i.test(sym) &&
       !/^test_endpoint$/i.test(sym) &&
-      !/^generate_report$/i.test(sym)) {
+      !/^generate_report$/i.test(sym) &&
+      !/^generateReport$/i.test(sym)) {
     dupSymbols.push({ sym, files: uniq });
   }
 }
