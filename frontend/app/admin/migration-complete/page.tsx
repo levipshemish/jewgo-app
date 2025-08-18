@@ -38,7 +38,7 @@ export default function CompleteMigrationDashboard() {
         transition: transitionData.stats,
         cleanup: cleanupData.stats
       });
-    } catch (error) {
+    } catch {
       setMessage('Failed to fetch migration data');
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ export default function CompleteMigrationDashboard() {
       } else {
         setMessage(result.error || 'Action failed');
       }
-    } catch (error) {
+    } catch {
       setMessage('Error performing action');
     } finally {
       setActionLoading(false);

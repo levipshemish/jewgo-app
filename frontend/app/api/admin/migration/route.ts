@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MigrationManager } from "@/lib/auth/migration-manager";
 import { prisma } from "@/lib/db/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const migrationManager = MigrationManager.getInstance();
     const stats = await migrationManager.getMigrationStats();

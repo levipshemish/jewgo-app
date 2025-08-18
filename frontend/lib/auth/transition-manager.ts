@@ -93,16 +93,17 @@ export class TransitionManager {
   /**
    * Check if user should be redirected to Supabase auth
    */
-  shouldRedirectToSupabase(userId: string): boolean {
+  async shouldRedirectToSupabase(userId: string): Promise<boolean> {
     if (!this.config.redirectToSupabase) {
       return false;
     }
 
     // Check if user has Supabase ID
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { supabaseId: true }
-    }).then(user => !!user?.supabaseId);
+    });
+    return !!user?.supabaseId;
   }
 
   /**
@@ -218,7 +219,7 @@ export class TransitionManager {
     try {
       const supabase = await createSupabaseServerClient();
       await supabase.auth.admin.listUsers();
-    } catch (error) {
+    } catch {
       issues.push('Supabase connection failed');
     }
     

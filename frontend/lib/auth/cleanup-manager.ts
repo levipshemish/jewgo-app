@@ -277,7 +277,7 @@ export class CleanupManager {
     const issues: string[] = [];
     const recommendations: string[] = [];
 
-    const stats = await this.getCleanupStats();
+    await this.getCleanupStats();
 
     // Check if there are users without Supabase IDs
     const usersWithoutSupabase = await prisma.user.count({

@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 
 export interface SyncedUser {

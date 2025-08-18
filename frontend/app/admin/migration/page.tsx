@@ -27,7 +27,7 @@ export default function MigrationDashboard() {
       } else {
         setMessage('Failed to fetch migration data');
       }
-    } catch (error) {
+    } catch {
       setMessage('Error fetching migration data');
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ export default function MigrationDashboard() {
       } else {
         setMessage(result.error || 'Action failed');
       }
-    } catch (error) {
+    } catch {
       setMessage('Error performing migration action');
     } finally {
       setActionLoading(false);

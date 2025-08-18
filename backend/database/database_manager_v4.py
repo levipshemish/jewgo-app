@@ -505,10 +505,30 @@ class DatabaseManager:
         """Safely parse JSON string with fallback to default value."""
         if not json_str:
             return default_value
+        
+        # Handle non-string inputs (e.g., already parsed JSON objects)
+        if not isinstance(json_str, str):
+            # If it's already a list, dict, or other JSON-compatible type, return as is
+            if isinstance(json_str, (list, dict, int, float, bool)) or json_str is None:
+                return json_str
+            logger.debug(f"Non-string JSON input: {type(json_str)}, using default value")
+            return default_value
+        
+        # Remove leading/trailing whitespace
+        json_str = json_str.strip()
+        
+        # Handle empty strings
+        if not json_str:
+            return default_value
+        
         try:
             return json.loads(json_str)
         except (json.JSONDecodeError, TypeError) as e:
-            logger.warning(f"Failed to parse JSON: {e}, using default value")
+            # Log the specific error and the problematic JSON string (truncated)
+            json_preview = json_str[:100] + "..." if len(json_str) > 100 else json_str
+            logger.warning(
+                f"Failed to parse JSON: {e}, using default value. JSON preview: {json_preview}"
+            )
             return default_value
 
     def _image_to_dict(self, image) -> Dict[str, Any]:

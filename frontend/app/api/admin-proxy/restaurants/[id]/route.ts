@@ -1,9 +1,11 @@
+import { NextRequest } from 'next/server'
+
 export const runtime = 'nodejs'
 
 const API_BASE_URL = process.env.ADMIN_API_URL || process.env.BACKEND_URL || 'https://jewgo.onrender.com'
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25'
 
-async function forward(req: Request, method: 'GET' | 'PUT' | 'DELETE', id: string) {
+async function forward(req: NextRequest, method: 'GET' | 'PUT' | 'DELETE', id: string) {
   if (!ADMIN_TOKEN) {
     // console.error('ADMIN_TOKEN not configured')
     return new Response(JSON.stringify({ 
@@ -59,19 +61,19 @@ async function forward(req: Request, method: 'GET' | 'PUT' | 'DELETE', id: strin
 }
 
 export async function GET(
-  req: Request, { params }: { params: Promise<{ id: string }> }) {
+  req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   return forward(req, 'GET', id)
 }
 
 export async function PUT(
-  req: Request, { params }: { params: Promise<{ id: string }> }) {
+  req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   return forward(req, 'PUT', id)
 }
 
 export async function DELETE(
-  req: Request, { params }: { params: Promise<{ id: string }> }) {
+  req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   return forward(req, 'DELETE', id)
 }
