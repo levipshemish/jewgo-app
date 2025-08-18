@@ -14,7 +14,7 @@ export interface MigrationLog {
   id: string;
   userId: string;
   email: string;
-  status: 'pending' | 'success' | 'failed';
+  status: string; // Changed to match Prisma schema
   error?: string;
   migratedAt?: Date;
   createdAt: Date;
@@ -194,10 +194,11 @@ export class MigrationManager {
    * Get migration logs
    */
   async getMigrationLogs(limit: number = 50): Promise<MigrationLog[]> {
-    return await prisma.migrationLog.findMany({
+    const logs = await prisma.migrationLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit
     });
+    return logs as MigrationLog[];
   }
 
   /**
