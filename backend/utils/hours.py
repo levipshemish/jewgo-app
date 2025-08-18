@@ -2,18 +2,12 @@ import logging
 import re
 from datetime import datetime, time, timedelta
 from typing import Dict, List, Optional, Tuple, Union
+import json
 
 import pytz
 from dateutil import parser as date_parser
 from dateutil.relativedelta import relativedelta
-
-                import json
-
-            from timezonefinder import TimezoneFinder
-
-
-
-
+from timezonefinder import TimezoneFinder
 
 """Unified Hours Utility Module.
 

@@ -1,9 +1,5 @@
 from app_factory import create_app
-
-    from utils.config_manager import ConfigManager
-
-
-
+from utils.config_manager import ConfigManager
 
 """
 WSGI Entry Point for JewGo Backend

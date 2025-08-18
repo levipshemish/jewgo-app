@@ -1,24 +1,19 @@
 import pytest
 from datetime import datetime, date, time
 from unittest.mock import patch
+import sys
+import os
 
+# Import the service
+try:
     from services.hours_compute import HoursCompute, hours_compute
-    import sys
-    import os
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from services.hours_compute import HoursCompute, hours_compute
-
-
-
-
-
 
 #!/usr/bin/env python3
 """Tests for Hours Compute Service."""
 
-# Import the service
-try:
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 class TestHoursCompute:
     """Test cases for HoursCompute service."""
     

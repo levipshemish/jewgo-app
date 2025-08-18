@@ -4,6 +4,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse, urlunparse
+from contextlib import contextmanager
 
 
 
@@ -56,22 +57,6 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
-# Configure structured logging
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer(),
-    ],
-    context_class=dict,
-    logger_factory=structlog.stdlib.LoggerFactory(),
-    wrapper_class=structlog.stdlib.BoundLogger,
-    cache_logger_on_first_use=True,
-)
-
-
 
 class DatabaseConnectionManager:
     """Unified database connection manager with comprehensive session management."""

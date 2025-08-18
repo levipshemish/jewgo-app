@@ -3,19 +3,17 @@ import sys
 import json
 from datetime import datetime
 
-
-        from utils.cache_manager import cache_manager
-
-        from app_factory import create_app
-
-            from utils.cache_manager import cache_manager
-
-
-
-
-
-        import redis
-        from monitor_redis import RedisMonitor
+try:
+    from utils.cache_manager import cache_manager
+    from app_factory import create_app
+    import redis
+    from monitor_redis import RedisMonitor
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    from utils.cache_manager import cache_manager
+    from app_factory import create_app
+    import redis
+    from monitor_redis import RedisMonitor
 
 #!/usr/bin/env python3
 """

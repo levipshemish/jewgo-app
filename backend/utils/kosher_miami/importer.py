@@ -5,23 +5,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-
-
-    from config.config import get_config
-    from database.database_manager_v3 import EnhancedDatabaseManager
-
-
-
-
-
-
-
 import requests
 
-            from .processor import KosherMiamiProcessor
-            from .processor import KosherMiamiProcessor
-                from .processor import KosherMiamiProcessor
-                    from .processor import KosherMiamiProcessor
+from config.config import get_config
+from database.database_manager_v3 import EnhancedDatabaseManager
+from .processor import KosherMiamiProcessor
+
 #!/usr/bin/env python3
 """Kosher Miami Importer.
 
@@ -30,11 +19,6 @@ Database import functionality with geocoding for kosher establishment data.
 
 # Add backend to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
-
-try:
-except ImportError as e:
-    sys.exit(1)
-
 
 class KosherMiamiImporter:
     """Importer for kosher establishment data with geocoding."""

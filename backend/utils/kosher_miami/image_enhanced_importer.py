@@ -7,25 +7,14 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-
-
-    from config.config import get_config
-    from database.database_manager_v3 import EnhancedDatabaseManager
-    from utils.cloudinary_uploader import CloudinaryUploader
-    from utils.google_places_image_scraper import GooglePlacesImageScraper
-
-
-
-
-
-
-
 import requests
 
-            from .processor import KosherMiamiProcessor
-            from .processor import KosherMiamiProcessor
-                from .processor import KosherMiamiProcessor
-                    from .processor import KosherMiamiProcessor
+from config.config import get_config
+from database.database_manager_v3 import EnhancedDatabaseManager
+from utils.cloudinary_uploader import CloudinaryUploader
+from utils.google_places_image_scraper import GooglePlacesImageScraper
+from .processor import KosherMiamiProcessor
+
 logger = get_logger(__name__)
 
 #!/usr/bin/env python3
@@ -41,13 +30,6 @@ Version: 2.0
 
 # Add backend to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
-
-try:
-except ImportError as e:
-    sys.exit(1)
-
-
-
 
 class ImageEnhancedKosherMiamiImporter:
     """Enhanced importer with image scraping and Cloudinary upload."""

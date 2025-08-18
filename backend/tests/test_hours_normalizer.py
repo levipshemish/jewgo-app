@@ -2,24 +2,19 @@ import json
 import pytest
 from datetime import datetime
 from unittest.mock import patch
+import sys
+import os
 
+# Import the service
+try:
     from services.hours_normalizer import HoursNormalizer, hours_normalizer
-    import sys
-    import os
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
     from services.hours_normalizer import HoursNormalizer, hours_normalizer
-
-
-
-
-
 
 #!/usr/bin/env python3
 """Tests for Hours Normalizer Service."""
 
-# Import the service
-try:
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 class TestHoursNormalizer:
     """Test cases for HoursNormalizer service."""
     
