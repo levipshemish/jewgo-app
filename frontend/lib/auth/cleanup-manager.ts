@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db/prisma";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface CleanupStats {
   orphanedNextAuthSessions: number;
@@ -175,12 +174,16 @@ export class CleanupManager {
             include: { accounts: true, sessions: true, profile: true }
           });
 
-          // Sort by completeness (Supabase ID first, then most recent)
-          users.sort((a, b) => {
-            if (a.supabaseId && !b.supabaseId) return -1;
-            if (!a.supabaseId && b.supabaseId) return 1;
-            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-          });
+                     // Sort by completeness (Supabase ID first, then most recent)
+           users.sort((a, b) => {
+             if (a.supabaseId && !b.supabaseId) { 
+               return -1; 
+             }
+             if (!a.supabaseId && b.supabaseId) { 
+               return 1; 
+             }
+             return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+           });
 
           const primaryUser = users[0];
           const duplicateUsers = users.slice(1);
