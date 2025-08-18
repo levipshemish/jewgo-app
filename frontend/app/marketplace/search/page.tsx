@@ -3,8 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import { Suspense } from "react";
 
-export default function MarketplaceSearchPage() {
+function MarketplaceSearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
 
@@ -66,5 +67,20 @@ export default function MarketplaceSearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketplaceSearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading search...</p>
+        </div>
+      </div>
+    }>
+      <MarketplaceSearchContent />
+    </Suspense>
   );
 }
