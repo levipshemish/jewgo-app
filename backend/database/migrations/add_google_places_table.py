@@ -1,23 +1,3 @@
-from utils.logging_config import get_logger
-
-import os
-import sys
-from pathlib import Path
-
-from database.google_places_manager import Base
-
-from utils.logging_config import get_logger
-
-    import argparse
-
-
-
-
-from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
-
-logger = get_logger(__name__)
-
 #!/usr/bin/env python3
 """Database Migration: Add Google Places Table.
 ===========================================
@@ -29,6 +9,17 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+
+from database.google_places_manager import Base
+from utils.logging_config import get_logger
 
 # Add the backend directory to the Python path
 backend_path = Path(__file__).parent.parent.parent
