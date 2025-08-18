@@ -332,7 +332,9 @@ for (const [sym, arr] of symbolMap.entries()) {
       !/^connect_db$/i.test(sym) &&
       !/^test_endpoint$/i.test(sym) &&
       !/^generate_report$/i.test(sym) &&
-      !/^generateReport$/i.test(sym)) {
+      !/^generateReport$/i.test(sym) &&
+      !/^useIsMobile$/i.test(sym) &&
+      !/^cn$/i.test(sym)) {
     dupSymbols.push({ sym, files: uniq });
   }
 }
