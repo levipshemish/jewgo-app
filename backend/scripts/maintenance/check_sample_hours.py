@@ -1,20 +1,16 @@
-import os
-import sys
-from dotenv import load_dotenv
-
-from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-                import json
-
-
-
-        from sqlalchemy import text
-
 #!/usr/bin/env python3
 """
 Check a sample restaurant's hours data.
 """
+
+import json
+import os
+import sys
+
+from dotenv import load_dotenv
+from sqlalchemy import text
+
+from database.database_manager_v3 import EnhancedDatabaseManager
 
 # Load environment variables
 load_dotenv()

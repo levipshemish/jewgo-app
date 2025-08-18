@@ -1,23 +1,18 @@
-import os
-import sys
-import time
-from dotenv import load_dotenv
-
-from database.google_places_manager import GooglePlacesManager
-from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-            
-
-
-
-        from sqlalchemy import text
-            import requests
-
 #!/usr/bin/env python3
 """
 Populate Google Places data for existing restaurants.
 """
+
+import os
+import sys
+import time
+
+import requests
+from dotenv import load_dotenv
+from sqlalchemy import text
+
+from database.database_manager_v3 import EnhancedDatabaseManager
+from database.google_places_manager import GooglePlacesManager
 
 # Load environment variables
 load_dotenv()

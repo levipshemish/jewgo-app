@@ -1,17 +1,10 @@
-import os
-
-from app_factory import create_app
-from dotenv import load_dotenv
-
-
-        from app_factory import deps
-
-
-
-
-
 #!/usr/bin/env python3
 """Debug script to test database manager initialization in Flask app context."""
+
+import os
+
+from app_factory import create_app, deps
+from dotenv import load_dotenv
 
 def debug_database_manager() -> None:
     """Debug the database manager initialization."""

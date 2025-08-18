@@ -1,19 +1,15 @@
-import os
-import sys
-from dotenv import load_dotenv
-
-from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-
-
-
-        from sqlalchemy import text
-
 #!/usr/bin/env python3
 """
 Check the current hours status of all restaurants.
 """
+
+import os
+import sys
+
+from dotenv import load_dotenv
+from sqlalchemy import text
+
+from database.database_manager_v3 import EnhancedDatabaseManager
 
 # Load environment variables
 load_dotenv()

@@ -10,9 +10,6 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 
 from database.database_manager_v3 import EnhancedDatabaseManager
-"""
-Check the database schema to see if the hours columns exist.
-"""
 
 # Load environment variables
 load_dotenv()

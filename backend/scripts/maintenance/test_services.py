@@ -1,24 +1,17 @@
-import os
-import sys
-
-    from app_factory import create_app
-    from config.config import Config
-    from database.database_manager_v3 import EnhancedDatabaseManager
-    from services import GooglePlacesService, HealthService, RestaurantService
-        import traceback
-
-
-
-
-
 #!/usr/bin/env python3
 """Test script for the service layer architecture."""
+
+import os
+import sys
+import traceback
+
+from app_factory import create_app
+from config.config import Config
+from database.database_manager_v3 import EnhancedDatabaseManager
+from services import GooglePlacesService, HealthService, RestaurantService
+
 # Add the current directory to Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-try:
-except ImportError as e:
-    sys.exit(1)
 
 
 def test_services() -> bool:

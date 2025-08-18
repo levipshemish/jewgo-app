@@ -1,16 +1,3 @@
-import json
-import os
-import sys
-import time
-from pathlib import Path
-
-        from utils.cloudinary_uploader import CloudinaryUploader
-        from utils.google_places_image_scraper import GooglePlacesImageScraper
-
-
-
-
-
 #!/usr/bin/env python3
 """Scrape Restaurant Images from Google Places.
 ==========================================
@@ -21,6 +8,15 @@ and uploads them to Cloudinary.
 Author: JewGo Development Team
 Version: 1.0
 """
+
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+from utils.cloudinary_uploader import CloudinaryUploader
+from utils.google_places_image_scraper import GooglePlacesImageScraper
 
 # Add current directory to Python path
 sys.path.append(".")

@@ -1,26 +1,19 @@
-import os
-import sys
-import time
-import json
-from datetime import datetime
-from dotenv import load_dotenv
-
-from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-        
-        
-
-
-
-        from sqlalchemy import text
-        import requests
-        from sqlalchemy import text
-
 #!/usr/bin/env python3
 """
 Update all restaurants with hours information using direct SQL.
 """
+
+import json
+import os
+import sys
+import time
+from datetime import datetime
+
+import requests
+from dotenv import load_dotenv
+from sqlalchemy import text
+
+from database.database_manager_v3 import EnhancedDatabaseManager
 
 # Load environment variables
 load_dotenv()

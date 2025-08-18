@@ -1,25 +1,20 @@
-import os
-import sys
-import time
-from dotenv import load_dotenv
-
-from database.google_places_manager import GooglePlacesManager, GooglePlacesData
-from database.database_manager_v3 import EnhancedDatabaseManager
-
-        
-        
-            import json
-        from datetime import datetime
-
-
-
-        from sqlalchemy import text
-        import requests
-
 #!/usr/bin/env python3
 """
 Update all restaurants with hours information from Google Places.
 """
+
+import json
+import os
+import sys
+import time
+from datetime import datetime
+
+import requests
+from dotenv import load_dotenv
+from sqlalchemy import text
+
+from database.database_manager_v3 import EnhancedDatabaseManager
+from database.google_places_manager import GooglePlacesManager, GooglePlacesData
 
 # Load environment variables
 load_dotenv()

@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+"""Simple script to import restaurants from Kosher Miami data."""
+
 import json
 import os
 import sys
@@ -5,14 +8,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-        from database.database_manager_v3 import EnhancedDatabaseManager
-
-
-
-
-
-#!/usr/bin/env python3
-"""Simple script to import restaurants from Kosher Miami data."""
+from database.database_manager_v3 import EnhancedDatabaseManager
 
 # Load environment variables
 load_dotenv()
