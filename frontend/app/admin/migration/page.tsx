@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { MigrationStats, MigrationLog } from "@/lib/auth/migration-manager";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface MigrationData {
   stats: MigrationStats;
@@ -13,10 +15,45 @@ export default function MigrationDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const router = useRouter();
 
+  // Check authentication and admin status
   useEffect(() => {
-    fetchMigrationData();
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        if (!session) {
+          router.push('/auth/signin?redirectTo=/admin/migration');
+          return;
+        }
+
+        // Check if user is admin
+        const adminEmails = [
+          process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@jewgo.com",
+          // Add more admin emails as needed
+        ];
+
+        const isAdminUser = adminEmails.includes(session.user.email || "");
+        if (!isAdminUser) {
+          router.push('/?error=unauthorized');
+          return;
+        }
+
+        setIsAuthenticated(true);
+        setIsAdmin(true);
+        fetchMigrationData();
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/auth/signin?redirectTo=/admin/migration');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const fetchMigrationData = async () => {
     try {
@@ -29,8 +66,6 @@ export default function MigrationDashboard() {
       }
     } catch {
       setMessage('Error fetching migration data');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -60,15 +95,21 @@ export default function MigrationDashboard() {
     }
   };
 
-  if (loading) {
+  // Show loading state while checking authentication
+  if (loading || isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Migration Dashboard</h1>
-          <div className="animate-pulse">Loading migration data...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  // Don't render if not authenticated or not admin (will redirect)
+  if (!isAuthenticated || !isAdmin) {
+    return null;
   }
 
   if (!migrationData) {

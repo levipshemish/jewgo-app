@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// Unified authentication system that works with both Supabase and NextAuth
+// Supabase authentication system
 export async function getSessionUser() {
   try {
-    // Try Supabase first (primary auth system)
     const supabase = await createSupabaseServerClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (user && !error) {
+    if (user) {
       return {
         id: user.id,
         email: user.email,
@@ -18,23 +17,7 @@ export async function getSessionUser() {
       };
     }
   } catch (error) {
-    console.warn('Supabase auth check failed:', error);
-  }
-
-  // Fallback to NextAuth if Supabase fails
-  try {
-    const { getServerSession } = await import('next-auth');
-    const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
-    const session = await getServerSession(authOptions);
-    
-    if (session?.user) {
-      return {
-        ...session.user,
-        provider: 'nextauth'
-      };
-    }
-  } catch (error) {
-    console.warn('NextAuth fallback failed:', error);
+    // Supabase auth check failed - silent fail
   }
 
   return null;
@@ -73,7 +56,9 @@ export async function isAuthenticated(): Promise<boolean> {
 // Get user profile data
 export async function getUserProfile() {
   const user = await getSessionUser();
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
   
   // You can extend this to fetch additional profile data from your database
   return {

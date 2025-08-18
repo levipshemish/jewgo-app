@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Heart, MapPin, Clock, Eye, Building2, Church, Ticket, Store, ShoppingCart, Zap, ChevronDown, MessageCircle } from 'lucide-react';
-import { BottomNavigation } from '@/components/navigation/ui';
+import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle } from 'lucide-react';
+import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import MarketplaceHeader from './MarketplaceHeader';
 import { 
@@ -16,77 +16,7 @@ import ProductCard from './ProductCard';
 import CategoryCard from './CategoryCard';
 import MarketplaceFiltersComponent from './MarketplaceFilters';
 
-// Category navigation component matching marketplace-app design
-function CategoryNav() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('marketplace');
 
-  const categories = [
-    { name: "Mikvahs", icon: Building2, slug: "mikvahs" },
-    { name: "Shuls", icon: Church, slug: "shuls" },
-    { name: "Specials", icon: Ticket, slug: "specials" },
-    { name: "Marketplace", icon: Store, slug: "marketplace" },
-    { name: "Stores", icon: ShoppingCart, slug: "stores" },
-  ];
-
-  const handleTabChange = (slug: string) => {
-    setActiveTab(slug);
-    
-    switch (slug) {
-      case 'mikvahs':
-        router.push('/mikvahs');
-        break;
-      case 'shuls':
-        router.push('/shuls');
-        break;
-      case 'marketplace':
-        // Already on marketplace page
-        break;
-      case 'specials':
-        router.push('/specials');
-        break;
-      case 'stores':
-        router.push('/stores');
-        break;
-      default:
-        break;
-    }
-  };
-
-  return (
-    <nav className="bg-white px-4 py-4">
-      <div className="flex justify-between items-center">
-        {categories.map((category) => {
-          const Icon = category.icon;
-          const active = activeTab === category.slug;
-
-          return (
-            <button
-              key={category.name}
-              onClick={() => handleTabChange(category.slug)}
-              className="flex flex-col items-center gap-2"
-            >
-              <div
-                className={`p-3 rounded-2xl transition-colors ${
-                  active ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <Icon className="w-6 h-6" />
-              </div>
-              <span className={`text-sm transition-colors ${active ? "text-purple-600 font-medium" : "text-gray-600"}`}>
-                {category.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {/* Active indicator line */}
-      <div className="mt-4 flex justify-center">
-        <div className="w-12 h-1 bg-purple-600 rounded-full"></div>
-      </div>
-    </nav>
-  );
-}
 
 // Action buttons component matching marketplace-app design
 function ActionButtons() {
@@ -272,6 +202,7 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
 
 export default function MarketplacePageClient() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState('marketplace');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
@@ -336,6 +267,30 @@ export default function MarketplacePageClient() {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    switch (tab) {
+      case 'mikvahs':
+        router.push('/mikvahs');
+        break;
+      case 'shuls':
+        router.push('/shuls');
+        break;
+      case 'marketplace':
+        // Already on marketplace page
+        break;
+      case 'eatery':
+        router.push('/eatery');
+        break;
+      case 'stores':
+        router.push('/stores');
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleAddToCart = (product: MarketplaceProduct) => {
     setCart(prev => [...prev, product]);
   };
@@ -354,7 +309,9 @@ export default function MarketplacePageClient() {
     return (
       <div className="min-h-screen bg-gray-50">
         <MarketplaceHeader onSearch={handleSearch} />
-        <CategoryNav />
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        </div>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
@@ -369,7 +326,9 @@ export default function MarketplacePageClient() {
   return (
     <div className="min-h-screen bg-gray-50">
       <MarketplaceHeader onSearch={handleSearch} />
-      <CategoryNav />
+      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
       <div className="px-4 py-4 space-y-4">
         <ActionButtons />
         <LocationDisplay />

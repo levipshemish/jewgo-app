@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -9,6 +9,7 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useRouter } from 'next/navigation';
+import { supabaseBrowser } from '@/lib/supabase/client';
 
 interface FilterState {
   agency?: string;
@@ -27,6 +28,30 @@ export default function FavoritesPage() {
   const [activeTab, setActiveTab] = useState('favorites');
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({});
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        if (!session) {
+          // Redirect to sign in if not authenticated
+          router.push('/auth/signin?redirectTo=/favorites');
+          return;
+        }
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/auth/signin?redirectTo=/favorites');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -68,6 +93,23 @@ export default function FavoritesPage() {
   const handleCloseFilters = handleImmediateTouch(() => {
     setShowFilters(false);
   });
+
+  // Show loading state while checking authentication
+  if (loading || isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#f4f4f4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // Filter favorites based on search query only (other filters require full restaurant data)
   const filteredFavorites = favorites.filter(restaurant => {

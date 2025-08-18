@@ -4,21 +4,41 @@ import { FormEvent, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 
-export default function SignIn() {
+export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const onEmailSignIn = async (e: FormEvent) => {
+  const onEmailSignUp = async (e: FormEvent) => {
     e.preventDefault();
     setPending(true);
     setError(null);
+    setSuccess(null);
+    
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setPending(false);
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setPending(false);
+      return;
+    }
     
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
+      const { data, error } = await supabaseBrowser.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
       
       if (error) {
@@ -28,36 +48,17 @@ export default function SignIn() {
       }
       
       if (data.user) {
-        // Wait a moment for session to be established
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Verify session is established
-        const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
-        
-        if (sessionError) {
-          setError(`Session error: ${sessionError.message}`);
-          setPending(false);
-          return;
-        }
-        
-        if (session && session.user) {
-          // Redirect to home page
-          window.location.href = "/";
-        } else {
-          setError("Authentication successful but session not established. Please try again.");
-        }
-      } else {
-        setError("Authentication failed. Please check your credentials.");
+        setSuccess("Account created successfully! Please check your email to verify your account.");
       }
     } catch (err) {
-      console.error('Sign in error:', err);
+      console.error('Sign up error:', err);
       setError("An unexpected error occurred. Please try again.");
     }
     
     setPending(false);
   };
 
-  const onGoogleSignIn = async () => {
+  const onGoogleSignUp = async () => {
     setPending(true);
     setError(null);
     
@@ -88,14 +89,14 @@ export default function SignIn() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to JewGo
+            Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Access your account to manage favorites and more
+            Join JewGo to save favorites and discover kosher restaurants
           </p>
         </div>
         
-        <form onSubmit={onEmailSignIn} className="mt-8 space-y-6">
+        <form onSubmit={onEmailSignUp} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -122,12 +123,29 @@ export default function SignIn() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="sr-only">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </div>
@@ -136,13 +154,17 @@ export default function SignIn() {
             <div className="text-red-600 text-sm text-center">{error}</div>
           )}
 
+          {success && (
+            <div className="text-green-600 text-sm text-center">{success}</div>
+          )}
+
           <div className="space-y-3">
             <button
               type="submit"
               disabled={pending}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {pending ? "Signing in..." : "Sign In"}
+              {pending ? "Creating account..." : "Create Account"}
             </button>
           </div>
 
@@ -159,7 +181,7 @@ export default function SignIn() {
             <div className="mt-6">
               <button
                 type="button"
-                onClick={onGoogleSignIn}
+                onClick={onGoogleSignUp}
                 disabled={pending}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
               >
@@ -181,7 +203,7 @@ export default function SignIn() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="ml-2">Sign in with Google</span>
+                <span className="ml-2">Sign up with Google</span>
               </button>
             </div>
           </div>
@@ -189,9 +211,9 @@ export default function SignIn() {
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{' '}
-            <Link href="/auth/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/auth/signin" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Sign in
             </Link>
           </p>
           <p className="text-sm text-gray-500 mt-2">
