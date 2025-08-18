@@ -6,6 +6,7 @@ import sys
 import traceback
 from typing import Any, Dict, Optional, Type
 
+import structlog
 from utils.logging_config import get_logger
 
 try:

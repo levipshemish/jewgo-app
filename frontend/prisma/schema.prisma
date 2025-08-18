@@ -24,6 +24,8 @@ model User {
   password       String?
   role           String    @default("user")
   isSuperAdmin   Boolean   @default(false)
+  // Supabase migration
+  supabaseId     String?   @unique
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -31,6 +33,7 @@ model User {
   sessions       Session[]
   profile        UserProfile?
   passwordResets PasswordReset[]
+  migrationLogs  MigrationLog[]
 
   @@schema("nextauth")
 }
@@ -291,5 +294,20 @@ model RestaurantTodayHours {
 
   @@map("restaurant_today_hours")
   @@schema("public")
+}
+
+// Migration tracking for NextAuth to Supabase migration
+model MigrationLog {
+  id         String    @id @default(cuid())
+  userId     String
+  email      String
+  status     String    @default("pending") // pending, success, failed
+  error      String?
+  migratedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("nextauth")
 }
 

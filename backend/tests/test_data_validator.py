@@ -1,15 +1,3 @@
-import pytest
-import json
-from typing import Dict, Any
-
-from utils.data_validator import (
-from utils.error_handler import ValidationError
-
-
-
-
-
-
 #!/usr/bin/env python3
 """Test Data Validator Unification.
 ==============================
@@ -21,6 +9,12 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
+import json
+from typing import Dict, Any
+
+import pytest
+
+from utils.data_validator import (
     DataValidator,
     validate_restaurant_data,
     validate_review_data,
@@ -30,6 +24,7 @@ Version: 1.0
     validate_url,
     sanitize_string
 )
+from utils.error_handler import ValidationError
 class TestDataValidatorClass:
     """Test the core DataValidator class."""
     

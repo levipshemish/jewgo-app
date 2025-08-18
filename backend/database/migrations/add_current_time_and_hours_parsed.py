@@ -9,8 +9,6 @@ import sys
 
 from sqlalchemy import create_engine, text
 
-logger = get_logger(__name__)
-
 #!/usr/bin/env python3
 """Migration script to add missing columns to the restaurants table.
 This fixes the issue where the eatery page shows no listings due to schema mismatch.
@@ -20,19 +18,15 @@ Missing columns:
 - hours_parsed (BOOLEAN)
 """
 
-# Configure logging
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer(),
-    ],
-    context_class=dict,
-    logger_factory=structlog.stdlib.LoggerFactory(),
-    wrapper_class=structlog.stdlib.BoundLogger,
-    cache_logger_on_first_use=True,
-)
+import os
+import sys
+
+import structlog
+from sqlalchemy import create_engine, text
+
+from utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 

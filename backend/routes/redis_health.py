@@ -15,7 +15,7 @@ import time
 from typing import Dict, Any
 
 import redis
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, jsonify
 
 from utils.logging_config import get_logger
 from utils.config_manager import ConfigManager

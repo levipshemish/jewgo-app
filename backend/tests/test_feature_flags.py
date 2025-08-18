@@ -2,6 +2,7 @@
 """Tests for the feature flags system."""
 
 import json
+import time
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 

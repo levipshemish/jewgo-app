@@ -26,6 +26,12 @@ from flask import jsonify, make_response, request
 
 from utils.logging_config import get_logger
 
+# Try to import Split.io, but don't fail if not available
+try:
+    from splitio import get_factory
+except ImportError:
+    get_factory = None
+
 logger = get_logger(__name__)
 
 class FeatureFlag:
