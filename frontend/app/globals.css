@@ -641,6 +641,38 @@ html {
   .restaurant-card .mb-0\.5 {
     margin-bottom: 0.125rem !important;
   }
+  
+  /* Mobile-specific container styling - ensure left alignment */
+  .restaurant-card .flex.items-center {
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+  
+  /* Ensure proper text container width on mobile */
+  .restaurant-card .w-full {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  
+  /* Fix price and rating container alignment on mobile */
+  .restaurant-card .flex.items-center.justify-between {
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+  }
+  
+  /* Ensure price text is left-aligned */
+  .restaurant-card .text-xs.text-gray-500 {
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+  
+  /* Ensure rating is right-aligned but container is properly spaced */
+  .restaurant-card .flex.items-center.gap-1.flex-shrink-0 {
+    justify-content: flex-end !important;
+    align-items: center !important;
+  }
 
   /* Improve mobile navigation */
   .bottom-nav {
