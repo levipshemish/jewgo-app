@@ -1863,6 +1863,9 @@ div[class*="specials-dynamic-grid"] {
   .bg-white.rounded-t-\[32px\] {
     margin-top: -1.5rem !important; /* Smaller overlap on mobile to preserve rounded corners */
     padding-top: 1rem !important;
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    overflow: hidden !important;
   }
   
   /* Responsive negative margins for better overlap on larger screens */
@@ -1913,6 +1916,55 @@ div[class*="specials-dynamic-grid"] {
 
 /* SIMPLE MOBILE TOUCH FIXES - Core fixes only */
 @media (max-width: 768px) {
+  /* Ensure rounded corners are visible on mobile for restaurant details */
+  .bg-white.rounded-t-\[32px\] {
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  
+  /* Ensure the image carousel doesn't overlap the rounded corners */
+  .bg-white.rounded-t-\[32px\] + * {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  /* Ensure the image carousel container doesn't interfere with rounded corners */
+  .bg-white.rounded-t-\[32px\] .relative {
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    overflow: hidden !important;
+  }
+  
+  /* Force rounded corners to be visible on mobile */
+  .bg-white.rounded-t-\[32px\] {
+    clip-path: inset(0 0 0 0) !important;
+  }
+  
+  /* Specific fix for restaurant details card rounded corners on mobile */
+  .restaurant-details-card {
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 10 !important;
+  }
+  
+  /* Ensure proper stacking context for mobile */
+  .restaurant-details-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: white;
+    border-top-left-radius: 32px;
+    border-top-right-radius: 32px;
+    z-index: -1;
+  }
   /* Ensure all clickable elements are properly touchable */
   button, a, [role="button"], [onClick], [data-clickable="true"] {
     cursor: pointer !important;

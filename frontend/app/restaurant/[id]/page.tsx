@@ -452,7 +452,7 @@ const RestaurantDetailPage: React.FC = () => {
       </div>
 
       {/* Restaurant Details Section - White Card with flush overlap effect */}
-      <div className="bg-white rounded-t-[32px] relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg">
+      <div className="bg-white rounded-t-[32px] restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg">
         <div
           className="restaurant-dynamic-layout pt-4 sm:pt-6 pb-24 max-w-screen-md mx-auto"
           style={{
