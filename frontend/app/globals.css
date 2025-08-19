@@ -2171,3 +2171,35 @@ div[class*="specials-dynamic-grid"] {
   content-visibility: visible !important;
   contain: none !important;
 }
+
+/* Mobile-specific fix for restaurant details card rounded corners */
+@media (max-width: 768px) {
+  .restaurant-details-card {
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    -webkit-border-top-left-radius: 32px !important;
+    -webkit-border-top-right-radius: 32px !important;
+    -moz-border-radius-topleft: 32px !important;
+    -moz-border-radius-topright: 32px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 10 !important;
+    /* Force hardware acceleration for better rendering */
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+    will-change: transform !important;
+  }
+  
+  /* Ensure the image carousel doesn't interfere */
+  .restaurant-hero-section {
+    position: relative !important;
+    z-index: 1 !important;
+    overflow: visible !important;
+  }
+  
+  /* Remove any conflicting styles */
+  .restaurant-details-card::before,
+  .restaurant-details-card::after {
+    display: none !important;
+  }
+}

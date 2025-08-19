@@ -452,13 +452,25 @@ const RestaurantDetailPage: React.FC = () => {
       </div>
 
       {/* Restaurant Details Section - White Card with flush overlap effect */}
-      <div className="bg-white rounded-t-[32px] restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg" style={{
-        borderTopLeftRadius: '32px',
-        borderTopRightRadius: '32px',
-        overflow: 'hidden',
-        position: 'relative',
-        zIndex: 10
-      }}>
+      <div 
+        className="bg-white restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg" 
+        style={{
+          borderTopLeftRadius: '32px',
+          borderTopRightRadius: '32px',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 10,
+          // Force rounded corners on mobile with explicit styling
+          ...(typeof window !== 'undefined' && window.innerWidth <= 768 && {
+            borderTopLeftRadius: '32px',
+            borderTopRightRadius: '32px',
+            WebkitBorderTopLeftRadius: '32px',
+            WebkitBorderTopRightRadius: '32px',
+            MozBorderRadiusTopLeft: '32px',
+            MozBorderRadiusTopRight: '32px'
+          })
+        }}
+      >
         <div
           className="restaurant-dynamic-layout pt-4 sm:pt-6 pb-24 max-w-screen-md mx-auto"
           style={{
