@@ -3,10 +3,10 @@ services:
     name: jewgo-backend
     env: python
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: cd backend && gunicorn --config config/gunicorn.conf.py app:app
+    startCommand: cd backend && PYTHONPATH=. gunicorn --config config/gunicorn.conf.py wsgi:app
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.11.8
       - key: NODE_VERSION
         value: 24.5.0
       - key: PIP_NO_DEFAULT_INDEX

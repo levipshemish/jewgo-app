@@ -6,7 +6,7 @@ gunicorn==21.2.0
 Werkzeug==2.3.7
 
 # Database
-SQLAlchemy>=2.0.30
+SQLAlchemy==2.0.43
 psycopg2-binary==2.9.9
 alembic==1.13.1
 
