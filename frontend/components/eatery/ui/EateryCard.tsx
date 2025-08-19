@@ -168,8 +168,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         })
       }}
     >
-      {/* Image Container - Using balanced aspect ratio with full rounded corners, reduced bottom margin */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl mb-2">
+      {/* Image Container - Using balanced aspect ratio */}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -263,27 +263,27 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Flush with page, transparent background, closer to image */}
+      {/* Text Content Container - Separate transparent container */}
       <motion.div 
-        className="px-2 pt-1 pb-1"
+        className="p-1.5 bg-transparent"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Bold text with tighter spacing */}
+        {/* Restaurant Name - Bold text with standardized height */}
         <div className="min-h-8 mb-1 flex items-center">
           <h3 className="text-sm font-bold text-gray-900 leading-tight break-words">
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
-        {/* Price Range and Rating - Tighter spacing and layout */}
-        <div className="flex items-center justify-between min-w-0 gap-3">
-          <SpanContainer className="text-xs text-gray-600 font-medium truncate flex-1">
+        {/* Price Range and Rating - Swapped positions */}
+        <div className="flex items-center justify-between min-w-0">
+          <SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2">
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
             <span className="text-xs font-semibold text-gray-800">
               {getRating().toFixed(1)}
