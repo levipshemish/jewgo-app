@@ -127,29 +127,19 @@ class MarketplaceServiceV4:
             query += " ORDER BY m.created_at DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             
-            # Execute query
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-                
-                # Convert psycopg2-style parameters to SQLAlchemy-style
-                # Replace %s with numbered parameters
-                sqlalchemy_query = query
-                sqlalchemy_params = {}
-                for i, param in enumerate(params):
-                    param_name = f"param_{i}"
-                    sqlalchemy_query = sqlalchemy_query.replace("%s", f":{param_name}", 1)
-                    sqlalchemy_params[param_name] = param
-                
-                # Execute main query
-                result = session.execute(text(sqlalchemy_query), sqlalchemy_params)
-                listings = result.fetchall()
-                
-                # Get total count for pagination
-                count_query = sqlalchemy_query.replace("SELECT m.*, ", "SELECT COUNT(*) as total FROM marketplace m ")
-                count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
-                count_params = {k: v for k, v in sqlalchemy_params.items() if not k.endswith(f"_{len(params)-2}") and not k.endswith(f"_{len(params)-1}")}
-                count_result = session.execute(text(count_query), count_params)
-                total = count_result.scalar()
+            # Execute query using direct database connection
+            with self.db_manager.connection_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Execute main query
+                    cursor.execute(query, params)
+                    listings = cursor.fetchall()
+                    
+                    # Get total count for pagination
+                    count_query = query.replace("SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, ", "SELECT COUNT(*) as total FROM marketplace m ")
+                    count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
+                    count_params = params[:-2] if len(params) > 2 else params  # Remove limit and offset
+                    cursor.execute(count_query, count_params)
+                    total = cursor.fetchone()[0]
             
             # Format response for marketplace table
             formatted_listings = []
@@ -220,21 +210,20 @@ class MarketplaceServiceV4:
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.connection_manager.get_session_context() as session:
-                from sqlalchemy import text
-                
-                result = session.execute(text("""
-                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                           m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
-                           m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
-                           m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                           m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
-                           m.vendor_name as seller_name, m.vendor_id as seller_username
-                    FROM marketplace m
-                    WHERE m.id = :listing_id
-                """), {'listing_id': listing_id})
-                
-                listing = result.fetchone()
+            with self.db_manager.connection_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
+                               m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                               m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
+                               m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
+                               m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
+                               m.vendor_name as seller_name, m.vendor_id as seller_username
+                        FROM marketplace m
+                        WHERE m.id = %s
+                    """, [listing_id])
+                    
+                    listing = cursor.fetchone()
                 
                 if not listing:
                     return {
