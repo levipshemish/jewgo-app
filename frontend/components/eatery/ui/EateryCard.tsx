@@ -60,6 +60,14 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       if (restaurant.price_range.includes('-')) {
         return `$${restaurant.price_range}`;
       }
+      // If it's already a dollar amount format, return as is
+      if (restaurant.price_range.startsWith('$')) {
+        return restaurant.price_range;
+      }
+      // If it's just numbers, assume it's a price range and add $
+      if (/^\d+$/.test(restaurant.price_range)) {
+        return `$${restaurant.price_range}`;
+      }
       return restaurant.price_range;
     }
     
@@ -67,7 +75,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       return `$${restaurant.min_avg_meal_cost}-${restaurant.max_avg_meal_cost}`;
     }
     
-    return 'Price Range: $';
+    // Return consistent format across all devices
+    return '$$';
   };
 
   const getRating = () => {
@@ -270,9 +279,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Bold text with standardized height and no wrapping */}
-        <div className="h-8 mb-1 flex items-center">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate">
+        {/* Restaurant Name - Flexible height with better text handling */}
+        <div className="min-h-8 mb-1 flex items-start">
+          <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2 break-words">
             {titleCase(restaurant.name)}
           </h3>
         </div>

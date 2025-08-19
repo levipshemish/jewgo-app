@@ -762,6 +762,8 @@ html {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  max-height: 2.8rem;
+  line-height: 1.4;
 }
 
 .line-clamp-3 {

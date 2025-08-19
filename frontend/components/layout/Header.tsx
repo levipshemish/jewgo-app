@@ -39,10 +39,10 @@ export default function Header({
                       <Logo size="md" variant="dark" className="w-6 h-6 sm:w-7 sm:h-7" />
                     </div>
                     
-                    {/* Brand Text - Only the logo text, no additional description */}
-                    <div className="hidden sm:block">
+                    {/* Brand Text - Show on all screen sizes for consistent branding */}
+                    <div className="block">
                       <h1 
-                        className="text-base sm:text-lg font-bold text-[#292B2D] tracking-wide"
+                        className="text-sm sm:text-base lg:text-lg font-bold text-[#292B2D] tracking-wide"
                         style={{ 
                           fontFamily: '"Comic Sans MS", "Chalkboard SE", "Marker Felt", "Arial Rounded MT Bold", "Helvetica Rounded", sans-serif',
                           fontWeight: '700',

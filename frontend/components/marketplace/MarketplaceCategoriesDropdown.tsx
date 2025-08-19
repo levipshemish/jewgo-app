@@ -78,7 +78,9 @@ export default function MarketplaceCategoriesDropdown({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
