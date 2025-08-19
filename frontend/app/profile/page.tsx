@@ -78,6 +78,12 @@ export default async function ProfilePage() {
                   <h3 className="text-sm font-medium text-yellow-900 mb-2">Account</h3>
                   <div className="space-y-2">
                     <Link
+                      href="/profile/settings"
+                      className="block text-sm text-yellow-700 hover:text-yellow-900"
+                    >
+                      Settings
+                    </Link>
+                    <Link
                       href="/logout"
                       className="block text-sm text-yellow-700 hover:text-yellow-900"
                     >

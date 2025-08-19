@@ -160,6 +160,15 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
             >
               {pending ? "Signing in..." : "Sign In"}
             </button>
+            
+            <div className="text-center">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot your password?
+              </Link>
+            </div>
           </div>
 
           <div className="mt-6">
