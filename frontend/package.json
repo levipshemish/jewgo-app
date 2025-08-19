@@ -142,22 +142,18 @@
     "vitest": "^3.2.4"
   },
   "overrides": {
-    "cookie": "^0.7.0",
-    "rimraf": "^5.0.0",
-    "glob": "^10.0.0"
-  },
-  "browserslist": [
-    "defaults",
-    "not ie 11",
-    "not ie_mob 11"
-  ],
-  "resolutions": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "eslint": "^8.57.0",
     "rimraf": "^5.0.0",
     "glob": "^10.0.0",
     "@humanwhocodes/config-array": "^0.13.0",
-    "@humanwhocodes/object-schema": "^2.0.3"
-  }
+    "@humanwhocodes/object-schema": "^2.0.3",
+    "cookie": "^0.7.0"
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not ie_mob 11"
+  ]
 }
