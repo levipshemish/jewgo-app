@@ -1593,7 +1593,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
         """Get a specific restaurant by ID."""
         try:
             # Try to get from cache first
-            cached_result = deps.get("cache_manager")
+            cached_result = deps.get("cache_manager_v4")
 
             if cached_result:
                 cached_data = cached_result.get_cached_restaurant_details(restaurant_id)
