@@ -212,7 +212,7 @@ def error_response(message: str, status_code: int = 500, details: Optional[Dict]
     }
     if details:
         response["details"] = details
-    return jsonify(response), status_code
+    return jsonify(response)
 
 def not_found_response(message: str, resource_type: str = "resource"):
     """Create a standardized not found response."""
@@ -1029,7 +1029,7 @@ def get_marketplace_listing(listing_id):
                 return success_response({
                     'success': True,
                     'data': formatted_listing
-                }), 200
+                })
                 
     except Exception as e:
         logger.exception("Error fetching marketplace listing")
