@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: jewgo-backend
+    env: python
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: cd backend && PYTHONPATH=. gunicorn --config config/gunicorn.conf.py wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: NODE_VERSION
+        value: 24.5.0
+      - key: PIP_NO_DEFAULT_INDEX
+        value: "false"
+      - key: CORS_ORIGINS
+        value: "https://jewgo.app,https://jewgo-app.vercel.app,http://localhost:3000,http://127.0.0.1:3000"
+      - key: ENVIRONMENT
+        value: "production"
+    buildFilter:
+      paths:
+        - backend/**
+        - build.sh
+        - pyproject.toml
