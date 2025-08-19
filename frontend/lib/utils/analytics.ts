@@ -34,10 +34,11 @@ class Analytics {
 
   // Track a generic event
   track(event: string, properties?: Record<string, any>) {
-    const analyticsEvent: AnalyticsEventData = {
-      event,
-      properties,
-      timestamp: new Date(),
+    const analyticsEvent: AnalyticsEvent = {
+      name: event,
+      timestamp: new Date().toISOString(),
+      url: typeof window !== 'undefined' ? window.location.href : '',
+      props: properties,
     };
 
     this.queue.push(analyticsEvent);
@@ -166,7 +167,7 @@ class Analytics {
     
     // Google Analytics example:
     if ((window as any).gtag) {
-      (window as any).gtag('event', event.name, event.props);
+      (window as any).gtag('event', event.event, event.properties);
     }
 
     // Or send to custom analytics endpoint
