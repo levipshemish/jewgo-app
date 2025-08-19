@@ -104,7 +104,9 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
   // Format price/price range
   const formatPrice = () => {
     if (type === 'product' && data.price !== undefined) {
-      if (data.price === 0) return 'Free';
+      if (data.price === 0) {
+        return 'Free';
+      }
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: data.currency || 'USD',

@@ -26,7 +26,9 @@ export default function MarketplaceListingCard({
   };
 
   const formatPrice = (priceCents: number, currency: string) => {
-    if (priceCents === 0) return 'Free';
+    if (priceCents === 0) {
+      return 'Free';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
@@ -83,10 +85,18 @@ export default function MarketplaceListingCard({
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    }
+    if (diffInSeconds < 3600) {
+      return `${Math.floor(diffInSeconds / 60)}m ago`;
+    }
+    if (diffInSeconds < 86400) {
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    }
+    if (diffInSeconds < 2592000) {
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
     
     return date.toLocaleDateString();
   };
@@ -99,7 +109,7 @@ export default function MarketplaceListingCard({
       {/* Image placeholder */}
       <div className="aspect-square bg-gray-100 flex items-center justify-center">
         <div className="text-4xl text-gray-400">
-          {getListingTypeIcon(listing.type)}
+          {getListingTypeIcon(listing.kind)}
         </div>
       </div>
 
@@ -131,8 +141,8 @@ export default function MarketplaceListingCard({
             {formatPrice(listing.price_cents, listing.currency)}
           </span>
           
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getListingTypeColor(listing.type)}`}>
-            {listing.type.charAt(0).toUpperCase() + listing.type.slice(1)}
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getListingTypeColor(listing.kind)}`}>
+            {listing.kind.charAt(0).toUpperCase() + listing.kind.slice(1)}
           </span>
         </div>
 
@@ -165,13 +175,7 @@ export default function MarketplaceListingCard({
         {/* Seller */}
         {listing.seller_name && (
           <div className="flex items-center text-sm text-gray-500 mb-2">
-            {listing.seller_type === 'gemach' ? (
-              <Building className="w-4 h-4 mr-1 flex-shrink-0" />
-            ) : listing.seller_type === 'user' ? (
-              <User className="w-4 h-4 mr-1 flex-shrink-0" />
-            ) : (
-              <User className="w-4 h-4 mr-1 flex-shrink-0" />
-            )}
+            <User className="w-4 h-4 mr-1 flex-shrink-0" />
             <span className="truncate">{listing.seller_name}</span>
           </div>
         )}
@@ -197,9 +201,9 @@ export default function MarketplaceListingCard({
             <span>{formatTimeAgo(listing.created_at)}</span>
           </div>
           
-          {listing.category && (
+          {listing.category_name && (
             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {typeof listing.category === 'string' ? listing.category : listing.category.name}
+              {listing.category_name}
             </span>
           )}
         </div>

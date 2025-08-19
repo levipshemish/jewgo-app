@@ -25,7 +25,7 @@ export default function CategoryPage() {
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: '',
     subcategory: '',
-    listingType: '',
+    kind: '',
     condition: '',
     minPrice: '',
     maxPrice: '',
@@ -87,7 +87,7 @@ export default function CategoryPage() {
     setFilters({
       category: '',
       subcategory: '',
-      listingType: '',
+      kind: '',
       condition: '',
       minPrice: '',
       maxPrice: '',

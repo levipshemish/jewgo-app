@@ -292,38 +292,42 @@ class MarketplaceServiceV4:
             
             with self.db_manager.connection_manager.get_session() as conn:
                 with conn.cursor() as cursor:
+                    # Set defaults
+                    listing_data.setdefault('txn_type', 'sale')
+                    listing_data.setdefault('currency', 'USD')
+                    listing_data.setdefault('country', 'US')
+                    listing_data.setdefault('status', 'active')
+                    listing_data.setdefault('attributes', {})
+                    
                     # Insert listing
                     cursor.execute("""
                         INSERT INTO listings (
-                            title, description, type, category_id, subcategory_id,
-                            price_cents, currency, condition, city, region, zip, country,
-                            lat, lng, seller_user_id, available_from,
-                            available_to, loan_terms, attributes, status
+                            kind, txn_type, title, description, price_cents, currency,
+                            condition, category_id, subcategory_id, city, region, zip,
+                            country, lat, lng, seller_user_id, attributes, status
                         ) VALUES (
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         ) RETURNING id
-                    """, [
+                    """, (
+                        listing_data['kind'],
+                        listing_data['txn_type'],
                         listing_data['title'],
                         listing_data.get('description'),
-                        listing_data['type'],
+                        listing_data['price_cents'],
+                        listing_data['currency'],
+                        listing_data['condition'],
                         listing_data['category_id'],
                         listing_data.get('subcategory_id'),
-                        listing_data['price_cents'],
-                        listing_data.get('currency', 'USD'),
-                        listing_data.get('condition'),
                         listing_data.get('city'),
                         listing_data.get('region'),
                         listing_data.get('zip'),
-                        listing_data.get('country', 'US'),
+                        listing_data['country'],
                         listing_data.get('lat'),
                         listing_data.get('lng'),
                         listing_data.get('seller_user_id'),
-                        listing_data.get('available_from'),
-                        listing_data.get('available_to'),
-                        json.dumps(listing_data.get('loan_terms')) if listing_data.get('loan_terms') else None,
-                        json.dumps(listing_data.get('attributes', {})),
-                        'active'
-                    ])
+                        json.dumps(listing_data['attributes']),
+                        listing_data['status']
+                    ))
                     
                     listing_id = cursor.fetchone()[0]
                     conn.commit()

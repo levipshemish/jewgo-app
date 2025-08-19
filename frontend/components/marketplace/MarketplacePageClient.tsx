@@ -25,7 +25,9 @@ function MarketplaceActionButtons() {
   };
 
   const handleCategoryClick = () => {
-    // TODO: Implement category filter
+    // TODO: Implement category filter - for now, show a basic alert
+    // This should be replaced with a proper category selection modal or dropdown
+    alert('Category filter functionality coming soon! This will allow filtering marketplace items by category.');
   };
 
   const handleMessagesClick = () => {
@@ -252,7 +254,7 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                 {/* Category and Vendor */}
                 <div className="flex items-center justify-between mt-1">
                   <div className="px-2 py-1 border border-gray-300 rounded-full text-xs">
-                    {typeof product.category === 'string' ? product.category : product.category?.name || 'General'}
+                    {product.category_name || 'General'}
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -279,7 +281,7 @@ export default function MarketplacePageClient() {
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: '',
     subcategory: '',
-    listingType: '',
+    kind: '',
     condition: '',
     minPrice: '',
     maxPrice: '',

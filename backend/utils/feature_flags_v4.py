@@ -72,6 +72,11 @@ class APIV4FeatureFlags:
                 "default": True,
                 "description": "Enable enhanced error handling in v4",
                 "stage": MigrationStage.TESTING
+            },
+            "api_v4_marketplace": {
+                "default": True,
+                "description": "Enable streamlined marketplace endpoints",
+                "stage": MigrationStage.TESTING
             }
         }
         self._load_from_env()

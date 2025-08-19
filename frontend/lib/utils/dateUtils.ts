@@ -152,7 +152,9 @@ export const formatRelativeTime = (input: string | number | Date): string => {
  */
 export const formatDateISO = (input: string | number | Date): string => {
   const date = parseDateInput(input);
-  if (!date) return 'Invalid Date';
+  if (!date) {
+    return 'Invalid Date';
+  }
 
   return date.toISOString().split('T')[0];
 };
@@ -162,7 +164,9 @@ export const formatDateISO = (input: string | number | Date): string => {
  */
 export const isToday = (input: string | number | Date): boolean => {
   const date = parseDateInput(input);
-  if (!date) return false;
+  if (!date) {
+    return false;
+  }
 
   const today = new Date();
   return date.toDateString() === today.toDateString();
@@ -173,7 +177,9 @@ export const isToday = (input: string | number | Date): boolean => {
  */
 export const isYesterday = (input: string | number | Date): boolean => {
   const date = parseDateInput(input);
-  if (!date) return false;
+  if (!date) {
+    return false;
+  }
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -185,7 +191,9 @@ export const isYesterday = (input: string | number | Date): boolean => {
  */
 export const getDayOfWeek = (input: string | number | Date): string => {
   const date = parseDateInput(input);
-  if (!date) return 'Invalid Date';
+  if (!date) {
+    return 'Invalid Date';
+  }
 
   return date.toLocaleDateString('en-US', { weekday: 'long' });
 };
@@ -195,7 +203,9 @@ export const getDayOfWeek = (input: string | number | Date): string => {
  */
 export const getMonthName = (input: string | number | Date): string => {
   const date = parseDateInput(input);
-  if (!date) return 'Invalid Date';
+  if (!date) {
+    return 'Invalid Date';
+  }
 
   return date.toLocaleDateString('en-US', { month: 'long' });
 };

@@ -28,7 +28,7 @@ export default function MarketplacePage() {
   const [filters, setFilters] = useState({
     category: '',
     subcategory: '',
-    listingType: '',
+    kind: '',
     condition: '',
     minPrice: '',
     maxPrice: '',
@@ -52,7 +52,7 @@ export default function MarketplacePage() {
         search: searchQuery || undefined,
         category: filters.category || undefined,
         subcategory: filters.subcategory || undefined,
-        type: filters.listingType || undefined,
+        type: filters.kind || undefined,
         condition: filters.condition || undefined,
         min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined, // Convert to cents
         max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,

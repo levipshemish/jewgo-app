@@ -204,15 +204,15 @@ export async function getListingsByCategory(
 }
 
 /**
- * Get listings by type (sale, free, borrow)
+ * Get listings by kind (regular, vehicle, appliance)
  */
-export async function getListingsByType(
-  type: 'sale' | 'free' | 'borrow' | 'gemach',
-  params: Omit<MarketplaceSearchParams, 'type'> = {}
+export async function getListingsByKind(
+  kind: 'regular' | 'vehicle' | 'appliance',
+  params: Omit<MarketplaceSearchParams, 'kind'> = {}
 ): Promise<MarketplaceSearchResponse> {
   return fetchMarketplaceListings({
     ...params,
-    type,
+    kind,
   });
 }
 
@@ -257,8 +257,8 @@ export class MarketplaceAPI {
     return getListingsByCategory(category, params);
   }
 
-  static async getListingsByType(type: 'sale' | 'free' | 'borrow' | 'gemach', params: Omit<MarketplaceSearchParams, 'type'> = {}): Promise<MarketplaceSearchResponse> {
-    return getListingsByType(type, params);
+  static async getListingsByKind(kind: 'regular' | 'vehicle' | 'appliance', params: Omit<MarketplaceSearchParams, 'kind'> = {}): Promise<MarketplaceSearchResponse> {
+    return getListingsByKind(kind, params);
   }
 
   static async getListingsByLocation(lat: number, lng: number, radius: number = 10, params: Omit<MarketplaceSearchParams, 'lat' | 'lng' | 'radius'> = {}): Promise<MarketplaceSearchResponse> {

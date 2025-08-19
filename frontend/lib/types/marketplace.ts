@@ -1,27 +1,28 @@
 export interface MarketplaceListing {
   id: string;
+  kind: 'regular' | 'vehicle' | 'appliance';  // Changed from type
+  txn_type: 'sale';  // New field
   title: string;
   description?: string;
-  type: 'sale' | 'free' | 'borrow';
-  category?: MarketplaceCategory | string;
-  subcategory?: string;
   price_cents: number;
   price?: number;
   originalPrice?: number;
   currency: string;
-  condition?: 'new' | 'used_like_new' | 'used_good' | 'used_fair';
+  condition: 'new' | 'used_like_new' | 'used_good' | 'used_fair';
+  category_id: number;
+  subcategory_id?: number;
+  category_name?: string;
+  subcategory_name?: string;
   city?: string;
   region?: string;
   zip?: string;
   country: string;
   lat?: number;
   lng?: number;
+  seller_user_id?: string;
   seller_name?: string;
-  seller_type: 'user' | 'gemach';
-  available_from?: string;
-  available_to?: string;
-  loan_terms?: any;
-  attributes?: any;
+  seller_username?: string;
+  attributes?: any;  // JSONB for kind-specific data
   endorse_up: number;
   endorse_down: number;
   status: string;
@@ -71,7 +72,7 @@ export interface MarketplaceSubcategory {
 export interface MarketplaceFilters {
   category: string;
   subcategory: string;
-  listingType: string;
+  kind: string;  // Changed from listingType
   condition: string;
   minPrice: string;
   maxPrice: string;
@@ -85,7 +86,7 @@ export interface MarketplaceSearchParams {
   search?: string;
   category?: string;
   subcategory?: string;
-  type?: string;
+  kind?: string;  // Changed from type
   condition?: string;
   min_price?: number;
   max_price?: number;
@@ -118,12 +119,13 @@ export interface MarketplaceListingResponse {
 export interface CreateListingRequest {
   title: string;
   description?: string;
-  type: 'sale' | 'free' | 'borrow' | 'gemach';
+  kind: 'regular' | 'vehicle' | 'appliance';  // Changed from type
+  txn_type?: 'sale';  // New field
   category_id: number;
   subcategory_id?: number;
   price_cents: number;
   currency?: string;
-  condition?: 'new' | 'used_like_new' | 'used_good' | 'used_fair';
+  condition: 'new' | 'used_like_new' | 'used_good' | 'used_fair';
   city?: string;
   region?: string;
   zip?: string;
@@ -131,11 +133,7 @@ export interface CreateListingRequest {
   lat?: number;
   lng?: number;
   seller_user_id?: string;
-  seller_gemach_id?: string;
-  available_from?: string;
-  available_to?: string;
-  loan_terms?: any;
-  attributes?: any;
+  attributes?: any;  // JSONB for kind-specific data
 }
 
 export interface CreateListingResponse {
@@ -161,4 +159,27 @@ export interface MarketplaceStats {
   totalUsers: number;
   recentListings: number;
   featuredListings: number;
+}
+
+// Kind-specific attribute interfaces
+export interface VehicleAttributes {
+  vehicle_type: 'car' | 'motorcycle' | 'scooter' | 'bike';
+  make: string;
+  model: string;
+  year: number;
+  mileage: number;
+  [key: string]: any;
+}
+
+export interface ApplianceAttributes {
+  appliance_type: string;
+  kosher_use: 'meat' | 'dairy' | 'pareve' | 'unspecified';
+  brand?: string;
+  model?: string;
+  never_mixed?: boolean;
+  [key: string]: any;
+}
+
+export interface RegularAttributes {
+  [key: string]: any;
 }

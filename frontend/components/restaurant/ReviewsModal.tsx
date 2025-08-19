@@ -199,6 +199,9 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
           title: reviewData.title,
           content: reviewData.content,
           images: reviewData.images,
+          userId: session?.user?.email || 'anonymous',
+          userName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || 'Anonymous',
+          userEmail: session?.user?.email || '',
         }),
       });
 

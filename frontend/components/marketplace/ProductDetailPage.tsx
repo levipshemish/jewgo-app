@@ -188,7 +188,7 @@ export default function ProductDetailPage() {
             <div className="space-y-6">
               {/* Category and Vendor */}
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>{typeof product.category === 'string' ? product.category : product.category?.name || 'General'}</span>
+                <span>{product.category_name || 'General'}</span>
                 <span>•</span>
                 <span>{product.seller_name || 'Seller'}</span>
               </div>
