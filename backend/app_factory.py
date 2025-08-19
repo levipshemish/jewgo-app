@@ -1052,13 +1052,36 @@ def create_app(config_class=None):
                         columns = cursor.fetchall()
                         column_info = [{"name": col[0], "type": col[1]} for col in columns]
                         
+                        # Try to execute the actual marketplace query to see if it works
+                        try:
+                            cursor.execute("""
+                                SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
+                                       m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                                       m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
+                                       m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
+                                       m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
+                                       m.vendor_name as seller_name
+                                FROM marketplace m
+                                WHERE m.status = %s
+                                LIMIT 1
+                            """, ['active'])
+                            
+                            sample_data = cursor.fetchone()
+                            query_works = True
+                        except Exception as query_error:
+                            query_works = False
+                            query_error_msg = str(query_error)
+                        
                         return jsonify({
                             "success": True,
                             "marketplace_table_exists": True,
                             "listings_table_exists": listings_exists,
                             "record_count": count,
                             "columns": column_info,
-                            "status": "marketplace_table_found"
+                            "status": "marketplace_table_found",
+                            "query_works": query_works,
+                            "query_error": query_error_msg if not query_works else None,
+                            "sample_data": sample_data if query_works else None
                         })
                     elif listings_exists:
                         # Check if listings table has data
