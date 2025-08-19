@@ -209,8 +209,8 @@ class Analytics {
 
   private sendToAnalyticsService(event: AnalyticsEventData) {
     // In production, implement actual analytics service integration
-    // For now, just log to console
-    console.log('Sending to analytics service:', event);
+    // For now, silently process the event
+    // TODO: Integrate with actual analytics service (Google Analytics, Mixpanel, etc.)
   }
 }
 
