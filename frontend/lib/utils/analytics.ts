@@ -157,13 +157,13 @@ class Analytics {
     return sanitized;
   }
 
-  private async sendToAnalyticsService(event: AnalyticsEvent) {
+  private async sendToAnalyticsService(event: AnalyticsEventData) {
     // Placeholder for actual analytics service integration
     // Examples: Google Analytics, Mixpanel, Segment, etc.
     
     // Google Analytics example:
     if ((window as any).gtag) {
-      (window as any).gtag('event', event.name, event.props);
+      (window as any).gtag('event', event.event, event.properties);
     }
 
     // Or send to custom analytics endpoint
