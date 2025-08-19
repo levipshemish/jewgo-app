@@ -706,9 +706,8 @@ def create_app(config_class=None):
     # Register v4 API routes
     try:
         if api_v4 is not None:
-            # Temporarily disable api_v4 blueprint for debugging
-            # app.register_blueprint(api_v4)
-            logger.info("API v4 routes blueprint temporarily disabled for debugging")
+            app.register_blueprint(api_v4)
+            logger.info("API v4 routes blueprint registered successfully")
         else:
             logger.warning("API v4 routes blueprint is None - skipping registration")
     except ImportError as e:
