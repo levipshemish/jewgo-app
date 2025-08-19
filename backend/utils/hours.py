@@ -7,7 +7,13 @@ import json
 import pytz
 from dateutil import parser as date_parser
 from dateutil.relativedelta import relativedelta
-from timezonefinder import TimezoneFinder
+
+try:
+    from timezonefinder import TimezoneFinder
+    TIMEZONEFINDER_AVAILABLE = True
+except ImportError:
+    TimezoneFinder = None
+    TIMEZONEFINDER_AVAILABLE = False
 
 """Unified Hours Utility Module.
 
@@ -97,8 +103,17 @@ class HoursParser:
             try:
                 data = json.loads(hours_data)
                 return self._convert_json_hours(data)
-            except:
-                pass
+            except json.JSONDecodeError as e:
+                logger.warning("Failed to parse JSON hours data", 
+                             hours_data=hours_data[:100],  # Log first 100 chars
+                             error=str(e),
+                             line_number=e.lineno if hasattr(e, 'lineno') else None,
+                             column_number=e.colno if hasattr(e, 'colno') else None)
+            except Exception as e:
+                logger.warning("Unexpected error parsing JSON hours data", 
+                             hours_data=hours_data[:100],  # Log first 100 chars
+                             error=str(e),
+                             error_type=type(e).__name__)
 
         # Handle common structured formats
         lines = hours_data.split("\n")
@@ -318,19 +333,25 @@ class TimezoneHelper:
                 return default_tz
             return default_tz
 
-        try:
-            # Use timezonefinder for precise timezone lookup
-            tf = TimezoneFinder()
-            tz_name = tf.timezone_at(lat=latitude, lng=longitude)
-            return tz_name or default_tz
-        except ImportError:
-            # Fallback to manual mapping
-            return TimezoneHelper._manual_timezone_lookup(
-                latitude,
-                longitude,
-                city,
-                state,
-            )
+        if TIMEZONEFINDER_AVAILABLE:
+            try:
+                # Use timezonefinder for precise timezone lookup
+                tf = TimezoneFinder()
+                tz_name = tf.timezone_at(lat=latitude, lng=longitude)
+                return tz_name or default_tz
+            except Exception as e:
+                logger.warning("TimezoneFinder failed, falling back to manual lookup", 
+                             error=str(e),
+                             latitude=latitude,
+                             longitude=longitude)
+        
+        # Fallback to manual mapping
+        return TimezoneHelper._manual_timezone_lookup(
+            latitude,
+            longitude,
+            city,
+            state,
+        )
 
     @staticmethod
     def _manual_timezone_lookup(

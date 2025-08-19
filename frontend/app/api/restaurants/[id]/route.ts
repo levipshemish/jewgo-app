@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 
 export async function GET(
-  _request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  _request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
@@ -157,8 +159,8 @@ export async function GET(
     
     // Fallback to mock data on network error
     const mockRestaurant = {
-      id: parseInt((await params).id),
-      name: `Restaurant ${(await params).id}`,
+      id: parseInt(params.id),
+      name: `Restaurant ${params.id}`,
       address: '123 Main St',
       city: 'New York',
       state: 'NY',
@@ -198,9 +200,9 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
@@ -266,9 +268,9 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
@@ -319,9 +321,9 @@ export async function DELETE(
 }
 
 export async function PATCH(
-  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {

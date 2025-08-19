@@ -186,12 +186,21 @@ class DatabaseConnectionManager:
                     with dbapi_connection.cursor() as cursor:
                         cursor.execute(f"SET statement_timeout = {statement_timeout}")
                         cursor.execute(f"SET idle_in_transaction_session_timeout = {idle_tx_timeout}")
-                except Exception:
+                        logger.debug("Successfully set Neon timeouts", 
+                                   statement_timeout=statement_timeout,
+                                   idle_tx_timeout=idle_tx_timeout)
+                except Exception as e:
+                    logger.warning("Failed to set Neon timeouts on connection", 
+                                 error=str(e),
+                                 error_type=type(e).__name__,
+                                 statement_timeout=statement_timeout,
+                                 idle_tx_timeout=idle_tx_timeout)
                     # Non-fatal: leave defaults if SET fails
-                    pass
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to setup Neon timeout event listener", 
+                         error=str(e),
+                         error_type=type(e).__name__)
             # Non-fatal: proceed without event listener if unsupported
-            pass
 
     def _test_connection(self) -> None:
         """Test database connection."""

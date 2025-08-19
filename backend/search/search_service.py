@@ -1,5 +1,11 @@
 from utils.logging_config import get_logger
-from utils.cache_manager_v4 import CacheManagerV4
+
+try:
+    from utils.cache_manager_v4 import CacheManagerV4
+    CACHE_AVAILABLE = True
+except ImportError:
+    CacheManagerV4 = None
+    CACHE_AVAILABLE = False
 
 import time
 from typing import Any, Dict, List, Optional
@@ -56,12 +62,16 @@ class SearchService:
         self._initialize_providers()
         
         # Initialize cache manager
-        self.cache_manager = CacheManagerV4(
-            redis_url=self.config.redis_url if hasattr(self.config, 'redis_url') else None,
-            default_ttl=1800,  # 30 minutes for search results
-            enable_cache=True,
-            cache_prefix="jewgo:search:"
-        )
+        if CACHE_AVAILABLE:
+            self.cache_manager = CacheManagerV4(
+                redis_url=self.config.redis_url if hasattr(self.config, 'redis_url') else None,
+                default_ttl=1800,  # 30 minutes for search results
+                enable_cache=True,
+                cache_prefix="jewgo:search:"
+            )
+        else:
+            self.cache_manager = None
+            logger.warning("Cache manager not available, caching disabled")
         
         # Search statistics
         self.stats = {
@@ -126,14 +136,19 @@ class SearchService:
             if not search_type:
                 search_type = self.config.default_search_type
             
-            # Generate cache key
-            cache_key = self._generate_search_cache_key(query, search_type, filters, limit, offset, **kwargs)
-            
-            # Try to get from cache first
-            cached_result = self.cache_manager.get(cache_key)
-            if cached_result:
-                logger.info("Search cache hit", query=query, search_type=search_type)
-                return cached_result
+            # Generate cache key and try to get from cache first
+            if self.cache_manager:
+                cache_key = self._generate_search_cache_key(query, search_type, filters, limit, offset, **kwargs)
+                cached_result = self.cache_manager.get(cache_key)
+                if cached_result:
+                    logger.info("Search cache hit", query=query, search_type=search_type)
+                    # Update cache hit metadata
+                    if hasattr(cached_result, 'search_metadata') and cached_result.search_metadata:
+                        cached_result.search_metadata.cache_hit = True
+                        cached_result.search_metadata.timestamp = datetime.utcnow()
+                    # Update statistics for cache hit
+                    self._update_stats(search_type, 0, True, cache_hit=True)
+                    return cached_result
             
             # Get provider
             provider = self.providers.get(search_type)
@@ -153,14 +168,14 @@ class SearchService:
             # Get suggestions
             suggestions = await provider.get_suggestions(query, limit=10)
             
-            # Create search metadata
+            # Create search metadata (this is a fresh search, not from cache)
             search_metadata = SearchMetadata(
                 query=query,
                 search_type=SearchType(search_type),
                 filters_applied=filters.to_dict() if filters else {},
                 execution_time_ms=execution_time_ms,
                 results_count=len(results),
-                cache_hit=False,
+                cache_hit=False,  # This is a fresh search result
                 timestamp=datetime.utcnow()
             )
             
@@ -174,7 +189,8 @@ class SearchService:
             )
             
             # Cache the result
-            self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
+            if self.cache_manager:
+                self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
             
             # Update statistics
             self._update_stats(search_type, execution_time_ms, True)
@@ -305,7 +321,7 @@ class SearchService:
         
         return health_status
     
-    def _update_stats(self, search_type: str, execution_time_ms: int, success: bool):
+    def _update_stats(self, search_type: str, execution_time_ms: int, success: bool, cache_hit: bool = False):
         """Update search statistics."""
         self.stats['total_searches'] += 1
         
@@ -314,12 +330,13 @@ class SearchService:
         else:
             self.stats['failed_searches'] += 1
         
-        # Update average response time
-        current_avg = self.stats['average_response_time_ms']
-        total_searches = self.stats['total_searches']
-        self.stats['average_response_time_ms'] = (
-            (current_avg * (total_searches - 1) + execution_time_ms) / total_searches
-        )
+        # Update average response time (only for non-cache hits)
+        if not cache_hit:
+            current_avg = self.stats['average_response_time_ms']
+            total_searches = self.stats['total_searches']
+            self.stats['average_response_time_ms'] = (
+                (current_avg * (total_searches - 1) + execution_time_ms) / total_searches
+            )
         
         # Update search type distribution
         self.stats['search_type_distribution'][search_type] = (

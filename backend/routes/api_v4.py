@@ -106,13 +106,32 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 
 # Create Blueprint for v4 API routes only if all required dependencies are available
-if all([RestaurantServiceV4, ReviewServiceV4, UserServiceV4, UnifiedSearchService, 
-        APIError, ValidationError, NotFoundError, DatabaseError, ExternalServiceError,
-        CacheManagerV4, ConfigManager]):
+required_dependencies = [
+    RestaurantServiceV4, ReviewServiceV4, UserServiceV4, UnifiedSearchService,
+    APIError, ValidationError, NotFoundError, DatabaseError, ExternalServiceError,
+    CacheManagerV4, ConfigManager
+]
+
+missing_dependencies = [dep.__name__ if dep else "None" for dep in required_dependencies if not dep]
+
+if all(required_dependencies):
     api_v4 = Blueprint('api_v4', __name__, url_prefix='/api/v4')
+    logger.info("API v4 blueprint created successfully")
 else:
-    logger.warning("Not all required dependencies available for api_v4 - setting to None")
+    logger.warning(f"Missing dependencies for api_v4: {missing_dependencies}")
     api_v4 = None
+
+# Create a safe route decorator that only works when api_v4 is available
+def safe_route(path, methods=None, **kwargs):
+    """Safe route decorator that only works when api_v4 blueprint is available."""
+    if api_v4 is None:
+        # Return a no-op decorator when api_v4 is not available
+        def no_op_decorator(f):
+            logger.warning(f"Route {path} not registered - api_v4 blueprint unavailable")
+            return f
+        return no_op_decorator
+    
+    return api_v4.route(path, methods=methods, **kwargs)
 
 def get_service_dependencies():
     """Get service dependencies from app context."""
@@ -187,7 +206,7 @@ def not_found_response(message: str, resource_type: str = "resource"):
     return error_response(f"{resource_type.capitalize()} not found: {message}", 404)
 
 # Restaurant Routes
-@api_v4.route("/restaurants", methods=["GET"])
+@safe_route("/restaurants", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 def get_restaurants():
     """Get restaurants with optional filtering and pagination using v4 service."""
@@ -236,7 +255,7 @@ def get_restaurants():
         logger.exception("Error fetching restaurants", error=str(e))
         return error_response("Failed to fetch restaurants", 500)
 
-@api_v4.route("/restaurants/search", methods=["GET"])
+@safe_route("/restaurants/search", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 def search_restaurants():
     """Search restaurants by query using unified search service."""
@@ -303,7 +322,7 @@ def search_restaurants():
         logger.exception("Error searching restaurants", error=str(e))
         return error_response("Failed to search restaurants", 500)
 
-@api_v4.route("/restaurants/<int:restaurant_id>", methods=["GET"])
+@safe_route("/restaurants/<int:restaurant_id>", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 def get_restaurant(restaurant_id: int):
     """Get a specific restaurant by ID using v4 service."""
@@ -326,7 +345,7 @@ def get_restaurant(restaurant_id: int):
         logger.exception("Error fetching restaurant", restaurant_id=restaurant_id, error=str(e))
         return error_response("Failed to fetch restaurant", 500)
 
-@api_v4.route("/restaurants", methods=["POST"])
+@safe_route("/restaurants", methods=["POST"])
 @require_api_v4_flag("api_v4_restaurants")
 def create_restaurant():
     """Create a new restaurant using v4 service."""
@@ -355,7 +374,7 @@ def create_restaurant():
         logger.exception("Error creating restaurant", error=str(e))
         return error_response("Failed to create restaurant", 500)
 
-@api_v4.route("/restaurants/<int:restaurant_id>", methods=["PUT"])
+@safe_route("/restaurants/<int:restaurant_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_restaurants")
 def update_restaurant(restaurant_id: int):
     """Update a restaurant using v4 service."""
@@ -385,7 +404,7 @@ def update_restaurant(restaurant_id: int):
         logger.exception("Error updating restaurant", restaurant_id=restaurant_id, error=str(e))
         return error_response("Failed to update restaurant", 500)
 
-@api_v4.route("/restaurants/<int:restaurant_id>", methods=["DELETE"])
+@safe_route("/restaurants/<int:restaurant_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_restaurants")
 def delete_restaurant(restaurant_id: int):
     """Delete a restaurant using v4 service."""
@@ -410,7 +429,7 @@ def delete_restaurant(restaurant_id: int):
         return error_response("Failed to delete restaurant", 500)
 
 # Review Routes
-@api_v4.route("/reviews", methods=["GET"])
+@safe_route("/reviews", methods=["GET"])
 @require_api_v4_flag("api_v4_reviews")
 def get_reviews():
     """Get reviews with optional filtering using v4 service."""
@@ -461,7 +480,7 @@ def get_reviews():
         logger.exception("Error fetching reviews", error=str(e))
         return error_response("Failed to fetch reviews", 500)
 
-@api_v4.route("/reviews", methods=["POST"])
+@safe_route("/reviews", methods=["POST"])
 @require_api_v4_flag("api_v4_reviews")
 def create_review():
     """Create a new review using v4 service."""
@@ -490,7 +509,7 @@ def create_review():
         logger.exception("Error creating review", error=str(e))
         return error_response("Failed to create review", 500)
 
-@api_v4.route("/reviews/<int:review_id>", methods=["GET"])
+@safe_route("/reviews/<int:review_id>", methods=["GET"])
 @require_api_v4_flag("api_v4_reviews")
 def get_review(review_id: int):
     """Get a specific review by ID using v4 service."""
@@ -513,7 +532,7 @@ def get_review(review_id: int):
         logger.exception("Error fetching review", review_id=review_id, error=str(e))
         return error_response("Failed to fetch review", 500)
 
-@api_v4.route("/reviews/<int:review_id>", methods=["PUT"])
+@safe_route("/reviews/<int:review_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_reviews")
 def update_review(review_id: int):
     """Update a review using v4 service."""
@@ -543,7 +562,7 @@ def update_review(review_id: int):
         logger.exception("Error updating review", review_id=review_id, error=str(e))
         return error_response("Failed to update review", 500)
 
-@api_v4.route("/reviews/<int:review_id>", methods=["DELETE"])
+@safe_route("/reviews/<int:review_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_reviews")
 def delete_review(review_id: int):
     """Delete a review using v4 service."""
@@ -568,7 +587,7 @@ def delete_review(review_id: int):
         return error_response("Failed to delete review", 500)
 
 # User Routes (Admin only)
-@api_v4.route("/admin/users", methods=["GET"])
+@safe_route("/admin/users", methods=["GET"])
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_get_users():
@@ -605,7 +624,7 @@ def admin_get_users():
         logger.exception("Error fetching users", error=str(e))
         return error_response("Failed to fetch users", 500)
 
-@api_v4.route("/admin/users", methods=["PUT"])
+@safe_route("/admin/users", methods=["PUT"])
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_update_user():
@@ -634,7 +653,7 @@ def admin_update_user():
         logger.exception("Error updating user", error=str(e))
         return error_response("Failed to update user", 500)
 
-@api_v4.route("/admin/users", methods=["DELETE"])
+@safe_route("/admin/users", methods=["DELETE"])
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_delete_user():
@@ -665,7 +684,7 @@ def admin_delete_user():
         return error_response("Failed to delete user", 500)
 
 # Statistics Routes
-@api_v4.route("/statistics", methods=["GET"])
+@safe_route("/statistics", methods=["GET"])
 @require_api_v4_flag("api_v4_statistics")
 def get_statistics():
     """Get application statistics using v4 service."""
@@ -682,7 +701,7 @@ def get_statistics():
         return error_response("Failed to fetch statistics", 500)
 
 # Migration Status Routes
-@api_v4.route("/migration/status", methods=["GET"])
+@safe_route("/migration/status", methods=["GET"])
 def get_migration_status():
     """Get the current migration status for v4 API."""
     try:
@@ -694,7 +713,7 @@ def get_migration_status():
         logger.exception("Error fetching migration status", error=str(e))
         return error_response("Failed to fetch migration status", 500)
 
-@api_v4.route("/migration/health", methods=["GET"])
+@safe_route("/migration/health", methods=["GET"])
 def get_migration_health():
     """Get health status of v4 API components."""
     try:
@@ -743,7 +762,7 @@ def get_migration_health():
         return error_response("Failed to check migration health", 500)
 
 # Marketplace Routes
-@api_v4.route("/marketplace/products", methods=["GET"])
+@safe_route("/marketplace/products", methods=["GET"])
 def get_marketplace_products():
     """Get marketplace products with filtering and pagination."""
     try:
@@ -802,7 +821,7 @@ def get_marketplace_products():
         logger.exception("Error fetching marketplace products", error=str(e))
         return error_response("Failed to fetch marketplace products", 500)
 
-@api_v4.route("/marketplace/products/<product_id>", methods=["GET"])
+@safe_route("/marketplace/products/<product_id>", methods=["GET"])
 def get_marketplace_product(product_id):
     """Get a single marketplace product by ID."""
     try:
@@ -821,7 +840,7 @@ def get_marketplace_product(product_id):
         logger.exception("Error fetching marketplace product", error=str(e))
         return error_response("Failed to fetch marketplace product", 500)
 
-@api_v4.route("/marketplace/products/featured", methods=["GET"])
+@safe_route("/marketplace/products/featured", methods=["GET"])
 def get_featured_products():
     """Get featured marketplace products."""
     try:
@@ -844,7 +863,7 @@ def get_featured_products():
         logger.exception("Error fetching featured products", error=str(e))
         return error_response("Failed to fetch featured products", 500)
 
-@api_v4.route("/marketplace/categories", methods=["GET"])
+@safe_route("/marketplace/categories", methods=["GET"])
 def get_marketplace_categories():
     """Get marketplace categories."""
     try:
@@ -863,7 +882,7 @@ def get_marketplace_categories():
         logger.exception("Error fetching marketplace categories", error=str(e))
         return error_response("Failed to fetch marketplace categories", 500)
 
-@api_v4.route("/marketplace/vendors", methods=["GET"])
+@safe_route("/marketplace/vendors", methods=["GET"])
 def get_marketplace_vendors():
     """Get marketplace vendors."""
     try:
@@ -882,7 +901,7 @@ def get_marketplace_vendors():
         logger.exception("Error fetching marketplace vendors", error=str(e))
         return error_response("Failed to fetch marketplace vendors", 500)
 
-@api_v4.route("/marketplace/search", methods=["GET"])
+@safe_route("/marketplace/search", methods=["GET"])
 def search_marketplace():
     """Search marketplace products."""
     try:
@@ -910,7 +929,7 @@ def search_marketplace():
         logger.exception("Error searching marketplace", error=str(e))
         return error_response("Failed to search marketplace", 500)
 
-@api_v4.route("/marketplace/stats", methods=["GET"])
+@safe_route("/marketplace/stats", methods=["GET"])
 def get_marketplace_stats():
     """Get marketplace statistics."""
     try:

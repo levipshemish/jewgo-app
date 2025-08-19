@@ -8,7 +8,6 @@ Werkzeug==2.3.7
 # Database
 SQLAlchemy>=2.0.30
 psycopg[binary]==3.2.9
-psycopg2-binary==2.9.7
 alembic==1.13.1
 
 # Caching and Performance

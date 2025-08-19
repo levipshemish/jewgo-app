@@ -1,13 +1,28 @@
 from utils.logging_config import get_logger
 
+try:
+    from utils.cache_manager_v4 import CacheManagerV4
+    CACHE_AVAILABLE = True
+except ImportError:
+    CacheManagerV4 = None
+    CACHE_AVAILABLE = False
+
 import time
+import hashlib
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 
 
-from utils.error_handler import handle_database_operation
+try:
+    from utils.error_handler import handle_database_operation
+    ERROR_HANDLER_AVAILABLE = True
+except ImportError:
+    def handle_database_operation(func):
+        return func
+    ERROR_HANDLER_AVAILABLE = False
 from utils.config_manager import ConfigManager
 
 from database.database_manager_v3 import Restaurant
@@ -190,6 +205,17 @@ class UnifiedSearchService:
         """Initialize the unified search service."""
         self.session = db_session
         self.config = ConfigManager()
+        
+        # Initialize cache manager
+        if CACHE_AVAILABLE:
+            self.cache_manager = CacheManagerV4(
+                default_ttl=1800,  # 30 minutes for search results
+                enable_cache=True,
+                cache_prefix="jewgo:unified_search:"
+            )
+        else:
+            self.cache_manager = None
+            logger.warning("Cache manager not available, caching disabled")
 
     @handle_database_operation
     def search_restaurants(
@@ -219,6 +245,19 @@ class UnifiedSearchService:
             filters=filters.to_dict()
         )
 
+        # Generate cache key and try to get from cache first
+        if self.cache_manager:
+            cache_key = self._generate_search_cache_key(search_type, filters)
+            cached_result = self.cache_manager.get(cache_key)
+            if cached_result:
+                logger.info("Unified search cache hit", 
+                           search_type=search_type.value,
+                           filters=filters.to_dict())
+                # Update cache hit metadata
+                cached_result.cache_hit = True
+                cached_result.timestamp = datetime.utcnow()
+                return cached_result
+
         try:
             if search_type == SearchType.BASIC:
                 results, total_count = self._basic_search(filters)
@@ -246,6 +285,10 @@ class UnifiedSearchService:
                 filters_applied=filters,
                 suggestions=suggestions
             )
+            
+            # Cache the result
+            if self.cache_manager:
+                self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
 
             logger.info(
                 "Search completed successfully",
@@ -614,6 +657,28 @@ class UnifiedSearchService:
         stats["by_listing_type"] = {listing_type: count for listing_type, count in type_counts if listing_type}
 
         return stats
+
+    def _generate_search_cache_key(self, search_type: SearchType, filters: SearchFilters) -> str:
+        """Generate a unique cache key for search results.
+        
+        Args:
+            search_type: Type of search
+            filters: Search filters
+            
+        Returns:
+            Unique cache key string
+        """
+        # Create a dictionary of all parameters
+        key_data = {
+            'search_type': search_type.value,
+            'filters': filters.to_dict()
+        }
+        
+        # Convert to JSON string and hash
+        key_string = json.dumps(key_data, sort_keys=True)
+        key_hash = hashlib.md5(key_string.encode()).hexdigest()
+        
+        return f"unified_search:{key_hash}"
 
 
 # Factory function for creating search service
