@@ -109,7 +109,7 @@ export default function InteractiveRestaurantMap({
   const {
     markersRef,
     markersMapRef,
-    clustererRef: _clustererRef,
+    clustererRef,
     getRestaurantKey,
     cleanupMarkers,
     createMarker,
@@ -215,6 +215,7 @@ export default function InteractiveRestaurantMap({
   const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentRenderedIdsRef = useRef<Set<number>>(new Set());
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isClusteringRef = useRef<boolean>(false);
   // Marker pool disabled to prevent "old marker" content issues
   const markerPoolRef = useRef<Map<string, (google.maps.marker.AdvancedMarkerElement | google.maps.Marker)[]>>(new Map());
@@ -222,6 +223,7 @@ export default function InteractiveRestaurantMap({
 
 
   // Safe error message helper
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const safeErrorMessage = useCallback((err: unknown): string => {
     if (err && typeof err === 'object' && 'message' in (err as any)) {
       return String((err as any).message ?? 'Unknown error');
@@ -230,7 +232,7 @@ export default function InteractiveRestaurantMap({
   }, []);
 
   // Marker pooling helper for better performance
-  const getPooledMarker = useCallback((restaurant: Restaurant, map: google.maps.Map) => {
+  const getPooledMarker = useCallback((restaurant: Restaurant, _map: google.maps.Map) => {
     const key = getRestaurantKey(restaurant);
     const pool = markerPoolRef.current.get(key);
     
@@ -245,7 +247,7 @@ export default function InteractiveRestaurantMap({
   }, [getRestaurantKey]);
 
   // Simplified marker cleanup without pooling to avoid content issues
-  const returnMarkerToPool = useCallback((marker: google.maps.marker.AdvancedMarkerElement, key: string) => {
+  const returnMarkerToPool = useCallback((marker: google.maps.marker.AdvancedMarkerElement, _key: string) => {
     try {
       // Remove from map and let garbage collection handle cleanup
       (marker as any).map = null;
@@ -477,7 +479,7 @@ export default function InteractiveRestaurantMap({
             try {
               renderVisibleMarkers();
               computeVisibleCount();
-            } catch (_) {}
+            } catch {}
           }, 250); // Increased to 250ms delay after idle for better performance
         });
 
@@ -507,7 +509,7 @@ export default function InteractiveRestaurantMap({
           renderTimeoutRef.current = safeSetTimeout(() => {
             try { 
               renderVisibleMarkers(); 
-            } catch (_) {}
+            } catch {}
           }, 100);
           // Remove the listener after it fires once
           if (tilesLoadedListener) {
@@ -897,6 +899,7 @@ export default function InteractiveRestaurantMap({
 
 
   // Function to get directions to a restaurant
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getDirectionsToRestaurant = useCallback((restaurant: Restaurant) => {
     if (!userLocation || !mapInstanceRef.current || !restaurant.latitude || !restaurant.longitude) {
       setNotification({
