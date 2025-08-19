@@ -279,9 +279,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Flexible height with better text handling */}
-        <div className="min-h-8 mb-1 flex items-start">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2 break-words">
+        {/* Restaurant Name - Single line with truncation */}
+        <div className="h-8 mb-1 flex items-center">
+          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate">
             {titleCase(restaurant.name)}
           </h3>
         </div>
