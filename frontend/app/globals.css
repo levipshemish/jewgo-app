@@ -585,11 +585,21 @@ html {
 
 /* Responsive Adjustments */
 @media (max-width: 640px) {
-  /* Force 2-column grid for mobile devices */
-  .restaurant-grid.mobile-grid-2,
-  .restaurant-grid.grid.mobile-grid-2,
-  .grid.restaurant-grid.mobile-grid-2 {
+  /* Ensure proper grid behavior on mobile */
+  .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Remove any horizontal scrolling on mobile */
+  .restaurant-grid {
+    overflow-x: visible !important;
+    flex-wrap: wrap !important;
+  }
+  
+  /* Ensure cards don't have fixed widths on mobile */
+  .restaurant-card {
+    min-width: 0 !important;
+    width: 100% !important;
   }
   
   .restaurant-card {
