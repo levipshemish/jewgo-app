@@ -179,8 +179,21 @@ def create_user_service():
 
 def create_marketplace_service():
     """Create and return a MarketplaceServiceV4 instance."""
-    db_manager, cache_manager, config = get_service_dependencies()
-    return MarketplaceServiceV4(db_manager) if MarketplaceServiceV4 else None
+    try:
+        db_manager, cache_manager, config = get_service_dependencies()
+        if not db_manager:
+            logger.error("Database manager not available for marketplace service")
+            return None
+        
+        service = MarketplaceServiceV4(db_manager) if MarketplaceServiceV4 else None
+        if service:
+            logger.info("MarketplaceServiceV4 created successfully")
+        else:
+            logger.error("Failed to create MarketplaceServiceV4")
+        return service
+    except Exception as e:
+        logger.error(f"Error creating marketplace service: {str(e)}")
+        return None
 
 def success_response(data: Any, message: str = "Success", status_code: int = 200):
     """Create a standardized success response."""
