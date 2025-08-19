@@ -263,9 +263,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Separate transparent container */}
+      {/* Text Content Container - White background with rounded corners overlaying image */}
       <motion.div 
-        className="p-1.5 bg-transparent"
+        className="p-1.5 bg-white rounded-3xl -mt-4 relative z-10 shadow-sm"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
