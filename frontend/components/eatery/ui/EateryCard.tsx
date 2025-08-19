@@ -202,10 +202,11 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         <AnimatePresence>
           {restaurant.kosher_category && (
             <SpanContainer 
-              className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium shadow-sm ${getKosherCategoryStyle()}`}
+              className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium shadow-sm max-w-[calc(100%-3rem)] truncate kosher-badge ${getKosherCategoryStyle()}`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
+              title={titleCase(restaurant.kosher_category)}
             >
               {titleCase(restaurant.kosher_category)}
             </SpanContainer>
@@ -280,21 +281,21 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Single line with truncation */}
-        <div className="h-8 mb-0.5 flex items-center w-full">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate w-full">
+        <div className="h-8 mb-0.5 flex items-center w-full min-w-0">
+          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate w-full min-w-0" title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
         {/* Price Range and Rating - Swapped positions */}
-        <div className="flex items-center justify-between min-w-0">
-          <SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2">
+        <div className="flex items-center justify-between min-w-0 w-full">
+          <SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2 min-w-0 price-text" title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-semibold text-gray-800">
+          <div className="flex items-center gap-1 flex-shrink-0 rating-container">
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon" />
+            <span className="text-xs font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text">
               {getRating().toFixed(1)}
             </span>
           </div>
@@ -310,20 +311,20 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           >
             {/* Location */}
             {restaurant.city && (
-              <div className="flex items-center text-xs text-gray-500">
-                <span className="truncate break-words">{restaurant.city}</span>
+              <div className="flex items-center text-xs text-gray-500 min-w-0">
+                <span className="truncate break-words min-w-0 w-full location-text" title={restaurant.city}>{restaurant.city}</span>
               </div>
             )}
 
             {/* Kosher Details */}
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 mt-2 min-w-0">
               {restaurant.is_cholov_yisroel && (
-                <SpanContainer className="inline-block px-2 py-1 bg-[#FCC0C5]/20 text-[#8a4a4a] text-xs rounded-full border border-[#FCC0C5]">
+                <SpanContainer className="inline-block px-2 py-1 bg-[#FCC0C5]/20 text-[#8a4a4a] text-xs rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge" title="Chalav Yisroel">
                   Chalav Yisroel
                 </SpanContainer>
               )}
               {restaurant.is_pas_yisroel && (
-                <SpanContainer className="inline-block px-2 py-1 bg-[#74E1A0]/20 text-[#1a4a2a] text-xs rounded-full border border-[#74E1A0]">
+                <SpanContainer className="inline-block px-2 py-1 bg-[#74E1A0]/20 text-[#1a4a2a] text-xs rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge" title="Pas Yisroel">
                   Pas Yisroel
                 </SpanContainer>
               )}
