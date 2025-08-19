@@ -168,8 +168,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         })
       }}
     >
-      {/* Image Container - Using balanced aspect ratio with rounded top corners only */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-t-3xl">
+      {/* Image Container - Using balanced aspect ratio with full rounded corners */}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl mb-3">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -263,9 +263,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Positioned below image, flush with page */}
+      {/* Text Content Container - Positioned below image with spacing */}
       <motion.div 
-        className="p-3 bg-white rounded-b-3xl shadow-sm"
+        className="p-3 bg-white rounded-3xl shadow-sm"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
