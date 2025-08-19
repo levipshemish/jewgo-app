@@ -8,9 +8,14 @@ import os
 import sys
 from datetime import datetime
 from typing import List, Dict, Any
+from pathlib import Path
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.logging_config import get_logger
