@@ -92,7 +92,7 @@ export default function EnhancedFilters({
     return localFilters[key] !== '';
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">

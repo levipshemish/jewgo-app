@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-import { showToast } from './Toast';
+import { useToast } from './Toast';
 
 interface PasswordChangeModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export default function PasswordChangeModal({ isOpen, onClose, onSuccess }: Pass
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { showError, showSuccess } = useToast();
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -53,22 +54,22 @@ export default function PasswordChangeModal({ isOpen, onClose, onSuccess }: Pass
 
   const validateForm = () => {
     if (!currentPassword.trim()) {
-      showToast('Please enter your current password', 'error');
+      showError('Please enter your current password');
       return false;
     }
 
     if (newPassword.length < 8) {
-      showToast('New password must be at least 8 characters long', 'error');
+      showError('New password must be at least 8 characters long');
       return false;
     }
 
     if (newPassword !== confirmPassword) {
-      showToast('New passwords do not match', 'error');
+      showError('New passwords do not match');
       return false;
     }
 
     if (newPassword === currentPassword) {
-      showToast('New password must be different from current password', 'error');
+      showError('New password must be different from current password');
       return false;
     }
 
@@ -93,13 +94,13 @@ export default function PasswordChangeModal({ isOpen, onClose, onSuccess }: Pass
         throw new Error('Current password is incorrect');
       }
       
-      showToast('Password changed successfully!', 'success');
+      showSuccess('Password changed successfully!');
       onSuccess?.();
       onClose();
       
     } catch (error) {
       // // console.error('Password change failed:', error);
-      showToast(error instanceof Error ? error.message : 'Failed to change password', 'error');
+      showError(error instanceof Error ? error.message : 'Failed to change password');
     } finally {
       setIsLoading(false);
     }

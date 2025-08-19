@@ -64,7 +64,7 @@ function ResetPasswordForm() {
 
     try {
       const { error } = await supabaseBrowser.auth.updateUser({
-        password: password,
+        password,
       });
 
       if (error) {

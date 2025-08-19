@@ -1,182 +1,162 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-
-import { safeFilter } from '@/lib/utils/validation';
-
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface ToastProps {
-  id: string;
-  type: ToastType;
   message: string;
+  type: "success" | "error" | "info" | "warning";
   duration?: number;
-  onRemove: (id: string) => void;
+  onClose: () => void;
 }
 
-
-
-// Toast Component
-function Toast({ id, type, message, duration = 5000, onRemove }: ToastProps) {
-  const [isVisible, setIsVisible] = useState(false);
+export function Toast({ message, type, duration = 5000, onClose }: ToastProps) {
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Animate in
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    
-    // Auto remove
-    const removeTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(() => onRemove(id), 300); // Wait for animation
+      setTimeout(onClose, 300); // Wait for fade out animation
     }, duration);
 
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(removeTimer);
-    };
-  }, [id, duration, onRemove]);
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
 
   const getToastStyles = () => {
-    const baseClass = "flex items-center space-x-3 p-4 rounded-lg shadow-lg max-w-sm w-full transform transition-all duration-300";
+    const baseStyles = "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300";
+    
     switch (type) {
-      case 'success':
-        return `${baseClass} bg-green-500 text-white`;
-      case 'error':
-        return `${baseClass} bg-red-500 text-white`;
-      case 'warning':
-        return `${baseClass} bg-yellow-500 text-white`;
+      case "success":
+        return `${baseStyles} bg-green-500 text-white`;
+      case "error":
+        return `${baseStyles} bg-red-500 text-white`;
+      case "warning":
+        return `${baseStyles} bg-yellow-500 text-white`;
+      case "info":
+        return `${baseStyles} bg-blue-500 text-white`;
       default:
-        return `${baseClass} bg-blue-500 text-white`;
+        return `${baseStyles} bg-gray-500 text-white`;
     }
   };
 
   const getIcon = () => {
     switch (type) {
-      case 'success':
+      case "success":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
         );
-      case 'error':
+      case "error":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
         );
-      case 'warning':
+      case "warning":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        );
+      case "info":
+        return (
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
         );
       default:
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
+        return null;
     }
   };
 
-  return (
-    <div 
-      className={`${getToastStyles()} ${
-        isVisible 
-          ? 'translate-x-0 opacity-100' 
-          : 'translate-x-full opacity-0'
-      }`}
-    >
-      {getIcon()}
-      <span className="flex-1 text-sm font-medium">{message}</span>
-      <button
-        onClick={() => {
-          setIsVisible(false);
-          setTimeout(() => onRemove(id), 300);
-        }}
-        className="text-white/80 hover:text-white transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+  const toastElement = (
+    <div className={`${getToastStyles()} ${isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}`}>
+      <div className="flex items-start space-x-3">
+        <div className="flex-shrink-0">
+          {getIcon()}
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium">{message}</p>
+        </div>
+        <div className="flex-shrink-0">
+          <button
+            onClick={() => {
+              setIsVisible(false);
+              setTimeout(onClose, 300);
+            }}
+            className="inline-flex text-white hover:text-gray-200 focus:outline-none focus:text-gray-200 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
+
+  // Use portal to render toast at the top level
+  if (typeof window !== "undefined") {
+    return createPortal(toastElement, document.body);
+  }
+
+  return null;
 }
 
-// Toast Container
-export function ToastContainer() {
-  const [toasts, setToasts] = useState<Array<{ id: string; type: ToastType; message: string; duration?: number }>>([]);
-  const [mounted, setMounted] = useState(false);
+// Toast manager hook
+interface ToastItem {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info" | "warning";
+  duration?: number;
+}
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+export function useToast() {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => safeFilter(prev, toast => toast.id !== id));
-  }, []);
-
-  const showToast = (message: string, type: ToastType = 'info', duration?: number) => {
+  const addToast = (message: string, type: "success" | "error" | "info" | "warning" = "info", duration?: number) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setToasts(prev => [...prev, { id, type, message, duration }]);
+    const newToast: ToastItem = { id, message, type, duration };
+    
+    setToasts(prev => [...prev, newToast]);
   };
 
-  // Make showToast available globally
-  useEffect(() => {
-    if (mounted) {
-      (window as Window & { showToast?: typeof showToast }).showToast = showToast;
-      return () => {
-        delete (window as Window & { showToast?: typeof showToast }).showToast;
-      };
-    }
-    return undefined;
-  }, [mounted, showToast]);
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
-  // Don't render until mounted to prevent hydration issues
-  if (!mounted) {
-    return null;
-  }
+  const showSuccess = (message: string, duration?: number) => addToast(message, "success", duration);
+  const showError = (message: string, duration?: number) => addToast(message, "error", duration);
+  const showInfo = (message: string, duration?: number) => addToast(message, "info", duration);
+  const showWarning = (message: string, duration?: number) => addToast(message, "warning", duration);
+
+  return {
+    toasts,
+    addToast,
+    removeToast,
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning,
+  };
+}
+
+// Toast container component
+export function ToastContainer() {
+  const { toasts, removeToast } = useToast();
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
       {toasts.map(toast => (
         <Toast
           key={toast.id}
-          id={toast.id}
-          type={toast.type}
           message={toast.message}
+          type={toast.type}
           duration={toast.duration}
-          onRemove={removeToast}
+          onClose={() => removeToast(toast.id)}
         />
       ))}
     </div>
   );
-}
-
-// Hook for using toasts
-export function useToast() {
-  const showToast = (message: string, type: ToastType = 'info', duration?: number) => {
-    if (typeof window !== 'undefined' && (window as Window & { showToast?: typeof showToast }).showToast) {
-      (window as Window & { showToast?: typeof showToast }).showToast!(message, type, duration);
-    } else {
-      // Fallback to console
-      if (process.env.NODE_ENV === 'development') {
-        // Console logging removed for production
-      }
-    }
-  };
-
-  return { showToast };
-}
-
-// Global function for easy access
-export const showToast = (message: string, type: ToastType = 'info', duration?: number) => {
-  if (typeof window !== 'undefined' && (window as Window & { showToast?: typeof showToast }).showToast) {
-    (window as Window & { showToast?: typeof showToast }).showToast!(message, type, duration);
-  } else {
-    if (process.env.NODE_ENV === 'development') {
-      // Console logging removed for production
-    }
-  }
-}; 
+} 

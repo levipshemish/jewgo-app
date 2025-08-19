@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 
 import { safeFilter } from '@/lib/utils/validation';
 
-import { showToast } from './Toast';
+import { useToast } from './Toast';
 
 interface NotificationPreference {
   id: string;
@@ -28,6 +28,7 @@ export default function NotificationPreferences({
   const [preferences, setPreferences] = useState<NotificationPreference[]>(initialPreferences);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const { showSuccess, showError, showInfo } = useToast();
 
   const updatePreference = (id: string, channel: 'email' | 'push' | 'sms', value: boolean) => {
     setPreferences(prev => 
@@ -54,9 +55,9 @@ export default function NotificationPreferences({
     try {
       await onSave(preferences);
       setHasChanges(false);
-      showToast('Notification preferences saved!', 'success');
+      showSuccess('Notification preferences saved!');
     } catch {
-      showToast('Failed to save preferences. Please try again.', 'error');
+      showError('Failed to save preferences. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -65,7 +66,7 @@ export default function NotificationPreferences({
   const handleReset = () => {
     setPreferences(initialPreferences);
     setHasChanges(false);
-    showToast('Preferences reset to defaults', 'info');
+    showInfo('Preferences reset to defaults');
   };
 
   const getPreferencesByCategory = (category: string) => {

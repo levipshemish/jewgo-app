@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { showToast } from './Toast';
+import { useToast } from './Toast';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';
@@ -44,6 +44,7 @@ export function LoadingButton({
   children, onClick, loading = false, disabled = false, variant = 'primary', size = 'md', className = '', loadingText = 'Loading...', onError
 }: LoadingButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { showError } = useToast();
 
 
   const isDisabled = disabled || loading || isLoading;
@@ -70,7 +71,7 @@ export function LoadingButton({
     } catch (err) {
       const error = err instanceof Error ? err : new Error('An error occurred');
       onError?.(error);
-      showToast(error.message, 'error');
+      showError(error.message);
     } finally {
       setIsLoading(false);
     }

@@ -82,7 +82,7 @@ export default function CategoryFilter({
   };
 
   const filteredCategories = categories.filter(category => {
-    if (!searchQuery) return true;
+    if (!searchQuery) {return true;}
     const matchesCategory = category.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubcategory = category.subcategories?.some(sub => 
       sub.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,7 +95,7 @@ export default function CategoryFilter({
     sub => sub.slug === selectedSubcategory
   );
 
-  if (!isOpen) return null;
+  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">

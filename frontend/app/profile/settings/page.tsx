@@ -4,12 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import AvatarUpload from "@/components/profile/AvatarUpload";
+import ProfileEditForm from "@/components/profile/ProfileEditForm";
+import { ToastContainer } from "@/components/ui/Toast";
 
 interface User {
   id: string;
   email: string | undefined;
   name?: string;
   provider: string;
+  avatar_url?: string | null;
+  username?: string;
 }
 
 export default function SettingsPage() {
@@ -28,7 +33,8 @@ export default function SettingsPage() {
             id: user.id,
             email: user.email || '',
             name: user.user_metadata?.full_name || user.user_metadata?.name,
-            provider: 'supabase'
+            provider: 'supabase',
+            avatar_url: user.user_metadata?.avatar_url || null
           });
         }
       } catch (error) {
@@ -74,6 +80,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "account", name: "Account", icon: "👤" },
+    { id: "profile", name: "Profile", icon: "📝" },
     { id: "security", name: "Security", icon: "🔒" },
     { id: "notifications", name: "Notifications", icon: "🔔" },
     { id: "privacy", name: "Privacy", icon: "🛡️" },
@@ -124,6 +131,9 @@ export default function SettingsPage() {
             {activeTab === "account" && (
               <AccountSettings user={user} />
             )}
+            {activeTab === "profile" && (
+              <ProfileSettings user={user} />
+            )}
             {activeTab === "security" && (
               <SecuritySettings user={user} />
             )}
@@ -136,6 +146,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }
@@ -144,6 +157,7 @@ function AccountSettings({ user }: { user: User }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.name || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState(user);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -157,6 +171,8 @@ function AccountSettings({ user }: { user: User }) {
       }
 
       setIsEditing(false);
+      // Update local state
+      setCurrentUser(prev => ({ ...prev, name }));
       // You might want to show a success message here
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -166,6 +182,10 @@ function AccountSettings({ user }: { user: User }) {
     }
   };
 
+  const handleAvatarChange = (avatarUrl: string) => {
+    setCurrentUser(prev => ({ ...prev, avatar_url: avatarUrl || null }));
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -173,10 +193,19 @@ function AccountSettings({ user }: { user: User }) {
         <p className="text-sm text-gray-500">Update your basic account information.</p>
       </div>
 
+      {/* Avatar Upload Section */}
+      <div>
+        <h4 className="text-md font-medium text-gray-900 mb-4">Profile Picture</h4>
+        <AvatarUpload
+          currentAvatarUrl={currentUser.avatar_url}
+          onAvatarChange={handleAvatarChange}
+        />
+      </div>
+
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Email</label>
-          <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+          <p className="mt-1 text-sm text-gray-900">{currentUser.email}</p>
           <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
         </div>
 
@@ -220,7 +249,42 @@ function AccountSettings({ user }: { user: User }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Authentication Provider</label>
-          <p className="mt-1 text-sm text-gray-900 capitalize">{user.provider}</p>
+          <p className="mt-1 text-sm text-gray-900 capitalize">{currentUser.provider}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileSettings({ user }: { user: User }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
+        <p className="text-sm text-gray-500">Update your profile details and preferences.</p>
+      </div>
+      
+      <ProfileEditForm />
+      
+      {/* Public Profile Link */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-blue-900 mb-2">Public Profile</h4>
+        <p className="text-sm text-blue-700 mb-3">
+          Share your profile with others. Your public profile will be available at:
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            /u/{user.username || 'your-username'}
+          </code>
+          {user.username && (
+            <Link
+              href={`/u/${user.username}`}
+              target="_blank"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              View Profile →
+            </Link>
+          )}
         </div>
       </div>
     </div>
