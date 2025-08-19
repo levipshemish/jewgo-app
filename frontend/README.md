@@ -90,7 +90,7 @@ frontend/
 
 Required environment variables (see `.env.example`):
 - `DATABASE_URL` - Database connection string
-- `NEXTAUTH_SECRET` - NextAuth secret
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `GOOGLE_MAPS_API_KEY` - Google Maps API key
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous key

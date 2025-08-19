@@ -71,7 +71,7 @@ The application provides comprehensive filtering options to help users find exac
 ## 🔐 Authentication & User Management
 
 ### Authentication System
-- **NextAuth.js**: Secure authentication framework
+- **Supabase Auth**: Secure authentication framework
 - **Google OAuth**: Sign in with Google account
 - **Session Management**: Persistent login sessions
 - **Protected Routes**: Secure access to user-specific features

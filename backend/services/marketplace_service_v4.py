@@ -52,14 +52,13 @@ class MarketplaceServiceV4:
     ) -> Dict[str, Any]:
         """Get marketplace listings with filtering and pagination."""
         try:
-            # Build query for marketplace table with specific column order
+            # Build query for marketplace table with correct column names
             query = """
                 SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                       m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                       m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
                        m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
                        m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                       m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
-                       m.vendor_name as seller_name
+                       m.updated_at, m.category, m.subcategory
                 FROM marketplace m
                 WHERE m.status = %s
             """
@@ -128,7 +127,7 @@ class MarketplaceServiceV4:
             params.extend([limit, offset])
             
             # Execute query using direct database connection
-            with self.db_manager.connection_manager.get_connection() as conn:
+            with self.db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Execute main query
                     cursor.execute(query, params)
@@ -165,29 +164,29 @@ class MarketplaceServiceV4:
                     'country': 'US',  # Default country
                     'lat': float(listing[8]) if listing[8] else None,  # latitude
                     'lng': float(listing[9]) if listing[9] else None,  # longitude
-                    'seller_user_id': listing[10],  # vendor_id
+                    'seller_user_id': None,  # vendor_id doesn't exist in marketplace table
                     'attributes': {
-                        'vendor_name': listing[11],  # vendor_name
-                        'vendor_phone': listing[12],  # vendor_phone
-                        'vendor_email': listing[13],  # vendor_email
-                        'kosher_agency': listing[14],  # kosher_agency
-                        'kosher_level': listing[15],  # kosher_level
-                        'is_available': listing[16],  # is_available
-                        'is_featured': listing[17],  # is_featured
-                        'is_on_sale': listing[18],  # is_on_sale
-                        'discount_percentage': listing[19],  # discount_percentage
-                        'stock': listing[20],  # stock
-                        'rating': float(listing[21]) if listing[21] else None,  # rating
-                        'review_count': listing[22] or 0  # review_count
+                        'vendor_name': listing[10],  # vendor_name
+                        'vendor_phone': listing[11],  # vendor_phone
+                        'vendor_email': listing[12],  # vendor_email
+                        'kosher_agency': listing[13],  # kosher_agency
+                        'kosher_level': listing[14],  # kosher_level
+                        'is_available': listing[15],  # is_available
+                        'is_featured': listing[16],  # is_featured
+                        'is_on_sale': listing[17],  # is_on_sale
+                        'discount_percentage': listing[18],  # discount_percentage
+                        'stock': listing[19],  # stock
+                        'rating': float(listing[20]) if listing[20] else None,  # rating
+                        'review_count': listing[21] or 0  # review_count
                     },
                     'endorse_up': 0,  # Default values
                     'endorse_down': 0,  # Default values
-                    'status': listing[23],  # status
-                    'created_at': listing[24].isoformat() if listing[24] else None,  # created_at
-                    'updated_at': listing[25].isoformat() if listing[25] else None,  # updated_at
-                    'category_name': listing[26],  # category_name (from alias)
-                    'subcategory_name': listing[27],  # subcategory_name (from alias)
-                    'seller_name': listing[28]  # seller_name (from alias)
+                    'status': listing[22],  # status
+                    'created_at': listing[23].isoformat() if listing[23] else None,  # created_at
+                    'updated_at': listing[24].isoformat() if listing[24] else None,  # updated_at
+                    'category_name': listing[25],  # category
+                    'subcategory_name': listing[26],  # subcategory
+                    'seller_name': listing[10]  # vendor_name as seller_name
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -212,7 +211,7 @@ class MarketplaceServiceV4:
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.connection_manager.get_connection() as conn:
+            with self.db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 

@@ -112,7 +112,7 @@ export default function HomePage() {
                 <h3 className="font-semibold text-gray-900 mb-2">Current Implementation</h3>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>✅ Supabase Auth (Primary)</li>
-                  <li>✅ NextAuth.js (Fallback)</li>
+                  <li>✅ Supabase Auth (Primary)</li>
                   <li>✅ Protected Routes</li>
                   <li>✅ Admin Authentication</li>
                   <li>✅ Google OAuth</li>

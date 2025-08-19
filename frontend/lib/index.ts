@@ -8,7 +8,7 @@ export * from './api/health';
 export * from './api/specials';
 
 // Auth exports
-export * from './auth/mfa-manager';
+
 
 // Config exports
 export * from './api-config';

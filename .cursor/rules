@@ -12,7 +12,7 @@
 - **Frontend**: Next.js 15 App Router, React 18, TypeScript strict, Tailwind, Prisma, Zod, SWR
 - **Backend**: Flask 2.3, SQLAlchemy, Postgres (Neon), Redis
 - **APIs**: BE https://jewgo.onrender.com, FE https://jewgo-app.vercel.app; dev 5000/3000
-- **Auth Levels**: Public, User(NextAuth), Admin(ADMIN_TOKEN), Scraper(SCRAPER_TOKEN)
+- **Auth Levels**: Public, User(Supabase), Admin(ADMIN_TOKEN), Scraper(SCRAPER_TOKEN)
 - **Key Endpoints**: /api/restaurants(+/search, /{id}, /{id}/hours, /{id}/specials), /api/reviews(+/{id}), /api/admin/{users,restaurants,reviews}, /api/admin/cache/{clear,stats}, feature-flags
 
 ## Core Principles

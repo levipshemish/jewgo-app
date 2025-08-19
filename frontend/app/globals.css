@@ -534,6 +534,20 @@ html {
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
     width: 100% !important;
+    font-size: 0.875rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Mobile-specific container styling */
+  .restaurant-card .flex.items-center {
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  
+  /* Ensure proper text container width on mobile */
+  .restaurant-card .w-full {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }
 
@@ -585,8 +599,23 @@ html {
     @apply text-lg;
   }
 
-  h3 {
-    @apply text-base;
+  /* Restaurant card text - ensure proper truncation and sizing on mobile */
+  .restaurant-card h3 {
+    @apply text-sm;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Mobile-specific spacing for restaurant cards */
+  .restaurant-card .p-1 {
+    padding: 0.25rem !important;
+  }
+  
+  .restaurant-card .mb-0\.5 {
+    margin-bottom: 0.125rem !important;
   }
 
   /* Improve mobile navigation */

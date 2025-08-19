@@ -288,25 +288,7 @@ class ReviewFlag(Base):
     resolution_notes = Column(Text, nullable=True)
 
 
-class User(Base):
-    """User model for NextAuth integration.
-    
-    This model represents users in the NextAuth schema.
-    Note: This is read-only for admin purposes - user creation/auth handled by NextAuth.
-    """
 
-    __tablename__ = "User"
-    __table_args__ = {"schema": "nextauth"}
-
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=True)
-    email = Column(String, nullable=False, unique=True)
-    emailVerified = Column(DateTime, nullable=True)
-    image = Column(String, nullable=True)
-    password = Column(String, nullable=True)
-    isSuperAdmin = Column(Boolean, nullable=False, default=False)
-    createdAt = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 class Marketplace(Base):
