@@ -1,18 +1,16 @@
+#!/usr/bin/env node
+
 /**
- * Unified Script Utilities
- * ========================
+ * Shared Script Utilities
  * 
- * Centralized script utility functions to eliminate code duplication.
- * This module consolidates all script utility logic that was previously duplicated.
- * 
- * Author: JewGo Development Team
- * Version: 1.0
+ * Common utilities used across multiple scripts to reduce duplication
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
-// ANSI color codes for console output
+// Colors for console output
 const colors = {
   red: '\x1b[31m',
   green: '\x1b[32m',
@@ -28,26 +26,25 @@ const colors = {
  * Log a message with optional color
  */
 function log(message, color = 'reset') {
-  const colorCode = colors[color] || colors.reset;
-  console.log(`${colorCode}${message}${colors.reset}`);
+  console.log(colors[color] + message + colors.reset);
 }
 
 /**
  * Log a section header
  */
 function logSection(title) {
-  log(`\n${  '='.repeat(50)}`, 'cyan');
+  console.log('\n' + '='.repeat(50));
   log(title, 'bold');
-  log('='.repeat(50), 'cyan');
+  console.log('='.repeat(50));
 }
 
 /**
  * Log a subsection header
  */
 function logSubsection(title) {
-  log(`\n${  '-'.repeat(30)}`, 'cyan');
+  console.log('\n' + '-'.repeat(30));
   log(title, 'cyan');
-  log('-'.repeat(30), 'cyan');
+  console.log('-'.repeat(30));
 }
 
 /**
@@ -66,247 +63,114 @@ function getFileSize(filePath) {
  * Format bytes to human readable format
  */
 function formatBytes(bytes) {
-  if (bytes === 0) {return '0 Bytes';}
+  if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 /**
- * Find files recursively in a directory
+ * Find files with specific extensions in a directory
  */
-function findFiles(dir, pattern = null) {
+function findFiles(dir, extensions = [], excludeDirs = ['node_modules', '.next', '.git']) {
   const files = [];
   
-  function traverse(currentDir) {
-    try {
-      const items = fs.readdirSync(currentDir);
+  function scanDirectory(currentDir) {
+    const items = fs.readdirSync(currentDir);
+    
+    for (const item of items) {
+      const fullPath = path.join(currentDir, item);
+      const stat = fs.statSync(fullPath);
       
-      for (const item of items) {
-        const fullPath = path.join(currentDir, item);
-        const stat = fs.statSync(fullPath);
-        
-        if (stat.isDirectory()) {
-          traverse(fullPath);
-        } else if (stat.isFile()) {
-          if (!pattern || pattern.test(item)) {
-            files.push(fullPath);
-          }
+      if (stat.isDirectory()) {
+        if (!excludeDirs.includes(item)) {
+          scanDirectory(fullPath);
+        }
+      } else if (stat.isFile()) {
+        const ext = path.extname(item).toLowerCase();
+        if (extensions.length === 0 || extensions.includes(ext)) {
+          files.push({
+            path: fullPath,
+            name: item,
+            size: stat.size,
+            extension: ext
+          });
         }
       }
-    } catch (error) {
-      log(`Error reading directory ${currentDir}: ${error.message}`, 'red');
     }
   }
   
-  traverse(dir);
+  scanDirectory(dir);
   return files;
 }
 
 /**
- * Process files with a callback function
+ * Execute a command and return the result
  */
-function processFiles(files, processor, options = {}) {
-  const { 
-    onProgress = null, 
-    onError = null, 
-    batchSize = 10,
-    showProgress = true 
-  } = options;
-  
-  const results = [];
-  let processed = 0;
-  const total = files.length;
-  
-  for (let i = 0; i < files.length; i += batchSize) {
-    const batch = files.slice(i, i + batchSize);
-    
-    for (const file of batch) {
-      try {
-        const result = processor(file);
-        results.push({ file, result, success: true });
-      } catch (error) {
-        const errorResult = { file, error: error.message, success: false };
-        results.push(errorResult);
-        
-        if (onError) {
-          onError(errorResult);
-        } else {
-          log(`Error processing ${file}: ${error.message}`, 'red');
-        }
-      }
-      
-      processed++;
-      
-      if (showProgress && onProgress) {
-        onProgress(processed, total);
-      }
-    }
-  }
-  
-  return results;
-}
-
-/**
- * Aggregate metrics from results
- */
-function aggregateMetrics(results, metrics = ['size', 'count']) {
-  const aggregated = {
-    total: results.length,
-    successful: results.filter(r => r.success).length,
-    failed: results.filter(r => !r.success).length,
-    totalSize: 0,
-    averageSize: 0
-  };
-  
-  if (metrics.includes('size')) {
-    const successfulResults = results.filter(r => r.success && r.result && typeof r.result.size === 'number');
-    aggregated.totalSize = successfulResults.reduce((sum, r) => sum + r.result.size, 0);
-    aggregated.averageSize = successfulResults.length > 0 ? aggregated.totalSize / successfulResults.length : 0;
-  }
-  
-  return aggregated;
-}
-
-/**
- * Create a progress bar
- */
-function createProgressBar(current, total, width = 30) {
-  const percentage = total > 0 ? (current / total) : 0;
-  const filled = Math.round(width * percentage);
-  const empty = width - filled;
-  
-  const bar = '█'.repeat(filled) + '░'.repeat(empty);
-  const percentText = Math.round(percentage * 100);
-  
-  return `[${bar}] ${percentText}% (${current}/${total})`;
-}
-
-/**
- * Validate file path exists
- */
-function validatePath(filePath) {
+function execCommand(command, options = {}) {
   try {
-    return fs.existsSync(filePath);
+    const result = execSync(command, { 
+      encoding: 'utf8', 
+      stdio: 'pipe',
+      ...options 
+    });
+    return { success: true, output: result };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error.message, 
+      output: error.stdout || '',
+      stderr: error.stderr || ''
+    };
+  }
+}
+
+/**
+ * Check if a directory exists
+ */
+function directoryExists(dirPath) {
+  try {
+    return fs.statSync(dirPath).isDirectory();
   } catch (error) {
     return false;
   }
 }
 
 /**
- * Get file extension
+ * Create directory if it doesn't exist
  */
-function getFileExtension(filePath) {
-  return path.extname(filePath).toLowerCase();
-}
-
-/**
- * Check if file is an image
- */
-function isImageFile(filePath) {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg'];
-  return imageExtensions.includes(getFileExtension(filePath));
-}
-
-/**
- * Check if file is a JavaScript file
- */
-function isJavaScriptFile(filePath) {
-  const jsExtensions = ['.js', '.jsx', '.ts', '.tsx'];
-  return jsExtensions.includes(getFileExtension(filePath));
-}
-
-/**
- * Check if file is a CSS file
- */
-function isCssFile(filePath) {
-  const cssExtensions = ['.css', '.scss', '.sass', '.less'];
-  return cssExtensions.includes(getFileExtension(filePath));
-}
-
-/**
- * Create backup of a file
- */
-function createBackup(filePath) {
-  try {
-    const backupPath = `${filePath  }.backup`;
-    fs.copyFileSync(filePath, backupPath);
-    return backupPath;
-  } catch (error) {
-    log(`Failed to create backup for ${filePath}: ${error.message}`, 'red');
-    return null;
+function ensureDirectoryExists(dirPath) {
+  if (!directoryExists(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 }
 
 /**
- * Restore file from backup
+ * Get project root directory
  */
-function restoreFromBackup(filePath) {
-  try {
-    const backupPath = `${filePath  }.backup`;
-    if (fs.existsSync(backupPath)) {
-      fs.copyFileSync(backupPath, filePath);
-      fs.unlinkSync(backupPath);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    log(`Failed to restore ${filePath} from backup: ${error.message}`, 'red');
-    return false;
-  }
+function getProjectRoot() {
+  return process.cwd();
 }
 
 /**
- * Measure execution time of a function
+ * Get relative path from project root
  */
-function measureTime(fn, label = 'Operation') {
-  const start = Date.now();
-  const result = fn();
-  const end = Date.now();
-  const duration = end - start;
-  
-  log(`${label} completed in ${duration}ms`, 'green');
-  return { result, duration };
-}
-
-/**
- * Retry a function with exponential backoff
- */
-async function retry(fn, maxRetries = 3, baseDelay = 1000) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (attempt === maxRetries) {
-        throw error;
-      }
-      
-      const delay = baseDelay * Math.pow(2, attempt - 1);
-      log(`Attempt ${attempt} failed, retrying in ${delay}ms...`, 'yellow');
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
+function getRelativePath(filePath) {
+  return path.relative(getProjectRoot(), filePath);
 }
 
 module.exports = {
+  colors,
   log,
   logSection,
   logSubsection,
   getFileSize,
   formatBytes,
   findFiles,
-  processFiles,
-  aggregateMetrics,
-  createProgressBar,
-  validatePath,
-  getFileExtension,
-  isImageFile,
-  isJavaScriptFile,
-  isCssFile,
-  createBackup,
-  restoreFromBackup,
-  measureTime,
-  retry,
-  colors
+  execCommand,
+  directoryExists,
+  ensureDirectoryExists,
+  getProjectRoot,
+  getRelativePath
 };

@@ -10,83 +10,14 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Colors for console output
-const colors = {
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  reset: '\x1b[0m',
-  bold: '\x1b[1m'
-};
-
-function log(message, color = 'reset') {
-  console.log(message);
-}
-
-function logSection(title) {
-  console.log('\n' + '='.repeat(50));
-  log(title, 'bold');
-  console.log('='.repeat(50));
-}
-
-function logSubsection(title) {
-  console.log('\n' + '-'.repeat(30));
-  log(title, 'cyan');
-  console.log('-'.repeat(30));
-}
-
-function getFileSize(filePath) {
-  try {
-    const stats = fs.statSync(filePath);
-    return stats.size;
-  } catch (error) {
-    return 0;
-  }
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function findImageFiles(dir, extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']) {
-  const files = [];
-  
-  function scanDirectory(currentDir) {
-    const items = fs.readdirSync(currentDir);
-    
-    for (const item of items) {
-      const fullPath = path.join(currentDir, item);
-      const stat = fs.statSync(fullPath);
-      
-      if (stat.isDirectory()) {
-        // Skip node_modules and .next directories
-        if (!['node_modules', '.next', '.git'].includes(item)) {
-          scanDirectory(fullPath);
-        }
-      } else if (stat.isFile()) {
-        const ext = path.extname(item).toLowerCase();
-        if (extensions.includes(ext)) {
-          files.push({
-            path: fullPath,
-            name: item,
-            size: stat.size,
-            extension: ext
-          });
-        }
-      }
-    }
-  }
-  
-  scanDirectory(dir);
-  return files;
-}
+const { 
+  log, 
+  logSection, 
+  logSubsection, 
+  getFileSize, 
+  formatBytes, 
+  findFiles 
+} = require('./utils/scriptUtils');
 
 function analyzeImages() {
   logSection('Image Analysis');
@@ -95,23 +26,24 @@ function analyzeImages() {
   const srcDir = path.join(process.cwd(), 'src');
   const appDir = path.join(process.cwd(), 'app');
   
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
   let allImages = [];
   
   // Find images in public directory
   if (fs.existsSync(publicDir)) {
-    const publicImages = findImageFiles(publicDir);
+    const publicImages = findFiles(publicDir, imageExtensions);
     allImages = allImages.concat(publicImages);
   }
   
   // Find images in src directory
   if (fs.existsSync(srcDir)) {
-    const srcImages = findImageFiles(srcDir);
+    const srcImages = findFiles(srcDir, imageExtensions);
     allImages = allImages.concat(srcImages);
   }
   
   // Find images in app directory
   if (fs.existsSync(appDir)) {
-    const appImages = findImageFiles(appDir);
+    const appImages = findFiles(appDir, imageExtensions);
     allImages = allImages.concat(appImages);
   }
   

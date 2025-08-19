@@ -108,7 +108,6 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.12",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.0.0",
@@ -135,7 +134,7 @@
     "prisma": "^5.22.0",
     "puppeteer": "^24.0.0",
     "sharp": "^0.34.3",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^3.4.17",
     "ts-prune": "^0.10.3",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",

@@ -11,50 +11,13 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Colors for console output
-const colors = {
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  reset: '\x1b[0m',
-  bold: '\x1b[1m'
-};
-
-function log(message, color = 'reset') {
-  console.log(colors[color] + message + colors.reset);
-}
-
-function logSection(title) {
-  console.log();
-  log(title, 'bold');
-  console.log();
-}
-
-function logSubsection(title) {
-  console.log();
-  log(title, 'cyan');
-  console.log();
-}
-
-function getFileSize(filePath) {
-  try {
-    const stats = fs.statSync(filePath);
-    return stats.size;
-  } catch (error) {
-    return 0;
-  }
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+const { 
+  log, 
+  logSection, 
+  logSubsection, 
+  getFileSize, 
+  formatBytes 
+} = require('./utils/scriptUtils');
 
 function analyzeBundleSizes() {
   logSection('Bundle Size Analysis');

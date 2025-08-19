@@ -1,493 +1,301 @@
 import { 
-  MarketplaceProduct, 
-  MarketplaceVendor, 
-  MarketplaceCategory, 
-  MarketplaceOrder,
-  MarketplaceFilters,
-  MarketplaceSearchResult,
-  MarketplaceStats
+  MarketplaceSearchParams, 
+  MarketplaceSearchResponse,
+  MarketplaceListingResponse,
+  CreateListingRequest,
+  CreateListingResponse,
+  CategoriesResponse,
+  GemachsResponse
 } from '@/lib/types/marketplace';
 
-export class MarketplaceAPI {
-  private static baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  private static apiVersion = ''; // Use main API instead of v4
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com';
 
-  private static async makeRequest<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}/api${this.apiVersion}${endpoint}`;
+/**
+ * Fetch marketplace listings with filtering and pagination
+ */
+export async function fetchMarketplaceListings(
+  params: MarketplaceSearchParams = {}
+): Promise<MarketplaceSearchResponse> {
+  try {
+    const searchParams = new URLSearchParams();
     
-    const defaultOptions: RequestInit = {
+    // Add all parameters to search params
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/listings?${searchParams.toString()}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
       },
-      ...options,
-    };
+    });
 
-    try {
-      const response = await fetch(url, defaultOptions);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
-      throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  }
 
-  // Products
-  static async getProducts(filters?: MarketplaceFilters): Promise<MarketplaceProduct[]> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (typeof value === 'object') {
-              queryParams.append(key, JSON.stringify(value));
-            } else {
-              queryParams.append(key, String(value));
-            }
-          }
-        });
-      }
-
-      const endpoint = `/marketplace/products${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      const data = await this.makeRequest<{ products: MarketplaceProduct[] }>(endpoint);
-      return data.products;
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-      return this.getMockProducts();
-    }
-  }
-
-  static async getProduct(id: string): Promise<MarketplaceProduct> {
-    try {
-      const data = await this.makeRequest<{ product: MarketplaceProduct }>(`/marketplace/products/${id}`);
-      return data.product;
-    } catch (error) {
-      console.error('Failed to fetch product:', error);
-      return this.getMockProduct(id);
-    }
-  }
-
-  static async getFeaturedProducts(): Promise<MarketplaceProduct[]> {
-    try {
-      const data = await this.makeRequest<{ products: MarketplaceProduct[] }>('/marketplace/products/featured');
-      return data.products;
-    } catch (error) {
-      console.error('Failed to fetch featured products:', error);
-      return this.getMockFeaturedProducts();
-    }
-  }
-
-  // Vendors
-  static async getVendors(): Promise<MarketplaceVendor[]> {
-    try {
-      const data = await this.makeRequest<{ vendors: MarketplaceVendor[] }>('/marketplace/vendors');
-      return data.vendors;
-    } catch (error) {
-      console.error('Failed to fetch vendors:', error);
-      return this.getMockVendors();
-    }
-  }
-
-  static async getVendor(id: string): Promise<MarketplaceVendor> {
-    try {
-      const data = await this.makeRequest<{ vendor: MarketplaceVendor }>(`/marketplace/vendors/${id}`);
-      return data.vendor;
-    } catch (error) {
-      console.error('Failed to fetch vendor:', error);
-      return this.getMockVendor(id);
-    }
-  }
-
-  static async getVendorProducts(vendorId: string): Promise<MarketplaceProduct[]> {
-    try {
-      const data = await this.makeRequest<{ products: MarketplaceProduct[] }>(`/marketplace/vendors/${vendorId}/products`);
-      return data.products;
-    } catch (error) {
-      console.error('Failed to fetch vendor products:', error);
-      return this.getMockVendorProducts(vendorId);
-    }
-  }
-
-  // Categories
-  static async getCategories(): Promise<MarketplaceCategory[]> {
-    try {
-      const data = await this.makeRequest<{ categories: MarketplaceCategory[] }>('/marketplace/categories');
-      return data.categories;
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-      return this.getMockCategories();
-    }
-  }
-
-  static async getCategory(id: string): Promise<MarketplaceCategory> {
-    try {
-      const data = await this.makeRequest<{ category: MarketplaceCategory }>(`/marketplace/categories/${id}`);
-      return data.category;
-    } catch (error) {
-      console.error('Failed to fetch category:', error);
-      return this.getMockCategory(id);
-    }
-  }
-
-  static async getCategoryProducts(categoryId: string): Promise<MarketplaceProduct[]> {
-    try {
-      const data = await this.makeRequest<{ products: MarketplaceProduct[] }>(`/marketplace/categories/${categoryId}/products`);
-      return data.products;
-    } catch (error) {
-      console.error('Failed to fetch category products:', error);
-      return this.getMockCategoryProducts(categoryId);
-    }
-  }
-
-  // Search
-  static async search(query: string, filters?: MarketplaceFilters): Promise<MarketplaceSearchResult> {
-    try {
-      const searchParams = new URLSearchParams({ q: query });
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (typeof value === 'object') {
-              searchParams.append(key, JSON.stringify(value));
-            } else {
-              searchParams.append(key, String(value));
-            }
-          }
-        });
-      }
-
-      const endpoint = `/marketplace/search?${searchParams.toString()}`;
-      const data = await this.makeRequest<MarketplaceSearchResult>(endpoint);
-      return data;
-    } catch (error) {
-      console.error('Failed to search marketplace:', error);
-      return this.getMockSearchResult(query);
-    }
-  }
-
-  // Orders
-  static async createOrder(orderData: Partial<MarketplaceOrder>): Promise<MarketplaceOrder> {
-    try {
-      const data = await this.makeRequest<{ order: MarketplaceOrder }>('/marketplace/orders', {
-        method: 'POST',
-        body: JSON.stringify(orderData),
-      });
-      return data.order;
-    } catch (error) {
-      console.error('Failed to create order:', error);
-      throw error;
-    }
-  }
-
-  static async getOrders(): Promise<MarketplaceOrder[]> {
-    try {
-      const data = await this.makeRequest<{ orders: MarketplaceOrder[] }>('/marketplace/orders');
-      return data.orders;
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      return this.getMockOrders();
-    }
-  }
-
-  static async getOrder(id: string): Promise<MarketplaceOrder> {
-    try {
-      const data = await this.makeRequest<{ order: MarketplaceOrder }>(`/marketplace/orders/${id}`);
-      return data.order;
-    } catch (error) {
-      console.error('Failed to fetch order:', error);
-      return this.getMockOrder(id);
-    }
-  }
-
-  // Stats
-  static async getStats(): Promise<MarketplaceStats> {
-    try {
-      const data = await this.makeRequest<{ stats: MarketplaceStats }>('/marketplace/stats');
-      return data.stats;
-    } catch (error) {
-      console.error('Failed to fetch marketplace stats:', error);
-      return this.getMockStats();
-    }
-  }
-
-  // Mock Data Methods
-  private static getMockProducts(): MarketplaceProduct[] {
-    return [
-      {
-        id: '1',
-        name: 'Glatt Kosher Beef Brisket',
-        description: 'Premium quality beef brisket, perfect for Shabbat meals',
-        price: 45.99,
-        originalPrice: 59.99,
-        currency: 'USD',
-        category: this.getMockCategories()[0],
-        vendor: this.getMockVendors()[0],
-        images: ['https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Brisket', 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Brisket+2'],
-        thumbnail: 'https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Brisket',
-        stock: 15,
-        isAvailable: true,
-        isFeatured: true,
-        isOnSale: true,
-        discountPercentage: 23,
-        tags: ['meat', 'brisket', 'shabbat', 'glatt'],
-        rating: 4.8,
-        reviewCount: 127,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-20T14:30:00Z',
-        kosherCertification: {
-          agency: 'OU',
-          level: 'glatt',
-          isVerified: true
-        }
-      },
-      {
-        id: '2',
-        name: 'Challah Bread - Traditional',
-        description: 'Fresh-baked traditional challah bread, perfect for Shabbat',
-        price: 8.99,
-        currency: 'USD',
-        category: this.getMockCategories()[1],
-        vendor: this.getMockVendors()[1],
-        images: ['https://via.placeholder.com/400x300/F59E0B/FFFFFF?text=Challah'],
-        thumbnail: 'https://via.placeholder.com/300x200/F59E0B/FFFFFF?text=Challah',
-        stock: 50,
-        isAvailable: true,
-        isFeatured: false,
-        isOnSale: false,
-        tags: ['bread', 'challah', 'shabbat', 'dairy'],
-        rating: 4.9,
-        reviewCount: 89,
-        createdAt: '2024-01-10T08:00:00Z',
-        updatedAt: '2024-01-19T16:45:00Z',
-        kosherCertification: {
-          agency: 'Kof-K',
-          level: 'pas_yisrael',
-          isVerified: true
-        }
-      }
-    ];
-  }
-
-  private static getMockFeaturedProducts(): MarketplaceProduct[] {
-    return this.getMockProducts().filter(product => product.isFeatured);
-  }
-
-  private static getMockProduct(id: string): MarketplaceProduct {
-    return this.getMockProducts().find(p => p.id === id) || this.getMockProducts()[0];
-  }
-
-  private static getMockVendors(): MarketplaceVendor[] {
-    return [
-      {
-        id: '1',
-        name: 'Kosher Delights Market',
-        description: 'Premium kosher meats and deli products',
-        logo: 'https://via.placeholder.com/150x150/3B82F6/FFFFFF?text=KD',
-        address: '123 Main Street',
-        city: 'Miami',
-        state: 'FL',
-        zipCode: '33101',
-        phone: '(305) 555-0123',
-        email: 'info@kosherdelights.com',
-        website: 'https://kosherdelights.com',
-        rating: 4.7,
-        reviewCount: 234,
-        isVerified: true,
-        isPremium: true,
-        categories: this.getMockCategories().slice(0, 2),
-        products: [],
-        hours: this.getMockVendorHours(),
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-20T12:00:00Z'
-      },
-      {
-        id: '2',
-        name: 'Bakery Express',
-        description: 'Fresh kosher baked goods and pastries',
-        logo: 'https://via.placeholder.com/150x150/F59E0B/FFFFFF?text=BE',
-        address: '456 Oak Avenue',
-        city: 'Miami',
-        state: 'FL',
-        zipCode: '33102',
-        phone: '(305) 555-0456',
-        email: 'orders@bakeryexpress.com',
-        rating: 4.8,
-        reviewCount: 156,
-        isVerified: true,
-        isPremium: false,
-        categories: this.getMockCategories().slice(1, 3),
-        products: [],
-        hours: this.getMockVendorHours(),
-        createdAt: '2024-01-05T00:00:00Z',
-        updatedAt: '2024-01-19T10:00:00Z'
-      }
-    ];
-  }
-
-  private static getMockVendor(id: string): MarketplaceVendor {
-    return this.getMockVendors().find(v => v.id === id) || this.getMockVendors()[0];
-  }
-
-  private static getMockVendorProducts(vendorId: string): MarketplaceProduct[] {
-    return this.getMockProducts().filter(p => p.vendor.id === vendorId);
-  }
-
-  private static getMockCategories(): MarketplaceCategory[] {
-    return [
-      {
-        id: '1',
-        name: 'Meat & Poultry',
-        description: 'Fresh kosher meats and poultry products',
-        icon: '🥩',
-        color: '#dc2626',
-        productCount: 45,
-        isActive: true,
-        sortOrder: 1
-      },
-      {
-        id: '2',
-        name: 'Bakery',
-        description: 'Fresh baked goods and pastries',
-        icon: '🥖',
-        color: '#f59e0b',
-        productCount: 32,
-        isActive: true,
-        sortOrder: 2
-      },
-      {
-        id: '3',
-        name: 'Dairy',
-        description: 'Kosher dairy products and cheeses',
-        icon: '🥛',
-        color: '#3b82f6',
-        productCount: 28,
-        isActive: true,
-        sortOrder: 3
-      },
-      {
-        id: '4',
-        name: 'Pantry',
-        description: 'Kosher pantry staples and ingredients',
-        icon: '🫙',
-        color: '#10b981',
-        productCount: 67,
-        isActive: true,
-        sortOrder: 4
-      }
-    ];
-  }
-
-  private static getMockCategory(id: string): MarketplaceCategory {
-    return this.getMockCategories().find(c => c.id === id) || this.getMockCategories()[0];
-  }
-
-  private static getMockCategoryProducts(categoryId: string): MarketplaceProduct[] {
-    return this.getMockProducts().filter(p => p.category.id === categoryId);
-  }
-
-  private static getMockVendorHours() {
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching marketplace listings:', error);
     return {
-      monday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
-      tuesday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
-      wednesday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
-      thursday: { isOpen: true, openTime: '09:00', closeTime: '18:00' },
-      friday: { isOpen: true, openTime: '09:00', closeTime: '16:00', isClosedForShabbat: true },
-      saturday: { isOpen: false, isClosedForShabbat: true },
-      sunday: { isOpen: true, openTime: '10:00', closeTime: '17:00' }
+      success: false,
+      error: 'Failed to fetch marketplace listings'
     };
   }
+}
 
-  private static getMockOrders(): MarketplaceOrder[] {
-    return [
-      {
-        id: '1',
-        userId: 'user123',
-        vendorId: '1',
-        products: [
-          {
-            productId: '1',
-            productName: 'Glatt Kosher Beef Brisket',
-            quantity: 2,
-            price: 45.99,
-            total: 91.98,
-            image: 'https://via.placeholder.com/300x200/FF6B6B/FFFFFF?text=Brisket'
-          }
-        ],
-        status: 'confirmed',
-        subtotal: 91.98,
-        tax: 7.36,
-        shipping: 5.99,
-        total: 105.33,
-        currency: 'USD',
-        shippingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          address: '789 Pine Street',
-          city: 'Miami',
-          state: 'FL',
-          zipCode: '33103',
-          country: 'USA',
-          phone: '(305) 555-0789'
-        },
-        billingAddress: {
-          firstName: 'John',
-          lastName: 'Doe',
-          address: '789 Pine Street',
-          city: 'Miami',
-          state: 'FL',
-          zipCode: '33103',
-          country: 'USA',
-          phone: '(305) 555-0789'
-        },
-        paymentMethod: {
-          id: 'pm_1',
-          type: 'credit_card',
-          last4: '4242',
-          brand: 'visa'
-        },
-        paymentStatus: 'paid',
-        createdAt: '2024-01-20T10:00:00Z',
-        updatedAt: '2024-01-20T10:30:00Z',
-        estimatedDelivery: '2024-01-22T14:00:00Z'
+/**
+ * Fetch a specific marketplace listing by ID
+ */
+export async function fetchMarketplaceListing(
+  listingId: string
+): Promise<MarketplaceListingResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/listings/${listingId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: 'Listing not found'
+        };
       }
-    ];
-  }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  private static getMockOrder(id: string): MarketplaceOrder {
-    return this.getMockOrders().find(o => o.id === id) || this.getMockOrders()[0];
-  }
-
-  private static getMockSearchResult(query: string): MarketplaceSearchResult {
-    const products = this.getMockProducts().filter(p => 
-      p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.description.toLowerCase().includes(query.toLowerCase())
-    );
-    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching marketplace listing:', error);
     return {
-      products,
-      vendors: this.getMockVendors(),
-      categories: this.getMockCategories(),
-      totalProducts: products.length,
-      totalVendors: this.getMockVendors().length,
-      hasMore: false
+      success: false,
+      error: 'Failed to fetch marketplace listing'
     };
   }
+}
 
-  private static getMockStats(): MarketplaceStats {
+/**
+ * Create a new marketplace listing
+ */
+export async function createMarketplaceListing(
+  listingData: CreateListingRequest
+): Promise<CreateListingResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/listings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(listingData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error creating marketplace listing:', error);
     return {
-      totalProducts: 172,
-      totalVendors: 8,
-      totalCategories: 4,
-      activeOrders: 23,
-      totalSales: 15420.50,
-      averageRating: 4.7
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create marketplace listing'
     };
+  }
+}
+
+/**
+ * Fetch marketplace categories
+ */
+export async function fetchMarketplaceCategories(): Promise<CategoriesResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/categories`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching marketplace categories:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch marketplace categories'
+    };
+  }
+}
+
+/**
+ * Fetch marketplace gemachs
+ */
+export async function fetchMarketplaceGemachs(): Promise<GemachsResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/gemachs`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching marketplace gemachs:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch marketplace gemachs'
+    };
+  }
+}
+
+/**
+ * Endorse a marketplace listing (upvote/downvote)
+ */
+export async function endorseListing(
+  listingId: string,
+  endorsementType: 'up' | 'down'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/listings/${listingId}/endorsements`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type: endorsementType }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error endorsing listing:', error);
+    return {
+      success: false,
+      error: 'Failed to endorse listing'
+    };
+  }
+}
+
+/**
+ * Search marketplace listings
+ */
+export async function searchMarketplaceListings(
+  query: string,
+  params: Omit<MarketplaceSearchParams, 'search'> = {}
+): Promise<MarketplaceSearchResponse> {
+  return fetchMarketplaceListings({
+    ...params,
+    search: query,
+  });
+}
+
+/**
+ * Get listings by category
+ */
+export async function getListingsByCategory(
+  category: string,
+  params: Omit<MarketplaceSearchParams, 'category'> = {}
+): Promise<MarketplaceSearchResponse> {
+  return fetchMarketplaceListings({
+    ...params,
+    category,
+  });
+}
+
+/**
+ * Get listings by type (sale, free, borrow, gemach)
+ */
+export async function getListingsByType(
+  type: 'sale' | 'free' | 'borrow' | 'gemach',
+  params: Omit<MarketplaceSearchParams, 'type'> = {}
+): Promise<MarketplaceSearchResponse> {
+  return fetchMarketplaceListings({
+    ...params,
+    type,
+  });
+}
+
+/**
+ * Get listings by location
+ */
+export async function getListingsByLocation(
+  lat: number,
+  lng: number,
+  radius: number = 10,
+  params: Omit<MarketplaceSearchParams, 'lat' | 'lng' | 'radius'> = {}
+): Promise<MarketplaceSearchResponse> {
+  return fetchMarketplaceListings({
+    ...params,
+    lat,
+    lng,
+    radius,
+  });
+}
+
+/**
+ * MarketplaceAPI class for centralized marketplace operations
+ */
+export class MarketplaceAPI {
+  static async fetchListings(params: MarketplaceSearchParams = {}): Promise<MarketplaceSearchResponse> {
+    return fetchMarketplaceListings(params);
+  }
+
+  static async fetchListing(listingId: string): Promise<MarketplaceListingResponse> {
+    return fetchMarketplaceListing(listingId);
+  }
+
+  static async createListing(listingData: CreateListingRequest): Promise<CreateListingResponse> {
+    return createMarketplaceListing(listingData);
+  }
+
+  static async searchListings(query: string, params: Omit<MarketplaceSearchParams, 'search'> = {}): Promise<MarketplaceSearchResponse> {
+    return searchMarketplaceListings(query, params);
+  }
+
+  static async getListingsByCategory(category: string, params: Omit<MarketplaceSearchParams, 'category'> = {}): Promise<MarketplaceSearchResponse> {
+    return getListingsByCategory(category, params);
+  }
+
+  static async getListingsByType(type: 'sale' | 'free' | 'borrow' | 'gemach', params: Omit<MarketplaceSearchParams, 'type'> = {}): Promise<MarketplaceSearchResponse> {
+    return getListingsByType(type, params);
+  }
+
+  static async getListingsByLocation(lat: number, lng: number, radius: number = 10, params: Omit<MarketplaceSearchParams, 'lat' | 'lng' | 'radius'> = {}): Promise<MarketplaceSearchResponse> {
+    return getListingsByLocation(lat, lng, radius, params);
+  }
+
+  static async endorseListing(listingId: string, endorsementType: 'up' | 'down'): Promise<{ success: boolean; error?: string }> {
+    return endorseListing(listingId, endorsementType);
+  }
+
+  static async fetchCategories(): Promise<CategoriesResponse> {
+    return fetchMarketplaceCategories();
+  }
+
+  static async fetchGemachs(): Promise<GemachsResponse> {
+    return fetchMarketplaceGemachs();
   }
 }

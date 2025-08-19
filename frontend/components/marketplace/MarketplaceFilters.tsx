@@ -1,298 +1,240 @@
 'use client';
 
-import { X, Filter, ChevronDown, ChevronUp, Star, DollarSign, Truck } from 'lucide-react';
-import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
-import { MarketplaceFilters as MarketplaceFiltersType, MarketplaceCategory } from '@/lib/types/marketplace';
+import { MarketplaceFilters as FiltersType } from '@/lib/types/marketplace';
+import { fetchMarketplaceCategories } from '@/lib/api/marketplace';
 
 interface MarketplaceFiltersProps {
-  filters: MarketplaceFiltersType;
-  categories: MarketplaceCategory[];
-  onFiltersChange: (filters: MarketplaceFiltersType) => void;
-  onClearFilters: () => void;
-  className?: string;
+  filters: FiltersType;
+  onFilterChange: (filters: FiltersType) => void;
+  onClose: () => void;
 }
 
-export default function MarketplaceFiltersComponent({
+export default function MarketplaceFilters({
   filters,
-  categories,
-  onFiltersChange,
-  onClearFilters,
-  className = ''
+  onFilterChange,
+  onClose
 }: MarketplaceFiltersProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [localFilters, setLocalFilters] = useState<FiltersType>(filters);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleFilterChange = (key: keyof MarketplaceFiltersType, value: any) => {
-    onFiltersChange({
-      ...filters,
-      [key]: value
-    });
+  // Load categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchMarketplaceCategories();
+        if (response.success && response.data) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  const handleFilterChange = (key: keyof FiltersType, value: string) => {
+    const newFilters = { ...localFilters, [key]: value };
+    setLocalFilters(newFilters);
   };
 
-  const handleCategoryToggle = (categoryId: string) => {
-    const currentCategories = filters.categories || [];
-    const newCategories = currentCategories.includes(categoryId)
-      ? currentCategories.filter(id => id !== categoryId)
-      : [...currentCategories, categoryId];
-    
-    handleFilterChange('categories', newCategories);
+  const handleApply = () => {
+    onFilterChange(localFilters);
+    onClose();
   };
 
-  const handlePriceRangeChange = (type: 'min' | 'max', value: string) => {
-    const numValue = value === '' ? undefined : Number(value);
-    const currentRange = filters.priceRange || { min: undefined, max: undefined };
-    
-    handleFilterChange('priceRange', {
-      ...currentRange,
-      [type]: numValue
-    });
+  const handleReset = () => {
+    const resetFilters: FiltersType = {
+      category: '',
+      subcategory: '',
+      listingType: '',
+      condition: '',
+      minPrice: '',
+      maxPrice: '',
+      city: '',
+      region: ''
+    };
+    setLocalFilters(resetFilters);
+    onFilterChange(resetFilters);
   };
 
-  const handleRatingChange = (rating: number) => {
-    handleFilterChange('rating', filters.rating === rating ? undefined : rating);
+  const handleClose = () => {
+    setLocalFilters(filters); // Reset to original filters
+    onClose();
   };
 
-  const handleAvailabilityChange = (availability: 'in_stock' | 'out_of_stock' | 'all') => {
-    handleFilterChange('availability', availability);
-  };
-
-  const handleSortByChange = (sortBy: string) => {
-    handleFilterChange('sortBy', sortBy);
-  };
-
-  const getActiveFilterCount = () => {
-    let count = 0;
-    if (filters.categories && filters.categories.length > 0) { count++; }
-    if (filters.priceRange && (filters.priceRange.min || filters.priceRange.max)) { count++; }
-    if (filters.rating) { count++; }
-    if (filters.availability && filters.availability !== 'all') { count++; }
-    if (filters.sortBy) { count++; }
-    if (filters.search) { count++; }
-    return count;
-  };
-
-  const toggleSection = (section: string) => {
-    setActiveSection(activeSection === section ? null : section);
+  const getSubcategories = () => {
+    if (!localFilters.category) return [];
+    const category = categories.find(c => c.slug === localFilters.category);
+    return category?.subcategories || [];
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${className}`}>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h3 className="font-semibold text-gray-900">Filters</h3>
-            {getActiveFilterCount() > 0 && (
-              <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                {getActiveFilterCount()}
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {getActiveFilterCount() > 0 && (
-              <button
-                onClick={onClearFilters}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-              >
-                <X className="w-4 h-4" />
-                Clear
-              </button>
-            )}
-            
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-gray-500 hover:text-gray-700"
+    <div className="bg-white border-b border-gray-200 p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+        <button
+          onClick={handleClose}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {/* Listing Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Listing Type
+          </label>
+          <select
+            value={localFilters.listingType}
+            onChange={(e) => handleFilterChange('listingType', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="sale">For Sale</option>
+            <option value="free">Free</option>
+            <option value="borrow">Borrow</option>
+            <option value="gemach">Gemach</option>
+          </select>
+        </div>
+
+        {/* Category */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Category
+          </label>
+          <select
+            value={localFilters.category}
+            onChange={(e) => {
+              handleFilterChange('category', e.target.value);
+              handleFilterChange('subcategory', ''); // Reset subcategory
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            disabled={loading}
+          >
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.slug}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Subcategory */}
+        {localFilters.category && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subcategory
+            </label>
+            <select
+              value={localFilters.subcategory}
+              onChange={(e) => handleFilterChange('subcategory', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
+              <option value="">All Subcategories</option>
+              {getSubcategories().map((subcategory: any) => (
+                <option key={subcategory.id} value={subcategory.slug}>
+                  {subcategory.name}
+                </option>
+              ))}
+            </select>
           </div>
+        )}
+
+        {/* Condition */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Condition
+          </label>
+          <select
+            value={localFilters.condition}
+            onChange={(e) => handleFilterChange('condition', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Any Condition</option>
+            <option value="new">New</option>
+            <option value="used_like_new">Used - Like New</option>
+            <option value="used_good">Used - Good</option>
+            <option value="used_fair">Used - Fair</option>
+          </select>
+        </div>
+
+        {/* Price Range */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Price Range
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="number"
+              placeholder="Min"
+              value={localFilters.minPrice}
+              onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="number"
+              placeholder="Max"
+              value={localFilters.maxPrice}
+              onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Location */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            City
+          </label>
+          <input
+            type="text"
+            placeholder="Enter city"
+            value={localFilters.city}
+            onChange={(e) => handleFilterChange('city', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            State/Region
+          </label>
+          <input
+            type="text"
+            placeholder="Enter state or region"
+            value={localFilters.region}
+            onChange={(e) => handleFilterChange('region', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
       </div>
 
-      {/* Filter Content */}
-      {isExpanded && (
-        <div className="p-4 space-y-6">
-          {/* Categories */}
-          <div>
-            <button
-              onClick={() => toggleSection('categories')}
-              className="flex items-center justify-between w-full text-left font-medium text-gray-900 mb-3"
-            >
-              Categories
-              {activeSection === 'categories' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            
-            {activeSection === 'categories' && (
-              <div className="space-y-2">
-                {categories.map((category) => (
-                  <label key={category.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.categories?.includes(category.id) || false}
-                      onChange={() => handleCategoryToggle(category.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{category.name}</span>
-                    <span className="text-xs text-gray-500">({category.productCount})</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <button
-              onClick={() => toggleSection('price')}
-              className="flex items-center justify-between w-full text-left font-medium text-gray-900 mb-3"
-            >
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Price Range
-              </div>
-              {activeSection === 'price' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            
-            {activeSection === 'price' && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.priceRange?.min || ''}
-                    onChange={(e) => handlePriceRangeChange('min', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <span className="text-gray-500">to</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.priceRange?.max || ''}
-                    onChange={(e) => handlePriceRangeChange('max', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Rating */}
-          <div>
-            <button
-              onClick={() => toggleSection('rating')}
-              className="flex items-center justify-between w-full text-left font-medium text-gray-900 mb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4" />
-                Minimum Rating
-              </div>
-              {activeSection === 'rating' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            
-            {activeSection === 'rating' && (
-              <div className="space-y-2">
-                {[4, 3, 2, 1].map((rating) => (
-                  <button
-                    key={rating}
-                    onClick={() => handleRatingChange(rating)}
-                    className={`flex items-center gap-2 w-full text-left p-2 rounded-md transition-colors ${
-                      filters.rating === rating
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-700">& up</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Availability */}
-          <div>
-            <button
-              onClick={() => toggleSection('availability')}
-              className="flex items-center justify-between w-full text-left font-medium text-gray-900 mb-3"
-            >
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                Availability
-              </div>
-              {activeSection === 'availability' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            
-            {activeSection === 'availability' && (
-              <div className="space-y-2">
-                {[
-                  { value: 'all', label: 'All Products' },
-                  { value: 'in_stock', label: 'In Stock' },
-                  { value: 'out_of_stock', label: 'Out of Stock' }
-                ].map((option) => (
-                  <label key={option.value} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="availability"
-                      value={option.value}
-                      checked={filters.availability === option.value}
-                      onChange={() => handleAvailabilityChange(option.value as any)}
-                      className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <button
-              onClick={() => toggleSection('sort')}
-              className="flex items-center justify-between w-full text-left font-medium text-gray-900 mb-3"
-            >
-              Sort By
-              {activeSection === 'sort' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-            
-            {activeSection === 'sort' && (
-              <div className="space-y-2">
-                {[
-                  { value: 'popular', label: 'Most Popular' },
-                  { value: 'newest', label: 'Newest First' },
-                  { value: 'rating', label: 'Highest Rated' },
-                  { value: 'price_low', label: 'Price: Low to High' },
-                  { value: 'price_high', label: 'Price: High to Low' }
-                ].map((option) => (
-                  <label key={option.value} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="sortBy"
-                      value={option.value}
-                      checked={filters.sortBy === option.value}
-                      onChange={() => handleSortByChange(option.value)}
-                      className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-6">
+        <button
+          onClick={handleApply}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Apply Filters
+        </button>
+        <button
+          onClick={handleReset}
+          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          Reset
+        </button>
+      </div>
     </div>
   );
 }
