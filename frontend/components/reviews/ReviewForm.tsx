@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Upload, X, Send } from 'lucide-react';
+import { supabaseBrowser } from '@/lib/supabase/client';
 // NextAuth removed - using Supabase only
 import { useRouter } from 'next/navigation';
 
@@ -24,15 +25,41 @@ export interface ReviewData {
 export default function ReviewForm({
   restaurantId, restaurantName, onSubmit, onCancel, className = ''
 }: ReviewFormProps) {
-  // NextAuth removed - using Supabase only
-  const session = null; // TODO: Replace with Supabase session
   const router = useRouter();
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Get Supabase session
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleRatingClick = (selectedRating: number) => {
     setRating(selectedRating);
@@ -159,6 +186,16 @@ export default function ReviewForm({
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className={`bg-white border rounded-lg p-6 ${className}`}>
+        <div className="text-center">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/';

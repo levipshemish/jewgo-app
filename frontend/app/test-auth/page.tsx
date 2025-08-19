@@ -7,6 +7,8 @@ export default function TestAuthPage() {
   const [status, setStatus] = useState<string>("Loading...");
   const [session, setSession] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState<string>("test@example.com");
+  const [testPassword, setTestPassword] = useState<string>("testpassword123");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -42,17 +44,36 @@ export default function TestAuthPage() {
     try {
       setStatus("Testing sign in...");
       const { data, error } = await supabaseBrowser.auth.signInWithPassword({
-        email: "test@example.com",
-        password: "wrongpassword",
+        email: testEmail,
+        password: testPassword,
       });
       
       if (error) {
         setStatus(`Sign in test completed with expected error: ${error.message}`);
       } else {
         setStatus("Sign in test completed unexpectedly successfully");
+        setSession(data.session);
       }
     } catch (err) {
       setError(`Sign in test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const testSignUp = async () => {
+    try {
+      setStatus("Testing sign up...");
+      const { data, error } = await supabaseBrowser.auth.signUp({
+        email: testEmail,
+        password: testPassword,
+      });
+      
+      if (error) {
+        setStatus(`Sign up test error: ${error.message}`);
+      } else {
+        setStatus(`Sign up test completed: ${data.user ? 'User created' : 'Check email for confirmation'}`);
+      }
+    } catch (err) {
+      setError(`Sign up test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -73,6 +94,22 @@ export default function TestAuthPage() {
       }
     } catch (err) {
       setError(`Google OAuth test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setStatus("Signing out...");
+      const { error } = await supabaseBrowser.auth.signOut();
+      
+      if (error) {
+        setStatus(`Sign out error: ${error.message}`);
+      } else {
+        setStatus("Signed out successfully");
+        setSession(null);
+      }
+    } catch (err) {
+      setError(`Sign out failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -104,20 +141,58 @@ export default function TestAuthPage() {
               </div>
             )}
             
-            <div className="space-y-2">
-              <button
-                onClick={testSignIn}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Test Email Sign In
-              </button>
+            <div className="space-y-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Test Credentials</h2>
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    placeholder="Test Email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Test Password"
+                    value={testPassword}
+                    onChange={(e) => setTestPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
               
-              <button
-                onClick={testGoogleOAuth}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 ml-2"
-              >
-                Test Google OAuth
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={testSignUp}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                >
+                  Test Sign Up
+                </button>
+                
+                <button
+                  onClick={testSignIn}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 ml-2"
+                >
+                  Test Email Sign In
+                </button>
+                
+                <button
+                  onClick={testGoogleOAuth}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 ml-2"
+                >
+                  Test Google OAuth
+                </button>
+                
+                {session && (
+                  <button
+                    onClick={signOut}
+                    className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 ml-2"
+                  >
+                    Sign Out
+                  </button>
+                )}
+              </div>
             </div>
             
             <div className="bg-gray-50 border border-gray-200 rounded-md p-4">

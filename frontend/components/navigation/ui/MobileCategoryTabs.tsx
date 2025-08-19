@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, Building2, Droplets, Star } from 'lucide-react';
+import { Store, Droplets, Star } from 'lucide-react';
 
 // Custom kitchen tools icon component
 const KitchenTools: React.FC<{ size?: number; className?: string }> = ({ size = 18, className = '' }) => (
@@ -18,6 +18,30 @@ const KitchenTools: React.FC<{ size?: number; className?: string }> = ({ size = 
     className={className}
   >
     <path d="M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12zm0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3" />
+  </svg>
+);
+
+// Custom synagogue with Star of David icon component
+const Synagogue: React.FC<{ size?: number; className?: string }> = ({ size = 18, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    {/* Synagogue building */}
+    <path d="M3 21h18" />
+    <path d="M5 21V7l7-4 7 4v14" />
+    <path d="M9 21v-8h6v8" />
+    <path d="M7 7v14" />
+    <path d="M17 7v14" />
+    {/* Star of David on top */}
+    <path d="M12 3l1.5 2.5L16 6l-2.5 1.5L12 10l-1.5-2.5L8 6l2.5-1.5z" />
   </svg>
 );
 
@@ -40,7 +64,7 @@ const MobileCategoryTabs: React.FC<MobileCategoryTabsProps> = ({
     {
       id: 'shuls',
       label: 'Shuls',
-      icon: Building2,
+      icon: Synagogue,
       href: '/shuls',
     },
     {

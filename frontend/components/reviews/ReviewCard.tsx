@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, ThumbsUp, Flag, User, Clock, Shield, MoreVertical } from 'lucide-react';
+import { supabaseBrowser } from '@/lib/supabase/client';
 // NextAuth removed - using Supabase only
 import { formatDate } from '@/lib/utils/dateUtils';
 
@@ -35,14 +36,40 @@ interface ReviewCardProps {
 export default function ReviewCard({
   review, onHelpful, onFlag, onEdit, onDelete, showActions = true, className = ''
 }: ReviewCardProps) {
-  // NextAuth removed - using Supabase only
-  const session = null; // TODO: Replace with Supabase session
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isHelpfulLoading, setIsHelpfulLoading] = useState(false);
   const [isFlagLoading, setIsFlagLoading] = useState(false);
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [flagReason, setFlagReason] = useState('');
   const [flagDescription, setFlagDescription] = useState('');
+
+  // Get Supabase session
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Using unified date formatting utility
 
