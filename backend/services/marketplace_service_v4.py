@@ -52,11 +52,13 @@ class MarketplaceServiceV4:
     ) -> Dict[str, Any]:
         """Get marketplace listings with filtering and pagination."""
         try:
-            # Build query for marketplace table
+            # Build query for marketplace table with specific column order
             query = """
-                SELECT m.*, 
-                       m.category as category_name,
-                       m.subcategory as subcategory_name,
+                SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
+                       m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                       m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
+                       m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
+                       m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
                        m.vendor_name as seller_name
                 FROM marketplace m
                 WHERE m.status = %s
@@ -153,46 +155,47 @@ class MarketplaceServiceV4:
             formatted_listings = []
             for listing in listings:
                 # Convert marketplace table structure to expected format
+                # Use dictionary access since SQLAlchemy returns Row objects
                 formatted_listing = {
-                    'id': str(listing.id),
+                    'id': str(listing[0]),  # id
                     'kind': 'regular',  # Default to regular for marketplace items
                     'txn_type': 'sale',  # Default to sale
-                    'title': listing.title,
-                    'description': listing.description,
-                    'price_cents': int(float(listing.price) * 100) if listing.price else 0,  # Convert dollars to cents
-                    'currency': listing.currency or 'USD',
+                    'title': listing[1],  # title
+                    'description': listing[2],  # description
+                    'price_cents': int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
+                    'currency': listing[4] or 'USD',  # currency
                     'condition': 'new',  # Default condition for marketplace items
                     'category_id': None,  # Not used in marketplace table
                     'subcategory_id': None,  # Not used in marketplace table
-                    'city': listing.city,
-                    'region': listing.state,  # Map state to region
-                    'zip': listing.zip_code,
+                    'city': listing[5],  # city
+                    'region': listing[6],  # state (map to region)
+                    'zip': listing[7],  # zip_code
                     'country': 'US',  # Default country
-                    'lat': float(listing.latitude) if listing.latitude else None,
-                    'lng': float(listing.longitude) if listing.longitude else None,
-                    'seller_user_id': listing.vendor_id,
+                    'lat': float(listing[8]) if listing[8] else None,  # latitude
+                    'lng': float(listing[9]) if listing[9] else None,  # longitude
+                    'seller_user_id': listing[10],  # vendor_id
                     'attributes': {
-                        'vendor_name': listing.vendor_name,
-                        'vendor_phone': listing.vendor_phone,
-                        'vendor_email': listing.vendor_email,
-                        'kosher_agency': listing.kosher_agency,
-                        'kosher_level': listing.kosher_level,
-                        'is_available': listing.is_available,
-                        'is_featured': listing.is_featured,
-                        'is_on_sale': listing.is_on_sale,
-                        'discount_percentage': listing.discount_percentage,
-                        'stock': listing.stock,
-                        'rating': float(listing.rating) if listing.rating else None,
-                        'review_count': listing.review_count or 0
+                        'vendor_name': listing[11],  # vendor_name
+                        'vendor_phone': listing[12],  # vendor_phone
+                        'vendor_email': listing[13],  # vendor_email
+                        'kosher_agency': listing[14],  # kosher_agency
+                        'kosher_level': listing[15],  # kosher_level
+                        'is_available': listing[16],  # is_available
+                        'is_featured': listing[17],  # is_featured
+                        'is_on_sale': listing[18],  # is_on_sale
+                        'discount_percentage': listing[19],  # discount_percentage
+                        'stock': listing[20],  # stock
+                        'rating': float(listing[21]) if listing[21] else None,  # rating
+                        'review_count': listing[22] or 0  # review_count
                     },
                     'endorse_up': 0,  # Default values
                     'endorse_down': 0,  # Default values
-                    'status': listing.status,
-                    'created_at': listing.created_at.isoformat() if listing.created_at else None,
-                    'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
-                    'category_name': listing.category_name,
-                    'subcategory_name': listing.subcategory_name,
-                    'seller_name': listing.seller_name
+                    'status': listing[23],  # status
+                    'created_at': listing[24].isoformat() if listing[24] else None,  # created_at
+                    'updated_at': listing[25].isoformat() if listing[25] else None,  # updated_at
+                    'category_name': listing[26],  # category_name (from alias)
+                    'subcategory_name': listing[27],  # subcategory_name (from alias)
+                    'seller_name': listing[28]  # seller_name (from alias)
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -221,11 +224,12 @@ class MarketplaceServiceV4:
                 from sqlalchemy import text
                 
                 result = session.execute(text("""
-                    SELECT m.*, 
-                           m.category as category_name,
-                           m.subcategory as subcategory_name,
-                           m.vendor_name as seller_name,
-                           m.vendor_id as seller_username
+                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
+                           m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                           m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
+                           m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
+                           m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
+                           m.vendor_name as seller_name, m.vendor_id as seller_username
                     FROM marketplace m
                     WHERE m.id = :listing_id
                 """), {'listing_id': listing_id})
@@ -238,48 +242,48 @@ class MarketplaceServiceV4:
                         'error': 'Listing not found'
                     }
                 
-                # Format response for marketplace table
+                # Format response for marketplace table with specific column order
                 formatted_listing = {
-                    'id': str(listing.id),
+                    'id': str(listing[0]),  # id
                     'kind': 'regular',  # Default to regular for marketplace items
                     'txn_type': 'sale',  # Default to sale
-                    'title': listing.title,
-                    'description': listing.description,
-                    'price_cents': int(float(listing.price) * 100) if listing.price else 0,  # Convert dollars to cents
-                    'currency': listing.currency or 'USD',
+                    'title': listing[1],  # title
+                    'description': listing[2],  # description
+                    'price_cents': int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
+                    'currency': listing[4] or 'USD',  # currency
                     'condition': 'new',  # Default condition for marketplace items
                     'category_id': None,  # Not used in marketplace table
                     'subcategory_id': None,  # Not used in marketplace table
-                    'city': listing.city,
-                    'region': listing.state,  # Map state to region
-                    'zip': listing.zip_code,
+                    'city': listing[5],  # city
+                    'region': listing[6],  # state (map to region)
+                    'zip': listing[7],  # zip_code
                     'country': 'US',  # Default country
-                    'lat': float(listing.latitude) if listing.latitude else None,
-                    'lng': float(listing.longitude) if listing.longitude else None,
-                    'seller_user_id': listing.vendor_id,
+                    'lat': float(listing[8]) if listing[8] else None,  # latitude
+                    'lng': float(listing[9]) if listing[9] else None,  # longitude
+                    'seller_user_id': listing[10],  # vendor_id
                     'attributes': {
-                        'vendor_name': listing.vendor_name,
-                        'vendor_phone': listing.vendor_phone,
-                        'vendor_email': listing.vendor_email,
-                        'kosher_agency': listing.kosher_agency,
-                        'kosher_level': listing.kosher_level,
-                        'is_available': listing.is_available,
-                        'is_featured': listing.is_featured,
-                        'is_on_sale': listing.is_on_sale,
-                        'discount_percentage': listing.discount_percentage,
-                        'stock': listing.stock,
-                        'rating': float(listing.rating) if listing.rating else None,
-                        'review_count': listing.review_count or 0
+                        'vendor_name': listing[11],  # vendor_name
+                        'vendor_phone': listing[12],  # vendor_phone
+                        'vendor_email': listing[13],  # vendor_email
+                        'kosher_agency': listing[14],  # kosher_agency
+                        'kosher_level': listing[15],  # kosher_level
+                        'is_available': listing[16],  # is_available
+                        'is_featured': listing[17],  # is_featured
+                        'is_on_sale': listing[18],  # is_on_sale
+                        'discount_percentage': listing[19],  # discount_percentage
+                        'stock': listing[20],  # stock
+                        'rating': float(listing[21]) if listing[21] else None,  # rating
+                        'review_count': listing[22] or 0  # review_count
                     },
                     'endorse_up': 0,  # Default values
                     'endorse_down': 0,  # Default values
-                    'status': listing.status,
-                    'created_at': listing.created_at.isoformat() if listing.created_at else None,
-                    'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
-                    'category_name': listing.category_name,
-                    'subcategory_name': listing.subcategory_name,
-                    'seller_name': listing.seller_name,
-                    'seller_username': listing.seller_username
+                    'status': listing[23],  # status
+                    'created_at': listing[24].isoformat() if listing[24] else None,  # created_at
+                    'updated_at': listing[25].isoformat() if listing[25] else None,  # updated_at
+                    'category_name': listing[26],  # category_name (from alias)
+                    'subcategory_name': listing[27],  # subcategory_name (from alias)
+                    'seller_name': listing[28],  # seller_name (from alias)
+                    'seller_username': listing[29]  # seller_username (from alias)
                 }
             
             return {
