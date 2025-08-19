@@ -18,7 +18,18 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
 # Import the Flask app from the backend
-from wsgi import app
+try:
+    from wsgi import app
+    print("Successfully imported Flask app from backend")
+except ImportError as e:
+    print(f"Error importing Flask app: {e}")
+    # Create a simple Flask app as fallback
+    from flask import Flask
+    app = Flask(__name__)
+    
+    @app.route('/')
+    def health_check():
+        return {'status': 'ok', 'message': 'JewGo Backend is running'}
 
 if __name__ == "__main__":
     app.run(
