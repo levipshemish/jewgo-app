@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface AdminToken {
   id: string;
@@ -43,8 +46,22 @@ export class AdminTokenManager {
       isActive: true,
     };
 
-    // TODO: Store in database - requires Prisma schema for admin tokens
-    // await db.adminTokens.create(adminToken);
+    // Store in database
+    try {
+      await prisma.adminToken.create({
+        data: {
+          id: adminToken.id,
+          adminId: adminToken.adminId,
+          token: adminToken.token,
+          expiresAt: adminToken.expiresAt,
+          lastUsed: adminToken.lastUsed,
+          isActive: adminToken.isActive,
+        }
+      });
+    } catch (error) {
+      console.error('Failed to store admin token in database:', error);
+      // Continue without database storage for now
+    }
 
     return adminToken;
   }
@@ -52,14 +69,29 @@ export class AdminTokenManager {
   /**
    * Validate and refresh admin token
    */
-  static async validateToken(_token: string): Promise<AdminToken | null> {
-    // TODO: Fetch from database - requires Prisma schema for admin tokens
-    // const adminToken = await db.adminTokens.findFirst({
-    //   where: { token, isActive: true }
-    // });
+  static async validateToken(token: string): Promise<AdminToken | null> {
+    // Fetch from database
+    try {
+      const dbToken = await prisma.adminToken.findFirst({
+        where: { 
+          token: token,
+          isActive: true 
+        }
+      });
 
-    // Mock implementation for now
-    const adminToken = null;
+      if (!dbToken) {
+        return null;
+      }
+
+      const adminToken: AdminToken = {
+        id: dbToken.id,
+        adminId: dbToken.adminId,
+        token: dbToken.token,
+        createdAt: dbToken.createdAt,
+        expiresAt: dbToken.expiresAt,
+        lastUsed: dbToken.lastUsed,
+        isActive: dbToken.isActive,
+      };
 
     if (!adminToken) {
       return null;
@@ -72,10 +104,14 @@ export class AdminTokenManager {
 
     // Update last used
     adminToken.lastUsed = new Date();
-    // await db.adminTokens.update({
-    //   where: { id: adminToken.id },
-    //   data: { lastUsed: adminToken.lastUsed }
-    // });
+    try {
+      await prisma.adminToken.update({
+        where: { id: adminToken.id },
+        data: { lastUsed: adminToken.lastUsed }
+      });
+    } catch (error) {
+      console.error('Failed to update admin token last used:', error);
+    }
 
     return adminToken;
   }
@@ -83,12 +119,16 @@ export class AdminTokenManager {
   /**
    * Deactivate a token
    */
-  static async deactivateToken(_tokenId: string): Promise<void> {
-    // TODO: Update database - requires Prisma schema for admin tokens
-    // await db.adminTokens.update({
-    //   where: { id: tokenId },
-    //   data: { isActive: false }
-    // });
+  static async deactivateToken(tokenId: string): Promise<void> {
+    // Update database
+    try {
+      await prisma.adminToken.update({
+        where: { id: tokenId },
+        data: { isActive: false }
+      });
+    } catch (error) {
+      console.error('Failed to deactivate admin token:', error);
+    }
   }
 
   /**
@@ -96,10 +136,14 @@ export class AdminTokenManager {
    */
   static async rotateTokens(adminId: string): Promise<AdminToken> {
     // Deactivate existing tokens
-    // await db.adminTokens.updateMany({
-    //   where: { adminId, isActive: true },
-    //   data: { isActive: false }
-    // });
+    try {
+      await prisma.adminToken.updateMany({
+        where: { adminId, isActive: true },
+        data: { isActive: false }
+      });
+    } catch (error) {
+      console.error('Failed to deactivate existing tokens:', error);
+    }
 
     // Create new token
     return await this.createToken(adminId);
