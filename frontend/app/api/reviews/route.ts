@@ -20,7 +20,8 @@ export interface Review {
 }
 
 // Mock reviews data for development (unused but kept for reference)
-const mockReviews: Review[] = [
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _mockReviews: Review[] = [
   {
     id: '1',
     restaurant_id: 1,

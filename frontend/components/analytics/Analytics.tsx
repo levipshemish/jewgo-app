@@ -42,8 +42,8 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
       if (!response.ok) {
         // console.warn('Analytics endpoint returned error:', response.status);
       }
-    } catch (error) {
-              // console.warn('Failed to send analytics event:', error);
+        } catch {
+      // console.warn('Failed to send analytics event');
     }
   }, []);
 

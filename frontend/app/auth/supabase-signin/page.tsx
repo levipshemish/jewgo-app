@@ -49,9 +49,9 @@ export default function SupabaseSignIn() {
       } else {
         setError("Authentication failed. Please check your credentials.");
       }
-    } catch (err) {
-      console.error('Sign in error:', err);
-      setError("An unexpected error occurred. Please try again.");
+          } catch {
+        console.error('Sign in error occurred');
+        setError("An unexpected error occurred. Please try again.");
     }
     
     setPending(false);
@@ -97,9 +97,9 @@ export default function SupabaseSignIn() {
       } else {
         setError("Check your email for a magic link!");
       }
-    } catch (err) {
-      setPending(false);
-      setError("An unexpected error occurred. Please try again.");
+          } catch {
+        setPending(false);
+        setError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -126,9 +126,9 @@ export default function SupabaseSignIn() {
       } else {
         // console.log('Google OAuth initiated successfully');
       }
-    } catch (err) {
-      // console.error('Unexpected error during Google OAuth:', err);
-      setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          } catch {
+        // console.error('Unexpected error during Google OAuth');
+        setError('Unexpected error occurred during Google OAuth');
     }
     
     setPending(false);

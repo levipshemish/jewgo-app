@@ -12,7 +12,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#f4f4f4]">
       {/* Search Header */}
       <Header
-        onSearch={(query) => {
+        onSearch={(_query) => {
           // Handle search
         }}
         placeholder="Search restaurants..."
@@ -23,7 +23,7 @@ export default function HomePage() {
       />
 
       {/* Category Tabs */}
-      <CategoryTabs activeTab="eatery" onTabChange={(tab) => {
+      <CategoryTabs activeTab="eatery" onTabChange={(_tab) => {
         // Handle tab change
       }} />
 

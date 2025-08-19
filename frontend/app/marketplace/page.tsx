@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { BottomNavigation } from '@/components/navigation/ui';
 import MarketplaceSearch from '@/components/marketplace/MarketplaceSearch';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing } from '@/lib/types/marketplace';
-import { scrollToTop } from '@/lib/utils/scrollUtils';
+
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -111,7 +111,7 @@ export default function MarketplacePage() {
     }
   };
 
-  const handleTabChange = (tab: string) => {
+  const _handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
     // Filter by listing type based on tab

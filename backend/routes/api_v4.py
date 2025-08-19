@@ -201,7 +201,7 @@ def success_response(data: Any, message: str = "Success", status_code: int = 200
         "success": True,
         "message": message,
         "data": data
-    }), status_code
+    })
 
 def error_response(message: str, status_code: int = 500, details: Optional[Dict] = None):
     """Create a standardized error response."""
@@ -944,7 +944,7 @@ def get_marketplace_listings():
                 'limit': limit,
                 'offset': offset
             }
-        }), 200
+        })
         
     except Exception as e:
         logger.exception("Error fetching marketplace listings")

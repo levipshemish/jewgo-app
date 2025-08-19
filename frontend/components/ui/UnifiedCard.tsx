@@ -242,23 +242,23 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
 
 
           {/* Price */}
-          <div className="flex items-center justify-between">
+          <div className="mb-2">
             <span className="text-sm font-medium text-gray-900">
               {formatPrice()}
             </span>
-            
-            {/* Category Badge */}
-            {(data.kosher_category || data.listing_type) && (
-              <SpanContainer
-                className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700"
-                {...(isMobileDevice ? {} : {
-                  whileHover: { scale: 1.05 }
-                })}
-              >
-                {titleCase(data.kosher_category || data.listing_type || '')}
-              </SpanContainer>
-            )}
           </div>
+          
+          {/* Category Badge */}
+          {(data.kosher_category || data.listing_type) && (
+            <SpanContainer
+              className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700"
+              {...(isMobileDevice ? {} : {
+                whileHover: { scale: 1.05 }
+              })}
+            >
+              {titleCase(data.kosher_category || data.listing_type || '')}
+            </SpanContainer>
+          )}
         </div>
       </div>
     </CardContainer>

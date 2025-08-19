@@ -8,7 +8,7 @@ import { useRouter, useParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
-import MarketplaceFiltersComponent from '@/components/marketplace/MarketplaceFilters';
+
 import ProductCard from '@/components/marketplace/ProductCard';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
@@ -79,11 +79,11 @@ export default function CategoryPage() {
     }
   };
 
-  const handleFiltersChange = (newFilters: MarketplaceFiltersType) => {
+  const _handleFiltersChange = (newFilters: MarketplaceFiltersType) => {
     setFilters(newFilters);
   };
 
-  const handleClearFilters = () => {
+  const _handleClearFilters = () => {
     setFilters({
       category: '',
       subcategory: '',

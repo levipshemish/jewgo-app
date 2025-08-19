@@ -47,7 +47,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     setError(null);
     
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
+              const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });

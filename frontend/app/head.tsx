@@ -12,7 +12,7 @@ export function CustomHead() {
         const validSheets = styleSheets.filter(sheet => {
           try {
             return sheet.href && sheet.href.startsWith(window.location.origin);
-          } catch (_e) {
+          } catch {
             // Cross-origin stylesheets will throw errors, which is normal
             return false;
           }
