@@ -8,14 +8,14 @@ import ActionButtons from '@/components/layout/ActionButtons';
 import { BottomNavigation } from '@/components/navigation/ui';
 import MarketplaceCategoryTabs from '@/components/navigation/ui/MarketplaceCategoryTabs';
 
-import { EateryCard } from '@/components/eatery/ui';
-import { fetchRestaurants } from '@/lib/api/restaurants';
-import { Restaurant } from '@/lib/types/restaurant';
+import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
+import { fetchMarketplaceListings } from '@/lib/api/marketplace';
+import { MarketplaceListing } from '@/lib/types/marketplace';
 
 export default function MarketplacePage() {
   const router = useRouter();
 
-  const [listings, setListings] = useState<Restaurant[]>([]);
+  const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,29 +61,30 @@ export default function MarketplacePage() {
         region: filters.region || undefined
       };
 
-      // Build query parameters for restaurant filtering
-      const queryParams = new URLSearchParams();
-      if (searchQuery) {
-        queryParams.append('search', searchQuery);
-      }
-      if (filters.category) {
-        queryParams.append('listing_type', filters.category);
-      }
-      if (filters.city) {
-        queryParams.append('city', filters.city);
-      }
+      const response = await fetchMarketplaceListings(params);
       
-      const response = await fetchRestaurants(200, queryParams.toString());
-      const newListings = response.restaurants || [];
-      
-      if (append) {
-        setListings(prev => [...prev, ...newListings]);
+      if (response.success && response.data?.listings) {
+        const newListings = response.data.listings;
+        
+        // Check if marketplace is available (not empty due to "not yet available" message)
+        if (newListings.length === 0 && (response.data as any).message === 'Marketplace is not yet available') {
+          setMarketplaceAvailable(false);
+          setListings([]);
+          setHasMore(false);
+        } else {
+          setMarketplaceAvailable(true);
+          if (append) {
+            setListings(prev => [...prev, ...newListings]);
+          } else {
+            setListings(newListings);
+          }
+          
+          setHasMore(newListings.length === 20);
+          setCurrentPage(page);
+        }
       } else {
-        setListings(newListings);
+        setError(response.error || 'Failed to load listings');
       }
-      
-      setHasMore(newListings.length === 20);
-      setCurrentPage(page);
     } catch (err) {
       setError('Failed to load marketplace listings');
       console.error('Error loading listings:', err);
@@ -134,11 +135,15 @@ export default function MarketplacePage() {
     loadListings(1, false);
   };
 
-  const handleListingClick = (listing: Restaurant) => {
-    router.push(`/restaurant/${listing.id}`);
+  const handleListingClick = (listing: MarketplaceListing) => {
+    router.push(`/marketplace/${listing.id}`);
   };
 
 
+
+  const handleAddListing = () => {
+    router.push('/marketplace/add');
+  };
 
   const handleShowFilters = () => {
     setShowFilters(true);
@@ -188,7 +193,7 @@ export default function MarketplacePage() {
       {/* Header with Logo and Search */}
       <Header
         onSearch={handleSearch}
-        placeholder="Search restaurants..."
+        placeholder="Search marketplace listings..."
         showFilters={true}
         onShowFilters={handleShowFilters}
       />
@@ -202,7 +207,7 @@ export default function MarketplacePage() {
       <ActionButtons
         onShowFilters={handleShowFilters}
         onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-eatery')}
+        onAddEatery={handleAddListing}
       />
 
 
@@ -221,12 +226,12 @@ export default function MarketplacePage() {
           </div>
         ) : listings.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">🍽️</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No restaurants found</h3>
+            <div className="text-gray-400 text-6xl mb-4">🛍️</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
             <p className="text-gray-500 mb-6">
               {searchQuery || Object.values(filters).some(f => f) 
                 ? 'Try adjusting your search or filters'
-                : 'No restaurants available in this area'
+                : 'Be the first to add a listing!'
               }
             </p>
 
@@ -234,10 +239,10 @@ export default function MarketplacePage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((listing) => (
-              <EateryCard
+              <MarketplaceListingCard
                 key={listing.id}
-                restaurant={listing}
-                className="w-full"
+                listing={listing}
+                onClick={() => handleListingClick(listing)}
               />
             ))}
           </div>
