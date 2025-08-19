@@ -41,6 +41,10 @@ jobs:
           npm run lint
 
       - name: Run pre-merge guard
+        env:
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ci-build-api-key-for-testing-only
+          NEXT_PUBLIC_BACKEND_URL: https://jewgo.onrender.com
+          NODE_ENV: production
         run: |
           cd frontend
           npm run build
