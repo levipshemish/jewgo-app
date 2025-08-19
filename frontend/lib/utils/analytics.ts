@@ -1,8 +1,5 @@
 // NOTE: simple console-based analytics removed in favor of class-based singleton below
 
-// Import AnalyticsEvent from types
-import type { AnalyticsEvent } from '../types/index';
-
 // Analytics tracking utility
 // This can be integrated with services like Google Analytics, Mixpanel, or custom analytics
 
@@ -22,7 +19,7 @@ interface RegistrationMetrics {
 }
 
 class Analytics {
-  private queue: AnalyticsEvent[] = [];
+  private queue: AnalyticsEventData[] = [];
   private metrics: RegistrationMetrics = {
     totalAttempts: 0,
     successfulRegistrations: 0,
@@ -34,11 +31,10 @@ class Analytics {
 
   // Track a generic event
   track(event: string, properties?: Record<string, any>) {
-    const analyticsEvent: AnalyticsEvent = {
-      name: event,
-      timestamp: new Date().toISOString(),
-      url: typeof window !== 'undefined' ? window.location.href : '',
-      props: properties,
+    const analyticsEvent: AnalyticsEventData = {
+      event,
+      properties,
+      timestamp: new Date(),
     };
 
     this.queue.push(analyticsEvent);
@@ -161,13 +157,13 @@ class Analytics {
     return sanitized;
   }
 
-  private async sendToAnalyticsService(event: AnalyticsEventData) {
+  private async sendToAnalyticsService(event: AnalyticsEvent) {
     // Placeholder for actual analytics service integration
     // Examples: Google Analytics, Mixpanel, Segment, etc.
     
     // Google Analytics example:
     if ((window as any).gtag) {
-      (window as any).gtag('event', event.event, event.properties);
+      (window as any).gtag('event', event.name, event.props);
     }
 
     // Or send to custom analytics endpoint
