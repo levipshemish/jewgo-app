@@ -280,8 +280,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Single line with truncation */}
-        <div className="h-8 mb-0.5 flex items-center">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate">
+        <div className="h-8 mb-0.5 flex items-center w-full">
+          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate w-full">
             {titleCase(restaurant.name)}
           </h3>
         </div>

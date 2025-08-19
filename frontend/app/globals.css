@@ -527,6 +527,22 @@ html {
     min-width: 0;
     max-width: none;
   }
+  
+  /* Ensure text truncation works properly in restaurant cards */
+  .restaurant-card h3 {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+  }
+}
+
+/* Restaurant card text truncation - ensure it works on all screen sizes */
+.restaurant-card h3 {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  width: 100% !important;
 }
 
 /* Responsive Adjustments */
