@@ -52,66 +52,69 @@ class MarketplaceServiceV4:
     ) -> Dict[str, Any]:
         """Get marketplace listings with filtering and pagination."""
         try:
-            # Build query
+            # Build query for marketplace table
             query = """
-                SELECT l.*, 
-                       c.name as category_name,
-                       sc.name as subcategory_name,
-                       u.display_name as seller_name
-                FROM listings l
-                LEFT JOIN categories c ON l.category_id = c.id
-                LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
-                LEFT JOIN users u ON l.seller_user_id = u.id
-                WHERE l.status = %s
+                SELECT m.*, 
+                       m.category as category_name,
+                       m.subcategory as subcategory_name,
+                       m.vendor_name as seller_name
+                FROM marketplace m
+                WHERE m.status = %s
             """
             params = [status]
             
             # Add filters
             if search:
-                query += " AND (l.title ILIKE %s OR l.description ILIKE %s)"
+                query += " AND (m.title ILIKE %s OR m.description ILIKE %s)"
                 params.extend([f'%{search}%', f'%{search}%'])
             
             if category:
-                query += " AND c.slug = %s"
-                params.append(category)
+                query += " AND m.category ILIKE %s"
+                params.append(f'%{category}%')
                 
             if subcategory:
-                query += " AND sc.slug = %s"
-                params.append(subcategory)
+                query += " AND m.subcategory ILIKE %s"
+                params.append(f'%{subcategory}%')
                 
-            if kind:  # Changed from listing_type to kind
-                query += " AND l.kind = %s"
-                params.append(kind)
+            if kind:  # Map kind to appropriate marketplace fields
+                if kind == 'regular':
+                    query += " AND m.category NOT IN ('vehicle', 'appliance')"
+                elif kind == 'vehicle':
+                    query += " AND m.category ILIKE %s"
+                    params.append('%vehicle%')
+                elif kind == 'appliance':
+                    query += " AND m.category ILIKE %s"
+                    params.append('%appliance%')
                 
             if condition:
-                query += " AND l.condition = %s"
-                params.append(condition)
+                # Marketplace table doesn't have condition field, skip this filter
+                pass
             
             if min_price is not None:
-                query += " AND l.price_cents >= %s"
-                params.append(min_price)
+                query += " AND m.price >= %s"
+                params.append(min_price / 100.0)  # Convert cents to dollars
             
             if max_price is not None:
-                query += " AND l.price_cents <= %s"
-                params.append(max_price)
+                query += " AND m.price <= %s"
+                params.append(max_price / 100.0)  # Convert cents to dollars
             
             if city:
-                query += " AND l.city ILIKE %s"
+                query += " AND m.city ILIKE %s"
                 params.append(f'%{city}%')
                 
             if region:
-                query += " AND l.region = %s"
-                params.append(region)
+                query += " AND m.state ILIKE %s"
+                params.append(f'%{region}%')
             
             # Location-based filtering
             if lat and lng and radius:
                 # Convert radius from miles to degrees (approximate)
                 radius_degrees = radius / 69.0
                 query += """
-                    AND l.lat IS NOT NULL 
-                    AND l.lng IS NOT NULL
-                    AND l.lat BETWEEN %s AND %s
-                    AND l.lng BETWEEN %s AND %s
+                    AND m.latitude IS NOT NULL 
+                    AND m.longitude IS NOT NULL
+                    AND m.latitude BETWEEN %s AND %s
+                    AND m.longitude BETWEEN %s AND %s
                 """
                 params.extend([
                     lat - radius_degrees, lat + radius_degrees,
@@ -119,7 +122,7 @@ class MarketplaceServiceV4:
                 ])
             
             # Add ordering and pagination
-            query += " ORDER BY l.created_at DESC LIMIT %s OFFSET %s"
+            query += " ORDER BY m.created_at DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             
             # Execute query
@@ -140,42 +143,56 @@ class MarketplaceServiceV4:
                 listings = result.fetchall()
                 
                 # Get total count for pagination
-                count_query = sqlalchemy_query.replace("SELECT l.*, ", "SELECT COUNT(*) as total FROM listings l ")
+                count_query = sqlalchemy_query.replace("SELECT m.*, ", "SELECT COUNT(*) as total FROM marketplace m ")
                 count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
                 count_params = {k: v for k, v in sqlalchemy_params.items() if not k.endswith(f"_{len(params)-2}") and not k.endswith(f"_{len(params)-1}")}
                 count_result = session.execute(text(count_query), count_params)
                 total = count_result.scalar()
             
-            # Format response
+            # Format response for marketplace table
             formatted_listings = []
             for listing in listings:
+                # Convert marketplace table structure to expected format
                 formatted_listing = {
-                    'id': str(listing[0]),
-                    'kind': listing[1],  # Changed from type to kind
-                    'txn_type': listing[2],  # New field
-                    'title': listing[3],
-                    'description': listing[4],
-                    'price_cents': listing[5],
-                    'currency': listing[6],
-                    'condition': listing[7],
-                    'category_id': listing[8],
-                    'subcategory_id': listing[9],
-                    'city': listing[10],
-                    'region': listing[11],
-                    'zip': listing[12],
-                    'country': listing[13],
-                    'lat': listing[14],
-                    'lng': listing[15],
-                    'seller_user_id': listing[16],
-                    'attributes': listing[17],
-                    'endorse_up': listing[18],
-                    'endorse_down': listing[19],
-                    'status': listing[20],
-                    'created_at': listing[21].isoformat(),
-                    'updated_at': listing[22].isoformat(),
-                    'category_name': listing[23],
-                    'subcategory_name': listing[24],
-                    'seller_name': listing[25]
+                    'id': str(listing.id),
+                    'kind': 'regular',  # Default to regular for marketplace items
+                    'txn_type': 'sale',  # Default to sale
+                    'title': listing.title,
+                    'description': listing.description,
+                    'price_cents': int(float(listing.price) * 100) if listing.price else 0,  # Convert dollars to cents
+                    'currency': listing.currency or 'USD',
+                    'condition': 'new',  # Default condition for marketplace items
+                    'category_id': None,  # Not used in marketplace table
+                    'subcategory_id': None,  # Not used in marketplace table
+                    'city': listing.city,
+                    'region': listing.state,  # Map state to region
+                    'zip': listing.zip_code,
+                    'country': 'US',  # Default country
+                    'lat': float(listing.latitude) if listing.latitude else None,
+                    'lng': float(listing.longitude) if listing.longitude else None,
+                    'seller_user_id': listing.vendor_id,
+                    'attributes': {
+                        'vendor_name': listing.vendor_name,
+                        'vendor_phone': listing.vendor_phone,
+                        'vendor_email': listing.vendor_email,
+                        'kosher_agency': listing.kosher_agency,
+                        'kosher_level': listing.kosher_level,
+                        'is_available': listing.is_available,
+                        'is_featured': listing.is_featured,
+                        'is_on_sale': listing.is_on_sale,
+                        'discount_percentage': listing.discount_percentage,
+                        'stock': listing.stock,
+                        'rating': float(listing.rating) if listing.rating else None,
+                        'review_count': listing.review_count or 0
+                    },
+                    'endorse_up': 0,  # Default values
+                    'endorse_down': 0,  # Default values
+                    'status': listing.status,
+                    'created_at': listing.created_at.isoformat() if listing.created_at else None,
+                    'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
+                    'category_name': listing.category_name,
+                    'subcategory_name': listing.subcategory_name,
+                    'seller_name': listing.seller_name
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -204,16 +221,13 @@ class MarketplaceServiceV4:
                 from sqlalchemy import text
                 
                 result = session.execute(text("""
-                    SELECT l.*, 
-                           c.name as category_name,
-                           sc.name as subcategory_name,
-                           u.display_name as seller_name,
-                           u.username as seller_username
-                    FROM listings l
-                    LEFT JOIN categories c ON l.category_id = c.id
-                    LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
-                    LEFT JOIN users u ON l.seller_user_id = u.id
-                    WHERE l.id = :listing_id
+                    SELECT m.*, 
+                           m.category as category_name,
+                           m.subcategory as subcategory_name,
+                           m.vendor_name as seller_name,
+                           m.vendor_id as seller_username
+                    FROM marketplace m
+                    WHERE m.id = :listing_id
                 """), {'listing_id': listing_id})
                 
                 listing = result.fetchone()
@@ -224,36 +238,49 @@ class MarketplaceServiceV4:
                         'error': 'Listing not found'
                     }
                 
-                # Format response
+                # Format response for marketplace table
                 formatted_listing = {
-                        'id': str(listing[0]),
-                        'kind': listing[1],
-                        'txn_type': listing[2],
-                        'title': listing[3],
-                        'description': listing[4],
-                        'price_cents': listing[5],
-                        'currency': listing[6],
-                        'condition': listing[7],
-                        'category_id': listing[8],
-                        'subcategory_id': listing[9],
-                        'city': listing[10],
-                        'region': listing[11],
-                        'zip': listing[12],
-                        'country': listing[13],
-                        'lat': listing[14],
-                        'lng': listing[15],
-                        'seller_user_id': listing[16],
-                        'attributes': listing[17],
-                        'endorse_up': listing[18],
-                        'endorse_down': listing[19],
-                        'status': listing[20],
-                        'created_at': listing[21].isoformat(),
-                        'updated_at': listing[22].isoformat(),
-                        'category_name': listing[23],
-                        'subcategory_name': listing[24],
-                        'seller_name': listing[25],
-                        'seller_username': listing[26]
-                    }
+                    'id': str(listing.id),
+                    'kind': 'regular',  # Default to regular for marketplace items
+                    'txn_type': 'sale',  # Default to sale
+                    'title': listing.title,
+                    'description': listing.description,
+                    'price_cents': int(float(listing.price) * 100) if listing.price else 0,  # Convert dollars to cents
+                    'currency': listing.currency or 'USD',
+                    'condition': 'new',  # Default condition for marketplace items
+                    'category_id': None,  # Not used in marketplace table
+                    'subcategory_id': None,  # Not used in marketplace table
+                    'city': listing.city,
+                    'region': listing.state,  # Map state to region
+                    'zip': listing.zip_code,
+                    'country': 'US',  # Default country
+                    'lat': float(listing.latitude) if listing.latitude else None,
+                    'lng': float(listing.longitude) if listing.longitude else None,
+                    'seller_user_id': listing.vendor_id,
+                    'attributes': {
+                        'vendor_name': listing.vendor_name,
+                        'vendor_phone': listing.vendor_phone,
+                        'vendor_email': listing.vendor_email,
+                        'kosher_agency': listing.kosher_agency,
+                        'kosher_level': listing.kosher_level,
+                        'is_available': listing.is_available,
+                        'is_featured': listing.is_featured,
+                        'is_on_sale': listing.is_on_sale,
+                        'discount_percentage': listing.discount_percentage,
+                        'stock': listing.stock,
+                        'rating': float(listing.rating) if listing.rating else None,
+                        'review_count': listing.review_count or 0
+                    },
+                    'endorse_up': 0,  # Default values
+                    'endorse_down': 0,  # Default values
+                    'status': listing.status,
+                    'created_at': listing.created_at.isoformat() if listing.created_at else None,
+                    'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
+                    'category_name': listing.category_name,
+                    'subcategory_name': listing.subcategory_name,
+                    'seller_name': listing.seller_name,
+                    'seller_username': listing.seller_username
+                }
             
             return {
                     'success': True,
