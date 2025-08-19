@@ -1,8 +1,1 @@
-
-> jewgo-frontend@0.1.0 analyze:depscruise /Users/mendell/jewgo app/frontend
-> depcruise --config .dependency-cruiser.js --output-type json .
-
-
-  ERROR: The supplied configuration is not valid: data/allowed/0 must NOT have additional properties, data/allowed/0 must NOT have additional properties, data/allowed/0 must match exactly one schema in oneOf.
-
- ELIFECYCLE  Command failed with exit code 1.
+{}

@@ -1,5 +1,1 @@
-
-> jewgo-frontend@0.1.0 analyze:cycles /Users/mendell/jewgo app/frontend
-> madge --ts-config ./tsconfig.json --warning --json --circular .
-
-[]
+{}

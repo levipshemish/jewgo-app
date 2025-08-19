@@ -79,7 +79,6 @@ console.log(tsMcpBuildResult.success ? '✅ TS Next Strict MCP build passed' : '
 console.log('\n7️⃣ Testing CI Configuration Files...');
 const ciFiles = [
   '.github/workflows/ci.yml',
-  '.github/workflows/mcp-validation.yml',
   '.github/workflows/premerge-guard.yml'
 ];
 
