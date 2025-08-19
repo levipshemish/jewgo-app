@@ -1004,6 +1004,74 @@ def create_app(config_class=None):
             200,
         )
 
+    @app.route("/api/debug/marketplace-table", methods=["GET"])
+    def debug_marketplace_table():
+        """Debug endpoint to check marketplace table status."""
+        try:
+            from database.database_manager_v3 import EnhancedDatabaseManager
+            
+            db_manager = EnhancedDatabaseManager()
+            
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    # Check if marketplace table exists
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'marketplace'
+                        );
+                    """)
+                    
+                    table_exists = cursor.fetchone()[0]
+                    
+                    if table_exists:
+                        # Check if table has data
+                        cursor.execute("SELECT COUNT(*) FROM marketplace")
+                        count = cursor.fetchone()[0]
+                        
+                        # Check table structure
+                        cursor.execute("""
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'marketplace' 
+                            ORDER BY ordinal_position
+                        """)
+                        
+                        columns = cursor.fetchall()
+                        column_info = [{"name": col[0], "type": col[1]} for col in columns]
+                        
+                        return jsonify({
+                            "success": True,
+                            "table_exists": True,
+                            "record_count": count,
+                            "columns": column_info
+                        })
+                    else:
+                        # Check what tables exist
+                        cursor.execute("""
+                            SELECT table_name 
+                            FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            ORDER BY table_name
+                        """)
+                        
+                        tables = cursor.fetchall()
+                        table_names = [table[0] for table in tables]
+                        
+                        return jsonify({
+                            "success": True,
+                            "table_exists": False,
+                            "available_tables": table_names
+                        })
+                        
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": str(e),
+                "table_exists": False
+            }), 500
+
     @app.route("/api/test/cors", methods=["GET", "POST", "OPTIONS"])
     def test_cors():
         """Simple test endpoint to verify CORS is working."""
