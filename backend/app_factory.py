@@ -1592,50 +1592,13 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
         try:
-            # Debug: Log cache manager status
-            logger.info(f"Debug: deps keys: {list(deps.keys())}")
-            logger.info(f"Debug: cache_manager_v4 in deps: {'cache_manager_v4' in deps}")
-            
-            # Try to get from cache first
-            cached_result = deps.get("cache_manager_v4")
-            logger.info(f"Debug: cached_result type: {type(cached_result)}")
-            logger.info(f"Debug: cached_result is None: {cached_result is None}")
-
-            # Temporarily disable cache to debug database issue
-            cached_result = None
-            logger.info("Debug: Cache temporarily disabled for debugging")
-
-            # Get database manager instance
-            db_manager = deps.get("get_db_manager")()
-            logger.info(f"Debug: db_manager type: {type(db_manager)}")
-            logger.info(f"Debug: db_manager is None: {db_manager is None}")
-            
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return error_response("Database not available", 503)
-
-            # Get restaurant from database
-            try:
-                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-                logger.info(f"Debug: restaurant result: {restaurant is not None}")
-            except Exception as db_error:
-                logger.error(f"Database error: {db_error}")
-                raise
-
-            if not restaurant:
-                return not_found_response("Restaurant not found", resource_type="restaurant")
-
-            response_data = {"restaurant": restaurant}
-
-            # Cache the result
-            if cached_result:
-                cached_result.cache_restaurant_details(
-                    restaurant_id,
-                    response_data,
-                    ttl=1800,
-                )  # Cache for 30 minutes
-
-            return restaurant_response(restaurant)
+            # Temporary simplified response for debugging
+            logger.info(f"Debug: Restaurant endpoint called with ID: {restaurant_id}")
+            return jsonify({
+                "message": "Restaurant endpoint working",
+                "restaurant_id": restaurant_id,
+                "status": "debug_mode"
+            }), 200
 
         except Exception as e:
             logger.exception(
