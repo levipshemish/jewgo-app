@@ -16,7 +16,7 @@ jest.mock('next/navigation', () => ({
 // Mock reCAPTCHA
 jest.mock('@/lib/utils/recaptcha', () => ({
   useRecaptcha: () => ({
-    execute: jest.fn().mockResolvedValue('test-token'),
+    execute: jest.fn().mockResolvedValue('test-token' as any),
     siteKey: 'test-site-key',
   }),
 }));

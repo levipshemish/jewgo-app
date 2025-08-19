@@ -11,7 +11,7 @@
     "export": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --project tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "health-check": "node scripts/health-check.js",

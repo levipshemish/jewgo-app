@@ -173,7 +173,7 @@ describe('Registration Flow', () => {
 
   describe('Security Features', () => {
     it('should hash email for privacy in analytics', () => {
-      const track = vi.spyOn(analytics as any, 'track');
+      const track = jest.spyOn(analytics as any, 'track');
       analytics.trackRegistrationAttempt('user@example.com');
       
       expect(track).toHaveBeenCalledWith(
@@ -185,7 +185,7 @@ describe('Registration Flow', () => {
     });
 
     it('should sanitize error details', () => {
-      const track = vi.spyOn(analytics as any, 'track');
+      const track = jest.spyOn(analytics as any, 'track');
       analytics.trackRegistrationFailure('test@example.com', 'error', {
         password: 'secret',
         token: 'token123',
