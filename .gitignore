@@ -120,3 +120,12 @@ Thumbs.db
 # Cursor AI Configuration (Development Tool)
 .cursor/ backend/venv_py311/
 backend/venv_py311/
+
+# Graveyard and archive files (old/unused code)
+**/graveyard/
+**/archive/
+**/_unused/
+
+# Coverage reports
+**/coverage/
+**/lcov-report/
