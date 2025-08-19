@@ -1,18 +1,18 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, Fragment, useRef } from 'react';
-
-import { EateryCard } from '@/components/eatery/ui';
-import { Header } from '@/components/layout';
-import ActionButtons from '@/components/layout/ActionButtons';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import AdvancedFilters from '@/components/search/AdvancedFilters';
+import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
+import { Header } from '@/components/layout';
+import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { EateryCard } from '@/components/eatery/ui';
+import ActionButtons from '@/components/layout/ActionButtons';
+import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { Restaurant } from '@/lib/types/restaurant';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
+
+import { Restaurant } from '@/lib/types/restaurant';
 
 export default function EateryExplorePage() {
   const router = useRouter();
@@ -182,7 +182,7 @@ export default function EateryExplorePage() {
         
         const data = await fetchRestaurants(200, params.toString());
         setRestaurants(data.restaurants || []);
-      } catch {
+      } catch (_err) {
         // console.error('Error loading restaurants:', err);
         setError('Failed to load restaurants. Please try again.');
       } finally {
@@ -316,8 +316,6 @@ export default function EateryExplorePage() {
       setCurrentPage(prev => prev + 1);
     }
   };
-
-
 
   // Scroll to top when page changes (for desktop pagination)
   useEffect(() => {
@@ -511,25 +509,14 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              {/* Mobile-first grid with proper safe area handling */}
-              <div 
-                className="
-                  grid gap-4
-                  grid-cols-2
-                  sm:grid-cols-3
-                  lg:grid-cols-4
-                  xl:grid-cols-5
-                  2xl:grid-cols-6
-                  pb-[calc(env(safe-area-inset-bottom)+88px)]
-                "
-              >
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <article key={restaurant.id} className="min-w-0">
+                  <div key={restaurant.id} className="relative">
                     <EateryCard
                       restaurant={restaurant}
                       className="w-full"
                     />
-                  </article>
+                  </div>
                 ))}
               </div>
               
@@ -664,10 +651,7 @@ export default function EateryExplorePage() {
                     disabled={currentPage === totalPages}
                     className="pagination-button disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     style={{
-                      minHeight: '44px',
-                      minWidth: '44px',
-                      touchAction: 'manipulation',
-                      WebkitTapHighlightColor: 'transparent'
+                      minHeight: '44px', minWidth: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent'
                     }}
                   >
                     <span className="hidden sm:inline">Next</span>
