@@ -5,8 +5,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
-import { BottomNavigation } from '@/components/navigation/ui';
-import { CategoryTabs } from '@/components/navigation/ui';
+import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 
 import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
