@@ -650,12 +650,16 @@ def create_app(config_class=None):
                 db_manager = get_db_manager()
                 if db_manager:
                     logger.info("Database manager v3 initialized successfully")
+                    # Store in app config for health routes
+                    app.config['DB_MANAGER'] = db_manager
                 else:
                     logger.error("Failed to initialize database manager v3")
                 
                 db_manager_v4 = get_db_manager_v4()
                 if db_manager_v4:
                     logger.info("Database manager v4 initialized successfully")
+                    # Store in app config for health routes
+                    app.config['DB_MANAGER_V4'] = db_manager_v4
                 else:
                     logger.error("Failed to initialize database manager v4")
                     
