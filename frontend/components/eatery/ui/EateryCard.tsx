@@ -90,52 +90,56 @@ export default function EateryCard({ restaurant, className = "" }: EateryCardPro
       )}
       onClick={handleCardClick}
     >
-      {/* Image Section */}
+      {/* Image Section with proper rounded corners */}
       <div className="relative">
-        <OptimizedImage
-          src={getSafeImageUrl(restaurant.image_url) || '/images/default-restaurant.webp'}
-          alt={restaurant.name}
-          aspectRatio="photo"
-          containerClassName="rounded-t-xl"
-          loading="lazy"
-          showLoadingState={false}
-        />
-        
-        {/* Kosher Category Badge */}
-        {restaurant.kosher_category && (
-          <span className={`absolute top-2 left-2 px-1.5 py-0.5 rounded-full shadow-md ${commonTypography.badge} ${
-            getKosherCategoryBadgeClasses(restaurant.kosher_category)
-          }`}>
-            {titleCase(restaurant.kosher_category)}
-          </span>
-        )}
+        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
+          <OptimizedImage
+            src={getSafeImageUrl(restaurant.image_url) || '/images/default-restaurant.webp'}
+            alt={restaurant.name}
+            aspectRatio="photo"
+            containerClassName="w-full h-full"
+            loading="lazy"
+            showLoadingState={false}
+          />
+          
+          {/* Kosher Category Badge */}
+          {restaurant.kosher_category && (
+            <span className={`absolute top-2 left-2 px-2 py-1 rounded-full shadow-sm bg-white/90 backdrop-blur-sm ${commonTypography.badge} ${
+              getKosherCategoryBadgeClasses(restaurant.kosher_category)
+            }`}>
+              {titleCase(restaurant.kosher_category)}
+            </span>
+          )}
 
-        {/* Business Type Badge */}
-        {businessType && businessType !== 'None' && (
-          <span className={`absolute top-2 left-12 px-2 py-0.5 rounded-full shadow-md text-xs font-medium ${businessTypeColor}`}>
-            <span className="mr-1">{businessTypeIcon}</span>
-            {businessTypeDisplay}
-          </span>
-        )}
+          {/* Business Type Badge */}
+          {businessType && businessType !== 'None' && (
+            <span className={`absolute top-2 left-12 px-2 py-1 rounded-full shadow-sm bg-white/90 backdrop-blur-sm text-xs font-medium ${businessTypeColor}`}>
+              <span className="mr-1">{businessTypeIcon}</span>
+              {businessTypeDisplay}
+            </span>
+          )}
 
-        {/* Favorite Button */}
-        <button 
-          className="absolute top-2 right-2 w-6 h-6 rounded-full transition-all duration-200 hover:scale-110 z-10 flex items-center justify-center"
-          title="Favorite"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Heart size={12} className="w-3 h-3 text-gray-400" />
-        </button>
+          {/* Favorite Button */}
+          <button 
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-200 hover:scale-110 z-10 flex items-center justify-center"
+            title="Favorite"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Heart size={12} className="w-3 h-3 text-gray-400" />
+          </button>
+        </div>
       </div>
 
-      {/* Content Section */}
-      <div className={commonSpacing.card}>
+      {/* Content Section with proper spacing */}
+      <div className="p-3">
         {/* Restaurant Name and Rating on same line */}
-        <div className="flex items-center justify-between mb-2">
-          <h3 className={`${commonTypography.title} tracking-tight flex-1 mr-2`}>{restaurant.name}</h3>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-900 tracking-tight flex-1 mr-2 line-clamp-1">
+            {restaurant.name}
+          </h3>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-            <span className={commonTypography.body}>
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs text-gray-700 font-medium">
               {getRating().toFixed(1)}
             </span>
             {reviewCount > 0 && (
@@ -147,7 +151,7 @@ export default function EateryCard({ restaurant, className = "" }: EateryCardPro
         </div>
         
         {formatPriceRange() && (
-          <p className={commonTypography.subtitle}>
+          <p className="text-xs text-gray-600">
             {formatPriceRange()}
           </p>
         )}
