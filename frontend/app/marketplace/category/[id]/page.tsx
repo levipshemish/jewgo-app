@@ -12,7 +12,7 @@ import MarketplaceFiltersComponent from '@/components/marketplace/MarketplaceFil
 import ProductCard from '@/components/marketplace/ProductCard';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
-import { MarketplaceProduct, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
 export default function CategoryPage() {
   const router = useRouter();
@@ -20,9 +20,18 @@ export default function CategoryPage() {
   const categoryId = params?.id as string;
   
   const [category, setCategory] = useState<MarketplaceCategory | null>(null);
-  const [products, setProducts] = useState<MarketplaceProduct[]>([]);
+  const [products, setProducts] = useState<MarketplaceListing[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
-  const [filters, setFilters] = useState<MarketplaceFiltersType>({});
+  const [filters, setFilters] = useState<MarketplaceFiltersType>({
+    category: '',
+    subcategory: '',
+    listingType: '',
+    condition: '',
+    minPrice: '',
+    maxPrice: '',
+    city: '',
+    region: ''
+  });
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -40,12 +49,12 @@ export default function CategoryPage() {
       const [categoryData, productsData, categoriesData] = await Promise.all([
         MarketplaceAPI.getCategory(categoryId),
         MarketplaceAPI.getCategoryProducts(categoryId),
-        MarketplaceAPI.getCategories()
+        MarketplaceAPI.fetchCategories()
       ]);
 
       setCategory(categoryData);
       setProducts(productsData);
-      setCategories(categoriesData);
+      setCategories(categoriesData.data || []);
     } catch (error) {
       console.error('Failed to load category data:', error);
     } finally {
@@ -75,7 +84,16 @@ export default function CategoryPage() {
   };
 
   const handleClearFilters = () => {
-    setFilters({});
+    setFilters({
+      category: '',
+      subcategory: '',
+      listingType: '',
+      condition: '',
+      minPrice: '',
+      maxPrice: '',
+      city: '',
+      region: ''
+    });
   };
 
   if (loading) {
@@ -135,15 +153,15 @@ export default function CategoryPage() {
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-2xl"
                 style={{
-                  background: `linear-gradient(135deg, ${category.color}20 0%, ${category.color}40 100%)`,
-                  borderColor: category.color
+                  background: `linear-gradient(135deg, #3B82F620 0%, #3B82F640 100%)`,
+                  borderColor: '#3B82F6'
                 }}
               >
-                {category.icon}
+                📦
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{category.name}</h1>
-                <p className="text-sm text-gray-500">{category.productCount} products</p>
+                <p className="text-sm text-gray-500">{products.length} products</p>
               </div>
             </div>
           </div>
@@ -201,12 +219,7 @@ export default function CategoryPage() {
       {showFilters && (
         <div className="bg-white border-b border-gray-100 px-4 py-4">
           <div className="max-w-7xl mx-auto">
-            <MarketplaceFiltersComponent
-              filters={filters}
-              categories={categories}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={handleClearFilters}
-            />
+            <p className="text-sm text-gray-600">Filters coming soon...</p>
           </div>
         </div>
       )}

@@ -5,7 +5,9 @@ import {
   CreateListingRequest,
   CreateListingResponse,
   CategoriesResponse,
-  GemachsResponse
+  GemachsResponse,
+  MarketplaceCategory,
+  MarketplaceListing
 } from '@/lib/types/marketplace';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com';
@@ -297,5 +299,45 @@ export class MarketplaceAPI {
 
   static async fetchGemachs(): Promise<GemachsResponse> {
     return fetchMarketplaceGemachs();
+  }
+
+  // Additional methods for the marketplace page
+  static async getCategory(categoryId: string): Promise<MarketplaceCategory | null> {
+    try {
+      const categories = await fetchMarketplaceCategories();
+      if (categories.success && categories.data) {
+        return categories.data.find(cat => cat.id.toString() === categoryId) || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      return null;
+    }
+  }
+
+  static async getCategoryProducts(categoryId: string): Promise<MarketplaceListing[]> {
+    try {
+      const response = await getListingsByCategory(categoryId);
+      if (response.success && response.data) {
+        return response.data.listings;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching category products:', error);
+      return [];
+    }
+  }
+
+  static async search(query: string, params: any = {}): Promise<{ products: MarketplaceListing[] }> {
+    try {
+      const response = await searchMarketplaceListings(query, params);
+      if (response.success && response.data) {
+        return { products: response.data.listings };
+      }
+      return { products: [] };
+    } catch (error) {
+      console.error('Error searching products:', error);
+      return { products: [] };
+    }
   }
 }

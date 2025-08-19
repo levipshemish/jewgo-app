@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import { 
-  MarketplaceProduct, 
+  MarketplaceListing, 
   MarketplaceCategory, 
   MarketplaceFilters as MarketplaceFiltersType,
   MarketplaceStats 
@@ -134,9 +134,9 @@ function getTimeAgo(dateString: string): string {
 
 // Product grid component matching unified eatery sizing
 function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
-  products: MarketplaceProduct[];
-  onAddToCart: (product: MarketplaceProduct) => void;
-  onAddToWishlist: (product: MarketplaceProduct) => void;
+  products: MarketplaceListing[];
+  onAddToCart: (product: MarketplaceListing) => void;
+  onAddToWishlist: (product: MarketplaceListing) => void;
 }) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
@@ -272,14 +272,14 @@ export default function MarketplacePageClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('marketplace');
   const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState<MarketplaceProduct[]>([]);
+  const [products, setProducts] = useState<MarketplaceListing[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<MarketplaceProduct[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<MarketplaceListing[]>([]);
   const [stats, setStats] = useState<MarketplaceStats | null>(null);
   const [filters, setFilters] = useState<MarketplaceFiltersType>({});
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<MarketplaceProduct[]>([]);
-  const [wishlist, setWishlist] = useState<MarketplaceProduct[]>([]);
+  const [cart, setCart] = useState<MarketplaceListing[]>([]);
+  const [wishlist, setWishlist] = useState<MarketplaceListing[]>([]);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -359,11 +359,11 @@ export default function MarketplacePageClient() {
     }
   };
 
-  const handleAddToCart = (product: MarketplaceProduct) => {
+  const handleAddToCart = (product: MarketplaceListing) => {
     setCart(prev => [...prev, product]);
   };
 
-  const handleAddToWishlist = (product: MarketplaceProduct) => {
+  const handleAddToWishlist = (product: MarketplaceListing) => {
     setWishlist(prev => {
       const exists = prev.find(p => p.id === product.id);
       if (exists) {

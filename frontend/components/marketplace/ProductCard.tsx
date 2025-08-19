@@ -7,15 +7,15 @@ import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { MarketplaceProduct } from '@/lib/types/marketplace';
+import { MarketplaceListing } from '@/lib/types/marketplace';
 import { titleCase } from '@/lib/utils/stringUtils';
 
 
 interface ProductCardProps {
-	product: MarketplaceProduct;
+	product: MarketplaceListing;
 	variant?: 'default' | 'compact' | 'featured';
-	onAddToCart?: (product: MarketplaceProduct) => void;
-	onAddToWishlist?: (product: MarketplaceProduct) => void;
+	onAddToCart?: (product: MarketplaceListing) => void;
+	onAddToWishlist?: (product: MarketplaceListing) => void;
 	className?: string;
 }
 

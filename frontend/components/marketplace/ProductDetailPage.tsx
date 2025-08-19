@@ -7,14 +7,14 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
-import { MarketplaceProduct } from '@/lib/types/marketplace';
+import { MarketplaceListing } from '@/lib/types/marketplace';
 
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
   const productId = params?.id as string;
   
-  const [product, setProduct] = useState<MarketplaceProduct | null>(null);
+  const [product, setProduct] = useState<MarketplaceListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);

@@ -27,12 +27,18 @@ export interface MarketplaceListing {
   updated_at: string;
 }
 
+// Alias for backward compatibility
+export type MarketplaceProduct = MarketplaceListing;
+
 export interface MarketplaceCategory {
   id: number;
   name: string;
   slug: string;
   sort_order: number;
   active: boolean;
+  color?: string;
+  productCount?: number;
+  description?: string;
   subcategories: MarketplaceSubcategory[];
 }
 
