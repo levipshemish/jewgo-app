@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Get the request body
     const body = await request.json();
-    const { email, _name, _image } = body;
+    const { email } = body;
 
     // Verify the email matches the authenticated user
     if (email !== user.email) {

@@ -231,7 +231,7 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
         </div>
 
         {/* Content Section */}
-        <div className="p-3">
+        <div className="p-4 pt-3 bg-white border-t border-gray-100">
           <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
             {titleCase(data.name)}
           </h3>

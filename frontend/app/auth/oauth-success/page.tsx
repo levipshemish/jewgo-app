@@ -51,7 +51,7 @@ function OAuthSuccessContent() {
         // Process tokens from hash
         await handleTokens(hash);
 
-      } catch (err) {
+              } catch {
         setStatus("Unexpected error occurred");
         setTimeout(() => router.push('/auth/auth-code-error?error=unexpected'), 2000);
       }
@@ -116,7 +116,7 @@ function OAuthSuccessContent() {
         } else {
           // User data synced successfully
         }
-      } catch (error) {
+      } catch {
         // User sync error, but continuing...
         // Don't fail the auth flow if sync fails
       }

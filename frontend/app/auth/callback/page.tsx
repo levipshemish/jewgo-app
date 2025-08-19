@@ -6,7 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function AuthCallbackContent() {
-  const [status, setStatus] = useState<string>("Processing authentication...");
+  const [status] = useState<string>("Processing authentication...");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -33,7 +33,7 @@ function AuthCallbackContent() {
         } else {
           setError('Failed to establish session');
         }
-      } catch (error) {
+      } catch {
         setError('Authentication failed');
       }
     };
@@ -57,7 +57,7 @@ function AuthCallbackContent() {
 
         // Session established via code exchange
         router.push(searchParams.get("redirectTo") || '/');
-      } catch (error) {
+      } catch {
         setError('Code exchange failed');
       }
     };

@@ -54,7 +54,7 @@ export async function PUT(
             reason: reason || 'Rejected by admin',
           }),
         });
-      } catch (_emailError) {
+      } catch {
         // eslint-disable-next-line no-console
         }
     }

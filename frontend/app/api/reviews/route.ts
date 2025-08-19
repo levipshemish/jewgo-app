@@ -19,8 +19,8 @@ export interface Review {
   moderator_notes?: string;
 }
 
-// Mock reviews data for development
-const _mockReviews: Review[] = [
+// Mock reviews data for development (unused but kept for reference)
+const mockReviews: Review[] = [
   {
     id: '1',
     restaurant_id: 1,

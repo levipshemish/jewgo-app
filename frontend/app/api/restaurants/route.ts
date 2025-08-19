@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
             submittedBy: validatedData.owner_info?.email || validatedData.email || 'Anonymous',
           }),
         });
-      } catch (_emailError) {
+      } catch {
         }
     }
     
@@ -427,7 +427,7 @@ export async function GET(request: NextRequest) {
       offset: typeof offset === 'number' ? offset : 0
     });
 
-  } catch (__error) {
+  } catch {
     // console.error('Error fetching restaurants:', error);
     // console.error('Error type:', typeof error);
     // console.error('Error message:', error instanceof Error ? error.message : String(error));
