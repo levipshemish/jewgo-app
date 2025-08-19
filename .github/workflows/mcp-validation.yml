@@ -41,8 +41,7 @@ jobs:
         id: tsc-check
         run: |
           echo "Running TypeScript strict check..."
-          echo '{"type":"tool","name":"tsc_check","params":{"cwd":"frontend"}}' | \
-          node tools/ts-next-strict-mcp/dist/index.js > tsc-results.json
+          node tools/ts-next-strict-mcp/dist/check.js tsc frontend > tsc-results.json
           
           # Parse results and set output
           if jq -e '.ok == true' tsc-results.json > /dev/null; then
@@ -59,8 +58,7 @@ jobs:
         id: eslint-check
         run: |
           echo "Running ESLint check..."
-          echo '{"type":"tool","name":"eslint_check","params":{"cwd":"frontend","pattern":"**/*.{ts,tsx}","fix":false}}' | \
-          node tools/ts-next-strict-mcp/dist/index.js > eslint-results.json
+          node tools/ts-next-strict-mcp/dist/check.js eslint frontend "**/*.{ts,tsx}" > eslint-results.json
           
           # Parse results and set output
           if jq -e '.ok == true' eslint-results.json > /dev/null; then
@@ -78,8 +76,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           echo "Running CI Guard..."
-          echo '{"type":"tool","name":"premerge_guard","params":{"cwd":"frontend","budgets":{"mainKB":500,"initialTotalMB":2}}}' | \
-          node tools/ci-guard-mcp/dist/index.js > ci-guard-results.json
+          node tools/ci-guard-mcp/dist/check.js frontend > ci-guard-results.json
           
           # Parse results and set output
           if jq -e '.ok == true' ci-guard-results.json > /dev/null; then

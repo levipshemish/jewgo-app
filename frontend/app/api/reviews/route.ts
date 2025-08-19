@@ -20,7 +20,7 @@ export interface Review {
 }
 
 // Mock reviews data for development
-const mockReviews: Review[] = [
+const _mockReviews: Review[] = [
   {
     id: '1',
     restaurant_id: 1,

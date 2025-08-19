@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // Get the request body
     const body = await request.json();
-    const { email, name, image } = body;
+    const { email, _name, _image } = body;
 
     // Verify the email matches the authenticated user
     if (email !== user.email) {
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get the current Supabase user
     const supabase = await createSupabaseServerClient();

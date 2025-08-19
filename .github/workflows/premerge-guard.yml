@@ -31,20 +31,15 @@ jobs:
 
       - name: Run TypeScript strict check
         run: |
-          echo '{"type":"tool","name":"tsc_check","params":{"cwd":"frontend"}}' | node tools/ts-next-strict-mcp/dist/index.js
+          node tools/ts-next-strict-mcp/dist/check.js tsc frontend
 
       - name: Run ESLint check
         run: |
-          echo '{"type":"tool","name":"eslint_check","params":{"cwd":"frontend","pattern":"app/**/*.tsx"}}' | node tools/ts-next-strict-mcp/dist/index.js
+          node tools/ts-next-strict-mcp/dist/check.js eslint frontend "app/**/*.tsx"
 
       - name: Run pre-merge guard
         run: |
-          echo '{"type":"tool","name":"premerge_guard","params":{
-            "cwd":"frontend",
-            "feHealthUrl":"https://jewgo-app.vercel.app/health",
-            "beHealthUrl":"https://jewgo.onrender.com/health",
-            "budgets":{"mainKB":500,"initialTotalMB":2}
-          }}' | node tools/ci-guard-mcp/dist/index.js
+          node tools/ci-guard-mcp/dist/check.js frontend "https://jewgo-app.vercel.app/health" "https://jewgo.onrender.com/health" 500 2
 
       - name: Check schema drift (if DB URL available)
         if: env.DATABASE_URL

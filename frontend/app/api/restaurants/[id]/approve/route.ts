@@ -50,7 +50,7 @@ export async function PUT(
             approvedBy: 'Admin',
           }),
         });
-      } catch (emailError) {
+      } catch (_emailError) {
         // eslint-disable-next-line no-console
         }
     }

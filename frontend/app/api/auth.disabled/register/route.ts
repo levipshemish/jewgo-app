@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
         html: createVerificationEmail(token, name)
       })
       
-      } catch (emailError) {
-      // console.error('[AUTH][REGISTER] Failed to send verification email:', emailError)
+      } catch (_emailError) {
+      // console.error('[AUTH][REGISTER] Failed to send verification email:', _emailError)
       // Don't fail registration if email fails, but log it
     }
 

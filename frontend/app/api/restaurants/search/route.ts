@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
           return closeM < openM 
             ? (currentTime >= openM || currentTime <= closeM) 
             : (currentTime >= openM && currentTime <= closeM);
-        } catch (_error) {
+        } catch (__error) {
           return false;
         }
       });

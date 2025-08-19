@@ -55,7 +55,7 @@ export async function GET(
                 });
               }
             }
-          } catch (fallbackError) {
+          } catch (_fallbackError) {
             // Silently handle fallback error
           }
         
