@@ -93,27 +93,31 @@ export class AdminTokenManager {
         isActive: dbToken.isActive,
       };
 
-    if (!adminToken) {
-      return null;
-    }
+      if (!adminToken) {
+        return null;
+      }
 
-    if (adminToken.expiresAt < new Date()) {
-      await this.deactivateToken(adminToken.id);
-      return null;
-    }
+      if (adminToken.expiresAt < new Date()) {
+        await this.deactivateToken(adminToken.id);
+        return null;
+      }
 
-    // Update last used
-    adminToken.lastUsed = new Date();
-    try {
-      await prisma.adminToken.update({
-        where: { id: adminToken.id },
-        data: { lastUsed: adminToken.lastUsed }
-      });
+      // Update last used
+      adminToken.lastUsed = new Date();
+      try {
+        await prisma.adminToken.update({
+          where: { id: adminToken.id },
+          data: { lastUsed: adminToken.lastUsed }
+        });
+      } catch (error) {
+        console.error('Failed to update admin token last used:', error);
+      }
+
+      return adminToken;
     } catch (error) {
-      console.error('Failed to update admin token last used:', error);
+      console.error('Failed to validate admin token:', error);
+      return null;
     }
-
-    return adminToken;
   }
 
   /**
@@ -200,14 +204,21 @@ export class AdminTokenManager {
    * Check if user has admin privileges
    */
   private static async isUserAdmin(email: string): Promise<boolean> {
-    // TODO: Implement database check - requires NextAuth user schema integration
-    // const user = await db.users.findUnique({
-    //   where: { email },
-    //   select: { isSuperAdmin: true }
-    // });
-    // return user?.isSuperAdmin || false;
+    // Implement database check
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: { isSuperAdmin: true }
+      });
+      
+      if (user?.isSuperAdmin) {
+        return true;
+      }
+    } catch (error) {
+      console.error('Failed to check admin status from database:', error);
+    }
 
-    // Mock implementation - replace with actual database check
+    // Fallback to environment variables
     const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
     const adminDomains = process.env.ADMIN_DOMAINS?.split(',') || [];
     

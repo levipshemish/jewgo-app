@@ -27,6 +27,12 @@ except ImportError as e:
     UserServiceV4 = None
 
 try:
+    from services.marketplace_service_v4 import MarketplaceServiceV4
+except ImportError as e:
+    logger.warning(f"Could not import MarketplaceServiceV4: {e}")
+    MarketplaceServiceV4 = None
+
+try:
     from utils.unified_search_service import UnifiedSearchService, SearchFilters, SearchType
 except ImportError as e:
     logger.warning(f"Could not import UnifiedSearchService: {e}")
@@ -151,6 +157,11 @@ def create_user_service():
     """Create and return a UserServiceV4 instance."""
     db_manager, cache_manager, config = get_service_dependencies()
     return UserServiceV4(db_manager=db_manager, cache_manager=cache_manager, config=config)
+
+def create_marketplace_service():
+    """Create and return a MarketplaceServiceV4 instance."""
+    db_manager, cache_manager, config = get_service_dependencies()
+    return MarketplaceServiceV4(db_manager) if MarketplaceServiceV4 else None
 
 def success_response(data: Any, message: str = "Success", status_code: int = 200):
     """Create a standardized success response."""

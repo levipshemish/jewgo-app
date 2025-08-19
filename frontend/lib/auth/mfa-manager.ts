@@ -1,5 +1,8 @@
 import { NextRequest } from 'next/server';
 import { authenticator } from 'otplib';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export interface MFASecret {
   id: string;
@@ -114,13 +117,32 @@ export class MFAManager {
       return { isValid: false, error: 'MFA token required' };
     }
 
-    // TODO: Fetch MFA secret from database - requires Prisma schema for MFA secrets
-    // const mfaSecret = await db.mfaSecrets.findFirst({
-    //   where: { userId, isEnabled: true }
-    // });
+    // Fetch MFA secret from database
+    try {
+      const dbMfaSecret = await prisma.mFASecret.findFirst({
+        where: { 
+          userId: userId,
+          isEnabled: true 
+        }
+      });
 
-    // Mock implementation
-    const mfaSecret = null;
+      if (!dbMfaSecret) {
+        return { isValid: false, error: 'MFA not configured' };
+      }
+
+      const mfaSecret: MFASecret = {
+        id: dbMfaSecret.id,
+        userId: dbMfaSecret.userId,
+        secret: dbMfaSecret.secret,
+        backupCodes: dbMfaSecret.backupCodes,
+        isEnabled: dbMfaSecret.isEnabled,
+        createdAt: dbMfaSecret.createdAt,
+        updatedAt: dbMfaSecret.updatedAt,
+      };
+    } catch (error) {
+      console.error('Failed to fetch MFA secret from database:', error);
+      return { isValid: false, error: 'MFA configuration error' };
+    }
 
     if (!mfaSecret) {
       return { isValid: false, error: 'MFA not configured' };
