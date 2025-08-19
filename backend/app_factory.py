@@ -1589,7 +1589,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return error_response("Failed to fetch statistics", 500)
 
     @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
-    @limiter.limit("100 per minute")
+    # @limiter.limit("100 per minute")  # Temporarily disabled for debugging
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
         return jsonify({
