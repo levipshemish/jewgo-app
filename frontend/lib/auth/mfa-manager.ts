@@ -11,7 +11,7 @@ export interface MFASecret {
   backupCodes: string[];
   isEnabled: boolean;
   createdAt: Date;
-  lastUsed: Date;
+  updatedAt: Date;
 }
 
 export class MFAManager {
@@ -29,7 +29,7 @@ export class MFAManager {
       backupCodes,
       isEnabled: false,
       createdAt: new Date(),
-      lastUsed: new Date(),
+      updatedAt: new Date(),
     };
   }
 
@@ -118,6 +118,7 @@ export class MFAManager {
     }
 
     // Fetch MFA secret from database
+    let mfaSecret: MFASecret | null = null;
     try {
       const dbMfaSecret = await prisma.mFASecret.findFirst({
         where: { 
@@ -130,7 +131,7 @@ export class MFAManager {
         return { isValid: false, error: 'MFA not configured' };
       }
 
-      const mfaSecret: MFASecret = {
+      mfaSecret = {
         id: dbMfaSecret.id,
         userId: dbMfaSecret.userId,
         secret: dbMfaSecret.secret,
