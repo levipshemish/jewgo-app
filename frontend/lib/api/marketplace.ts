@@ -10,13 +10,13 @@ import {
 
 export class MarketplaceAPI {
   private static baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  private static apiVersion = 'v4';
+  private static apiVersion = ''; // Use main API instead of v4
 
   private static async makeRequest<T>(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseURL}/api/${this.apiVersion}${endpoint}`;
+    const url = `${this.baseURL}/api${this.apiVersion}${endpoint}`;
     
     const defaultOptions: RequestInit = {
       headers: {

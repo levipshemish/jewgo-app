@@ -2570,6 +2570,234 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
     # Duplicate test-sentry route removed - already defined above
 
+    # Marketplace Routes
+    @app.route("/api/marketplace/products", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_marketplace_products():
+        """Get marketplace products with filtering and pagination."""
+        try:
+            # Get query parameters
+            limit = min(int(request.args.get("limit", 50)), 1000)
+            offset = int(request.args.get("offset", 0))
+            category_id = request.args.get("category_id")
+            vendor_id = request.args.get("vendor_id")
+            search_query = request.args.get("q")
+            min_price = request.args.get("min_price")
+            max_price = request.args.get("max_price")
+            is_featured = request.args.get("is_featured")
+            is_on_sale = request.args.get("is_on_sale")
+            status = request.args.get("status")
+            sort_by = request.args.get("sort_by", "created_at")
+            sort_order = request.args.get("sort_order", "desc")
+            
+            # Convert string parameters to appropriate types
+            if min_price:
+                min_price = float(min_price)
+            if max_price:
+                max_price = float(max_price)
+            if is_featured:
+                is_featured = is_featured.lower() == "true"
+            if is_on_sale:
+                is_on_sale = is_on_sale.lower() == "true"
+            
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_products(
+                limit=limit,
+                offset=offset,
+                category_id=category_id,
+                vendor_id=vendor_id,
+                search_query=search_query,
+                min_price=min_price,
+                max_price=max_price,
+                is_featured=is_featured,
+                is_on_sale=is_on_sale,
+                status=status,
+                sort_by=sort_by,
+                sort_order=sort_order
+            )
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to retrieve products")}), 500
+            
+        except ValueError as e:
+            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+        except Exception as e:
+            logger.error(f"Error fetching marketplace products: {e}")
+            return jsonify({"error": "Failed to fetch marketplace products"}), 500
+
+    @app.route("/api/marketplace/products/<product_id>", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_marketplace_product(product_id):
+        """Get a single marketplace product by ID."""
+        try:
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_product(product_id)
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Product not found")}), 404
+            
+        except Exception as e:
+            logger.error(f"Error fetching marketplace product: {e}")
+            return jsonify({"error": "Failed to fetch marketplace product"}), 500
+
+    @app.route("/api/marketplace/products/featured", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_featured_products():
+        """Get featured marketplace products."""
+        try:
+            limit = min(int(request.args.get("limit", 10)), 100)
+            
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_featured_products(limit=limit)
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to retrieve featured products")}), 500
+            
+        except ValueError as e:
+            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+        except Exception as e:
+            logger.error(f"Error fetching featured products: {e}")
+            return jsonify({"error": "Failed to fetch featured products"}), 500
+
+    @app.route("/api/marketplace/categories", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_marketplace_categories():
+        """Get marketplace categories."""
+        try:
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_categories()
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to retrieve categories")}), 500
+            
+        except Exception as e:
+            logger.error(f"Error fetching marketplace categories: {e}")
+            return jsonify({"error": "Failed to fetch marketplace categories"}), 500
+
+    @app.route("/api/marketplace/vendors", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_marketplace_vendors():
+        """Get marketplace vendors."""
+        try:
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_vendors()
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to retrieve vendors")}), 500
+            
+        except Exception as e:
+            logger.error(f"Error fetching marketplace vendors: {e}")
+            return jsonify({"error": "Failed to fetch marketplace vendors"}), 500
+
+    @app.route("/api/marketplace/search", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def search_marketplace():
+        """Search marketplace products."""
+        try:
+            query = request.args.get("q", "").strip()
+            if not query:
+                return jsonify({"error": "Query parameter 'q' is required"}), 400
+            
+            limit = min(int(request.args.get("limit", 50)), 1000)
+            offset = int(request.args.get("offset", 0))
+            
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.search_products(query, limit=limit, offset=offset)
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to search products")}), 500
+            
+        except ValueError as e:
+            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+        except Exception as e:
+            logger.error(f"Error searching marketplace: {e}")
+            return jsonify({"error": "Failed to search marketplace"}), 500
+
+    @app.route("/api/marketplace/stats", methods=["GET"])
+    @limiter.limit("100 per minute")
+    def get_marketplace_stats():
+        """Get marketplace statistics."""
+        try:
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create marketplace service
+            from services.marketplace_service_v4 import MarketplaceServiceV4
+            service = MarketplaceServiceV4(db_manager)
+            
+            result = service.get_stats()
+            
+            if result["success"]:
+                return jsonify(result), 200
+            else:
+                return jsonify({"error": result.get("error", "Failed to retrieve stats")}), 500
+            
+        except Exception as e:
+            logger.error(f"Error fetching marketplace stats: {e}")
+            return jsonify({"error": "Failed to fetch marketplace stats"}), 500
+
     # Error handlers are now registered through utils.error_handler.register_error_handlers()
     # Add more routes as needed...
     # Note: For brevity, I'm including just the essential routes here.
