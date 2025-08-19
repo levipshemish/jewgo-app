@@ -1023,10 +1023,21 @@ def create_app(config_class=None):
                         );
                     """)
                     
-                    table_exists = cursor.fetchone()[0]
+                    marketplace_exists = cursor.fetchone()[0]
                     
-                    if table_exists:
-                        # Check if table has data
+                    # Check if listings table exists
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'listings'
+                        );
+                    """)
+                    
+                    listings_exists = cursor.fetchone()[0]
+                    
+                    if marketplace_exists:
+                        # Check if marketplace table has data
                         cursor.execute("SELECT COUNT(*) FROM marketplace")
                         count = cursor.fetchone()[0]
                         
@@ -1043,9 +1054,35 @@ def create_app(config_class=None):
                         
                         return jsonify({
                             "success": True,
-                            "table_exists": True,
+                            "marketplace_table_exists": True,
+                            "listings_table_exists": listings_exists,
                             "record_count": count,
-                            "columns": column_info
+                            "columns": column_info,
+                            "status": "marketplace_table_found"
+                        })
+                    elif listings_exists:
+                        # Check if listings table has data
+                        cursor.execute("SELECT COUNT(*) FROM listings")
+                        count = cursor.fetchone()[0]
+                        
+                        # Check table structure
+                        cursor.execute("""
+                            SELECT column_name, data_type 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'listings' 
+                            ORDER BY ordinal_position
+                        """)
+                        
+                        columns = cursor.fetchall()
+                        column_info = [{"name": col[0], "type": col[1]} for col in columns]
+                        
+                        return jsonify({
+                            "success": True,
+                            "marketplace_table_exists": False,
+                            "listings_table_exists": True,
+                            "record_count": count,
+                            "columns": column_info,
+                            "status": "listings_table_found_but_service_expects_marketplace"
                         })
                     else:
                         # Check what tables exist
@@ -1061,15 +1098,18 @@ def create_app(config_class=None):
                         
                         return jsonify({
                             "success": True,
-                            "table_exists": False,
-                            "available_tables": table_names
+                            "marketplace_table_exists": False,
+                            "listings_table_exists": False,
+                            "available_tables": table_names,
+                            "status": "no_marketplace_tables_found"
                         })
                         
         except Exception as e:
             return jsonify({
                 "success": False,
                 "error": str(e),
-                "table_exists": False
+                "marketplace_table_exists": False,
+                "listings_table_exists": False
             }), 500
 
     @app.route("/api/test/cors", methods=["GET", "POST", "OPTIONS"])
