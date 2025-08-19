@@ -12,23 +12,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 7.33.7
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: 'npm'
           cache-dependency-path: |
-            frontend/pnpm-lock.yaml
+            frontend/package-lock.json
 
       - name: Install frontend dependencies
         run: |
           cd frontend
-          pnpm install --frozen-lockfile
+          npm ci
 
       - name: Install backend dependencies
         run: |
@@ -38,17 +33,17 @@ jobs:
       - name: Run TypeScript strict check
         run: |
           cd frontend
-          pnpm run type-check
+          npm run type-check
 
       - name: Run ESLint check
         run: |
           cd frontend
-          pnpm run lint
+          npm run lint
 
       - name: Run pre-merge guard
         run: |
           cd frontend
-          pnpm run build
+          npm run build
 
       - name: Check schema drift (if DB URL available)
         if: env.DATABASE_URL
