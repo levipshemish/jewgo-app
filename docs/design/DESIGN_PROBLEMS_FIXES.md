@@ -158,10 +158,10 @@ const formatPriceRange = () => {
 ## Responsive Design Improvements
 
 ### Grid Layout Consistency
-The app already demonstrates good responsive grid behavior:
-- **Mobile (≤640px)**: 1 column
-- **Tablet (641-1024px)**: 2 columns  
-- **Desktop (≥1024px)**: 3 columns
+The eatery page follows the project rule of **2 columns with 4 rows** across ALL screen sizes:
+- **All Devices**: 2 columns × 4 rows = 8 restaurant cards per page
+- **Consistent Layout**: No responsive column changes based on screen size
+- **Uniform Experience**: Same layout on mobile, tablet, and desktop
 
 ### Category Navigation
 - Horizontal scrolling on mobile devices

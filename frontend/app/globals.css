@@ -512,7 +512,12 @@ html {
   max-width: 100% !important;
 }
 
-/* Restaurant grid responsive adjustments */
+/* Restaurant grid - Always 2 columns with 4 rows across all screen sizes */
+.restaurant-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1rem;
+}
+
 @media (max-width: 640px) {
   .restaurant-grid {
     gap: 0.5rem !important;
