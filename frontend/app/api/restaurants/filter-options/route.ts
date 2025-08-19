@@ -80,7 +80,16 @@ export async function GET() {
       agencies,
       listingTypes,
       priceRanges,
-      kosherCategories: correctedKosherCategories
+      kosherCategories,
+      counts: {
+        cities: cityCounts,
+        states: stateCounts,
+        agencies: agencyCounts,
+        listingTypes: listingTypeCounts,
+        priceRanges: priceRangeCounts,
+        kosherCategories: kosherCategoryCounts,
+        total: restaurants.length
+      }
     };
 
     return NextResponse.json({
@@ -98,7 +107,16 @@ export async function GET() {
       agencies: ['Kosher Miami', 'ORB'],
       listingTypes: ['restaurant', 'bakery', 'catering'],
       priceRanges: ['$', '$$', '$$$', '$$$$'],
-      kosherCategories: ['meat', 'dairy', 'pareve']
+      kosherCategories: ['meat', 'dairy', 'pareve'],
+      counts: {
+        cities: { 'Miami': 45, 'Miami Beach': 23, 'Boca Raton': 12, 'Fort Lauderdale': 8 },
+        states: { 'FL': 88 },
+        agencies: { 'Kosher Miami': 67, 'ORB': 21 },
+        listingTypes: { 'restaurant': 75, 'bakery': 8, 'catering': 5 },
+        priceRanges: { '$': 15, '$$': 45, '$$$': 20, '$$$$': 8 },
+        kosherCategories: { 'meat': 25, 'dairy': 50, 'pareve': 13 },
+        total: 88
+      }
     };
     
     return NextResponse.json({

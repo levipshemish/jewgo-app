@@ -106,11 +106,10 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            redirectTo: redirectTo,
           }
         },
       });

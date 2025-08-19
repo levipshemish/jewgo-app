@@ -66,7 +66,7 @@ export default function SignUp() {
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent('/')}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
