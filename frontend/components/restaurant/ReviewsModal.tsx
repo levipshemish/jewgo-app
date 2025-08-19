@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Review } from '@/components/reviews/ReviewCard';
 import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
-// NextAuth removed - using Supabase only
+import { supabaseBrowser } from '@/lib/supabase/client';
 import { Restaurant } from '@/lib/types/restaurant';
 
 // Google Review interface
@@ -54,8 +54,7 @@ interface ReviewsModalProps {
 }
 
 export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsModalProps) {
-  // NextAuth removed - using Supabase only
-  const session = null; // TODO: Replace with Supabase session
+  const [session, setSession] = useState<any>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -70,6 +69,29 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'google' | 'user'>('all');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Get Supabase session
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error('Error getting session:', error);
+      }
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Safe JSON parsing for potentially malformed Google reviews payloads
   const googleReviews: GoogleReview[] = React.useMemo(() => {

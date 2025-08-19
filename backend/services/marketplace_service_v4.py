@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Marketplace Service v4 - Service layer for marketplace operations.
+"""Marketplace Service v4 - Streamlined marketplace operations.
 
-This service provides marketplace functionality including listings, categories,
-gemachs, and user management. It follows the v4 service layer architecture
-pattern used throughout the JewGo application.
+This service provides marketplace functionality with three creation paths:
+- Regular (generic items)
+- Vehicle (with vehicle-specific attributes)
+- Appliance (with kosher flags)
 
 Author: JewGo Development Team
-Version: 4.0
+Version: 4.1
 Last Updated: 2024
 """
 
@@ -29,7 +30,7 @@ class MarketplaceServiceV4:
         self.cache_manager = cache_manager
         self.config = config
         
-        logger.info("MarketplaceServiceV4 initialized")
+        logger.info("MarketplaceServiceV4 (Streamlined) initialized")
 
     def get_listings(
         self,
@@ -38,7 +39,7 @@ class MarketplaceServiceV4:
         search: Optional[str] = None,
         category: Optional[str] = None,
         subcategory: Optional[str] = None,
-        listing_type: Optional[str] = None,
+        kind: Optional[str] = None,  # Changed from listing_type to kind
         condition: Optional[str] = None,
         min_price: Optional[int] = None,
         max_price: Optional[int] = None,
@@ -78,9 +79,9 @@ class MarketplaceServiceV4:
                 query += " AND sc.slug = %s"
                 params.append(subcategory)
                 
-            if listing_type:
-                query += " AND l.type = %s"
-                params.append(listing_type)
+            if kind:  # Changed from listing_type to kind
+                query += " AND l.kind = %s"
+                params.append(kind)
                 
             if condition:
                 query += " AND l.condition = %s"
@@ -137,32 +138,32 @@ class MarketplaceServiceV4:
             formatted_listings = []
             for listing in listings:
                 formatted_listing = {
-                    'id': str(listing[0]),  # Assuming id is first column
-                    'title': listing[1],
-                    'description': listing[2],
-                    'type': listing[3],
-                    'category': listing[4],
-                    'subcategory': listing[5],
-                    'price_cents': listing[6],
-                    'currency': listing[7],
-                    'condition': listing[8],
-                    'city': listing[9],
-                    'region': listing[10],
-                    'zip': listing[11],
-                    'country': listing[12],
-                    'lat': listing[13],
-                    'lng': listing[14],
-                    'seller_name': listing[15] or listing[16],
-                    'seller_type': 'user' if listing[15] else 'gemach',
-                    'available_from': listing[17].isoformat() if listing[17] else None,
-                    'available_to': listing[18].isoformat() if listing[18] else None,
-                    'loan_terms': listing[19],
-                    'attributes': listing[20],
-                    'endorse_up': listing[21],
-                    'endorse_down': listing[22],
-                    'status': listing[23],
-                    'created_at': listing[24].isoformat(),
-                    'updated_at': listing[25].isoformat()
+                    'id': str(listing[0]),
+                    'kind': listing[1],  # Changed from type to kind
+                    'txn_type': listing[2],  # New field
+                    'title': listing[3],
+                    'description': listing[4],
+                    'price_cents': listing[5],
+                    'currency': listing[6],
+                    'condition': listing[7],
+                    'category_id': listing[8],
+                    'subcategory_id': listing[9],
+                    'city': listing[10],
+                    'region': listing[11],
+                    'zip': listing[12],
+                    'country': listing[13],
+                    'lat': listing[14],
+                    'lng': listing[15],
+                    'seller_user_id': listing[16],
+                    'attributes': listing[17],
+                    'endorse_up': listing[18],
+                    'endorse_down': listing[19],
+                    'status': listing[20],
+                    'created_at': listing[21].isoformat(),
+                    'updated_at': listing[22].isoformat(),
+                    'category_name': listing[23],
+                    'subcategory_name': listing[24],
+                    'seller_name': listing[25]
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -213,32 +214,32 @@ class MarketplaceServiceV4:
                     # Format response
                     formatted_listing = {
                         'id': str(listing[0]),
-                        'title': listing[1],
-                        'description': listing[2],
-                        'type': listing[3],
-                        'category': listing[4],
-                        'subcategory': listing[5],
-                        'price_cents': listing[6],
-                        'currency': listing[7],
-                        'condition': listing[8],
-                        'city': listing[9],
-                        'region': listing[10],
-                        'zip': listing[11],
-                        'country': listing[12],
-                        'lat': listing[13],
-                        'lng': listing[14],
-                        'seller_name': listing[15],
-                        'seller_username': listing[16],
-                        'seller_type': 'user',
-                        'available_from': listing[20].isoformat() if listing[20] else None,
-                        'available_to': listing[21].isoformat() if listing[21] else None,
-                        'loan_terms': listing[22],
-                        'attributes': listing[23],
-                        'endorse_up': listing[24],
-                        'endorse_down': listing[25],
-                        'status': listing[26],
-                        'created_at': listing[27].isoformat(),
-                        'updated_at': listing[28].isoformat()
+                        'kind': listing[1],
+                        'txn_type': listing[2],
+                        'title': listing[3],
+                        'description': listing[4],
+                        'price_cents': listing[5],
+                        'currency': listing[6],
+                        'condition': listing[7],
+                        'category_id': listing[8],
+                        'subcategory_id': listing[9],
+                        'city': listing[10],
+                        'region': listing[11],
+                        'zip': listing[12],
+                        'country': listing[13],
+                        'lat': listing[14],
+                        'lng': listing[15],
+                        'seller_user_id': listing[16],
+                        'attributes': listing[17],
+                        'endorse_up': listing[18],
+                        'endorse_down': listing[19],
+                        'status': listing[20],
+                        'created_at': listing[21].isoformat(),
+                        'updated_at': listing[22].isoformat(),
+                        'category_name': listing[23],
+                        'subcategory_name': listing[24],
+                        'seller_name': listing[25],
+                        'seller_username': listing[26]
                     }
                     
                     return {
@@ -258,7 +259,7 @@ class MarketplaceServiceV4:
         """Create a new marketplace listing."""
         try:
             # Validate required fields
-            required_fields = ['title', 'type', 'category_id', 'price_cents']
+            required_fields = ['title', 'kind', 'category_id', 'condition', 'price_cents']
             for field in required_fields:
                 if field not in listing_data:
                     return {
@@ -266,26 +267,27 @@ class MarketplaceServiceV4:
                         'error': f'Missing required field: {field}'
                     }
             
-            # Validate listing type
-            valid_types = ['sale', 'free', 'borrow', 'gemach']
-            if listing_data['type'] not in valid_types:
+            # Validate listing kind
+            valid_kinds = ['regular', 'vehicle', 'appliance']
+            if listing_data['kind'] not in valid_kinds:
                 return {
                     'success': False,
-                    'error': f'Invalid listing type. Must be one of: {", ".join(valid_types)}'
+                    'error': f'Invalid listing kind. Must be one of: {valid_kinds}'
                 }
             
-            # Validate price for free listings
-            if listing_data['type'] == 'free' and listing_data['price_cents'] != 0:
+            # Validate condition
+            valid_conditions = ['new', 'used_like_new', 'used_good', 'used_fair']
+            if listing_data['condition'] not in valid_conditions:
                 return {
                     'success': False,
-                    'error': 'Free listings must have price_cents = 0'
+                    'error': f'Invalid condition. Must be one of: {valid_conditions}'
                 }
             
-            # Validate loan terms for borrow
-            if listing_data['type'] == 'borrow' and not listing_data.get('loan_terms'):
+            # Validate price
+            if listing_data['price_cents'] < 0:
                 return {
                     'success': False,
-                    'error': 'Borrow listings must include loan_terms'
+                    'error': 'Price cannot be negative'
                 }
             
             with self.db_manager.connection_manager.get_session() as conn:

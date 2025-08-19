@@ -4,7 +4,7 @@ import { Plus, MessageCircle, ExternalLink } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { StarRating } from '@/components/ui/StarRating';
-// NextAuth removed - using Supabase only
+import { supabaseBrowser } from '@/lib/supabase/client';
 import { Restaurant } from '@/lib/types/restaurant';
 
 import ReviewCard, { Review } from './ReviewCard';
@@ -58,8 +58,7 @@ interface ReviewsSectionProps {
 export default function ReviewsSection({
   restaurantId, restaurantName, restaurant, className = ''
 }: ReviewsSectionProps) {
-  // NextAuth removed - using Supabase only
-  const session: { user?: { email?: string; name?: string } } | null = null; // TODO: Replace with Supabase session
+  const [session, setSession] = useState<any>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -68,6 +67,29 @@ export default function ReviewsSection({
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
+
+  // Get Supabase session
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        setSession(session);
+      } catch (error) {
+        console.error('Error getting session:', error);
+      }
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Safe JSON parsing for potentially malformed Google reviews payloads
   const googleReviews: GoogleReview[] = React.useMemo(() => {
@@ -215,9 +237,9 @@ export default function ReviewsSection({
         },
         body: JSON.stringify({
           ...reviewData,
-          userId: 'anonymous',
-          userName: 'Anonymous',
-          userEmail: '',
+          userId: session?.user?.email || 'anonymous',
+          userName: session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || 'Anonymous',
+          userEmail: session?.user?.email || '',
         }),
       });
 
