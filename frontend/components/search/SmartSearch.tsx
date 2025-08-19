@@ -190,7 +190,7 @@ export default function SmartSearch({
       
       const googlePlaces = await searchGooglePlaces(searchQuery);
       
-      const googleSuggestions: SearchSuggestion[] = googlePlaces.map((place: GooglePlacesResult) => ({
+      const googleSuggestions: SearchSuggestion[] = (googlePlaces || []).map((place: GooglePlacesResult) => ({
         id: `google-${place.place_id}`,
         type: 'google_place' as const,
         title: place.name,
