@@ -2188,6 +2188,8 @@ div[class*="specials-dynamic-grid"] {
     transform: translateZ(0) !important;
     -webkit-transform: translateZ(0) !important;
     will-change: transform !important;
+    /* Enhanced shadow for better visibility on mobile */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1) !important;
   }
   
   /* Ensure the image carousel doesn't interfere */
@@ -2202,4 +2204,19 @@ div[class*="specials-dynamic-grid"] {
   .restaurant-details-card::after {
     display: none !important;
   }
+}
+
+/* Extra small mobile devices - ensure maximum overlap visibility */
+@media (max-width: 480px) {
+  .restaurant-details-card {
+    margin-top: -6rem !important; /* Force even more overlap on very small screens */
+    box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.15) !important;
+    /* Add a subtle border to make the overlap more visible */
+    border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
+  }
+}
+
+/* Ensure the white background is more visible against the image */
+.restaurant-details-card {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 1) 100%) !important;
 }
