@@ -20,22 +20,59 @@ export async function GET() {
     const restaurantsData = await restaurantsResponse.json();
     const restaurants = restaurantsData.restaurants || restaurantsData.data || [];
     
-    // Extract unique values from actual data - only include valid kosher categories
-    const cities = Array.from(new Set(restaurants.map((r: { city?: string }) => r.city).filter(Boolean))).sort();
-    const states = Array.from(new Set(restaurants.map((r: { state?: string }) => r.state).filter(Boolean))).sort();
-    const agencies = Array.from(new Set(restaurants.map((r: { certifying_agency?: string }) => r.certifying_agency).filter(Boolean))).sort();
-    const listingTypes = Array.from(new Set(restaurants.map((r: { listing_type?: string; category?: string }) => r.listing_type || r.category).filter(Boolean))).sort();
+    // Extract unique values from actual data with counts
+    const cityCounts = restaurants.reduce((acc: Record<string, number>, r: { city?: string }) => {
+      if (r.city) {
+        acc[r.city] = (acc[r.city] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const cities = Object.keys(cityCounts).sort();
     
-    // Only include valid kosher categories (dairy, meat, pareve)
+    const stateCounts = restaurants.reduce((acc: Record<string, number>, r: { state?: string }) => {
+      if (r.state) {
+        acc[r.state] = (acc[r.state] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const states = Object.keys(stateCounts).sort();
+    
+    const agencyCounts = restaurants.reduce((acc: Record<string, number>, r: { certifying_agency?: string }) => {
+      if (r.certifying_agency) {
+        acc[r.certifying_agency] = (acc[r.certifying_agency] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const agencies = Object.keys(agencyCounts).sort();
+    
+    const listingTypeCounts = restaurants.reduce((acc: Record<string, number>, r: { listing_type?: string; category?: string }) => {
+      const type = r.listing_type || r.category;
+      if (type) {
+        acc[type] = (acc[type] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const listingTypes = Object.keys(listingTypeCounts).sort();
+    
+    // Only include valid kosher categories (dairy, meat, pareve) with counts
     const validKosherCategories = ['dairy', 'meat', 'pareve'];
-    const kosherCategories = Array.from(new Set(restaurants.map((r: { kosher_category?: string; kosher_type?: string }) => r.kosher_category || r.kosher_type).filter(Boolean))).sort();
-    const correctedKosherCategories = kosherCategories
-      .filter((category): category is string => typeof category === 'string' && validKosherCategories.includes(category.toLowerCase()))
-      .map(category => category.toLowerCase())
-      .filter((category, index, arr) => arr.indexOf(category) === index) // Remove duplicates
-      .sort();
+    const kosherCategoryCounts = restaurants.reduce((acc: Record<string, number>, r: { kosher_category?: string; kosher_type?: string }) => {
+      const category = r.kosher_category || r.kosher_type;
+      if (category && validKosherCategories.includes(category.toLowerCase())) {
+        const normalizedCategory = category.toLowerCase();
+        acc[normalizedCategory] = (acc[normalizedCategory] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const kosherCategories = Object.keys(kosherCategoryCounts).sort();
     
-    const priceRanges = Array.from(new Set(restaurants.map((r: { price_range?: string }) => r.price_range).filter(Boolean))).sort();
+    const priceRangeCounts = restaurants.reduce((acc: Record<string, number>, r: { price_range?: string }) => {
+      if (r.price_range) {
+        acc[r.price_range] = (acc[r.price_range] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    const priceRanges = Object.keys(priceRangeCounts).sort();
     
     const filterOptions = {
       cities,

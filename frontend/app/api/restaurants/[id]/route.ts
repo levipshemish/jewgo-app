@@ -198,7 +198,7 @@ export async function GET(
 }
 
 export async function PUT(
-  _request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const restaurantId = parseInt(id);
@@ -210,29 +210,54 @@ export async function PUT(
       }, { status: 400 });
     }
 
-    const body = await _request.json();
+    const body = await request.json();
 
-    // TODO: Update restaurant data in database
-    // For now, we'll simulate the database update
-    // In a real implementation, you would:
-    // 1. Connect to your database
-    // 2. Update the restaurant data
-    // 3. Validate the data
-    // 4. Update any related records
-    // 5. Log the update for audit purposes
+    // Validate required fields
+    if (!body.name || !body.address || !body.phone) {
+      return NextResponse.json({
+        success: false,
+        message: 'Name, address, and phone are required fields'
+      }, { status: 400 });
+    }
+
+    // Update restaurant data via backend API
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+      },
+      body: JSON.stringify({
+        ...body,
+        updated_at: new Date().toISOString()
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json({
+        success: false,
+        message: errorData.message || `Backend API error: ${response.status}`
+      }, { status: response.status });
+    }
+
+    const result = await response.json();
 
     return NextResponse.json({
       success: true,
       message: 'Restaurant updated successfully',
-      data: {
+      data: result.data || {
         id: restaurantId,
         ...body,
         updated_at: new Date().toISOString()
       }
     });
 
-  } catch {
-    // // console.error('Error updating restaurant:', error);
+  } catch (error) {
+    console.error('Error updating restaurant:', error);
     return NextResponse.json({
       success: false,
       message: 'Failed to update restaurant'
@@ -241,7 +266,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const restaurantId = parseInt(id);
@@ -253,29 +278,110 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    // TODO: Delete restaurant from database
-    // For now, we'll simulate the database deletion
-    // In a real implementation, you would:
-    // 1. Connect to your database
-    // 2. Delete the restaurant record
-    // 3. Clean up any related records
-    // 4. Handle cascading deletes if needed
-    // 5. Log the deletion for audit purposes
+    // Delete restaurant via backend API
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json({
+        success: false,
+        message: errorData.message || `Backend API error: ${response.status}`
+      }, { status: response.status });
+    }
+
+    const result = await response.json();
 
     return NextResponse.json({
       success: true,
       message: 'Restaurant deleted successfully',
-      data: {
+      data: result.data || {
         id: restaurantId,
         deleted_at: new Date().toISOString()
       }
     });
 
-  } catch {
-    // // console.error('Error deleting restaurant:', error);
+  } catch (error) {
+    console.error('Error deleting restaurant:', error);
     return NextResponse.json({
       success: false,
       message: 'Failed to delete restaurant'
+    }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const restaurantId = parseInt(id);
+    
+    if (isNaN(restaurantId)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid restaurant ID'
+      }, { status: 400 });
+    }
+
+    const body = await request.json();
+
+    // Validate that at least one field is provided
+    if (Object.keys(body).length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'At least one field must be provided for update'
+      }, { status: 400 });
+    }
+
+    // Partial update restaurant data via backend API
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+      },
+      body: JSON.stringify({
+        ...body,
+        updated_at: new Date().toISOString()
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json({
+        success: false,
+        message: errorData.message || `Backend API error: ${response.status}`
+      }, { status: response.status });
+    }
+
+    const result = await response.json();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Restaurant partially updated successfully',
+      data: result.data || {
+        id: restaurantId,
+        ...body,
+        updated_at: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Error partially updating restaurant:', error);
+    return NextResponse.json({
+      success: false,
+      message: 'Failed to partially update restaurant'
     }, { status: 500 });
   }
 } 

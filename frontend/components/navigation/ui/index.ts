@@ -1,4 +1,8 @@
 export { default as BottomNavigation } from './BottomNavigation';
 export { default as CategoryTabs } from './CategoryTabs';
 export { default as MobileCategoryTabs } from './MobileCategoryTabs';
-export { default as SubNav } from './SubNav'; 
+export { default as SubNav } from './SubNav';
+
+// Export shared utilities and hooks
+export * from './shared';
+export * from './hooks'; 
