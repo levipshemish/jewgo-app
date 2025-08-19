@@ -20,7 +20,7 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from services.base_service import BaseService
-from database.database_manager_v3 import DatabaseManagerV3
+from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManagerV3
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
