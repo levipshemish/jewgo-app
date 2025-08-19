@@ -1,34 +1,34 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 import SignUpPage from '@/app/auth/supabase-signup/page';
 
 // Mock Next.js router
-const mockPush = vi.fn();
-vi.mock('next/navigation', () => ({
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
 }));
 
 // Mock reCAPTCHA
-vi.mock('@/lib/utils/recaptcha', () => ({
+jest.mock('@/lib/utils/recaptcha', () => ({
   useRecaptcha: () => ({
-    execute: vi.fn().mockResolvedValue('test-token'),
+    execute: jest.fn().mockResolvedValue('test-token'),
     siteKey: 'test-site-key',
   }),
 }));
 
 // Mock fetch
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 describe('SignUpPage Component', () => {
   const user = userEvent.setup();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should render signup form with all fields', () => {

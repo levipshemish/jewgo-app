@@ -1,4 +1,4 @@
-const fetch = require('node-fetch')
+const fetch = require('node-fetch');
 
 async function testAPIEndpoints() {
   const baseUrl = 'http://localhost:3000'

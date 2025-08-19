@@ -1,29 +1,29 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
 import { analytics } from '@/lib/utils/analytics';
 import { validateEmail, validatePassword } from '@/lib/utils/formValidation';
 import { rateLimiter } from '@/lib/utils/rateLimiter';
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: jest.fn(),
   }),
 }));
 
 // Mock fetch
-global.fetch = vi.fn();
+global.fetch = jest.fn();
 
 describe('Registration Flow', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     analytics.resetMetrics();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('Form Validation', () => {

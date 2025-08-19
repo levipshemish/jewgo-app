@@ -328,7 +328,7 @@ async function main() {
     // Optimize images
     // const results = await optimizeImages(images, analysis);
     // Generate report
-    generateReport(analysis, results);
+    generateReport(analysis, []);
     
     log('\n✅ Enhanced image optimization complete!', 'green');
     log('\nNext steps:', 'blue');

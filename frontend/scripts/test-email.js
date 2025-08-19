@@ -51,7 +51,7 @@ async function testEmailConfig() {
       `
     })
     
-    console.log(`✅ Test email sent successfully! Message ID: ${info.messageId}`)
+    console.log(`✅ Test email sent successfully! Message ID: ${info.messageId}`);
     
   } catch (error) {
     console.error('❌ SMTP test failed:')
