@@ -487,10 +487,10 @@ def create_app(config_class=None):
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["1000 per day", "200 per hour", "50 per minute"],
+        default_limits=[],  # Temporarily disable all rate limiting
         storage_uri=redis_url
     )
-    logger.info(f"Rate limiter configured with storage: {redis_url}")
+    logger.info(f"Rate limiter configured with storage: {redis_url} (rate limiting temporarily disabled)")
 
     # Initialize Redis cache and session
     try:
@@ -1588,7 +1588,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return error_response("Failed to fetch statistics", 500)
 
     @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
-    @limiter.limit("200 per minute")  # Re-enabled with higher limit
+    # @limiter.limit("200 per minute")  # Temporarily disabled for testing
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
         try:
