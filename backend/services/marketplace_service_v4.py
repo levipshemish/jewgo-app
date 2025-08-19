@@ -308,6 +308,14 @@ class MarketplaceServiceV4(BaseService):
             Dictionary containing categories
         """
         try:
+            # Check if database manager is available
+            if not self.db_manager:
+                self.logger.warning("Database manager not available")
+                return {
+                    "success": True,
+                    "categories": []
+                }
+            
             # Check if marketplace table exists first
             check_query = """
                 SELECT EXISTS (
@@ -463,6 +471,21 @@ class MarketplaceServiceV4(BaseService):
             Dictionary containing marketplace stats
         """
         try:
+            # Check if database manager is available
+            if not self.db_manager:
+                self.logger.warning("Database manager not available")
+                return {
+                    "success": True,
+                    "stats": {
+                        "total_products": 0,
+                        "total_vendors": 0,
+                        "total_categories": 0,
+                        "active_orders": 0,
+                        "total_sales": 0.0,
+                        "average_rating": 0.0
+                    }
+                }
+            
             # Check if marketplace table exists first
             check_query = """
                 SELECT EXISTS (
