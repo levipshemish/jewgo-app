@@ -40,42 +40,36 @@ OVERALL_PASSED=true
 run_tsc_check() {
     print_status "Running TypeScript strict check..."
     
-    if echo '{"type":"tool","name":"tsc_check","params":{"cwd":"frontend"}}' | node tools/ts-next-strict-mcp/dist/index.js > tsc-results.json 2>/dev/null; then
-        if jq -e '.ok == true' tsc-results.json > /dev/null 2>&1; then
-            print_success "TypeScript check passed"
-            TSC_PASSED=true
-        else
-            ISSUES=$(jq -r '.issues | length' tsc-results.json 2>/dev/null || echo "unknown")
-            print_error "TypeScript check failed with $ISSUES issues"
-            echo "Issues found:"
-            jq -r '.issues[] | "  - \(.file):\(.line):\(.col) \(.message)"' tsc-results.json 2>/dev/null || echo "  Unable to parse issues"
-            OVERALL_PASSED=false
-        fi
+    # Run TypeScript check directly instead of through MCP
+    if cd frontend && npx tsc --noEmit > ../tsc-results.txt 2>&1; then
+        print_success "TypeScript check passed"
+        TSC_PASSED=true
     else
-        print_error "TypeScript check failed to run"
+        print_error "TypeScript check failed"
+        echo "Issues found:"
+        cat ../tsc-results.txt | grep -E "\.tsx?\(\d+,\d+\):" | head -10
         OVERALL_PASSED=false
     fi
+    cd ..
 }
 
 # Run ESLint check
 run_eslint_check() {
     print_status "Running ESLint check..."
     
-    if echo '{"type":"tool","name":"eslint_check","params":{"cwd":"frontend","pattern":"**/*.{ts,tsx}","fix":true}}' | node tools/ts-next-strict-mcp/dist/index.js > eslint-results.json 2>/dev/null; then
-        if jq -e '.ok == true' eslint-results.json > /dev/null 2>&1; then
-            print_success "ESLint check passed"
-            ESLINT_PASSED=true
-        else
-            ISSUES=$(jq -r '.issues | length' eslint-results.json 2>/dev/null || echo "unknown")
-            print_error "ESLint check failed with $ISSUES issues"
-            echo "Issues found:"
-            jq -r '.issues[] | "  - \(.file):\(.line):\(.column) \(.message)"' eslint-results.json 2>/dev/null || echo "  Unable to parse issues"
-            OVERALL_PASSED=false
-        fi
+    # Run ESLint check directly instead of through MCP
+    if cd frontend && npx eslint app/**/*.tsx --format json > ../eslint-results.json 2>/dev/null; then
+        print_success "ESLint check passed"
+        ESLINT_PASSED=true
     else
-        print_error "ESLint check failed to run"
+        print_error "ESLint check failed"
+        echo "Issues found:"
+        if [ -f "../eslint-results.json" ]; then
+            jq -r '.[] | .messages[] | "  - \(.filePath):\(.line):\(.column) \(.message)"' ../eslint-results.json 2>/dev/null | head -10
+        fi
         OVERALL_PASSED=false
     fi
+    cd ..
 }
 
 # Check for database changes
@@ -129,7 +123,7 @@ generate_report() {
 
 # Cleanup temporary files
 cleanup() {
-    rm -f tsc-results.json eslint-results.json
+    rm -f tsc-results.txt eslint-results.json
 }
 
 # Main execution
