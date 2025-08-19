@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Heart, Star, MapPin } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
@@ -135,10 +135,7 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
     return rating && rating > 0 ? rating : 0.0;
   };
 
-  // Get location text
-  const getLocationText = () => {
-    return data.location || data.address || '';
-  };
+
 
   const handleImageLoad = () => setImageLoading(false);
   const handleImageError = () => {
@@ -242,13 +239,7 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
             </p>
           )}
 
-          {/* Location */}
-          {getLocationText() && (
-            <div className="flex items-center text-xs text-gray-500 mb-2">
-              <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-              <span className="line-clamp-1">{getLocationText()}</span>
-            </div>
-          )}
+
 
           {/* Price */}
           <div className="flex items-center justify-between">

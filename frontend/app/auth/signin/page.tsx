@@ -57,11 +57,11 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
         return;
       }
       
-      if (data.user) {
+      if (data?.user) {
         // User authenticated successfully
         router.push(redirectTo || '/');
       }
-    } catch (error) {
+    } catch {
       setError('Sign in failed');
     } finally {
       setPending(false);
@@ -83,7 +83,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       if (error) {
         setError(error.message);
       }
-    } catch (error) {
+    } catch {
       setError('Google sign in failed');
     } finally {
       setPending(false);

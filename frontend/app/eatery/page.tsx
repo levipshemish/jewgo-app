@@ -182,7 +182,7 @@ export default function EateryExplorePage() {
         
         const data = await fetchRestaurants(200, params.toString());
         setRestaurants(data.restaurants || []);
-      } catch (_err) {
+      } catch {
         // console.error('Error loading restaurants:', err);
         setError('Failed to load restaurants. Please try again.');
       } finally {
