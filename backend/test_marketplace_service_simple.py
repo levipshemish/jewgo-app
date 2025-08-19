@@ -47,9 +47,11 @@ def test_marketplace_service_simple():
                 listings = cursor.fetchall()
                 
                 # Get total count
-                count_query = query.replace("SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, ", "SELECT COUNT(*) as total FROM marketplace m ")
-                count_query = count_query.split("ORDER BY")[0]
-                count_params = params[:-2] if len(params) > 2 else params
+                count_query = """
+                    SELECT COUNT(*) as total FROM marketplace m 
+                    WHERE m.status = %s
+                """
+                count_params = [params[0]]  # Only the status parameter
                 cursor.execute(count_query, count_params)
                 total = cursor.fetchone()[0]
         
