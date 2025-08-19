@@ -168,8 +168,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         })
       }}
     >
-      {/* Image Container - Using balanced aspect ratio with full rounded corners */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl mb-3">
+      {/* Image Container - Using balanced aspect ratio with full rounded corners, reduced bottom margin */}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl mb-2">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -263,21 +263,21 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Flush with page, transparent background */}
+      {/* Text Content Container - Flush with page, transparent background, closer to image */}
       <motion.div 
-        className="px-2 pt-2 pb-1"
+        className="px-2 pt-1 pb-1"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Bold text with improved spacing */}
-        <div className="min-h-8 mb-2 flex items-center">
+        {/* Restaurant Name - Bold text with tighter spacing */}
+        <div className="min-h-8 mb-1 flex items-center">
           <h3 className="text-sm font-bold text-gray-900 leading-tight break-words">
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
-        {/* Price Range and Rating - Improved spacing and layout */}
+        {/* Price Range and Rating - Tighter spacing and layout */}
         <div className="flex items-center justify-between min-w-0 gap-3">
           <SpanContainer className="text-xs text-gray-600 font-medium truncate flex-1">
             {formatPriceRange()}
