@@ -1589,14 +1589,50 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return error_response("Failed to fetch statistics", 500)
 
     @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
-    # @limiter.limit("100 per minute")  # Temporarily disabled for debugging
+    # @limiter.limit("100 per minute")  # Temporarily disabled due to rate limiter issue
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
-        return jsonify({
-            "message": "Restaurant endpoint working",
-            "restaurant_id": restaurant_id,
-            "status": "debug_mode"
-        }), 200
+        try:
+            # Try to get from cache first
+            cached_result = deps.get("cache_manager_v4")
+
+            if cached_result:
+                cached_data = cached_result.get_cached_restaurant_details(restaurant_id)
+                if cached_data:
+                    logger.info(
+                        "Serving restaurant from cache", restaurant_id=restaurant_id
+                    )
+                    return jsonify(cached_data), 200
+
+            # Get database manager instance
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                logger.error("Database manager not initialized")
+                return error_response("Database not available", 503)
+
+            # Get restaurant from database
+            restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+
+            if not restaurant:
+                return not_found_response("Restaurant not found", resource_type="restaurant")
+
+            response_data = {"restaurant": restaurant}
+
+            # Cache the result
+            if cached_result:
+                cached_result.cache_restaurant_details(
+                    restaurant_id,
+                    response_data,
+                    ttl=1800,
+                )  # Cache for 30 minutes
+
+            return restaurant_response(restaurant)
+
+        except Exception as e:
+            logger.exception(
+                "Error fetching restaurant", restaurant_id=restaurant_id, error=str(e)
+            )
+            return error_response("Failed to fetch restaurant", 500)
 
     @app.route("/api/restaurants/<int:restaurant_id>/fetch-website", methods=["POST"])
     @limiter.limit("30 per hour")
