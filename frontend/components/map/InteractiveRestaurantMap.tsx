@@ -290,7 +290,7 @@ export default function InteractiveRestaurantMap({
       // Update refs and apply clustering after processing
       const finalizeMarkers = () => {
         markersRef.current = newMarkers;
-        currentRenderedIdsRef.current = new Set(inView.map(r => r.id));
+        currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
         applyClustering(map);
       };
       
@@ -593,14 +593,14 @@ export default function InteractiveRestaurantMap({
 
     // Smart marker management: only update what's necessary
     const currentIds = new Set(currentRenderedIdsRef.current);
-    const newIds = new Set(inView.map(r => r.id));
+    const newIds = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
     
     // Remove markers that are no longer in view
     const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
     toRemove.forEach(id => {
       const marker = markersMapRef.current.get(id);
       if (marker) {
-        const restaurant = inView.find(r => r.id === id) || restaurantsWithCoords.find(r => r.id === id);
+        const restaurant = (Array.isArray(inView) ? inView.find(r => r.id === id) : null) || restaurantsWithCoords.find(r => r.id === id);
         if (restaurant) {
           const key = getRestaurantKey(restaurant);
           returnMarkerToPool(marker, key);
@@ -610,10 +610,10 @@ export default function InteractiveRestaurantMap({
     });
 
     // Add markers that are newly in view
-    const toAdd = inView.filter(r => !currentIds.has(r.id));
+    const toAdd = Array.isArray(inView) ? inView.filter(r => !currentIds.has(r.id)) : [];
     
     // Update markers that need visual updates (selected state, rating changes, etc.)
-    const toUpdate = inView.filter(r => {
+    const toUpdate = Array.isArray(inView) ? inView.filter(r => {
       if (!currentIds.has(r.id)) { 
         return false; 
       }
@@ -626,13 +626,13 @@ export default function InteractiveRestaurantMap({
       const currentKey = getRestaurantKey(r);
       const markerKey = (marker as any)._restaurantKey;
       return currentKey !== markerKey;
-    });
+    }) : [];
 
     // Process additions and updates
           const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
     
     // Keep existing markers that don't need updates
-    inView.forEach(r => {
+    (Array.isArray(inView) ? inView : []).forEach(r => {
       if (!toAdd.some(add => add.id === r.id) && !toUpdate.some(update => update.id === r.id)) {
         const existingMarker = markersMapRef.current.get(r.id);
         if (existingMarker) {
@@ -661,7 +661,7 @@ export default function InteractiveRestaurantMap({
         () => {
           // Completion callback
           markersRef.current = newMarkers;
-          currentRenderedIdsRef.current = new Set(inView.map(r => r.id));
+          currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
           applyClustering(map);
         }
       );
@@ -670,7 +670,7 @@ export default function InteractiveRestaurantMap({
     } else {
       // No new markers to add/update, just update refs
       markersRef.current = newMarkers;
-      currentRenderedIdsRef.current = new Set(inView.map(r => r.id));
+      currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
       applyClustering(map);
     }
   }, [restaurantsWithCoords, selectedRestaurantId, showRatingBubbles, onRestaurantSelect, cleanupMarkers, createMarker, applyClustering, getRestaurantKey, getPooledMarker, returnMarkerToPool]);

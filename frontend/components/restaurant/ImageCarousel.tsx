@@ -23,9 +23,17 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
   // Process and validate images, combining with fallbacks
   const allImages = React.useMemo(() => {
+    // Ensure images is always an array
+    const safeImages = Array.isArray(images) ? images : [];
+    
     // Use the new validation utility to process images
-    const maxImages = Array.isArray(images) && images.length > 0 ? images.length : 1;
-    const processedImages = processRestaurantImages(images, kosherCategory, maxImages) || [];
+    const maxImages = safeImages.length > 0 ? safeImages.length : 1;
+    const processedImages = processRestaurantImages(safeImages, kosherCategory, maxImages) || [];
+    
+    // Ensure processedImages is an array before filtering
+    if (!Array.isArray(processedImages)) {
+      return [];
+    }
     
     // Additional validation: remove any images that are clearly problematic
     const validatedImages = processedImages.filter(img => {
@@ -52,6 +60,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       
       return true;
     });
+    
+    // Ensure validatedImages is an array before mapping
+    if (!Array.isArray(validatedImages)) {
+      return [];
+    }
     
     // Normalize known broken 'image_1.{ext}' variants to extensionless so Cloudinary can serve best format
     const normalized = validatedImages.map((u) =>
