@@ -99,7 +99,15 @@ class MarketplaceServiceV4(BaseService):
                             "has_more": False
                         }
             
-            query = "SELECT * FROM marketplace WHERE 1=1"
+            # Use explicit column names to avoid column order issues
+            query = """
+                SELECT id, name, title, description, price, category, subcategory, 
+                       vendor_name, product_image, location, city, state, 
+                       kosher_agency, kosher_level, rating, stock, is_available, 
+                       is_featured, is_on_sale, discount_percentage, views, 
+                       created_at, updated_at
+                FROM marketplace WHERE 1=1
+            """
             params = []
             
             # Apply filters
@@ -132,10 +140,6 @@ class MarketplaceServiceV4(BaseService):
                 query += " AND is_on_sale = %s"
                 params.append(is_on_sale)
             
-            if status:
-                query += " AND status = %s"
-                params.append(status)
-            
             # Add sorting
             valid_sort_fields = ["name", "price", "rating", "created_at", "updated_at"]
             if sort_by not in valid_sort_fields:
@@ -155,45 +159,46 @@ class MarketplaceServiceV4(BaseService):
                     products = cursor.fetchall()
                     
                     # Get total count for pagination
-                    count_query = query.replace("SELECT *", "SELECT COUNT(*)")
+                    count_query = query.replace("SELECT id, name, title, description, price, category, subcategory, vendor_name, product_image, location, city, state, kosher_agency, kosher_level, rating, stock, is_available, is_featured, is_on_sale, discount_percentage, views, created_at, updated_at", "SELECT COUNT(*)")
                     count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
                     cursor.execute(count_query, params[:-2])  # Remove limit and offset
                     total_count = cursor.fetchone()[0]
             
-            # Convert to list of dictionaries
+            # Convert to list of dictionaries with explicit column mapping
             product_list = []
             for product in products:
-                product_dict = {
-                    "id": str(product[0]),
-                    "name": product[1],
-                    "title": product[2],
-                    "description": product[3],
-                    "price": float(product[4]) if product[4] else 0.0,
-                    "category_id": product[5],
-                    "subcategory": product[6],
-                    "vendor_id": product[7],
-                    "vendor_name": product[8],
-                    "product_image": product[9],
-                    "images": [product[9]] if product[9] else [],
-                    "thumbnail": product[9],
-                    "location": product[10],
-                    "city": product[11],
-                    "state": product[12],
-                    "kosher_agency": product[13],
-                    "kosher_level": product[14],
-                    "status": product[15],
-                    "rating": float(product[16]) if product[16] else 0.0,
-                    "stock": product[17],
-                    "is_available": product[18],
-                    "is_featured": product[19],
-                    "is_on_sale": product[20],
-                    "discount_percentage": float(product[21]) if product[21] else 0.0,
-                    "views": product[22] or 0,
-                    "created_at": product[23].isoformat() if product[23] else None,
-                    "updated_at": product[24].isoformat() if product[24] else None,
-                    "external_id": product[25]
-                }
-                product_list.append(product_dict)
+                try:
+                    product_dict = {
+                        "id": str(product[0]),
+                        "name": product[1],
+                        "title": product[2],
+                        "description": product[3],
+                        "price": float(product[4]) if product[4] is not None else 0.0,
+                        "category": product[5],
+                        "subcategory": product[6],
+                        "vendor_name": product[7],
+                        "product_image": product[8],
+                        "images": [product[8]] if product[8] else [],
+                        "thumbnail": product[8],
+                        "location": product[9],
+                        "city": product[10],
+                        "state": product[11],
+                        "kosher_agency": product[12],
+                        "kosher_level": product[13],
+                        "rating": float(product[14]) if product[14] is not None else 0.0,
+                        "stock": product[15] or 0,
+                        "is_available": product[16],
+                        "is_featured": product[17],
+                        "is_on_sale": product[18],
+                        "discount_percentage": float(product[19]) if product[19] is not None else 0.0,
+                        "views": product[20] or 0,
+                        "created_at": product[21].isoformat() if product[21] else None,
+                        "updated_at": product[22].isoformat() if product[22] else None
+                    }
+                    product_list.append(product_dict)
+                except (ValueError, TypeError, IndexError) as e:
+                    self.logger.warning(f"Error processing product {product[0] if product else 'unknown'}: {str(e)}")
+                    continue
             
             return {
                 "success": True,
@@ -226,7 +231,14 @@ class MarketplaceServiceV4(BaseService):
             Dictionary containing product data
         """
         try:
-            query = "SELECT * FROM marketplace WHERE id = %s"
+            query = """
+                SELECT id, name, title, description, price, category, subcategory, 
+                       vendor_name, product_image, location, city, state, 
+                       kosher_agency, kosher_level, rating, stock, is_available, 
+                       is_featured, is_on_sale, discount_percentage, views, 
+                       created_at, updated_at
+                FROM marketplace WHERE id = %s
+            """
             
             with self.db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
@@ -240,36 +252,41 @@ class MarketplaceServiceV4(BaseService):
                     "product": None
                 }
             
-            product_dict = {
-                "id": str(product[0]),
-                "name": product[1],
-                "title": product[2],
-                "description": product[3],
-                "price": float(product[4]) if product[4] else 0.0,
-                "category_id": product[5],
-                "subcategory": product[6],
-                "vendor_id": product[7],
-                "vendor_name": product[8],
-                "product_image": product[9],
-                "images": [product[9]] if product[9] else [],
-                "thumbnail": product[9],
-                "location": product[10],
-                "city": product[11],
-                "state": product[12],
-                "kosher_agency": product[13],
-                "kosher_level": product[14],
-                "status": product[15],
-                "rating": float(product[16]) if product[16] else 0.0,
-                "stock": product[17],
-                "is_available": product[18],
-                "is_featured": product[19],
-                "is_on_sale": product[20],
-                "discount_percentage": float(product[21]) if product[21] else 0.0,
-                "views": product[22] or 0,
-                "created_at": product[23].isoformat() if product[23] else None,
-                "updated_at": product[24].isoformat() if product[24] else None,
-                "external_id": product[25]
-            }
+            try:
+                product_dict = {
+                    "id": str(product[0]),
+                    "name": product[1],
+                    "title": product[2],
+                    "description": product[3],
+                    "price": float(product[4]) if product[4] is not None else 0.0,
+                    "category": product[5],
+                    "subcategory": product[6],
+                    "vendor_name": product[7],
+                    "product_image": product[8],
+                    "images": [product[8]] if product[8] else [],
+                    "thumbnail": product[8],
+                    "location": product[9],
+                    "city": product[10],
+                    "state": product[11],
+                    "kosher_agency": product[12],
+                    "kosher_level": product[13],
+                    "rating": float(product[14]) if product[14] is not None else 0.0,
+                    "stock": product[15] or 0,
+                    "is_available": product[16],
+                    "is_featured": product[17],
+                    "is_on_sale": product[18],
+                    "discount_percentage": float(product[19]) if product[19] is not None else 0.0,
+                    "views": product[20] or 0,
+                    "created_at": product[21].isoformat() if product[21] else None,
+                    "updated_at": product[22].isoformat() if product[22] else None
+                }
+            except (ValueError, TypeError, IndexError) as e:
+                self.logger.error(f"Error processing product {product_id}: {str(e)}")
+                return {
+                    "success": False,
+                    "error": "Failed to process product data",
+                    "product": None
+                }
             
             return {
                 "success": True,
@@ -296,7 +313,6 @@ class MarketplaceServiceV4(BaseService):
         return self.get_products(
             limit=limit,
             is_featured=True,
-            status="active",
             sort_by="rating",
             sort_order="desc"
         )
