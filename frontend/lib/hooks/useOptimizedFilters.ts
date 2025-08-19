@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
-import { FilterState, FilterValue } from '@/lib/types';
+import { FilterState, FilterValue } from '@/lib/filters/filters.types';
 import { Restaurant } from '@/lib/types/restaurant';
 
 interface UseOptimizedFiltersOptions {
@@ -320,7 +320,7 @@ export const useOptimizedFilters = (
 
       // Apply "near me" filter
       if (activeFilters.nearMe && activeFilters.userLocation) {
-        const maxDistance = activeFilters.maxDistance ?? activeFilters.distanceRadius ?? 10;
+        const maxDistance = activeFilters.maxDistance ?? 10;
         filtered = filtered.filter(restaurant => 
           FILTER_FUNCTIONS.nearMe(restaurant, activeFilters.userLocation!, maxDistance)
         );
@@ -413,7 +413,7 @@ export const useOptimizedFilters = (
 
       // Apply "near me" filter
       if (previewFilters.nearMe && previewFilters.userLocation) {
-        const maxDistance = previewFilters.maxDistance ?? previewFilters.distanceRadius ?? 10;
+        const maxDistance = previewFilters.maxDistance ?? 10;
         filtered = filtered.filter(restaurant => 
           FILTER_FUNCTIONS.nearMe(restaurant, previewFilters.userLocation!, maxDistance)
         );
