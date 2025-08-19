@@ -2403,7 +2403,7 @@ div[class*="specials-dynamic-grid"] {
   }
   
   /* Ensure price text is left-aligned and properly sized */
-  .restaurant-card .text-xs.text-gray-500.font-normal.truncate.flex-1 {
+  .restaurant-card .price-text {
     text-align: left !important;
     justify-content: flex-start !important;
     flex: 1 !important;
@@ -2415,7 +2415,7 @@ div[class*="specials-dynamic-grid"] {
   }
   
   /* Ensure rating is right-aligned but container is properly spaced */
-  .restaurant-card .flex.items-center.gap-1.flex-shrink-0 {
+  .restaurant-card .rating-container {
     justify-content: flex-end !important;
     align-items: center !important;
     flex-shrink: 0 !important;
@@ -2423,11 +2423,11 @@ div[class*="specials-dynamic-grid"] {
   }
   
   /* Fix star icon and rating text alignment */
-  .restaurant-card .w-3.h-3.fill-yellow-400 {
+  .restaurant-card .star-icon {
     flex-shrink: 0 !important;
   }
   
-  .restaurant-card .text-xs.font-semibold.text-gray-800 {
+  .restaurant-card .rating-text {
     flex-shrink: 0 !important;
     white-space: nowrap !important;
   }
@@ -2462,4 +2462,25 @@ div[class*="specials-dynamic-grid"] {
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
     max-width: 100% !important;
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    .restaurant-card {
+      /* Reduce overall card spacing */
+      margin-bottom: 0.75rem !important;
+    }
+    
+    .restaurant-card .price-text {
+      margin-right: 0.25rem !important;
+    }
+    
+    .restaurant-card h3 {
+      line-height: 1.2 !important;
+    }
+    
+    /* Ensure proper image aspect ratio on mobile */
+    .restaurant-card .aspect-\[5\/4\] {
+      aspect-ratio: 5/4 !important;
+    }
   }

@@ -273,29 +273,29 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Reduced padding for tighter spacing */}
+      {/* Text Content Container - Tighter spacing for mobile */}
       <motion.div 
-        className="p-1 bg-transparent"
+        className={`bg-transparent ${isMobileDevice ? 'px-0.5 pt-1 pb-0.5' : 'p-1'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Single line with truncation */}
-        <div className="h-8 mb-0.5 flex items-center w-full min-w-0">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight truncate w-full min-w-0" title={titleCase(restaurant.name)}>
+        {/* Restaurant Name - Compact for mobile */}
+        <div className={`flex items-center w-full min-w-0 ${isMobileDevice ? 'h-6 mb-0.5' : 'h-8 mb-0.5'}`}>
+          <h3 className={`font-bold text-gray-900 leading-tight truncate w-full min-w-0 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
-        {/* Price Range and Rating - Swapped positions */}
-        <div className="flex items-center justify-between min-w-0 w-full">
-          <SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2 min-w-0 price-text" title={formatPriceRange()}>
+        {/* Price Range and Rating - Compact spacing for mobile */}
+        <div className={`flex items-center justify-between min-w-0 w-full ${isMobileDevice ? 'gap-1' : ''}`}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs mr-1' : 'text-xs mr-2'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
           <div className="flex items-center gap-1 flex-shrink-0 rating-container">
-            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon" />
-            <span className="text-xs font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text">
+            <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+            <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
               {getRating().toFixed(1)}
             </span>
           </div>
@@ -304,7 +304,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         {/* Additional Details - Only show if showDetails is true */}
         {showDetails && (
           <motion.div 
-            className="space-y-2 mt-3 pt-3 border-t border-gray-100"
+            className={`${isMobileDevice ? 'space-y-1 mt-2 pt-2' : 'space-y-2 mt-3 pt-3'} border-t border-gray-100`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             transition={{ duration: 0.3 }}
@@ -317,14 +317,14 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
             )}
 
             {/* Kosher Details */}
-            <div className="flex flex-wrap gap-1 mt-2 min-w-0">
+            <div className={`flex flex-wrap gap-1 min-w-0 ${isMobileDevice ? 'mt-1' : 'mt-2'}`}>
               {restaurant.is_cholov_yisroel && (
-                <SpanContainer className="inline-block px-2 py-1 bg-[#FCC0C5]/20 text-[#8a4a4a] text-xs rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge" title="Chalav Yisroel">
+                <SpanContainer className={`inline-block bg-[#FCC0C5]/20 text-[#8a4a4a] rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge ${isMobileDevice ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'}`} title="Chalav Yisroel">
                   Chalav Yisroel
                 </SpanContainer>
               )}
               {restaurant.is_pas_yisroel && (
-                <SpanContainer className="inline-block px-2 py-1 bg-[#74E1A0]/20 text-[#1a4a2a] text-xs rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge" title="Pas Yisroel">
+                <SpanContainer className={`inline-block bg-[#74E1A0]/20 text-[#1a4a2a] rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge ${isMobileDevice ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'}`} title="Pas Yisroel">
                   Pas Yisroel
                 </SpanContainer>
               )}
