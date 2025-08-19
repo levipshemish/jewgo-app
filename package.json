@@ -4,6 +4,7 @@
   "private": true,
   "description": "JewGo - Kosher restaurant finder and marketplace",
   "scripts": {
+    "// MCP scripts for local development only": "",
     "mcp:strict": "node ./tools/ts-next-strict-mcp/dist/index.js",
     "mcp:schema": "schema-drift-mcp",
     "mcp:guard": "node ./tools/ci-guard-mcp/dist/index.js",

@@ -342,7 +342,8 @@ pipx upgrade schema-drift-mcp
 1. **Server not starting:**
    ```bash
    # Rebuild servers
-   pnpm mcp:build
+   # MCP tools are for local development only
+# pnpm mcp:build
    
    # Check server status
    pnpm mcp:status

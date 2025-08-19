@@ -394,7 +394,7 @@ This will:
 
 ## 📊 Integration with CI/CD
 
-These scripts are integrated with GitHub Actions in `.github/workflows/mcp-validation.yml`:
+These scripts are for local development only and are NOT used in CI/CD pipelines:
 
 - **Triggers**: Push to main/develop, Pull requests
 - **Checks**: TypeScript, ESLint, CI Guard, Schema Drift
@@ -433,4 +433,4 @@ When adding new MCP scripts:
 - [MCP Standards](../docs/MCP_STANDARDS.md)
 - [Development Workflow](../docs/DEVELOPMENT_WORKFLOW.md)
 - [Contributing Guidelines](../docs/CONTRIBUTING.md)
-- [GitHub Actions Workflow](../../.github/workflows/mcp-validation.yml)
+- [Local Development Only] MCP tools are not used in CI/CD

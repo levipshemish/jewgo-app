@@ -22,12 +22,15 @@ jobs:
         with:
           version: 8
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: |
-          pnpm mcp:install
+          cd frontend
+          pnpm install --frozen-lockfile
 
-      - name: Build MCP servers
-        run: pnpm mcp:build
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
 
       - name: Run TypeScript strict check
         run: |
