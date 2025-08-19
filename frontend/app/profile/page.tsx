@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/auth";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { getSessionUser } from "@/lib/auth";
 
 export default async function ProfilePage() {
   const user = await getSessionUser();

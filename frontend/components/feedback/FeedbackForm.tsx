@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Send, X } from 'lucide-react';
+import React, { useState } from 'react';
 
 export interface FeedbackData {
   type: 'correction' | 'suggestion' | 'general';

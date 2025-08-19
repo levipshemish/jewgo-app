@@ -1,5 +1,5 @@
-import { Restaurant } from '@/lib/types/restaurant';
 import { ValidationResult } from '@/lib/types';
+import { Restaurant } from '@/lib/types/restaurant';
 
 /**
  * Validates if a restaurant object has the required properties

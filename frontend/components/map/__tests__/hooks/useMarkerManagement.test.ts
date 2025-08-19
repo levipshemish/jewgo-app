@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
-import { useMarkerManagement } from '../../hooks/useMarkerManagement';
+
 import { Restaurant } from '../../../../lib/types/restaurant';
+import { useMarkerManagement } from '../../hooks/useMarkerManagement';
 
 // Mock ESM markerclusterer to avoid relying on real Google Maps OverlayView
 jest.mock('@googlemaps/markerclusterer', () => {

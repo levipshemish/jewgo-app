@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MapPin, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MarketplaceProduct } from '@/lib/types/marketplace';
-import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { titleCase } from '@/lib/utils/stringUtils';
+import { MapPin, Heart } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+
+import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { MarketplaceProduct } from '@/lib/types/marketplace';
+import { titleCase } from '@/lib/utils/stringUtils';
+
 
 interface ProductCardProps {
 	product: MarketplaceProduct;

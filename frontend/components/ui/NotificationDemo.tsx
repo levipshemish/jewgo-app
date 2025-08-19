@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import { useNotifications } from '@/lib/contexts/NotificationsContext';
 
 const NotificationDemo: React.FC = () => {

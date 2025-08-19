@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useState, Suspense, useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { FormEvent, useState, Suspense, useEffect } from "react";
+
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
@@ -46,54 +47,25 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     setError(null);
     
     try {
-      console.log('Attempting email sign in with:', { email, hasPassword: !!password });
-      
       const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
       
-      console.log('Sign in response:', { data, error });
-      
       if (error) {
-        console.error('Sign in error:', error);
         setError(error.message);
-        setPending(false);
         return;
       }
       
       if (data.user) {
-        console.log('User authenticated:', data.user.email);
-        
-        // Wait a moment for session to be established
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Verify session is established
-        const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          setError(`Session error: ${sessionError.message}`);
-          setPending(false);
-          return;
-        }
-        
-        if (session && session.user) {
-          console.log('Session established, redirecting to:', redirectTo);
-          // Redirect to the intended page
-          router.push(redirectTo);
-        } else {
-          setError("Authentication successful but session not established. Please try again.");
-        }
-      } else {
-        setError("Authentication failed. Please check your credentials.");
+        // User authenticated successfully
+        router.push(redirectTo || '/');
       }
-    } catch (err) {
-      console.error('Sign in exception:', err);
-      setError("An unexpected error occurred. Please try again.");
+    } catch (error) {
+      setError('Sign in failed');
+    } finally {
+      setPending(false);
     }
-    
-    setPending(false);
   };
 
   const onGoogleSignIn = async () => {
@@ -101,31 +73,21 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     setError(null);
     
     try {
-      console.log('Attempting Google OAuth sign in');
-      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: "google",
-        options: { 
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo || '/')}`,
         },
       });
-      
+
       if (error) {
-        console.error('Google OAuth error:', error);
-        setError(`Google OAuth failed: ${error.message}`);
-      } else {
-        console.log('Google OAuth initiated successfully');
+        setError(error.message);
       }
-    } catch (err) {
-      console.error('Google OAuth exception:', err);
-      setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } catch (error) {
+      setError('Google sign in failed');
+    } finally {
+      setPending(false);
     }
-    
-    setPending(false);
   };
 
   return (

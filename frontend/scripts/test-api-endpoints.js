@@ -16,16 +16,18 @@ async function testAPIEndpoints() {
     })
     
     const resetData = await resetResponse.json()
-    }`)
+    console.log(`Password reset response: ${JSON.stringify(resetData)}`)
     
     if (resetResponse.ok) {
-      } else {
-      }
+      console.log('✅ Password reset request successful');
+    } else {
+      console.log('❌ Password reset request failed');
+    }
     
   } catch (error) {
-    // console.error('❌ API test failed:')
-    // console.error(error.message)
-    }
+    console.error('❌ API test failed:');
+    console.error(error.message);
+  }
 }
 
 testAPIEndpoints()

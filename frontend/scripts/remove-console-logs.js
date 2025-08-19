@@ -45,17 +45,17 @@ const CONSOLE_PATTERNS = [
   }
 ];
 
-function shouldProcessFile(_filePath) {
+function shouldProcessFile(filePath) {
   const ext = path.extname(filePath);
   return ['.ts', '.tsx', '.js', '.jsx'].includes(ext);
 }
 
-function shouldExcludeDirectory(_dirPath) {
+function shouldExcludeDirectory(dirPath) {
   const dirName = path.basename(dirPath);
   return EXCLUDED_DIRS.includes(dirName);
 }
 
-function processFile(_filePath) {
+function processFile(filePath) {
   try {
     let content = fs.readFileSync(filePath, 'utf8');
     let originalContent = content;
@@ -76,12 +76,12 @@ function processFile(_filePath) {
 
     return 0;
   } catch (error) {
-    // console.error(`❌ Error processing ${filePath}:`, error.message);
+    console.error(`❌ Error processing ${filePath}:`, error.message);
     return 0;
   }
 }
 
-function walkDirectory(_dir) {
+function walkDirectory(dir) {
   const files = fs.readdirSync(dir);
   let totalChanges = 0;
 
@@ -105,13 +105,14 @@ function main() {
   // Count current console statements
   let beforeCount = 0;
   try {
-    // const result = execSync(
+    const result = execSync(
       'find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | xargs grep -c "console\\." | cut -d: -f2 | paste -sd+ | bc',
       { encoding: 'utf8', cwd: process.cwd() }
     ).trim();
     beforeCount = parseInt(result) || 0;
   } catch (e) {
-    }
+    console.log('Could not count console statements before processing');
+  }
 
   const startDir = process.cwd();
   const totalChanges = walkDirectory(startDir);
@@ -119,15 +120,20 @@ function main() {
   // Count remaining console statements
   let afterCount = 0;
   try {
-    // const result = execSync(
+    const result = execSync(
       'find . -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" | grep -v node_modules | xargs grep -c "console\\." | cut -d: -f2 | paste -sd+ | bc',
       { encoding: 'utf8', cwd: process.cwd() }
     ).trim();
     afterCount = parseInt(result) || 0;
   } catch (e) {
-    }
-
+    console.log('Could not count console statements after processing');
   }
+
+  console.log(`✅ Console log removal complete!`);
+  console.log(`📊 Before: ${beforeCount} console statements`);
+  console.log(`📊 After: ${afterCount} console statements`);
+  console.log(`📊 Removed: ${beforeCount - afterCount} console statements`);
+}
 
 if (require.main === module) {
   main();

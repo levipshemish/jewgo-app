@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Truck, Shield, Clock, MapPin, Phone, Globe } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';

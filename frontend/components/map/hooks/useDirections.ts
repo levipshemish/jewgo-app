@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react';
+
 import { Restaurant } from '@/lib/types/restaurant';
 
 interface UserLocation {

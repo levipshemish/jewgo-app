@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { prisma } from '@/lib/db/prisma';
 import { config } from 'dotenv';
 import { resolve } from 'path';
+
+import { prisma } from '@/lib/db/prisma';
 
 // Load environment variables from .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
@@ -87,7 +88,7 @@ async function testSupabaseSystem(): Promise<TestResult[]> {
     // Test 1: Supabase connection
     try {
       const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
+      if (error) {throw error;}
       
       results.push({
         test: 'Supabase Connection',
@@ -114,7 +115,7 @@ async function testSupabaseSystem(): Promise<TestResult[]> {
           }
         });
         
-        if (error) throw error;
+        if (error) {throw error;}
         
         results.push({
           test: 'Supabase User Signup',

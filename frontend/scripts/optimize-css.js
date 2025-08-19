@@ -37,7 +37,7 @@ const cssOptimizations = {
       cssFiles.forEach(file => {
         const stats = fs.statSync(file);
         const sizeKB = (stats.size / 1024).toFixed(2);
-        }: ${sizeKB} KB`);
+        console.log(`📄 ${path.relative(process.cwd(), file)}: ${sizeKB} KB`);
       });
       
       // Analyze globals.css specifically
@@ -50,11 +50,12 @@ const cssOptimizations = {
         const commentLines = lines.filter(line => line.trim().startsWith('/*') || line.trim().startsWith('//')).length;
         const actualCodeLines = totalLines - emptyLines - commentLines;
         
-        .size / 1024).toFixed(2)} KB`);
+        console.log(`📊 globals.css analysis: ${totalLines} lines, ${actualCodeLines} code lines, ${(fs.statSync(globalsPath).size / 1024).toFixed(2)} KB`);
       }
       
     } catch (error) {
-      }
+      console.error('Error analyzing CSS:', error);
+    }
   },
 
   // Check for unused CSS
@@ -92,14 +93,21 @@ const cssOptimizations = {
     
     checks.forEach(check => {
       if (check.found > 0) {
-        } else {
-        }
+        console.log(`⚠️  ${check.name}: ${check.found} found`);
+      } else {
+        console.log(`✅ ${check.name}: None found`);
+      }
     });
   },
 
   // Generate optimization recommendations
   generateRecommendations: () => {
-    },
+    console.log('\n💡 CSS Optimization Recommendations:');
+    console.log('1. Use CSS-in-JS or CSS modules for component-specific styles');
+    console.log('2. Implement CSS purging to remove unused styles');
+    console.log('3. Consider using PostCSS plugins for optimization');
+    console.log('4. Minimize CSS bundle size with compression');
+  },
 
   // Check Tailwind configuration
   checkTailwindConfig: () => {
@@ -108,15 +116,20 @@ const cssOptimizations = {
       try {
         const config = require(tailwindConfigPath);
         if (config.content) {
-          } else {
-          }
+          console.log('✅ Tailwind content paths configured');
+        } else {
+          console.log('⚠️  Tailwind content paths not configured');
+        }
         
         if (config.purge) {
-          }
-      } catch (error) {
+          console.log('✅ Tailwind purge configured');
         }
-    } else {
+      } catch (error) {
+        console.error('Error reading Tailwind config:', error);
       }
+    } else {
+      console.log('⚠️  Tailwind config not found');
+    }
   }
 };
 

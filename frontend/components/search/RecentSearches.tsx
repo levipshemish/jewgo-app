@@ -1,5 +1,5 @@
-import React from 'react';
 import { Clock, X } from 'lucide-react';
+import React from 'react';
 
 interface RecentSearchesProps {
   recentSearches: string[];

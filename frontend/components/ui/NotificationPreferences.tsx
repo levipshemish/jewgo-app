@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { showToast } from './Toast';
+
 import { safeFilter } from '@/lib/utils/validation';
+
+import { showToast } from './Toast';
 
 interface NotificationPreference {
   id: string;

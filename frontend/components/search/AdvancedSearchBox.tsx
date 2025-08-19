@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, X, Loader2, MapPin, Building2, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, X, Loader2, MapPin, Building2, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 interface SearchSuggestion {

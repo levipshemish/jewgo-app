@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTouchFeedback, useEnhancedTouch } from '@/lib/hooks/useTouchFeedback';
+import React, { useState } from 'react';
+
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { useTouchFeedback, useEnhancedTouch } from '@/lib/hooks/useTouchFeedback';
 import { isMobileDevice } from '@/lib/utils/touchUtils';
 
 export const TouchTestComponent: React.FC = () => {

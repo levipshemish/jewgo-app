@@ -3,10 +3,10 @@
 // Force dynamic rendering to avoid prerendering issues
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronDown, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 interface Restaurant {
   id: string;

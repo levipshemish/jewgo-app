@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
 import { User, Calendar, ChevronDown, ChevronUp, Star } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import React, { useState } from 'react';
+
 import { StarRating } from '@/components/ui/StarRating';
+import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/dateUtils';
 
 export interface ReviewSnippet {

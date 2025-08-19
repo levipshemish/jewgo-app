@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { useNotifications } from '@/lib/contexts/NotificationsContext';

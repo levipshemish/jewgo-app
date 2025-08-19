@@ -10,10 +10,10 @@
  * Version: 1.0
  */
 
+const { execSync } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-const { execSync } = require('child_process');
 
 /**
  * Environment configuration templates
@@ -451,7 +451,7 @@ function runHealthChecks() {
   
   healthChecks.forEach(check => {
     try {
-      const response = fetch(check.url + '/health');
+      const response = fetch(`${check.url  }/health`);
       if (response.ok) {
         console.log(`✅ ${check.name} health check passed`);
         results.push({ name: check.name, status: 'healthy' });

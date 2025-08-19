@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Phone, Globe2, Heart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 interface StickyCTAProps {
   restaurant?: {

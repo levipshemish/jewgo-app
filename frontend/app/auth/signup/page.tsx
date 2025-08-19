@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
+import { FormEvent, useState } from "react";
+
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");

@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
 import crypto from 'crypto'
-import { sendEmail, createVerificationEmail } from '@/lib/email'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
+
+import { prisma } from '@/lib/db/prisma'
+import { sendEmail, createVerificationEmail } from '@/lib/email'
+
 
 const RequestVerificationSchema = z.object({
   email: z.string().email(),

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
 import { syncSupabaseUserToNeon } from "./user-sync";
 
 export interface MigrationStats {

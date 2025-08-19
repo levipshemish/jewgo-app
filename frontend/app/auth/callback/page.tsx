@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function AuthCallbackContent() {
@@ -9,114 +10,63 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const processCallback = async () => {
       try {
-        // Check if we have tokens in the URL fragment
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        const errorParam = params.get("error");
-        const errorDescription = params.get("error_description");
-        
-        // Get redirectTo from search params
-        const redirectTo = searchParams.get("redirectTo") || "/";
+        // Process the callback
+        const result = await supabaseBrowser.auth.exchangeCodeForSession(
+          searchParams.get('code') || ''
+        );
 
-        console.log('Auth callback processing:', {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          hasError: !!errorParam,
-          redirectTo
-        });
-
-        // Handle OAuth errors
-        if (errorParam) {
-          setError(`OAuth error: ${errorDescription || errorParam}`);
-          setStatus("Authentication failed");
-          setTimeout(() => {
-            router.push(`/auth/signin?error=oauth_error&redirectTo=${encodeURIComponent(redirectTo)}`);
-          }, 3000);
+        if (result?.error) {
+          setError(result.error.message);
           return;
         }
 
-        // Handle successful OAuth with tokens
-        if (accessToken && refreshToken) {
-          setStatus("Setting up session...");
-          
-          const { data, error } = await supabaseBrowser.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            console.error('Session setup error:', error);
-            setError(`Session error: ${error.message}`);
-            setStatus("Failed to establish session");
-            setTimeout(() => {
-              router.push(`/auth/signin?error=session_error&redirectTo=${encodeURIComponent(redirectTo)}`);
-            }, 3000);
-            return;
-          }
-
-          if (data.session) {
-            console.log('Session established successfully');
-            setStatus("Authentication successful! Redirecting...");
-            setTimeout(() => {
-              router.push(redirectTo);
-            }, 1000);
-            return;
-          }
+        // Get session to verify authentication
+        const session = await supabaseBrowser.auth.getSession();
+        if (session?.data?.session) {
+          // Session established successfully
+          router.push(searchParams.get("redirectTo") || '/');
+        } else {
+          setError('Failed to establish session');
         }
-
-        // Check for OAuth code (standard flow)
-        const code = searchParams.get("code");
-        if (code) {
-          setStatus("Exchanging code for session...");
-          
-          const { data, error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
-          
-          if (error) {
-            console.error('Code exchange error:', error);
-            setError(`Code exchange error: ${error.message}`);
-            setStatus("Failed to exchange code");
-            setTimeout(() => {
-              router.push(`/auth/signin?error=code_exchange_error&redirectTo=${encodeURIComponent(redirectTo)}`);
-            }, 3000);
-            return;
-          }
-
-          if (data.session) {
-            console.log('Session established via code exchange');
-            setStatus("Authentication successful! Redirecting...");
-            setTimeout(() => {
-              router.push(redirectTo);
-            }, 1000);
-            return;
-          }
-        }
-
-        // No valid authentication found
-        setError("No valid authentication found");
-        setStatus("Authentication failed");
-        setTimeout(() => {
-          router.push(`/auth/signin?error=no_auth&redirectTo=${encodeURIComponent(redirectTo)}`);
-        }, 3000);
-
-      } catch (err) {
-        console.error('Callback processing error:', err);
-        setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setStatus("Authentication failed");
-        setTimeout(() => {
-          router.push(`/auth/signin?error=unexpected_error&redirectTo=${encodeURIComponent(searchParams.get("redirectTo") || "/")}`);
-        }, 3000);
+      } catch (error) {
+        setError('Authentication failed');
       }
     };
 
-    handleCallback();
-  }, [router, searchParams]);
+    if (searchParams.get('code')) {
+      processCallback();
+    }
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    const processCodeExchange = async () => {
+      try {
+        const result = await supabaseBrowser.auth.exchangeCodeForSession(
+          searchParams.get('code') || ''
+        );
+
+        if (result?.error) {
+          setError(result.error.message);
+          return;
+        }
+
+        // Session established via code exchange
+        router.push(searchParams.get("redirectTo") || '/');
+      } catch (error) {
+        setError('Code exchange failed');
+      }
+    };
+
+    if (searchParams.get('code') && !isProcessing) {
+      setIsProcessing(true);
+      processCodeExchange();
+    }
+  }, [searchParams, router, isProcessing]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { prisma } from '@/lib/db/prisma';
 import { config } from 'dotenv';
 import { resolve } from 'path';
+
+import { prisma } from '@/lib/db/prisma';
 
 // Load environment variables from .env.local
 config({ path: resolve(process.cwd(), '.env.local') });
@@ -50,7 +51,7 @@ async function migrateUsers(): Promise<MigrationResult[]> {
         // Create user in Supabase Auth
         const { data, error } = await supabase.auth.admin.createUser({
           email: user.email,
-          password: 'temporary-password-' + Math.random().toString(36).substring(7), // User will reset this
+          password: `temporary-password-${  Math.random().toString(36).substring(7)}`, // User will reset this
           email_confirm: true,
           user_metadata: { 
             name: user.name,

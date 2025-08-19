@@ -3,15 +3,16 @@
 // Force dynamic rendering to avoid prerendering issues
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Search, Filter, Grid, List } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
 import { Header } from '@/components/layout';
+import MarketplaceFiltersComponent from '@/components/marketplace/MarketplaceFilters';
+import ProductCard from '@/components/marketplace/ProductCard';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import { MarketplaceProduct, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
-import ProductCard from '@/components/marketplace/ProductCard';
-import MarketplaceFiltersComponent from '@/components/marketplace/MarketplaceFilters';
 
 export default function CategoryPage() {
   const router = useRouter();

@@ -1,6 +1,7 @@
-import { NextRequest } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { PrismaClient } from '@prisma/client';
+import { NextRequest } from 'next/server';
+
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const prisma = new PrismaClient();
 
@@ -74,7 +75,7 @@ export class AdminTokenManager {
     try {
       const dbToken = await prisma.adminToken.findFirst({
         where: { 
-          token: token,
+          token,
           isActive: true 
         }
       });

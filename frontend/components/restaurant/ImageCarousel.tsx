@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { processRestaurantImages } from '@/lib/utils/imageValidation';
+import Image from 'next/image';
+import React, { useState, useRef, useEffect } from 'react';
+
 import { useScrollSnapCarousel } from '@/lib/hooks/useScrollSnapCarousel';
+import { processRestaurantImages } from '@/lib/utils/imageValidation';
 
 interface ImageCarouselProps {
   images?: string[];

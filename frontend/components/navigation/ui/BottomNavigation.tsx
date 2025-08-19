@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { Heart, User, MessageSquare, Bell, Search} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, User, MessageSquare, Bell, Search} from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import React from 'react';
+
 import { useNotifications } from '@/lib/contexts/NotificationsContext';
 
 interface BottomNavigationProps {

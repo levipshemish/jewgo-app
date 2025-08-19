@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { analytics } from '@/lib/utils/analytics';
 import { validateEmail, validatePassword } from '@/lib/utils/formValidation';
 import { rateLimiter } from '@/lib/utils/rateLimiter';
-import { analytics } from '@/lib/utils/analytics';
 
 // Mock Next.js router
 vi.mock('next/navigation', () => ({

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { performanceMonitor, PerformanceMetrics } from '@/lib/analytics/performance';
 import { safeFilter } from '@/lib/utils/validation';
 

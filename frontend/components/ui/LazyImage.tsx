@@ -1,5 +1,6 @@
-import React from 'react';
 import Image, { ImageProps } from 'next/image';
+import React from 'react';
+
 import { useLazyImage } from '@/lib/hooks/useLazyLoading';
 import { cn } from '@/lib/utils/classNames';
 

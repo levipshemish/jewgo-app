@@ -1,5 +1,5 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface TransitionConfig {
   enableSupabaseAuth: boolean;

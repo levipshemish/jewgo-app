@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import Image, { ImageProps } from 'next/image';
+import React, { useState } from 'react';
+
 import { cn } from '@/lib/utils/classNames';
 
 interface OptimizedImageProps extends Omit<ImageProps, 'src'> {

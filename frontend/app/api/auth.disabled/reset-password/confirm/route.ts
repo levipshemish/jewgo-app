@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-import { sendEmail, createPasswordChangedEmail } from '@/lib/email'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+
+import { prisma } from '@/lib/db/prisma'
+import { sendEmail, createPasswordChangedEmail } from '@/lib/email'
+
 
 const ResetPasswordSchema = z.object({
   token: z.string(),

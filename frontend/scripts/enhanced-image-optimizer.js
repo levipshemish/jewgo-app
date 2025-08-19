@@ -278,7 +278,7 @@ async function optimizeImages(images, analysis) {
 }
 
 function generateReport(analysis, results) {
-  // const report = {
+  const report = {
     timestamp: new Date().toISOString(),
     summary: {
       totalImages: analysis.totalImages,

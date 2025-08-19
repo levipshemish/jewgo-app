@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { searchGooglePlaces } from '@/lib/google/places';
 import { useSearchInput, useSearchSuggestions, useRecentSearches } from '@/lib/hooks';
-import { SearchSuggestions } from './SearchSuggestions';
-import { RecentSearches } from './RecentSearches';
 import { SearchSuggestion } from '@/lib/hooks/useSearchSuggestions';
+
+import { RecentSearches } from './RecentSearches';
+import { SearchSuggestions } from './SearchSuggestions';
 
 interface SmartSearchProps {
   onSearch: (query: string) => void;

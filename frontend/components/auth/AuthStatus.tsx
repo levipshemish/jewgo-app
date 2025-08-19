@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 interface User {
   id: string;

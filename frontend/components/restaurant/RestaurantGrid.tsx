@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+
 import { Restaurant } from '@/lib/types/restaurant';
+
 import RestaurantCard from './RestaurantCard';
 
 interface RestaurantGridProps {

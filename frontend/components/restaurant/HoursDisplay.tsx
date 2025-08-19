@@ -1,5 +1,5 @@
-import { getHoursStatus, formatWeeklyHours } from '@/lib/utils/hours';
 import { HoursData } from '@/lib/types/restaurant';
+import { getHoursStatus, formatWeeklyHours } from '@/lib/utils/hours';
 
 interface Props {
   hoursOfOperation?: string;

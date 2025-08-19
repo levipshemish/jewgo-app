@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, X, Flag, Star, User, Clock, Shield, Eye, EyeOff, ThumbsUp } from 'lucide-react';
+import React, { useState } from 'react';
 
 export interface Review {
   id: string;

@@ -1,5 +1,6 @@
-import React from 'react'
 import { renderHook, waitFor, render } from '@testing-library/react'
+import React from 'react'
+
 import { useFeatureFlags, useFeatureFlag } from '@/lib/hooks/useFeatureFlags'
 
 // Mock fetch globally

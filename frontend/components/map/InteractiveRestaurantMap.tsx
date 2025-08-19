@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { safeFilter } from '@/lib/utils/validation';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+
 import { loadMaps } from '@/lib/maps/loader';
-import { useMarkerManagement } from './hooks/useMarkerManagement';
-import { throttle, createBatchProcessor, performanceMonitor, safeSetTimeout } from '@/lib/utils/performanceOptimization';
 import { Restaurant } from '@/lib/types/restaurant';
+import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+import { throttle, createBatchProcessor, performanceMonitor, safeSetTimeout } from '@/lib/utils/performanceOptimization';
+import { safeFilter } from '@/lib/utils/validation';
+
+import { useMarkerManagement } from './hooks/useMarkerManagement';
+
 
 // Optional globals for clustering when available at runtime
 declare global {

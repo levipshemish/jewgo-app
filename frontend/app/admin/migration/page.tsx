@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+
 import { MigrationStats, MigrationLog } from "@/lib/auth/migration-manager";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 interface MigrationData {
   stats: MigrationStats;

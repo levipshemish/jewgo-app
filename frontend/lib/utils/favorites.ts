@@ -1,7 +1,8 @@
 'use client';
 
-import { Restaurant } from '@/lib/types/restaurant';
 import * as React from 'react';
+
+import { Restaurant } from '@/lib/types/restaurant';
 
 const FAVORITES_STORAGE_KEY = 'jewgo_favorites';
 

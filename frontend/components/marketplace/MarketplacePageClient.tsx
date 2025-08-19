@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
-import MarketplaceHeader from './MarketplaceHeader';
 import { 
   MarketplaceProduct, 
   MarketplaceCategory, 
   MarketplaceFilters as MarketplaceFiltersType,
   MarketplaceStats 
 } from '@/lib/types/marketplace';
+
+import MarketplaceHeader from './MarketplaceHeader';
 
 // Marketplace-specific action buttons using eatery design style
 function MarketplaceActionButtons() {

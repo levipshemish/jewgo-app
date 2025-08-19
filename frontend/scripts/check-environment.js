@@ -23,7 +23,9 @@ const envPath = path.join(process.cwd(), '.env.local');
 const envExists = fs.existsSync(envPath);
 
 if (!envExists) {
-  } else {
+  console.log('❌ .env.local file not found');
+  console.log('Please create a .env.local file with the following variables:');
+} else {
   // Load and parse .env.local
   const envContent = fs.readFileSync(envPath, 'utf8');
   const envVars = {};
@@ -42,18 +44,22 @@ if (!envExists) {
     const hasValue = value && value !== '';
     
     if (hasValue) {
-      }...`);
+      console.log(`✅ ${key}: ${description}`);
     } else {
+      console.log(`❌ ${key}: ${description} - NOT SET`);
       allGood = false;
     }
   });
   
   if (allGood) {
-    } else {
-    }
+    console.log('\n🎉 All required environment variables are configured!');
+    process.exit(0);
+  } else {
+    console.log('\n⚠️  Some required environment variables are missing.');
+  }
 }
 
 Object.entries(requiredEnvVars).forEach(([key, description]) => {
-  .replace(/next_public_/g, '').replace(/_/g, '_')}_here`);
+  console.log(`${key}=your_${key.toLowerCase().replace(/next_public_/g, '').replace(/_/g, '_')}_here`);
 });
-process.exit(0); 
+process.exit(1); 

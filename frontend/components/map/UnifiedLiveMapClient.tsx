@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import InteractiveRestaurantMap from '@/components/map/InteractiveRestaurantMap';
-import { LocationPermissionPrompt } from '@/components/location';
-import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ArrowLeft, SlidersHorizontal, Heart, X, Star, MapPin, Search } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
-import { Restaurant } from '@/lib/types/restaurant';
+import { LocationPermissionPrompt } from '@/components/location';
+import InteractiveRestaurantMap from '@/components/map/InteractiveRestaurantMap';
+import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { fetchRestaurants, getMockRestaurants } from '@/lib/api/restaurants';
-import { safeFilter } from '@/lib/utils/validation';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
+import { Restaurant } from '@/lib/types/restaurant';
+import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
+import { safeFilter } from '@/lib/utils/validation';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 

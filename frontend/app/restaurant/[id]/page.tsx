@@ -1,26 +1,27 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { Globe2, ChevronLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { Restaurant } from '@/lib/types/restaurant';
-import ImageCarousel from '@/components/restaurant/ImageCarousel';
-import { processRestaurantImages } from '@/lib/utils/imageValidation';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
-import SpecialsSection from '@/components/restaurant/SpecialsSection';
-import StickyCTA from '@/components/ui/StickyCTA';
+import React, { useEffect, useState } from 'react';
+
 import { BottomNavigation } from '@/components/navigation/ui';
-import { commonTypography } from '@/lib/utils/typography';
-import { useIntersectionObserver } from '@/lib/hooks/useIntersectionObserver';
+import EnhancedHoursDisplay from '@/components/restaurant/EnhancedHoursDisplay';
+import ImageCarousel from '@/components/restaurant/ImageCarousel';
 import { OrderForm } from '@/components/restaurant/OrderForm';
 import ReviewsModal from '@/components/restaurant/ReviewsModal';
-import { getRestaurant } from '@/lib/api/restaurants';
-import { Globe2, ChevronLeft } from 'lucide-react';
-import EnhancedHoursDisplay from '@/components/restaurant/EnhancedHoursDisplay';
+import SpecialsSection from '@/components/restaurant/SpecialsSection';
+import StickyCTA from '@/components/ui/StickyCTA';
+import { useIntersectionObserver } from '@/lib/hooks/useIntersectionObserver';
+import { Restaurant } from '@/lib/types/restaurant';
+import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+import { processRestaurantImages } from '@/lib/utils/imageValidation';
 import { 
   getBusinessTypeDisplayName, 
   getBusinessTypeIcon, 
   getBusinessTypeColor
 } from '@/lib/utils/reviewUtils';
+import { commonTypography } from '@/lib/utils/typography';
+import { getRestaurant } from '@/lib/api/restaurants';
 
 const RestaurantDetailPage: React.FC = () => {
   const params = useParams();

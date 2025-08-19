@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import ActionButtons from '@/components/layout/ActionButtons';
-import AdvancedFilters from '@/components/search/AdvancedFilters';
-import { useFavorites } from '@/lib/utils/favorites';
-import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
+import { Header } from '@/components/layout';
+import ActionButtons from '@/components/layout/ActionButtons';
+import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import AdvancedFilters from '@/components/search/AdvancedFilters';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { useFavorites } from '@/lib/utils/favorites';
 
 interface FilterState {
   agency?: string;

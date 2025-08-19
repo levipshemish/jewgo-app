@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Restaurant } from '@/lib/types/restaurant';
 import { MapPin, Star, Phone, Home, Building2, Store } from 'lucide-react';
+import React from 'react';
+
+import { Restaurant } from '@/lib/types/restaurant';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/colors';
 import { titleCase } from '@/lib/utils/stringUtils';
 

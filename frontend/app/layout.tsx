@@ -1,15 +1,22 @@
 import type { Metadata } from 'next'
+
 import './globals.css'
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
-// NextAuth removed - using Supabase only
-import Analytics from '@/components/analytics/Analytics'
-import { CustomHead } from './head'
-import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
-import { FontOptimizer } from '@/components/ui/FontOptimizer'
-import { roboto } from './fonts'
 import Script from 'next/script'
-import HeadGuard from '@/components/dev/HeadGuard'
+
+import Analytics from '@/components/analytics/Analytics'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { FontOptimizer } from '@/components/ui/FontOptimizer'
+import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
+import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
+
+// NextAuth removed - using Supabase only
+import { roboto } from './fonts'
+import { CustomHead } from './head'
+
+
+
+
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://jewgo.app'),
   title: 'Jewgo - Find Your Kosher Eatery',
@@ -163,7 +170,7 @@ export default function RootLayout({
               </FontOptimizer>
               <Analytics />
               <ServiceWorkerRegistration />
-              {process.env.NEXT_PUBLIC_ENV !== "prod" ? <HeadGuard /> : null}
+      
             </NotificationsProvider>
         </ErrorBoundary>
       </body>

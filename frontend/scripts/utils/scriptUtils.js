@@ -36,7 +36,7 @@ function log(message, color = 'reset') {
  * Log a section header
  */
 function logSection(title) {
-  log('\n' + '='.repeat(50), 'cyan');
+  log(`\n${  '='.repeat(50)}`, 'cyan');
   log(title, 'bold');
   log('='.repeat(50), 'cyan');
 }
@@ -45,7 +45,7 @@ function logSection(title) {
  * Log a subsection header
  */
 function logSubsection(title) {
-  log('\n' + '-'.repeat(30), 'cyan');
+  log(`\n${  '-'.repeat(30)}`, 'cyan');
   log(title, 'cyan');
   log('-'.repeat(30), 'cyan');
 }
@@ -66,11 +66,11 @@ function getFileSize(filePath) {
  * Format bytes to human readable format
  */
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) {return '0 Bytes';}
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
 }
 
 /**
@@ -230,7 +230,7 @@ function isCssFile(filePath) {
  */
 function createBackup(filePath) {
   try {
-    const backupPath = filePath + '.backup';
+    const backupPath = `${filePath  }.backup`;
     fs.copyFileSync(filePath, backupPath);
     return backupPath;
   } catch (error) {
@@ -244,7 +244,7 @@ function createBackup(filePath) {
  */
 function restoreFromBackup(filePath) {
   try {
-    const backupPath = filePath + '.backup';
+    const backupPath = `${filePath  }.backup`;
     if (fs.existsSync(backupPath)) {
       fs.copyFileSync(backupPath, filePath);
       fs.unlinkSync(backupPath);

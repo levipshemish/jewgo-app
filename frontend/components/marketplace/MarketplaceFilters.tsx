@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
 import { X, Filter, ChevronDown, ChevronUp, Star, DollarSign, Truck } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { MarketplaceFilters as MarketplaceFiltersType, MarketplaceCategory } from '@/lib/types/marketplace';
 
 interface MarketplaceFiltersProps {

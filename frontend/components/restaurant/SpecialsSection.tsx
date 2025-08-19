@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import { RestaurantSpecial } from '@/lib/types/restaurant';
 import { getFallbackImages, getPlaceholderImage } from '@/lib/utils/imageValidation';
 

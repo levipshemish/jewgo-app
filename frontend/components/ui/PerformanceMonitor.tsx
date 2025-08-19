@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { usePerformanceOptimization } from '@/lib/hooks/usePerformanceOptimization';
 
 interface PerformanceMonitorProps {

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { MapPin, X, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface LocationPermissionPromptProps {
   onLocationGranted: (location: { latitude: number; longitude: number }) => void;

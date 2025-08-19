@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchRestaurants } from '@/lib/api/restaurants';
-import { Header } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import React, { useState, useEffect, Fragment, useRef } from 'react';
+
 import { EateryCard } from '@/components/eatery/ui';
+import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
+import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
+import { fetchRestaurants } from '@/lib/api/restaurants';
 import { useAdvancedFilters } from '@/lib/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
-
 import { Restaurant } from '@/lib/types/restaurant';
+import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
 
 export default function EateryExplorePage() {
   const router = useRouter();

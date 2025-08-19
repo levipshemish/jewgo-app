@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Restaurant } from '@/lib/types/restaurant';
+
 import { StarRating } from '@/components/ui/StarRating';
+import { Restaurant } from '@/lib/types/restaurant';
 
 interface Review {
   author_name?: string;

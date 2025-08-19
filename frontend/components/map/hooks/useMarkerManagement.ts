@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react';
+
 import { Restaurant } from '@/lib/types/restaurant';
 
 // Optional globals for clustering libs when available at runtime

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+
 import { performanceMonitor } from '@/lib/analytics/performance';
 
 interface AnalyticsData {

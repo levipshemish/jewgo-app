@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+
 import { FilterState, FilterValue } from '@/lib/types';
 
 export interface UseAdvancedFiltersReturn {

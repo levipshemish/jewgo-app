@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
+import { CleanupStats } from "@/lib/auth/cleanup-manager";
 import { MigrationStats } from "@/lib/auth/migration-manager";
 import { TransitionStats } from "@/lib/auth/transition-manager";
-import { CleanupStats } from "@/lib/auth/cleanup-manager";
 
 interface CompleteMigrationData {
   migration: MigrationStats;

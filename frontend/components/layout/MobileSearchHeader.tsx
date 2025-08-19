@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface MobileSearchHeaderProps {
   onSearch: (query: string) => void;

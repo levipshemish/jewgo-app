@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Logo } from '@/components/ui';
 import { SlidersHorizontal} from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Logo } from '@/components/ui';
 
 interface HeaderProps {
   onSearch?: (query: string) => void;

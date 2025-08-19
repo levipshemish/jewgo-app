@@ -65,7 +65,7 @@ function log(level, message, data = {}) {
     ...data,
   };
   
-  }: ${message}`);
+  console.log(`${timestamp} [${level.toUpperCase()}]: ${message}`);
   
   // Write to file
   fs.appendFileSync(CONFIG.logFile, JSON.stringify(logEntry) + '\n');
@@ -80,11 +80,11 @@ function makeRequest(url, options = {}) {
     const timeout = options.timeout || 10000;
     
     const protocol = url.startsWith('https:') ? https : http;
-    const req = protocol.get(url, { timeout }, (_res) => {
+    const req = protocol.get(url, { timeout }, (res) => {
       const responseTime = Date.now() - startTime;
       let data = '';
       
-      res.on('data', (_chunk) => {
+      res.on('data', (chunk) => {
         data += chunk;
       });
       
@@ -125,7 +125,7 @@ async function healthCheck(url, name) {
   try {
     log('info', `Starting health check for ${name}`, { url });
     
-    // const result = await makeRequest(url);
+    const result = await makeRequest(url);
     if (result.statusCode >= 200 && result.statusCode < 300) {
       log('info', `Health check passed for ${name}`, {
         statusCode: result.statusCode,
@@ -160,10 +160,10 @@ async function healthCheck(url, name) {
 async function performanceCheck() {
   log('info', 'Starting performance check');
   
-  // const results = {};
+  const results = {};
   for (const [name, url] of Object.entries(CONFIG.urls)) {
     const startTime = Date.now();
-    // const result = await healthCheck(url, name);
+    const result = await healthCheck(url, name);
     const totalTime = Date.now() - startTime;
     
     results[name] = {
@@ -173,11 +173,11 @@ async function performanceCheck() {
   }
   
   // Calculate performance metrics
-  // const avgResponseTime = Object.values(results)
+  const avgResponseTime = Object.values(results)
     .filter(r => r.success)
     .reduce((sum, r) => sum + r.responseTime, 0) / 
     Object.values(results).filter(r => r.success).length;
-  // const successRate = Object.values(results)
+  const successRate = Object.values(results)
     .filter(r => r.success).length / Object.keys(results).length;
   log('info', 'Performance check completed', {
     avgResponseTime: Math.round(avgResponseTime),
@@ -290,7 +290,7 @@ async function startMonitoring() {
  */
 async function runHealthCheck() {
   try {
-    // const result = await healthCheck(CONFIG.urls.health, 'Health Endpoint');
+    const result = await healthCheck(CONFIG.urls.health, 'Health Endpoint');
     updateMetrics(result);
     
     if (!result.success) {
@@ -306,7 +306,7 @@ async function runHealthCheck() {
  */
 async function runPerformanceCheck() {
   try {
-    // const results = await performanceCheck();
+    const results = await performanceCheck();
     // Update metrics for each endpoint
     Object.values(results).forEach(result => {
       updateMetrics(result);
@@ -326,7 +326,7 @@ async function runDetailedCheck() {
     const report = generateReport();
     
     // Check all endpoints
-    // const results = await performanceCheck();
+    const results = await performanceCheck();
     // Log detailed report
     log('info', 'Detailed check completed', {
       report,
@@ -361,13 +361,15 @@ function main() {
       runPerformanceCheck();
       break;
     case 'report':
-      , null, 2));
+      console.log(JSON.stringify(generateReport(), null, 2));
       break;
     case 'metrics':
-      );
+      console.log(JSON.stringify(metrics, null, 2));
       break;
     default:
-      }
+      console.log('Usage: node health-monitor.js [start|check|performance|report|metrics]');
+      break;
+  }
 }
 
 // Run if called directly

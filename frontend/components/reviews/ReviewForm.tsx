@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { Star, Upload, X, Send } from 'lucide-react';
-import { supabaseBrowser } from '@/lib/supabase/client';
-// NextAuth removed - using Supabase only
 import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
+import { supabaseBrowser } from '@/lib/supabase/client';
+
+// NextAuth removed - using Supabase only
 
 interface ReviewFormProps {
   restaurantId: number;

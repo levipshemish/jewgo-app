@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
-import { Restaurant } from '@/lib/types/restaurant';
+import React, { useState } from 'react';
+
 import { ButtonLoadingState } from '@/components/ui/LoadingState';
+import { Restaurant } from '@/lib/types/restaurant';
 import { validatePhone } from '@/lib/utils/formValidation';
 
 interface OrderItem {

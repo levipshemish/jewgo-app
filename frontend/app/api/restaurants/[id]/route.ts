@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 
 export async function GET(

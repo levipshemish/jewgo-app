@@ -1,7 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server'
+
 export const runtime = 'nodejs'
-import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
+
+import { prisma } from '@/lib/db/prisma'
+
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 

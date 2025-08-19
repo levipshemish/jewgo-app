@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 
 // Force dynamic rendering for API routes

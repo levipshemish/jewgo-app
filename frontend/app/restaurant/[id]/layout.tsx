@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator'
 
 interface RestaurantLayoutProps {

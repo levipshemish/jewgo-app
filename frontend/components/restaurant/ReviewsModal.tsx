@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { X, MessageCircle, ExternalLink, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { Review } from '@/components/reviews/ReviewCard';
+import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 // NextAuth removed - using Supabase only
 import { Restaurant } from '@/lib/types/restaurant';
-import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
-import { Review } from '@/components/reviews/ReviewCard';
 
 // Google Review interface
 interface GoogleReview {

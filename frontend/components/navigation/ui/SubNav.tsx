@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
 import { MapPin, Plus, SlidersHorizontal, Map, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 
 interface SubNavProps {
   variant?: 'simple' | 'eatery' | 'complex';

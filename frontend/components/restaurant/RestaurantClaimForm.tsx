@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { AlertCircle, CheckCircle, Send, X, Building2, User, FileText, Clock } from 'lucide-react';
+import React, { useState } from 'react';
 
 export interface ClaimData {
   restaurantId: number;

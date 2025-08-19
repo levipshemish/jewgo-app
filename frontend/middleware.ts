@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { NextRequest, NextResponse } from "next/server";
 
 // Define protected routes that require authentication
 const PROTECTED_PATHS = [
@@ -25,7 +25,7 @@ const AUTH_PATHS = [
 
 export async function middleware(req: NextRequest) {
   // Prepare a mutable response so we can set cookies if Supabase rotates them
-  let res = NextResponse.next({ request: { headers: req.headers } });
+  const res = NextResponse.next({ request: { headers: req.headers } });
 
   const path = req.nextUrl.pathname;
 
@@ -71,7 +71,7 @@ export async function middleware(req: NextRequest) {
 
     // Check if route requires authentication
     const requiresAuth = PROTECTED_PATHS.some((p) => 
-      path === p || path.startsWith(p + "/")
+      path === p || path.startsWith(`${p  }/`)
     );
 
     // Check if route requires admin privileges
@@ -109,7 +109,7 @@ export async function middleware(req: NextRequest) {
     
     // If there's an error checking authentication, redirect to sign in for protected routes
     const requiresAuth = PROTECTED_PATHS.some((p) => 
-      path === p || path.startsWith(p + "/")
+      path === p || path.startsWith(`${p  }/`)
     );
     
     const requiresAdmin = ADMIN_PATHS.some((p) => 

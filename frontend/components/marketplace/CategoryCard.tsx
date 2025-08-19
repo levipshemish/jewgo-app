@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { MarketplaceCategory } from '@/lib/types/marketplace';
+import { ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { MarketplaceCategory } from '@/lib/types/marketplace';
 import { titleCase } from '@/lib/utils/stringUtils';
 
 interface CategoryCardProps {

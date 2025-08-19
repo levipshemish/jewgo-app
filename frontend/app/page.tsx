@@ -1,10 +1,11 @@
 'use client';
 
 import Link from "next/link";
-import { Header } from "@/components/layout";
-import { CategoryTabs, BottomNavigation } from "@/components/navigation/ui";
-import ActionButtons from "@/components/layout/ActionButtons";
+
 import AuthStatus from "@/components/auth/AuthStatus";
+import { Header } from "@/components/layout";
+import ActionButtons from "@/components/layout/ActionButtons";
+import { CategoryTabs, BottomNavigation } from "@/components/navigation/ui";
 
 export default function HomePage() {
   return (

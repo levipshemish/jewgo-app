@@ -23,21 +23,22 @@ const colors = {
 };
 
 function log(message, color = 'reset') {
-  }
+  console.log(message);
+}
 
-function logSection(_title) {
-  );
+function logSection(title) {
+  console.log('\n' + '='.repeat(50));
   log(title, 'bold');
-  );
+  console.log('='.repeat(50));
 }
 
-function logSubsection(_title) {
-  );
+function logSubsection(title) {
+  console.log('\n' + '-'.repeat(30));
   log(title, 'cyan');
-  );
+  console.log('-'.repeat(30));
 }
 
-function getFileSize(_filePath) {
+function getFileSize(filePath) {
   try {
     const stats = fs.statSync(filePath);
     return stats.size;
@@ -46,7 +47,7 @@ function getFileSize(_filePath) {
   }
 }
 
-function formatBytes(_bytes) {
+function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -57,7 +58,7 @@ function formatBytes(_bytes) {
 function findImageFiles(dir, extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']) {
   const files = [];
   
-  function scanDirectory(_currentDir) {
+  function scanDirectory(currentDir) {
     const items = fs.readdirSync(currentDir);
     
     for (const item of items) {

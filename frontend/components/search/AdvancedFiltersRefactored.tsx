@@ -1,7 +1,8 @@
 import React from 'react';
-import { QuickFilters } from './QuickFilters';
+
 import { AgencyFilters } from './AgencyFilters';
 import { DietaryFilters } from './DietaryFilters';
+import { QuickFilters } from './QuickFilters';
 
 interface AdvancedFiltersProps {
   activeFilters: {

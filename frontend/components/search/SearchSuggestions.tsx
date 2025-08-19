@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { SearchSuggestion } from '@/lib/hooks/useSearchSuggestions';
 
 interface SearchSuggestionsProps {

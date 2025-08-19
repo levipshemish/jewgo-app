@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
+
 import { RestaurantSpecial } from '@/lib/types/restaurant';
-import { safeFilter } from '@/lib/utils/validation';
-import { commonTypography } from '@/lib/utils/typography';
 import { commonSpacing } from '@/lib/utils/spacing';
+import { commonTypography } from '@/lib/utils/typography';
+import { safeFilter } from '@/lib/utils/validation';
 
 interface SpecialsCardProps {
   specials: RestaurantSpecial[];

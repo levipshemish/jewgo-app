@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { Star, ThumbsUp, Flag, User, Clock, Shield, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { supabaseBrowser } from '@/lib/supabase/client';
 // NextAuth removed - using Supabase only
 import { formatDate } from '@/lib/utils/dateUtils';

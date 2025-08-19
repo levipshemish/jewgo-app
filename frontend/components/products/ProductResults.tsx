@@ -2,9 +2,10 @@
 
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
+
+import { EateryCard } from '@/components/eatery/ui';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { createFilterKey } from '@/lib/filters/serialize';
-import { EateryCard } from '@/components/eatery/ui';
 import { Restaurant } from '@/lib/types/restaurant';
 
 interface ProductResultsProps {

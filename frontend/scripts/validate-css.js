@@ -91,16 +91,19 @@ function validateCSS() {
         });
         
         if (issues.length > 0) {
-          issues.forEach(issue => );
+          issues.forEach(issue => console.log(`❌ ${file}: ${issue}`));
           hasErrors = true;
         } else {
-          }
+          console.log(`✅ ${file}: No issues found`);
+        }
         
       } catch (error) {
+        console.error(`❌ ${file}: Error reading file - ${error.message}`);
         hasErrors = true;
       }
     } else {
-      }
+      console.log(`⚠️  ${file}: File not found`);
+    }
   });
   
   // Check for build artifacts
@@ -114,16 +117,18 @@ function validateCSS() {
         cssFiles.forEach(file => {
           const filePath = path.join(cssDir, file);
           const stats = fs.statSync(filePath);
-          .toFixed(2)} KB`);
+          console.log(`📄 Build CSS: ${file} (${(stats.size / 1024).toFixed(2)} KB)`);
         });
       }
     }
   }
   
   if (hasErrors) {
+    console.log('\n❌ CSS validation failed');
     process.exit(1);
   } else {
-    }
+    console.log('\n✅ CSS validation passed');
+  }
 }
 
 // Run validation

@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+
 import UnifiedLiveMapClient from '@/components/map/UnifiedLiveMapClient';
 
 export default function LiveMapPage() {

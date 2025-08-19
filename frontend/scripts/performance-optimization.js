@@ -49,7 +49,9 @@ const optimizations = {
   buildProduction: () => {
     try {
       execSync('npm run build:production', { stdio: 'inherit' });
-      } catch (error) {
+      console.log('✅ Production build completed');
+    } catch (error) {
+      console.error('❌ Production build failed:', error.message);
       process.exit(1);
     }
   },
@@ -58,8 +60,10 @@ const optimizations = {
   generateReport: () => {
     try {
       execSync('npm run performance:report', { stdio: 'inherit' });
-      } catch (error) {
-      }
+      console.log('✅ Performance report generated');
+    } catch (error) {
+      console.error('❌ Performance report generation failed:', error.message);
+    }
   },
 
   // Check for performance issues
@@ -69,7 +73,8 @@ const optimizations = {
     // Check bundle size
     const bundleStatsPath = path.join(__dirname, '../.next/bundle-analyzer/client.html');
     if (fs.existsSync(bundleStatsPath)) {
-      }
+      console.log('✅ Bundle analyzer report found');
+    }
     
     // Check Lighthouse report
     const lighthousePath = path.join(__dirname, '../performance-audit.json');
@@ -80,7 +85,7 @@ const optimizations = {
       if (scores < 0.9) {
         issues.push(`Lighthouse performance score is ${(scores * 100).toFixed(1)}% (target: 90%+)`);
       } else {
-        .toFixed(1)}%`);
+        console.log(`✅ Lighthouse performance score: ${(scores * 100).toFixed(1)}%`);
       }
     }
     
@@ -90,30 +95,34 @@ const optimizations = {
     const foundLargeDeps = largeDeps.filter(dep => packageJson.dependencies[dep]);
     
     if (foundLargeDeps.length > 0) {
-      }`);
-      }
+      issues.push(`Large dependencies found: ${foundLargeDeps.join(', ')}`);
+    }
     
     if (issues.length > 0) {
-      issues.forEach(issue => );
+      issues.forEach(issue => console.log(`⚠️  ${issue}`));
     } else {
-      }
-    
-    },
+      console.log('✅ No performance issues detected');
+    }
+  },
 
   // Optimize CSS
   optimizeCSS: () => {
     try {
       execSync('npm run optimize:css', { stdio: 'inherit' });
-      } catch (error) {
-      }
+      console.log('✅ CSS optimization completed');
+    } catch (error) {
+      console.error('❌ CSS optimization failed:', error.message);
+    }
   },
 
   // Validate environment
   validateEnvironment: () => {
     try {
       execSync('npm run validate-env', { stdio: 'inherit' });
-      } catch (error) {
-      }
+      console.log('✅ Environment validation passed');
+    } catch (error) {
+      console.error('❌ Environment validation failed:', error.message);
+    }
   }
 };
 

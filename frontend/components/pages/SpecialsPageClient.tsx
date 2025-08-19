@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import { Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import { Ticket } from 'lucide-react';
+
 
 export default function SpecialsPageClient() {
   const router = useRouter();

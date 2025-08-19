@@ -1,6 +1,6 @@
+import { PrismaClient } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { authenticator } from 'otplib';
-import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -122,7 +122,7 @@ export class MFAManager {
     try {
       const dbMfaSecret = await prisma.mFASecret.findFirst({
         where: { 
-          userId: userId,
+          userId,
           isEnabled: true 
         }
       });

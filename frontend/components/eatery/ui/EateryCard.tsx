@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Heart, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Star } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+
+import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { Restaurant } from '@/lib/types/restaurant';
 import { useFavorites } from '@/lib/utils/favorites';
-import Image from 'next/image';
-import { isProblematicCloudinaryUrl } from '@/lib/utils/imageValidation';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
-import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { isProblematicCloudinaryUrl } from '@/lib/utils/imageValidation';
 import { titleCase } from '@/lib/utils/stringUtils';
 
 interface EateryCardProps {

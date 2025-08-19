@@ -1,16 +1,17 @@
 'use client';
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
 import { Heart, Star } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+
+import FeedbackButton from '@/components/feedback/FeedbackButton';
+import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { Restaurant } from '@/lib/types/restaurant';
 import { cn } from '@/lib/utils/cn';
-import OptimizedImage from '@/components/ui/OptimizedImage';
-import FeedbackButton from '@/components/feedback/FeedbackButton';
-import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { commonTypography, commonSpacing } from '@/lib/utils/commonStyles';
-import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
 import { 
   getBusinessTypeDisplayName, 
   getBusinessTypeIcon, 

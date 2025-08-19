@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+
 import FeedbackForm, { FeedbackData } from './FeedbackForm';
 
 interface FeedbackButtonProps {

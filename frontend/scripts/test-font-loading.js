@@ -72,20 +72,22 @@ async function testFontLoading() {
     
     // Generate report
     fontRequests.forEach((req, index) => {
-      .pop()}`);
+      console.log(`Font ${index + 1}: ${req.url.split('/').pop()}`);
     });
     
     fontsLoaded.forEach(font => {
       const status = font.loaded ? '✅' : '❌';
-      `);
+      console.log(`${status} ${font.family} (${font.weight} ${font.style})`);
     });
     
     preloadWarnings.forEach((warning, index) => {
-      });
+      console.log(`⚠️  Preload warning ${index + 1}: ${warning.text}`);
+    });
     
     // Performance metrics
     const performanceMetrics = await page.metrics();
-    }MB`);
+    console.log(`Memory usage: ${(performanceMetrics.JSHeapUsedSize / 1024 / 1024).toFixed(2)}MB`);
+    
     // Check for font display issues
     const fontDisplayIssues = await page.evaluate(() => {
       const elements = document.querySelectorAll('*');
@@ -109,25 +111,31 @@ async function testFontLoading() {
     
     if (fontDisplayIssues.length > 0) {
       fontDisplayIssues.forEach(issue => {
-        `);
+        console.log(`⚠️  Font display issue: ${issue.element} with ${issue.fontFamily}`);
       });
     }
     
     // Summary
     if (preloadWarnings.length === 0) {
-      } else {
-      }
+      console.log('✅ No preload warnings detected');
+    } else {
+      console.log(`⚠️  ${preloadWarnings.length} preload warnings found`);
+    }
     
     if (fontsLoaded.length > 0) {
-      } else {
-      }
+      console.log(`✅ ${fontsLoaded.filter(f => f.loaded).length}/${fontsLoaded.length} fonts loaded successfully`);
+    } else {
+      console.log('❌ No fonts detected');
+    }
     
     if (fontDisplayIssues.length === 0) {
-      } else {
-      }
+      console.log('✅ No font display issues detected');
+    } else {
+      console.log(`⚠️  ${fontDisplayIssues.length} font display issues found`);
+    }
     
-    } catch (error) {
-    // // console.error('❌ Test failed:', error.message);
+  } catch (error) {
+    console.error('❌ Test failed:', error.message);
   } finally {
     await browser.close();
   }

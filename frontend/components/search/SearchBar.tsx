@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { googlePlacesAPI } from '@/lib/google/places';
 import { safeFilter } from '@/lib/utils/validation';
 

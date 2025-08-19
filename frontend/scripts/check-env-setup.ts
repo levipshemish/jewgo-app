@@ -31,7 +31,7 @@ function checkEnvironmentVariables(): EnvCheck[] {
   checks.push({
     variable: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     set: !!supabaseAnonKey,
-    value: supabaseAnonKey?.substring(0, 20) + '...',
+    value: `${supabaseAnonKey?.substring(0, 20)  }...`,
     status: supabaseAnonKey ? '✅' : '❌',
     message: supabaseAnonKey ? 'Configured' : 'Missing - required for Supabase'
   });
@@ -40,7 +40,7 @@ function checkEnvironmentVariables(): EnvCheck[] {
   checks.push({
     variable: 'SUPABASE_SERVICE_ROLE_KEY',
     set: !!supabaseServiceKey && supabaseServiceKey !== 'your_supabase_service_role_key_here',
-    value: supabaseServiceKey?.substring(0, 20) + '...',
+    value: `${supabaseServiceKey?.substring(0, 20)  }...`,
     status: supabaseServiceKey && supabaseServiceKey !== 'your_supabase_service_role_key_here' ? '✅' : '❌',
     message: supabaseServiceKey === 'your_supabase_service_role_key_here' ? 'Still placeholder - needs real key' : 'Missing - required for admin operations'
   });
@@ -59,7 +59,7 @@ function checkEnvironmentVariables(): EnvCheck[] {
   checks.push({
     variable: 'NEXTAUTH_SECRET',
     set: !!nextAuthSecret && nextAuthSecret !== 'your-nextauth-secret-key-here',
-    value: nextAuthSecret?.substring(0, 10) + '...',
+    value: `${nextAuthSecret?.substring(0, 10)  }...`,
     status: nextAuthSecret && nextAuthSecret !== 'your-nextauth-secret-key-here' ? '✅' : '❌',
     message: nextAuthSecret === 'your-nextauth-secret-key-here' ? 'Still placeholder - needs real secret' : 'Missing - required for NextAuth.js'
   });
@@ -69,7 +69,7 @@ function checkEnvironmentVariables(): EnvCheck[] {
   checks.push({
     variable: 'GOOGLE_CLIENT_ID',
     set: !!googleClientId && googleClientId !== 'your-google-client-id-here',
-    value: googleClientId?.substring(0, 20) + '...',
+    value: `${googleClientId?.substring(0, 20)  }...`,
     status: googleClientId && googleClientId !== 'your-google-client-id-here' ? '✅' : '❌',
     message: googleClientId === 'your-google-client-id-here' ? 'Still placeholder - needs real client ID' : 'Missing - required for Google OAuth'
   });
@@ -78,7 +78,7 @@ function checkEnvironmentVariables(): EnvCheck[] {
   checks.push({
     variable: 'GOOGLE_CLIENT_SECRET',
     set: !!googleClientSecret && googleClientSecret !== 'your-google-client-secret-here',
-    value: googleClientSecret?.substring(0, 10) + '...',
+    value: `${googleClientSecret?.substring(0, 10)  }...`,
     status: googleClientSecret && googleClientSecret !== 'your-google-client-secret-here' ? '✅' : '❌',
     message: googleClientSecret === 'your-google-client-secret-here' ? 'Still placeholder - needs real client secret' : 'Missing - required for Google OAuth'
   });

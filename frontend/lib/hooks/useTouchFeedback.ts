@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useEffect } from 'react';
+
 import { getTouchStyles, isMobileDevice } from '@/lib/utils/touchUtils';
 
 interface TouchFeedbackOptions {

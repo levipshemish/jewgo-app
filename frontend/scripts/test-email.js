@@ -3,9 +3,11 @@ require('dotenv').config()
 
 async function testEmailConfig() {
   // Log configuration (without sensitive data)
+  console.log('📧 Testing email configuration...');
+  
   // Check if required variables are set
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    // console.error('❌ SMTP_USER and SMTP_PASS are required!')
+    console.error('❌ SMTP_USER and SMTP_PASS are required!')
     process.exit(1)
   }
 
@@ -23,6 +25,8 @@ async function testEmailConfig() {
   try {
     // Test connection
     await transporter.verify()
+    console.log('✅ SMTP connection verified');
+    
     // Send test email
     const testEmail = process.env.SMTP_USER // Send to yourself for testing
     
@@ -47,23 +51,23 @@ async function testEmailConfig() {
       `
     })
     
-    }`)
+    console.log(`✅ Test email sent successfully! Message ID: ${info.messageId}`)
     
   } catch (error) {
-    // console.error('❌ SMTP test failed:')
-    // console.error(error.message)
+    console.error('❌ SMTP test failed:')
+    console.error(error.message)
     
     if (error.code === 'EAUTH') {
-      // console.error('\n💡 Authentication failed. Please check:')
-      // console.error('1. SMTP_USER and SMTP_PASS are correct')
-      // console.error('2. If using Gmail, make sure you have:')
-      // console.error('   - 2-Factor Authentication enabled')
-      // console.error('   - App Password generated (not your regular password)')
+      console.error('\n💡 Authentication failed. Please check:')
+      console.error('1. SMTP_USER and SMTP_PASS are correct')
+      console.error('2. If using Gmail, make sure you have:')
+      console.error('   - 2-Factor Authentication enabled')
+      console.error('   - App Password generated (not your regular password)')
     } else if (error.code === 'ECONNECTION') {
-      // console.error('\n💡 Connection failed. Please check:')
-      // console.error('1. SMTP_HOST and SMTP_PORT are correct')
-      // console.error('2. Your network/firewall allows SMTP connections')
-      // console.error('3. The SMTP server is accessible')
+      console.error('\n💡 Connection failed. Please check:')
+      console.error('1. SMTP_HOST and SMTP_PORT are correct')
+      console.error('2. Your network/firewall allows SMTP connections')
+      console.error('3. The SMTP server is accessible')
     }
     
     process.exit(1)

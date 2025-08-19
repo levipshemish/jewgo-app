@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { Mail, CheckCircle, AlertCircle, X, ChefHat, Star, Users, Bell } from 'lucide-react';
+import React, { useState } from 'react';
 
 export interface NewsletterData {
   email: string;

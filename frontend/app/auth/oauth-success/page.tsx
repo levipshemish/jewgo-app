@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function OAuthSuccessContent() {
