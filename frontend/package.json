@@ -28,7 +28,6 @@
     "analyze": "ANALYZE=true npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky install",
     "lint:fix": "next lint --fix",
     "build:analyze": "ANALYZE=true npm run build",
     "build:production": "NODE_ENV=production npm run build",

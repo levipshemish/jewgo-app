@@ -33,6 +33,7 @@ mv _archive/utils/legacy-utils/ backend/utils/
   - favicon.svg.backup
   - icon.svg.backup
   - Reason: These are backup files that are no longer needed in the main public directory
+  - **Status**: Removed on 2024-12-19 - files were confirmed to be backups of current assets
 
 ## Verification Process
 Before deleting files from this archive:
