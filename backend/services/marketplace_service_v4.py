@@ -57,55 +57,55 @@ class MarketplaceServiceV4(BaseService):
                        m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
                        m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
                        m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                       m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
-                       m.vendor_name as seller_name
+                       m.updated_at, m.category, m.subcategory
                 FROM marketplace m
-                WHERE m.status = %s
+                WHERE m.status = :status
             """
-            params = [status]
+            params = {'status': status}
             
             # Add filters
             if search:
-                query += " AND (m.title ILIKE %s OR m.description ILIKE %s)"
-                params.extend([f'%{search}%', f'%{search}%'])
+                query += " AND (m.title ILIKE :search1 OR m.description ILIKE :search2)"
+                params['search1'] = f'%{search}%'
+                params['search2'] = f'%{search}%'
             
             if category:
-                query += " AND m.category ILIKE %s"
-                params.append(f'%{category}%')
+                query += " AND m.category ILIKE :category"
+                params['category'] = f'%{category}%'
                 
             if subcategory:
-                query += " AND m.subcategory ILIKE %s"
-                params.append(f'%{subcategory}%')
+                query += " AND m.subcategory ILIKE :subcategory"
+                params['subcategory'] = f'%{subcategory}%'
                 
             if kind:  # Map kind to appropriate marketplace fields
                 if kind == 'regular':
                     query += " AND m.category NOT IN ('vehicle', 'appliance')"
                 elif kind == 'vehicle':
-                    query += " AND m.category ILIKE %s"
-                    params.append('%vehicle%')
+                    query += " AND m.category ILIKE :kind_filter"
+                    params['kind_filter'] = '%vehicle%'
                 elif kind == 'appliance':
-                    query += " AND m.category ILIKE %s"
-                    params.append('%appliance%')
+                    query += " AND m.category ILIKE :kind_filter"
+                    params['kind_filter'] = '%appliance%'
                 
             if condition:
                 # Marketplace table doesn't have condition field, skip this filter
                 pass
             
             if min_price is not None:
-                query += " AND m.price >= %s"
-                params.append(min_price / 100.0)  # Convert cents to dollars
+                query += " AND m.price >= :min_price"
+                params['min_price'] = min_price / 100.0  # Convert cents to dollars
             
             if max_price is not None:
-                query += " AND m.price <= %s"
-                params.append(max_price / 100.0)  # Convert cents to dollars
+                query += " AND m.price <= :max_price"
+                params['max_price'] = max_price / 100.0  # Convert cents to dollars
             
             if city:
-                query += " AND m.city ILIKE %s"
-                params.append(f'%{city}%')
+                query += " AND m.city ILIKE :city"
+                params['city'] = f'%{city}%'
                 
             if region:
-                query += " AND m.state ILIKE %s"
-                params.append(f'%{region}%')
+                query += " AND m.state ILIKE :region"
+                params['region'] = f'%{region}%'
             
             # Location-based filtering
             if lat and lng and radius:
@@ -114,17 +114,19 @@ class MarketplaceServiceV4(BaseService):
                 query += """
                     AND m.latitude IS NOT NULL 
                     AND m.longitude IS NOT NULL
-                    AND m.latitude BETWEEN %s AND %s
-                    AND m.longitude BETWEEN %s AND %s
+                    AND m.latitude BETWEEN :lat_min AND :lat_max
+                    AND m.longitude BETWEEN :lng_min AND :lng_max
                 """
-                params.extend([
-                    lat - radius_degrees, lat + radius_degrees,
-                    lng - radius_degrees, lng + radius_degrees
-                ])
+                params.update({
+                    'lat_min': lat - radius_degrees,
+                    'lat_max': lat + radius_degrees,
+                    'lng_min': lng - radius_degrees,
+                    'lng_max': lng + radius_degrees
+                })
             
             # Add ordering and pagination
-            query += " ORDER BY m.created_at DESC LIMIT %s OFFSET %s"
-            params.extend([limit, offset])
+            query += " ORDER BY m.created_at DESC LIMIT :limit OFFSET :offset"
+            params.update({'limit': limit, 'offset': offset})
             
             # Execute query using database session (SQLAlchemy way)
             with self.db_manager.connection_manager.get_session_context() as session:
@@ -139,7 +141,7 @@ class MarketplaceServiceV4(BaseService):
                     SELECT COUNT(*) as total FROM marketplace m 
                     WHERE m.status = :status
                 """
-                count_result = session.execute(text(count_query), {'status': params[0]})
+                count_result = session.execute(text(count_query), {'status': status})
                 total = count_result.scalar()
             
             # Format response for marketplace table
@@ -184,9 +186,9 @@ class MarketplaceServiceV4(BaseService):
                     'status': listing[22],  # status
                     'created_at': listing[23].isoformat() if listing[23] else None,  # created_at
                     'updated_at': listing[24].isoformat() if listing[24] else None,  # updated_at
-                    'category_name': listing[25],  # category_name
-                    'subcategory_name': listing[26],  # subcategory_name
-                    'seller_name': listing[27]  # seller_name (vendor_name as seller_name)
+                    'category_name': listing[25],  # category
+                    'subcategory_name': listing[26],  # subcategory
+                    'seller_name': listing[10]  # vendor_name as seller_name
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -211,20 +213,21 @@ class MarketplaceServiceV4(BaseService):
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.connection_manager.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                               m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
-                               m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
-                               m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                               m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
-                               m.vendor_name as seller_name
-                        FROM marketplace m
-                        WHERE m.id = %s
-                    """, [listing_id])
-                    
-                    listing = cursor.fetchone()
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                query = """
+                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
+                           m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
+                           m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
+                           m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
+                           m.updated_at, m.category, m.subcategory
+                    FROM marketplace m
+                    WHERE m.id = :listing_id
+                """
+                
+                result = session.execute(text(query), {'listing_id': listing_id})
+                listing = result.fetchone()
                 
                 if not listing:
                     return {
