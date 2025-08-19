@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
+import MarketplaceActionButtons from '@/components/layout/MarketplaceActionButtons';
 import { BottomNavigation } from '@/components/navigation/ui';
-import MarketplaceSearch from '@/components/marketplace/MarketplaceSearch';
+import MarketplaceCategoryTabs from '@/components/navigation/ui/MarketplaceCategoryTabs';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing } from '@/lib/types/marketplace';
-
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -143,6 +143,10 @@ export default function MarketplacePage() {
     router.push('/marketplace/add');
   };
 
+  const handleShowFilters = () => {
+    setShowFilters(true);
+  };
+
   // Show marketplace not available message
   if (!marketplaceAvailable) {
     return (
@@ -183,63 +187,26 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      {/* Search and Filters */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-        <div className="px-4 py-3">
-          <MarketplaceSearch 
-            onSearch={handleSearch}
-            placeholder="Search marketplace listings..."
-          />
-          
-          <div className="flex items-center justify-between mt-3">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-              </svg>
-              Filters
-            </button>
-            
-            <button
-              onClick={handleAddListing}
-              className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Listing
-            </button>
-          </div>
-        </div>
-        
-        {/* Category Tabs */}
-        <div className="flex border-b border-gray-200 bg-white">
-          {[
-            { id: 'all', label: 'All Items', icon: '🛍️' },
-            { id: 'regular', label: 'Regular', icon: '📦' },
-            { id: 'vehicle', label: 'Vehicles', icon: '🚗' },
-            { id: 'appliance', label: 'Appliances', icon: '🏠' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+    <div className="min-h-screen bg-[#f4f4f4]">
+      {/* Header with Logo and Search */}
+      <Header
+        onSearch={handleSearch}
+        placeholder="Search marketplace listings..."
+        showFilters={true}
+        onShowFilters={handleShowFilters}
+      />
+
+      {/* Navigation Tabs */}
+      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        <MarketplaceCategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
+
+      {/* Action Buttons */}
+      <MarketplaceActionButtons
+        onShowFilters={handleShowFilters}
+        onShowCategories={() => {}}
+        onAddListing={handleAddListing}
+      />
 
       {/* Filters Panel */}
       {showFilters && (
