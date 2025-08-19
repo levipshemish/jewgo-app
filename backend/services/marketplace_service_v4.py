@@ -57,7 +57,8 @@ class MarketplaceServiceV4(BaseService):
                        m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
                        m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
                        m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                       m.updated_at, m.category, m.subcategory
+                       m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
+                       m.vendor_name as seller_name
                 FROM marketplace m
                 WHERE m.status = %s
             """
@@ -125,21 +126,21 @@ class MarketplaceServiceV4(BaseService):
             query += " ORDER BY m.created_at DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             
-            # Execute query using direct database connection
-            with self.db_manager.connection_manager.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    # Execute main query
-                    cursor.execute(query, params)
-                    listings = cursor.fetchall()
-                    
-                    # Get total count for pagination
-                    count_query = """
-                        SELECT COUNT(*) as total FROM marketplace m 
-                        WHERE m.status = %s
-                    """
-                    count_params = [params[0]]  # Only the status parameter
-                    cursor.execute(count_query, count_params)
-                    total = cursor.fetchone()[0]
+            # Execute query using database session (SQLAlchemy way)
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # Execute main query
+                result = session.execute(text(query), params)
+                listings = result.fetchall()
+                
+                # Get total count for pagination
+                count_query = """
+                    SELECT COUNT(*) as total FROM marketplace m 
+                    WHERE m.status = :status
+                """
+                count_result = session.execute(text(count_query), {'status': params[0]})
+                total = count_result.scalar()
             
             # Format response for marketplace table
             formatted_listings = []
@@ -183,9 +184,9 @@ class MarketplaceServiceV4(BaseService):
                     'status': listing[22],  # status
                     'created_at': listing[23].isoformat() if listing[23] else None,  # created_at
                     'updated_at': listing[24].isoformat() if listing[24] else None,  # updated_at
-                    'category_name': listing[25],  # category
-                    'subcategory_name': listing[26],  # subcategory
-                    'seller_name': listing[10]  # vendor_name as seller_name
+                    'category_name': listing[25],  # category_name
+                    'subcategory_name': listing[26],  # subcategory_name
+                    'seller_name': listing[27]  # seller_name (vendor_name as seller_name)
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -214,11 +215,11 @@ class MarketplaceServiceV4(BaseService):
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                               m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
+                               m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
                                m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
                                m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
                                m.updated_at, m.category as category_name, m.subcategory as subcategory_name, 
-                               m.vendor_name as seller_name, m.vendor_id as seller_username
+                               m.vendor_name as seller_name
                         FROM marketplace m
                         WHERE m.id = %s
                     """, [listing_id])
@@ -249,30 +250,29 @@ class MarketplaceServiceV4(BaseService):
                     'country': 'US',  # Default country
                     'lat': float(listing[8]) if listing[8] else None,  # latitude
                     'lng': float(listing[9]) if listing[9] else None,  # longitude
-                    'seller_user_id': listing[10],  # vendor_id
+                    'seller_user_id': None,  # vendor_id doesn't exist in marketplace table
                     'attributes': {
-                        'vendor_name': listing[11],  # vendor_name
-                        'vendor_phone': listing[12],  # vendor_phone
-                        'vendor_email': listing[13],  # vendor_email
-                        'kosher_agency': listing[14],  # kosher_agency
-                        'kosher_level': listing[15],  # kosher_level
-                        'is_available': listing[16],  # is_available
-                        'is_featured': listing[17],  # is_featured
-                        'is_on_sale': listing[18],  # is_on_sale
-                        'discount_percentage': listing[19],  # discount_percentage
-                        'stock': listing[20],  # stock
-                        'rating': float(listing[21]) if listing[21] else None,  # rating
-                        'review_count': listing[22] or 0  # review_count
+                        'vendor_name': listing[10],  # vendor_name
+                        'vendor_phone': listing[11],  # vendor_phone
+                        'vendor_email': listing[12],  # vendor_email
+                        'kosher_agency': listing[13],  # kosher_agency
+                        'kosher_level': listing[14],  # kosher_level
+                        'is_available': listing[15],  # is_available
+                        'is_featured': listing[16],  # is_featured
+                        'is_on_sale': listing[17],  # is_on_sale
+                        'discount_percentage': listing[18],  # discount_percentage
+                        'stock': listing[19],  # stock
+                        'rating': float(listing[20]) if listing[20] else None,  # rating
+                        'review_count': listing[21] or 0  # review_count
                     },
                     'endorse_up': 0,  # Default values
                     'endorse_down': 0,  # Default values
-                    'status': listing[23],  # status
-                    'created_at': listing[24].isoformat() if listing[24] else None,  # created_at
-                    'updated_at': listing[25].isoformat() if listing[25] else None,  # updated_at
-                    'category_name': listing[26],  # category_name (from alias)
-                    'subcategory_name': listing[27],  # subcategory_name (from alias)
-                    'seller_name': listing[28],  # seller_name (from alias)
-                    'seller_username': listing[29]  # seller_username (from alias)
+                    'status': listing[22],  # status
+                    'created_at': listing[23].isoformat() if listing[23] else None,  # created_at
+                    'updated_at': listing[24].isoformat() if listing[24] else None,  # updated_at
+                    'category_name': listing[25],  # category_name
+                    'subcategory_name': listing[26],  # subcategory_name
+                    'seller_name': listing[27]  # seller_name (vendor_name as seller_name)
                 }
             
             return {
