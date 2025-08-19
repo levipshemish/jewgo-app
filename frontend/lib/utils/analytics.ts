@@ -1,8 +1,5 @@
 // NOTE: simple console-based analytics removed in favor of class-based singleton below
 
-// Import AnalyticsEvent from types
-import type { AnalyticsEvent } from '../types';
-
 // Analytics tracking utility
 // This can be integrated with services like Google Analytics, Mixpanel, or custom analytics
 
@@ -22,7 +19,7 @@ interface RegistrationMetrics {
 }
 
 class Analytics {
-  private queue: AnalyticsEvent[] = [];
+  private queue: AnalyticsEventData[] = [];
   private metrics: RegistrationMetrics = {
     totalAttempts: 0,
     successfulRegistrations: 0,
@@ -161,13 +158,13 @@ class Analytics {
     return sanitized;
   }
 
-  private async sendToAnalyticsService(event: AnalyticsEventData) {
+  private async sendToAnalyticsService(event: AnalyticsEvent) {
     // Placeholder for actual analytics service integration
     // Examples: Google Analytics, Mixpanel, Segment, etc.
     
     // Google Analytics example:
     if ((window as any).gtag) {
-      (window as any).gtag('event', event.event, event.properties);
+      (window as any).gtag('event', event.name, event.props);
     }
 
     // Or send to custom analytics endpoint
