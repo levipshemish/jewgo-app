@@ -1,6 +1,6 @@
 
 
-import { GooglePlacesHours, GooglePlacesResult } from '@/lib/types';
+import { GooglePlacesHours, GooglePlacesResult } from '@/types';
 
 export async function fetchPlaceDetails(place_id: string): Promise<{
   hoursText: string,

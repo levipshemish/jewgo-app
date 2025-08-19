@@ -1,4 +1,4 @@
-import { ReviewsResponse, ReviewFilters, ReviewUpdateRequest} from '@/lib/types/review';
+import { ReviewsResponse, ReviewFilters, ReviewUpdateRequest} from '@/types';
 
 class AdminClient {
   private baseUrl = '/api/admin';

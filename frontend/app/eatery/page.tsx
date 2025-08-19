@@ -9,7 +9,7 @@ import ActionButtons from '@/components/layout/ActionButtons';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { fetchRestaurants } from '@/lib/api/restaurants';
-import { useAdvancedFilters } from '@/lib/hooks/useAdvancedFilters';
+import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { Restaurant } from '@/lib/types/restaurant';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';

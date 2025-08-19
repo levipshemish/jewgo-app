@@ -37,6 +37,13 @@ const ALLOWED_ROOT_FILES = [
   'duplication_analysis_report.json', '.DS_Store'
 ];
 
+// Allowed config files in subdirectories
+const ALLOWED_CONFIG_FILES = [
+  'tsconfig.json', 'tsconfig.test.json', 'jest.config.js', 'next.config.js',
+  'tailwind.config.js', 'postcss.config.js', '.eslintrc.json', '.prettierrc',
+  'package.json', 'pnpm-lock.yaml', 'package-lock.json'
+];
+
 const IGNORE_PATTERNS = [
   'node_modules', '.git', '.next', 'dist', 'build', 'coverage',
   '__pycache__', 'venv', '.venv', '.github/pull_request_template.md'
@@ -58,16 +65,24 @@ function isInAllowedDirectory(filePath) {
     return isAllowedRootFile(parts[0]);
   }
   
-  // Check frontend directories
-  if (ALLOWED_DIRECTORIES.frontend.includes(parts[0])) {
+  // Check if it's a config file in any subdirectory
+  if (parts.length > 1 && ALLOWED_CONFIG_FILES.includes(parts[parts.length - 1])) {
     return true;
+  }
+  
+  // Check frontend directories
+  if (parts[0] === 'frontend' && parts.length > 1) {
+    const frontendPath = parts.slice(1).join('/');
+    return ALLOWED_DIRECTORIES.frontend.some(dir => 
+      frontendPath.startsWith(dir + '/') || frontendPath === dir
+    );
   }
   
   // Check backend directories
   if (parts[0] === 'backend' && parts.length > 1) {
     const backendPath = parts.slice(1).join('/');
     return ALLOWED_DIRECTORIES.backend.some(dir => 
-      backendPath.startsWith(dir.replace('backend/', ''))
+      backendPath.startsWith(dir.replace('backend/', '') + '/') || backendPath === dir.replace('backend/', '')
     );
   }
   

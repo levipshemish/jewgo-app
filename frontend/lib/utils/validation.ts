@@ -1,4 +1,4 @@
-import { ValidationResult } from '@/lib/types';
+import { ValidationResult } from '@/types';
 import { Restaurant } from '@/lib/types/restaurant';
 
 /**

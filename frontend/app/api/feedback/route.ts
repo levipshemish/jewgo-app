@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 
-import { FeedbackData } from '@/lib/types';
+import { FeedbackData } from '@/types';
 import { logInfo, logError, logApiCall } from '@/lib/utils/logger';
 
 

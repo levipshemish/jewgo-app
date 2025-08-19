@@ -14,7 +14,7 @@ export * from './auth/mfa-manager';
 export * from './api-config';
 
 // Filter exports
-export * from '../filters/filters.types';
+export * from './filters/filters.types';
 export * from './filters/urlSync';
 
 // Hook exports
@@ -37,7 +37,7 @@ export * from './utils/rateLimiter';
 export * from './utils/recaptcha';
 
 // Validator exports
-export * from '../validators/review';
+export * from './validators/review';
 
 // Supabase exports
 export * from './supabase/middleware';

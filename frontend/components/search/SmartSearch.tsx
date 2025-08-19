@@ -4,7 +4,7 @@ import { Search, MapPin, Clock, Star, SlidersHorizontal, X } from 'lucide-react'
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { searchGooglePlaces, googlePlacesAPI } from '@/lib/google/places';
-import { GooglePlacesResult } from '@/lib/types';
+import { GooglePlacesResult } from '@/types';
 
 interface SmartSearchProps {
   onSearch: (query: string) => void;
