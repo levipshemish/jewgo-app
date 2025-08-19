@@ -451,9 +451,9 @@ const RestaurantDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Restaurant Details Section - White Card with flush overlap effect */}
+      {/* Restaurant Details Section - White Card with enhanced overlap effect */}
       <div 
-        className="bg-white restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg" 
+        className="bg-white restaurant-details-card relative -mt-16 sm:-mt-20 md:-mt-24 lg:-mt-28 xl:-mt-32 z-10 shadow-lg" 
         style={{
           borderTopLeftRadius: '32px',
           borderTopRightRadius: '32px',
@@ -472,7 +472,7 @@ const RestaurantDetailPage: React.FC = () => {
         }}
       >
         <div
-          className="restaurant-dynamic-layout pt-4 sm:pt-6 pb-24 max-w-screen-md mx-auto"
+          className="restaurant-dynamic-layout pt-8 sm:pt-10 md:pt-12 lg:pt-16 xl:pt-20 pb-24 max-w-screen-md mx-auto"
           style={{
             // Ensure content never gets hidden behind the fixed bottom navigation
             // and floating StickyCTA, including iOS safe area
