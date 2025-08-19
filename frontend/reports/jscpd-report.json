@@ -1,6 +1,6 @@
 {
   "statistics": {
-    "detectionDate": "2025-08-19T05:05:22.822Z",
+    "detectionDate": "2025-08-19T05:19:24.306Z",
     "formats": {
       "javascript": {
         "sources": {
@@ -605,14 +605,14 @@
             "newClones": 0
           },
           "components/eatery/ui/EateryCard.tsx": {
-            "lines": 121,
-            "tokens": 879,
+            "lines": 4,
+            "tokens": 32,
             "sources": 1,
-            "clones": 1,
-            "duplicatedLines": 40,
-            "duplicatedTokens": 302,
-            "percentage": 33.06,
-            "percentageTokens": 34.36,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -631,6 +631,18 @@
           "components/ui/VirtualList.tsx": {
             "lines": 170,
             "tokens": 1438,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/UnifiedCard.tsx": {
+            "lines": 28,
+            "tokens": 173,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1012,9 +1024,21 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
+          "components/search/FilterBase.tsx": {
+            "lines": 87,
+            "tokens": 765,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
           "components/search/DietaryFilters.tsx": {
-            "lines": 19,
-            "tokens": 163,
+            "lines": 6,
+            "tokens": 42,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1025,8 +1049,8 @@
             "newClones": 0
           },
           "components/search/CategoryFilters.tsx": {
-            "lines": 19,
-            "tokens": 163,
+            "lines": 6,
+            "tokens": 39,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1325,8 +1349,8 @@
             "newClones": 0
           },
           "components/marketplace/ProductDetailPage.tsx": {
-            "lines": 276,
-            "tokens": 2331,
+            "lines": 229,
+            "tokens": 1622,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1337,14 +1361,14 @@
             "newClones": 0
           },
           "components/marketplace/ProductCard.tsx": {
-            "lines": 132,
-            "tokens": 1090,
+            "lines": 5,
+            "tokens": 37,
             "sources": 1,
-            "clones": 1,
-            "duplicatedLines": 40,
-            "duplicatedTokens": 302,
-            "percentage": 30.3,
-            "percentageTokens": 27.71,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -1362,7 +1386,7 @@
           },
           "components/marketplace/MarketplacePageClient.tsx": {
             "lines": 243,
-            "tokens": 2051,
+            "tokens": 2072,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1878,14 +1902,14 @@
           }
         },
         "total": {
-          "lines": 17350,
-          "tokens": 136044,
-          "sources": 156,
-          "clones": 31,
-          "duplicatedLines": 916,
-          "duplicatedTokens": 7279,
-          "percentage": 5.28,
-          "percentageTokens": 5.35,
+          "lines": 17148,
+          "tokens": 134149,
+          "sources": 158,
+          "clones": 30,
+          "duplicatedLines": 876,
+          "duplicatedTokens": 6977,
+          "percentage": 5.11,
+          "percentageTokens": 5.2,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -2181,14 +2205,14 @@
             "newClones": 0
           },
           "lib/utils/dateUtils.ts": {
-            "lines": 230,
-            "tokens": 1991,
+            "lines": 215,
+            "tokens": 1723,
             "sources": 1,
-            "clones": 10,
-            "duplicatedLines": 84,
-            "duplicatedTokens": 1178,
-            "percentage": 36.52,
-            "percentageTokens": 59.17,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -2325,8 +2349,8 @@
             "newClones": 0
           },
           "lib/types/marketplace.ts": {
-            "lines": 178,
-            "tokens": 1255,
+            "lines": 163,
+            "tokens": 1131,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -2829,14 +2853,14 @@
             "newClones": 0
           },
           "lib/api/marketplace.ts": {
-            "lines": 413,
-            "tokens": 3262,
+            "lines": 386,
+            "tokens": 3053,
             "sources": 1,
-            "clones": 4,
-            "duplicatedLines": 56,
-            "duplicatedTokens": 420,
-            "percentage": 13.56,
-            "percentageTokens": 12.88,
+            "clones": 2,
+            "duplicatedLines": 28,
+            "duplicatedTokens": 210,
+            "percentage": 7.25,
+            "percentageTokens": 6.88,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -3502,14 +3526,14 @@
           }
         },
         "total": {
-          "lines": 19659,
-          "tokens": 161007,
+          "lines": 19602,
+          "tokens": 160406,
           "sources": 134,
-          "clones": 74,
-          "duplicatedLines": 1015,
-          "duplicatedTokens": 10282,
-          "percentage": 5.16,
-          "percentageTokens": 6.39,
+          "clones": 68,
+          "duplicatedLines": 959,
+          "duplicatedTokens": 9588,
+          "percentage": 4.89,
+          "percentageTokens": 5.98,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -3741,14 +3765,14 @@
             "newClones": 0
           },
           "components/eatery/ui/EateryCard.tsx": {
-            "lines": 326,
-            "tokens": 2594,
+            "lines": 45,
+            "tokens": 347,
             "sources": 1,
-            "clones": 5,
-            "duplicatedLines": 55,
-            "duplicatedTokens": 688,
-            "percentage": 16.87,
-            "percentageTokens": 26.52,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -3767,6 +3791,18 @@
           "components/ui/VirtualList.tsx": {
             "lines": 293,
             "tokens": 2542,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/UnifiedCard.tsx": {
+            "lines": 274,
+            "tokens": 2309,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -3981,8 +4017,8 @@
             "newClones": 0
           },
           "components/ui/LoadingState.tsx": {
-            "lines": 115,
-            "tokens": 771,
+            "lines": 113,
+            "tokens": 765,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -4196,27 +4232,39 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
-          "components/search/DietaryFilters.tsx": {
-            "lines": 69,
-            "tokens": 663,
+          "components/search/FilterBase.tsx": {
+            "lines": 166,
+            "tokens": 1275,
             "sources": 1,
-            "clones": 4,
-            "duplicatedLines": 63,
-            "duplicatedTokens": 549,
-            "percentage": 91.3,
-            "percentageTokens": 82.81,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/search/DietaryFilters.tsx": {
+            "lines": 43,
+            "tokens": 441,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "components/search/CategoryFilters.tsx": {
-            "lines": 74,
-            "tokens": 834,
+            "lines": 47,
+            "tokens": 603,
             "sources": 1,
-            "clones": 2,
-            "duplicatedLines": 39,
-            "duplicatedTokens": 345,
-            "percentage": 52.7,
-            "percentageTokens": 41.37,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -4224,11 +4272,11 @@
             "lines": 74,
             "tokens": 645,
             "sources": 1,
-            "clones": 2,
-            "duplicatedLines": 24,
-            "duplicatedTokens": 204,
-            "percentage": 32.43,
-            "percentageTokens": 31.63,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -4260,11 +4308,11 @@
             "lines": 495,
             "tokens": 4389,
             "sources": 1,
-            "clones": 19,
-            "duplicatedLines": 174,
-            "duplicatedTokens": 1897,
-            "percentage": 35.15,
-            "percentageTokens": 43.22,
+            "clones": 15,
+            "duplicatedLines": 150,
+            "duplicatedTokens": 1525,
+            "percentage": 30.3,
+            "percentageTokens": 34.75,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -4534,25 +4582,25 @@
           },
           "components/marketplace/ProductDetailPage.tsx": {
             "lines": 366,
-            "tokens": 3159,
+            "tokens": 2470,
             "sources": 1,
             "clones": 3,
             "duplicatedLines": 35,
             "duplicatedTokens": 271,
             "percentage": 9.56,
-            "percentageTokens": 8.58,
+            "percentageTokens": 10.97,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "components/marketplace/ProductCard.tsx": {
-            "lines": 275,
-            "tokens": 2461,
+            "lines": 50,
+            "tokens": 426,
             "sources": 1,
-            "clones": 5,
-            "duplicatedLines": 50,
-            "duplicatedTokens": 568,
-            "percentage": 18.18,
-            "percentageTokens": 23.08,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -4570,19 +4618,19 @@
           },
           "components/marketplace/MarketplacePageClient.tsx": {
             "lines": 422,
-            "tokens": 3466,
+            "tokens": 3487,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 12,
             "duplicatedTokens": 104,
             "percentage": 2.84,
-            "percentageTokens": 3,
+            "percentageTokens": 2.98,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "components/marketplace/MarketplaceListingCard.tsx": {
-            "lines": 206,
-            "tokens": 1681,
+            "lines": 208,
+            "tokens": 1730,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -4620,11 +4668,11 @@
             "lines": 202,
             "tokens": 1626,
             "sources": 1,
-            "clones": 4,
-            "duplicatedLines": 119,
-            "duplicatedTokens": 1020,
-            "percentage": 58.91,
-            "percentageTokens": 62.73,
+            "clones": 2,
+            "duplicatedLines": 84,
+            "duplicatedTokens": 716,
+            "percentage": 41.58,
+            "percentageTokens": 44.03,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -5266,14 +5314,14 @@
           }
         },
         "total": {
-          "lines": 26407,
-          "tokens": 217072,
-          "sources": 136,
-          "clones": 97,
-          "duplicatedLines": 1452,
-          "duplicatedTokens": 12538,
-          "percentage": 5.5,
-          "percentageTokens": 5.78,
+          "lines": 26288,
+          "tokens": 215296,
+          "sources": 138,
+          "clones": 85,
+          "duplicatedLines": 1307,
+          "duplicatedTokens": 11023,
+          "percentage": 4.97,
+          "percentageTokens": 5.12,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -5332,14 +5380,14 @@
       }
     },
     "total": {
-      "lines": 64194,
-      "tokens": 518985,
-      "sources": 436,
-      "clones": 202,
-      "duplicatedLines": 3383,
-      "duplicatedTokens": 30099,
-      "percentage": 5.27,
-      "percentageTokens": 5.8,
+      "lines": 63816,
+      "tokens": 514713,
+      "sources": 440,
+      "clones": 183,
+      "duplicatedLines": 3142,
+      "duplicatedTokens": 27588,
+      "percentage": 4.92,
+      "percentageTokens": 5.36,
       "newDuplicatedLines": 0,
       "newClones": 0
     }
@@ -6355,186 +6403,6 @@
     },
     {
       "format": "typescript",
-      "lines": 10,
-      "fragment": "= (input: string | number | Date): string => {\n  const date = typeof input === 'string' ? new Date(input) : \n               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : \n               input;\n\n  if (isNaN(date.getTime())) {\n    return 'Invalid Date';\n  }\n\n  return",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 143,
-        "end": 152,
-        "startLoc": {
-          "line": 143,
-          "column": 2,
-          "position": 1147
-        },
-        "endLoc": {
-          "line": 152,
-          "column": 7,
-          "position": 1267
-        }
-      },
-      "secondFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 95,
-        "end": 104,
-        "startLoc": {
-          "line": 95,
-          "column": 2,
-          "position": 596
-        },
-        "endLoc": {
-          "line": 104,
-          "column": 6,
-          "position": 716
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 7,
-      "fragment": "=> {\n  const date = typeof input === 'string' ? new Date(input) : \n               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : \n               input;\n\n  if (isNaN(date.getTime())) {\n    return false",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 158,
-        "end": 164,
-        "startLoc": {
-          "line": 158,
-          "column": 2,
-          "position": 1316
-        },
-        "endLoc": {
-          "line": 164,
-          "column": 6,
-          "position": 1408
-        }
-      },
-      "secondFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 95,
-        "end": 101,
-        "startLoc": {
-          "line": 95,
-          "column": 2,
-          "position": 616
-        },
-        "endLoc": {
-          "line": 101,
-          "column": 15,
-          "position": 708
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 10,
-      "fragment": "= (input: string | number | Date): boolean => {\n  const date = typeof input === 'string' ? new Date(input) : \n               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : \n               input;\n\n  if (isNaN(date.getTime())) {\n    return false;\n  }\n\n  const yesterday",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 174,
-        "end": 183,
-        "startLoc": {
-          "line": 174,
-          "column": 2,
-          "position": 1459
-        },
-        "endLoc": {
-          "line": 183,
-          "column": 10,
-          "position": 1581
-        }
-      },
-      "secondFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 158,
-        "end": 167,
-        "startLoc": {
-          "line": 158,
-          "column": 2,
-          "position": 1296
-        },
-        "endLoc": {
-          "line": 167,
-          "column": 6,
-          "position": 1418
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 10,
-      "fragment": "= (input: string | number | Date): string => {\n  const date = typeof input === 'string' ? new Date(input) : \n               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : \n               input;\n\n  if (isNaN(date.getTime())) {\n    return 'Invalid Date';\n  }\n\n  return date.toLocaleDateString",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 191,
-        "end": 200,
-        "startLoc": {
-          "line": 191,
-          "column": 2,
-          "position": 1639
-        },
-        "endLoc": {
-          "line": 200,
-          "column": 19,
-          "position": 1763
-        }
-      },
-      "secondFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 95,
-        "end": 152,
-        "startLoc": {
-          "line": 95,
-          "column": 2,
-          "position": 596
-        },
-        "endLoc": {
-          "line": 152,
-          "column": 12,
-          "position": 1271
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 10,
-      "fragment": "= (input: string | number | Date): string => {\n  const date = typeof input === 'string' ? new Date(input) : \n               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : \n               input;\n\n  if (isNaN(date.getTime())) {\n    return 'Invalid Date';\n  }\n\n  return date.toLocaleDateString('en-US', { month",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 206,
-        "end": 215,
-        "startLoc": {
-          "line": 206,
-          "column": 2,
-          "position": 1791
-        },
-        "endLoc": {
-          "line": 215,
-          "column": 6,
-          "position": 1922
-        }
-      },
-      "secondFile": {
-        "name": "lib/utils/dateUtils.ts",
-        "start": 95,
-        "end": 200,
-        "startLoc": {
-          "line": 95,
-          "column": 2,
-          "position": 596
-        },
-        "endLoc": {
-          "line": 200,
-          "column": 8,
-          "position": 1770
-        }
-      }
-    },
-    {
-      "format": "typescript",
       "lines": 28,
       "fragment": "= async (\n  endpoint: string,\n  serviceName: string,\n  request: NextRequest,\n  validateBody?: (body: any) => { isValid: boolean; errors: string[] }\n): Promise<NextResponse> => {\n  try {\n    // Parse request body\n    const body = await request.json().catch(() => ({}));\n\n    // Validate body if validator is provided\n    if (validateBody) {\n      const validation = validateBody(body);\n      if (!validation.isValid) {\n        return NextResponse.json(\n          {\n            error: 'Validation error',\n            message: 'Invalid request data',\n            details: validation.errors\n          },\n          { status: 400 }\n        );\n      }\n    }\n\n    const backendUrl = getBackendUrl();\n    const backendResponse = await fetch(`${backendUrl}${endpoint}`, {\n      method: 'PUT'",
       "tokens": 0,
@@ -7337,12 +7205,12 @@
         "startLoc": {
           "line": 125,
           "column": 32,
-          "position": 890
+          "position": 887
         },
         "endLoc": {
           "line": 139,
           "column": 41,
-          "position": 995
+          "position": 992
         }
       },
       "secondFile": {
@@ -7352,48 +7220,12 @@
         "startLoc": {
           "line": 32,
           "column": 2,
-          "position": 228
+          "position": 225
         },
         "endLoc": {
           "line": 46,
           "column": 39,
-          "position": 333
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 15,
-      "fragment": ", {\n      method: 'GET',\n      headers: {\n        'Content-Type': 'application/json',\n      },\n    });\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`);\n    }\n\n    const data = await response.json();\n    return data;\n  } catch (error) {\n    console.error('Error fetching marketplace gemachs:'",
-      "tokens": 0,
-      "firstFile": {
-        "name": "lib/api/marketplace.ts",
-        "start": 152,
-        "end": 166,
-        "startLoc": {
-          "line": 152,
-          "column": 29,
-          "position": 1071
-        },
-        "endLoc": {
-          "line": 166,
-          "column": 38,
-          "position": 1176
-        }
-      },
-      "secondFile": {
-        "name": "lib/api/marketplace.ts",
-        "start": 32,
-        "end": 46,
-        "startLoc": {
-          "line": 32,
-          "column": 2,
-          "position": 228
-        },
-        "endLoc": {
-          "line": 46,
-          "column": 39,
-          "position": 333
+          "position": 330
         }
       }
     },
@@ -8011,150 +7843,6 @@
     },
     {
       "format": "tsx",
-      "lines": 8,
-      "fragment": ", totalCount\n}) => {\n  return (\n    <div>\n      <h4 className=\"text-sm font-medium text-gray-700 mb-3 flex items-center justify-between\">\n        <div className=\"flex items-center\">\n          <svg className=\"w-4 h-4 mr-2 text-jewgo-primary\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n            <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/CategoryFilters.tsx",
-        "start": 24,
-        "end": 31,
-        "startLoc": {
-          "line": 24,
-          "column": 15,
-          "position": 396
-        },
-        "endLoc": {
-          "line": 31,
-          "column": 138,
-          "position": 493
-        }
-      },
-      "secondFile": {
-        "name": "components/search/DietaryFilters.tsx",
-        "start": 19,
-        "end": 65,
-        "startLoc": {
-          "line": 19,
-          "column": 14,
-          "position": 225
-        },
-        "endLoc": {
-          "line": 65,
-          "column": 197,
-          "position": 618
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 33,
-      "fragment": "?.[option.id] || 0;\n          return (\n            <button\n              key={option.id}\n              onClick={() => onCategoryChange(selectedCategory === option.id ? '' : option.id)}\n              className={cn(\n                \"p-3 rounded-lg border-2 transition-all duration-200 text-center relative\",\n                \"hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20\",\n                selectedCategory === option.id\n                  ? `${option.color} text-white border-transparent`\n                  : \"bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100\"\n              )}\n            >\n              <div className=\"text-2xl mb-2\">{option.icon}</div>\n              <div className=\"font-semibold text-sm mb-1\">{option.name}</div>\n              <p className=\"text-xs opacity-80 mb-2\">{option.description}</p>\n              {count > 0 && (\n                <div className={cn(\n                  \"text-xs font-medium px-2 py-1 rounded-full\",\n                  selectedCategory === option.id\n                    ? \"bg-white/20 text-white\"\n                    : \"bg-gray-200 text-gray-600\"\n                )}>\n                  {count} {count === 1 ? 'place' : 'places'}\n                </div>\n              )}\n            </button>\n          );\n        })}\n      </div>\n    </div>\n  );\n};",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/CategoryFilters.tsx",
-        "start": 43,
-        "end": 75,
-        "startLoc": {
-          "line": 43,
-          "column": 15,
-          "position": 586
-        },
-        "endLoc": {
-          "line": 75,
-          "column": 2,
-          "position": 834
-        }
-      },
-      "secondFile": {
-        "name": "components/search/DietaryFilters.tsx",
-        "start": 38,
-        "end": 70,
-        "startLoc": {
-          "line": 38,
-          "column": 14,
-          "position": 415
-        },
-        "endLoc": {
-          "line": 70,
-          "column": 2,
-          "position": 663
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 8,
-      "fragment": ", totalCount\n}) => {\n  return (\n    <div>\n      <h4 className=\"text-sm font-medium text-gray-700 mb-3 flex items-center justify-between\">\n        <div className=\"flex items-center\">\n          <svg className=\"w-4 h-4 mr-2 text-jewgo-primary\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n            <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/AgencyFilters.tsx",
-        "start": 19,
-        "end": 26,
-        "startLoc": {
-          "line": 19,
-          "column": 13,
-          "position": 180
-        },
-        "endLoc": {
-          "line": 26,
-          "column": 46,
-          "position": 277
-        }
-      },
-      "secondFile": {
-        "name": "components/search/DietaryFilters.tsx",
-        "start": 19,
-        "end": 65,
-        "startLoc": {
-          "line": 19,
-          "column": 14,
-          "position": 225
-        },
-        "endLoc": {
-          "line": 65,
-          "column": 197,
-          "position": 618
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 18,
-      "fragment": ".description}</p>\n              {count > 0 && (\n                <div className={cn(\n                  \"text-xs font-medium px-2 py-1 rounded-full\",\n                  selectedAgency === agency.id\n                    ? \"bg-white/20 text-white\"\n                    : \"bg-gray-200 text-gray-600\"\n                )}>\n                  {count} {count === 1 ? 'place' : 'places'}\n                </div>\n              )}\n            </button>\n          );\n        })}\n      </div>\n    </div>\n  );\n};",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/AgencyFilters.tsx",
-        "start": 58,
-        "end": 75,
-        "startLoc": {
-          "line": 58,
-          "column": 7,
-          "position": 538
-        },
-        "endLoc": {
-          "line": 75,
-          "column": 2,
-          "position": 645
-        }
-      },
-      "secondFile": {
-        "name": "components/search/DietaryFilters.tsx",
-        "start": 53,
-        "end": 70,
-        "startLoc": {
-          "line": 53,
-          "column": 7,
-          "position": 556
-        },
-        "endLoc": {
-          "line": 70,
-          "column": 2,
-          "position": 663
-        }
-      }
-    },
-    {
-      "format": "tsx",
       "lines": 9,
       "fragment": "<div className=\"bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-4\">\n      {/* Header */}\n      <div className=\"flex items-center justify-between mb-6\">\n        <div className=\"flex items-center\">\n          <svg className=\"w-5 h-5 mr-2 text-jewgo-primary\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n            <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z\" />\n          </svg>\n          <h3 className=\"text-lg font-semibold text-gray-900\">Filters</h3>\n          {",
       "tokens": 0,
@@ -8299,42 +7987,6 @@
     },
     {
       "format": "tsx",
-      "lines": 7,
-      "fragment": ".length > 0 && (\n          <div>\n            <h4 className=\"text-sm font-medium text-gray-700 mb-3 flex items-center\">\n              <svg className=\"w-4 h-4 mr-2 text-jewgo-primary\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253\" />\n              </svg>\n              Dietary Preference",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/AdvancedFilters.tsx",
-        "start": 356,
-        "end": 362,
-        "startLoc": {
-          "line": 356,
-          "column": 17,
-          "position": 3119
-        },
-        "endLoc": {
-          "line": 362,
-          "column": 11,
-          "position": 3213
-        }
-      },
-      "secondFile": {
-        "name": "components/search/AdvancedFilters.tsx",
-        "start": 320,
-        "end": 28,
-        "startLoc": {
-          "line": 320,
-          "column": 9,
-          "position": 2759
-        },
-        "endLoc": {
-          "line": 28,
-          "column": 12,
-          "position": 335
-        }
-      }
-    },
-    {
-      "format": "tsx",
       "lines": 10,
       "fragment": ")}\n              </select>\n              <svg className=\"absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M19 9l-7 7-7-7\" />\n              </svg>\n            </div>\n          </div>\n        )}\n\n        {/* Categories Dropdown */",
       "tokens": 0,
@@ -8366,42 +8018,6 @@
           "line": 355,
           "column": 35,
           "position": 3111
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 7,
-      "fragment": ".length > 0 && (\n          <div>\n            <h4 className=\"text-sm font-medium text-gray-700 mb-3 flex items-center\">\n              <svg className=\"w-4 h-4 mr-2 text-jewgo-primary\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">\n                <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth=\"2\" d=\"M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4\" />\n              </svg>\n              Category",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/search/AdvancedFilters.tsx",
-        "start": 395,
-        "end": 401,
-        "startLoc": {
-          "line": 395,
-          "column": 13,
-          "position": 3516
-        },
-        "endLoc": {
-          "line": 401,
-          "column": 9,
-          "position": 3608
-        }
-      },
-      "secondFile": {
-        "name": "components/search/AdvancedFilters.tsx",
-        "start": 320,
-        "end": 33,
-        "startLoc": {
-          "line": 320,
-          "column": 9,
-          "position": 2759
-        },
-        "endLoc": {
-          "line": 33,
-          "column": 9,
-          "position": 504
         }
       }
     },
@@ -9126,186 +8742,6 @@
       }
     },
     {
-      "format": "javascript",
-      "lines": 41,
-      "fragment": "}`}\n\t\t\t\t\t\t\t\t\t/>\n\t\t\t\t\t\t\t\t</motion.div>\n\t\t\t\t\t\t\t)}\n\t\t\t\t\t\t</ButtonContainer>\n\t\t\t\t\t)}\n\t\t\t\t</div>\n\n\t\t\t\t{/* Text Content Container - Separate transparent container like EateryCard */}\n\t\t\t\t<motion.div \n\t\t\t\t\tclassName=\"p-1.5 bg-transparent\"\n\t\t\t\t\tinitial={{ opacity: 0, y: 10 }}\n\t\t\t\t\tanimate={{ opacity: 1, y: 0 }}\n\t\t\t\t\ttransition={{ delay: 0.5, duration: 0.3 }}\n\t\t\t\t>\n\t\t\t\t\t{/* Product Name and Price - Combined like reference image */}\n\t\t\t\t\t<div className=\"min-h-8 mb-1 flex items-center\">\n\t\t\t\t\t\t<h3 className=\"text-sm font-bold text-gray-900 leading-tight break-words\">\n\t\t\t\t\t\t\t{formatPrice(product.price)} | {titleCase(product.name)}\n\t\t\t\t\t\t</h3>\n\t\t\t\t\t</div>\n\t\t\t\t\t\n\t\t\t\t\t{/* Location - Like EateryCard location display */}\n\t\t\t\t\t<div className=\"flex items-center justify-between min-w-0\">\n\t\t\t\t\t\t<SpanContainer className=\"text-xs text-gray-500 font-normal truncate flex-1 mr-2 flex items-center gap-1\">\n\t\t\t\t\t\t\t<MapPin className=\"w-3 h-3\" />\n\t\t\t\t\t\t\t<span>\n\t\t\t\t\t\t\t\t{product.city || ''}{product.city && product.region ? ', ' : ''}{product.region || ''}\n\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t</SpanContainer>\n\t\t\t\t\t</div>\n\t\t\t\t</motion.div>\n\t\t\t</CardContainer>\n\t\t);\n\t}\n\n\t// Compact variant: smaller padding and text\n\tif (variant === 'compact') {\n\t\treturn (\n\t\t\t<div \n\t\t\t\tonClick={handleProductClick",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 198,
-        "end": 238,
-        "startLoc": {
-          "line": 198,
-          "column": 11,
-          "position": 1845
-        },
-        "endLoc": {
-          "line": 238,
-          "column": 19,
-          "position": 2147
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 257,
-        "end": 298,
-        "startLoc": {
-          "line": 257,
-          "column": 17,
-          "position": 2106
-        },
-        "endLoc": {
-          "line": 298,
-          "column": 2,
-          "position": 2380
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 9,
-      "fragment": "();\n\tconst [imageError, setImageError] = useState(false);\n\tconst [imageLoading, setImageLoading] = useState(true);\n\tconst [isFavorited, setIsFavorited] = useState(false);\n\tconst { handleImmediateTouch, isMobile } = useMobileTouch();\n\t\n\tconst isMobileDevice = isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768);\n\n\tconst",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 29,
-        "end": 37,
-        "startLoc": {
-          "line": 29,
-          "column": 10,
-          "position": 249
-        },
-        "endLoc": {
-          "line": 37,
-          "column": 6,
-          "position": 362
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 24,
-        "end": 32,
-        "startLoc": {
-          "line": 24,
-          "column": 13,
-          "position": 247
-        },
-        "endLoc": {
-          "line": 32,
-          "column": 31,
-          "position": 360
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 6,
-      "fragment": "${className}`}\n\t\t\t\tdata-clickable=\"true\"\n\t\t\t\t{...(isMobileDevice ? {} : {\n\t\t\t\t\tinitial: { opacity: 0, scale: 0.95 },\n\t\t\t\t\tanimate: { opacity: 1, scale: 1 },\n\t\t\t\t\ttransition: { duration: 0.3, ease: 'easeOut'",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 85,
-        "end": 90,
-        "startLoc": {
-          "line": 85,
-          "column": 126,
-          "position": 806
-        },
-        "endLoc": {
-          "line": 90,
-          "column": 10,
-          "position": 889
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 128,
-        "end": 133,
-        "startLoc": {
-          "line": 128,
-          "column": 141,
-          "position": 1130
-        },
-        "endLoc": {
-          "line": 133,
-          "column": 10,
-          "position": 1213
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 10,
-      "fragment": "},\n\t\t\t\t\twhileHover: { scale: 1.02, transition: { duration: 0.2 } },\n\t\t\t\t\twhileTap: { scale: 0.98, transition: { duration: 0.1 } }\n\t\t\t\t})}\n\t\t\t\trole=\"button\"\n\t\t\t\ttabIndex={0}\n\t\t\t\tonKeyDown={(e) => {\n\t\t\t\t\tif (e.key === 'Enter' || e.key === ' ') {\n\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\thandleProductClick",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 90,
-        "end": 99,
-        "startLoc": {
-          "line": 90,
-          "column": 2,
-          "position": 891
-        },
-        "endLoc": {
-          "line": 99,
-          "column": 19,
-          "position": 1010
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 133,
-        "end": 148,
-        "startLoc": {
-          "line": 133,
-          "column": 2,
-          "position": 1215
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 16,
-          "position": 1342
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 14,
-      "fragment": "<ButtonContainer\n\t\t\t\t\t\t\tonClick={handleFavoriteClick}\n\t\t\t\t\t\t\tclassName=\"absolute top-2 right-2 w-10 h-10 px-2 py-0 transition-all duration-200 hover:scale-105 z-10 flex items-start justify-center active:scale-95 group\"\n\t\t\t\t\t\t\taria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}\n\t\t\t\t\t\t\ttitle={isFavorited ? 'Remove from favorites' : 'Add to favorites'}\n\t\t\t\t\t\t\t{...(isMobileDevice ? {} : {\n\t\t\t\t\t\t\t\twhileHover: { scale: 1.1 },\n\t\t\t\t\t\t\t\twhileTap: { scale: 0.9 },\n\t\t\t\t\t\t\t\tinitial: { opacity: 0, scale: 0.8 },\n\t\t\t\t\t\t\t\tanimate: { opacity: 1, scale: 1 },\n\t\t\t\t\t\t\t\ttransition: { delay: 0.3, duration: 0.3 }\n\t\t\t\t\t\t\t})}\n\t\t\t\t\t\t\tstyle={{\n\t\t\t\t\t\t\t\tWebkitTapHighlightColor",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 151,
-        "end": 164,
-        "startLoc": {
-          "line": 151,
-          "column": 7,
-          "position": 1476
-        },
-        "endLoc": {
-          "line": 164,
-          "column": 24,
-          "position": 1637
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 204,
-        "end": 217,
-        "startLoc": {
-          "line": 204,
-          "column": 9,
-          "position": 1727
-        },
-        "endLoc": {
-          "line": 217,
-          "column": 40,
-          "position": 1888
-        }
-      }
-    },
-    {
       "format": "tsx",
       "lines": 11,
       "fragment": "if (session?.user) {\n          setUser({\n            id: session.user.id,\n            email: session.user.email || \"\",\n            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,\n            image: session.user.user_metadata?.avatar_url,\n          });\n        } else {\n          setUser(null);\n        }\n        setLoading",
@@ -9343,78 +8779,6 @@
     },
     {
       "format": "tsx",
-      "lines": 21,
-      "fragment": "${className}`}\n        data-clickable=\"true\"\n        {...(isMobileDevice ? {} : {\n          initial: { opacity: 0, scale: 0.95 },\n          animate: { opacity: 1, scale: 1 },\n          transition: { duration: 0.3, ease: \"easeOut\" },\n          whileHover: { \n            scale: 1.02,\n            transition: { duration: 0.2 }\n          },\n          whileTap: { \n            scale: 0.98,\n            transition: { duration: 0.1 }\n          }\n        })}\n        role=\"button\"\n        tabIndex={0}\n        onKeyDown={(e) => {\n          if (e.key === 'Enter' || e.key === ' ') {\n            e.preventDefault();\n            handleClick",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/CategoryCard.tsx",
-        "start": 54,
-        "end": 74,
-        "startLoc": {
-          "line": 54,
-          "column": 127,
-          "position": 444
-        },
-        "endLoc": {
-          "line": 74,
-          "column": 12,
-          "position": 656
-        }
-      },
-      "secondFile": {
-        "name": "components/eatery/ui/EateryCard.tsx",
-        "start": 128,
-        "end": 148,
-        "startLoc": {
-          "line": 128,
-          "column": 141,
-          "position": 1130
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 16,
-          "position": 1342
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 16,
-      "fragment": "}\n        style={{\n          WebkitTapHighlightColor: 'transparent',\n          WebkitTouchCallout: 'none',\n          WebkitUserSelect: 'none',\n          userSelect: 'none',\n          touchAction: 'manipulation',\n          position: 'relative',\n          zIndex: 1,\n          ...(isMobileDevice && {\n            opacity: 1,\n            transform: 'scale(1)'\n          })\n        }}\n      >\n        {/* Category Container - Using balanced aspect ratio like EateryCard */",
-      "tokens": 0,
-      "firstFile": {
-        "name": "components/marketplace/CategoryCard.tsx",
-        "start": 77,
-        "end": 92,
-        "startLoc": {
-          "line": 77,
-          "column": 11,
-          "position": 686
-        },
-        "endLoc": {
-          "line": 92,
-          "column": 71,
-          "position": 778
-        }
-      },
-      "secondFile": {
-        "name": "components/marketplace/ProductCard.tsx",
-        "start": 102,
-        "end": 114,
-        "startLoc": {
-          "line": 102,
-          "column": 2,
-          "position": 1040
-        },
-        "endLoc": {
-          "line": 114,
-          "column": 68,
-          "position": 1129
-        }
-      }
-    },
-    {
-      "format": "tsx",
       "lines": 43,
       "fragment": ") {\n    return (\n      <CardContainer\n        onClick={handleClick}\n        className={`w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation category-card ${className}`}\n        data-clickable=\"true\"\n        {...(isMobileDevice ? {} : {\n          initial: { opacity: 0, scale: 0.95 },\n          animate: { opacity: 1, scale: 1 },\n          transition: { duration: 0.3, ease: \"easeOut\" },\n          whileHover: { \n            scale: 1.02,\n            transition: { duration: 0.2 }\n          },\n          whileTap: { \n            scale: 0.98,\n            transition: { duration: 0.1 }\n          }\n        })}\n        role=\"button\"\n        tabIndex={0}\n        onKeyDown={(e) => {\n          if (e.key === 'Enter' || e.key === ' ') {\n            e.preventDefault();\n            handleClick(e as any);\n          }\n        }}\n        aria-label={`Browse ${category.name} products`}\n        style={{\n          WebkitTapHighlightColor: 'transparent',\n          WebkitTouchCallout: 'none',\n          WebkitUserSelect: 'none',\n          userSelect: 'none',\n          touchAction: 'manipulation',\n          position: 'relative',\n          zIndex: 1,\n          ...(isMobileDevice && {\n            opacity: 1,\n            transform: 'scale(1)'\n          })\n        }}\n      >\n        <",
       "tokens": 0,
@@ -9436,16 +8800,16 @@
       "secondFile": {
         "name": "components/marketplace/CategoryCard.tsx",
         "start": 50,
-        "end": 114,
+        "end": 92,
         "startLoc": {
           "line": 50,
           "column": 10,
           "position": 419
         },
         "endLoc": {
-          "line": 114,
+          "line": 92,
           "column": 2,
-          "position": 1128
+          "position": 777
         }
       }
     },
@@ -10376,12 +9740,12 @@
         "startLoc": {
           "line": 278,
           "column": 5,
-          "position": 2301
+          "position": 2322
         },
         "endLoc": {
           "line": 290,
           "column": 5,
-          "position": 2405
+          "position": 2426
         }
       }
     },
