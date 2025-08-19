@@ -114,23 +114,23 @@ export default function MarketplacePage() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
-    // Filter by listing kind based on tab
-    let kind = '';
+    // Filter by listing type based on tab (same as eatery page)
+    let category = '';
     switch (tab) {
-      case 'regular':
-        kind = 'regular';
+      case 'restaurant':
+        category = 'restaurant';
         break;
-      case 'vehicle':
-        kind = 'vehicle';
+      case 'bakery':
+        category = 'bakery';
         break;
-      case 'appliance':
-        kind = 'appliance';
+      case 'catering':
+        category = 'catering';
         break;
       default:
-        kind = '';
+        category = '';
     }
     
-    setFilters(prev => ({ ...prev, kind }));
+    setFilters(prev => ({ ...prev, category }));
     setCurrentPage(1);
     loadListings(1, false);
   };

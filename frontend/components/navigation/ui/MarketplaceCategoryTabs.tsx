@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, Car, Home, ShoppingBag } from 'lucide-react';
+import { Package, Car, Home, ShoppingBag, Utensils, Cake, ChefHat } from 'lucide-react';
 import React from 'react';
 
 interface MarketplaceCategoryTabsProps {
@@ -12,27 +12,27 @@ interface MarketplaceCategoryTabsProps {
 const MarketplaceCategoryTabs: React.FC<MarketplaceCategoryTabsProps> = ({ 
   activeTab, onTabChange, className = ''
 }) => {
-  // Marketplace-specific categories
+  // Use the same categories as the eatery page
   const categories = [
     {
       id: 'all',
-      label: 'All Items',
+      label: 'All',
       icon: ShoppingBag
     },
     {
-      id: 'regular',
-      label: 'Regular',
-      icon: Package
+      id: 'restaurant',
+      label: 'Restaurants',
+      icon: Utensils
     },
     {
-      id: 'vehicle',
-      label: 'Vehicles',
-      icon: Car
+      id: 'bakery',
+      label: 'Bakeries',
+      icon: Cake
     },
     {
-      id: 'appliance',
-      label: 'Appliances',
-      icon: Home
+      id: 'catering',
+      label: 'Catering',
+      icon: ChefHat
     }
   ];
 
