@@ -2472,7 +2472,7 @@ div[class*="specials-dynamic-grid"] {
     }
     
     .restaurant-card .price-text {
-      margin-right: 0.25rem !important;
+      margin-right: 0.5rem !important;
     }
     
     .restaurant-card h3 {
@@ -2482,5 +2482,10 @@ div[class*="specials-dynamic-grid"] {
     /* Ensure proper image aspect ratio on mobile */
     .restaurant-card .aspect-\[5\/4\] {
       aspect-ratio: 5/4 !important;
+    }
+    
+    /* Fix mobile layout spacing */
+    .restaurant-card .flex.items-center.justify-between {
+      gap: 0.5rem !important;
     }
   }

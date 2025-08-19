@@ -275,21 +275,21 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
       {/* Text Content Container - Tighter spacing for mobile */}
       <motion.div 
-        className={`bg-transparent ${isMobileDevice ? 'px-0.5 pt-1 pb-0.5' : 'p-1'}`}
+        className={`bg-transparent ${isMobileDevice ? 'px-1 pt-2 pb-1' : 'p-1'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Compact for mobile */}
-        <div className={`flex items-center w-full min-w-0 ${isMobileDevice ? 'h-6 mb-0.5' : 'h-8 mb-0.5'}`}>
+        <div className={`flex items-center w-full min-w-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-0.5'}`}>
           <h3 className={`font-bold text-gray-900 leading-tight truncate w-full min-w-0 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
         {/* Price Range and Rating - Compact spacing for mobile */}
-        <div className={`flex items-center justify-between min-w-0 w-full ${isMobileDevice ? 'gap-1' : ''}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs mr-1' : 'text-xs mr-2'}`} title={formatPriceRange()}>
+        <div className={`flex items-center justify-between min-w-0 w-full ${isMobileDevice ? 'gap-2' : ''}`}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs mr-2' : 'text-xs mr-2'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
