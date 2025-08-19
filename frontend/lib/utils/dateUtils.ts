@@ -109,7 +109,9 @@ const parseDateInput = (input: string | number | Date): Date | null => {
  */
 export const formatRelativeTime = (input: string | number | Date): string => {
   const date = parseDateInput(input);
-  if (!date) return 'Invalid Date';
+  if (!date) {
+    return 'Invalid Date';
+  }
 
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);

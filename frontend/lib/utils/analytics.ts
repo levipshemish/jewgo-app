@@ -43,7 +43,7 @@ class Analytics {
     if (process.env.NODE_ENV === 'production') {
       this.sendToAnalyticsService(analyticsEvent);
     } else {
-      console.log('Analytics Event:', analyticsEvent);
+      // Development logging removed for production readiness
     }
   }
 
