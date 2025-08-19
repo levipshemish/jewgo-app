@@ -104,7 +104,7 @@ class MarketplaceServiceV4(BaseService):
                 SELECT id, name, title, description, price, category, subcategory, 
                        vendor_name, product_image, location, city, state, 
                        kosher_agency, kosher_level, rating, stock, is_available, 
-                       is_featured, is_on_sale, discount_percentage, views, 
+                       is_featured, is_on_sale, discount_percentage, 
                        created_at, updated_at
                 FROM marketplace WHERE 1=1
             """
@@ -191,9 +191,9 @@ class MarketplaceServiceV4(BaseService):
                         "is_featured": product[17],
                         "is_on_sale": product[18],
                         "discount_percentage": float(product[19]) if product[19] is not None else 0.0,
-                        "views": product[20] or 0,
-                        "created_at": product[21].isoformat() if product[21] else None,
-                        "updated_at": product[22].isoformat() if product[22] else None
+                        "views": 0,  # Default value since views column might not exist
+                        "created_at": product[20].isoformat() if product[20] else None,
+                        "updated_at": product[21].isoformat() if product[21] else None
                     }
                     product_list.append(product_dict)
                 except (ValueError, TypeError, IndexError) as e:
@@ -235,7 +235,7 @@ class MarketplaceServiceV4(BaseService):
                 SELECT id, name, title, description, price, category, subcategory, 
                        vendor_name, product_image, location, city, state, 
                        kosher_agency, kosher_level, rating, stock, is_available, 
-                       is_featured, is_on_sale, discount_percentage, views, 
+                       is_featured, is_on_sale, discount_percentage, 
                        created_at, updated_at
                 FROM marketplace WHERE id = %s
             """
@@ -252,41 +252,41 @@ class MarketplaceServiceV4(BaseService):
                     "product": None
                 }
             
-            try:
-                product_dict = {
-                    "id": str(product[0]),
-                    "name": product[1],
-                    "title": product[2],
-                    "description": product[3],
-                    "price": float(product[4]) if product[4] is not None else 0.0,
-                    "category": product[5],
-                    "subcategory": product[6],
-                    "vendor_name": product[7],
-                    "product_image": product[8],
-                    "images": [product[8]] if product[8] else [],
-                    "thumbnail": product[8],
-                    "location": product[9],
-                    "city": product[10],
-                    "state": product[11],
-                    "kosher_agency": product[12],
-                    "kosher_level": product[13],
-                    "rating": float(product[14]) if product[14] is not None else 0.0,
-                    "stock": product[15] or 0,
-                    "is_available": product[16],
-                    "is_featured": product[17],
-                    "is_on_sale": product[18],
-                    "discount_percentage": float(product[19]) if product[19] is not None else 0.0,
-                    "views": product[20] or 0,
-                    "created_at": product[21].isoformat() if product[21] else None,
-                    "updated_at": product[22].isoformat() if product[22] else None
-                }
-            except (ValueError, TypeError, IndexError) as e:
-                self.logger.error(f"Error processing product {product_id}: {str(e)}")
-                return {
-                    "success": False,
-                    "error": "Failed to process product data",
-                    "product": None
-                }
+                try:
+                    product_dict = {
+                        "id": str(product[0]),
+                        "name": product[1],
+                        "title": product[2],
+                        "description": product[3],
+                        "price": float(product[4]) if product[4] is not None else 0.0,
+                        "category": product[5],
+                        "subcategory": product[6],
+                        "vendor_name": product[7],
+                        "product_image": product[8],
+                        "images": [product[8]] if product[8] else [],
+                        "thumbnail": product[8],
+                        "location": product[9],
+                        "city": product[10],
+                        "state": product[11],
+                        "kosher_agency": product[12],
+                        "kosher_level": product[13],
+                        "rating": float(product[14]) if product[14] is not None else 0.0,
+                        "stock": product[15] or 0,
+                        "is_available": product[16],
+                        "is_featured": product[17],
+                        "is_on_sale": product[18],
+                        "discount_percentage": float(product[19]) if product[19] is not None else 0.0,
+                        "views": 0,  # Default value since views column might not exist
+                        "created_at": product[20].isoformat() if product[20] else None,
+                        "updated_at": product[21].isoformat() if product[21] else None
+                    }
+                except (ValueError, TypeError, IndexError) as e:
+                    self.logger.error(f"Error processing product {product_id}: {str(e)}")
+                    return {
+                        "success": False,
+                        "error": "Failed to process product data",
+                        "product": None
+                    }
             
             return {
                 "success": True,
