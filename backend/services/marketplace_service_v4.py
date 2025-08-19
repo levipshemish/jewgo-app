@@ -17,18 +17,17 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from utils.logging_config import get_logger
+from .base_service import BaseService
 
 logger = get_logger(__name__)
 
 
-class MarketplaceServiceV4:
+class MarketplaceServiceV4(BaseService):
     """Marketplace service for managing listings and categories."""
 
     def __init__(self, db_manager=None, cache_manager=None, config=None):
         """Initialize the marketplace service."""
-        self.db_manager = db_manager
-        self.cache_manager = cache_manager
-        self.config = config
+        super().__init__(db_manager=db_manager, cache_manager=cache_manager, config=config)
         
         logger.info("MarketplaceServiceV4 (Streamlined) initialized")
 
