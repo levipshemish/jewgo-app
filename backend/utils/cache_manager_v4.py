@@ -286,6 +286,64 @@ class CacheManagerV4:
         
         return self.delete_pattern(pattern)
 
+    def get_cached_restaurant_details(self, restaurant_id: int) -> Optional[Dict[str, Any]]:
+        """Get cached restaurant details by ID.
+        
+        Args:
+            restaurant_id: Restaurant ID to retrieve from cache
+            
+        Returns:
+            Cached restaurant data or None if not found
+        """
+        if not self.enable_cache:
+            return None
+            
+        try:
+            cache_key = f"{self.cache_prefix}restaurant:{restaurant_id}:details"
+            cached_data = self.get(cache_key)
+            
+            if cached_data:
+                logger.info(f"Cache hit for restaurant {restaurant_id}")
+                return cached_data
+            else:
+                logger.info(f"Cache miss for restaurant {restaurant_id}")
+                return None
+                
+        except Exception as e:
+            self._handle_cache_error("get_cached_restaurant_details", e)
+            return None
+
+    def cache_restaurant_details(self, restaurant_id: int, data: Dict[str, Any], ttl: Optional[int] = None) -> bool:
+        """Cache restaurant details.
+        
+        Args:
+            restaurant_id: Restaurant ID to cache
+            data: Restaurant data to cache
+            ttl: Time to live in seconds (defaults to 1800 = 30 minutes)
+            
+        Returns:
+            True if successfully cached, False otherwise
+        """
+        if not self.enable_cache:
+            return False
+            
+        try:
+            cache_key = f"{self.cache_prefix}restaurant:{restaurant_id}:details"
+            cache_ttl = ttl or 1800  # Default 30 minutes
+            
+            success = self.set(cache_key, data, cache_ttl)
+            
+            if success:
+                logger.info(f"Successfully cached restaurant {restaurant_id} for {cache_ttl}s")
+            else:
+                logger.warning(f"Failed to cache restaurant {restaurant_id}")
+                
+            return success
+            
+        except Exception as e:
+            self._handle_cache_error("cache_restaurant_details", e)
+            return False
+
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         stats = {
