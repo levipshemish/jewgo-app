@@ -569,6 +569,32 @@ class EnhancedDatabaseManager:
         return self.SessionLocal()
 
     @contextmanager
+    def get_connection(self):
+        """Get a raw database connection for direct SQL queries.
+        
+        This method provides a psycopg2 connection for services that need
+        to execute raw SQL queries instead of using SQLAlchemy ORM.
+        
+        Yields:
+            psycopg2 connection object
+        """
+        if not self.engine:
+            # Attempt a lazy connect so callers don't have to remember connect()
+            connected = self.connect()
+            if not connected or not self.engine:
+                msg = "Database not connected. Call connect() first."
+                raise RuntimeError(msg)
+        
+        connection = self.engine.raw_connection()
+        try:
+            yield connection
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+    @contextmanager
     def session_scope(self):
         """Context manager for database sessions with proper error handling."""
         session = self.get_session()
