@@ -32,17 +32,27 @@ async function migrateUsers(): Promise<MigrationResult[]> {
     
     for (const user of users) {
       try {
+        if (!user.email) {
+          console.log(`⚠️  Skipping user with no email: ${user.id}`);
+          results.push({
+            success: false,
+            email: 'no-email',
+            error: 'User has no email address'
+          });
+          continue;
+        }
+        
         console.log(`🔄 Migrating user: ${user.email}`);
         
         // Check if user already exists in Supabase
         const { data: existingUser } = await supabase.auth.admin.listUsers();
-        const userExists = existingUser.users.find((u: any) => u.email === user.email);
+        const userExists = existingUser.users.find((u: any) => u.email === user.email!);
         
         if (userExists) {
           console.log(`⚠️  User ${user.email} already exists in Supabase, skipping...`);
           results.push({
             success: true,
-            email: user.email,
+            email: user.email!,
             supabaseUserId: userExists.id
           });
           continue;
@@ -50,7 +60,7 @@ async function migrateUsers(): Promise<MigrationResult[]> {
         
         // Create user in Supabase Auth
         const { data, error } = await supabase.auth.admin.createUser({
-          email: user.email,
+          email: user.email!,
           password: `temporary-password-${  Math.random().toString(36).substring(7)}`, // User will reset this
           email_confirm: true,
           user_metadata: { 
@@ -64,7 +74,7 @@ async function migrateUsers(): Promise<MigrationResult[]> {
           console.error(`❌ Failed to migrate user ${user.email}:`, error.message);
           results.push({
             success: false,
-            email: user.email,
+            email: user.email!,
             error: error.message
           });
           continue;
@@ -83,7 +93,7 @@ async function migrateUsers(): Promise<MigrationResult[]> {
         console.log(`✅ Successfully migrated user: ${user.email}`);
         results.push({
           success: true,
-          email: user.email,
+          email: user.email!,
           supabaseUserId: data.user.id
         });
         
@@ -91,7 +101,7 @@ async function migrateUsers(): Promise<MigrationResult[]> {
         console.error(`❌ Error migrating user ${user.email}:`, err);
         results.push({
           success: false,
-          email: user.email,
+          email: user.email!,
           error: err instanceof Error ? err.message : 'Unknown error'
         });
       }

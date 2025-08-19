@@ -19,7 +19,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const router = useRouter();
 

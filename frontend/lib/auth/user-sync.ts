@@ -33,9 +33,9 @@ export async function syncSupabaseUserToNeon(supabaseUser: any): Promise<SyncedU
 
               return {
           id: updatedUser.id,
-          email: updatedUser.email,
-          name: updatedUser.name,
-          avatar_url: updatedUser.image,
+          email: updatedUser.email ?? '',
+          name: updatedUser.name ?? '',
+          avatar_url: updatedUser.image ?? undefined,
           isSuperAdmin: updatedUser.isSuperAdmin,
           createdAt: updatedUser.createdAt,
           updatedAt: updatedUser.updatedAt,
@@ -44,7 +44,7 @@ export async function syncSupabaseUserToNeon(supabaseUser: any): Promise<SyncedU
       // Create new user in Neon
       const newUser = await prisma.user.create({
         data: {
-          email: supabaseUser.email,
+          email: supabaseUser.email ?? '',
           name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name,
           image: supabaseUser.user_metadata?.avatar_url,
           isSuperAdmin: false, // Default to false, can be updated manually
@@ -53,9 +53,9 @@ export async function syncSupabaseUserToNeon(supabaseUser: any): Promise<SyncedU
 
       return {
         id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        avatar_url: newUser.image,
+        email: newUser.email ?? '',
+        name: newUser.name ?? '',
+        avatar_url: newUser.image ?? undefined,
         isSuperAdmin: newUser.isSuperAdmin,
         createdAt: newUser.createdAt,
         updatedAt: newUser.updatedAt,
@@ -82,9 +82,9 @@ export async function getNeonUserFromSupabase(supabaseUser: any): Promise<Synced
 
                   return {
           id: neonUser.id,
-          email: neonUser.email,
-          name: neonUser.name,
-          avatar_url: neonUser.image,
+          email: neonUser.email ?? '',
+          name: neonUser.name ?? '',
+          avatar_url: neonUser.image ?? undefined,
           isSuperAdmin: neonUser.isSuperAdmin,
           createdAt: neonUser.createdAt,
           updatedAt: neonUser.updatedAt,
@@ -122,9 +122,9 @@ export async function getAllNeonUsers(): Promise<SyncedUser[]> {
 
     return users.map(user => ({
       id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.image,
+      email: user.email ?? '',
+      name: user.name ?? '',
+      avatar_url: user.image ?? undefined,
       isSuperAdmin: user.isSuperAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -150,9 +150,9 @@ export async function updateUserAdminStatus(userId: string, isSuperAdmin: boolea
 
     return {
       id: updatedUser.id,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      avatar_url: updatedUser.image,
+      email: updatedUser.email ?? '',
+      name: updatedUser.name ?? '',
+      avatar_url: updatedUser.image ?? undefined,
       isSuperAdmin: updatedUser.isSuperAdmin,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt,

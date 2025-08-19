@@ -262,7 +262,7 @@ export default function UnifiedLiveMapClient() {
         setLoadingStage('complete');
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
       

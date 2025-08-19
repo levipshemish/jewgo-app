@@ -122,7 +122,7 @@ class MarketplaceServiceV4:
             params.extend([limit, offset])
             
             # Execute query
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_session() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(query, params)
                     listings = cursor.fetchall()
@@ -187,7 +187,7 @@ class MarketplaceServiceV4:
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_session() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         SELECT l.*, 
@@ -288,7 +288,7 @@ class MarketplaceServiceV4:
                     'error': 'Borrow listings must include loan_terms'
                 }
             
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_session() as conn:
                 with conn.cursor() as cursor:
                     # Insert listing
                     cursor.execute("""
@@ -345,7 +345,7 @@ class MarketplaceServiceV4:
     def get_categories(self) -> Dict[str, Any]:
         """Get marketplace categories and subcategories."""
         try:
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_session() as conn:
                 with conn.cursor() as cursor:
                     # Get categories
                     cursor.execute("""

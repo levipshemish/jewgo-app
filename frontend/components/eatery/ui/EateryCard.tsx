@@ -29,7 +29,14 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
     address: restaurant.address,
     kosher_category: restaurant.kosher_category,
     listing_type: restaurant.listing_type,
-    ...restaurant // Include any additional properties
+    // Include any additional properties that don't conflict
+    ...Object.fromEntries(
+      Object.entries(restaurant).filter(([key]) => 
+        !['id', 'name', 'description', 'image_url', 'rating', 'star_rating', 
+          'google_rating', 'price_range', 'min_avg_meal_cost', 'max_avg_meal_cost',
+          'address', 'kosher_category', 'listing_type'].includes(key)
+      )
+    )
   };
 
   return (

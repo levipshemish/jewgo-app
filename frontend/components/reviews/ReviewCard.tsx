@@ -121,7 +121,7 @@ export default function ReviewCard({
     }
   };
 
-  const isOwner = session?.user?.email === review.user_id;
+  const isOwner = (session as any)?.user?.email === review.user_id;
   const canEdit = isOwner && review.status === 'pending';
   const canDelete = isOwner;
 

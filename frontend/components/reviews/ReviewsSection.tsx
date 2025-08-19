@@ -59,7 +59,7 @@ export default function ReviewsSection({
   restaurantId, restaurantName, restaurant, className = ''
 }: ReviewsSectionProps) {
   // NextAuth removed - using Supabase only
-  const session = null; // TODO: Replace with Supabase session
+  const session: { user?: { email?: string; name?: string } } | null = null; // TODO: Replace with Supabase session
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -215,9 +215,9 @@ export default function ReviewsSection({
         },
         body: JSON.stringify({
           ...reviewData,
-          userId: session?.user?.email || 'anonymous',
-          userName: session?.user?.name || 'Anonymous',
-          userEmail: session?.user?.email || '',
+          userId: 'anonymous',
+          userName: 'Anonymous',
+          userEmail: '',
         }),
       });
 
@@ -357,7 +357,7 @@ export default function ReviewsSection({
     ? combinedReviews.reduce((sum, review) => sum + review.rating, 0) / combinedReviews.length 
     : 0;
 
-  const userReview = userReviews.find(review => review.user_id === session?.user?.email);
+  const userReview = userReviews.find(review => review.user_id === (session as any)?.user?.email);
 
   // Using unified StarRating component
 
@@ -517,7 +517,7 @@ export default function ReviewsSection({
           <div className="text-center py-8">
             <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600">No reviews yet</p>
-            {session && (
+            {(session as any) && (
               <p className="text-sm text-gray-500 mt-1">
                 Be the first to review {restaurantName}
               </p>

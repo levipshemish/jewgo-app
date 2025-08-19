@@ -28,7 +28,7 @@ export async function createSupabaseServerClient() {
   let key = 'placeholder-key';
   
   if (isValidSupabaseUrl(supabaseUrl) && supabaseAnonKey) {
-    url = supabaseUrl;
+    url = supabaseUrl!; // We know this is not undefined due to the check above
     key = supabaseAnonKey;
   } else {
     // console.warn('Supabase environment variables not configured. Using fallback client.');

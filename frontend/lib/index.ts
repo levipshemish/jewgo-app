@@ -21,14 +21,15 @@ export * from './filters/urlSync';
 export * from './hooks/useOptimizedFilters';
 export * from './hooks/useFilterOptions';
 export * from './hooks/useCssLoader';
-export * from '../hooks/useAdvancedFilters';
+
 
 // Type exports
-export * from '../types/index';
+export * from './types/restaurant';
+export * from './types/marketplace';
 
 // Utility exports
 export * from './utils/dateUtils';
-// export * from '../utils/analytics'; // TEMPORARY: Disabled due to type issues. Cleanup by: 2025-08-26
+export * from './utils/analytics';
 export * from './utils/admin';
 export * from './utils/apiRouteUtils';
 export * from './utils/componentUtils';

@@ -219,8 +219,8 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                 {/* Price and Views - Swapped positions to match eatery */}
                 <div className="flex items-center justify-between min-w-0">
                   <span className="text-xs text-gray-500 font-normal truncate flex-1 mr-2">
-                    {product.price === 0 ? 'Free' : `$${product.price}`}
-                    {product.originalPrice && product.originalPrice > product.price && (
+                    {product.price === 0 ? 'Free' : `$${product.price || 0}`}
+                    {product.originalPrice && (product.price ?? 0) && product.originalPrice > (product.price ?? 0) && (
                       <span className="text-gray-400 line-through ml-1">${product.originalPrice}</span>
                     )}
                   </span>

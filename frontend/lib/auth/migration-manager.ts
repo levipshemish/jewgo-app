@@ -61,7 +61,7 @@ export class MigrationManager {
       migratedUsers,
       failedMigrations,
       pendingMigrations,
-      lastMigrationDate: lastMigration?.migratedAt
+      lastMigrationDate: lastMigration?.migratedAt ?? undefined
     };
   }
 
@@ -110,7 +110,15 @@ export class MigrationManager {
 
     for (const migration of pendingMigrations) {
       try {
-        await this.migrateUser(migration.user);
+        if (!migration.user.email) {
+          throw new Error('User email is required for migration');
+        }
+        await this.migrateUser({
+          id: migration.user.id,
+          email: migration.user.email,
+          name: migration.user.name ?? undefined,
+          image: migration.user.image ?? undefined
+        });
         
         await prisma.migrationLog.update({
           where: { id: migration.id },
@@ -221,7 +229,15 @@ export class MigrationManager {
 
     for (const migration of failedMigrations) {
       try {
-        await this.migrateUser(migration.user);
+        if (!migration.user.email) {
+          throw new Error('User email is required for migration');
+        }
+        await this.migrateUser({
+          id: migration.user.id,
+          email: migration.user.email,
+          name: migration.user.name ?? undefined,
+          image: migration.user.image ?? undefined
+        });
         
         await prisma.migrationLog.update({
           where: { id: migration.id },

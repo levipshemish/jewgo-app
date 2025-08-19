@@ -62,7 +62,7 @@ export default function MarketplacePage() {
 
       const response = await fetchMarketplaceListings(params);
       
-      if (response.success) {
+      if (response.success && response.data?.listings) {
         const newListings = response.data.listings;
         
         if (append) {

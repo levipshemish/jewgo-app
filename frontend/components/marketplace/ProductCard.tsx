@@ -29,7 +29,12 @@ export default function ProductCard({
 		price: product.price,
 		currency: product.currency,
 		location: product.city ? `${product.city}${product.region ? `, ${product.region}` : ''}` : undefined,
-		...product // Include any additional properties
+		// Include any additional properties that don't conflict
+		...Object.fromEntries(
+			Object.entries(product).filter(([key]) => 
+				!['id', 'name', 'description', 'images', 'thumbnail', 'price', 'currency', 'location'].includes(key)
+			)
+		)
 	};
 
 	// Create wrapper functions to convert CardData back to MarketplaceListing
