@@ -135,7 +135,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full restaurant-image-carousel">
       <div 
         ref={carouselRef}
         className={`relative dynamic-hero bg-gray-200 ${className}`}

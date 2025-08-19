@@ -1965,6 +1965,56 @@ div[class*="specials-dynamic-grid"] {
     border-top-right-radius: 32px;
     z-index: -1;
   }
+  
+  /* Restaurant hero section - ensure it doesn't interfere with rounded corners */
+  .restaurant-hero-section {
+    position: relative !important;
+    z-index: 1 !important;
+    overflow: visible !important;
+  }
+  
+  /* Force rounded corners to be visible by ensuring proper layering */
+  .restaurant-details-card {
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+  }
+  
+  /* Ensure the white card background extends properly */
+  .restaurant-details-card::after {
+    content: '';
+    position: absolute;
+    top: -32px;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: white;
+    z-index: -2;
+  }
+  
+  /* Restaurant image carousel - ensure it doesn't clip rounded corners */
+  .restaurant-image-carousel {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  .restaurant-image-carousel .relative {
+    overflow: visible !important;
+  }
+  
+  /* Force the rounded corners to be visible with multiple approaches */
+  .restaurant-details-card {
+    border-top-left-radius: 32px !important;
+    border-top-right-radius: 32px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    z-index: 10 !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    -webkit-transform: translateZ(0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+  }
   /* Ensure all clickable elements are properly touchable */
   button, a, [role="button"], [onClick], [data-clickable="true"] {
     cursor: pointer !important;

@@ -366,7 +366,7 @@ const RestaurantDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Image Carousel Section */}
-      <div className="relative">
+      <div className="relative restaurant-hero-section">
         <ImageCarousel
           images={getRestaurantImages(restaurant)}
           restaurantName={restaurant.name}
@@ -452,7 +452,13 @@ const RestaurantDetailPage: React.FC = () => {
       </div>
 
       {/* Restaurant Details Section - White Card with flush overlap effect */}
-      <div className="bg-white rounded-t-[32px] restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg">
+      <div className="bg-white rounded-t-[32px] restaurant-details-card relative -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16 xl:-mt-20 z-10 shadow-lg" style={{
+        borderTopLeftRadius: '32px',
+        borderTopRightRadius: '32px',
+        overflow: 'hidden',
+        position: 'relative',
+        zIndex: 10
+      }}>
         <div
           className="restaurant-dynamic-layout pt-4 sm:pt-6 pb-24 max-w-screen-md mx-auto"
           style={{
