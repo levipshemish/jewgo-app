@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { BottomNavigation } from '@/components/navigation/ui';
-import MarketplaceCategoryTabs from '@/components/navigation/ui/MarketplaceCategoryTabs';
+import { CategoryTabs } from '@/components/navigation/ui';
 
 import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
@@ -19,7 +19,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('marketplace');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -114,25 +114,26 @@ export default function MarketplacePage() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
-    // Filter by listing type based on tab (same as eatery page)
-    let category = '';
+    // Handle navigation to different pages based on the selected tab
     switch (tab) {
-      case 'restaurant':
-        category = 'restaurant';
+      case 'mikvahs':
+        router.push('/mikvahs');
         break;
-      case 'bakery':
-        category = 'bakery';
+      case 'shuls':
+        router.push('/shuls');
         break;
-      case 'catering':
-        category = 'catering';
+      case 'eatery':
+        router.push('/eatery');
+        break;
+      case 'stores':
+        router.push('/stores');
+        break;
+      case 'marketplace':
+        // Already on marketplace page, just update the tab
         break;
       default:
-        category = '';
+        break;
     }
-    
-    setFilters(prev => ({ ...prev, category }));
-    setCurrentPage(1);
-    loadListings(1, false);
   };
 
   const handleListingClick = (listing: MarketplaceListing) => {
@@ -200,7 +201,7 @@ export default function MarketplacePage() {
 
       {/* Navigation Tabs */}
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        <MarketplaceCategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
       {/* Action Buttons */}
