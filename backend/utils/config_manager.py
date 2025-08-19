@@ -188,7 +188,11 @@ class ConfigManager:
     @classmethod
     def get_database_url(cls) -> Optional[str]:
         """Get database URL."""
-        return cls.get_env_var("DATABASE_URL")
+        url = cls.get_env_var("DATABASE_URL")
+        if url and url.startswith('postgresql://'):
+            # Convert to psycopg format for compatibility with psycopg[binary]
+            url = url.replace('postgresql://', 'postgresql+psycopg://')
+        return url
     
     @classmethod
     def get_test_database_url(cls) -> Optional[str]:
