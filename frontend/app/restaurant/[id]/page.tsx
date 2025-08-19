@@ -32,39 +32,58 @@ const RestaurantDetailPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
-
+  const [retryCount, setRetryCount] = useState(0);
 
   // Intersection observers for animations
   const { ref: specialsSectionRef } = useIntersectionObserver();
 
-  useEffect(() => {
-    const fetchRestaurant = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const restaurantId = parseInt(params?.['id'] as string);
-        if (isNaN(restaurantId)) {
-          throw new Error('Invalid restaurant ID');
-        }
-        
-        const data = await getRestaurant(restaurantId);
-        if (data) {
-          setRestaurant(data);
-          
-          // Check if restaurant is in favorites
-          const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-          setIsFavorite(favorites.includes(data.id));
-        } else {
-          throw new Error('Restaurant not found');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load restaurant');
-      } finally {
-        setLoading(false);
+  const fetchRestaurant = async (retryAttempt = 0) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const restaurantId = parseInt(params?.['id'] as string);
+      if (isNaN(restaurantId)) {
+        throw new Error('Invalid restaurant ID');
       }
-    };
+      
+      const data = await getRestaurant(restaurantId);
+      if (data) {
+        setRestaurant(data);
+        
+        // Check if restaurant is in favorites
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        setIsFavorite(favorites.includes(data.id));
+      } else {
+        throw new Error('Restaurant not found');
+      }
+    } catch (err: any) {
+      // Handle specific error types
+      if (err.status === 429 && retryAttempt < 3) {
+        // Retry with exponential backoff for rate limiting
+        const delay = Math.min(2000 * Math.pow(2, retryAttempt), 10000);
+        setError(`Service temporarily unavailable. Retrying in ${Math.round(delay / 1000)} seconds...`);
+        
+        setTimeout(() => {
+          setRetryCount(retryAttempt + 1);
+          fetchRestaurant(retryAttempt + 1);
+        }, delay);
+        return;
+      } else if (err.status === 429) {
+        setError('Service temporarily unavailable due to high traffic. Please try again in a few moments.');
+      } else if (err.status === 404) {
+        setError('Restaurant not found');
+      } else if (err.message?.includes('timeout')) {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load restaurant');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (params?.['id']) {
       fetchRestaurant();
     }

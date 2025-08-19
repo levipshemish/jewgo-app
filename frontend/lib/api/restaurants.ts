@@ -58,11 +58,6 @@ export class RestaurantsAPI {
     retries: number = 3,
     timeout: number = process.env.NODE_ENV === 'production' ? 30000 : 12000 // Increased timeout for production
   ): Promise<T> {
-    // Always route restaurant listing requests through Next.js API to apply client-side filtering
-    // and proxy behavior consistently across environments.
-    const url = endpoint.startsWith('/api/restaurants')
-      ? endpoint
-      : `${API_BASE_URL}${endpoint}`;
     
     const defaultHeaders = {
       'Content-Type': 'application/json',
@@ -77,19 +72,16 @@ export class RestaurantsAPI {
       },
     };
 
+    const url = `${API_BASE_URL}${endpoint}`;
+
     for (let attempt = 1; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, timeout);
+      
       try {
-        // On first attempt, try to wake up the backend if it's the main restaurants endpoint
-        if (attempt === 1 && endpoint.includes('/api/restaurants')) {
-          await this.wakeUpBackend();
-        }
-        
-        // Create AbortController for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, timeout);
-        
         const response = await fetch(url, {
           ...config,
           signal: controller.signal
@@ -109,8 +101,20 @@ export class RestaurantsAPI {
             throw error;
           }
           
+          // For 429 errors, implement exponential backoff with longer delays
+          if (response.status === 429) {
+            console.warn(`Rate limited (429) on attempt ${attempt}/${retries}`);
+            if (attempt < retries) {
+              // Longer delay for rate limiting: 2^attempt seconds + random jitter
+              const delay = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 2000, 10000);
+              console.log(`Waiting ${Math.round(delay)}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          }
+          
           if (error.retryable && attempt < retries) {
-            // Exponential backoff with jitter
+            // Exponential backoff with jitter for other retryable errors
             const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
@@ -124,38 +128,33 @@ export class RestaurantsAPI {
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
           return data;
-        } else {
-          throw new Error('Invalid response format - expected JSON');
         }
-      } catch (error) {
-        // // console.error(`API request failed (attempt ${attempt}/${retries}):`, error);
         
-        // Handle timeout and abort errors specifically
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            // // console.error(`Request timed out after ${timeout}ms`);
-            if (attempt === retries) {
-              throw new Error(`Request timed out after ${timeout}ms - the backend server may be down or overloaded`);
-            }
-          } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            // // console.error('Network error - possible CORS or connectivity issue');
-            if (attempt === retries) {
-              throw new Error('Network error - unable to connect to backend service');
-            }
+        // Handle non-JSON responses
+        const text = await response.text();
+        return text as T;
+        
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+          console.error(`Request timed out after ${timeout}ms`);
+          if (attempt < retries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
           }
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+          console.error('Network error - possible CORS or connectivity issue');
         }
         
         if (attempt === retries) {
           throw error;
         }
-        
-        // Exponential backoff with jitter for retries
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
-        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
-    throw new Error('All retry attempts failed');
+    throw new Error('Max retries exceeded');
   }
 
   static async fetchRestaurants(limit: number = 1000, queryParams?: string): Promise<RestaurantsResponse> {
