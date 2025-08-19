@@ -1601,18 +1601,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             logger.info(f"Debug: cached_result type: {type(cached_result)}")
             logger.info(f"Debug: cached_result is None: {cached_result is None}")
 
-            if cached_result:
-                logger.info(f"Debug: cache manager methods: {[m for m in dir(cached_result) if 'restaurant' in m.lower()]}")
-                try:
-                    cached_data = cached_result.get_cached_restaurant_details(restaurant_id)
-                    if cached_data:
-                        logger.info(
-                            "Serving restaurant from cache", restaurant_id=restaurant_id
-                        )
-                        return jsonify(cached_data), 200
-                except Exception as cache_error:
-                    logger.error(f"Cache error: {cache_error}")
-                    # Continue without cache
+            # Temporarily disable cache to debug database issue
+            cached_result = None
+            logger.info("Debug: Cache temporarily disabled for debugging")
 
             # Get database manager instance
             db_manager = deps.get("get_db_manager")()
