@@ -16,11 +16,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            frontend/pnpm-lock.yaml
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 7.33.7
 
       - name: Install frontend dependencies
         run: |
@@ -35,17 +38,17 @@ jobs:
       - name: Run TypeScript strict check
         run: |
           cd frontend
-          npm run type-check
+          pnpm run type-check
 
       - name: Run ESLint check
         run: |
           cd frontend
-          npm run lint
+          pnpm run lint
 
       - name: Run pre-merge guard
         run: |
           cd frontend
-          npm run build
+          pnpm run build
 
       - name: Check schema drift (if DB URL available)
         if: env.DATABASE_URL
