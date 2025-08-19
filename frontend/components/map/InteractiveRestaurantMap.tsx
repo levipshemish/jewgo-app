@@ -60,8 +60,8 @@ export default function InteractiveRestaurantMap({
   
   const [mapError, setMapError] = useState<string | null>(null);
   const [apiLoaded, setApiLoaded] = useState(false);
-  const [isLoadingMarkers, setIsLoadingMarkers] = useState(false);
-  const [markerError, setMarkerError] = useState<string | null>(null);
+  const [isLoadingMarkers] = useState(false);
+  const [markerError] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notification | null>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -109,7 +109,7 @@ export default function InteractiveRestaurantMap({
   const {
     markersRef,
     markersMapRef,
-    clustererRef,
+    clustererRef: _clustererRef,
     getRestaurantKey,
     cleanupMarkers,
     createMarker,
@@ -171,7 +171,7 @@ export default function InteractiveRestaurantMap({
       requestAnimationFrame(() => {
       setVisibleCount(count);
       });
-    } catch (_) {
+    } catch {
       // ignore
     }
   }, [isLoadingMarkers, markerError]);

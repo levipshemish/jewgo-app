@@ -784,11 +784,11 @@ def get_marketplace_listings():
     try:
         # Get query parameters
         limit = min(int(request.args.get('limit', 50)), 1000)
-        offset = min(int(request.args.get('offset', 0)), 0)
+        offset = max(int(request.args.get('offset', 0)), 0)
         search = request.args.get('search')
         category = request.args.get('category')
         subcategory = request.args.get('subcategory')
-        listing_type = request.args.get('type')  # sale, free, borrow, gemach
+        kind = request.args.get('kind')  # regular, vehicle, appliance
         condition = request.args.get('condition')
         min_price = request.args.get('min_price', type=int)
         max_price = request.args.get('max_price', type=int)
@@ -799,152 +799,33 @@ def get_marketplace_listings():
         lng = request.args.get('lng', type=float)
         radius = min(request.args.get('radius', 10, type=float), 1000)  # miles
         
-        # TEMPORARY: Check if marketplace tables exist
-        try:
-            # Test if listings table exists
-            with get_service_dependencies()[0] as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
-        except Exception as table_error:
-            logger.warning(f"Marketplace tables not found: {table_error}")
-            # Return empty response when tables don't exist
-            return success_response({
-                'success': True,
-                'data': {
-                    'listings': [],
-                    'total': 0,
-                    'limit': limit,
-                    'offset': offset
-                },
-                'message': 'Marketplace is not yet available'
-            }), 200
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
         
-        # Build query
-        query = """
-            SELECT l.*, 
-                   c.name as category_name,
-                   sc.name as subcategory_name,
-                   u.display_name as seller_name,
-                   g.name as gemach_name
-            FROM listings l
-            LEFT JOIN categories c ON l.category_id = c.id
-            LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
-            LEFT JOIN users u ON l.seller_user_id = u.id
-            LEFT JOIN gemachs g ON l.seller_gemach_id = g.id
-            WHERE l.status = %s
-        """
-        params = [status]
+        result = service.get_listings(
+            limit=limit,
+            offset=offset,
+            search=search,
+            category=category,
+            subcategory=subcategory,
+            kind=kind,
+            condition=condition,
+            min_price=min_price,
+            max_price=max_price,
+            city=city,
+            region=region,
+            status=status,
+            lat=lat,
+            lng=lng,
+            radius=radius
+        )
         
-        # Add filters
-        if search:
-            query += " AND (l.title ILIKE %s OR l.description ILIKE %s)"
-            params.extend([f'%{search}%', f'%{search}%'])
-        
-        if category:
-            query += " AND c.slug = %s"
-            params.append(category)
-            
-        if subcategory:
-            query += " AND sc.slug = %s"
-            params.append(subcategory)
-            
-        if listing_type:
-            query += " AND l.type = %s"
-            params.append(listing_type)
-            
-        if condition:
-            query += " AND l.condition = %s"
-            params.append(condition)
-            
-        if min_price is not None:
-            query += " AND l.price_cents >= %s"
-            params.append(min_price)
-            
-        if max_price is not None:
-            query += " AND l.price_cents <= %s"
-            params.append(max_price)
-            
-        if city:
-            query += " AND l.city ILIKE %s"
-            params.append(f'%{city}%')
-            
-        if region:
-            query += " AND l.region = %s"
-            params.append(region)
-        
-        # Location-based filtering
-        if lat and lng and radius:
-            # Convert radius from miles to degrees (approximate)
-            radius_degrees = radius / 69.0
-            query += """
-                AND l.lat IS NOT NULL 
-                AND l.lng IS NOT NULL
-                AND l.lat BETWEEN %s AND %s
-                AND l.lng BETWEEN %s AND %s
-            """
-            params.extend([
-                lat - radius_degrees, lat + radius_degrees,
-                lng - radius_degrees, lng + radius_degrees
-            ])
-        
-        # Add ordering and pagination
-        query += " ORDER BY l.created_at DESC LIMIT %s OFFSET %s"
-        params.extend([limit, offset])
-        
-        # Execute query
-        with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(query, params)
-                listings = cursor.fetchall()
-                
-                # Get total count for pagination
-                count_query = query.replace("SELECT l.*, ", "SELECT COUNT(*) as total FROM listings l ")
-                count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
-                cursor.execute(count_query, params[:-2])  # Remove limit and offset
-                total = cursor.fetchone()['total']
-        
-        # Format response
-        formatted_listings = []
-        for listing in listings:
-            formatted_listing = {
-                'id': str(listing['id']),
-                'title': listing['title'],
-                'description': listing['description'],
-                'type': listing['type'],
-                'category': listing['category_name'],
-                'subcategory': listing['subcategory_name'],
-                'price_cents': listing['price_cents'],
-                'currency': listing['currency'],
-                'condition': listing['condition'],
-                'city': listing['city'],
-                'region': listing['region'],
-                'zip': listing['zip'],
-                'country': listing['country'],
-                'lat': listing['lat'],
-                'lng': listing['lng'],
-                'seller_name': listing['seller_name'] or listing['gemach_name'],
-                'seller_type': 'user' if listing['seller_name'] else 'gemach',
-                'available_from': listing['available_from'].isoformat() if listing['available_from'] else None,
-                'available_to': listing['available_to'].isoformat() if listing['available_to'] else None,
-                'loan_terms': listing['loan_terms'],
-                'attributes': listing['attributes'],
-                'endorse_up': listing['endorse_up'],
-                'endorse_down': listing['endorse_down'],
-                'status': listing['status'],
-                'created_at': listing['created_at'].isoformat(),
-                'updated_at': listing['updated_at'].isoformat()
-            }
-            formatted_listings.append(formatted_listing)
-        
-        return success_response({
-            'success': True,
-            'data': {
-                'listings': formatted_listings,
-                'total': total,
-                'limit': limit,
-                'offset': offset
-            }
-        })
+        if result["success"]:
+            return success_response(result["data"])
+        else:
+            return error_response(result.get("error", "Failed to fetch listings"), 500)
         
     except Exception as e:
         logger.exception("Error fetching marketplace listings")
@@ -1041,92 +922,21 @@ def get_marketplace_listing(listing_id):
 def create_marketplace_listing():
     """Create a new marketplace listing."""
     try:
-        # TEMPORARY: Check if marketplace tables exist
-        try:
-            # Test if listings table exists
-            with get_service_dependencies()[0] as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
-        except Exception as table_error:
-            logger.warning(f"Marketplace tables not found: {table_error}")
-            # Return error when tables don't exist
-            return error_response("Marketplace is not yet available", 503, {"details": "Database tables not created"})
-        
         data = request.get_json()
+        if not data:
+            return error_response("Request body is required", 400)
         
-        # Validate required fields
-        required_fields = ['title', 'type', 'category_id', 'price_cents']
-        for field in required_fields:
-            if field not in data:
-                return error_response(f'Missing required field: {field}', 400)
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
         
-        # Validate listing type
-        valid_types = ['sale', 'free', 'borrow', 'gemach']
-        if data['type'] not in valid_types:
-            return error_response(f'Invalid listing type. Must be one of: {", ".join(valid_types)}', 400)
+        result = service.create_listing(data)
         
-        # Validate price for free listings
-        if data['type'] == 'free' and data['price_cents'] != 0:
-            return error_response('Free listings must have price_cents = 0', 400)
-        
-        # Validate loan terms for borrow/gemach
-        if data['type'] in ['borrow', 'gemach'] and not data.get('loan_terms'):
-            return error_response(f'{data["type"].title()} listings must include loan_terms', 400)
-        
-        # Validate gemach seller
-        if data['type'] == 'gemach' and not data.get('seller_gemach_id'):
-            return error_response('Gemach listings must include seller_gemach_id', 400)
-        
-        # Get user ID from session (for now, use a placeholder)
-        # TODO: Integrate with Supabase auth
-        seller_user_id = data.get('seller_user_id')  # For now, accept from request
-        
-        with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                # Insert listing
-                cursor.execute("""
-                    INSERT INTO listings (
-                        title, description, type, category_id, subcategory_id,
-                        price_cents, currency, condition, city, region, zip, country,
-                        lat, lng, seller_user_id, seller_gemach_id, available_from,
-                        available_to, loan_terms, attributes, status
-                    ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                    ) RETURNING id
-                """, [
-                    data['title'],
-                    data.get('description'),
-                    data['type'],
-                    data['category_id'],
-                    data.get('subcategory_id'),
-                    data['price_cents'],
-                    data.get('currency', 'USD'),
-                    data.get('condition'),
-                    data.get('city'),
-                    data.get('region'),
-                    data.get('zip'),
-                    data.get('country', 'US'),
-                    data.get('lat'),
-                    data.get('lng'),
-                    seller_user_id,
-                    data.get('seller_gemach_id'),
-                    data.get('available_from'),
-                    data.get('available_to'),
-                    json.dumps(data.get('loan_terms')) if data.get('loan_terms') else None,
-                    json.dumps(data.get('attributes', {})),
-                    'active'
-                ])
-                
-                listing_id = cursor.fetchone()['id']
-                conn.commit()
-                
-                return success_response({
-                    'success': True,
-                    'data': {
-                        'id': str(listing_id),
-                        'message': 'Listing created successfully'
-                    }
-                }), 201
+        if result["success"]:
+            return success_response(result["data"], "Listing created successfully", 201)
+        else:
+            return error_response(result.get("error", "Failed to create listing"), 400)
                 
     except Exception as e:
         logger.exception("Error creating marketplace listing")

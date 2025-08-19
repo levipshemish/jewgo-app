@@ -33,8 +33,8 @@ class MarketplaceServiceV4:
         logger.info("MarketplaceServiceV4 (Streamlined) initialized")
 
     def get_listings(
-        self,
-        limit: int = 50,
+        self, 
+        limit: int = 50, 
         offset: int = 0,
         search: Optional[str] = None,
         category: Optional[str] = None,
@@ -86,15 +86,15 @@ class MarketplaceServiceV4:
             if condition:
                 query += " AND l.condition = %s"
                 params.append(condition)
-                
+            
             if min_price is not None:
                 query += " AND l.price_cents >= %s"
                 params.append(min_price)
-                
+            
             if max_price is not None:
                 query += " AND l.price_cents <= %s"
                 params.append(max_price)
-                
+            
             if city:
                 query += " AND l.city ILIKE %s"
                 params.append(f'%{city}%')
@@ -123,16 +123,28 @@ class MarketplaceServiceV4:
             params.extend([limit, offset])
             
             # Execute query
-            with self.db_manager.connection_manager.get_session() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(query, params)
-                    listings = cursor.fetchall()
-                    
-                    # Get total count for pagination
-                    count_query = query.replace("SELECT l.*, ", "SELECT COUNT(*) as total FROM listings l ")
-                    count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
-                    cursor.execute(count_query, params[:-2])  # Remove limit and offset
-                    total = cursor.fetchone()[0]
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # Convert psycopg2-style parameters to SQLAlchemy-style
+                # Replace %s with numbered parameters
+                sqlalchemy_query = query
+                sqlalchemy_params = {}
+                for i, param in enumerate(params):
+                    param_name = f"param_{i}"
+                    sqlalchemy_query = sqlalchemy_query.replace("%s", f":{param_name}", 1)
+                    sqlalchemy_params[param_name] = param
+                
+                # Execute main query
+                result = session.execute(text(sqlalchemy_query), sqlalchemy_params)
+                listings = result.fetchall()
+                
+                # Get total count for pagination
+                count_query = sqlalchemy_query.replace("SELECT l.*, ", "SELECT COUNT(*) as total FROM listings l ")
+                count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
+                count_params = {k: v for k, v in sqlalchemy_params.items() if not k.endswith(f"_{len(params)-2}") and not k.endswith(f"_{len(params)-1}")}
+                count_result = session.execute(text(count_query), count_params)
+                total = count_result.scalar()
             
             # Format response
             formatted_listings = []
@@ -188,31 +200,32 @@ class MarketplaceServiceV4:
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.connection_manager.get_session() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT l.*, 
-                               c.name as category_name,
-                               sc.name as subcategory_name,
-                               u.display_name as seller_name,
-                               u.username as seller_username
-                        FROM listings l
-                        LEFT JOIN categories c ON l.category_id = c.id
-                        LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
-                        LEFT JOIN users u ON l.seller_user_id = u.id
-                        WHERE l.id = %s
-                    """, [listing_id])
-                    
-                    listing = cursor.fetchone()
-                    
-                    if not listing:
-                        return {
-                            'success': False,
-                            'error': 'Listing not found'
-                        }
-                    
-                    # Format response
-                    formatted_listing = {
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                result = session.execute(text("""
+                    SELECT l.*, 
+                           c.name as category_name,
+                           sc.name as subcategory_name,
+                           u.display_name as seller_name,
+                           u.username as seller_username
+                    FROM listings l
+                    LEFT JOIN categories c ON l.category_id = c.id
+                    LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
+                    LEFT JOIN users u ON l.seller_user_id = u.id
+                    WHERE l.id = :listing_id
+                """), {'listing_id': listing_id})
+                
+                listing = result.fetchone()
+                
+                if not listing:
+                    return {
+                        'success': False,
+                        'error': 'Listing not found'
+                    }
+                
+                # Format response
+                formatted_listing = {
                         'id': str(listing[0]),
                         'kind': listing[1],
                         'txn_type': listing[2],
@@ -241,12 +254,12 @@ class MarketplaceServiceV4:
                         'seller_name': listing[25],
                         'seller_username': listing[26]
                     }
-                    
-                    return {
-                        'success': True,
-                        'data': formatted_listing
-                    }
-                    
+            
+            return {
+                    'success': True,
+                    'data': formatted_listing
+            }
+            
         except Exception as e:
             logger.exception("Error fetching marketplace listing")
             return {
@@ -285,61 +298,63 @@ class MarketplaceServiceV4:
             
             # Validate price
             if listing_data['price_cents'] < 0:
-                return {
+                        return {
                     'success': False,
                     'error': 'Price cannot be negative'
                 }
             
-            with self.db_manager.connection_manager.get_session() as conn:
-                with conn.cursor() as cursor:
-                    # Set defaults
-                    listing_data.setdefault('txn_type', 'sale')
-                    listing_data.setdefault('currency', 'USD')
-                    listing_data.setdefault('country', 'US')
-                    listing_data.setdefault('status', 'active')
-                    listing_data.setdefault('attributes', {})
-                    
-                    # Insert listing
-                    cursor.execute("""
-                        INSERT INTO listings (
-                            kind, txn_type, title, description, price_cents, currency,
-                            condition, category_id, subcategory_id, city, region, zip,
-                            country, lat, lng, seller_user_id, attributes, status
-                        ) VALUES (
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                        ) RETURNING id
-                    """, (
-                        listing_data['kind'],
-                        listing_data['txn_type'],
-                        listing_data['title'],
-                        listing_data.get('description'),
-                        listing_data['price_cents'],
-                        listing_data['currency'],
-                        listing_data['condition'],
-                        listing_data['category_id'],
-                        listing_data.get('subcategory_id'),
-                        listing_data.get('city'),
-                        listing_data.get('region'),
-                        listing_data.get('zip'),
-                        listing_data['country'],
-                        listing_data.get('lat'),
-                        listing_data.get('lng'),
-                        listing_data.get('seller_user_id'),
-                        json.dumps(listing_data['attributes']),
-                        listing_data['status']
-                    ))
-                    
-                    listing_id = cursor.fetchone()[0]
-                    conn.commit()
-                    
-                    return {
-                        'success': True,
-                        'data': {
-                            'id': str(listing_id),
-                            'message': 'Listing created successfully'
-                        }
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # Set defaults
+                listing_data.setdefault('txn_type', 'sale')
+                listing_data.setdefault('currency', 'USD')
+                listing_data.setdefault('country', 'US')
+                listing_data.setdefault('status', 'active')
+                listing_data.setdefault('attributes', {})
+                
+                # Insert listing
+                result = session.execute(text("""
+                    INSERT INTO listings (
+                        kind, txn_type, title, description, price_cents, currency,
+                        condition, category_id, subcategory_id, city, region, zip,
+                        country, lat, lng, seller_user_id, attributes, status
+                    ) VALUES (
+                        :kind, :txn_type, :title, :description, :price_cents, :currency,
+                        :condition, :category_id, :subcategory_id, :city, :region, :zip,
+                        :country, :lat, :lng, :seller_user_id, :attributes, :status
+                    ) RETURNING id
+                """), {
+                    'kind': listing_data['kind'],
+                    'txn_type': listing_data['txn_type'],
+                    'title': listing_data['title'],
+                    'description': listing_data.get('description'),
+                    'price_cents': listing_data['price_cents'],
+                    'currency': listing_data['currency'],
+                    'condition': listing_data['condition'],
+                    'category_id': listing_data['category_id'],
+                    'subcategory_id': listing_data.get('subcategory_id'),
+                    'city': listing_data.get('city'),
+                    'region': listing_data.get('region'),
+                    'zip': listing_data.get('zip'),
+                    'country': listing_data['country'],
+                    'lat': listing_data.get('lat'),
+                    'lng': listing_data.get('lng'),
+                    'seller_user_id': listing_data.get('seller_user_id'),
+                    'attributes': json.dumps(listing_data['attributes']),
+                    'status': listing_data['status']
+                })
+                
+                listing_id = result.scalar()
+            
+            return {
+                    'success': True,
+                    'data': {
+                        'id': str(listing_id),
+                        'message': 'Listing created successfully'
                     }
-                    
+            }
+            
         except Exception as e:
             logger.exception("Error creating marketplace listing")
             return {
@@ -351,52 +366,53 @@ class MarketplaceServiceV4:
     def get_categories(self) -> Dict[str, Any]:
         """Get marketplace categories and subcategories."""
         try:
-            with self.db_manager.connection_manager.get_session() as conn:
-                with conn.cursor() as cursor:
-                    # Get categories
-                    cursor.execute("""
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # Get categories
+                result = session.execute(text("""
+                    SELECT id, name, slug, sort_order, active
+                    FROM categories
+                    WHERE active = true
+                    ORDER BY sort_order, name
+                """))
+                categories = result.fetchall()
+                
+                # Get subcategories for each category
+                formatted_categories = []
+                for category in categories:
+                    sub_result = session.execute(text("""
                         SELECT id, name, slug, sort_order, active
-                        FROM categories
-                        WHERE active = true
+                        FROM subcategories
+                        WHERE category_id = :category_id AND active = true
                         ORDER BY sort_order, name
-                    """)
-                    categories = cursor.fetchall()
+                    """), {'category_id': category[0]})
+                    subcategories = sub_result.fetchall()
                     
-                    # Get subcategories for each category
-                    formatted_categories = []
-                    for category in categories:
-                        cursor.execute("""
-                            SELECT id, name, slug, sort_order, active
-                            FROM subcategories
-                            WHERE category_id = %s AND active = true
-                            ORDER BY sort_order, name
-                        """, [category[0]])
-                        subcategories = cursor.fetchall()
-                        
-                        formatted_category = {
-                            'id': category[0],
-                            'name': category[1],
-                            'slug': category[2],
-                            'sort_order': category[3],
-                            'active': category[4],
-                            'subcategories': [
-                                {
-                                    'id': sub[0],
-                                    'name': sub[1],
-                                    'slug': sub[2],
-                                    'sort_order': sub[3],
-                                    'active': sub[4]
-                                }
-                                for sub in subcategories
-                            ]
-                        }
-                        formatted_categories.append(formatted_category)
+                    formatted_category = {
+                        'id': category[0],
+                        'name': category[1],
+                        'slug': category[2],
+                        'sort_order': category[3],
+                        'active': category[4],
+                        'subcategories': [
+                            {
+                                'id': sub[0],
+                                'name': sub[1],
+                                'slug': sub[2],
+                                'sort_order': sub[3],
+                                'active': sub[4]
+                            }
+                            for sub in subcategories
+                        ]
+                    }
+                    formatted_categories.append(formatted_category)
                     
                     return {
-                        'success': True,
-                        'data': formatted_categories
+                    'success': True,
+                    'data': formatted_categories
                     }
-                    
+            
         except Exception as e:
             logger.exception("Error fetching marketplace categories")
             return {

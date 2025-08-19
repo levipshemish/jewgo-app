@@ -70,6 +70,7 @@ const RestaurantDetailPage: React.FC = () => {
     }
   }, [params]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getAgencyBadgeClass = (agency: string) => {
     switch (agency?.toUpperCase()) {
       case 'ORB':
@@ -81,6 +82,7 @@ const RestaurantDetailPage: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const __getKosherBadgeClass = (category: string) => {
     switch (category?.toLowerCase()) {
       case 'dairy':
@@ -94,6 +96,7 @@ const RestaurantDetailPage: React.FC = () => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getAllTags = (restaurant: Restaurant) => {
     const tags = [];
     

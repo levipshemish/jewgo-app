@@ -42,8 +42,7 @@ export default function AddListingPage() {
     lat: undefined,
     lng: undefined,
     seller_user_id: '',
-    attributes: {},
-    status: 'active'
+    attributes: {}
   });
 
   // Categories
@@ -136,22 +135,36 @@ export default function AddListingPage() {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.title.trim()) return 'Title is required';
-    if (!formData.category_id) return 'Category is required';
-    if (formData.price_cents < 0) return 'Price cannot be negative';
+    if (!formData.title.trim()) {
+      return 'Title is required';
+    }
+    if (!formData.category_id) {
+      return 'Category is required';
+    }
+    if (formData.price_cents < 0) {
+      return 'Price cannot be negative';
+    }
 
     // Kind-specific validation
     if (kind === 'vehicle') {
-      if (!vehicleAttributes.make.trim()) return 'Vehicle make is required';
-      if (!vehicleAttributes.model.trim()) return 'Vehicle model is required';
+      if (!vehicleAttributes.make.trim()) {
+        return 'Vehicle make is required';
+      }
+      if (!vehicleAttributes.model.trim()) {
+        return 'Vehicle model is required';
+      }
       if (vehicleAttributes.year < 1900 || vehicleAttributes.year > new Date().getFullYear() + 1) {
         return 'Please enter a valid year';
       }
-      if (vehicleAttributes.mileage < 0) return 'Mileage cannot be negative';
+      if (vehicleAttributes.mileage < 0) {
+        return 'Mileage cannot be negative';
+      }
     }
 
     if (kind === 'appliance') {
-      if (!applianceAttributes.brand.trim()) return 'Brand is required for appliances';
+      if (!applianceAttributes.brand?.trim()) {
+        return 'Brand is required for appliances';
+      }
     }
 
     return null;

@@ -179,7 +179,7 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
     >
       <div className="relative bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden">
         {/* Image Section */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl mb-2 shadow-sm">
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-200 animate-pulse" />
           )}
@@ -228,7 +228,7 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
         </div>
 
         {/* Content Section */}
-        <div className="p-4 pt-3 bg-white border-t border-gray-100">
+        <div className="p-4 pt-2 bg-white">
           <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
             {titleCase(data.name)}
           </h3>

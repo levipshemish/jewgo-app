@@ -53,7 +53,7 @@ export default function MarketplacePage() {
         search: searchQuery || undefined,
         category: filters.category || undefined,
         subcategory: filters.subcategory || undefined,
-        type: filters.kind || undefined,
+        kind: filters.kind || undefined,
         condition: filters.condition || undefined,
         min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined, // Convert to cents
         max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
@@ -111,29 +111,26 @@ export default function MarketplacePage() {
     }
   };
 
-  const _handleTabChange = (tab: string) => {
+  const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
-    // Filter by listing type based on tab
-    let listingType = '';
+    // Filter by listing kind based on tab
+    let kind = '';
     switch (tab) {
-      case 'sale':
-        listingType = 'sale';
+      case 'regular':
+        kind = 'regular';
         break;
-      case 'free':
-        listingType = 'free';
+      case 'vehicle':
+        kind = 'vehicle';
         break;
-      case 'borrow':
-        listingType = 'borrow';
-        break;
-      case 'gemach':
-        listingType = 'gemach';
+      case 'appliance':
+        kind = 'appliance';
         break;
       default:
-        listingType = '';
+        kind = '';
     }
     
-    setFilters(prev => ({ ...prev, listingType }));
+    setFilters(prev => ({ ...prev, kind }));
     setCurrentPage(1);
     loadListings(1, false);
   };
@@ -221,10 +218,27 @@ export default function MarketplacePage() {
         </div>
         
         {/* Category Tabs */}
-        {/* <CategoryTabs
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        /> */}
+        <div className="flex border-b border-gray-200 bg-white">
+          {[
+            { id: 'all', label: 'All Items', icon: '🛍️' },
+            { id: 'regular', label: 'Regular', icon: '📦' },
+            { id: 'vehicle', label: 'Vehicles', icon: '🚗' },
+            { id: 'appliance', label: 'Appliances', icon: '🏠' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex-1 px-4 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <span className="mr-2">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filters Panel */}

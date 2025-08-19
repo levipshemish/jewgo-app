@@ -102,10 +102,9 @@ export default function MarketplaceFilters({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">All Types</option>
-            <option value="sale">For Sale</option>
-            <option value="free">Free</option>
-            <option value="borrow">Borrow</option>
-            <option value="gemach">Gemach</option>
+            <option value="regular">Regular Items</option>
+            <option value="vehicle">Vehicles</option>
+            <option value="appliance">Appliances</option>
           </select>
         </div>
 
