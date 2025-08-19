@@ -159,8 +159,8 @@ export async function GET(
     
     // Fallback to mock data on network error
     const mockRestaurant = {
-      id: parseInt(params.id),
-      name: `Restaurant ${params.id}`,
+      id: parseInt(id),
+      name: `Restaurant ${id}`,
       address: '123 Main St',
       city: 'New York',
       state: 'NY',
@@ -200,9 +200,11 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest, { params }: { params: { id: string } }) {
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
@@ -268,9 +270,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest, { params }: { params: { id: string } }) {
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
@@ -321,9 +325,11 @@ export async function DELETE(
 }
 
 export async function PATCH(
-  request: NextRequest, { params }: { params: { id: string } }) {
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
