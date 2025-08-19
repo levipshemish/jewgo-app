@@ -37,9 +37,6 @@ export * from './utils/recaptcha';
 // Validator exports
 export * from './validators/review';
 
-// Worker exports
-export * from './workers/mendel-worker';
-
 // Supabase exports
 export * from './supabase/middleware';
 
