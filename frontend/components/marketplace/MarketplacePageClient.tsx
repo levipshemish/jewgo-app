@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, Clock, Eye, Zap, ChevronDown, MessageCircle, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
@@ -14,9 +14,19 @@ import {
 } from '@/lib/types/marketplace';
 
 import MarketplaceHeader from './MarketplaceHeader';
+import CategoryFilter from './CategoryFilter';
+import EnhancedFilters from './EnhancedFilters';
 
 // Marketplace-specific action buttons using eatery design style
-function MarketplaceActionButtons() {
+function MarketplaceActionButtons({
+  onCategoryFilterOpen,
+  onEnhancedFiltersOpen,
+  activeFilters
+}: {
+  onCategoryFilterOpen: () => void;
+  onEnhancedFiltersOpen: () => void;
+  activeFilters: MarketplaceFiltersType;
+}) {
   const router = useRouter();
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
@@ -25,13 +35,19 @@ function MarketplaceActionButtons() {
   };
 
   const handleCategoryClick = () => {
-    // TODO: Implement category filter - for now, show a basic alert
-    // This should be replaced with a proper category selection modal or dropdown
-    alert('Category filter functionality coming soon! This will allow filtering marketplace items by category.');
+    onCategoryFilterOpen();
+  };
+
+  const handleEnhancedFiltersClick = () => {
+    onEnhancedFiltersOpen();
   };
 
   const handleMessagesClick = () => {
     router.push('/marketplace/messages');
+  };
+
+  const getActiveFilterCount = () => {
+    return Object.values(activeFilters).filter(value => value !== '').length;
   };
 
   return (
@@ -74,8 +90,42 @@ function MarketplaceActionButtons() {
               })
             }}
           >
-            <span className="whitespace-nowrap overflow-hidden text-ellipsis">Category</span>
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+              Category
+              {activeFilters.category && (
+                <span className="ml-1 bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded-full">
+                  1
+                </span>
+              )}
+            </span>
             <ChevronDown className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+          </button>
+
+          {/* Enhanced Filters Button */}
+          <button
+            type="button"
+            onClick={handleEnhancedFiltersClick}
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            style={{
+              minHeight: '44px',
+              minWidth: '44px',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              cursor: 'pointer',
+              ...(isMobile && {
+                transition: 'all 0.1s ease-out'
+              })
+            }}
+          >
+            <Filter className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+              Filters
+              {getActiveFilterCount() > 0 && (
+                <span className="ml-1 bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded-full">
+                  {getActiveFilterCount()}
+                </span>
+              )}
+            </span>
           </button>
           
           {/* Messages Button */}
@@ -291,6 +341,10 @@ export default function MarketplacePageClient() {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<MarketplaceListing[]>([]);
   const [wishlist, setWishlist] = useState<MarketplaceListing[]>([]);
+  
+  // Filter modal states
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showEnhancedFilters, setShowEnhancedFilters] = useState(false);
 
   useEffect(() => {
     loadMarketplaceData();
@@ -384,6 +438,19 @@ export default function MarketplacePageClient() {
     });
   };
 
+  // Filter handlers
+  const handleCategoryChange = (category: string, subcategory?: string) => {
+    setFilters(prev => ({
+      ...prev,
+      category,
+      subcategory: subcategory || ''
+    }));
+  };
+
+  const handleEnhancedFiltersChange = (newFilters: MarketplaceFiltersType) => {
+    setFilters(newFilters);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -410,7 +477,11 @@ export default function MarketplacePageClient() {
       </div>
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto space-y-4">
-          <MarketplaceActionButtons />
+          <MarketplaceActionButtons 
+            onCategoryFilterOpen={() => setShowCategoryFilter(true)}
+            onEnhancedFiltersOpen={() => setShowEnhancedFilters(true)}
+            activeFilters={filters}
+          />
           <LocationDisplay />
           <ProductGrid 
             products={products} 
@@ -418,6 +489,22 @@ export default function MarketplacePageClient() {
             onAddToWishlist={handleAddToWishlist}
           />
         </div>
+
+        {/* Filter Modals */}
+        <CategoryFilter
+          selectedCategory={filters.category}
+          selectedSubcategory={filters.subcategory}
+          onCategoryChange={handleCategoryChange}
+          onClose={() => setShowCategoryFilter(false)}
+          isOpen={showCategoryFilter}
+        />
+
+        <EnhancedFilters
+          filters={filters}
+          onFiltersChange={handleEnhancedFiltersChange}
+          onClose={() => setShowEnhancedFilters(false)}
+          isOpen={showEnhancedFilters}
+        />
       </div>
       <BottomNavigation />
     </div>
