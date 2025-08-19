@@ -1,0 +1,572 @@
+strict digraph "dependency-cruiser output"{
+    rankdir="LR" splines="true" overlap="false" nodesep="0.16" ranksep="0.18" fontname="Helvetica-bold" fontsize="9" style="rounded,bold,filled" fillcolor="#ffffff" compound="true"
+    node [shape="box" style="rounded, filled" height="0.2" color="black" fillcolor="#ffffcc" fontcolor="black" fontname="Helvetica" fontsize="9"]
+    edge [arrowhead="normal" arrowsize="0.6" penwidth="2.0" color="#00000033" fontname="Helvetica" fontsize="9"]
+
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/add-eatery" {label="add-eatery" "app/add-eatery/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/add-eatery/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/admin" {label="admin" subgraph "cluster_app/admin/migration-complete" {label="migration-complete" "app/admin/migration-complete/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/admin/migration-complete/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/admin" {label="admin" subgraph "cluster_app/admin/migration" {label="migration" "app/admin/migration/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/admin/migration/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/admin/migration/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/analytics" {label="analytics" "app/api/analytics/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/analytics/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/[...nextauth]" {label="[...nextauth]" "app/api/auth.disabled/[...nextauth]/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/[...nextauth]/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/auth.disabled/[...nextauth]/route.ts" -> "lib/auth-config.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/register" {label="register" "app/api/auth.disabled/register/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/register/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/auth.disabled/register/route.ts" -> "lib/db/prisma.ts"
+    "app/api/auth.disabled/register/route.ts" -> "lib/email.ts" [style="dashed"]
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/reset-password" {label="reset-password" subgraph "cluster_app/api/auth.disabled/reset-password/confirm" {label="confirm" "app/api/auth.disabled/reset-password/confirm/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/reset-password/confirm/route.ts" fillcolor="#ddfeff"] } } } } }
+    "app/api/auth.disabled/reset-password/confirm/route.ts" -> "lib/db/prisma.ts"
+    "app/api/auth.disabled/reset-password/confirm/route.ts" -> "lib/email.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/reset-password" {label="reset-password" "app/api/auth.disabled/reset-password/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/reset-password/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/auth.disabled/reset-password/route.ts" -> "lib/db/prisma.ts"
+    "app/api/auth.disabled/reset-password/route.ts" -> "lib/email.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/sync-user" {label="sync-user" "app/api/auth.disabled/sync-user/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/sync-user/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/auth.disabled/sync-user/route.ts" -> "lib/auth/user-sync.ts"
+    "app/api/auth.disabled/sync-user/route.ts" -> "lib/supabase/server.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/auth.disabled" {label="auth.disabled" subgraph "cluster_app/api/auth.disabled/verify-email" {label="verify-email" "app/api/auth.disabled/verify-email/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/auth.disabled/verify-email/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/auth.disabled/verify-email/route.ts" -> "lib/db/prisma.ts"
+    "app/api/auth.disabled/verify-email/route.ts" -> "lib/email.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/feedback" {label="feedback" "app/api/feedback/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/feedback/route.ts" fillcolor="#ddfeff"] } } }
+    "app/api/feedback/route.ts" -> "lib/utils/logger.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/health-check" {label="health-check" "app/api/health-check/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/health-check/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/health" {label="health" "app/api/health/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/health/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/kosher-types" {label="kosher-types" "app/api/kosher-types/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/kosher-types/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/migrate" {label="migrate" "app/api/migrate/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/migrate/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/remove-duplicates" {label="remove-duplicates" "app/api/remove-duplicates/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/remove-duplicates/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants-with-images" {label="restaurants-with-images" "app/api/restaurants-with-images/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/restaurants-with-images/route.ts" fillcolor="#ddfeff"] } } }
+    "app/api/restaurants-with-images/route.ts" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" subgraph "cluster_app/api/restaurants/[id]/approve" {label="approve" "app/api/restaurants/[id]/approve/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/[id]/approve/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" subgraph "cluster_app/api/restaurants/[id]/fetch-hours" {label="fetch-hours" "app/api/restaurants/[id]/fetch-hours/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/[id]/fetch-hours/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" subgraph "cluster_app/api/restaurants/[id]/fetch-website" {label="fetch-website" "app/api/restaurants/[id]/fetch-website/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/[id]/fetch-website/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" subgraph "cluster_app/api/restaurants/[id]/hours" {label="hours" "app/api/restaurants/[id]/hours/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/[id]/hours/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" subgraph "cluster_app/api/restaurants/[id]/reject" {label="reject" "app/api/restaurants/[id]/reject/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/[id]/reject/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/[id]" {label="[id]" "app/api/restaurants/[id]/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/restaurants/[id]/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/restaurants/[id]/route.ts" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/business-types" {label="business-types" "app/api/restaurants/business-types/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/business-types/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/fetch-missing-hours" {label="fetch-missing-hours" "app/api/restaurants/fetch-missing-hours/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/fetch-missing-hours/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/fetch-missing-websites" {label="fetch-missing-websites" "app/api/restaurants/fetch-missing-websites/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/fetch-missing-websites/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/filter-options" {label="filter-options" "app/api/restaurants/filter-options/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/filter-options/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/filtered" {label="filtered" "app/api/restaurants/filtered/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/restaurants/filtered/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" "app/api/restaurants/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/restaurants/route.ts" fillcolor="#ddfeff"] } } }
+    "app/api/restaurants/route.ts" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/restaurants" {label="restaurants" subgraph "cluster_app/api/restaurants/search" {label="search" "app/api/restaurants/search/route.ts" [label=<route.ts> tooltip="route.ts" URL="app/api/restaurants/search/route.ts" fillcolor="#ddfeff"] } } } }
+    "app/api/restaurants/search/route.ts" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/reviews" {label="reviews" "app/api/reviews/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/reviews/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/sentry-example-api" {label="sentry-example-api" "app/api/sentry-example-api/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/sentry-example-api/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/statistics" {label="statistics" "app/api/statistics/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/statistics/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/test" {label="test" "app/api/test/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/test/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/api" {label="api" subgraph "cluster_app/api/update-database" {label="update-database" "app/api/update-database/route.ts" [label=<route.ts> tooltip="no-orphans" URL="app/api/update-database/route.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/auth-code-error" {label="auth-code-error" "app/auth/auth-code-error/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/auth/auth-code-error/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/callback" {label="callback" "app/auth/callback/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/callback/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/callback/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/oauth-success" {label="oauth-success" "app/auth/oauth-success/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/oauth-success/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/oauth-success/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/signin" {label="signin" "app/auth/signin/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/signin/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/signin/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/signup" {label="signup" "app/auth/signup/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/signup/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/signup/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/supabase-signin" {label="supabase-signin" "app/auth/supabase-signin/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/supabase-signin/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/supabase-signin/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/auth" {label="auth" subgraph "cluster_app/auth/supabase-signup" {label="supabase-signup" "app/auth/supabase-signup/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/auth/supabase-signup/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/auth/supabase-signup/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/eatery" {label="eatery" "app/eatery/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/eatery/page.tsx" fillcolor="#bbfeff"] } }
+    "app/eatery/page.tsx" -> "components/eatery/ui/index.ts"
+    "app/eatery/page.tsx" -> "components/layout/index.ts"
+    "app/eatery/page.tsx" -> "components/layout/ActionButtons.tsx"
+    "app/eatery/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/eatery/page.tsx" -> "components/search/AdvancedFilters.tsx"
+    "app/eatery/page.tsx" -> "lib/api/restaurants.ts"
+    "app/eatery/page.tsx" -> "lib/hooks/useAdvancedFilters.ts"
+    "app/eatery/page.tsx" -> "lib/hooks/useInfiniteScroll.ts"
+    "app/eatery/page.tsx" -> "lib/utils/scrollUtils.ts"
+    subgraph "cluster_app" {label="app" "app/error.tsx" [label=<error.tsx> tooltip="no-orphans" URL="app/error.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/favorites" {label="favorites" "app/favorites/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/favorites/page.tsx" fillcolor="#bbfeff"] } }
+    "app/favorites/page.tsx" -> "components/layout/index.ts"
+    "app/favorites/page.tsx" -> "components/layout/ActionButtons.tsx"
+    "app/favorites/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/favorites/page.tsx" -> "components/search/AdvancedFilters.tsx"
+    "app/favorites/page.tsx" -> "components/ui/ErrorBoundary.tsx"
+    "app/favorites/page.tsx" -> "lib/hooks/useMobileTouch.ts"
+    "app/favorites/page.tsx" -> "lib/supabase/client.ts"
+    "app/favorites/page.tsx" -> "lib/utils/favorites.ts"
+    subgraph "cluster_app" {label="app" "app/fonts.ts" [label=<fonts.ts> tooltip="fonts.ts" URL="app/fonts.ts" fillcolor="#ddfeff"] }
+    subgraph "cluster_app" {label="app" "app/global-error.tsx" [label=<global-error.tsx> tooltip="no-orphans" URL="app/global-error.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] }
+    subgraph "cluster_app" {label="app" "app/globals.css" [label=<globals.css> tooltip="globals.css" URL="app/globals.css" ] }
+    subgraph "cluster_app" {label="app" "app/head.tsx" [label=<head.tsx> tooltip="head.tsx" URL="app/head.tsx" fillcolor="#bbfeff"] }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/healthz" {label="healthz" "app/healthz/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/healthz/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_app" {label="app" "app/instrumentation.ts" [label=<instrumentation.ts> tooltip="no-orphans" URL="app/instrumentation.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] }
+    subgraph "cluster_app" {label="app" "app/layout.tsx" [label=<layout.tsx> tooltip="layout.tsx" URL="app/layout.tsx" fillcolor="#bbfeff"] }
+    "app/layout.tsx" -> "app/fonts.ts"
+    "app/layout.tsx" -> "app/globals.css"
+    "app/layout.tsx" -> "app/head.tsx"
+    "app/layout.tsx" -> "components/analytics/Analytics.tsx"
+    "app/layout.tsx" -> "components/ui/ErrorBoundary.tsx"
+    "app/layout.tsx" -> "components/ui/FontOptimizer.tsx"
+    "app/layout.tsx" -> "components/ui/ServiceWorkerRegistration.tsx"
+    "app/layout.tsx" -> "lib/contexts/NotificationsContext.tsx"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/live-map" {label="live-map" "app/live-map/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/live-map/page.tsx" fillcolor="#bbfeff"] } }
+    "app/live-map/page.tsx" -> "components/map/UnifiedLiveMapClient.tsx"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/logout" {label="logout" "app/logout/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/logout/page.tsx" fillcolor="#bbfeff"] } }
+    "app/logout/page.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" subgraph "cluster_app/marketplace/category" {label="category" subgraph "cluster_app/marketplace/category/[id]" {label="[id]" "app/marketplace/category/[id]/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/marketplace/category/[id]/page.tsx" fillcolor="#bbfeff"] } } } }
+    "app/marketplace/category/[id]/page.tsx" -> "components/layout/index.ts"
+    "app/marketplace/category/[id]/page.tsx" -> "components/marketplace/ProductCard.tsx"
+    "app/marketplace/category/[id]/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/marketplace/category/[id]/page.tsx" -> "lib/api/marketplace.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" subgraph "cluster_app/marketplace/messages" {label="messages" "app/marketplace/messages/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/marketplace/messages/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" "app/marketplace/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/marketplace/page.tsx" fillcolor="#bbfeff"] } }
+    "app/marketplace/page.tsx" -> "components/layout/index.ts"
+    "app/marketplace/page.tsx" -> "components/marketplace/MarketplaceFilters.tsx"
+    "app/marketplace/page.tsx" -> "components/marketplace/MarketplaceListingCard.tsx"
+    "app/marketplace/page.tsx" -> "components/marketplace/MarketplaceSearch.tsx"
+    "app/marketplace/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/marketplace/page.tsx" -> "lib/api/marketplace.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" subgraph "cluster_app/marketplace/product" {label="product" subgraph "cluster_app/marketplace/product/[id]" {label="[id]" "app/marketplace/product/[id]/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/marketplace/product/[id]/page.tsx" fillcolor="#bbfeff"] } } } }
+    "app/marketplace/product/[id]/page.tsx" -> "components/marketplace/ProductDetailPage.tsx"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" subgraph "cluster_app/marketplace/search" {label="search" "app/marketplace/search/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/marketplace/search/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/marketplace" {label="marketplace" subgraph "cluster_app/marketplace/sell" {label="sell" "app/marketplace/sell/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/marketplace/sell/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } } }
+    subgraph "cluster_app" {label="app" "app/not-found.tsx" [label=<not-found.tsx> tooltip="no-orphans" URL="app/not-found.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/notifications" {label="notifications" "app/notifications/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/notifications/page.tsx" fillcolor="#bbfeff"] } }
+    "app/notifications/page.tsx" -> "components/layout/index.ts"
+    "app/notifications/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/notifications/page.tsx" -> "lib/contexts/NotificationsContext.tsx"
+    "app/notifications/page.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_app" {label="app" "app/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/page.tsx" fillcolor="#bbfeff"] }
+    "app/page.tsx" -> "components/auth/AuthStatus.tsx"
+    "app/page.tsx" -> "components/layout/index.ts"
+    "app/page.tsx" -> "components/layout/ActionButtons.tsx"
+    "app/page.tsx" -> "components/navigation/ui/index.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/profile" {label="profile" "app/profile/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/profile/page.tsx" fillcolor="#bbfeff"] } }
+    "app/profile/page.tsx" -> "lib/auth.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/restaurant" {label="restaurant" subgraph "cluster_app/restaurant/[id]" {label="[id]" "app/restaurant/[id]/layout.tsx" [label=<layout.tsx> tooltip="layout.tsx" URL="app/restaurant/[id]/layout.tsx" fillcolor="#bbfeff"] } } }
+    "app/restaurant/[id]/layout.tsx" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/restaurant" {label="restaurant" subgraph "cluster_app/restaurant/[id]" {label="[id]" "app/restaurant/[id]/page.tsx" [label=<page.tsx> tooltip="page.tsx" URL="app/restaurant/[id]/page.tsx" fillcolor="#bbfeff"] } } }
+    "app/restaurant/[id]/page.tsx" -> "components/navigation/ui/index.ts"
+    "app/restaurant/[id]/page.tsx" -> "components/restaurant/EnhancedHoursDisplay.tsx"
+    "app/restaurant/[id]/page.tsx" -> "components/restaurant/ImageCarousel.tsx"
+    "app/restaurant/[id]/page.tsx" -> "components/restaurant/OrderForm.tsx"
+    "app/restaurant/[id]/page.tsx" -> "components/restaurant/ReviewsModal.tsx"
+    "app/restaurant/[id]/page.tsx" -> "components/restaurant/SpecialsSection.tsx"
+    "app/restaurant/[id]/page.tsx" -> "components/ui/StickyCTA.tsx"
+    "app/restaurant/[id]/page.tsx" -> "lib/api/restaurants.ts"
+    "app/restaurant/[id]/page.tsx" -> "lib/hooks/useIntersectionObserver.ts"
+    "app/restaurant/[id]/page.tsx" -> "lib/utils/imageUrlValidator.ts"
+    "app/restaurant/[id]/page.tsx" -> "lib/utils/imageValidation.ts"
+    "app/restaurant/[id]/page.tsx" -> "lib/utils/reviewUtils.ts"
+    "app/restaurant/[id]/page.tsx" -> "lib/utils/typography.ts"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/restaurant" {label="restaurant" "app/restaurant/layout.tsx" [label=<layout.tsx> tooltip="no-orphans" URL="app/restaurant/layout.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/shuls" {label="shuls" "app/shuls/page.tsx" [label=<page.tsx> tooltip="no-orphans" URL="app/shuls/page.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/admin" {label="admin" "components/admin/FeatureFlagManager.tsx" [label=<FeatureFlagManager.tsx> tooltip="FeatureFlagManager.tsx" URL="components/admin/FeatureFlagManager.tsx" fillcolor="#bbfeff"] } }
+    "components/admin/FeatureFlagManager.tsx" -> "lib/hooks/useFeatureFlags.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/analytics" {label="analytics" "components/analytics/Analytics.tsx" [label=<Analytics.tsx> tooltip="Analytics.tsx" URL="components/analytics/Analytics.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/analytics" {label="analytics" "components/analytics/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/analytics/index.ts" fillcolor="#ddfeff"] } }
+    "components/analytics/index.ts" -> "components/analytics/Analytics.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/auth" {label="auth" "components/auth/AuthStatus.tsx" [label=<AuthStatus.tsx> tooltip="AuthStatus.tsx" URL="components/auth/AuthStatus.tsx" fillcolor="#bbfeff"] } }
+    "components/auth/AuthStatus.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/auth" {label="auth" "components/auth/index.ts" [label=<index.ts> tooltip="no-orphans" URL="components/auth/index.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/eatery" {label="eatery" subgraph "cluster_components/eatery/ui" {label="ui" "components/eatery/ui/CardSkeleton.tsx" [label=<CardSkeleton.tsx> tooltip="CardSkeleton.tsx" URL="components/eatery/ui/CardSkeleton.tsx" fillcolor="#bbfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/eatery" {label="eatery" subgraph "cluster_components/eatery/ui" {label="ui" "components/eatery/ui/EateryCard.tsx" [label=<EateryCard.tsx> tooltip="EateryCard.tsx" URL="components/eatery/ui/EateryCard.tsx" fillcolor="#bbfeff"] } } }
+    "components/eatery/ui/EateryCard.tsx" -> "components/ui/UnifiedCard.tsx"
+    "components/eatery/ui/EateryCard.tsx" -> "lib/utils/favorites.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/eatery" {label="eatery" subgraph "cluster_components/eatery/ui" {label="ui" "components/eatery/ui/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/eatery/ui/index.ts" fillcolor="#ddfeff"] } } }
+    "components/eatery/ui/index.ts" -> "components/eatery/ui/CardSkeleton.tsx"
+    "components/eatery/ui/index.ts" -> "components/eatery/ui/EateryCard.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/feedback" {label="feedback" "components/feedback/FeedbackButton.tsx" [label=<FeedbackButton.tsx> tooltip="FeedbackButton.tsx" URL="components/feedback/FeedbackButton.tsx" fillcolor="#bbfeff"] } }
+    "components/feedback/FeedbackButton.tsx" -> "components/feedback/FeedbackForm.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/feedback" {label="feedback" "components/feedback/FeedbackForm.tsx" [label=<FeedbackForm.tsx> tooltip="FeedbackForm.tsx" URL="components/feedback/FeedbackForm.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/filters" {label="filters" "components/filters/AdvancedFilterSheet.tsx" [label=<AdvancedFilterSheet.tsx> tooltip="AdvancedFilterSheet.tsx" URL="components/filters/AdvancedFilterSheet.tsx" fillcolor="#bbfeff"] } }
+    "components/filters/AdvancedFilterSheet.tsx" -> "components/filters/BusinessTypeFilter.tsx"
+    "components/filters/AdvancedFilterSheet.tsx" -> "components/ui/PillDropdown.tsx"
+    "components/filters/AdvancedFilterSheet.tsx" -> "lib/filters/serialize.ts"
+    "components/filters/AdvancedFilterSheet.tsx" -> "lib/hooks/useLocalFilters.ts"
+    "components/filters/AdvancedFilterSheet.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/filters" {label="filters" "components/filters/BusinessTypeFilter.tsx" [label=<BusinessTypeFilter.tsx> tooltip="BusinessTypeFilter.tsx" URL="components/filters/BusinessTypeFilter.tsx" fillcolor="#bbfeff"] } }
+    "components/filters/BusinessTypeFilter.tsx" -> "lib/utils/cn.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/forms" {label="forms" "components/forms/ImageUpload.tsx" [label=<ImageUpload.tsx> tooltip="ImageUpload.tsx" URL="components/forms/ImageUpload.tsx" fillcolor="#bbfeff"] } }
+    "components/forms/ImageUpload.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/ActionButtons.tsx" [label=<ActionButtons.tsx> tooltip="ActionButtons.tsx" URL="components/layout/ActionButtons.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/Header.tsx" [label=<Header.tsx> tooltip="Header.tsx" URL="components/layout/Header.tsx" fillcolor="#bbfeff"] } }
+    "components/layout/Header.tsx" -> "components/ui/index.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/MobileActionButtons.tsx" [label=<MobileActionButtons.tsx> tooltip="no-orphans" URL="components/layout/MobileActionButtons.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/MobileSearchHeader.tsx" [label=<MobileSearchHeader.tsx> tooltip="no-orphans" URL="components/layout/MobileSearchHeader.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/SearchHeader.tsx" [label=<SearchHeader.tsx> tooltip="SearchHeader.tsx" URL="components/layout/SearchHeader.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/layout" {label="layout" "components/layout/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/layout/index.ts" fillcolor="#ddfeff"] } }
+    "components/layout/index.ts" -> "components/layout/ActionButtons.tsx"
+    "components/layout/index.ts" -> "components/layout/Header.tsx"
+    "components/layout/index.ts" -> "components/layout/SearchHeader.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/location" {label="location" "components/location/LocationCard.tsx" [label=<LocationCard.tsx> tooltip="LocationCard.tsx" URL="components/location/LocationCard.tsx" fillcolor="#bbfeff"] } }
+    "components/location/LocationCard.tsx" -> "lib/utils/colors.ts"
+    "components/location/LocationCard.tsx" -> "lib/utils/stringUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/location" {label="location" "components/location/LocationPermissionPrompt.tsx" [label=<LocationPermissionPrompt.tsx> tooltip="LocationPermissionPrompt.tsx" URL="components/location/LocationPermissionPrompt.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/location" {label="location" "components/location/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/location/index.ts" fillcolor="#ddfeff"] } }
+    "components/location/index.ts" -> "components/location/LocationCard.tsx"
+    "components/location/index.ts" -> "components/location/LocationPermissionPrompt.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/InteractiveRestaurantMap.tsx" [label=<InteractiveRestaurantMap.tsx> tooltip="InteractiveRestaurantMap.tsx" URL="components/map/InteractiveRestaurantMap.tsx" fillcolor="#bbfeff"] } }
+    "components/map/InteractiveRestaurantMap.tsx" -> "components/monitoring/MapPerformanceMonitor.tsx"
+    "components/map/InteractiveRestaurantMap.tsx" -> "components/map/hooks/useMarkerManagement.ts"
+    "components/map/InteractiveRestaurantMap.tsx" -> "lib/maps/loader.ts"
+    "components/map/InteractiveRestaurantMap.tsx" -> "lib/utils/imageUrlValidator.ts"
+    "components/map/InteractiveRestaurantMap.tsx" -> "lib/utils/performanceOptimization.ts"
+    "components/map/InteractiveRestaurantMap.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/MapControls.tsx" [label=<MapControls.tsx> tooltip="MapControls.tsx" URL="components/map/MapControls.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/MapLegend.tsx" [label=<MapLegend.tsx> tooltip="MapLegend.tsx" URL="components/map/MapLegend.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/MapNotification.tsx" [label=<MapNotification.tsx> tooltip="MapNotification.tsx" URL="components/map/MapNotification.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/MapWhenVisible.tsx" [label=<MapWhenVisible.tsx> tooltip="no-orphans" URL="components/map/MapWhenVisible.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/UnifiedLiveMapClient.tsx" [label=<UnifiedLiveMapClient.tsx> tooltip="UnifiedLiveMapClient.tsx" URL="components/map/UnifiedLiveMapClient.tsx" fillcolor="#bbfeff"] } }
+    "components/map/UnifiedLiveMapClient.tsx" -> "components/location/index.ts"
+    "components/map/UnifiedLiveMapClient.tsx" -> "components/map/InteractiveRestaurantMap.tsx"
+    "components/map/UnifiedLiveMapClient.tsx" -> "components/search/AdvancedFilters.tsx"
+    "components/map/UnifiedLiveMapClient.tsx" -> "lib/api/restaurants.ts"
+    "components/map/UnifiedLiveMapClient.tsx" -> "lib/message-bus.ts"
+    "components/map/UnifiedLiveMapClient.tsx" -> "lib/utils/imageUrlValidator.ts"
+    "components/map/UnifiedLiveMapClient.tsx" -> "lib/utils/touchUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/__tests__" {label="__tests__" "components/map/__tests__/MapControls.test.tsx" [label=<MapControls.test.tsx> tooltip="MapControls.test.tsx" URL="components/map/__tests__/MapControls.test.tsx" fillcolor="#bbfeff"] } } }
+    "components/map/__tests__/MapControls.test.tsx" -> "components/map/MapControls.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/__tests__" {label="__tests__" "components/map/__tests__/MapLegend.test.tsx" [label=<MapLegend.test.tsx> tooltip="MapLegend.test.tsx" URL="components/map/__tests__/MapLegend.test.tsx" fillcolor="#bbfeff"] } } }
+    "components/map/__tests__/MapLegend.test.tsx" -> "components/map/MapLegend.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/__tests__" {label="__tests__" "components/map/__tests__/MapNotification.test.tsx" [label=<MapNotification.test.tsx> tooltip="MapNotification.test.tsx" URL="components/map/__tests__/MapNotification.test.tsx" fillcolor="#bbfeff"] } } }
+    "components/map/__tests__/MapNotification.test.tsx" -> "components/map/MapNotification.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/__tests__" {label="__tests__" subgraph "cluster_components/map/__tests__/hooks" {label="hooks" "components/map/__tests__/hooks/useMarkerManagement.test.ts" [label=<useMarkerManagement.test.ts> tooltip="useMarkerManagement.test.ts" URL="components/map/__tests__/hooks/useMarkerManagement.test.ts" fillcolor="#ddfeff"] } } } }
+    "components/map/__tests__/hooks/useMarkerManagement.test.ts" -> "components/map/hooks/useMarkerManagement.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/hooks" {label="hooks" "components/map/hooks/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/map/hooks/index.ts" fillcolor="#ddfeff"] } } }
+    "components/map/hooks/index.ts" -> "components/map/hooks/useDirections.ts"
+    "components/map/hooks/index.ts" -> "components/map/hooks/useDistanceCircles.ts"
+    "components/map/hooks/index.ts" -> "components/map/hooks/useMarkerManagement.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/hooks" {label="hooks" "components/map/hooks/useDirections.ts" [label=<useDirections.ts> tooltip="useDirections.ts" URL="components/map/hooks/useDirections.ts" fillcolor="#ddfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/hooks" {label="hooks" "components/map/hooks/useDistanceCircles.ts" [label=<useDistanceCircles.ts> tooltip="useDistanceCircles.ts" URL="components/map/hooks/useDistanceCircles.ts" fillcolor="#ddfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" subgraph "cluster_components/map/hooks" {label="hooks" "components/map/hooks/useMarkerManagement.ts" [label=<useMarkerManagement.ts> tooltip="useMarkerManagement.ts" URL="components/map/hooks/useMarkerManagement.ts" fillcolor="#ddfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/map" {label="map" "components/map/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/map/index.ts" fillcolor="#ddfeff"] } }
+    "components/map/index.ts" -> "components/map/hooks/index.ts"
+    "components/map/index.ts" -> "components/map/InteractiveRestaurantMap.tsx"
+    "components/map/index.ts" -> "components/map/MapControls.tsx"
+    "components/map/index.ts" -> "components/map/MapLegend.tsx"
+    "components/map/index.ts" -> "components/map/MapNotification.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/CategoryCard.tsx" [label=<CategoryCard.tsx> tooltip="CategoryCard.tsx" URL="components/marketplace/CategoryCard.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/CategoryCard.tsx" -> "lib/hooks/useMobileTouch.ts"
+    "components/marketplace/CategoryCard.tsx" -> "lib/utils/stringUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/MarketplaceFilters.tsx" [label=<MarketplaceFilters.tsx> tooltip="MarketplaceFilters.tsx" URL="components/marketplace/MarketplaceFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/MarketplaceFilters.tsx" -> "lib/api/marketplace.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/MarketplaceHeader.tsx" [label=<MarketplaceHeader.tsx> tooltip="MarketplaceHeader.tsx" URL="components/marketplace/MarketplaceHeader.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/MarketplaceHeader.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/MarketplaceListingCard.tsx" [label=<MarketplaceListingCard.tsx> tooltip="MarketplaceListingCard.tsx" URL="components/marketplace/MarketplaceListingCard.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/MarketplacePageClient.tsx" [label=<MarketplacePageClient.tsx> tooltip="MarketplacePageClient.tsx" URL="components/marketplace/MarketplacePageClient.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/MarketplacePageClient.tsx" -> "components/marketplace/MarketplaceHeader.tsx"
+    "components/marketplace/MarketplacePageClient.tsx" -> "components/navigation/ui/index.ts"
+    "components/marketplace/MarketplacePageClient.tsx" -> "lib/api/marketplace.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/MarketplaceSearch.tsx" [label=<MarketplaceSearch.tsx> tooltip="MarketplaceSearch.tsx" URL="components/marketplace/MarketplaceSearch.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/ProductCard.tsx" [label=<ProductCard.tsx> tooltip="ProductCard.tsx" URL="components/marketplace/ProductCard.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/ProductCard.tsx" -> "components/ui/UnifiedCard.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/ProductDetailPage.tsx" [label=<ProductDetailPage.tsx> tooltip="ProductDetailPage.tsx" URL="components/marketplace/ProductDetailPage.tsx" fillcolor="#bbfeff"] } }
+    "components/marketplace/ProductDetailPage.tsx" -> "components/layout/index.ts"
+    "components/marketplace/ProductDetailPage.tsx" -> "components/navigation/ui/index.ts"
+    "components/marketplace/ProductDetailPage.tsx" -> "lib/api/marketplace.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/marketplace" {label="marketplace" "components/marketplace/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/marketplace/index.ts" fillcolor="#ddfeff"] } }
+    "components/marketplace/index.ts" -> "components/marketplace/CategoryCard.tsx"
+    "components/marketplace/index.ts" -> "components/marketplace/MarketplaceFilters.tsx"
+    "components/marketplace/index.ts" -> "components/marketplace/MarketplacePageClient.tsx"
+    "components/marketplace/index.ts" -> "components/marketplace/ProductCard.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/monitoring" {label="monitoring" "components/monitoring/ApiHealthIndicator.tsx" [label=<ApiHealthIndicator.tsx> tooltip="ApiHealthIndicator.tsx" URL="components/monitoring/ApiHealthIndicator.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/monitoring" {label="monitoring" "components/monitoring/MapPerformanceMonitor.tsx" [label=<MapPerformanceMonitor.tsx> tooltip="MapPerformanceMonitor.tsx" URL="components/monitoring/MapPerformanceMonitor.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/monitoring" {label="monitoring" "components/monitoring/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/monitoring/index.ts" fillcolor="#ddfeff"] } }
+    "components/monitoring/index.ts" -> "components/monitoring/ApiHealthIndicator.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/BottomNavigation.tsx" [label=<BottomNavigation.tsx> tooltip="BottomNavigation.tsx" URL="components/navigation/ui/BottomNavigation.tsx" fillcolor="#bbfeff"] } } }
+    "components/navigation/ui/BottomNavigation.tsx" -> "lib/contexts/NotificationsContext.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/CategoryTabs.tsx" [label=<CategoryTabs.tsx> tooltip="CategoryTabs.tsx" URL="components/navigation/ui/CategoryTabs.tsx" fillcolor="#bbfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/MobileCategoryTabs.tsx" [label=<MobileCategoryTabs.tsx> tooltip="MobileCategoryTabs.tsx" URL="components/navigation/ui/MobileCategoryTabs.tsx" fillcolor="#bbfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/SubNav.tsx" [label=<SubNav.tsx> tooltip="SubNav.tsx" URL="components/navigation/ui/SubNav.tsx" fillcolor="#bbfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/hooks.ts" [label=<hooks.ts> tooltip="hooks.ts" URL="components/navigation/ui/hooks.ts" fillcolor="#ddfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/navigation/ui/index.ts" fillcolor="#ddfeff"] } } }
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/BottomNavigation.tsx"
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/CategoryTabs.tsx"
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/hooks.ts"
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/MobileCategoryTabs.tsx"
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/shared.ts"
+    "components/navigation/ui/index.ts" -> "components/navigation/ui/SubNav.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/navigation" {label="navigation" subgraph "cluster_components/navigation/ui" {label="ui" "components/navigation/ui/shared.ts" [label=<shared.ts> tooltip="shared.ts" URL="components/navigation/ui/shared.ts" fillcolor="#ddfeff"] } } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/newsletter" {label="newsletter" "components/newsletter/NewsletterSignup.tsx" [label=<NewsletterSignup.tsx> tooltip="no-orphans" URL="components/newsletter/NewsletterSignup.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/pages" {label="pages" "components/pages/SpecialsPageClient.tsx" [label=<SpecialsPageClient.tsx> tooltip="SpecialsPageClient.tsx" URL="components/pages/SpecialsPageClient.tsx" fillcolor="#bbfeff"] } }
+    "components/pages/SpecialsPageClient.tsx" -> "components/layout/index.ts"
+    "components/pages/SpecialsPageClient.tsx" -> "components/navigation/ui/index.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/pages" {label="pages" "components/pages/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/pages/index.ts" fillcolor="#ddfeff"] } }
+    "components/pages/index.ts" -> "components/pages/SpecialsPageClient.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/products" {label="products" "components/products/ProductResults.tsx" [label=<ProductResults.tsx> tooltip="ProductResults.tsx" URL="components/products/ProductResults.tsx" fillcolor="#bbfeff"] } }
+    "components/products/ProductResults.tsx" -> "components/eatery/ui/index.ts"
+    "components/products/ProductResults.tsx" -> "lib/filters/serialize.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/EnhancedHoursDisplay.tsx" [label=<EnhancedHoursDisplay.tsx> tooltip="EnhancedHoursDisplay.tsx" URL="components/restaurant/EnhancedHoursDisplay.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/HoursDisplay.tsx" [label=<HoursDisplay.tsx> tooltip="HoursDisplay.tsx" URL="components/restaurant/HoursDisplay.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/HoursDisplay.tsx" -> "lib/utils/hours.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/HoursStatusBadge.tsx" [label=<HoursStatusBadge.tsx> tooltip="no-orphans" URL="components/restaurant/HoursStatusBadge.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/ImageCarousel.tsx" [label=<ImageCarousel.tsx> tooltip="ImageCarousel.tsx" URL="components/restaurant/ImageCarousel.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/ImageCarousel.tsx" -> "lib/hooks/useScrollSnapCarousel.ts"
+    "components/restaurant/ImageCarousel.tsx" -> "lib/utils/imageValidation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/OrderForm.tsx" [label=<OrderForm.tsx> tooltip="OrderForm.tsx" URL="components/restaurant/OrderForm.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/OrderForm.tsx" -> "components/ui/LoadingState.tsx"
+    "components/restaurant/OrderForm.tsx" -> "lib/utils/formValidation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/RestaurantCard.tsx" [label=<RestaurantCard.tsx> tooltip="RestaurantCard.tsx" URL="components/restaurant/RestaurantCard.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/RestaurantCard.tsx" -> "components/feedback/FeedbackButton.tsx"
+    "components/restaurant/RestaurantCard.tsx" -> "components/ui/OptimizedImage.tsx"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/hooks/useMobileTouch.ts"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/utils/cn.ts"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/utils/commonStyles.ts"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/utils/imageUrlValidator.ts"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/utils/kosherCategories.ts"
+    "components/restaurant/RestaurantCard.tsx" -> "lib/utils/reviewUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/RestaurantCardSkeleton.tsx" [label=<RestaurantCardSkeleton.tsx> tooltip="RestaurantCardSkeleton.tsx" URL="components/restaurant/RestaurantCardSkeleton.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/RestaurantClaimForm.tsx" [label=<RestaurantClaimForm.tsx> tooltip="no-orphans" URL="components/restaurant/RestaurantClaimForm.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/RestaurantGrid.tsx" [label=<RestaurantGrid.tsx> tooltip="RestaurantGrid.tsx" URL="components/restaurant/RestaurantGrid.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/RestaurantGrid.tsx" -> "components/restaurant/RestaurantCard.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/Reviews.tsx" [label=<Reviews.tsx> tooltip="Reviews.tsx" URL="components/restaurant/Reviews.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/Reviews.tsx" -> "components/ui/StarRating.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/ReviewsModal.tsx" [label=<ReviewsModal.tsx> tooltip="ReviewsModal.tsx" URL="components/restaurant/ReviewsModal.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/ReviewsModal.tsx" -> "components/reviews/ReviewForm.tsx"
+    "components/restaurant/ReviewsModal.tsx" -> "components/ui/StarRating.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/SpecialsSection.tsx" [label=<SpecialsSection.tsx> tooltip="SpecialsSection.tsx" URL="components/restaurant/SpecialsSection.tsx" fillcolor="#bbfeff"] } }
+    "components/restaurant/SpecialsSection.tsx" -> "lib/utils/imageValidation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/restaurant" {label="restaurant" "components/restaurant/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/restaurant/index.ts" fillcolor="#ddfeff"] } }
+    "components/restaurant/index.ts" -> "components/restaurant/HoursDisplay.tsx"
+    "components/restaurant/index.ts" -> "components/restaurant/RestaurantCard.tsx"
+    "components/restaurant/index.ts" -> "components/restaurant/RestaurantCardSkeleton.tsx"
+    "components/restaurant/index.ts" -> "components/restaurant/RestaurantGrid.tsx"
+    "components/restaurant/index.ts" -> "components/restaurant/Reviews.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/ReviewCard.tsx" [label=<ReviewCard.tsx> tooltip="ReviewCard.tsx" URL="components/reviews/ReviewCard.tsx" fillcolor="#bbfeff"] } }
+    "components/reviews/ReviewCard.tsx" -> "lib/supabase/client.ts"
+    "components/reviews/ReviewCard.tsx" -> "lib/utils/dateUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/ReviewForm.tsx" [label=<ReviewForm.tsx> tooltip="ReviewForm.tsx" URL="components/reviews/ReviewForm.tsx" fillcolor="#bbfeff"] } }
+    "components/reviews/ReviewForm.tsx" -> "lib/supabase/client.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/ReviewModeration.tsx" [label=<ReviewModeration.tsx> tooltip="ReviewModeration.tsx" URL="components/reviews/ReviewModeration.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/ReviewSnippets.tsx" [label=<ReviewSnippets.tsx> tooltip="ReviewSnippets.tsx" URL="components/reviews/ReviewSnippets.tsx" fillcolor="#bbfeff"] } }
+    "components/reviews/ReviewSnippets.tsx" -> "components/ui/StarRating.tsx"
+    "components/reviews/ReviewSnippets.tsx" -> "lib/utils/cn.ts"
+    "components/reviews/ReviewSnippets.tsx" -> "lib/utils/dateUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/ReviewsSection.tsx" [label=<ReviewsSection.tsx> tooltip="ReviewsSection.tsx" URL="components/reviews/ReviewsSection.tsx" fillcolor="#bbfeff"] } }
+    "components/reviews/ReviewsSection.tsx" -> "components/reviews/ReviewForm.tsx"
+    "components/reviews/ReviewsSection.tsx" -> "components/ui/StarRating.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/reviews" {label="reviews" "components/reviews/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/reviews/index.ts" fillcolor="#ddfeff"] } }
+    "components/reviews/index.ts" -> "components/reviews/ReviewCard.tsx"
+    "components/reviews/index.ts" -> "components/reviews/ReviewForm.tsx"
+    "components/reviews/index.ts" -> "components/reviews/ReviewModeration.tsx"
+    "components/reviews/index.ts" -> "components/reviews/ReviewsSection.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/AdvancedFilters.tsx" [label=<AdvancedFilters.tsx> tooltip="AdvancedFilters.tsx" URL="components/search/AdvancedFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/search/AdvancedFilters.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/AdvancedFiltersRefactored.tsx" [label=<AdvancedFiltersRefactored.tsx> tooltip="AdvancedFiltersRefactored.tsx" URL="components/search/AdvancedFiltersRefactored.tsx" fillcolor="#bbfeff"] } }
+    "components/search/AdvancedFiltersRefactored.tsx" -> "components/search/AgencyFilters.tsx"
+    "components/search/AdvancedFiltersRefactored.tsx" -> "components/search/DietaryFilters.tsx"
+    "components/search/AdvancedFiltersRefactored.tsx" -> "components/search/QuickFilters.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/AdvancedSearchBox.tsx" [label=<AdvancedSearchBox.tsx> tooltip="AdvancedSearchBox.tsx" URL="components/search/AdvancedSearchBox.tsx" fillcolor="#bbfeff"] } }
+    "components/search/AdvancedSearchBox.tsx" -> "lib/hooks/useDebounce.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/AgencyFilters.tsx" [label=<AgencyFilters.tsx> tooltip="AgencyFilters.tsx" URL="components/search/AgencyFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/search/AgencyFilters.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/CategoryFilters.tsx" [label=<CategoryFilters.tsx> tooltip="CategoryFilters.tsx" URL="components/search/CategoryFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/search/CategoryFilters.tsx" -> "components/search/FilterBase.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/DietaryFilters.tsx" [label=<DietaryFilters.tsx> tooltip="DietaryFilters.tsx" URL="components/search/DietaryFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/search/DietaryFilters.tsx" -> "components/search/FilterBase.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/FilterBase.tsx" [label=<FilterBase.tsx> tooltip="FilterBase.tsx" URL="components/search/FilterBase.tsx" fillcolor="#bbfeff"] } }
+    "components/search/FilterBase.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/QuickFilters.tsx" [label=<QuickFilters.tsx> tooltip="QuickFilters.tsx" URL="components/search/QuickFilters.tsx" fillcolor="#bbfeff"] } }
+    "components/search/QuickFilters.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/RecentSearches.tsx" [label=<RecentSearches.tsx> tooltip="RecentSearches.tsx" URL="components/search/RecentSearches.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/SearchBar.tsx" [label=<SearchBar.tsx> tooltip="SearchBar.tsx" URL="components/search/SearchBar.tsx" fillcolor="#bbfeff"] } }
+    "components/search/SearchBar.tsx" -> "lib/google/places.ts"
+    "components/search/SearchBar.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/SearchSuggestions.tsx" [label=<SearchSuggestions.tsx> tooltip="SearchSuggestions.tsx" URL="components/search/SearchSuggestions.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/SmartSearch.tsx" [label=<SmartSearch.tsx> tooltip="SmartSearch.tsx" URL="components/search/SmartSearch.tsx" fillcolor="#bbfeff"] } }
+    "components/search/SmartSearch.tsx" -> "lib/google/places.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/SmartSearchRefactored.tsx" [label=<SmartSearchRefactored.tsx> tooltip="SmartSearchRefactored.tsx" URL="components/search/SmartSearchRefactored.tsx" fillcolor="#bbfeff"] } }
+    "components/search/SmartSearchRefactored.tsx" -> "components/search/RecentSearches.tsx"
+    "components/search/SmartSearchRefactored.tsx" -> "components/search/SearchSuggestions.tsx"
+    "components/search/SmartSearchRefactored.tsx" -> "lib/hooks/index.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/search" {label="search" "components/search/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/search/index.ts" fillcolor="#ddfeff"] } }
+    "components/search/index.ts" -> "components/search/AdvancedFilters.tsx"
+    "components/search/index.ts" -> "components/search/AdvancedFiltersRefactored.tsx"
+    "components/search/index.ts" -> "components/search/AgencyFilters.tsx"
+    "components/search/index.ts" -> "components/search/DietaryFilters.tsx"
+    "components/search/index.ts" -> "components/search/QuickFilters.tsx"
+    "components/search/index.ts" -> "components/search/RecentSearches.tsx"
+    "components/search/index.ts" -> "components/search/SearchBar.tsx"
+    "components/search/index.ts" -> "components/search/SearchSuggestions.tsx"
+    "components/search/index.ts" -> "components/search/SmartSearch.tsx"
+    "components/search/index.ts" -> "components/search/SmartSearchRefactored.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/specials" {label="specials" "components/specials/SpecialsCard.tsx" [label=<SpecialsCard.tsx> tooltip="SpecialsCard.tsx" URL="components/specials/SpecialsCard.tsx" fillcolor="#bbfeff"] } }
+    "components/specials/SpecialsCard.tsx" -> "lib/utils/spacing.ts"
+    "components/specials/SpecialsCard.tsx" -> "lib/utils/typography.ts"
+    "components/specials/SpecialsCard.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/specials" {label="specials" "components/specials/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/specials/index.ts" fillcolor="#ddfeff"] } }
+    "components/specials/index.ts" -> "components/specials/SpecialsCard.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/AnalyticsDashboard.tsx" [label=<AnalyticsDashboard.tsx> tooltip="AnalyticsDashboard.tsx" URL="components/ui/AnalyticsDashboard.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/AnalyticsDashboard.tsx" -> "lib/analytics/performance.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/ConfirmModal.tsx" [label=<ConfirmModal.tsx> tooltip="ConfirmModal.tsx" URL="components/ui/ConfirmModal.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/CssLoader.tsx" [label=<CssLoader.tsx> tooltip="no-orphans" URL="components/ui/CssLoader.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/ErrorBoundary.tsx" [label=<ErrorBoundary.tsx> tooltip="ErrorBoundary.tsx" URL="components/ui/ErrorBoundary.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/FontLoader.tsx" [label=<FontLoader.tsx> tooltip="no-orphans" URL="components/ui/FontLoader.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/FontOptimizer.tsx" [label=<FontOptimizer.tsx> tooltip="FontOptimizer.tsx" URL="components/ui/FontOptimizer.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LazyImage.tsx" [label=<LazyImage.tsx> tooltip="LazyImage.tsx" URL="components/ui/LazyImage.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/LazyImage.tsx" -> "lib/hooks/useLazyLoading.ts"
+    "components/ui/LazyImage.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LazyLoader.tsx" [label=<LazyLoader.tsx> tooltip="LazyLoader.tsx" URL="components/ui/LazyLoader.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/LazyLoader.tsx" -> "components/analytics/Analytics.tsx" [style="dashed"]
+    "components/ui/LazyLoader.tsx" -> "components/map/InteractiveRestaurantMap.tsx" [style="dashed"]
+    "components/ui/LazyLoader.tsx" -> "components/restaurant/ImageCarousel.tsx" [style="dashed"]
+    "components/ui/LazyLoader.tsx" -> "components/reviews/ReviewForm.tsx" [style="dashed"]
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/Loading.tsx" [label=<Loading.tsx> tooltip="Loading.tsx" URL="components/ui/Loading.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LoadingSpinner.tsx" [label=<LoadingSpinner.tsx> tooltip="LoadingSpinner.tsx" URL="components/ui/LoadingSpinner.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/LoadingSpinner.tsx" -> "components/ui/Loading.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LoadingState.tsx" [label=<LoadingState.tsx> tooltip="LoadingState.tsx" URL="components/ui/LoadingState.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/LoadingState.tsx" -> "components/ui/Loading.tsx"
+    "components/ui/LoadingState.tsx" -> "components/ui/LoadingStates.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LoadingStates.tsx" [label=<LoadingStates.tsx> tooltip="LoadingStates.tsx" URL="components/ui/LoadingStates.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/LoadingStates.tsx" -> "components/ui/Toast.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/Logo.tsx" [label=<Logo.tsx> tooltip="Logo.tsx" URL="components/ui/Logo.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/LogoIcon.tsx" [label=<LogoIcon.tsx> tooltip="LogoIcon.tsx" URL="components/ui/LogoIcon.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/NotificationDemo.tsx" [label=<NotificationDemo.tsx> tooltip="NotificationDemo.tsx" URL="components/ui/NotificationDemo.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/NotificationDemo.tsx" -> "lib/contexts/NotificationsContext.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/NotificationPreferences.tsx" [label=<NotificationPreferences.tsx> tooltip="NotificationPreferences.tsx" URL="components/ui/NotificationPreferences.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/NotificationPreferences.tsx" -> "components/ui/Toast.tsx"
+    "components/ui/NotificationPreferences.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/OptimizedImage.tsx" [label=<OptimizedImage.tsx> tooltip="OptimizedImage.tsx" URL="components/ui/OptimizedImage.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/OptimizedImage.tsx" -> "lib/utils/classNames.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/PasswordChangeModal.tsx" [label=<PasswordChangeModal.tsx> tooltip="PasswordChangeModal.tsx" URL="components/ui/PasswordChangeModal.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/PasswordChangeModal.tsx" -> "components/ui/Toast.tsx"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/PerformanceDashboard.tsx" [label=<PerformanceDashboard.tsx> tooltip="PerformanceDashboard.tsx" URL="components/ui/PerformanceDashboard.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/PerformanceDashboard.tsx" -> "lib/analytics/performance.ts"
+    "components/ui/PerformanceDashboard.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/PerformanceMonitor.tsx" [label=<PerformanceMonitor.tsx> tooltip="PerformanceMonitor.tsx" URL="components/ui/PerformanceMonitor.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/PerformanceMonitor.tsx" -> "lib/hooks/usePerformanceOptimization.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/PillDropdown.tsx" [label=<PillDropdown.tsx> tooltip="PillDropdown.tsx" URL="components/ui/PillDropdown.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/RefreshButton.tsx" [label=<RefreshButton.tsx> tooltip="RefreshButton.tsx" URL="components/ui/RefreshButton.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/ServiceWorkerRegistration.tsx" [label=<ServiceWorkerRegistration.tsx> tooltip="ServiceWorkerRegistration.tsx" URL="components/ui/ServiceWorkerRegistration.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/SharePopup.tsx" [label=<SharePopup.tsx> tooltip="SharePopup.tsx" URL="components/ui/SharePopup.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/StarRating.tsx" [label=<StarRating.tsx> tooltip="StarRating.tsx" URL="components/ui/StarRating.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/StarRating.tsx" -> "lib/utils/cn.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/StickyCTA.tsx" [label=<StickyCTA.tsx> tooltip="StickyCTA.tsx" URL="components/ui/StickyCTA.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/Toast.tsx" [label=<Toast.tsx> tooltip="Toast.tsx" URL="components/ui/Toast.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/Toast.tsx" -> "lib/utils/validation.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/TouchTestComponent.tsx" [label=<TouchTestComponent.tsx> tooltip="TouchTestComponent.tsx" URL="components/ui/TouchTestComponent.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/TouchTestComponent.tsx" -> "lib/hooks/useMobileTouch.ts"
+    "components/ui/TouchTestComponent.tsx" -> "lib/hooks/useTouchFeedback.ts"
+    "components/ui/TouchTestComponent.tsx" -> "lib/utils/touchUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/UnifiedCard.tsx" [label=<UnifiedCard.tsx> tooltip="UnifiedCard.tsx" URL="components/ui/UnifiedCard.tsx" fillcolor="#bbfeff"] } }
+    "components/ui/UnifiedCard.tsx" -> "lib/hooks/useMobileTouch.ts"
+    "components/ui/UnifiedCard.tsx" -> "lib/utils/classNames.ts"
+    "components/ui/UnifiedCard.tsx" -> "lib/utils/stringUtils.ts"
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/VirtualList.tsx" [label=<VirtualList.tsx> tooltip="no-orphans" URL="components/ui/VirtualList.tsx" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_components" {label="components" subgraph "cluster_components/ui" {label="ui" "components/ui/index.ts" [label=<index.ts> tooltip="index.ts" URL="components/ui/index.ts" fillcolor="#ddfeff"] } }
+    "components/ui/index.ts" -> "components/ui/AnalyticsDashboard.tsx"
+    "components/ui/index.ts" -> "components/ui/ConfirmModal.tsx"
+    "components/ui/index.ts" -> "components/ui/ErrorBoundary.tsx"
+    "components/ui/index.ts" -> "components/ui/LoadingSpinner.tsx"
+    "components/ui/index.ts" -> "components/ui/LoadingStates.tsx"
+    "components/ui/index.ts" -> "components/ui/Logo.tsx"
+    "components/ui/index.ts" -> "components/ui/LogoIcon.tsx"
+    "components/ui/index.ts" -> "components/ui/NotificationPreferences.tsx"
+    "components/ui/index.ts" -> "components/ui/PasswordChangeModal.tsx"
+    "components/ui/index.ts" -> "components/ui/PerformanceDashboard.tsx"
+    "components/ui/index.ts" -> "components/ui/PillDropdown.tsx"
+    "components/ui/index.ts" -> "components/ui/RefreshButton.tsx"
+    "components/ui/index.ts" -> "components/ui/SharePopup.tsx"
+    "components/ui/index.ts" -> "components/ui/Toast.tsx"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/analytics" {label="analytics" "lib/analytics/performance.ts" [label=<performance.ts> tooltip="performance.ts" URL="lib/analytics/performance.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" "lib/api-config.ts" [label=<api-config.ts> tooltip="no-orphans" URL="lib/api-config.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/adminClient.ts" [label=<adminClient.ts> tooltip="no-orphans" URL="lib/api/adminClient.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/health.ts" [label=<health.ts> tooltip="no-orphans" URL="lib/api/health.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/marketplace.ts" [label=<marketplace.ts> tooltip="marketplace.ts" URL="lib/api/marketplace.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/mockData.ts" [label=<mockData.ts> tooltip="no-orphans" URL="lib/api/mockData.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/restaurants.ts" [label=<restaurants.ts> tooltip="restaurants.ts" URL="lib/api/restaurants.ts" fillcolor="#ddfeff"] } }
+    "lib/api/restaurants.ts" -> "lib/utils/imageUrlValidator.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/api" {label="api" "lib/api/specials.ts" [label=<specials.ts> tooltip="no-orphans" URL="lib/api/specials.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" "lib/auth-config.ts" [label=<auth-config.ts> tooltip="auth-config.ts" URL="lib/auth-config.ts" fillcolor="#ddfeff"] }
+    subgraph "cluster_lib" {label="lib" "lib/auth.ts" [label=<auth.ts> tooltip="auth.ts" URL="lib/auth.ts" fillcolor="#ddfeff"] }
+    "lib/auth.ts" -> "lib/supabase/server.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/admin-token-manager.ts" [label=<admin-token-manager.ts> tooltip="admin-token-manager.ts" URL="lib/auth/admin-token-manager.ts" fillcolor="#ddfeff"] } }
+    "lib/auth/admin-token-manager.ts" -> "lib/supabase/server.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/cleanup-manager.ts" [label=<cleanup-manager.ts> tooltip="cleanup-manager.ts" URL="lib/auth/cleanup-manager.ts" fillcolor="#ddfeff"] } }
+    "lib/auth/cleanup-manager.ts" -> "lib/db/prisma.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/mfa-manager.ts" [label=<mfa-manager.ts> tooltip="no-orphans" URL="lib/auth/mfa-manager.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/migration-manager.ts" [label=<migration-manager.ts> tooltip="migration-manager.ts" URL="lib/auth/migration-manager.ts" fillcolor="#ddfeff"] } }
+    "lib/auth/migration-manager.ts" -> "lib/auth/user-sync.ts"
+    "lib/auth/migration-manager.ts" -> "lib/db/prisma.ts"
+    "lib/auth/migration-manager.ts" -> "lib/supabase/server.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/transition-manager.ts" [label=<transition-manager.ts> tooltip="transition-manager.ts" URL="lib/auth/transition-manager.ts" fillcolor="#ddfeff"] } }
+    "lib/auth/transition-manager.ts" -> "lib/db/prisma.ts"
+    "lib/auth/transition-manager.ts" -> "lib/supabase/server.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/auth" {label="auth" "lib/auth/user-sync.ts" [label=<user-sync.ts> tooltip="user-sync.ts" URL="lib/auth/user-sync.ts" fillcolor="#ddfeff"] } }
+    "lib/auth/user-sync.ts" -> "lib/db/prisma.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/backups" {label="backups" "lib/backups/hoursBackup.ts" [label=<hoursBackup.ts> tooltip="no-orphans" URL="lib/backups/hoursBackup.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/backups" {label="backups" "lib/backups/websiteBackup.ts" [label=<websiteBackup.ts> tooltip="no-orphans" URL="lib/backups/websiteBackup.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/contexts" {label="contexts" "lib/contexts/NotificationsContext.tsx" [label=<NotificationsContext.tsx> tooltip="NotificationsContext.tsx" URL="lib/contexts/NotificationsContext.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/db" {label="db" "lib/db/prisma.ts" [label=<prisma.ts> tooltip="prisma.ts" URL="lib/db/prisma.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" "lib/email.ts" [label=<email.ts> tooltip="email.ts" URL="lib/email.ts" fillcolor="#ddfeff"] }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/filters" {label="filters" "lib/filters/filters.types.ts" [label=<filters.types.ts> tooltip="no-orphans" URL="lib/filters/filters.types.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/filters" {label="filters" "lib/filters/serialize.ts" [label=<serialize.ts> tooltip="serialize.ts" URL="lib/filters/serialize.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/filters" {label="filters" "lib/filters/urlSync.ts" [label=<urlSync.ts> tooltip="no-orphans" URL="lib/filters/urlSync.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/google" {label="google" "lib/google/places.ts" [label=<places.ts> tooltip="places.ts" URL="lib/google/places.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/index.ts" [label=<index.ts> tooltip="index.ts" URL="lib/hooks/index.ts" fillcolor="#ddfeff"] } }
+    "lib/hooks/index.ts" -> "lib/hooks/useInfiniteScroll.ts"
+    "lib/hooks/index.ts" -> "lib/hooks/useIsMobile.ts"
+    "lib/hooks/index.ts" -> "lib/hooks/useRecentSearches.ts"
+    "lib/hooks/index.ts" -> "lib/hooks/useSearchInput.ts"
+    "lib/hooks/index.ts" -> "lib/hooks/useSearchSuggestions.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useAdvancedFilters.ts" [label=<useAdvancedFilters.ts> tooltip="useAdvancedFilters.ts" URL="lib/hooks/useAdvancedFilters.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useCssLoader.ts" [label=<useCssLoader.ts> tooltip="no-orphans" URL="lib/hooks/useCssLoader.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useDebounce.ts" [label=<useDebounce.ts> tooltip="useDebounce.ts" URL="lib/hooks/useDebounce.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useFeatureFlags.tsx" [label=<useFeatureFlags.tsx> tooltip="useFeatureFlags.tsx" URL="lib/hooks/useFeatureFlags.tsx" fillcolor="#bbfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useFilterOptions.ts" [label=<useFilterOptions.ts> tooltip="no-orphans" URL="lib/hooks/useFilterOptions.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useInfiniteScroll.ts" [label=<useInfiniteScroll.ts> tooltip="useInfiniteScroll.ts" URL="lib/hooks/useInfiniteScroll.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useIntersectionObserver.ts" [label=<useIntersectionObserver.ts> tooltip="useIntersectionObserver.ts" URL="lib/hooks/useIntersectionObserver.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useIsMobile.ts" [label=<useIsMobile.ts> tooltip="useIsMobile.ts" URL="lib/hooks/useIsMobile.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useLazyLoading.ts" [label=<useLazyLoading.ts> tooltip="useLazyLoading.ts" URL="lib/hooks/useLazyLoading.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useLocalFilters.ts" [label=<useLocalFilters.ts> tooltip="useLocalFilters.ts" URL="lib/hooks/useLocalFilters.ts" fillcolor="#ddfeff"] } }
+    "lib/hooks/useLocalFilters.ts" -> "lib/filters/serialize.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useMobileTouch.ts" [label=<useMobileTouch.ts> tooltip="useMobileTouch.ts" URL="lib/hooks/useMobileTouch.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useOptimizedFilters.ts" [label=<useOptimizedFilters.ts> tooltip="no-orphans" URL="lib/hooks/useOptimizedFilters.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/usePerformanceOptimization.ts" [label=<usePerformanceOptimization.ts> tooltip="usePerformanceOptimization.ts" URL="lib/hooks/usePerformanceOptimization.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useRecentSearches.ts" [label=<useRecentSearches.ts> tooltip="useRecentSearches.ts" URL="lib/hooks/useRecentSearches.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useScrollSnapCarousel.ts" [label=<useScrollSnapCarousel.ts> tooltip="useScrollSnapCarousel.ts" URL="lib/hooks/useScrollSnapCarousel.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useSearchInput.ts" [label=<useSearchInput.ts> tooltip="useSearchInput.ts" URL="lib/hooks/useSearchInput.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useSearchSuggestions.ts" [label=<useSearchSuggestions.ts> tooltip="useSearchSuggestions.ts" URL="lib/hooks/useSearchSuggestions.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/hooks" {label="hooks" "lib/hooks/useTouchFeedback.ts" [label=<useTouchFeedback.ts> tooltip="useTouchFeedback.ts" URL="lib/hooks/useTouchFeedback.ts" fillcolor="#ddfeff"] } }
+    "lib/hooks/useTouchFeedback.ts" -> "lib/utils/touchUtils.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/i18n" {label="i18n" "lib/i18n/index.ts" [label=<index.ts> tooltip="no-orphans" URL="lib/i18n/index.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/maps" {label="maps" "lib/maps/loader.ts" [label=<loader.ts> tooltip="loader.ts" URL="lib/maps/loader.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" "lib/message-bus.ts" [label=<message-bus.ts> tooltip="message-bus.ts" URL="lib/message-bus.ts" fillcolor="#ddfeff"] }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/polyfills" {label="polyfills" "lib/polyfills/global-polyfill.js" [label=<global-polyfill.js> tooltip="no-orphans" URL="lib/polyfills/global-polyfill.js" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/polyfills" {label="polyfills" "lib/polyfills/self-polyfill.js" [label=<self-polyfill.js> tooltip="no-orphans" URL="lib/polyfills/self-polyfill.js" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/supabase" {label="supabase" "lib/supabase/client.ts" [label=<client.ts> tooltip="client.ts" URL="lib/supabase/client.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/supabase" {label="supabase" "lib/supabase/middleware.ts" [label=<middleware.ts> tooltip="no-orphans" URL="lib/supabase/middleware.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/supabase" {label="supabase" "lib/supabase/server.ts" [label=<server.ts> tooltip="server.ts" URL="lib/supabase/server.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/google-maps.d.ts" [label=<google-maps.d.ts> tooltip="google-maps.d.ts" URL="lib/types/google-maps.d.ts" fillcolor="#ccffcc"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/index.ts" [label=<index.ts> tooltip="no-orphans" URL="lib/types/index.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/leaflet.d.ts" [label=<leaflet.d.ts> tooltip="leaflet.d.ts" URL="lib/types/leaflet.d.ts" fillcolor="#ccffcc"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/marketplace.ts" [label=<marketplace.ts> tooltip="no-orphans" URL="lib/types/marketplace.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/next-auth.d.ts" [label=<next-auth.d.ts> tooltip="next-auth.d.ts" URL="lib/types/next-auth.d.ts" fillcolor="#ccffcc"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/restaurant.ts" [label=<restaurant.ts> tooltip="no-orphans" URL="lib/types/restaurant.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/types" {label="types" "lib/types/review.ts" [label=<review.ts> tooltip="no-orphans" URL="lib/types/review.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/admin.ts" [label=<admin.ts> tooltip="no-orphans" URL="lib/utils/admin.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/analytics.ts" [label=<analytics.ts> tooltip="no-orphans" URL="lib/utils/analytics.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/apiRouteUtils.ts" [label=<apiRouteUtils.ts> tooltip="no-orphans" URL="lib/utils/apiRouteUtils.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/classNames.ts" [label=<classNames.ts> tooltip="classNames.ts" URL="lib/utils/classNames.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/cn.ts" [label=<cn.ts> tooltip="cn.ts" URL="lib/utils/cn.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/colors.ts" [label=<colors.ts> tooltip="colors.ts" URL="lib/utils/colors.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/commonStyles.ts" [label=<commonStyles.ts> tooltip="commonStyles.ts" URL="lib/utils/commonStyles.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/componentUtils.ts" [label=<componentUtils.ts> tooltip="no-orphans" URL="lib/utils/componentUtils.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/dateUtils.ts" [label=<dateUtils.ts> tooltip="dateUtils.ts" URL="lib/utils/dateUtils.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/distance.ts" [label=<distance.ts> tooltip="no-orphans" URL="lib/utils/distance.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/favorites.ts" [label=<favorites.ts> tooltip="favorites.ts" URL="lib/utils/favorites.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/formValidation.ts" [label=<formValidation.ts> tooltip="formValidation.ts" URL="lib/utils/formValidation.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/hours.ts" [label=<hours.ts> tooltip="hours.ts" URL="lib/utils/hours.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/imageUrlValidator.ts" [label=<imageUrlValidator.ts> tooltip="imageUrlValidator.ts" URL="lib/utils/imageUrlValidator.ts" fillcolor="#ddfeff"] } }
+    "lib/utils/imageUrlValidator.ts" -> "lib/utils/imageValidation.ts"
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/imageValidation.ts" [label=<imageValidation.ts> tooltip="imageValidation.ts" URL="lib/utils/imageValidation.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/kosherCategories.ts" [label=<kosherCategories.ts> tooltip="kosherCategories.ts" URL="lib/utils/kosherCategories.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/logger.ts" [label=<logger.ts> tooltip="logger.ts" URL="lib/utils/logger.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/performanceOptimization.ts" [label=<performanceOptimization.ts> tooltip="performanceOptimization.ts" URL="lib/utils/performanceOptimization.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/rateLimiter.ts" [label=<rateLimiter.ts> tooltip="no-orphans" URL="lib/utils/rateLimiter.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/recaptcha.ts" [label=<recaptcha.ts> tooltip="no-orphans" URL="lib/utils/recaptcha.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/reviewUtils.ts" [label=<reviewUtils.ts> tooltip="reviewUtils.ts" URL="lib/utils/reviewUtils.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/scrollUtils.ts" [label=<scrollUtils.ts> tooltip="scrollUtils.ts" URL="lib/utils/scrollUtils.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/spacing.ts" [label=<spacing.ts> tooltip="spacing.ts" URL="lib/utils/spacing.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/stringUtils.ts" [label=<stringUtils.ts> tooltip="stringUtils.ts" URL="lib/utils/stringUtils.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/touchUtils.ts" [label=<touchUtils.ts> tooltip="touchUtils.ts" URL="lib/utils/touchUtils.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/typography.ts" [label=<typography.ts> tooltip="typography.ts" URL="lib/utils/typography.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/utils" {label="utils" "lib/utils/validation.ts" [label=<validation.ts> tooltip="validation.ts" URL="lib/utils/validation.ts" fillcolor="#ddfeff"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/validators" {label="validators" "lib/validators/review.ts" [label=<review.ts> tooltip="no-orphans" URL="lib/validators/review.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+    subgraph "cluster_lib" {label="lib" subgraph "cluster_lib/workers" {label="workers" "lib/workers/mendel-worker.ts" [label=<mendel-worker.ts> tooltip="no-orphans" URL="lib/workers/mendel-worker.ts" fillcolor="#ccffcc" fontcolor="orange" color="orange"] } }
+}

@@ -31,13 +31,7 @@ module.exports = {
       }
     }
   ],
-  allowed: [
-    {
-      name: 'allow-all',
-      from: {},
-      to: {}
-    }
-  ],
+  allowed: [],
   options: {
     doNotFollow: {
       path: 'node_modules',
