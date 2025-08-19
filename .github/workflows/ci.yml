@@ -31,8 +31,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        cache: 'pnpm'
+        cache-dependency-path: |
+          frontend/pnpm-lock.yaml
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
         
     - name: Debug - Check current directory and files
       run: |
@@ -48,7 +54,7 @@ jobs:
         cd $GITHUB_WORKSPACE/frontend
         pwd
         ls -la package.json
-        npm ci --prefer-offline --no-audit
+        pnpm install --frozen-lockfile --prefer-offline
       
     - name: Debug - Check if node_modules exists
       run: |
@@ -63,12 +69,12 @@ jobs:
     - name: Run ESLint
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npm run lint
+        pnpm run lint
       
     - name: Run TypeScript type checking
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npm run type-check
+        pnpm run type-check
       
     - name: Build frontend
       id: build_frontend
@@ -82,8 +88,8 @@ jobs:
         NODE_ENV: production
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npx prisma generate
-        npm run build
+        pnpm exec prisma generate
+        pnpm run build
         
     - name: Mendel Mode v4.2 - Progressive Enhancement Tracking
       run: |
@@ -191,8 +197,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        cache: 'pnpm'
+        cache-dependency-path: |
+          frontend/pnpm-lock.yaml
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
           
     - name: Install Python dependencies
       working-directory: backend
@@ -381,8 +393,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        cache: 'pnpm'
+        cache-dependency-path: |
+          frontend/pnpm-lock.yaml
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
       
     - name: Run Bandit security scan
       run: |
@@ -392,16 +410,16 @@ jobs:
         # Show summary of findings
         bandit -r backend/ --confidence-level high -f txt || true
         
-    - name: Run npm audit
+    - name: Run pnpm audit
       run: |
         cd $GITHUB_WORKSPACE/frontend
         echo "Running security audit..."
         # Install dependencies
-        npm ci --prefer-offline --no-audit
+        pnpm install --frozen-lockfile --prefer-offline
         # Run audit with moderate level (ignore low-level issues)
-        npm audit --audit-level moderate || echo "Audit completed with warnings"
+        pnpm audit --audit-level moderate || echo "Audit completed with warnings"
         # Check for high/critical vulnerabilities
-        npm audit --audit-level high
+        pnpm audit --audit-level high
 
   # Performance Testing
   performance:
@@ -417,13 +435,19 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        cache: 'pnpm'
+        cache-dependency-path: |
+          frontend/pnpm-lock.yaml
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
         
     - name: Install frontend dependencies
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npm ci --prefer-offline --no-audit
+        pnpm install --frozen-lockfile --prefer-offline
       
     - name: Build frontend
       env:
@@ -435,14 +459,14 @@ jobs:
         NODE_ENV: production
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npm run build
+        pnpm run build
       
     - name: Build and run Lighthouse CI
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm install -g @lhci/cli@latest
         # Start Next.js server in production mode (non-blocking)
-        npm run start &
+        pnpm run start &
         SERVER_PID=$!
         # Wait for server to be ready
         echo "Waiting for server to start..."
@@ -481,8 +505,15 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        cache: 'pnpm'
+        cache-dependency-path: |
+          frontend/pnpm-lock.yaml
+        
+    - name: Install pnpm
+      if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
 
     - name: Deploy to Vercel (Frontend via CLI)
       if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
