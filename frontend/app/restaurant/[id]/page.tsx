@@ -70,7 +70,7 @@ const RestaurantDetailPage: React.FC = () => {
     }
   }, [params]);
 
-  const __getAgencyBadgeClass = (agency: string) => {
+  const _getAgencyBadgeClass = (agency: string) => {
     switch (agency?.toUpperCase()) {
       case 'ORB':
         return 'bg-white text-blue-600 border border-blue-200';

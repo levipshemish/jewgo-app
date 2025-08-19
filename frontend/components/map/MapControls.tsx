@@ -11,7 +11,7 @@ interface MapControlsProps {
 }
 
 export default function MapControls({
-  userLocation, showDirections, setShowDirections, onLocationClick, onClearDirections
+  userLocation, showDirections, setShowDirections: _setShowDirections, onLocationClick, onClearDirections
 }: MapControlsProps) {
   return (
     <>

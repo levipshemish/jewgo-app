@@ -135,7 +135,7 @@ function getTimeAgo(dateString: string): string {
 }
 
 // Product grid component matching unified eatery sizing
-function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
+function ProductGrid({ products, onAddToCart: _onAddToCart, onAddToWishlist: _onAddToWishlist }: {
   products: MarketplaceListing[];
   onAddToCart: (product: MarketplaceListing) => void;
   onAddToWishlist: (product: MarketplaceListing) => void;
@@ -272,7 +272,7 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
 
 export default function MarketplacePageClient() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('marketplace');
+  const [_activeTab, setActiveTab] = useState('marketplace');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState<MarketplaceListing[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
@@ -346,7 +346,7 @@ export default function MarketplacePageClient() {
     }
   };
 
-  const handleTabChange = (tab: string) => {
+  const _handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
     switch (tab) {
@@ -389,7 +389,7 @@ export default function MarketplacePageClient() {
       <div className="min-h-screen bg-gray-50">
         <MarketplaceHeader onSearch={handleSearch} />
         <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          {/* CategoryTabs component removed - functionality moved to action buttons */}
         </div>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
@@ -406,7 +406,7 @@ export default function MarketplacePageClient() {
     <div className="min-h-screen bg-gray-50">
       <MarketplaceHeader onSearch={handleSearch} />
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        {/* CategoryTabs component removed - functionality moved to action buttons */}
       </div>
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto space-y-4">

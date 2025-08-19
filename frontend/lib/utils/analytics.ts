@@ -187,7 +187,7 @@ class Analytics {
   // Private helper methods
   private hashEmail(email: string): string {
     // Simple hash for privacy - in production, use a proper hashing library
-    return email.split('@')[0].substring(0, 3) + '***@' + email.split('@')[1];
+    return `${email.split('@')[0].substring(0, 3)}***@${email.split('@')[1]}`;
   }
 
   private sanitizeDetails(details: any): any {
@@ -207,7 +207,7 @@ class Analytics {
     return query.replace(/[<>]/g, '').substring(0, 100);
   }
 
-  private sendToAnalyticsService(event: AnalyticsEventData) {
+  private sendToAnalyticsService(_event: AnalyticsEventData) {
     // In production, implement actual analytics service integration
     // For now, silently process the event
     // TODO: Integrate with actual analytics service (Google Analytics, Mixpanel, etc.)

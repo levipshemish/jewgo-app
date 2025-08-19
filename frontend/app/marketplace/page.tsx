@@ -23,6 +23,7 @@ export default function MarketplacePage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -65,14 +66,22 @@ export default function MarketplacePage() {
       if (response.success && response.data?.listings) {
         const newListings = response.data.listings;
         
-        if (append) {
-          setListings(prev => [...prev, ...newListings]);
+        // Check if marketplace is available (not empty due to "not yet available" message)
+        if (newListings.length === 0 && (response.data as any).message === 'Marketplace is not yet available') {
+          setMarketplaceAvailable(false);
+          setListings([]);
+          setHasMore(false);
         } else {
-          setListings(newListings);
+          setMarketplaceAvailable(true);
+          if (append) {
+            setListings(prev => [...prev, ...newListings]);
+          } else {
+            setListings(newListings);
+          }
+          
+          setHasMore(newListings.length === 20);
+          setCurrentPage(page);
         }
-        
-        setHasMore(newListings.length === 20);
-        setCurrentPage(page);
       } else {
         setError(response.error || 'Failed to load listings');
       }
@@ -136,6 +145,45 @@ export default function MarketplacePage() {
   const handleAddListing = () => {
     router.push('/marketplace/add');
   };
+
+  // Show marketplace not available message
+  if (!marketplaceAvailable) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-6">🛍️</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Marketplace Coming Soon!
+            </h1>
+            <p className="text-gray-600 mb-6">
+              Our marketplace feature is currently under development. We're working hard to bring you a great buying and selling experience for kosher items.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-blue-900 mb-2">What's Coming:</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Buy and sell kosher items</li>
+                <li>• Vehicle and appliance listings</li>
+                <li>• Gemach (free loan) items</li>
+                <li>• Location-based search</li>
+                <li>• Secure transactions</li>
+              </ul>
+            </div>
+            <button
+              onClick={() => router.push('/')}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
+        
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

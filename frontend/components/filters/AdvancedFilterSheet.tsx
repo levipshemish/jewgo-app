@@ -22,7 +22,7 @@ interface AdvancedFilterSheetProps {
 }
 
 const AdvancedFilterSheet: React.FC<AdvancedFilterSheetProps> = ({
-  initialApplied, onApply, onCancel, enableUrlSync = true, userLocation, locationLoading, onRequestLocation, }) => {
+  initialApplied, onApply, onCancel: _onCancel, enableUrlSync = true, userLocation, locationLoading, onRequestLocation, }) => {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
     kosherCategories: [],

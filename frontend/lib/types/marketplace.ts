@@ -106,6 +106,7 @@ export interface MarketplaceSearchResponse {
     total: number;
     limit: number;
     offset: number;
+    message?: string;
   };
   error?: string;
 }
