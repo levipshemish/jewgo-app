@@ -86,10 +86,7 @@ class DatabaseConnectionManager:
             msg = "DATABASE_URL environment variable is required"
             raise ValueError(msg)
         
-        # Ensure database URL uses psycopg3 dialect for compatibility
-        if self.database_url.startswith("postgresql://") and not self.database_url.startswith("postgresql+psycopg://"):
-            self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://")
-            logger.info("Updated database URL to use psycopg3 dialect")
+
 
         # Initialize SQLAlchemy components
         self.engine = None

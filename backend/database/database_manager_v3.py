@@ -449,10 +449,7 @@ class EnhancedDatabaseManager:
     def connect(self) -> bool:
         """Connect to the database and create tables if they don't exist."""
         try:
-            # Ensure database URL uses psycopg3 dialect for compatibility
-            if self.database_url.startswith("postgresql://") and not self.database_url.startswith("postgresql+psycopg://"):
-                self.database_url = self.database_url.replace("postgresql://", "postgresql+psycopg://")
-                logger.info("Updated database URL to use psycopg3 dialect")
+
             
             # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
             try:
@@ -468,7 +465,7 @@ class EnhancedDatabaseManager:
                 # Non-fatal: continue without altering URL
                 logger.warning("Failed to normalize database URL for SSL; continuing", error=str(e))
 
-            # Create the engine with SQLAlchemy 2.0 + psycopg3
+            # Create the engine with SQLAlchemy 2.0 + psycopg2-binary
             # Add connection pool + TCP keepalive settings for better reliability under TLS
             keepalives_idle = ConfigManager.get_pg_keepalives_idle()
             keepalives_interval = ConfigManager.get_pg_keepalives_interval()
