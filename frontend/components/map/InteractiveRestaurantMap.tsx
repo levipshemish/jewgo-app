@@ -9,6 +9,7 @@ import { throttle, createBatchProcessor, performanceMonitor, safeSetTimeout } fr
 import { safeFilter } from '@/lib/utils/validation';
 
 import { useMarkerManagement } from './hooks/useMarkerManagement';
+import { MapPerformanceMonitor } from '../monitoring/MapPerformanceMonitor';
 
 
 // Optional globals for clustering when available at runtime
@@ -64,6 +65,10 @@ export default function InteractiveRestaurantMap({
   const [notification, setNotification] = useState<Notification | null>(null);
   const [showDirections, setShowDirections] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
+  
+  // Add info window cache for performance
+  const infoWindowCache = useRef<Map<number, { content: string; timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   // Filter restaurants with valid coordinates and addresses - memoized for performance
   const restaurantsWithCoords = useMemo(() => {
@@ -289,7 +294,7 @@ export default function InteractiveRestaurantMap({
       
       // Use performance monitor to track marker creation
       performanceMonitor.measure('Marker Creation', finalizeMarkers);
-    }, 150), // Increased debounce to 150ms for better performance
+    }, 300), // Increased throttle to 300ms for better performance
     [cleanupMarkers, createMarker, applyClustering]
   );
 
@@ -846,18 +851,48 @@ export default function InteractiveRestaurantMap({
       return lat >= sw.lat() && lat <= ne.lat() && lng >= sw.lng() && lng <= ne.lng();
     });
 
-    // Basic guard against excessive rerenders on identical inputs (soft check)
+    // Enhanced bounds change detection with minimum distance threshold
     const zoom = map.getZoom?.() ?? 0;
-    const boundsKey = `${sw.lat().toFixed(2)},${sw.lng().toFixed(2)}:${ne.lat().toFixed(2)},${ne.lng().toFixed(2)}:z${zoom}`;
+    
+    // More granular bounds checking (3 decimal places for better precision)
+    const boundsKey = `${sw.lat().toFixed(3)},${sw.lng().toFixed(3)}:${ne.lat().toFixed(3)},${ne.lng().toFixed(3)}:z${zoom}`;
+    
+    // Add minimum distance threshold to prevent micro-movements from triggering renders
+    const lastBounds = lastRenderKeyRef.current;
+    if (lastBounds) {
+      const lastBoundsParts = lastBounds.split(':');
+      const currentBoundsParts = boundsKey.split(':');
+      
+      // Check if bounds change is significant enough
+      const lastCoords = lastBoundsParts[0].split(',');
+      const currentCoords = currentBoundsParts[0].split(',');
+      
+      const latDiff = Math.abs(parseFloat(lastCoords[0]) - parseFloat(currentCoords[0]));
+      const lngDiff = Math.abs(parseFloat(lastCoords[1]) - parseFloat(currentCoords[1]));
+      
+      // Skip render if change is less than 0.001 degrees (roughly 100 meters)
+      if (latDiff < 0.001 && lngDiff < 0.001 && lastBoundsParts[2] === currentBoundsParts[2]) {
+        return;
+      }
+    }
+    
     const nextKey = `${boundsKey}|count=${inView.length}|b=${showRatingBubbles ? 1 : 0}`;
+    
+    // Additional check for rapid movements
     if (lastRenderKeyRef.current === nextKey && selectedRestaurantIdRef.current === selectedRestaurantId) {
       return;
     }
+    
     lastRenderKeyRef.current = nextKey;
 
     // Use debounced marker update
     debouncedUpdateMarkers(map, inView);
   }, [restaurantsWithCoords, selectedRestaurantId, showRatingBubbles, onRestaurantSelect, debouncedUpdateMarkers]);
+
+  // Clear info window cache when restaurants change
+  useEffect(() => {
+    infoWindowCache.current.clear();
+  }, [restaurantsWithCoords]);
 
 
 
@@ -955,6 +990,37 @@ export default function InteractiveRestaurantMap({
       .replace(/'/g, '&#x27;')
       .replace(/\//g, '&#x2F;');
   };
+
+  // Enhanced info window content creation with caching
+  const createInfoWindowContent = useCallback((restaurant: Restaurant, distanceFromUser?: number | null) => {
+    const cacheKey = restaurant.id;
+    const now = Date.now();
+    
+    // Check cache first
+    const cached = infoWindowCache.current.get(cacheKey);
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      return cached.content;
+    }
+    
+    // Generate new content
+    const content = _createInfoWindowContent(restaurant, distanceFromUser);
+    
+    // Cache the content
+    infoWindowCache.current.set(cacheKey, {
+      content,
+      timestamp: now
+    });
+    
+    // Clean up old cache entries
+    if (infoWindowCache.current.size > 100) {
+      const entries = Array.from(infoWindowCache.current.entries());
+      const sortedEntries = entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = sortedEntries.slice(0, 20); // Remove oldest 20 entries
+      toRemove.forEach(([key]) => infoWindowCache.current.delete(key));
+    }
+    
+    return content;
+  }, []);
 
   const _createInfoWindowContent = (restaurant: Restaurant, distanceFromUser?: number | null) => {
     let safeImageUrl = getMapSafeImageUrl(restaurant);
@@ -1327,6 +1393,9 @@ export default function InteractiveRestaurantMap({
           </span>
         </button>
       </div>
+      
+      {/* Performance Monitor - Only shown in development */}
+      <MapPerformanceMonitor />
     </div>
   );
 }

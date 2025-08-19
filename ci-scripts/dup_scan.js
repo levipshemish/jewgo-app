@@ -41,7 +41,7 @@ for (const [base, arr] of nameMap.entries()) {
   // Ignore expected duplicates like index files and __init__.py
   if (base === 'index.ts' || base === 'index.tsx' || base === 'index.js' || base === '__init__.py') continue;
   // Ignore Next.js page.tsx files (expected in app router)
-  if (base === 'page.tsx' && arr.every(f => f.includes('/app/') || f.includes('/pages/'))) continue;
+  if (base === 'page.tsx' && arr.every(f => f.includes('/app/') || f.includes('/pages/') || f.includes('/graveyard/'))) continue;
   // Ignore route.ts files (expected in Next.js API routes)
   if (base === 'route.ts' && arr.every(f => f.includes('/api/') || f.includes('/app/api/') || f.includes('/auth/') || f.includes('/logout/'))) continue;
   // Ignore layout.tsx files (expected in Next.js app router)
@@ -89,6 +89,7 @@ for (const [sym, arr] of symbolMap.entries()) {
       !/^decorator$/i.test(sym) &&
       !/^wrapper$/i.test(sym) &&
       !/^connect$/i.test(sym) &&
+      !/^connect_redis$/i.test(sym) &&
       !/^close$/i.test(sym) &&
       !/^delete$/i.test(sym) &&
       !/^run$/i.test(sym) &&

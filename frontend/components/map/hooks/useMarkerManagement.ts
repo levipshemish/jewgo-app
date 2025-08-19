@@ -25,14 +25,32 @@ interface UseMarkerManagementProps {
   onRestaurantSelect?: (restaurantId: number) => void;
 }
 
+// Helper function to get marker color
+const getMarkerColor = (category?: string) => {
+  switch (category?.toLowerCase()) {
+    case 'meat':
+      return '#A70000'; // JewGo Dark Red for meat
+    case 'dairy':
+      return '#ADD8E6'; // JewGo Light Blue for dairy
+    case 'pareve':
+      return '#FFCE6D'; // JewGo Yellow for pareve
+    default:
+      return '#BBBBBB'; // JewGo Gray for unknown
+  }
+};
+
 export function useMarkerManagement({
   restaurants, selectedRestaurantId, userLocation, showRatingBubbles, enableClustering, onRestaurantSelect
 }: UseMarkerManagementProps) {
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const markersMapRef = useRef<Map<number, google.maps.marker.AdvancedMarkerElement>>(new Map());
   const clustererRef = useRef<any | null>(null);
+  
+  // Add marker content cache and pool for reuse
+  const markerContentCache = useRef<Map<string, { element: HTMLElement; version: string; lastUsed: number }>>(new Map());
+  const markerPool = useRef<Map<string, google.maps.marker.AdvancedMarkerElement[]>>(new Map());
 
-  // Helper function to generate a unique key for restaurant changes
+  // Enhanced restaurant key generation with content versioning
   const getRestaurantKey = useCallback((restaurant: Restaurant) => {
     const isSelected = selectedRestaurantId === restaurant.id;
     const rating = restaurant.quality_rating || restaurant.rating || restaurant.star_rating || restaurant.google_rating || 0;
@@ -54,10 +72,64 @@ export function useMarkerManagement({
       distanceHash = `_${Math.round(distance * 10)}`; // Round to 0.1 miles
     }
     
-    return `${restaurant.id}_${restaurant.latitude}_${restaurant.longitude}_${restaurant.kosher_category}_${rating}_${isSelected}${distanceHash}`;
-  }, [selectedRestaurantId, userLocation]);
+    // Add content version to key
+    const contentVersion = `${restaurant.kosher_category}_${rating}_${isSelected}_${showRatingBubbles ? 1 : 0}`;
+    
+    return `${restaurant.id}_${restaurant.latitude}_${restaurant.longitude}_${contentVersion}${distanceHash}`;
+  }, [selectedRestaurantId, userLocation, showRatingBubbles]);
 
-  // Cleanup function to remove markers
+  // Enhanced marker pooling with content validation
+  const getPooledMarker = useCallback((restaurant: Restaurant, map: google.maps.Map) => {
+    const key = getRestaurantKey(restaurant);
+    const pool = markerPool.current.get(key);
+    
+    if (pool && pool.length > 0) {
+      const marker = pool.pop()!;
+      
+      // Validate marker content before reuse
+      const currentContentVersion = getRestaurantKey(restaurant);
+      const markerContentVersion = (marker as any)._contentVersion;
+      
+      if (currentContentVersion === markerContentVersion) {
+        // Content is still valid, reuse marker
+        (marker as any).map = map;
+        return marker;
+      } else {
+        // Content has changed, clean up old marker
+        (marker as any).map = null;
+      }
+    }
+    
+    return null;
+  }, [getRestaurantKey]);
+
+  // Enhanced marker return to pool
+  const returnMarkerToPool = useCallback((marker: google.maps.marker.AdvancedMarkerElement, key: string) => {
+    try {
+      // Store content version for validation
+      (marker as any)._contentVersion = key;
+      
+      // Remove from map
+      (marker as any).map = null;
+      
+      // Add to pool
+      if (!markerPool.current.has(key)) {
+        markerPool.current.set(key, []);
+      }
+      markerPool.current.get(key)!.push(marker);
+      
+      // Limit pool size to prevent memory leaks
+      const pool = markerPool.current.get(key)!;
+      if (pool.length > 10) {
+        const oldMarker = pool.shift()!;
+        (oldMarker as any).map = null;
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+  }, []);
+
+  // Enhanced cleanup with pool management
   const cleanupMarkers = useCallback(() => {
     try {
       markersRef.current.forEach(marker => {
@@ -69,214 +141,156 @@ export function useMarkerManagement({
       });
       markersRef.current = [];
       markersMapRef.current.clear();
+      
+      // Clean up old pool entries (older than 5 minutes)
+      const now = Date.now();
+      markerPool.current.forEach((pool, key) => {
+        const filteredPool = pool.filter(marker => {
+          const lastUsed = (marker as any)._lastUsed || 0;
+          return (now - lastUsed) < 5 * 60 * 1000; // 5 minutes
+        });
+        if (filteredPool.length === 0) {
+          markerPool.current.delete(key);
+        } else {
+          markerPool.current.set(key, filteredPool);
+        }
+      });
     } catch {
-      // // console.error('Error during marker cleanup:', error);
+      // Ignore cleanup errors
     }
   }, []);
 
-  // Create marker function
+  // Add marker update functionality
+  const updateMarkerContent = useCallback((marker: google.maps.marker.AdvancedMarkerElement, restaurant: Restaurant) => {
+    try {
+      const newContent = createMarkerContent(restaurant);
+      if (newContent) {
+        (marker as any).content = newContent;
+        (marker as any)._contentVersion = getRestaurantKey(restaurant);
+        (marker as any)._lastUsed = Date.now();
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to update marker content:', error);
+      }
+    }
+  }, [getRestaurantKey]);
+
+  // Separate content creation from marker creation
+  const createMarkerContent = useCallback((restaurant: Restaurant) => {
+    const isSelected = selectedRestaurantId === restaurant.id;
+    const markerColor = getMarkerColor(restaurant.kosher_category);
+    const finalColor = isSelected ? '#FFD700' : markerColor;
+    
+    // Get rating for bubble display
+    const getRating = (restaurant: Restaurant) => {
+      const rating = restaurant.quality_rating || restaurant.rating || restaurant.star_rating || restaurant.google_rating;
+      return rating && rating > 0 ? rating : 0.0;
+    };
+    
+    const rating = getRating(restaurant);
+    
+    if (showRatingBubbles) {
+      // Create rating bubble content
+      const bubbleWidth = isSelected ? 56 : 48;
+      const bubbleHeight = isSelected ? 32 : 28;
+      
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}">
+          <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}" 
+                rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
+                fill="${finalColor}" stroke="${markerColor}" stroke-width="2"/>
+          <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#FFD700">⭐</text>
+          <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="${isSelected ? '#FFFFFF' : '#000000'}">
+            ${rating.toFixed(1)}
+          </text>
+        </svg>
+      `;
+      return element;
+    } else {
+      // Create simple marker content
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+                fill="${finalColor}" 
+                stroke="#000000" 
+                stroke-width="1.5"/>
+          <circle cx="12" cy="9" r="2.5" fill="white"/>
+          <circle cx="12" cy="9" r="1.5" fill="${finalColor}"/>
+        </svg>
+      `;
+      return element;
+    }
+  }, [selectedRestaurantId, showRatingBubbles]);
+
+  // Enhanced createMarker function with recycling
   const createMarker = useCallback((restaurant: Restaurant, map: google.maps.Map) => {
     try {
       if (restaurant.latitude === undefined || restaurant.longitude === undefined) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('useMarkerManagement: Restaurant missing coordinates:', {
-            id: restaurant.id,
-            name: restaurant.name,
-            latitude: restaurant.latitude,
-            longitude: restaurant.longitude
-          });
-        }
+              if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('useMarkerManagement: Restaurant missing coordinates:', {
+          id: restaurant.id,
+          name: restaurant.name,
+          latitude: restaurant.latitude,
+          longitude: restaurant.longitude
+        });
+      }
         return null;
       }
 
-      const position = new window.google.maps.LatLng(Number(restaurant.latitude), Number(restaurant.longitude));
-      // Remove excessive logging that was called for every marker
-      const isSelected = selectedRestaurantId === restaurant.id;
-
-      if (process.env.NODE_ENV === 'development') {
-        // console.log('useMarkerManagement: Creating marker for restaurant:', {
-        //   id: restaurant.id,
-        //   name: restaurant.name,
-        //   lat: restaurant.latitude,
-        //   lng: restaurant.longitude,
-        //   isSelected,
-        //   showRatingBubbles
-        // });
-      }
-
-      // Calculate distance from user if available
-      let distanceFromUser: number | null = null;
-      if (userLocation && restaurant.latitude && restaurant.longitude) {
-        const R = 3959; // Earth's radius in miles
-        const restaurantLat = Number(restaurant.latitude);
-        const restaurantLon = Number(restaurant.longitude);
-        const dLat = (restaurantLat - userLocation.latitude) * Math.PI / 180;
-        const dLon = (restaurantLon - userLocation.longitude) * Math.PI / 180;
-        const a = 
-          Math.sin(dLat/2) * Math.sin(dLat/2) +
-          Math.cos(userLocation.latitude * Math.PI / 180) * Math.cos(restaurantLat * Math.PI / 180) * 
-          Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        distanceFromUser = R * c;
-      }
-
-      // Get marker color based on kosher category
-      const getMarkerColor = (category?: string) => {
-        switch (category?.toLowerCase()) {
-          case 'meat':
-            return '#A70000'; // JewGo Dark Red for meat
-          case 'dairy':
-            return '#ADD8E6'; // JewGo Light Blue for dairy
-          case 'pareve':
-            return '#FFCE6D'; // JewGo Yellow for pareve
-          default:
-            return '#BBBBBB'; // JewGo Gray for unknown
-        }
-      };
-
-      const markerColor = getMarkerColor(restaurant.kosher_category);
-      const finalColor = isSelected ? '#FFD700' : markerColor; // Gold if selected, otherwise category color
-
-      // Get rating for bubble display
-      const getRating = (restaurant: Restaurant) => {
-        const rating = restaurant.quality_rating || restaurant.rating || restaurant.star_rating || restaurant.google_rating;
-        return rating && rating > 0 ? rating : 0.0;
-      };
-
-      const rating = getRating(restaurant);
-
-      // Create marker using AdvancedMarkerElement with fallback
-      let marker: google.maps.marker.AdvancedMarkerElement | google.maps.Marker;
+      // Try to get a pooled marker first
+      let marker = getPooledMarker(restaurant, map);
       
-      if (showRatingBubbles) {
-        // Create rating bubble marker
-        const bubbleWidth = isSelected ? 56 : 48;
-        const bubbleHeight = isSelected ? 32 : 28;
+      if (marker) {
+        // Update existing marker content if needed
+        const currentVersion = getRestaurantKey(restaurant);
+        const markerVersion = (marker as any)._contentVersion;
         
-        const kosherColor = getMarkerColor(restaurant.kosher_category);
-        const bubbleColor = isSelected ? kosherColor : '#FFFFFF';
-        const textColor = isSelected ? '#FFFFFF' : '#000000';
-        const borderColor = isSelected ? kosherColor : kosherColor;
-        
-        if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
-          try {
-            const element = document.createElement('div');
-            element.innerHTML = `
-              <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}">
-                <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}" 
-                      rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
-                      fill="${bubbleColor}" stroke="${borderColor}" stroke-width="2"/>
-                <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#FFD700">⭐</text>
-                <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="${textColor}">
-                  ${rating.toFixed(1)}
-                </text>
-              </svg>
-            `;
-            
-            marker = new window.google.maps.marker.AdvancedMarkerElement({
-              position,
-              content: element,
-              title: restaurant.name,
-              map
-            });
-          } catch (error) {
-            if (process.env.NODE_ENV === 'development') {
-              // console.log('useMarkerManagement: Failed to create rating bubble marker, falling back:', error);
-            }
-            // Fallback to simple AdvancedMarkerElement
-            const element = document.createElement('div');
-            element.innerHTML = `
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-                      fill="${finalColor}" 
-                      stroke="#000000" 
-                      stroke-width="1.5"/>
-                <circle cx="12" cy="9" r="2.5" fill="white"/>
-                <circle cx="12" cy="9" r="1.5" fill="${finalColor}"/>
-              </svg>
-            `;
-            
-            marker = new window.google.maps.marker.AdvancedMarkerElement({
-              position,
-              map,
-              content: element,
-              title: restaurant.name
-            });
-          }
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            // console.log('useMarkerManagement: AdvancedMarkerElement not available, using fallback');
-          }
-          // Fallback to simple AdvancedMarkerElement
-          const element = document.createElement('div');
-          element.innerHTML = `
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-                    fill="${finalColor}" 
-                    stroke="#000000" 
-                    stroke-width="1.5"/>
-              <circle cx="12" cy="9" r="2.5" fill="white"/>
-              <circle cx="12" cy="9" r="1.5" fill="${finalColor}"/>
-            </svg>
-          `;
-          
-          marker = new window.google.maps.marker.AdvancedMarkerElement({
-            position,
-            map,
-            content: element,
-            title: restaurant.name
-          });
+        if (currentVersion !== markerVersion) {
+          updateMarkerContent(marker, restaurant);
         }
-      } else {
-        // Regular AdvancedMarkerElement without rating bubble
-        const element = document.createElement('div');
-        element.innerHTML = `
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-                  fill="${finalColor}" 
-                  stroke="#000000" 
-                  stroke-width="1.5"/>
-            <circle cx="12" cy="9" r="2.5" fill="white"/>
-            <circle cx="12" cy="9" r="1.5" fill="${finalColor}"/>
-          </svg>
-        `;
         
-        marker = new window.google.maps.marker.AdvancedMarkerElement({
-          position,
-          map,
-          content: element,
-          title: restaurant.name
-        });
+        return marker;
       }
 
-      // Add click listener to marker - AdvancedMarkerElement uses gmp-click
+      // Create new marker if no pooled marker available
+      const position = new window.google.maps.LatLng(Number(restaurant.latitude), Number(restaurant.longitude));
+      const content = createMarkerContent(restaurant);
+      
+      if (!content) {
+        return null;
+      }
+
+      marker = new window.google.maps.marker.AdvancedMarkerElement({
+        position,
+        content,
+        title: restaurant.name,
+        map
+      });
+
+      // Store metadata
+      (marker as any)._contentVersion = getRestaurantKey(restaurant);
+      (marker as any)._lastUsed = Date.now();
+      (marker as any)._restaurantId = restaurant.id;
+
+      // Add event listeners
       marker.addListener('gmp-click', () => {
         onRestaurantSelect?.(restaurant.id);
       });
 
-      // Add hover effects for better interactivity - AdvancedMarkerElement
-      marker.addListener('gmp-mouseover', () => {
-        // AdvancedMarkerElement doesn't have setZIndex, but we can handle hover effects differently
-        // For now, we'll just log or handle hover in a different way
-      });
-
-      marker.addListener('gmp-mouseout', () => {
-        // Handle mouse out if needed
-      });
-
-      if (process.env.NODE_ENV === 'development') {
-        // console.log('useMarkerManagement: Successfully created marker for restaurant:', restaurant.name);
-      }
-
       return marker;
     } catch (markerError) {
       if (process.env.NODE_ENV === 'development') {
-        // console.error(`useMarkerManagement: Error creating marker for restaurant ${restaurant.name} (ID: ${restaurant.id}):`, markerError);
+        // eslint-disable-next-line no-console
+        console.warn(`Error creating marker for restaurant ${restaurant.name}:`, markerError);
       }
       return null;
     }
-  }, [selectedRestaurantId, userLocation, showRatingBubbles, onRestaurantSelect]);
+  }, [getRestaurantKey, getPooledMarker, updateMarkerContent, createMarkerContent, onRestaurantSelect]);
 
   // Apply clustering function
   const applyClustering = useCallback((map: google.maps.Map) => {
@@ -327,6 +341,9 @@ export function useMarkerManagement({
     getRestaurantKey,
     cleanupMarkers,
     createMarker,
-    applyClustering
+    applyClustering,
+    updateMarkerContent, // Export for external use
+    getPooledMarker,     // Export for debugging
+    returnMarkerToPool   // Export for debugging
   };
 }
