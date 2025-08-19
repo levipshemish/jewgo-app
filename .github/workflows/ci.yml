@@ -193,6 +193,11 @@ jobs:
         cache: 'pip'
         cache-dependency-path: 'backend/requirements.txt'
         
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
     - name: Setup Node.js (for Mendel Mode scripts)
       uses: actions/setup-node@v4
       with:
@@ -200,11 +205,6 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: |
           frontend/pnpm-lock.yaml
-        
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
           
     - name: Install Python dependencies
       working-directory: backend
@@ -389,6 +389,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -396,11 +401,6 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: |
           frontend/pnpm-lock.yaml
-        
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
       
     - name: Run Bandit security scan
       run: |
@@ -431,6 +431,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -438,11 +443,6 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: |
           frontend/pnpm-lock.yaml
-        
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
         
     - name: Install frontend dependencies
       run: |
@@ -500,6 +500,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Install pnpm
+      if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+        
     - name: Setup Node.js for Vercel CLI
       if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
       uses: actions/setup-node@v4
@@ -508,12 +514,6 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: |
           frontend/pnpm-lock.yaml
-        
-    - name: Install pnpm
-      if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
 
     - name: Deploy to Vercel (Frontend via CLI)
       if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
