@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, Suspense } from "react";
+import { FormEvent, useState, Suspense, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -9,16 +9,36 @@ import { useSearchParams, useRouter } from "next/navigation";
 function SignInFormWithParams() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
+  const errorParam = searchParams.get("error");
   
-  return <SignInForm redirectTo={redirectTo} />;
+  return <SignInForm redirectTo={redirectTo} initialError={errorParam} />;
 }
 
-function SignInForm({ redirectTo }: { redirectTo: string }) {
+function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialError?: string | null }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
+  const [debugInfo, setDebugInfo] = useState<string>("");
   const router = useRouter();
+
+  // Check Supabase connection on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const { data, error } = await supabaseBrowser.auth.getSession();
+        if (error) {
+          setDebugInfo(`Connection error: ${error.message}`);
+        } else {
+          setDebugInfo("Supabase connection OK");
+        }
+      } catch (err) {
+        setDebugInfo(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    };
+    
+    checkConnection();
+  }, []);
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,18 +46,25 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
     setError(null);
     
     try {
+      console.log('Attempting email sign in with:', { email, hasPassword: !!password });
+      
       const { data, error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
       
+      console.log('Sign in response:', { data, error });
+      
       if (error) {
+        console.error('Sign in error:', error);
         setError(error.message);
         setPending(false);
         return;
       }
       
       if (data.user) {
+        console.log('User authenticated:', data.user.email);
+        
         // Wait a moment for session to be established
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -45,12 +72,14 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
         const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
         
         if (sessionError) {
+          console.error('Session error:', sessionError);
           setError(`Session error: ${sessionError.message}`);
           setPending(false);
           return;
         }
         
         if (session && session.user) {
+          console.log('Session established, redirecting to:', redirectTo);
           // Redirect to the intended page
           router.push(redirectTo);
         } else {
@@ -60,7 +89,7 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
         setError("Authentication failed. Please check your credentials.");
       }
     } catch (err) {
-      console.error('Sign in error:', err);
+      console.error('Sign in exception:', err);
       setError("An unexpected error occurred. Please try again.");
     }
     
@@ -72,6 +101,8 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
     setError(null);
     
     try {
+      console.log('Attempting Google OAuth sign in');
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
@@ -84,9 +115,13 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
       });
       
       if (error) {
+        console.error('Google OAuth error:', error);
         setError(`Google OAuth failed: ${error.message}`);
+      } else {
+        console.log('Google OAuth initiated successfully');
       }
     } catch (err) {
+      console.error('Google OAuth exception:', err);
       setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
     
@@ -104,6 +139,13 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
             Access your account to manage favorites and more
           </p>
         </div>
+        
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && debugInfo && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p className="text-sm text-blue-800">Debug: {debugInfo}</p>
+          </div>
+        )}
         
         <form onSubmit={onEmailSignIn} className="mt-8 space-y-6">
           <div className="space-y-4">
@@ -143,7 +185,9 @@ function SignInForm({ redirectTo }: { redirectTo: string }) {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <div className="text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-md p-3">
+              {error}
+            </div>
           )}
 
           <div className="space-y-3">

@@ -3079,7 +3079,7 @@ class EnhancedDatabaseManager:
                     "role": "admin" if user.isSuperAdmin else "user",
                     "createdAt": user.createdAt.isoformat() if user.createdAt else None,
                     "updatedAt": user.updatedAt.isoformat() if user.updatedAt else None,
-                    "_count": {"sessions": 0}  # TODO: Implement session count - requires NextAuth session tracking
+                    "_count": {"sessions": self._get_user_session_count(user.id)}
                 }
                 result.append(user_dict)
             
@@ -3218,3 +3218,26 @@ class EnhancedDatabaseManager:
         )
         
         return restaurant_images_map
+
+    def _get_user_session_count(self, user_id: str) -> int:
+        """Get the number of active sessions for a user.
+        
+        Args:
+            user_id: User ID to get session count for
+            
+        Returns:
+            Number of active sessions
+        """
+        try:
+            session = self.get_session()
+            # Count active sessions (not expired)
+            count = session.query(Session).filter(
+                Session.userId == user_id,
+                Session.expires > datetime.utcnow()
+            ).count()
+            return count
+        except Exception as e:
+            logger.warning("Error getting session count", user_id=user_id, error=str(e))
+            return 0
+        finally:
+            session.close()

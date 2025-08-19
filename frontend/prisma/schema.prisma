@@ -34,6 +34,8 @@ model User {
   profile        UserProfile?
   passwordResets PasswordReset[]
   migrationLogs  MigrationLog[]
+  adminTokens    AdminToken[]
+  mfaSecret      MFASecret?
 
   @@schema("nextauth")
 }
@@ -305,6 +307,39 @@ model MigrationLog {
   error      String?
   migratedAt DateTime?
   createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("nextauth")
+}
+
+// Admin token management
+model AdminToken {
+  id        String   @id @default(cuid())
+  adminId   String
+  token     String   @unique
+  name      String?  // Optional name for the token
+  expiresAt DateTime
+  lastUsed  DateTime @default(now())
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Optional: Link to user for additional context
+  user User? @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@schema("nextauth")
+}
+
+// MFA secrets storage
+model MFASecret {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  secret    String   // Encrypted MFA secret
+  backupCodes String[] @default([]) // Encrypted backup codes
+  isEnabled Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

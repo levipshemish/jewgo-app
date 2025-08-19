@@ -1,4 +1,5 @@
 from utils.logging_config import get_logger
+from utils.cache_manager_v4 import CacheManagerV4
 
 import time
 from typing import Any, Dict, List, Optional
@@ -53,6 +54,14 @@ class SearchService:
         # Initialize providers
         self.providers = {}
         self._initialize_providers()
+        
+        # Initialize cache manager
+        self.cache_manager = CacheManagerV4(
+            redis_url=self.config.redis_url if hasattr(self.config, 'redis_url') else None,
+            default_ttl=1800,  # 30 minutes for search results
+            enable_cache=True,
+            cache_prefix="jewgo:search:"
+        )
         
         # Search statistics
         self.stats = {
@@ -117,6 +126,15 @@ class SearchService:
             if not search_type:
                 search_type = self.config.default_search_type
             
+            # Generate cache key
+            cache_key = self._generate_search_cache_key(query, search_type, filters, limit, offset, **kwargs)
+            
+            # Try to get from cache first
+            cached_result = self.cache_manager.get(cache_key)
+            if cached_result:
+                logger.info("Search cache hit", query=query, search_type=search_type)
+                return cached_result
+            
             # Get provider
             provider = self.providers.get(search_type)
             if not provider:
@@ -142,7 +160,7 @@ class SearchService:
                 filters_applied=filters.to_dict() if filters else {},
                 execution_time_ms=execution_time_ms,
                 results_count=len(results),
-                cache_hit=False,  # TODO: Implement caching
+                cache_hit=False,
                 timestamp=datetime.utcnow()
             )
             
@@ -154,6 +172,9 @@ class SearchService:
                 suggestions=suggestions,
                 filters_applied=filters or SearchFilters()
             )
+            
+            # Cache the result
+            self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
             
             # Update statistics
             self._update_stats(search_type, execution_time_ms, True)
@@ -306,5 +327,39 @@ class SearchService:
         )
         
         self.stats['last_updated'] = datetime.utcnow()
+    
+    def _generate_search_cache_key(self, query: str, search_type: str, filters: Optional[SearchFilters], 
+                                 limit: int, offset: int, **kwargs) -> str:
+        """Generate a unique cache key for search results.
+        
+        Args:
+            query: Search query
+            search_type: Type of search
+            filters: Search filters
+            limit: Result limit
+            offset: Result offset
+            **kwargs: Additional parameters
+            
+        Returns:
+            Unique cache key string
+        """
+        import hashlib
+        import json
+        
+        # Create a dictionary of all parameters
+        key_data = {
+            'query': query.lower().strip(),
+            'search_type': search_type,
+            'filters': filters.to_dict() if filters else {},
+            'limit': limit,
+            'offset': offset,
+            **kwargs
+        }
+        
+        # Convert to JSON string and hash
+        key_string = json.dumps(key_data, sort_keys=True)
+        key_hash = hashlib.md5(key_string.encode()).hexdigest()
+        
+        return f"search:{key_hash}"
     
     # Embedding generation methods removed - vector search is no longer supported
