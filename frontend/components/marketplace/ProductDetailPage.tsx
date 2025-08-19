@@ -157,13 +157,13 @@ export default function ProductDetailPage() {
             <div className="space-y-4">
               <div className="aspect-square overflow-hidden rounded-lg">
                 <img
-                  src={product.images[selectedImage] || product.thumbnail}
-                  alt={product.name}
+                                  src={product.images?.[selectedImage] || product.thumbnail || ''}
+                alt={product.title}
                   className="w-full h-full object-cover"
                 />
               </div>
               
-              {product.images.length > 1 && (
+              {product.images && product.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto">
                   {product.images.map((image, index) => (
                     <button
@@ -175,7 +175,7 @@ export default function ProductDetailPage() {
                     >
                       <img
                         src={image}
-                        alt={`${product.name} ${index + 1}`}
+                        alt={`${product.title} ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -188,56 +188,39 @@ export default function ProductDetailPage() {
             <div className="space-y-6">
               {/* Category and Vendor */}
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>{product.category.name}</span>
+                <span>{typeof product.category === 'string' ? product.category : product.category?.name || 'General'}</span>
                 <span>•</span>
-                <span>{product.vendor.name}</span>
+                <span>{product.seller_name || 'Seller'}</span>
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-
-              {/* Rating */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {renderRating(product.rating)}
-                </div>
-                <span className="text-sm text-gray-500">
-                  ({product.reviewCount} reviews)
-                </span>
-              </div>
+              <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
 
               {/* Price */}
               <div className="flex items-center gap-3">
-                {product.isOnSale && product.originalPrice && (
+                {product.isOnSale && product.originalPrice && product.originalPrice > (product.price || 0) && (
                   <span className="text-xl text-gray-500 line-through">
-                    {formatPrice(product.originalPrice)}
+                    ${product.originalPrice}
                   </span>
                 )}
                 <span className="text-3xl font-bold text-gray-900">
-                  {formatPrice(product.price)}
+                  ${product.price || product.price_cents / 100}
                 </span>
-                {product.isOnSale && product.discountPercentage && (
+                {product.isOnSale && product.originalPrice && product.originalPrice > (product.price || 0) && (
                   <span className="bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
-                    -{product.discountPercentage}%
+                    -{Math.round(((product.originalPrice - (product.price || 0)) / product.originalPrice) * 100)}%
                   </span>
                 )}
               </div>
 
-              {/* Stock Status */}
+              {/* Status */}
               <div className="flex items-center gap-2">
-                {product.isAvailable ? (
-                  <div className="flex items-center gap-2 text-green-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium">
-                      {product.stock > 0 ? `In Stock (${product.stock} available)` : 'In Stock'}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-red-600">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-sm font-medium">Out of Stock</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-medium">
+                    {product.status === 'active' ? 'Available' : product.status}
+                  </span>
+                </div>
               </div>
 
               {/* Description */}
@@ -246,8 +229,8 @@ export default function ProductDetailPage() {
                 <p className="text-gray-600 leading-relaxed">{product.description}</p>
               </div>
 
-              {/* Kosher Certification */}
-              {product.kosherCertification && (
+              {/* Kosher Certification - Commented out as property doesn't exist in MarketplaceListing type */}
+              {/* {product.kosherCertification && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                   <Shield className="w-5 h-5 text-green-600" />
                   <div>
@@ -259,10 +242,10 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
 
-              {/* Dietary Info */}
-              {product.dietaryInfo && (
+              {/* Dietary Info - Commented out as property doesn't exist in MarketplaceListing type */}
+              {/* {product.dietaryInfo && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Dietary Information</h3>
                   <div className="flex flex-wrap gap-2">
@@ -280,7 +263,7 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Quantity and Actions */}
               <div className="space-y-4">
@@ -306,7 +289,7 @@ export default function ProductDetailPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleAddToCart}
-                    disabled={!product.isAvailable}
+                    disabled={product.status !== 'active'}
                     className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <ShoppingCart className="w-5 h-5" />
@@ -333,8 +316,8 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Vendor Information */}
-      <div className="bg-white border-t border-gray-100 mt-8">
+      {/* Vendor Information - Commented out as vendor object doesn't exist in MarketplaceListing type */}
+      {/* <div className="bg-white border-t border-gray-100 mt-8">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Vendor Information</h2>
           
@@ -376,7 +359,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <BottomNavigation />
     </div>

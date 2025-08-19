@@ -90,16 +90,26 @@ export const formatDateTime = (input: string | number | Date): string => {
 };
 
 /**
- * Format relative time (e.g., "2 hours ago", "3 days ago")
+ * Shared helper to parse and validate date input
  */
-export const formatRelativeTime = (input: string | number | Date): string => {
+const parseDateInput = (input: string | number | Date): Date | null => {
   const date = typeof input === 'string' ? new Date(input) : 
                typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
                input;
 
   if (isNaN(date.getTime())) {
-    return 'Invalid Date';
+    return null;
   }
+  
+  return date;
+};
+
+/**
+ * Format relative time (e.g., "2 hours ago", "3 days ago")
+ */
+export const formatRelativeTime = (input: string | number | Date): string => {
+  const date = parseDateInput(input);
+  if (!date) return 'Invalid Date';
 
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -141,13 +151,8 @@ export const formatRelativeTime = (input: string | number | Date): string => {
  * Format date for ISO string (e.g., "2024-01-15")
  */
 export const formatDateISO = (input: string | number | Date): string => {
-  const date = typeof input === 'string' ? new Date(input) : 
-               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
-               input;
-
-  if (isNaN(date.getTime())) {
-    return 'Invalid Date';
-  }
+  const date = parseDateInput(input);
+  if (!date) return 'Invalid Date';
 
   return date.toISOString().split('T')[0];
 };
@@ -156,13 +161,8 @@ export const formatDateISO = (input: string | number | Date): string => {
  * Check if a date is today
  */
 export const isToday = (input: string | number | Date): boolean => {
-  const date = typeof input === 'string' ? new Date(input) : 
-               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
-               input;
-
-  if (isNaN(date.getTime())) {
-    return false;
-  }
+  const date = parseDateInput(input);
+  if (!date) return false;
 
   const today = new Date();
   return date.toDateString() === today.toDateString();
@@ -172,13 +172,8 @@ export const isToday = (input: string | number | Date): boolean => {
  * Check if a date is yesterday
  */
 export const isYesterday = (input: string | number | Date): boolean => {
-  const date = typeof input === 'string' ? new Date(input) : 
-               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
-               input;
-
-  if (isNaN(date.getTime())) {
-    return false;
-  }
+  const date = parseDateInput(input);
+  if (!date) return false;
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -189,13 +184,8 @@ export const isYesterday = (input: string | number | Date): boolean => {
  * Get the day of the week
  */
 export const getDayOfWeek = (input: string | number | Date): string => {
-  const date = typeof input === 'string' ? new Date(input) : 
-               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
-               input;
-
-  if (isNaN(date.getTime())) {
-    return 'Invalid Date';
-  }
+  const date = parseDateInput(input);
+  if (!date) return 'Invalid Date';
 
   return date.toLocaleDateString('en-US', { weekday: 'long' });
 };
@@ -204,13 +194,8 @@ export const getDayOfWeek = (input: string | number | Date): string => {
  * Get the month name
  */
 export const getMonthName = (input: string | number | Date): string => {
-  const date = typeof input === 'string' ? new Date(input) : 
-               typeof input === 'number' ? new Date(input < 10000000000 ? input * 1000 : input) : 
-               input;
-
-  if (isNaN(date.getTime())) {
-    return 'Invalid Date';
-  }
+  const date = parseDateInput(input);
+  if (!date) return 'Invalid Date';
 
   return date.toLocaleDateString('en-US', { month: 'long' });
 };

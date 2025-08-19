@@ -185,7 +185,7 @@ def create_marketplace_service():
             logger.error("Database manager not available for marketplace service")
             return None
         
-        service = MarketplaceServiceV4(db_manager) if MarketplaceServiceV4 else None
+        service = MarketplaceServiceV4(db_manager=db_manager, cache_manager=cache_manager, config=config)
         if service:
             logger.info("MarketplaceServiceV4 created successfully")
         else:
@@ -774,111 +774,327 @@ def get_migration_health():
         logger.exception("Error checking migration health", error=str(e))
         return error_response("Failed to check migration health", 500)
 
-# Marketplace Routes
-@safe_route("/marketplace/products", methods=["GET"])
-def get_marketplace_products():
-    """Get marketplace products with filtering and pagination."""
+
+
+# Marketplace endpoints
+@safe_route("/api/v4/marketplace/listings", methods=["GET"])
+@require_api_v4_flag("api_v4_marketplace")
+def get_marketplace_listings():
+    """Get marketplace listings with filtering and pagination."""
     try:
         # Get query parameters
-        limit = min(int(request.args.get("limit", 50)), 1000)
-        offset = int(request.args.get("offset", 0))
-        category_id = request.args.get("category_id")
-        vendor_id = request.args.get("vendor_id")
-        search_query = request.args.get("q")
-        min_price = request.args.get("min_price")
-        max_price = request.args.get("max_price")
-        is_featured = request.args.get("is_featured")
-        is_on_sale = request.args.get("is_on_sale")
-        status = request.args.get("status")
-        sort_by = request.args.get("sort_by", "created_at")
-        sort_order = request.args.get("sort_order", "desc")
+        limit = min(int(request.args.get('limit', 50)), 1000)
+        offset = min(int(request.args.get('offset', 0)), 0)
+        search = request.args.get('search')
+        category = request.args.get('category')
+        subcategory = request.args.get('subcategory')
+        listing_type = request.args.get('type')  # sale, free, borrow, gemach
+        condition = request.args.get('condition')
+        min_price = request.args.get('min_price', type=int)
+        max_price = request.args.get('max_price', type=int)
+        city = request.args.get('city')
+        region = request.args.get('region')
+        status = request.args.get('status', 'active')
+        lat = request.args.get('lat', type=float)
+        lng = request.args.get('lng', type=float)
+        radius = min(request.args.get('radius', 10, type=float), 1000)  # miles
         
-        # Convert string parameters to appropriate types
-        if min_price:
-            min_price = float(min_price)
-        if max_price:
-            max_price = float(max_price)
-        if is_featured:
-            is_featured = is_featured.lower() == "true"
-        if is_on_sale:
-            is_on_sale = is_on_sale.lower() == "true"
+        # Build query
+        query = """
+            SELECT l.*, 
+                   c.name as category_name,
+                   sc.name as subcategory_name,
+                   u.display_name as seller_name,
+                   g.name as gemach_name
+            FROM listings l
+            LEFT JOIN categories c ON l.category_id = c.id
+            LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
+            LEFT JOIN users u ON l.seller_user_id = u.id
+            LEFT JOIN gemachs g ON l.seller_gemach_id = g.id
+            WHERE l.status = %s
+        """
+        params = [status]
         
-        # Use marketplace service
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
+        # Add filters
+        if search:
+            query += " AND (l.title ILIKE %s OR l.description ILIKE %s)"
+            params.extend([f'%{search}%', f'%{search}%'])
         
-        result = service.get_products(
-            limit=limit,
-            offset=offset,
-            category_id=category_id,
-            vendor_id=vendor_id,
-            search_query=search_query,
-            min_price=min_price,
-            max_price=max_price,
-            is_featured=is_featured,
-            is_on_sale=is_on_sale,
-            status=status,
-            sort_by=sort_by,
-            sort_order=sort_order
-        )
+        if category:
+            query += " AND c.slug = %s"
+            params.append(category)
+            
+        if subcategory:
+            query += " AND sc.slug = %s"
+            params.append(subcategory)
+            
+        if listing_type:
+            query += " AND l.type = %s"
+            params.append(listing_type)
+            
+        if condition:
+            query += " AND l.condition = %s"
+            params.append(condition)
+            
+        if min_price is not None:
+            query += " AND l.price_cents >= %s"
+            params.append(min_price)
+            
+        if max_price is not None:
+            query += " AND l.price_cents <= %s"
+            params.append(max_price)
+            
+        if city:
+            query += " AND l.city ILIKE %s"
+            params.append(f'%{city}%')
+            
+        if region:
+            query += " AND l.region = %s"
+            params.append(region)
         
-        if result["success"]:
-            return success_response(result)
-        else:
-            return error_response(result.get("error", "Failed to retrieve products"), 500)
+        # Location-based filtering
+        if lat and lng and radius:
+            # Convert radius from miles to degrees (approximate)
+            radius_degrees = radius / 69.0
+            query += """
+                AND l.lat IS NOT NULL 
+                AND l.lng IS NOT NULL
+                AND l.lat BETWEEN %s AND %s
+                AND l.lng BETWEEN %s AND %s
+            """
+            params.extend([
+                lat - radius_degrees, lat + radius_degrees,
+                lng - radius_degrees, lng + radius_degrees
+            ])
         
-    except ValueError as e:
-        return error_response(f"Invalid parameter: {str(e)}", 400)
+        # Add ordering and pagination
+        query += " ORDER BY l.created_at DESC LIMIT %s OFFSET %s"
+        params.extend([limit, offset])
+        
+        # Execute query
+        with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(query, params)
+                listings = cursor.fetchall()
+                
+                # Get total count for pagination
+                count_query = query.replace("SELECT l.*, ", "SELECT COUNT(*) as total FROM listings l ")
+                count_query = count_query.split("ORDER BY")[0]  # Remove ORDER BY and LIMIT
+                cursor.execute(count_query, params[:-2])  # Remove limit and offset
+                total = cursor.fetchone()['total']
+        
+        # Format response
+        formatted_listings = []
+        for listing in listings:
+            formatted_listing = {
+                'id': str(listing['id']),
+                'title': listing['title'],
+                'description': listing['description'],
+                'type': listing['type'],
+                'category': listing['category_name'],
+                'subcategory': listing['subcategory_name'],
+                'price_cents': listing['price_cents'],
+                'currency': listing['currency'],
+                'condition': listing['condition'],
+                'city': listing['city'],
+                'region': listing['region'],
+                'zip': listing['zip'],
+                'country': listing['country'],
+                'lat': listing['lat'],
+                'lng': listing['lng'],
+                'seller_name': listing['seller_name'] or listing['gemach_name'],
+                'seller_type': 'user' if listing['seller_name'] else 'gemach',
+                'available_from': listing['available_from'].isoformat() if listing['available_from'] else None,
+                'available_to': listing['available_to'].isoformat() if listing['available_to'] else None,
+                'loan_terms': listing['loan_terms'],
+                'attributes': listing['attributes'],
+                'endorse_up': listing['endorse_up'],
+                'endorse_down': listing['endorse_down'],
+                'status': listing['status'],
+                'created_at': listing['created_at'].isoformat(),
+                'updated_at': listing['updated_at'].isoformat()
+            }
+            formatted_listings.append(formatted_listing)
+        
+        return success_response({
+            'success': True,
+            'data': {
+                'listings': formatted_listings,
+                'total': total,
+                'limit': limit,
+                'offset': offset
+            }
+        }), 200
+        
     except Exception as e:
-        logger.exception("Error fetching marketplace products", error=str(e))
-        return error_response("Failed to fetch marketplace products", 500)
+        logger.exception("Error fetching marketplace listings")
+        return error_response("Failed to fetch marketplace listings", 500, {"details": str(e)})
 
-@safe_route("/marketplace/products/<product_id>", methods=["GET"])
-def get_marketplace_product(product_id):
-    """Get a single marketplace product by ID."""
+
+@safe_route("/api/v4/marketplace/listings/<listing_id>", methods=["GET"])
+@require_api_v4_flag("api_v4_marketplace")
+def get_marketplace_listing(listing_id):
+    """Get a specific marketplace listing by ID."""
     try:
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
-        
-        result = service.get_product(product_id)
-        
-        if result["success"]:
-            return success_response(result)
-        else:
-            return not_found_response(result.get("error", "Product not found"), "product")
-        
+        with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("""
+                    SELECT l.*, 
+                           c.name as category_name,
+                           sc.name as subcategory_name,
+                           u.display_name as seller_name,
+                           u.username as seller_username,
+                           g.name as gemach_name,
+                           g.phone as gemach_phone,
+                           g.email as gemach_email
+                    FROM listings l
+                    LEFT JOIN categories c ON l.category_id = c.id
+                    LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
+                    LEFT JOIN users u ON l.seller_user_id = u.id
+                    LEFT JOIN gemachs g ON l.seller_gemach_id = g.id
+                    WHERE l.id = %s
+                """, [listing_id])
+                
+                listing = cursor.fetchone()
+                
+                if not listing:
+                    return not_found_response(f"Listing with ID {listing_id}", "listing")
+                
+                # Format response
+                formatted_listing = {
+                    'id': str(listing['id']),
+                    'title': listing['title'],
+                    'description': listing['description'],
+                    'type': listing['type'],
+                    'category': listing['category_name'],
+                    'subcategory': listing['subcategory_name'],
+                    'price_cents': listing['price_cents'],
+                    'currency': listing['currency'],
+                    'condition': listing['condition'],
+                    'city': listing['city'],
+                    'region': listing['region'],
+                    'zip': listing['zip'],
+                    'country': listing['country'],
+                    'lat': listing['lat'],
+                    'lng': listing['lng'],
+                    'seller_name': listing['seller_name'] or listing['gemach_name'],
+                    'seller_username': listing['seller_username'],
+                    'seller_type': 'user' if listing['seller_name'] else 'gemach',
+                    'seller_contact': {
+                        'phone': listing['gemach_phone'] if listing['gemach_name'] else None,
+                        'email': listing['gemach_email'] if listing['gemach_name'] else None
+                    },
+                    'available_from': listing['available_from'].isoformat() if listing['available_from'] else None,
+                    'available_to': listing['available_to'].isoformat() if listing['available_to'] else None,
+                    'loan_terms': listing['loan_terms'],
+                    'attributes': listing['attributes'],
+                    'endorse_up': listing['endorse_up'],
+                    'endorse_down': listing['endorse_down'],
+                    'status': listing['status'],
+                    'created_at': listing['created_at'].isoformat(),
+                    'updated_at': listing['updated_at'].isoformat()
+                }
+                
+                return success_response({
+                    'success': True,
+                    'data': formatted_listing
+                }), 200
+                
     except Exception as e:
-        logger.exception("Error fetching marketplace product", error=str(e))
-        return error_response("Failed to fetch marketplace product", 500)
+        logger.exception("Error fetching marketplace listing")
+        return error_response("Failed to fetch marketplace listing", 500, {"details": str(e)})
 
-@safe_route("/marketplace/products/featured", methods=["GET"])
-def get_featured_products():
-    """Get featured marketplace products."""
+
+@safe_route("/api/v4/marketplace/listings", methods=["POST"])
+@require_api_v4_flag("api_v4_marketplace")
+def create_marketplace_listing():
+    """Create a new marketplace listing."""
     try:
-        limit = min(int(request.args.get("limit", 10)), 100)
+        data = request.get_json()
         
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
+        # Validate required fields
+        required_fields = ['title', 'type', 'category_id', 'price_cents']
+        for field in required_fields:
+            if field not in data:
+                return error_response(f'Missing required field: {field}', 400)
         
-        result = service.get_featured_products(limit=limit)
+        # Validate listing type
+        valid_types = ['sale', 'free', 'borrow', 'gemach']
+        if data['type'] not in valid_types:
+            return error_response(f'Invalid listing type. Must be one of: {", ".join(valid_types)}', 400)
         
-        if result["success"]:
-            return success_response(result)
-        else:
-            return error_response(result.get("error", "Failed to retrieve featured products"), 500)
+        # Validate price for free listings
+        if data['type'] == 'free' and data['price_cents'] != 0:
+            return error_response('Free listings must have price_cents = 0', 400)
         
-    except ValueError as e:
-        return error_response(f"Invalid parameter: {str(e)}", 400)
+        # Validate loan terms for borrow/gemach
+        if data['type'] in ['borrow', 'gemach'] and not data.get('loan_terms'):
+            return error_response(f'{data["type"].title()} listings must include loan_terms', 400)
+        
+        # Validate gemach seller
+        if data['type'] == 'gemach' and not data.get('seller_gemach_id'):
+            return error_response('Gemach listings must include seller_gemach_id', 400)
+        
+        # Get user ID from session (for now, use a placeholder)
+        # TODO: Integrate with Supabase auth
+        seller_user_id = data.get('seller_user_id')  # For now, accept from request
+        
+        with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                # Insert listing
+                cursor.execute("""
+                    INSERT INTO listings (
+                        title, description, type, category_id, subcategory_id,
+                        price_cents, currency, condition, city, region, zip, country,
+                        lat, lng, seller_user_id, seller_gemach_id, available_from,
+                        available_to, loan_terms, attributes, status
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    ) RETURNING id
+                """, [
+                    data['title'],
+                    data.get('description'),
+                    data['type'],
+                    data['category_id'],
+                    data.get('subcategory_id'),
+                    data['price_cents'],
+                    data.get('currency', 'USD'),
+                    data.get('condition'),
+                    data.get('city'),
+                    data.get('region'),
+                    data.get('zip'),
+                    data.get('country', 'US'),
+                    data.get('lat'),
+                    data.get('lng'),
+                    seller_user_id,
+                    data.get('seller_gemach_id'),
+                    data.get('available_from'),
+                    data.get('available_to'),
+                    json.dumps(data.get('loan_terms')) if data.get('loan_terms') else None,
+                    json.dumps(data.get('attributes', {})),
+                    'active'
+                ])
+                
+                listing_id = cursor.fetchone()['id']
+                conn.commit()
+                
+                return success_response({
+                    'success': True,
+                    'data': {
+                        'id': str(listing_id),
+                        'message': 'Listing created successfully'
+                    }
+                }), 201
+                
     except Exception as e:
-        logger.exception("Error fetching featured products", error=str(e))
-        return error_response("Failed to fetch featured products", 500)
+        logger.exception("Error creating marketplace listing")
+        return error_response("Failed to create marketplace listing", 500, {"details": str(e)})
 
-@safe_route("/marketplace/categories", methods=["GET"])
+
+@safe_route("/api/v4/marketplace/categories", methods=["GET"])
+@require_api_v4_flag("api_v4_marketplace")
 def get_marketplace_categories():
-    """Get marketplace categories."""
+    """Get marketplace categories and subcategories."""
     try:
         service = create_marketplace_service()
         if not service:
@@ -892,74 +1108,11 @@ def get_marketplace_categories():
             return error_response(result.get("error", "Failed to retrieve categories"), 500)
         
     except Exception as e:
-        logger.exception("Error fetching marketplace categories", error=str(e))
-        return error_response("Failed to fetch marketplace categories", 500)
+        logger.exception("Error fetching marketplace categories")
+        return error_response("Failed to fetch marketplace categories", 500, {"details": str(e)})
 
-@safe_route("/marketplace/vendors", methods=["GET"])
-def get_marketplace_vendors():
-    """Get marketplace vendors."""
-    try:
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
-        
-        result = service.get_vendors()
-        
-        if result["success"]:
-            return success_response(result)
-        else:
-            return error_response(result.get("error", "Failed to retrieve vendors"), 500)
-        
-    except Exception as e:
-        logger.exception("Error fetching marketplace vendors", error=str(e))
-        return error_response("Failed to fetch marketplace vendors", 500)
 
-@safe_route("/marketplace/search", methods=["GET"])
-def search_marketplace():
-    """Search marketplace products."""
-    try:
-        query = request.args.get("q", "").strip()
-        if not query:
-            return error_response("Query parameter 'q' is required", 400)
-        
-        limit = min(int(request.args.get("limit", 50)), 1000)
-        offset = int(request.args.get("offset", 0))
-        
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
-        
-        result = service.search_products(query, limit=limit, offset=offset)
-        
-        if result["success"]:
-            return success_response(result)
-        else:
-            return error_response(result.get("error", "Failed to search products"), 500)
-        
-    except ValueError as e:
-        return error_response(f"Invalid parameter: {str(e)}", 400)
-    except Exception as e:
-        logger.exception("Error searching marketplace", error=str(e))
-        return error_response("Failed to search marketplace", 500)
 
-@safe_route("/marketplace/stats", methods=["GET"])
-def get_marketplace_stats():
-    """Get marketplace statistics."""
-    try:
-        service = create_marketplace_service()
-        if not service:
-            return error_response("Marketplace service unavailable", 503)
-        
-        result = service.get_stats()
-        
-        if result["success"]:
-            return success_response(result)
-        else:
-            return error_response(result.get("error", "Failed to retrieve stats"), 500)
-        
-    except Exception as e:
-        logger.exception("Error fetching marketplace stats", error=str(e))
-        return error_response("Failed to fetch marketplace stats", 500)
 
 # Error handlers
 @api_v4.errorhandler(ValidationError)

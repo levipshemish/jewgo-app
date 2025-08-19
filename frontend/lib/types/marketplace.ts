@@ -2,10 +2,12 @@ export interface MarketplaceListing {
   id: string;
   title: string;
   description?: string;
-  type: 'sale' | 'free' | 'borrow' | 'gemach';
-  category?: string;
+  type: 'sale' | 'free' | 'borrow';
+  category?: MarketplaceCategory | string;
   subcategory?: string;
   price_cents: number;
+  price?: number;
+  originalPrice?: number;
   currency: string;
   condition?: 'new' | 'used_like_new' | 'used_good' | 'used_fair';
   city?: string;
@@ -25,6 +27,19 @@ export interface MarketplaceListing {
   status: string;
   created_at: string;
   updated_at: string;
+  thumbnail?: string;
+  images?: string[];
+  name?: string;
+  isOnSale?: boolean;
+  views?: number;
+  isAvailable?: boolean;
+  rating?: number;
+  vendor?: {
+    city?: string;
+    state?: string;
+    name?: string;
+    logo?: string;
+  };
 }
 
 // Alias for backward compatibility
@@ -39,6 +54,7 @@ export interface MarketplaceCategory {
   color?: string;
   productCount?: number;
   description?: string;
+  icon?: string;
   subcategories: MarketplaceSubcategory[];
 }
 
@@ -50,22 +66,7 @@ export interface MarketplaceSubcategory {
   active: boolean;
 }
 
-export interface MarketplaceGemach {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  address1?: string;
-  city?: string;
-  region?: string;
-  zip?: string;
-  country: string;
-  lat?: number;
-  lng?: number;
-  hours?: string;
-  eligibility?: string;
-  notes?: string;
-}
+
 
 export interface MarketplaceFilters {
   category: string;
@@ -94,6 +95,7 @@ export interface MarketplaceSearchParams {
   lat?: number;
   lng?: number;
   radius?: number;
+  featured?: boolean;
 }
 
 export interface MarketplaceSearchResponse {
@@ -151,8 +153,12 @@ export interface CategoriesResponse {
   error?: string;
 }
 
-export interface GemachsResponse {
-  success: boolean;
-  data?: MarketplaceGemach[];
-  error?: string;
+
+
+export interface MarketplaceStats {
+  totalListings: number;
+  totalCategories: number;
+  totalUsers: number;
+  recentListings: number;
+  featuredListings: number;
 }

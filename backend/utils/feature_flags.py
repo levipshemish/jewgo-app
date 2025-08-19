@@ -268,6 +268,14 @@ class FeatureFlagManager:
                 rollout_percentage=0.0,
                 target_environments=["development", "staging"],
             ),
+            # Marketplace Features
+            "api_v4_marketplace": FeatureFlag(
+                name="api_v4_marketplace",
+                enabled=True,
+                                        description="Marketplace system for buying, selling, and borrowing listings",
+                version="1.0",
+                rollout_percentage=100.0,
+            ),
         }
 
         # Only add default flags if they don't already exist

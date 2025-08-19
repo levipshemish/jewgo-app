@@ -167,6 +167,8 @@ export default function MarketplaceListingCard({
           <div className="flex items-center text-sm text-gray-500 mb-2">
             {listing.seller_type === 'gemach' ? (
               <Building className="w-4 h-4 mr-1 flex-shrink-0" />
+            ) : listing.seller_type === 'user' ? (
+              <User className="w-4 h-4 mr-1 flex-shrink-0" />
             ) : (
               <User className="w-4 h-4 mr-1 flex-shrink-0" />
             )}
@@ -197,7 +199,7 @@ export default function MarketplaceListingCard({
           
           {listing.category && (
             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {listing.category}
+              {typeof listing.category === 'string' ? listing.category : listing.category.name}
             </span>
           )}
         </div>

@@ -238,25 +238,25 @@ function ProductGrid({ products, onAddToCart, onAddToWishlist }: {
                   <div className="flex items-center gap-1">
                     <MapPin className="w-3 h-3" />
                     <span className="truncate">
-                      {product.vendor?.city && product.vendor?.state 
-                        ? `${product.vendor.city}, ${product.vendor.state}` 
+                      {product.city && product.region 
+                        ? `${product.city}, ${product.region}` 
                         : 'Miami Gardens, FL'}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    <span>{getTimeAgo(product.createdAt)}</span>
+                    <span>{getTimeAgo(product.created_at)}</span>
                   </div>
                 </div>
 
                 {/* Category and Vendor */}
                 <div className="flex items-center justify-between mt-1">
                   <div className="px-2 py-1 border border-gray-300 rounded-full text-xs">
-                    {product.category?.name || 'General'}
+                    {typeof product.category === 'string' ? product.category : product.category?.name || 'General'}
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-gray-600">{product.vendor?.name || 'Seller'}</span>
+                    <span className="text-xs text-gray-600">{product.seller_name || 'Seller'}</span>
                   </div>
                 </div>
               </div>
@@ -276,7 +276,16 @@ export default function MarketplacePageClient() {
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<MarketplaceListing[]>([]);
   const [stats, setStats] = useState<MarketplaceStats | null>(null);
-  const [filters, setFilters] = useState<MarketplaceFiltersType>({});
+  const [filters, setFilters] = useState<MarketplaceFiltersType>({
+    category: '',
+    subcategory: '',
+    listingType: '',
+    condition: '',
+    minPrice: '',
+    maxPrice: '',
+    city: '',
+    region: ''
+  });
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<MarketplaceListing[]>([]);
   const [wishlist, setWishlist] = useState<MarketplaceListing[]>([]);

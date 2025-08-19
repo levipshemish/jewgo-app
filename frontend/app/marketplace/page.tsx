@@ -173,18 +173,10 @@ export default function MarketplacePage() {
         </div>
         
         {/* Category Tabs */}
-        <CategoryTabs
-          variant="filter"
-          activeCategory={activeTab}
-          onCategoryChange={handleTabChange}
-          categories={[
-            { id: 'all', name: 'All', icon: '🛍️' },
-            { id: 'sale', name: 'For Sale', icon: '💰' },
-            { id: 'free', name: 'Free', icon: '🎁' },
-            { id: 'borrow', name: 'Borrow', icon: '📚' },
-            { id: 'gemach', name: 'Gemach', icon: '🤝' }
-          ]}
-        />
+        {/* <CategoryTabs
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+        /> */}
       </div>
 
       {/* Filters Panel */}
@@ -261,7 +253,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation variant="layout" />
+      <BottomNavigation />
     </div>
   );
 }

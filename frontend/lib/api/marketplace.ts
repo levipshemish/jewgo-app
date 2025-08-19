@@ -5,9 +5,10 @@ import {
   CreateListingRequest,
   CreateListingResponse,
   CategoriesResponse,
-  GemachsResponse,
+
   MarketplaceCategory,
-  MarketplaceListing
+  MarketplaceListing,
+  MarketplaceStats
 } from '@/lib/types/marketplace';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com';
@@ -143,32 +144,7 @@ export async function fetchMarketplaceCategories(): Promise<CategoriesResponse> 
   }
 }
 
-/**
- * Fetch marketplace gemachs
- */
-export async function fetchMarketplaceGemachs(): Promise<GemachsResponse> {
-  try {
-    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/gemachs`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching marketplace gemachs:', error);
-    return {
-      success: false,
-      error: 'Failed to fetch marketplace gemachs'
-    };
-  }
-}
 
 /**
  * Endorse a marketplace listing (upvote/downvote)
@@ -228,7 +204,7 @@ export async function getListingsByCategory(
 }
 
 /**
- * Get listings by type (sale, free, borrow, gemach)
+ * Get listings by type (sale, free, borrow)
  */
 export async function getListingsByType(
   type: 'sale' | 'free' | 'borrow' | 'gemach',
@@ -297,9 +273,7 @@ export class MarketplaceAPI {
     return fetchMarketplaceCategories();
   }
 
-  static async fetchGemachs(): Promise<GemachsResponse> {
-    return fetchMarketplaceGemachs();
-  }
+
 
   // Additional methods for the marketplace page
   static async getCategory(categoryId: string): Promise<MarketplaceCategory | null> {
@@ -338,6 +312,76 @@ export class MarketplaceAPI {
     } catch (error) {
       console.error('Error searching products:', error);
       return { products: [] };
+    }
+  }
+
+  // Additional methods for MarketplacePageClient
+  static async getProducts(params: MarketplaceSearchParams = {}): Promise<MarketplaceListing[]> {
+    try {
+      const response = await fetchMarketplaceListings(params);
+      if (response.success && response.data) {
+        return response.data.listings;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
+  }
+
+  static async getProduct(productId: string): Promise<MarketplaceListing | null> {
+    try {
+      const response = await fetchMarketplaceListing(productId);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching product:', error);
+      return null;
+    }
+  }
+
+  static async getCategories(): Promise<MarketplaceCategory[]> {
+    try {
+      const response = await fetchMarketplaceCategories();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
+  }
+
+  static async getFeaturedProducts(): Promise<MarketplaceListing[]> {
+    try {
+      const response = await fetchMarketplaceListings({ limit: 10 });
+      if (response.success && response.data) {
+        return response.data.listings;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      return [];
+    }
+  }
+
+  static async getStats(): Promise<MarketplaceStats | null> {
+    try {
+      // This would typically call a stats endpoint
+      // For now, return mock data
+      return {
+        totalListings: 0,
+        totalCategories: 0,
+        totalUsers: 0,
+        recentListings: 0,
+        featuredListings: 0
+      };
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      return null;
     }
   }
 }

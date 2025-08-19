@@ -1,11 +1,9 @@
 'use client';
 
-// Re-export from unified Loading component
-export { LoadingState, Skeleton, SkeletonCard } from './Loading';
-
 // Keep any additional components that are specific to this file
 import React from 'react';
-import { LoadingState } from './Loading';
+import { LoadingState, Skeleton } from './Loading';
+import { SkeletonCard } from './LoadingStates';
 import { Loader2 } from 'lucide-react';
 
 // Loading state wrapper for async operations
