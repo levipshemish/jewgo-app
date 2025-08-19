@@ -742,6 +742,193 @@ def get_migration_health():
         logger.exception("Error checking migration health", error=str(e))
         return error_response("Failed to check migration health", 500)
 
+# Marketplace Routes
+@api_v4.route("/marketplace/products", methods=["GET"])
+def get_marketplace_products():
+    """Get marketplace products with filtering and pagination."""
+    try:
+        # Get query parameters
+        limit = min(int(request.args.get("limit", 50)), 1000)
+        offset = int(request.args.get("offset", 0))
+        category_id = request.args.get("category_id")
+        vendor_id = request.args.get("vendor_id")
+        search_query = request.args.get("q")
+        min_price = request.args.get("min_price")
+        max_price = request.args.get("max_price")
+        is_featured = request.args.get("is_featured")
+        is_on_sale = request.args.get("is_on_sale")
+        status = request.args.get("status")
+        sort_by = request.args.get("sort_by", "created_at")
+        sort_order = request.args.get("sort_order", "desc")
+        
+        # Convert string parameters to appropriate types
+        if min_price:
+            min_price = float(min_price)
+        if max_price:
+            max_price = float(max_price)
+        if is_featured:
+            is_featured = is_featured.lower() == "true"
+        if is_on_sale:
+            is_on_sale = is_on_sale.lower() == "true"
+        
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_products(
+            limit=limit,
+            offset=offset,
+            category_id=category_id,
+            vendor_id=vendor_id,
+            search_query=search_query,
+            min_price=min_price,
+            max_price=max_price,
+            is_featured=is_featured,
+            is_on_sale=is_on_sale,
+            status=status,
+            sort_by=sort_by,
+            sort_order=sort_order
+        )
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to retrieve products"), 500)
+        
+    except ValueError as e:
+        return error_response(f"Invalid parameter: {str(e)}", 400)
+    except Exception as e:
+        logger.exception("Error fetching marketplace products", error=str(e))
+        return error_response("Failed to fetch marketplace products", 500)
+
+@api_v4.route("/marketplace/products/<product_id>", methods=["GET"])
+def get_marketplace_product(product_id):
+    """Get a single marketplace product by ID."""
+    try:
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_product(product_id)
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return not_found_response(result.get("error", "Product not found"), "product")
+        
+    except Exception as e:
+        logger.exception("Error fetching marketplace product", error=str(e))
+        return error_response("Failed to fetch marketplace product", 500)
+
+@api_v4.route("/marketplace/products/featured", methods=["GET"])
+def get_featured_products():
+    """Get featured marketplace products."""
+    try:
+        limit = min(int(request.args.get("limit", 10)), 100)
+        
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_featured_products(limit=limit)
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to retrieve featured products"), 500)
+        
+    except ValueError as e:
+        return error_response(f"Invalid parameter: {str(e)}", 400)
+    except Exception as e:
+        logger.exception("Error fetching featured products", error=str(e))
+        return error_response("Failed to fetch featured products", 500)
+
+@api_v4.route("/marketplace/categories", methods=["GET"])
+def get_marketplace_categories():
+    """Get marketplace categories."""
+    try:
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_categories()
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to retrieve categories"), 500)
+        
+    except Exception as e:
+        logger.exception("Error fetching marketplace categories", error=str(e))
+        return error_response("Failed to fetch marketplace categories", 500)
+
+@api_v4.route("/marketplace/vendors", methods=["GET"])
+def get_marketplace_vendors():
+    """Get marketplace vendors."""
+    try:
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_vendors()
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to retrieve vendors"), 500)
+        
+    except Exception as e:
+        logger.exception("Error fetching marketplace vendors", error=str(e))
+        return error_response("Failed to fetch marketplace vendors", 500)
+
+@api_v4.route("/marketplace/search", methods=["GET"])
+def search_marketplace():
+    """Search marketplace products."""
+    try:
+        query = request.args.get("q", "").strip()
+        if not query:
+            return error_response("Query parameter 'q' is required", 400)
+        
+        limit = min(int(request.args.get("limit", 50)), 1000)
+        offset = int(request.args.get("offset", 0))
+        
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.search_products(query, limit=limit, offset=offset)
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to search products"), 500)
+        
+    except ValueError as e:
+        return error_response(f"Invalid parameter: {str(e)}", 400)
+    except Exception as e:
+        logger.exception("Error searching marketplace", error=str(e))
+        return error_response("Failed to search marketplace", 500)
+
+@api_v4.route("/marketplace/stats", methods=["GET"])
+def get_marketplace_stats():
+    """Get marketplace statistics."""
+    try:
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+        
+        result = service.get_stats()
+        
+        if result["success"]:
+            return success_response(result)
+        else:
+            return error_response(result.get("error", "Failed to retrieve stats"), 500)
+        
+    except Exception as e:
+        logger.exception("Error fetching marketplace stats", error=str(e))
+        return error_response("Failed to fetch marketplace stats", 500)
+
 # Error handlers
 @api_v4.errorhandler(ValidationError)
 def handle_validation_error(error):
