@@ -127,7 +127,7 @@ class MarketplaceServiceV4:
             params.extend([limit, offset])
             
             # Execute query using direct database connection
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Execute main query
                     cursor.execute(query, params)
@@ -211,7 +211,7 @@ class MarketplaceServiceV4:
     def get_listing(self, listing_id: str) -> Dict[str, Any]:
         """Get a specific marketplace listing by ID."""
         try:
-            with self.db_manager.get_connection() as conn:
+            with self.db_manager.connection_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 

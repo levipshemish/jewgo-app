@@ -559,6 +559,30 @@ html {
   width: 100% !important;
 }
 
+/* Restaurant header overlay - ensure it's always visible */
+.restaurant-hero-section .absolute.inset-0 {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+}
+
+.restaurant-hero-section .absolute.inset-0 .pointer-events-auto {
+  pointer-events: auto !important;
+  z-index: 20 !important;
+}
+
+.restaurant-hero-section .bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 640px) {
   /* Force 2-column grid for mobile devices */
@@ -2018,6 +2042,31 @@ div[class*="specials-dynamic-grid"] {
     position: relative !important;
     z-index: 1 !important;
     overflow: visible !important;
+  }
+  
+  /* Ensure header overlay is always visible on mobile */
+  .restaurant-hero-section .absolute.inset-0 {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 10 !important;
+    pointer-events: none !important;
+  }
+  
+  .restaurant-hero-section .absolute.inset-0 .pointer-events-auto {
+    pointer-events: auto !important;
+    z-index: 20 !important;
+  }
+  
+  /* Ensure the header pill is always visible on mobile */
+  .restaurant-hero-section .bg-white\/95 {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
   }
   
   /* Force rounded corners to be visible by ensuring proper layering */

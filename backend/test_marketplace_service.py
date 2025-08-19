@@ -1,49 +1,70 @@
 #!/usr/bin/env python3
-"""Test the updated marketplace service."""
+"""Test marketplace service creation and database connection."""
 
+import os
+import sys
 from dotenv import load_dotenv
-from services.marketplace_service_v4 import MarketplaceServiceV4
-from database.database_manager_v3 import DatabaseManagerV3
+
+# Add backend to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Load environment variables
 load_dotenv()
 
 def test_marketplace_service():
-    """Test the marketplace service with the marketplace table."""
+    """Test marketplace service creation and basic functionality."""
     
     try:
-        # Initialize service
+        print("🔍 Testing marketplace service creation...")
+        
+        # Import required modules
+        from services.marketplace_service_v4 import MarketplaceServiceV4
+        from database.database_manager_v3 import DatabaseManagerV3
+        from utils.unified_database_config import ConfigManager
+        
+        # Create database manager
+        print("📊 Creating database manager...")
         db_manager = DatabaseManagerV3()
-        service = MarketplaceServiceV4(db_manager=db_manager)
         
-        print("🧪 Testing marketplace service...")
+        # Create config manager
+        print("⚙️ Creating config manager...")
+        config = ConfigManager()
         
-        # Test the service
-        result = service.get_listings(limit=5)
+        # Create marketplace service
+        print("🛍️ Creating marketplace service...")
+        service = MarketplaceServiceV4(db_manager=db_manager, cache_manager=None, config=config)
         
-        print(f"✅ Success: {result['success']}")
-        
-        if result['success']:
-            data = result['data']
-            print(f"📊 Total listings: {data['total']}")
-            print(f"📋 Listings returned: {len(data['listings'])}")
+        if service:
+            print("✅ Marketplace service created successfully!")
             
-            if data['listings']:
-                print("\n📝 Sample listing:")
-                listing = data['listings'][0]
-                print(f"  ID: {listing['id']}")
-                print(f"  Title: {listing['title']}")
-                print(f"  Price: ${listing['price_cents']/100:.2f}")
-                print(f"  Category: {listing['category_name']}")
-                print(f"  Seller: {listing['seller_name']}")
-                print(f"  Status: {listing['status']}")
-        else:
-            print(f"❌ Error: {result['error']}")
-            if 'details' in result:
-                print(f"📋 Details: {result['details']}")
+            # Test basic database connection
+            print("🔗 Testing database connection...")
+            try:
+                with db_manager.get_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("SELECT COUNT(*) FROM marketplace")
+                        count = cursor.fetchone()[0]
+                        print(f"✅ Database connection successful! Found {count} marketplace items")
+                        
+                        # Test service query
+                        print("🔍 Testing service query...")
+                        result = service.get_listings(limit=5)
+                        
+                        if result["success"]:
+                            print(f"✅ Service query successful! Found {len(result['data']['listings'])} listings")
+                            for listing in result['data']['listings'][:2]:
+                                print(f"  - {listing['title']} (${listing['price_cents']/100:.2f})")
+                        else:
+                            print(f"❌ Service query failed: {result.get('error', 'Unknown error')}")
+                            
+            except Exception as e:
+                print(f"❌ Database connection failed: {e}")
                 
+        else:
+            print("❌ Failed to create marketplace service")
+            
     except Exception as e:
-        print(f"❌ Test failed with exception: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
 
