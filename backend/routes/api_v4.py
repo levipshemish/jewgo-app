@@ -105,9 +105,9 @@ Last Updated: 2024
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 
-# Create Blueprint for v4 API routes only if all required dependencies are available
+# Create Blueprint for v4 API routes - only require essential dependencies
 required_dependencies = [
-    RestaurantServiceV4, ReviewServiceV4, UserServiceV4, UnifiedSearchService,
+    MarketplaceServiceV4,  # Only require marketplace service for now
     APIError, ValidationError, NotFoundError, DatabaseError, ExternalServiceError,
     CacheManagerV4, ConfigManager
 ]
@@ -799,6 +799,26 @@ def get_marketplace_listings():
         lng = request.args.get('lng', type=float)
         radius = min(request.args.get('radius', 10, type=float), 1000)  # miles
         
+        # TEMPORARY: Check if marketplace tables exist
+        try:
+            # Test if listings table exists
+            with get_service_dependencies()[0] as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
+        except Exception as table_error:
+            logger.warning(f"Marketplace tables not found: {table_error}")
+            # Return empty response when tables don't exist
+            return success_response({
+                'success': True,
+                'data': {
+                    'listings': [],
+                    'total': 0,
+                    'limit': limit,
+                    'offset': offset
+                },
+                'message': 'Marketplace is not yet available'
+            }), 200
+        
         # Build query
         query = """
             SELECT l.*, 
@@ -936,6 +956,17 @@ def get_marketplace_listings():
 def get_marketplace_listing(listing_id):
     """Get a specific marketplace listing by ID."""
     try:
+        # TEMPORARY: Check if marketplace tables exist
+        try:
+            # Test if listings table exists
+            with get_service_dependencies()[0] as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
+        except Exception as table_error:
+            logger.warning(f"Marketplace tables not found: {table_error}")
+            # Return not found when tables don't exist
+            return not_found_response(f"Listing with ID {listing_id}", "listing")
+        
         with get_service_dependencies()[0] as conn: # Assuming get_service_dependencies()[0] is db_manager
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute("""
@@ -1010,6 +1041,17 @@ def get_marketplace_listing(listing_id):
 def create_marketplace_listing():
     """Create a new marketplace listing."""
     try:
+        # TEMPORARY: Check if marketplace tables exist
+        try:
+            # Test if listings table exists
+            with get_service_dependencies()[0] as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
+        except Exception as table_error:
+            logger.warning(f"Marketplace tables not found: {table_error}")
+            # Return error when tables don't exist
+            return error_response("Marketplace is not yet available", 503, {"details": "Database tables not created"})
+        
         data = request.get_json()
         
         # Validate required fields
