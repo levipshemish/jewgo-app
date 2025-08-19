@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
-import ActionButtons from '@/components/layout/ActionButtons';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 
+import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
+import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
+import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
-import { MarketplaceListing } from '@/lib/types/marketplace';
+import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -20,12 +22,13 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('marketplace');
   const [showFilters, setShowFilters] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
   
   // Filter state
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: '',
     subcategory: '',
     kind: '',
@@ -35,6 +38,9 @@ export default function MarketplacePage() {
     city: '',
     region: ''
   });
+  
+  // Selected category state
+  const [selectedCategory, setSelectedCategory] = useState<MarketplaceCategory | undefined>();
 
   // Load initial listings
   useEffect(() => {
@@ -98,7 +104,7 @@ export default function MarketplacePage() {
     loadListings(1, false);
   };
 
-  const handleFilterChange = (newFilters: typeof filters) => {
+  const handleFilterChange = (newFilters: MarketplaceFiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
     loadListings(1, false);
@@ -141,12 +147,33 @@ export default function MarketplacePage() {
 
 
 
-  const handleAddListing = () => {
+  const handleSell = () => {
     router.push('/marketplace/add');
+  };
+
+  const handleShowCategories = () => {
+    setShowCategories(true);
   };
 
   const handleShowFilters = () => {
     setShowFilters(true);
+  };
+
+  const handleCategorySelect = (category: MarketplaceCategory) => {
+    setSelectedCategory(category);
+    if (category.id) {
+      setFilters(prev => ({
+        ...prev,
+        category: category.name
+      }));
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        category: ''
+      }));
+    }
+    setCurrentPage(1);
+    loadListings(1, false);
   };
 
   // Show marketplace not available message
@@ -203,11 +230,11 @@ export default function MarketplacePage() {
         <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
-      {/* Action Buttons */}
-      <ActionButtons
+      {/* Marketplace Action Bar */}
+      <MarketplaceActionBar
+        onSell={handleSell}
+        onShowCategories={handleShowCategories}
         onShowFilters={handleShowFilters}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={handleAddListing}
       />
 
 
@@ -266,6 +293,22 @@ export default function MarketplacePage() {
           </div>
         )}
       </div>
+
+      {/* Categories Dropdown */}
+      <MarketplaceCategoriesDropdown
+        isOpen={showCategories}
+        onClose={() => setShowCategories(false)}
+        onCategorySelect={handleCategorySelect}
+        selectedCategory={selectedCategory}
+      />
+
+      {/* Filters Modal */}
+      <MarketplaceFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onApplyFilters={handleFilterChange}
+        currentFilters={filters}
+      />
 
       {/* Bottom Navigation */}
       <BottomNavigation />

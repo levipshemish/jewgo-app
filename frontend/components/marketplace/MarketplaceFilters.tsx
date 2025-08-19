@@ -1,57 +1,39 @@
 'use client';
 
 import { X } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-import { MarketplaceFilters as FiltersType } from '@/lib/types/marketplace';
-import { fetchMarketplaceCategories } from '@/lib/api/marketplace';
+import { MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
 interface MarketplaceFiltersProps {
-  filters: FiltersType;
-  onFilterChange: (filters: FiltersType) => void;
+  isOpen: boolean;
   onClose: () => void;
+  onApplyFilters: (filters: MarketplaceFiltersType) => void;
+  currentFilters: MarketplaceFiltersType;
 }
 
 export default function MarketplaceFilters({
-  filters,
-  onFilterChange,
-  onClose
+  isOpen,
+  onClose,
+  onApplyFilters,
+  currentFilters,
 }: MarketplaceFiltersProps) {
-  const [localFilters, setLocalFilters] = useState<FiltersType>(filters);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState<MarketplaceFiltersType>(currentFilters);
 
-  // Load categories
-  useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      try {
-        const response = await fetchMarketplaceCategories();
-        if (response.success && response.data) {
-          setCategories(response.data);
-        }
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
-  }, []);
-
-  const handleFilterChange = (key: keyof FiltersType, value: string) => {
-    const newFilters = { ...localFilters, [key]: value };
-    setLocalFilters(newFilters);
+  const handleFilterChange = (key: keyof MarketplaceFiltersType, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   };
 
-  const handleApply = () => {
-    onFilterChange(localFilters);
+  const handleApplyFilters = () => {
+    onApplyFilters(filters);
     onClose();
   };
 
-  const handleReset = () => {
-    const resetFilters: FiltersType = {
+  const handleClearFilters = () => {
+    const clearedFilters: MarketplaceFiltersType = {
       category: '',
       subcategory: '',
       kind: '',
@@ -59,182 +41,154 @@ export default function MarketplaceFilters({
       minPrice: '',
       maxPrice: '',
       city: '',
-      region: ''
+      region: '',
     };
-    setLocalFilters(resetFilters);
-    onFilterChange(resetFilters);
-  };
-
-  const handleClose = () => {
-    setLocalFilters(filters); // Reset to original filters
+    setFilters(clearedFilters);
+    onApplyFilters(clearedFilters);
     onClose();
   };
 
-  const getSubcategories = () => {
-    if (!localFilters.category) {
-      return [];
-    }
-    const category = categories.find(c => c.slug === localFilters.category);
-    return category?.subcategories || [];
+  const handleClose = () => {
+    // Reset filters to current state when closing without applying
+    setFilters(currentFilters);
+    onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="bg-white border-b border-gray-200 p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-        <button
-          onClick={handleClose}
-          className="text-gray-400 hover:text-gray-600"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        {/* Listing Type */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Listing Type
-          </label>
-          <select
-            value={localFilters.kind}
-            onChange={(e) => handleFilterChange('kind', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleClose} />
+      
+      {/* Filters Modal */}
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+          <button
+            onClick={handleClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <option value="">All Types</option>
-            <option value="regular">Regular Items</option>
-            <option value="vehicle">Vehicles</option>
-            <option value="appliance">Appliances</option>
-          </select>
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
 
-        {/* Category */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Category
-          </label>
-          <select
-            value={localFilters.category}
-            onChange={(e) => {
-              handleFilterChange('category', e.target.value);
-              handleFilterChange('subcategory', ''); // Reset subcategory
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            disabled={loading}
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.slug}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Subcategory */}
-        {localFilters.category && (
+        {/* Content */}
+        <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-4 space-y-6">
+          {/* Kind Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Subcategory
+              Item Type
             </label>
             <select
-              value={localFilters.subcategory}
-              onChange={(e) => handleFilterChange('subcategory', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={filters.kind}
+              onChange={(e) => handleFilterChange('kind', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">All Subcategories</option>
-              {getSubcategories().map((subcategory: any) => (
-                <option key={subcategory.id} value={subcategory.slug}>
-                  {subcategory.name}
-                </option>
-              ))}
+              <option value="">All Types</option>
+              <option value="regular">Regular Items</option>
+              <option value="vehicle">Vehicles</option>
+              <option value="appliance">Appliances</option>
             </select>
           </div>
-        )}
 
-        {/* Condition */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Condition
-          </label>
-          <select
-            value={localFilters.condition}
-            onChange={(e) => handleFilterChange('condition', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Any Condition</option>
-            <option value="new">New</option>
-            <option value="used_like_new">Used - Like New</option>
-            <option value="used_good">Used - Good</option>
-            <option value="used_fair">Used - Fair</option>
-          </select>
-        </div>
+          {/* Condition Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Condition
+            </label>
+            <select
+              value={filters.condition}
+              onChange={(e) => handleFilterChange('condition', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Conditions</option>
+              <option value="new">New</option>
+              <option value="used_like_new">Used - Like New</option>
+              <option value="used_good">Used - Good</option>
+              <option value="used_fair">Used - Fair</option>
+            </select>
+          </div>
 
-        {/* Price Range */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Price Range
-          </label>
-          <div className="grid grid-cols-2 gap-2">
+          {/* Price Range */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Price Range
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <input
+                  type="number"
+                  placeholder="Min Price"
+                  value={filters.minPrice}
+                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  placeholder="Max Price"
+                  value={filters.maxPrice}
+                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Location Filters */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              City
+            </label>
             <input
-              type="number"
-              placeholder="Min"
-              value={localFilters.minPrice}
-              onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              type="text"
+              placeholder="Enter city name"
+              value={filters.city}
+              onChange={(e) => handleFilterChange('city', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Region
+            </label>
             <input
-              type="number"
-              placeholder="Max"
-              value={localFilters.maxPrice}
-              onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              type="text"
+              placeholder="Enter region/state"
+              value={filters.region}
+              onChange={(e) => handleFilterChange('region', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* Location */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            City
-          </label>
-          <input
-            type="text"
-            placeholder="Enter city"
-            value={localFilters.city}
-            onChange={(e) => handleFilterChange('city', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+        {/* Footer */}
+        <div className="flex items-center justify-between p-4 border-t border-gray-200">
+          <button
+            onClick={handleClearFilters}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Clear All
+          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleApplyFilters}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Apply Filters
+            </button>
+          </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            State/Region
-          </label>
-          <input
-            type="text"
-            placeholder="Enter state or region"
-            value={localFilters.region}
-            onChange={(e) => handleFilterChange('region', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2 mt-6">
-        <button
-          onClick={handleApply}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Apply Filters
-        </button>
-        <button
-          onClick={handleReset}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          Reset
-        </button>
       </div>
     </div>
   );
