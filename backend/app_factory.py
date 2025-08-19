@@ -1607,12 +1607,20 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
             # Get database manager instance
             db_manager = deps.get("get_db_manager")()
+            logger.info(f"Debug: db_manager type: {type(db_manager)}")
+            logger.info(f"Debug: db_manager is None: {db_manager is None}")
+            
             if not db_manager:
                 logger.error("Database manager not initialized")
                 return error_response("Database not available", 503)
 
             # Get restaurant from database
-            restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+            try:
+                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+                logger.info(f"Debug: restaurant result: {restaurant is not None}")
+            except Exception as db_error:
+                logger.error(f"Database error: {db_error}")
+                raise
 
             if not restaurant:
                 return not_found_response("Restaurant not found", resource_type="restaurant")
