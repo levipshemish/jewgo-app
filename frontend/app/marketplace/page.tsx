@@ -159,10 +159,10 @@ export default function MarketplacePage() {
               Marketplace Coming Soon!
             </h1>
             <p className="text-gray-600 mb-6">
-              Our marketplace feature is currently under development. We're working hard to bring you a great buying and selling experience for kosher items.
+              Our marketplace feature is currently under development. We&apos;re working hard to bring you a great buying and selling experience for kosher items.
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-blue-900 mb-2">What's Coming:</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">What&apos;s Coming:</h3>
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>• Buy and sell kosher items</li>
                 <li>• Vehicle and appliance listings</li>

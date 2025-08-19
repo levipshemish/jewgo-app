@@ -180,9 +180,9 @@ export const UnifiedCard: React.FC<UnifiedCardProps> = ({
         }
       }}
     >
-      <div className="relative bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-lg hover:shadow-xl overflow-hidden">
         {/* Image Section */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-200 animate-pulse" />
           )}
