@@ -272,15 +272,15 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Separate transparent container */}
+      {/* Text Content Container - Reduced padding for tighter spacing */}
       <motion.div 
-        className="p-1.5 bg-transparent"
+        className="p-1 bg-transparent"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Single line with truncation */}
-        <div className="h-8 mb-1 flex items-center">
+        <div className="h-8 mb-0.5 flex items-center">
           <h3 className="text-sm font-bold text-gray-900 leading-tight truncate">
             {titleCase(restaurant.name)}
           </h3>
