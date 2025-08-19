@@ -263,15 +263,15 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - White background with rounded corners overlaying image */}
+      {/* Text Content Container - Improved white background with better positioning and styling */}
       <motion.div 
-        className="p-1.5 bg-white rounded-3xl -mt-4 relative z-10 shadow-sm"
+        className="p-2 bg-white/95 backdrop-blur-sm rounded-2xl -mt-6 relative z-10 shadow-lg border border-white/20"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Bold text with standardized height */}
-        <div className="min-h-8 mb-1 flex items-center">
+        <div className="min-h-8 mb-1.5 flex items-center">
           <h3 className="text-sm font-bold text-gray-900 leading-tight break-words">
             {titleCase(restaurant.name)}
           </h3>
@@ -279,14 +279,14 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         
         {/* Price Range and Rating - Swapped positions */}
         <div className="flex items-center justify-between min-w-0">
-          <SpanContainer className="text-xs text-gray-500 font-normal truncate flex-1 mr-2">
+          <SpanContainer className="text-xs text-gray-600 font-medium truncate flex-1 mr-2">
             {formatPriceRange()}
           </SpanContainer>
           
           <div className="flex items-center gap-1 flex-shrink-0">
             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs font-medium text-gray-800">
-              {getRating().toFixed(2)}
+            <span className="text-xs font-semibold text-gray-800">
+              {getRating().toFixed(1)}
             </span>
           </div>
         </div>
