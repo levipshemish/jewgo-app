@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export const useRecentSearches = (maxSearches: number = 5) => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);

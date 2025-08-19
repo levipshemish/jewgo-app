@@ -1,8 +1,8 @@
 'use client';
 
-import { ArrowLeft, Star, ShoppingCart, Heart, Share2, Truck, Shield, Clock, MapPin, Phone, Globe } from 'lucide-react';
-import { useRouter, useParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
+import { Heart, Star, Share2, ShoppingCart, User, ArrowLeft } from 'lucide-react';
+import { useRouter, useParams } from 'next/navigation';
 
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
@@ -61,38 +61,37 @@ export default function ProductDetailPage() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: product?.currency || 'USD',
-    }).format(price);
+
+
+  // Helper functions
+  const getConditionColor = (condition?: string) => {
+    switch (condition) {
+      case 'new':
+        return 'bg-green-100 text-green-800';
+      case 'used_like_new':
+        return 'bg-blue-100 text-blue-800';
+      case 'used_good':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'used_fair':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const renderRating = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-      );
+  const getListingTypeColor = (type: string) => {
+    switch (type) {
+      case 'sale':
+        return 'bg-green-100 text-green-800';
+      case 'free':
+        return 'bg-blue-100 text-blue-800';
+      case 'borrow':
+        return 'bg-purple-100 text-purple-800';
+      case 'gemach':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
-
-    if (hasHalfStar) {
-      stars.push(
-        <Star key="half" className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-      );
-    }
-
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <Star key={`empty-${i}`} className="w-4 h-4 text-gray-300" />
-      );
-    }
-
-    return stars;
   };
 
   if (loading) {

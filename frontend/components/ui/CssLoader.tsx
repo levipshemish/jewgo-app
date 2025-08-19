@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 // Simple CSS loader that uses proper Next.js CSS imports
 interface CssLoaderProps {

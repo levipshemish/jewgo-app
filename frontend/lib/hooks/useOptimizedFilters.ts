@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 import { FilterState, FilterValue } from '@/lib/filters/filters.types';
 import { Restaurant } from '@/lib/types/restaurant';

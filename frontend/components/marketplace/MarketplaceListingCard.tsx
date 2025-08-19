@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, MapPin, Clock, User, Building } from 'lucide-react';
+import { Heart, MapPin, Clock, User } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { MarketplaceListing } from '@/lib/types/marketplace';

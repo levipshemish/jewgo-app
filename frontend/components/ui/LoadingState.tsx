@@ -2,7 +2,7 @@
 
 // Keep any additional components that are specific to this file
 import React from 'react';
-import { LoadingState, Skeleton } from './Loading';
+import { LoadingState } from './Loading';
 import { SkeletonCard } from './LoadingStates';
 import { Loader2 } from 'lucide-react';
 
