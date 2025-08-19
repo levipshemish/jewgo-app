@@ -1591,20 +1591,11 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
     @limiter.limit("100 per minute")
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
-        try:
-            # Temporary simplified response for debugging
-            logger.info(f"Debug: Restaurant endpoint called with ID: {restaurant_id}")
-            return jsonify({
-                "message": "Restaurant endpoint working",
-                "restaurant_id": restaurant_id,
-                "status": "debug_mode"
-            }), 200
-
-        except Exception as e:
-            logger.exception(
-                "Error fetching restaurant", restaurant_id=restaurant_id, error=str(e)
-            )
-            return error_response("Failed to fetch restaurant", 500)
+        return jsonify({
+            "message": "Restaurant endpoint working",
+            "restaurant_id": restaurant_id,
+            "status": "debug_mode"
+        }), 200
 
     @app.route("/api/restaurants/<int:restaurant_id>/fetch-website", methods=["POST"])
     @limiter.limit("30 per hour")
