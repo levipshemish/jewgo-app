@@ -1,0 +1,499 @@
+
+> jewgo-frontend@0.1.0 analyze:tsprune /Users/mendell/jewgo app/frontend
+> ts-prune --ignore 'index.ts|barrel.ts'
+
+instrumentation-client.ts:35 - onRouterTransitionStart
+instrumentation.ts:3 - register
+instrumentation.ts:13 - onRequestError
+middleware-supabase.ts:7 - middleware
+middleware-supabase.ts:35 - config
+middleware.ts:26 - middleware
+middleware.ts:130 - config
+app/error.tsx:6 - default
+app/global-error.tsx:7 - default
+app/instrumentation.ts:1 - register
+app/layout.tsx:72 - default
+app/layout.tsx:13 - metadata
+app/layout.tsx:63 - viewport
+app/not-found.tsx:3 - default
+lib/api-config.ts:20 - API_CONFIG (used in module)
+lib/api-config.ts:27 - API_ENDPOINTS
+lib/api-config.ts:47 - apiCall
+lib/api-config.ts:73 - frontendApiCall
+lib/api-config.ts:90 - isProduction
+lib/api-config.ts:91 - isDevelopment
+lib/api-config.ts:92 - isTest
+lib/auth.ts:26 - requireUser (used in module)
+lib/auth.ts:34 - requireAdmin
+lib/auth.ts:51 - isAuthenticated
+lib/auth.ts:57 - getUserProfile
+lib/message-bus.ts:10 - FilterWorkerResult (used in module)
+scripts/check-env-setup.ts:144 - checkEnvironmentVariables (used in module)
+scripts/check-env-setup.ts:144 - printEnvironmentStatus (used in module)
+scripts/generate-secret.ts:28 - generateSecret (used in module)
+scripts/generate-secret.ts:28 - generateNextAuthSecret (used in module)
+scripts/migrate-users.ts:182 - migrateUsers (used in module)
+scripts/migrate-users.ts:182 - sendMigrationNotifications (used in module)
+scripts/test-auth-systems.ts:325 - testNextAuthSystem (used in module)
+scripts/test-auth-systems.ts:326 - testSupabaseSystem (used in module)
+scripts/test-auth-systems.ts:327 - testEnvironmentVariables (used in module)
+scripts/test-auth-systems.ts:328 - testDualSystemCompatibility (used in module)
+scripts/test-auth-systems.ts:329 - runAllTests (used in module)
+app/eatery/debug-page.tsx:5 - default
+app/eatery/simple-page.tsx:6 - default
+app/eatery/test-page.tsx:6 - default
+components/admin/FeatureFlagManager.tsx:17 - default
+components/archive/SplashScreen.tsx:11 - default
+components/filters/AdvancedFilterSheet.tsx:321 - default
+components/filters/BusinessTypeFilter.tsx:7 - BusinessType (used in module)
+components/forms/ImageUpload.tsx:13 - default
+components/layout/MobileActionButtons.tsx:12 - default
+components/layout/MobileSearchHeader.tsx:13 - default
+components/map/MapWhenVisible.tsx:13 - default
+components/newsletter/NewsletterSignup.tsx:51 - default
+components/newsletter/NewsletterSignup.tsx:6 - NewsletterData (used in module)
+components/products/ProductResults.tsx:144 - default
+components/restaurant/HoursStatusBadge.tsx:18 - default
+components/restaurant/RestaurantClaimForm.tsx:50 - default
+components/restaurant/RestaurantClaimForm.tsx:6 - ClaimData (used in module)
+components/reviews/ReviewModeration.tsx:6 - Review (used in module)
+components/reviews/ReviewModeration.tsx:26 - ReviewFlag (used in module)
+components/reviews/ReviewSnippets.tsx:23 - default
+components/search/AdvancedSearchBox.tsx:24 - default
+components/search/CategoryFilters.tsx:22 - CategoryFilters
+components/ui/CssLoader.tsx:13 - CssLoader
+components/ui/CssLoader.tsx:60 - LeafletCssLoader
+components/ui/ErrorBoundary.tsx:178 - useErrorHandler
+components/ui/ErrorBoundary.tsx:230 - withErrorBoundary
+components/ui/ErrorBoundary.tsx:245 - AsyncErrorBoundary
+components/ui/FontLoader.tsx:9 - FontLoader
+components/ui/LazyImage.tsx:110 - default
+components/ui/LazyLoader.tsx:17 - LazyLoader
+components/ui/LazyLoader.tsx:30 - LazyMap
+components/ui/LazyLoader.tsx:31 - LazyAnalytics
+components/ui/LazyLoader.tsx:32 - LazyImageCarousel
+components/ui/LazyLoader.tsx:33 - LazyReviews
+components/ui/LoadingSpinner.tsx:73 - LoadingOverlay
+components/ui/LoadingSpinner.tsx:96 - Skeleton
+components/ui/LoadingSpinner.tsx:133 - RestaurantCardSkeleton (used in module)
+components/ui/LoadingSpinner.tsx:146 - RestaurantGridSkeleton
+components/ui/LoadingSpinner.tsx:157 - InfiniteScrollLoader
+components/ui/LoadingSpinner.tsx:179 - PullToRefreshIndicator
+components/ui/LoadingState.tsx:21 - LoadingState (used in module)
+components/ui/LoadingState.tsx:82 - Skeleton (used in module)
+components/ui/LoadingState.tsx:93 - SkeletonCard (used in module)
+components/ui/LoadingState.tsx:113 - SkeletonList
+components/ui/LoadingState.tsx:124 - LoadingOverlay
+components/ui/LoadingState.tsx:143 - AsyncLoadingState
+components/ui/LoadingState.tsx:182 - PageLoadingState
+components/ui/LoadingState.tsx:195 - TableLoadingState
+components/ui/NotificationDemo.tsx:52 - default
+components/ui/PerformanceMonitor.tsx:17 - PerformanceMonitor
+components/ui/PerformanceMonitor.tsx:185 - useFilterPerformance
+components/ui/StarRating.tsx:128 - renderStars
+components/ui/StarRating.tsx:143 - default
+components/ui/VirtualList.tsx:16 - VirtualList (used in module)
+components/ui/VirtualList.tsx:144 - VirtualRestaurantList
+components/ui/VirtualList.tsx:205 - VirtualRestaurantCard
+db/sync/updateHours.ts:1 - updateRestaurantHours
+lib/analytics/performance.ts:328 - measureRender
+lib/analytics/performance.ts:334 - measureApi
+lib/analytics/performance.ts:340 - trackInteraction
+lib/analytics/performance.ts:345 - usePerformanceTracking
+lib/api/adminClient.ts:161 - adminClient
+lib/api/health.ts:22 - HealthAPI (used in module)
+lib/api/health.ts:129 - checkHealth (used in module)
+lib/api/health.ts:130 - checkApiEndpoints (used in module)
+lib/api/mockData.ts:3 - mockExportUserData
+lib/api/mockData.ts:34 - mockDeleteAccount
+lib/api/mockData.ts:47 - mockClaimDeal
+lib/api/specials.ts:28 - SpecialsAPI (used in module)
+lib/api/specials.ts:182 - fetchSpecials (used in module)
+lib/api/specials.ts:183 - claimDeal (used in module)
+lib/api/specials.ts:184 - getMockSpecials (used in module)
+lib/auth/admin-token-manager.ts:7 - AdminToken (used in module)
+lib/auth/admin-token-manager.ts:17 - AdminTokenManager
+lib/auth/cleanup-manager.ts:11 - CleanupResult (used in module)
+lib/auth/cleanup-manager.ts:20 - CleanupManager (used in module)
+lib/auth/mfa-manager.ts:7 - MFASecret (used in module)
+lib/auth/mfa-manager.ts:17 - MFAManager
+lib/auth/migration-manager.ts:26 - MigrationManager (used in module)
+lib/auth/transition-manager.ts:4 - TransitionConfig (used in module)
+lib/auth/transition-manager.ts:23 - TransitionManager (used in module)
+lib/backups/hoursBackup.ts:30 - fetchRestaurantHours (used in module)
+lib/backups/hoursBackup.ts:71 - fetchMissingHours
+lib/backups/hoursBackup.ts:111 - ensureRestaurantHours
+lib/backups/hoursBackup.ts:139 - getFallbackHoursDisplay
+lib/backups/hoursBackup.ts:156 - formatHoursForDisplay
+lib/backups/hoursBackup.ts:169 - isRestaurantOpen
+lib/backups/hoursBackup.ts:9 - HoursFetchResponse (used in module)
+lib/backups/hoursBackup.ts:18 - BulkHoursFetchResponse (used in module)
+lib/backups/websiteBackup.ts:28 - fetchRestaurantWebsite (used in module)
+lib/backups/websiteBackup.ts:67 - fetchMissingWebsites
+lib/backups/websiteBackup.ts:111 - ensureRestaurantWebsite
+lib/backups/websiteBackup.ts:130 - getFallbackWebsiteLink
+lib/backups/websiteBackup.ts:9 - WebsiteFetchResponse (used in module)
+lib/backups/websiteBackup.ts:17 - BulkWebsiteFetchResponse (used in module)
+lib/filters/filters.types.ts:19 - FilterState (used in module)
+lib/filters/serialize.ts:3 - serializeFilters (used in module)
+lib/filters/serialize.ts:21 - parseFilters
+lib/filters/serialize.ts:33 - isFilterEmpty
+lib/filters/urlSync.ts:3 - replaceUrlQuery (used in module)
+lib/filters/urlSync.ts:28 - parseUrlQuery (used in module)
+lib/filters/urlSync.ts:56 - syncFiltersToUrl
+lib/filters/urlSync.ts:69 - hydrateFiltersFromUrl
+lib/google/places.ts:5 - fetchPlaceDetails
+lib/google/places.ts:45 - ModernGooglePlacesAPI (used in module)
+lib/hooks/useAdvancedFilters.ts:4 - UseAdvancedFiltersReturn (used in module)
+lib/hooks/useCssLoader.ts:9 - useCssLoader
+lib/hooks/useCssLoader.ts:62 - useCssMimeTypeFix
+lib/hooks/useFilterOptions.ts:30 - useFilterOptions
+lib/hooks/useLazyLoading.ts:32 - useLazyLoading (used in module)
+lib/hooks/useLazyLoading.ts:114 - useLazyComponent
+lib/hooks/useLocalFilters.ts:38 - UseLocalFiltersReturn (used in module)
+lib/hooks/useOptimizedFilters.ts:156 - useOptimizedFilters
+lib/hooks/usePerformanceOptimization.ts:214 - useComponentPerformance
+lib/hooks/usePerformanceOptimization.ts:241 - useMemoryOptimization
+lib/hooks/useSearchInput.ts:3 - UseSearchInputProps (used in module)
+lib/hooks/useSearchSuggestions.ts:14 - GooglePlaceSuggestion
+lib/hooks/useSearchSuggestions.ts:24 - AddressEntry
+lib/hooks/useSearchSuggestions.ts:33 - PopularSearch
+lib/maps/loader.ts:7 - getMapsLoader (used in module)
+lib/types/marketplace.ts:91 - OrderItem (used in module)
+lib/types/marketplace.ts:100 - Address (used in module)
+lib/types/marketplace.ts:111 - PaymentMethod (used in module)
+lib/types/marketplace.ts:120 - ShippingInfo (used in module)
+lib/types/marketplace.ts:130 - ShippingMethod (used in module)
+lib/types/marketplace.ts:138 - KosherCertification (used in module)
+lib/types/marketplace.ts:146 - DietaryInfo (used in module)
+lib/types/marketplace.ts:155 - VendorHours (used in module)
+lib/types/marketplace.ts:165 - DayHours (used in module)
+lib/types/marketplace.ts:172 - OrderStatus (used in module)
+lib/types/marketplace.ts:181 - PaymentStatus (used in module)
+lib/types/restaurant.ts:2 - KosherCategory (used in module)
+lib/types/restaurant.ts:5 - RestaurantStatus (used in module)
+lib/types/restaurant.ts:8 - SpecialType
+lib/types/restaurant.ts:11 - DayHours (used in module)
+lib/types/restaurant.ts:17 - WeeklyHours (used in module)
+lib/types/restaurant.ts:38 - RestaurantCategory (used in module)
+lib/types/restaurant.ts:70 - MenuPricing (used in module)
+lib/types/restaurant.ts:78 - RestaurantCardProps
+lib/types/restaurant.ts:83 - RestaurantGridProps
+lib/types/restaurant.ts:91 - SearchBarProps
+lib/types/restaurant.ts:95 - CategoryNavProps
+lib/types/restaurant.ts:189 - computeRestaurantStatus
+lib/types/review.ts:1 - Review (used in module)
+lib/types/review.ts:55 - ReviewCreateRequest
+lib/utils/admin.ts:1 - isAdminEmail
+lib/utils/analytics.ts:186 - AnalyticsEvent (used in module)
+lib/utils/analytics.ts:186 - RegistrationMetrics (used in module)
+lib/utils/apiRouteUtils.ts:63 - forwardGetRequest (used in module)
+lib/utils/apiRouteUtils.ts:107 - forwardPostRequest (used in module)
+lib/utils/apiRouteUtils.ts:155 - forwardPutRequest (used in module)
+lib/utils/apiRouteUtils.ts:203 - forwardDeleteRequest (used in module)
+lib/utils/apiRouteUtils.ts:241 - createGetRoute (used in module)
+lib/utils/apiRouteUtils.ts:253 - createPostRoute (used in module)
+lib/utils/apiRouteUtils.ts:266 - createPutRoute (used in module)
+lib/utils/apiRouteUtils.ts:279 - createDeleteRoute (used in module)
+lib/utils/apiRouteUtils.ts:291 - createCrudRoutes (used in module)
+lib/utils/apiRouteUtils.ts:307 - validators (used in module)
+lib/utils/apiRouteUtils.ts:364 - responses (used in module)
+lib/utils/apiRouteUtils.ts:487 - default
+lib/utils/colors.ts:9 - JEWGO_COLORS (used in module)
+lib/utils/colors.ts:72 - KOSHER_CATEGORY_COLORS (used in module)
+lib/utils/colors.ts:97 - CERTIFYING_AGENCY_COLORS (used in module)
+lib/utils/colors.ts:126 - getKosherCategoryColors (used in module)
+lib/utils/colors.ts:130 - getCertifyingAgencyColors (used in module)
+lib/utils/colors.ts:145 - getCertifyingAgencyBadgeClasses
+lib/utils/componentUtils.ts:17 - handleEscape (used in module)
+lib/utils/componentUtils.ts:36 - handleSubmit (used in module)
+lib/utils/componentUtils.ts:60 - handleMapClick (used in module)
+lib/utils/componentUtils.ts:82 - handleAddEateryClick (used in module)
+lib/utils/componentUtils.ts:97 - handleFiltersClick (used in module)
+lib/utils/componentUtils.ts:112 - handleTabClick (used in module)
+lib/utils/componentUtils.ts:125 - handleSearch (used in module)
+lib/utils/componentUtils.ts:140 - handleShowFilters (used in module)
+lib/utils/componentUtils.ts:150 - handleFiltersChange (used in module)
+lib/utils/componentUtils.ts:160 - handleClearFilters (used in module)
+lib/utils/componentUtils.ts:169 - handleSearchWithSuggestions (used in module)
+lib/utils/componentUtils.ts:185 - handleLoadingState (used in module)
+lib/utils/componentUtils.ts:204 - handleErrorState (used in module)
+lib/utils/componentUtils.ts:218 - handleConfirmation (used in module)
+lib/utils/componentUtils.ts:233 - handleFileUpload (used in module)
+lib/utils/componentUtils.ts:254 - handleImageLoad (used in module)
+lib/utils/componentUtils.ts:267 - handleScroll (used in module)
+lib/utils/componentUtils.ts:286 - handleResize (used in module)
+lib/utils/componentUtils.ts:303 - handleClickOutside (used in module)
+lib/utils/componentUtils.ts:317 - handleKeyboardNavigation (used in module)
+lib/utils/componentUtils.ts:354 - handleTouch (used in module)
+lib/utils/componentUtils.ts:369 - handleDragAndDrop (used in module)
+lib/utils/componentUtils.ts:387 - default
+lib/utils/dateUtils.ts:12 - DateFormatOptions (used in module)
+lib/utils/dateUtils.ts:60 - formatDateShort (used in module)
+lib/utils/dateUtils.ts:71 - formatDateLong (used in module)
+lib/utils/dateUtils.ts:82 - formatDateTime (used in module)
+lib/utils/dateUtils.ts:95 - formatRelativeTime (used in module)
+lib/utils/dateUtils.ts:143 - formatDateISO (used in module)
+lib/utils/dateUtils.ts:158 - isToday (used in module)
+lib/utils/dateUtils.ts:174 - isYesterday (used in module)
+lib/utils/dateUtils.ts:191 - getDayOfWeek (used in module)
+lib/utils/dateUtils.ts:206 - getMonthName (used in module)
+lib/utils/dateUtils.ts:231 - default
+lib/utils/distance.ts:14 - calculateDistance (used in module)
+lib/utils/distance.ts:29 - sortRestaurantsByDistance
+lib/utils/distance.ts:61 - formatDistance
+lib/utils/distance.ts:77 - getRestaurantDistance
+lib/utils/distance.ts:92 - getRestaurantsWithinRadius
+lib/utils/distance.ts:3 - Location (used in module)
+lib/utils/distance.ts:8 - RestaurantWithDistance (used in module)
+lib/utils/favorites.ts:9 - FavoriteRestaurant (used in module)
+lib/utils/favorites.ts:19 - FavoritesData (used in module)
+lib/utils/favorites.ts:338 - favoritesManager (used in module)
+lib/utils/favorites.ts:374 - toggleFavorite
+lib/utils/favorites.ts:382 - getFavoriteCount
+lib/utils/favorites.ts:386 - isStorageAvailable (used in module)
+lib/utils/formValidation.ts:94 - validateForm (used in module)
+lib/utils/formValidation.ts:126 - validateField
+lib/utils/formValidation.ts:183 - validateUrl
+lib/utils/formValidation.ts:192 - validateRequired
+lib/utils/formValidation.ts:209 - createFormState
+lib/utils/formValidation.ts:220 - updateFormField
+lib/utils/formValidation.ts:235 - setFormErrors
+lib/utils/formValidation.ts:249 - clearFormErrors
+lib/utils/formValidation.ts:258 - setSubmitting
+lib/utils/formValidation.ts:267 - validateZipCode
+lib/utils/formValidation.ts:275 - validatePriceRange
+lib/utils/formValidation.ts:295 - validateHours
+lib/utils/formValidation.ts:309 - validateUniqueEmail
+lib/utils/formValidation.ts:331 - validateRestaurantName
+lib/utils/formValidation.ts:354 - submitForm
+lib/utils/formValidation.ts:4 - emailSchema
+lib/utils/formValidation.ts:9 - passwordSchema
+lib/utils/formValidation.ts:14 - phoneSchema (used in module)
+lib/utils/formValidation.ts:19 - urlSchema (used in module)
+lib/utils/formValidation.ts:25 - requiredStringSchema (used in module)
+lib/utils/formValidation.ts:29 - optionalStringSchema (used in module)
+lib/utils/formValidation.ts:35 - restaurantSchema (used in module)
+lib/utils/formValidation.ts:54 - restaurantSpecialSchema (used in module)
+lib/utils/formValidation.ts:80 - ValidationError (used in module)
+lib/utils/formValidation.ts:85 - ValidationResult (used in module)
+lib/utils/formValidation.ts:201 - FormState (used in module)
+lib/utils/formValidation.ts:384 - RestaurantFormData
+lib/utils/formValidation.ts:385 - RestaurantSpecialFormData
+lib/utils/hours.ts:263 - formatWeeklyHoursArray
+lib/utils/hours.ts:11 - HoursStatus (used in module)
+lib/utils/hours.ts:24 - OpeningHours (used in module)
+lib/utils/imageUrlValidator.ts:19 - isValidImageUrl (used in module)
+lib/utils/imageUrlValidator.ts:48 - fixCloudinaryUrl (used in module)
+lib/utils/imageUrlValidator.ts:173 - sanitizeRestaurantImageUrl (used in module)
+lib/utils/imageValidation.ts:13 - isValidCloudinaryUrl (used in module)
+lib/utils/imageValidation.ts:36 - isLikelyAccessibleCloudinaryUrl (used in module)
+lib/utils/imageValidation.ts:100 - filterValidImageUrls
+lib/utils/imageValidation.ts:177 - getRestaurantFallbackImage
+lib/utils/imageValidation.ts:187 - getPlaceholderImages (used in module)
+lib/utils/logger.ts:8 - LogLevel (used in module)
+lib/utils/logger.ts:16 - LogContext (used in module)
+lib/utils/logger.ts:20 - LogEntry
+lib/utils/logger.ts:169 - logDebug
+lib/utils/logger.ts:171 - logWarn
+lib/utils/logger.ts:173 - logFatal
+lib/utils/logger.ts:178 - logUserAction (used in module)
+lib/utils/logger.ts:180 - logPerformance (used in module)
+lib/utils/logger.ts:182 - logSecurity (used in module)
+lib/utils/logger.ts:186 - Logger (used in module)
+lib/utils/logger.ts:187 - default
+lib/utils/performanceOptimization.ts:90 - debounce
+lib/utils/rateLimiter.ts:114 - withRateLimit
+lib/utils/rateLimiter.ts:92 - rateLimitConfigs
+lib/utils/recaptcha.ts:6 - verifyRecaptcha
+lib/utils/recaptcha.ts:41 - useRecaptcha
+lib/utils/reviewUtils.ts:46 - getReviewCount
+lib/utils/scrollUtils.ts:29 - scrollToElement
+lib/utils/scrollUtils.ts:52 - getScrollPosition (used in module)
+lib/utils/scrollUtils.ts:63 - createThrottledScrollHandler
+lib/utils/scrollUtils.ts:97 - createThrottledResizeHandler
+lib/utils/scrollUtils.ts:131 - createDebouncedScrollHandler
+lib/utils/scrollUtils.ts:156 - isElementInViewport
+lib/utils/scrollUtils.ts:179 - getElementDimensions
+lib/utils/spacing.ts:79 - getSpacingClasses (used in module)
+lib/utils/spacing.ts:9 - spacing (used in module)
+lib/utils/stringUtils.ts:27 - sentenceCase (used in module)
+lib/utils/stringUtils.ts:37 - camelCase (used in module)
+lib/utils/stringUtils.ts:51 - kebabCase (used in module)
+lib/utils/stringUtils.ts:64 - snakeCase (used in module)
+lib/utils/stringUtils.ts:77 - pascalCase (used in module)
+lib/utils/stringUtils.ts:89 - truncate (used in module)
+lib/utils/stringUtils.ts:102 - capitalizeWords (used in module)
+lib/utils/stringUtils.ts:114 - normalizeWhitespace (used in module)
+lib/utils/stringUtils.ts:124 - toSlug (used in module)
+lib/utils/stringUtils.ts:138 - escapeHtml (used in module)
+lib/utils/stringUtils.ts:156 - unescapeHtml (used in module)
+lib/utils/stringUtils.ts:174 - getInitials (used in module)
+lib/utils/stringUtils.ts:188 - isEmpty (used in module)
+lib/utils/stringUtils.ts:195 - isAlphaSpace (used in module)
+lib/utils/stringUtils.ts:205 - isAlphanumericSpace (used in module)
+lib/utils/stringUtils.ts:215 - formatPhoneNumber (used in module)
+lib/utils/stringUtils.ts:235 - formatCurrency (used in module)
+lib/utils/stringUtils.ts:245 - formatNumber (used in module)
+lib/utils/stringUtils.ts:252 - randomString (used in module)
+lib/utils/stringUtils.ts:284 - default
+lib/utils/touchUtils.ts:5 - TOUCH_TARGET_SIZE (used in module)
+lib/utils/touchUtils.ts:10 - isTouchDevice (used in module)
+lib/utils/touchUtils.ts:30 - getTouchTargetSize (used in module)
+lib/utils/touchUtils.ts:56 - debounce
+lib/utils/touchUtils.ts:87 - preventDoubleTapZoom
+lib/utils/touchUtils.ts:102 - addTouchFeedback
+lib/utils/touchUtils.ts:122 - removeTouchFeedback
+lib/utils/typography.ts:172 - getTypographyClasses (used in module)
+lib/utils/typography.ts:23 - typography (used in module)
+lib/utils/validation.ts:7 - isValidRestaurant (used in module)
+lib/utils/validation.ts:31 - validateRestaurants
+lib/utils/validation.ts:47 - safeGet
+lib/utils/validation.ts:86 - safeMap
+lib/utils/validation.ts:103 - safeReduce
+lib/utils/validation.ts:125 - safeLength
+lib/utils/validation.ts:135 - safeIncludes
+lib/utils/validation.ts:151 - safeFind
+lib/utils/validation.ts:167 - safeFindIndex
+lib/utils/validation.ts:183 - validateApiResponse
+lib/validators/review.ts:3 - ReviewSchema (used in module)
+lib/validators/review.ts:24 - ReviewsResponseSchema (used in module)
+lib/validators/review.ts:40 - ReviewFiltersSchema (used in module)
+lib/validators/review.ts:48 - ReviewUpdateRequestSchema (used in module)
+lib/validators/review.ts:57 - ReviewCreateRequestSchema (used in module)
+lib/validators/review.ts:67 - Review
+lib/validators/review.ts:68 - ReviewsResponse
+lib/validators/review.ts:69 - ReviewFilters
+lib/validators/review.ts:70 - ReviewUpdateRequest
+lib/validators/review.ts:71 - ReviewCreateRequest
+.next/types/app/page.ts:54 - PageProps (used in module)
+.next/types/app/page.ts:58 - LayoutProps
+.next/types/app/add-eatery/page.ts:54 - PageProps (used in module)
+.next/types/app/add-eatery/page.ts:58 - LayoutProps
+.next/types/app/eatery/page.ts:54 - PageProps (used in module)
+.next/types/app/eatery/page.ts:58 - LayoutProps
+.next/types/app/favorites/page.ts:54 - PageProps (used in module)
+.next/types/app/favorites/page.ts:58 - LayoutProps
+.next/types/app/healthz/page.ts:54 - PageProps (used in module)
+.next/types/app/healthz/page.ts:58 - LayoutProps
+.next/types/app/live-map/page.ts:54 - PageProps (used in module)
+.next/types/app/live-map/page.ts:58 - LayoutProps
+.next/types/app/logout/page.ts:54 - PageProps (used in module)
+.next/types/app/logout/page.ts:58 - LayoutProps
+.next/types/app/marketplace/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/page.ts:58 - LayoutProps
+.next/types/app/notifications/page.ts:54 - PageProps (used in module)
+.next/types/app/notifications/page.ts:58 - LayoutProps
+.next/types/app/profile/page.ts:54 - PageProps (used in module)
+.next/types/app/profile/page.ts:58 - LayoutProps
+.next/types/app/restaurant/layout.ts:54 - PageProps
+.next/types/app/restaurant/layout.ts:58 - LayoutProps (used in module)
+.next/types/app/shuls/page.ts:54 - PageProps (used in module)
+.next/types/app/shuls/page.ts:58 - LayoutProps
+.next/types/app/test-auth/page.ts:54 - PageProps (used in module)
+.next/types/app/test-auth/page.ts:58 - LayoutProps
+.next/types/app/test-css/page.ts:54 - PageProps (used in module)
+.next/types/app/test-css/page.ts:58 - LayoutProps
+.next/types/app/test-supabase/page.ts:54 - PageProps (used in module)
+.next/types/app/test-supabase/page.ts:58 - LayoutProps
+.next/types/app/test-syntax/page.ts:54 - PageProps (used in module)
+.next/types/app/test-syntax/page.ts:58 - LayoutProps
+.next/types/app/test-touch/page.ts:54 - PageProps (used in module)
+.next/types/app/test-touch/page.ts:58 - LayoutProps
+components/archive/archive/20250817_152758/LiveMap.tsx:6 - default
+.next/types/app/admin/migration/page.ts:54 - PageProps (used in module)
+.next/types/app/admin/migration/page.ts:58 - LayoutProps
+.next/types/app/admin/migration-complete/page.ts:54 - PageProps (used in module)
+.next/types/app/admin/migration-complete/page.ts:58 - LayoutProps
+.next/types/app/api/analytics/route.ts:313 - PageProps
+.next/types/app/api/analytics/route.ts:317 - LayoutProps
+.next/types/app/api/feedback/route.ts:313 - PageProps
+.next/types/app/api/feedback/route.ts:317 - LayoutProps
+.next/types/app/api/health/route.ts:313 - PageProps
+.next/types/app/api/health/route.ts:317 - LayoutProps
+.next/types/app/api/health-check/route.ts:313 - PageProps
+.next/types/app/api/health-check/route.ts:317 - LayoutProps
+.next/types/app/api/kosher-types/route.ts:313 - PageProps
+.next/types/app/api/kosher-types/route.ts:317 - LayoutProps
+.next/types/app/api/migrate/route.ts:313 - PageProps
+.next/types/app/api/migrate/route.ts:317 - LayoutProps
+.next/types/app/api/remove-duplicates/route.ts:313 - PageProps
+.next/types/app/api/remove-duplicates/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/route.ts:313 - PageProps
+.next/types/app/api/restaurants/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants-with-images/route.ts:313 - PageProps
+.next/types/app/api/restaurants-with-images/route.ts:317 - LayoutProps
+.next/types/app/api/reviews/route.ts:313 - PageProps
+.next/types/app/api/reviews/route.ts:317 - LayoutProps
+.next/types/app/api/sentry-example-api/route.ts:313 - PageProps
+.next/types/app/api/sentry-example-api/route.ts:317 - LayoutProps
+.next/types/app/api/statistics/route.ts:313 - PageProps
+.next/types/app/api/statistics/route.ts:317 - LayoutProps
+.next/types/app/api/test/route.ts:313 - PageProps
+.next/types/app/api/test/route.ts:317 - LayoutProps
+.next/types/app/api/update-database/route.ts:313 - PageProps
+.next/types/app/api/update-database/route.ts:317 - LayoutProps
+.next/types/app/auth/auth-code-error/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/auth-code-error/page.ts:58 - LayoutProps
+.next/types/app/auth/callback/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/callback/page.ts:58 - LayoutProps
+.next/types/app/auth/oauth-success/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/oauth-success/page.ts:58 - LayoutProps
+.next/types/app/auth/signin/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/signin/page.ts:58 - LayoutProps
+.next/types/app/auth/signup/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/signup/page.ts:58 - LayoutProps
+.next/types/app/auth/supabase-signin/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/supabase-signin/page.ts:58 - LayoutProps
+.next/types/app/auth/supabase-signup/page.ts:54 - PageProps (used in module)
+.next/types/app/auth/supabase-signup/page.ts:58 - LayoutProps
+.next/types/app/marketplace/messages/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/messages/page.ts:58 - LayoutProps
+.next/types/app/marketplace/search/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/search/page.ts:58 - LayoutProps
+.next/types/app/marketplace/sell/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/sell/page.ts:58 - LayoutProps
+.next/types/app/restaurant/[id]/layout.ts:54 - PageProps
+.next/types/app/restaurant/[id]/layout.ts:58 - LayoutProps (used in module)
+.next/types/app/restaurant/[id]/page.ts:54 - PageProps (used in module)
+.next/types/app/restaurant/[id]/page.ts:58 - LayoutProps
+.next/types/app/api/auth.disabled/[...nextauth]/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/[...nextauth]/route.ts:317 - LayoutProps
+.next/types/app/api/auth.disabled/register/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/register/route.ts:317 - LayoutProps
+.next/types/app/api/auth.disabled/reset-password/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/reset-password/route.ts:317 - LayoutProps
+.next/types/app/api/auth.disabled/sync-user/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/sync-user/route.ts:317 - LayoutProps
+.next/types/app/api/auth.disabled/verify-email/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/verify-email/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/business-types/route.ts:313 - PageProps
+.next/types/app/api/restaurants/business-types/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/fetch-missing-hours/route.ts:313 - PageProps
+.next/types/app/api/restaurants/fetch-missing-hours/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/fetch-missing-websites/route.ts:313 - PageProps
+.next/types/app/api/restaurants/fetch-missing-websites/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/filter-options/route.ts:313 - PageProps
+.next/types/app/api/restaurants/filter-options/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/filtered/route.ts:313 - PageProps
+.next/types/app/api/restaurants/filtered/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/search/route.ts:313 - PageProps
+.next/types/app/api/restaurants/search/route.ts:317 - LayoutProps
+.next/types/app/marketplace/category/[id]/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/category/[id]/page.ts:58 - LayoutProps
+.next/types/app/marketplace/product/[id]/page.ts:54 - PageProps (used in module)
+.next/types/app/marketplace/product/[id]/page.ts:58 - LayoutProps
+.next/types/app/api/auth.disabled/reset-password/confirm/route.ts:313 - PageProps
+.next/types/app/api/auth.disabled/reset-password/confirm/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/approve/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/approve/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/fetch-hours/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/fetch-hours/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/fetch-website/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/fetch-website/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/hours/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/hours/route.ts:317 - LayoutProps
+.next/types/app/api/restaurants/[id]/reject/route.ts:313 - PageProps
+.next/types/app/api/restaurants/[id]/reject/route.ts:317 - LayoutProps

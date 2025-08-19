@@ -67,7 +67,14 @@
     "supabase:test": "tsx scripts/test-auth-systems.ts",
     "supabase:migrate": "tsx scripts/migrate-users.ts",
     "check:env": "tsx scripts/check-env-setup.ts",
-    "generate:secret": "tsx scripts/generate-secret.ts"
+    "generate:secret": "tsx scripts/generate-secret.ts",
+    "analyze:dup": "jscpd --reporters json,html --threshold 2 --min-lines 5 .",
+    "analyze:dead": "knip --reporter json",
+    "analyze:deps": "depcheck --json",
+    "analyze:cycles": "madge --ts-config ./tsconfig.json --warning --json --circular .",
+    "analyze:tsprune": "ts-prune --ignore 'index.ts|barrel.ts'",
+    "analyze:depscruise": "depcruise --config .dependency-cruiser.js --output-type json .",
+    "lint:imports": "eslint . --ext .ts,.tsx,.js --rule 'import/order: [2, {\"newlines-between\": \"always\", \"groups\": [[\"builtin\", \"external\"], [\"internal\"], [\"parent\", \"sibling\", \"index\"]], \"alphabetize\": {\"order\": \"asc\"}}]'"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
@@ -138,7 +145,14 @@
     "terser-webpack-plugin": "^5.3.10",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "jscpd": "^3.5.10",
+    "knip": "^5.0.0",
+    "depcheck": "^1.4.7",
+    "madge": "^6.1.0",
+    "dependency-cruiser": "^13.0.0",
+    "ts-prune": "^0.10.3",
+    "eslint-plugin-import": "^2.31.0"
   },
   "overrides": {
     "cookie": "^0.7.0",
