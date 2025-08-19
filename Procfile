@@ -1,0 +1,1 @@
+web: cd backend && PYTHONPATH=. gunicorn --config config/gunicorn.conf.py wsgi:app
