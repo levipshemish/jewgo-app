@@ -8,14 +8,14 @@ import MarketplaceActionButtons from '@/components/layout/MarketplaceActionButto
 import { BottomNavigation } from '@/components/navigation/ui';
 import MarketplaceCategoryTabs from '@/components/navigation/ui/MarketplaceCategoryTabs';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
-import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
-import { fetchMarketplaceListings } from '@/lib/api/marketplace';
-import { MarketplaceListing } from '@/lib/types/marketplace';
+import { EateryCard } from '@/components/eatery/ui';
+import { fetchRestaurants } from '@/lib/api/restaurants';
+import { Restaurant } from '@/lib/types/restaurant';
 
 export default function MarketplacePage() {
   const router = useRouter();
 
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
+  const [listings, setListings] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,30 +61,29 @@ export default function MarketplacePage() {
         region: filters.region || undefined
       };
 
-      const response = await fetchMarketplaceListings(params);
-      
-      if (response.success && response.data?.listings) {
-        const newListings = response.data.listings;
-        
-        // Check if marketplace is available (not empty due to "not yet available" message)
-        if (newListings.length === 0 && (response.data as any).message === 'Marketplace is not yet available') {
-          setMarketplaceAvailable(false);
-          setListings([]);
-          setHasMore(false);
-        } else {
-          setMarketplaceAvailable(true);
-          if (append) {
-            setListings(prev => [...prev, ...newListings]);
-          } else {
-            setListings(newListings);
-          }
-          
-          setHasMore(newListings.length === 20);
-          setCurrentPage(page);
-        }
-      } else {
-        setError(response.error || 'Failed to load listings');
+      // Build query parameters for restaurant filtering
+      const queryParams = new URLSearchParams();
+      if (searchQuery) {
+        queryParams.append('search', searchQuery);
       }
+      if (filters.category) {
+        queryParams.append('listing_type', filters.category);
+      }
+      if (filters.city) {
+        queryParams.append('city', filters.city);
+      }
+      
+      const response = await fetchRestaurants(200, queryParams.toString());
+      const newListings = response.restaurants || [];
+      
+      if (append) {
+        setListings(prev => [...prev, ...newListings]);
+      } else {
+        setListings(newListings);
+      }
+      
+      setHasMore(newListings.length === 20);
+      setCurrentPage(page);
     } catch (err) {
       setError('Failed to load marketplace listings');
       console.error('Error loading listings:', err);
@@ -135,8 +134,8 @@ export default function MarketplacePage() {
     loadListings(1, false);
   };
 
-  const handleListingClick = (listing: MarketplaceListing) => {
-    router.push(`/marketplace/${listing.id}`);
+  const handleListingClick = (listing: Restaurant) => {
+    router.push(`/restaurant/${listing.id}`);
   };
 
   const handleAddListing = () => {
@@ -253,10 +252,10 @@ export default function MarketplacePage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((listing) => (
-              <MarketplaceListingCard
+              <EateryCard
                 key={listing.id}
-                listing={listing}
-                onClick={() => handleListingClick(listing)}
+                restaurant={listing}
+                className="w-full"
               />
             ))}
           </div>
