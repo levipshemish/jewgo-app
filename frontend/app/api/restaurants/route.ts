@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
+import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic'
@@ -62,6 +63,12 @@ const RestaurantSubmissionSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting for submissions
+  const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.auth, 'restaurant-submission');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     
@@ -158,6 +165,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.api, 'restaurants-list');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     if (!request.nextUrl) {
       throw new Error('Request URL is undefined');

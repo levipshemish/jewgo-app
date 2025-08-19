@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
+import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 
 export async function GET(
-  _request: NextRequest, 
+  request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Apply rate limiting
+  const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.api, 'restaurant-detail');
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   const { id } = await params;
   try {
     const restaurantId = parseInt(id);

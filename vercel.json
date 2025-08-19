@@ -7,5 +7,13 @@
   "framework": "nextjs",
   "env": {
     "NEXT_PUBLIC_BACKEND_URL": "https://jewgo.onrender.com"
+  },
+  "functions": {
+    "app/api/restaurants/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/restaurants/route.ts": {
+      "maxDuration": 30
+    }
   }
 }

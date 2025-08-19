@@ -99,7 +99,7 @@ export const rateLimitConfigs = {
   // More lenient for API calls
   api: {
     windowMs: 1 * 60 * 1000, // 1 minute
-    maxRequests: 60,
+    maxRequests: 200, // Increased from 60 to 200
     message: 'Too many requests. Please slow down.'
   },
   // Very strict for password reset

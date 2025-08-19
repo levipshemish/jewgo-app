@@ -95,7 +95,12 @@ def add_marketplace_sample_data():
                 "seller_user_id": "sample_user_1",
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=30),
-                "status": "active"
+                "status": "active",
+                "kind": "appliance",
+                "attributes": {
+                    "appliance_type": "blender",
+                    "kosher_use": "dairy"
+                }
             },
             {
                 "title": "Complete Shas Set - Talmud Bavli",
@@ -114,7 +119,9 @@ def add_marketplace_sample_data():
                 "seller_user_id": "sample_user_2",
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=60),
-                "status": "active"
+                "status": "active",
+                "kind": "regular",
+                "attributes": {}
             },
             {
                 "title": "Community Gemach - Baby Equipment",
@@ -134,7 +141,9 @@ def add_marketplace_sample_data():
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=365),
                 "loan_terms": {"duration_days": 30, "deposit_required": False},
-                "status": "active"
+                "status": "active",
+                "kind": "regular",
+                "attributes": {}
             },
             {
                 "title": "2019 Honda Odyssey - Family Minivan",
@@ -153,7 +162,15 @@ def add_marketplace_sample_data():
                 "seller_user_id": "sample_user_3",
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=90),
-                "status": "active"
+                "status": "active",
+                "kind": "vehicle",
+                "attributes": {
+                    "vehicle_type": "minivan",
+                    "year": 2019,
+                    "mileage": 45000,
+                    "make": "Honda",
+                    "model": "Odyssey"
+                }
             },
             {
                 "title": "Kosher Smartphone - Separate Apps",
@@ -172,7 +189,9 @@ def add_marketplace_sample_data():
                 "seller_user_id": "sample_user_4",
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=45),
-                "status": "active"
+                "status": "active",
+                "kind": "regular",
+                "attributes": {}
             },
             {
                 "title": "Shabbat Table Set - 8 Person",
@@ -191,7 +210,9 @@ def add_marketplace_sample_data():
                 "seller_user_id": "sample_user_5",
                 "available_from": datetime.now(),
                 "available_to": datetime.now() + timedelta(days=60),
-                "status": "active"
+                "status": "active",
+                "kind": "regular",
+                "attributes": {}
             },
             {
                 "title": "Tzitzit Set - Handmade",
@@ -242,9 +263,9 @@ def add_marketplace_sample_data():
                 INSERT INTO "Marketplace listings" (
                     id, title, description, type, category_id, price_cents, currency,
                     condition, city, region, zip, country, lat, lng, seller_user_id,
-                    available_from, available_to, loan_terms, status, created_at, updated_at
+                    available_from, available_to, loan_terms, attributes, endorse_up, endorse_down, status, created_at, updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
             ''', (
                 listing_id, listing["title"], listing["description"], listing["type"],
@@ -252,7 +273,7 @@ def add_marketplace_sample_data():
                 listing["condition"], listing["city"], listing["region"], listing["zip"],
                 listing["country"], listing["lat"], listing["lng"], listing["seller_user_id"],
                 listing["available_from"], listing["available_to"], listing.get("loan_terms"),
-                listing["status"], datetime.now(), datetime.now()
+                listing.get("attributes", {}), 0, 0, listing["status"], datetime.now(), datetime.now()
             ))
             
             price_str = f"${listing['price_cents']/100:,.2f}" if listing['price_cents'] > 0 else "FREE"
