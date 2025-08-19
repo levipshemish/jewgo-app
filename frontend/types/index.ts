@@ -1,3 +1,10 @@
+// Barrel file for types exports
+// This provides stable entry points for commonly used types
+
+export * from '../lib/types/restaurant';
+export * from '../lib/types/marketplace';
+export * from '../lib/types/review';
+
 // Analytics and tracking types
 export interface AnalyticsEvent {
   name: string;
@@ -49,22 +56,22 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
-// Filter types
-export interface FilterState {
-  agency?: string;
-  dietary?: string;
-  openNow?: boolean;
-  category?: string;
-  nearMe?: boolean;
-  distanceRadius?: number;
-  maxDistance?: number;
-  priceRange?: string;
-  rating?: number;
-  searchQuery?: string;
-  userLocation?: UserLocation;
-}
+// Filter types - moved to lib/filters/filters.types.ts
+// export interface FilterState {
+//   agency?: string;
+//   dietary?: string;
+//   openNow?: boolean;
+//   category?: string;
+//   nearMe?: boolean;
+//   distanceRadius?: number;
+//   maxDistance?: number;
+//   priceRange?: string;
+//   rating?: number;
+//   searchQuery?: string;
+//   userLocation?: UserLocation;
+// }
 
-export type FilterValue = string | boolean | number | undefined;
+// export type FilterValue = string | boolean | number | undefined;
 
 // Location types
 export interface UserLocation {

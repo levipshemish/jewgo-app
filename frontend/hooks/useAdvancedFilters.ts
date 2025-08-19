@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 
-import { FilterState, FilterValue } from '@/lib/types';
+import { FilterState, FilterValue } from '@/lib/filters/filters.types';
 
 export interface UseAdvancedFiltersReturn {
   activeFilters: FilterState;

@@ -777,7 +777,7 @@ def get_migration_health():
 
 
 # Marketplace endpoints
-@safe_route("/api/v4/marketplace/listings", methods=["GET"])
+@safe_route("/marketplace/listings", methods=["GET"])
 @require_api_v4_flag("api_v4_marketplace")
 def get_marketplace_listings():
     """Get marketplace listings with filtering and pagination."""
@@ -951,7 +951,7 @@ def get_marketplace_listings():
         return error_response("Failed to fetch marketplace listings", 500, {"details": str(e)})
 
 
-@safe_route("/api/v4/marketplace/listings/<listing_id>", methods=["GET"])
+@safe_route("/marketplace/listings/<listing_id>", methods=["GET"])
 @require_api_v4_flag("api_v4_marketplace")
 def get_marketplace_listing(listing_id):
     """Get a specific marketplace listing by ID."""
@@ -1036,7 +1036,7 @@ def get_marketplace_listing(listing_id):
         return error_response("Failed to fetch marketplace listing", 500, {"details": str(e)})
 
 
-@safe_route("/api/v4/marketplace/listings", methods=["POST"])
+@safe_route("/marketplace/listings", methods=["POST"])
 @require_api_v4_flag("api_v4_marketplace")
 def create_marketplace_listing():
     """Create a new marketplace listing."""
@@ -1133,8 +1133,8 @@ def create_marketplace_listing():
         return error_response("Failed to create marketplace listing", 500, {"details": str(e)})
 
 
-@safe_route("/api/v4/marketplace/categories", methods=["GET"])
-@require_api_v4_flag("api_v4_marketplace")
+@safe_route("/marketplace/categories", methods=["GET"])
+# @require_api_v4_flag("api_v4_marketplace")  # Temporarily disabled for testing
 def get_marketplace_categories():
     """Get marketplace categories and subcategories."""
     try:

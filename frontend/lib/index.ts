@@ -14,20 +14,21 @@ export * from './auth/mfa-manager';
 export * from './api-config';
 
 // Filter exports
-export * from './filters/filters.types';
+export * from '../filters/filters.types';
 export * from './filters/urlSync';
 
 // Hook exports
 export * from './hooks/useOptimizedFilters';
 export * from './hooks/useFilterOptions';
 export * from './hooks/useCssLoader';
+export * from '../hooks/useAdvancedFilters';
 
 // Type exports
-export * from './types/index';
+export * from '../types/index';
 
 // Utility exports
 export * from './utils/dateUtils';
-// export * from './utils/analytics'; // TEMPORARY: Disabled due to type issues
+// export * from '../utils/analytics'; // TEMPORARY: Disabled due to type issues. Cleanup by: 2025-08-26
 export * from './utils/admin';
 export * from './utils/apiRouteUtils';
 export * from './utils/componentUtils';
@@ -36,7 +37,7 @@ export * from './utils/rateLimiter';
 export * from './utils/recaptcha';
 
 // Validator exports
-export * from './validators/review';
+export * from '../validators/review';
 
 // Supabase exports
 export * from './supabase/middleware';
