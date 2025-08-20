@@ -232,9 +232,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       className={cn(
         "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
         "md:hover:shadow-2xl transition-shadow duration-300",
-        "max-md:w-[200px] max-md:mx-auto",
-        "max-sm:w-[200px] max-sm:p-3",
-        "xl:w-[200px]",
+        "mx-auto",
         className
       )}
       variants={cardVariants}
