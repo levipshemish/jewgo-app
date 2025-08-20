@@ -340,7 +340,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           {cardData.showHeart && (
             <motion.button
               className={cn(
-                "absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center",
+                "absolute top-2 right-2 w-4 h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center",
                 "shadow-lg transition-colors duration-200 group",
                 isLiked ? 'bg-white' : 'bg-white/90 hover:bg-white'
               )}
@@ -356,32 +356,24 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               onKeyDown={handleHeartKeyDown}
               aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
               aria-pressed={isLiked}
-              type="button"
               style={{
+                minHeight: '16px',
+                minWidth: '16px',
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
-                minHeight: '24px',
-                minWidth: '24px',
                 zIndex: 10
               }}
             >
-              <motion.div
-                animate={{ 
-                  scale: isLiked ? [1, 1.2, 1] : 1,
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                <Heart
-                  size={14}
-                  className={cn(
-                    "transition-all duration-200",
-                    isLiked 
-                      ? 'fill-red-500 stroke-red-500' 
-                      : 'fill-none stroke-gray-400 group-hover:fill-red-500 group-hover:stroke-red-500'
-                  )}
-                  strokeWidth={2}
-                />
-              </motion.div>
+              <Heart
+                size={12}
+                className={cn(
+                  "transition-all duration-200 md:size-3.5",
+                  isLiked 
+                    ? 'fill-red-500 stroke-red-500' 
+                    : 'fill-none stroke-gray-400 group-hover:fill-red-500 group-hover:stroke-red-500'
+                )}
+                strokeWidth={2}
+              />
             </motion.button>
           )}
         </AnimatePresence>
