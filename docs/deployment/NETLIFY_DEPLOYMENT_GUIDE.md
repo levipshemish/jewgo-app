@@ -133,15 +133,20 @@ The monitoring configuration now includes both Netlify and Vercel endpoints:
    - **Solution**: Ensure `.nvmrc` file contains exactly `22` with no trailing spaces
    - **Fix**: Run `echo "22" > frontend/.nvmrc` to recreate the file
 
-3. **API Routes Not Working**
+3. **Package Version Errors**
+   - **Error**: `No matching version found for @netlify/plugin-nextjs@^6.0.0`
+   - **Solution**: The app uses Netlify's built-in Next.js support, no plugin needed
+   - **Note**: Next.js 15 is fully supported by Netlify without additional plugins
+
+4. **API Routes Not Working**
    - Ensure `NEXT_PUBLIC_BACKEND_URL` is set correctly
    - Check that backend is running on Render
 
-4. **Authentication Issues**
+5. **Authentication Issues**
    - Verify `NEXTAUTH_URL` matches your Netlify domain
    - Check that `NEXTAUTH_SECRET` is set
 
-5. **Database Connection Issues**
+6. **Database Connection Issues**
    - Ensure `DATABASE_URL` is accessible from Netlify
    - Check database connection limits
 
