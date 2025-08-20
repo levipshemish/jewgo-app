@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -30,22 +29,10 @@ interface EnhancedProductCardProps {
   onCardClick?: (data: CardData) => void;
   onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
-  lazy?: boolean;
   priority?: boolean;
 }
 
-// Error Boundary Hook
-const useErrorBoundary = () => {
-  const [hasError, setHasError] = useState(false);
-  const resetError = useCallback(() => setHasError(false), []);
-  
-  const catchError = useCallback((error: Error) => {
-    console.warn('Card warning:', error);
-    // Just log errors, don't break the UI
-  }, []);
 
-  return { hasError: false, resetError, catchError };
-};
 
 // Motion variants for animations
 const cardVariants = {
@@ -87,13 +74,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   onCardClick,
   onTagClick,
   className = '',
-  lazy = true,
   priority = false
 }) => {
-  const router = useRouter();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
-  const { catchError } = useErrorBoundary();
   
   // State management
   const [imageError, setImageError] = useState(false);
@@ -176,9 +160,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       // Clear the announcement after screen readers have processed it
       setTimeout(() => setAnnouncement(''), 1000);
     } catch (error) {
-      catchError(error as Error);
+      console.warn('Card error:', error);
     }
-  }, [isLiked, isAnimating, data.id, data.title, onLikeToggle, addFavorite, removeFavorite, catchError]);
+  }, [isLiked, isAnimating, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {
