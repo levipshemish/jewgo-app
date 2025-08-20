@@ -1,108 +1,258 @@
-# Docker Frontend Testing Setup
+# Docker Frontend Setup Guide
 
-## 🚀 Quick Setup
+This guide covers setting up and running the JewGo frontend application using Docker.
 
-### 1. Start Docker
-Make sure Docker Desktop is running on your Mac:
-```bash
-# Check if Docker is running
-docker --version
-docker info
-```
+## 🐳 Quick Start
 
-If Docker isn't running, start Docker Desktop from Applications.
+### Prerequisites
+- Docker and Docker Compose installed
+- Node.js 22.x (for local development)
+- pnpm package manager
 
-### 2. Start Your Real Backend
-```bash
-# Terminal 1: Start backend
-source .venv/bin/activate
-cd backend
-python -m flask run
-```
+### Environment Setup
 
-### 3. Build and Start Frontend Container
-```bash
-# Terminal 2: Build and start frontend
-./scripts/docker-frontend.sh build
-./scripts/docker-frontend.sh start
-```
+1. **Copy environment template:**
+   ```bash
+   cp config/environment/frontend.env.example frontend/.env.local
+   ```
 
-### 4. Access the Application
-- **Frontend**: http://localhost:3000 (Docker container)
-- **Backend**: http://localhost:5000 (your real backend)
+2. **Edit environment variables:**
+   ```bash
+   # Edit frontend/.env.local with your actual values:
+   # - Supabase credentials
+   # - Google Maps API key
+   # - Database URL
+   # - Admin token
+   ```
 
-## 📋 Available Commands
+### Using the Setup Script
+
+The easiest way to run the frontend is using the provided setup script:
 
 ```bash
-./scripts/docker-frontend.sh build     # Build container
-./scripts/docker-frontend.sh start     # Start container
-./scripts/docker-frontend.sh stop      # Stop container
-./scripts/docker-frontend.sh logs      # View logs
-./scripts/docker-frontend.sh status    # Check status
-./scripts/docker-frontend.sh shell     # Access container shell
-./scripts/docker-frontend.sh cleanup   # Clean up resources
-./scripts/docker-frontend.sh help      # Show help
+# Development mode (with hot reloading)
+./scripts/docker-setup.sh dev
+
+# Production mode
+./scripts/docker-setup.sh prod
+
+# Stop containers
+./scripts/docker-setup.sh stop
+
+# Clean up Docker resources
+./scripts/docker-setup.sh cleanup
+
+# Show help
+./scripts/docker-setup.sh help
 ```
 
-## 🔧 How It Works
+## 🔧 Manual Docker Commands
 
-- **Frontend**: Runs in Docker container on port 3000
-- **Backend**: Uses your real backend on port 5000
-- **Connection**: Container connects to backend via `host.docker.internal:5000`
-- **Hot Reloading**: Source code is mounted for live development
-- **Environment**: Uses development mode with hot reloading
+### Development Mode
 
-## 🛠️ Development Workflow
+```bash
+# Build and run development container
+docker-compose -f docker-compose.frontend.dev.yml up --build
 
-1. **Start backend locally** (Terminal 1)
-2. **Start frontend in Docker** (Terminal 2)
-3. **Make changes** to frontend code
-4. **See changes immediately** (hot reloading)
-5. **Test with real backend data**
+# Run in background
+docker-compose -f docker-compose.frontend.dev.yml up -d
+
+# View logs
+docker-compose -f docker-compose.frontend.dev.yml logs -f
+```
+
+### Production Mode
+
+```bash
+# Build and run production container
+docker-compose -f docker-compose.frontend.yml up --build
+
+# Run in background
+docker-compose -f docker-compose.frontend.yml up -d
+
+# View logs
+docker-compose -f docker-compose.frontend.yml logs -f
+```
+
+## 📁 File Structure
+
+```
+├── docker-compose.frontend.yml          # Production Docker Compose
+├── docker-compose.frontend.dev.yml      # Development Docker Compose
+├── frontend/
+│   ├── Dockerfile                       # Production Dockerfile
+│   ├── Dockerfile.dev                   # Development Dockerfile
+│   └── .env.local                       # Local environment variables
+└── scripts/
+    └── docker-setup.sh                  # Setup and management script
+```
 
 ## 🔍 Troubleshooting
 
-### Docker Not Running
+### Common Issues
+
+1. **Environment Variables Not Loading**
+   - Ensure `.env.local` exists in the frontend directory
+   - Check that environment variables are properly set in Docker Compose files
+   - Verify Supabase credentials are correct
+
+2. **Webpack Cache Warnings**
+   - These are performance warnings, not errors
+   - The configuration has been optimized to reduce these warnings
+   - They don't affect functionality
+
+3. **Port Already in Use**
+   ```bash
+   # Check what's using port 3000
+   lsof -i :3000
+   
+   # Kill the process or change the port in docker-compose files
+   ```
+
+4. **Build Failures**
+   ```bash
+   # Clean up and rebuild
+   docker-compose down
+   docker system prune -f
+   docker-compose up --build
+   ```
+
+5. **Authentication Issues**
+   - Check Supabase configuration in environment variables
+   - Verify middleware configuration
+   - Check browser console for errors
+
+### Health Checks
+
+The application includes health check endpoints:
+
 ```bash
-# Start Docker Desktop from Applications
-# Or check status
-docker info
+# Check application health
+curl http://localhost:3000/api/health
+
+# Expected response:
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T00:00:00.000Z",
+  "uptime": 123.456,
+  "environment": "development",
+  "version": "0.1.1",
+  "checks": {
+    "database": "ok",
+    "supabase": "configured",
+    "googleMaps": "configured"
+  }
+}
 ```
 
-### Port Conflicts
+## 🚀 Performance Optimizations
+
+### Webpack Configuration
+- Filesystem cache with compression
+- Optimized package imports
+- Build worker enabled
+- Cache max age: 2 days
+
+### Docker Optimizations
+- Multi-stage builds for production
+- Non-root user for security
+- Health checks for monitoring
+- Volume mounting for development hot reloading
+
+## 🔒 Security Features
+
+- Non-root user in containers
+- Environment variable validation
+- Security headers configuration
+- Input sanitization
+- CORS configuration
+
+## 📊 Monitoring
+
+### Health Checks
+- Application health endpoint
+- Docker health checks
+- Environment validation
+
+### Logging
+- Structured logging with consistent levels
+- Error tracking with Sentry
+- Performance monitoring
+
+## 🛠️ Development Workflow
+
+1. **Start development environment:**
+   ```bash
+   ./scripts/docker-setup.sh dev
+   ```
+
+2. **Make code changes** (hot reloading enabled)
+
+3. **Test changes** in browser at `http://localhost:3000`
+
+4. **Stop development environment:**
+   ```bash
+   ./scripts/docker-setup.sh stop
+   ```
+
+5. **Deploy to production:**
+   ```bash
+   ./scripts/docker-setup.sh prod
+   ```
+
+## 📝 Environment Variables
+
+### Required Variables
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps API key
+- `DATABASE_URL` - PostgreSQL database URL
+
+### Optional Variables
+- `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` - Google Maps map ID
+- `ADMIN_TOKEN` - Admin authentication token
+- `NEXT_PUBLIC_ADMIN_EMAIL` - Admin email address
+
+## 🔄 Updates and Maintenance
+
+### Updating Dependencies
 ```bash
-# Check what's using port 3000
-lsof -i :3000
-# Kill if needed
-lsof -ti:3000 | xargs kill -9
+# Update package.json dependencies
+cd frontend
+pnpm update
+
+# Rebuild containers
+./scripts/docker-setup.sh dev
 ```
 
-### Backend Connection Issues
+### Database Migrations
 ```bash
-# Check if backend is running
-curl http://localhost:5000/health
+# Run Prisma migrations
+docker-compose exec frontend pnpm prisma migrate deploy
 ```
 
-### Container Issues
+### Cache Management
 ```bash
-# Clean up and restart
-./scripts/docker-frontend.sh cleanup
-./scripts/docker-frontend.sh build
-./scripts/docker-frontend.sh start
+# Clear Next.js cache
+docker-compose exec frontend pnpm clean
+
+# Clear Docker cache
+./scripts/docker-setup.sh cleanup
 ```
 
-## 📚 Benefits
+## 📞 Support
 
-- ✅ **Isolated testing** - Frontend changes don't affect local environment
-- ✅ **Real backend data** - Connects to your actual backend
-- ✅ **Hot reloading** - See changes immediately
-- ✅ **Consistent environment** - Same setup across team members
-- ✅ **Easy cleanup** - Remove container when done
+For issues related to:
+- **Docker setup**: Check this guide and troubleshooting section
+- **Environment variables**: Verify `.env.local` configuration
+- **Build errors**: Check logs and clean rebuild
+- **Authentication**: Verify Supabase configuration
 
-## 🎯 Perfect For
+## 🎯 Best Practices
 
-- Testing frontend changes with real backend
-- Debugging frontend-specific issues
-- Team development consistency
-- CI/CD pipeline testing
-- Production-like environment testing
+1. **Always use the setup script** for consistency
+2. **Keep environment variables secure** and never commit them
+3. **Use development mode** for local development
+4. **Monitor health checks** for production deployments
+5. **Regular cleanup** of Docker resources
+6. **Test in production mode** before deployment

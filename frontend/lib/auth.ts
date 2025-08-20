@@ -1,13 +1,18 @@
 import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { 
+  isSupabaseConfigured, 
+  transformSupabaseUser, 
+  handleUserLoadError,
+  type TransformedUser 
+} from "@/lib/utils/auth-utils";
 
 // Supabase authentication system
-export async function getSessionUser() {
+export async function getSessionUser(): Promise<TransformedUser | null> {
   try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
-        process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+    // Check if Supabase is configured using centralized utility
+    if (!isSupabaseConfigured()) {
       console.log('[Auth] Supabase not configured, returning null');
       return null;
     }
@@ -16,13 +21,7 @@ export async function getSessionUser() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.full_name || user.user_metadata?.name,
-        image: user.user_metadata?.avatar_url,
-        provider: 'supabase'
-      };
+      return transformSupabaseUser(user);
     }
   } catch (error) {
     console.error('[Auth] Supabase auth check failed:', error);
@@ -32,7 +31,7 @@ export async function getSessionUser() {
   return null;
 }
 
-export async function requireUser() {
+export async function requireUser(): Promise<TransformedUser> {
   const user = await getSessionUser();
   if (!user) {
     redirect("/auth/signin");
@@ -40,7 +39,7 @@ export async function requireUser() {
   return user;
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(): Promise<TransformedUser> {
   const user = await requireUser();
   
   // Check admin emails (configurable)

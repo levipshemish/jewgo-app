@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 
 // NextAuth removed - using Supabase only
 
@@ -37,14 +38,22 @@ export default function ReviewForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Get Supabase session
+  // Get Supabase session using centralized approach
   useEffect(() => {
     const getSession = async () => {
       try {
+        // Use centralized configuration check
+        if (!isSupabaseConfigured()) {
+          console.log('[ReviewForm] Supabase not configured');
+          setLoading(false);
+          return;
+        }
+
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         setSession(session);
       } catch (error) {
         console.error('Error getting session:', error);
+        handleUserLoadError(error);
       } finally {
         setLoading(false);
       }

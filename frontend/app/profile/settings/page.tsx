@@ -4,24 +4,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { 
+  isSupabaseConfigured, 
+  transformSupabaseUser, 
+  handleUserLoadError,
+  createMockUser,
+  type TransformedUser 
+} from "@/lib/utils/auth-utils";
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 // Force dynamic rendering to avoid SSR issues
 export const dynamic = 'force-dynamic';
 
-interface User {
-  id: string;
-  email: string | undefined;
-  name?: string;
-  provider: string;
-  avatar_url?: string | null;
-  username?: string;
-}
-
 export default function SettingsPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("account");
 
@@ -31,18 +30,11 @@ export default function SettingsPage() {
       try {
         console.log('Loading user data...');
         
-        // Check if Supabase is configured
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
-            process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+        // Check if Supabase is configured using centralized utility
+        if (!isSupabaseConfigured()) {
           console.warn('Supabase not configured, allowing access for development');
           // For development, create a mock user
-          setUser({
-            id: 'dev-user-id',
-            email: 'dev@example.com',
-            name: 'Development User',
-            provider: 'development',
-            avatar_url: null
-          });
+          setUser(createMockUser());
           return;
         }
         
@@ -50,13 +42,7 @@ export default function SettingsPage() {
         console.log('User load result:', { user, error });
         
         if (user) {
-          const userData = {
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.user_metadata?.name,
-            provider: 'supabase',
-            avatar_url: user.user_metadata?.avatar_url || null
-          };
+          const userData = transformSupabaseUser(user);
           console.log('Setting user data:', userData);
           setUser(userData);
         } else {
@@ -64,7 +50,7 @@ export default function SettingsPage() {
         }
       } catch (error) {
         console.error('Error loading user:', error);
-        // Failed to load user
+        handleUserLoadError(error);
       } finally {
         setIsLoading(false);
       }
@@ -73,16 +59,7 @@ export default function SettingsPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading settings..." />;
   }
 
   if (!user) {
@@ -179,7 +156,7 @@ export default function SettingsPage() {
   );
 }
 
-function AccountSettings({ user }: { user: User }) {
+function AccountSettings({ user }: { user: TransformedUser }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.name || "");
   const [isSaving, setIsSaving] = useState(false);
@@ -282,7 +259,7 @@ function AccountSettings({ user }: { user: User }) {
   );
 }
 
-function ProfileSettings({ user }: { user: User }) {
+function ProfileSettings({ user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
@@ -317,7 +294,7 @@ function ProfileSettings({ user }: { user: User }) {
   );
 }
 
-function SecuritySettings({ user }: { user: User }) {
+function SecuritySettings({ user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
@@ -369,7 +346,7 @@ function SecuritySettings({ user }: { user: User }) {
   );
 }
 
-function NotificationSettings({ user }: { user: User }) {
+function NotificationSettings({ user }: { user: TransformedUser }) {
   const [preferences, setPreferences] = useState({
     specials: true,
     newRestaurants: true,
@@ -428,7 +405,7 @@ function NotificationSettings({ user }: { user: User }) {
   );
 }
 
-function PrivacySettings({ user }: { user: User }) {
+function PrivacySettings({ user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>

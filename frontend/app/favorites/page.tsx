@@ -8,9 +8,11 @@ import ActionButtons from '@/components/layout/ActionButtons';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { useFavorites } from '@/lib/utils/favorites';
+import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 
 interface FilterState {
   agency?: string;
@@ -32,10 +34,18 @@ export default function FavoritesPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check authentication status
+  // Check authentication status using centralized approach
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Use centralized configuration check
+        if (!isSupabaseConfigured()) {
+          console.log('[Favorites] Supabase not configured');
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         if (!session) {
           // Redirect to sign in if not authenticated
@@ -45,6 +55,7 @@ export default function FavoritesPage() {
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check failed:', error);
+        handleUserLoadError(error, router);
         router.push('/auth/signin?redirectTo=/favorites');
       } finally {
         setLoading(false);
@@ -97,26 +108,12 @@ export default function FavoritesPage() {
 
   // Show loading state while checking authentication
   if (loading || isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-[#f4f4f4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading favorites..." />;
   }
 
   // Show loading state if not authenticated (will redirect)
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#f4f4f4] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecting to sign in...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Redirecting to sign in..." />;
   }
 
   // Filter favorites based on search query only (other filters require full restaurant data)

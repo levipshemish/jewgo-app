@@ -1,28 +1,23 @@
 'use client';
 
-import { Search } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
 
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
 
 interface MarketplaceHeaderProps {
   onSearch?: (query: string) => void;
+  className?: string;
 }
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  image?: string;
-}
-
-export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [user, setUser] = useState<User | null>(null);
+export default function MarketplaceHeader({ onSearch, className = "" }: MarketplaceHeaderProps) {
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -30,12 +25,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-            image: session.user.user_metadata?.avatar_url,
-          });
+          setUser(transformSupabaseUser(session.user));
         } else {
           setUser(null);
         }
@@ -53,12 +43,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-            image: session.user.user_metadata?.avatar_url,
-          });
+          setUser(transformSupabaseUser(session.user));
         } else {
           setUser(null);
         }
@@ -127,9 +112,9 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
         <input
           type="text"
           placeholder="What do you want to find?"
-          className="w-full pl-10 pr-4 py-3 bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-3 bg-gray-50 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
         />
       </form>
     </header>

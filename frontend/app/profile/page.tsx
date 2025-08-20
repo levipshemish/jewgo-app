@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-
-interface User {
-  id: string;
-  email: string | undefined;
-  name?: string;
-  provider: string;
-  avatar_url?: string | null;
-}
+import { 
+  isSupabaseConfigured, 
+  transformSupabaseUser, 
+  handleUserLoadError,
+  type TransformedUser 
+} from "@/lib/utils/auth-utils";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectStatus, setRedirectStatus] = useState<string>('');
   const router = useRouter();
@@ -26,15 +25,13 @@ export default function ProfilePage() {
         console.log('Profile page: Loading user data...');
         console.log('Profile page: Current URL:', window.location.href);
         
-        // Check if Supabase is configured
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
-            process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+        // Check if Supabase is configured using centralized utility
+        if (!isSupabaseConfigured()) {
           console.warn('Profile page: Supabase not configured, redirecting to settings');
           console.log('Profile page: About to redirect to /profile/settings');
           setRedirectStatus('Supabase not configured, redirecting to settings...');
-          setTimeout(() => {
-            router.push('/profile/settings');
-          }, 1000); // Add a delay to see the status
+          // Remove unnecessary delay - redirect immediately
+          router.push('/profile/settings');
           return;
         }
         
@@ -42,38 +39,26 @@ export default function ProfilePage() {
         console.log('Profile page: User load result:', { user, error });
         
         if (user) {
-          const userData = {
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.user_metadata?.name,
-            provider: 'supabase',
-            avatar_url: user.user_metadata?.avatar_url || null
-          };
+          const userData = transformSupabaseUser(user);
           console.log('Profile page: Setting user data:', userData);
           setUser(userData);
           
-          // Redirect to settings page
+          // Redirect to settings page immediately
           console.log('Profile page: About to redirect to /profile/settings');
           setRedirectStatus('Redirecting to /profile/settings...');
-          setTimeout(() => {
-            router.push('/profile/settings');
-          }, 1000); // Add a delay to see the status
+          router.push('/profile/settings');
         } else {
           console.log('Profile page: No user found, redirecting to signin');
           console.log('Profile page: About to redirect to /auth/signin');
           setRedirectStatus('Redirecting to /auth/signin...');
-          setTimeout(() => {
-            router.push('/auth/signin');
-          }, 1000); // Add a delay to see the status
+          router.push('/auth/signin');
         }
-              } catch (error) {
-          console.error('Profile page: Error loading user:', error);
-          console.log('Profile page: About to redirect to /auth/signin due to error');
-          setRedirectStatus('Error occurred, redirecting to /auth/signin...');
-          setTimeout(() => {
-            router.push('/auth/signin');
-          }, 1000); // Add a delay to see the status
-        } finally {
+      } catch (error) {
+        console.error('Profile page: Error loading user:', error);
+        console.log('Profile page: About to redirect to /auth/signin due to error');
+        setRedirectStatus('Error occurred, redirecting to /auth/signin...');
+        handleUserLoadError(error, router);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -81,16 +66,7 @@ export default function ProfilePage() {
   }, [router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading profile..." />;
   }
 
   // This should not be reached due to redirects above

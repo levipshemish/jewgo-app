@@ -4,17 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-
-interface User {
-  id: string;
-  email: string | undefined;
-  name?: string;
-  provider: string;
-  avatar_url?: string | null;
-}
+import { 
+  isSupabaseConfigured, 
+  transformSupabaseUser, 
+  handleUserLoadError,
+  type TransformedUser 
+} from "@/lib/utils/auth-utils";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function TestAuthPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState<string>("");
 
@@ -23,31 +22,22 @@ export default function TestAuthPage() {
       try {
         setDebugInfo("Checking authentication...");
         
-        // Check environment variables
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        
-        setDebugInfo(prev => prev + `\nSupabase URL: ${supabaseUrl || 'not set'}`);
-        setDebugInfo(prev => prev + `\nSupabase Key: ${supabaseKey ? 'set' : 'not set'}`);
-        
-        // Check if using placeholder values
-        if (supabaseUrl === 'https://placeholder.supabase.co') {
+        // Use centralized configuration check
+        if (!isSupabaseConfigured()) {
           setDebugInfo(prev => prev + '\nUsing placeholder Supabase configuration');
+          setIsLoading(false);
+          return;
         }
         
-        // Get user session
+        // Get user session using centralized approach
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         
         if (error) {
           setDebugInfo(prev => prev + `\nAuth error: ${error.message}`);
+          handleUserLoadError(error);
         } else if (user) {
-          const userData = {
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.user_metadata?.name,
-            provider: 'supabase',
-            avatar_url: user.user_metadata?.avatar_url || null
-          };
+          // Use centralized user transformation
+          const userData = transformSupabaseUser(user);
           setUser(userData);
           setDebugInfo(prev => prev + `\nUser authenticated: ${user.email}`);
         } else {
@@ -60,6 +50,7 @@ export default function TestAuthPage() {
         
       } catch (error) {
         setDebugInfo(prev => prev + `\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        handleUserLoadError(error);
       } finally {
         setIsLoading(false);
       }
@@ -79,16 +70,7 @@ export default function TestAuthPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h1 className="text-2xl font-bold text-gray-900">Testing Authentication...</h1>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Testing Authentication..." />;
   }
 
   return (
@@ -106,6 +88,7 @@ export default function TestAuthPage() {
                 </p>
                 <p className="text-green-700 text-sm">ID: {user.id}</p>
                 <p className="text-green-700 text-sm">Name: {user.name || 'Not set'}</p>
+                <p className="text-green-700 text-sm">Provider: {user.provider}</p>
               </div>
             ) : (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">

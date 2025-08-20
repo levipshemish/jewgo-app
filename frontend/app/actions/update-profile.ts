@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ProfileSchema, UsernameSchema, type ProfileData } from "@/lib/validators/profile";
+import { isSupabaseConfigured } from "@/lib/utils/auth-utils";
 
 /**
  * Server action to update user profile
@@ -197,9 +198,8 @@ export async function checkUsernameAvailability(username: string) {
  */
 export async function getCurrentProfile() {
   try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
-        process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+    // Check if Supabase is configured using centralized utility
+    if (!isSupabaseConfigured()) {
       // Return mock profile for development
       const mockProfile: ProfileData = {
         username: "dev-user",

@@ -18,7 +18,8 @@ function OAuthSuccessContent() {
         if (session) {
           setStatus("Already authenticated! Syncing user data...");
           await syncUserData(session.user);
-          setTimeout(() => router.push('/eatery'), 1000);
+          // Remove setTimeout delay - redirect immediately
+          router.push('/eatery');
           return;
         }
 
@@ -30,20 +31,20 @@ function OAuthSuccessContent() {
           const error = searchParams.get('error');
           if (error === 'no_code') {
             setStatus("OAuth flow completed. Checking for tokens...");
-            // Wait a moment for any redirects to complete
-            setTimeout(async () => {
-              const currentHash = window.location.hash.substring(1);
-              if (currentHash && currentHash.includes('access_token')) {
-                await handleTokens(currentHash);
-              } else {
-                setStatus("No authentication tokens found. Please try signing in again.");
-                setTimeout(() => router.push('/auth/supabase-signin'), 3000);
-              }
-            }, 1000);
+            // Remove setTimeout delay - check immediately
+            const currentHash = window.location.hash.substring(1);
+            if (currentHash && currentHash.includes('access_token')) {
+              await handleTokens(currentHash);
+            } else {
+              setStatus("No authentication tokens found. Please try signing in again.");
+              // Remove setTimeout delay - redirect immediately
+              router.push('/auth/supabase-signin');
+            }
             return;
           } else {
             setStatus("No authentication data found. Please try signing in again.");
-            setTimeout(() => router.push('/auth/supabase-signin'), 3000);
+            // Remove setTimeout delay - redirect immediately
+            router.push('/auth/supabase-signin');
             return;
           }
         }
@@ -51,9 +52,10 @@ function OAuthSuccessContent() {
         // Process tokens from hash
         await handleTokens(hash);
 
-              } catch {
+      } catch {
         setStatus("Unexpected error occurred");
-        setTimeout(() => router.push('/auth/auth-code-error?error=unexpected'), 2000);
+        // Remove setTimeout delay - redirect immediately
+        router.push('/auth/auth-code-error?error=unexpected');
       }
     };
 
@@ -65,7 +67,8 @@ function OAuthSuccessContent() {
 
       if (!accessToken) {
         setStatus("Error: No access token found");
-        setTimeout(() => router.push('/auth/auth-code-error?error=no_token'), 2000);
+        // Remove setTimeout delay - redirect immediately
+        router.push('/auth/auth-code-error?error=no_token');
         return;
       }
 
@@ -79,18 +82,20 @@ function OAuthSuccessContent() {
 
       if (error) {
         setStatus("Error setting up session");
-        setTimeout(() => router.push('/auth/auth-code-error?error=session_setup_failed'), 2000);
+        // Remove setTimeout delay - redirect immediately
+        router.push('/auth/auth-code-error?error=session_setup_failed');
         return;
       }
 
       if (data.session) {
         setStatus("Authentication successful! Syncing user data...");
         await syncUserData(data.session.user);
-        // Redirect to the main app
-        setTimeout(() => router.push('/eatery'), 1000);
+        // Remove setTimeout delay - redirect immediately
+        router.push('/eatery');
       } else {
         setStatus("No session created");
-        setTimeout(() => router.push('/auth/auth-code-error?error=no_session'), 2000);
+        // Remove setTimeout delay - redirect immediately
+        router.push('/auth/auth-code-error?error=no_session');
       }
     };
 

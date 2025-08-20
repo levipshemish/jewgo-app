@@ -30,6 +30,14 @@ const nextConfig = {
       /Module not found: Can't resolve 'encoding'/,
     ];
 
+    // Optimize webpack cache to reduce serialization warnings
+    config.cache = {
+      ...config.cache,
+      type: 'filesystem',
+      compression: 'gzip',
+      maxAge: 172800000, // 2 days
+    };
+
     // Exclude archive directories from build
     config.module.rules.push({
       test: /\.(ts|tsx)$/,
@@ -137,6 +145,8 @@ const nextConfig = {
     // Enable modern features for better performance
     // Removed @prisma/client from optimizePackageImports to prevent Query Engine bundling issues
     optimizePackageImports: ['lucide-react'],
+    // Optimize webpack cache to reduce serialization warnings
+    webpackBuildWorker: true,
   },
 
   // Disable prerendering to avoid build errors

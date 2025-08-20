@@ -1,21 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { transformSupabaseUser, type TransformedUser } from "@/lib/utils/auth-utils";
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  image?: string;
-  provider: string;
+interface AuthStatusProps {
+  className?: string;
 }
 
-export default function AuthStatus() {
-  const [user, setUser] = useState<User | null>(null);
+export default function AuthStatus({ className = "" }: AuthStatusProps) {
+  const [user, setUser] = useState<TransformedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -26,13 +23,7 @@ export default function AuthStatus() {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-            image: session.user.user_metadata?.avatar_url,
-            provider: "supabase"
-          });
+          setUser(transformSupabaseUser(session.user));
         } else {
           setUser(null);
         }
@@ -53,13 +44,7 @@ export default function AuthStatus() {
           // Auth state changed: event, session?.user?.email
           
           if (session?.user) {
-            setUser({
-              id: session.user.id,
-              email: session.user.email || "",
-              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-              image: session.user.user_metadata?.avatar_url,
-              provider: "supabase"
-            });
+            setUser(transformSupabaseUser(session.user));
           } else {
             setUser(null);
           }
@@ -124,21 +109,21 @@ export default function AuthStatus() {
             className="h-8 w-8 rounded-full"
           />
         )}
-        <div className="text-sm">
-          <p className="font-medium text-gray-900">{user.name || user.email}</p>
-          <p className="text-gray-500 text-xs">{user.provider}</p>
-        </div>
+        <span className="text-sm font-medium text-gray-700">
+          {user.name || user.email}
+        </span>
       </div>
+      
       <div className="flex items-center space-x-2">
         <Link
           href="/profile"
-          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+          className="text-sm text-gray-600 hover:text-gray-900"
         >
           Profile
         </Link>
         <button
           onClick={handleSignOut}
-          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+          className="text-sm text-gray-600 hover:text-gray-900"
         >
           Sign out
         </button>
