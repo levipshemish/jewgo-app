@@ -294,19 +294,19 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Fixed height container */}
-        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-1'}`}>
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0.5' : 'h-8 mb-0.5'}`}>
           <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
         {/* Price Range and Rating - Fixed height meta row */}
-        <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-3' : 'h-6 gap-4'}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+        <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text pl-0.5 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1.5 flex-shrink-0 rating-container">
+          <div className="flex items-center gap-1 flex-shrink-0 rating-container pr-0.5">
             <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
             <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
               {getRating().toFixed(1)}
