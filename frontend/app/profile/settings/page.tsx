@@ -27,6 +27,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          setIsLoading(false);
+          return;
+        }
+        
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         
         if (user) {
@@ -39,6 +45,7 @@ export default function SettingsPage() {
           });
         }
       } catch (error) {
+        console.error('Error loading user:', error);
         // Failed to load user
       } finally {
         setIsLoading(false);
