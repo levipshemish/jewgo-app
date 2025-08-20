@@ -285,8 +285,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 <motion.div
                   className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
                   style={{
-                    width: '60px',
-                    minWidth: '60px'
+                    width: '60px',          // Fixed width
+                    maxWidth: '60px',       // Prevent expansion - KEY FIX
+                    minWidth: '60px',       // Maintain minimum
+                    overflow: 'hidden'      // Ensure content doesn't overflow - KEY FIX
                   }}
                   variants={tagVariants}
                   initial="idle"
@@ -298,7 +300,15 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                   tabIndex={0}
                   aria-label={`${cardData.imageTag} tag - click to open link`}
                 >
-                  <span className="truncate">
+                  <span 
+                    className="truncate block w-full text-center"  // Added block and text-center
+                    style={{
+                      overflow: 'hidden',           // Explicit overflow hidden
+                      textOverflow: 'ellipsis',     // Explicit ellipsis
+                      whiteSpace: 'nowrap',         // Prevent wrapping
+                      maxWidth: '100%'              // Ensure span doesn't exceed parent
+                    }}
+                  >
                     {cardData.imageTag}
                   </span>
                 </motion.div>
@@ -306,12 +316,22 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 <div 
                   className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
                   style={{
-                    width: '60px',
-                    minWidth: '60px'
+                    width: '60px',          // Fixed width
+                    maxWidth: '60px',       // Prevent expansion - KEY FIX
+                    minWidth: '60px',       // Maintain minimum
+                    overflow: 'hidden'      // Ensure content doesn't overflow - KEY FIX
                   }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
-                  <span className="truncate">
+                  <span 
+                    className="truncate block w-full text-center"  // Added block and text-center
+                    style={{
+                      overflow: 'hidden',           // Explicit overflow hidden
+                      textOverflow: 'ellipsis',     // Explicit ellipsis
+                      whiteSpace: 'nowrap',         // Prevent wrapping
+                      maxWidth: '100%'              // Ensure span doesn't exceed parent
+                    }}
+                  >
                     {cardData.imageTag}
                   </span>
                 </div>
