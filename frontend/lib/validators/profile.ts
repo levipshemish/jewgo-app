@@ -39,10 +39,10 @@ export const ProfileSchema = z.object({
   
   phone: z
     .string()
-    .regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number")
+    .regex(/^[\+]?[0-9\s\-\(\)]{7,20}$/, "Please enter a valid phone number")
     .optional()
     .or(z.literal(""))
-    .transform(val => val || ""),
+    .transform(val => val?.replace(/[\s\-\(\)]/g, '') || ""),
   
   dateOfBirth: z
     .string()
@@ -122,7 +122,7 @@ export const ProfileFormSchema = z.object({
   
   phone: z
     .string()
-    .regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number")
+    .regex(/^[\+]?[0-9\s\-\(\)]{7,20}$/, "Please enter a valid phone number")
     .optional()
     .or(z.literal("")),
   

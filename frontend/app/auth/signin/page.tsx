@@ -21,6 +21,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(initialError || null);
   const [debugInfo, setDebugInfo] = useState<string>("");
+  const router = useRouter();
 
   // Check Supabase connection on component mount
   useEffect(() => {
@@ -45,8 +46,8 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     setPending(true);
     setError(null);
     
-          try {
-              const { error } = await supabaseBrowser.auth.signInWithPassword({
+    try {
+      const { error } = await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
@@ -57,9 +58,9 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       }
       
       // User authenticated successfully
-      // Force a full page navigation to ensure the redirect works
-      window.location.href = redirectTo || '/profile/settings';
-    } catch {
+      // Use Next.js router for better UX and state preservation
+      router.push(redirectTo || '/profile/settings');
+    } catch (err) {
       setError('Sign in failed');
     } finally {
       setPending(false);
@@ -81,7 +82,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       if (error) {
         setError(error.message);
       }
-    } catch {
+    } catch (err) {
       setError('Google sign in failed');
     } finally {
       setPending(false);

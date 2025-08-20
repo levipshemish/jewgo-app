@@ -51,14 +51,12 @@ class MarketplaceServiceV4(BaseService):
     ) -> Dict[str, Any]:
         """Get marketplace listings with filtering and pagination."""
         try:
-            # Build query for marketplace table with correct column names
+            # Build query for "Marketplace listings" table with correct column names
             query = """
-                SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                       m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
-                       m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
-                       m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                       m.updated_at, m.category, m.subcategory
-                FROM marketplace m
+                SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
+                       m.lat, m.lng, m.seller_user_id, m.type, m.condition,
+                       m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
+                FROM "Marketplace listings" m
                 WHERE m.status = :status
             """
             params = {'status': status}
@@ -70,41 +68,43 @@ class MarketplaceServiceV4(BaseService):
                 params['search2'] = f'%{search}%'
             
             if category:
-                query += " AND m.category ILIKE :category"
+                # For category filtering, we need to join with categories table
+                query += " AND m.category_id IN (SELECT id FROM categories WHERE name ILIKE :category)"
                 params['category'] = f'%{category}%'
                 
             if subcategory:
-                query += " AND m.subcategory ILIKE :subcategory"
+                # For subcategory filtering, we need to join with subcategories table
+                query += " AND m.subcategory_id IN (SELECT id FROM subcategories WHERE name ILIKE :subcategory)"
                 params['subcategory'] = f'%{subcategory}%'
                 
             if kind:  # Map kind to appropriate marketplace fields
                 if kind == 'regular':
-                    query += " AND m.category NOT IN ('vehicle', 'appliance')"
+                    query += " AND m.type NOT IN ('vehicle', 'appliance')"
                 elif kind == 'vehicle':
-                    query += " AND m.category ILIKE :kind_filter"
+                    query += " AND m.type ILIKE :kind_filter"
                     params['kind_filter'] = '%vehicle%'
                 elif kind == 'appliance':
-                    query += " AND m.category ILIKE :kind_filter"
+                    query += " AND m.type ILIKE :kind_filter"
                     params['kind_filter'] = '%appliance%'
                 
             if condition:
-                # Marketplace table doesn't have condition field, skip this filter
-                pass
+                query += " AND m.condition = :condition"
+                params['condition'] = condition
             
             if min_price is not None:
-                query += " AND m.price >= :min_price"
-                params['min_price'] = min_price / 100.0  # Convert cents to dollars
+                query += " AND m.price_cents >= :min_price"
+                params['min_price'] = min_price  # Keep in cents
             
             if max_price is not None:
-                query += " AND m.price <= :max_price"
-                params['max_price'] = max_price / 100.0  # Convert cents to dollars
+                query += " AND m.price_cents <= :max_price"
+                params['max_price'] = max_price  # Keep in cents
             
             if city:
                 query += " AND m.city ILIKE :city"
                 params['city'] = f'%{city}%'
                 
             if region:
-                query += " AND m.state ILIKE :region"
+                query += " AND m.region ILIKE :region"
                 params['region'] = f'%{region}%'
             
             # Location-based filtering
@@ -112,10 +112,10 @@ class MarketplaceServiceV4(BaseService):
                 # Convert radius from miles to degrees (approximate)
                 radius_degrees = radius / 69.0
                 query += """
-                    AND m.latitude IS NOT NULL 
-                    AND m.longitude IS NOT NULL
-                    AND m.latitude BETWEEN :lat_min AND :lat_max
-                    AND m.longitude BETWEEN :lng_min AND :lng_max
+                    AND m.lat IS NOT NULL 
+                    AND m.lng IS NOT NULL
+                    AND m.lat BETWEEN :lat_min AND :lat_max
+                    AND m.lng BETWEEN :lng_min AND :lng_max
                 """
                 params.update({
                     'lat_min': lat - radius_degrees,
@@ -138,57 +138,49 @@ class MarketplaceServiceV4(BaseService):
                 
                 # Get total count for pagination
                 count_query = """
-                    SELECT COUNT(*) as total FROM marketplace m 
+                    SELECT COUNT(*) as total FROM "Marketplace listings" m 
                     WHERE m.status = :status
                 """
                 count_result = session.execute(text(count_query), {'status': status})
                 total = count_result.scalar()
             
-            # Format response for marketplace table
+            # Format response for "Marketplace listings" table
             formatted_listings = []
             for listing in listings:
-                # Convert marketplace table structure to expected format
+                # Convert "Marketplace listings" table structure to expected format
                 # Use dictionary access since SQLAlchemy returns Row objects
                 formatted_listing = {
                     'id': str(listing[0]),  # id
                     'kind': 'regular',  # Default to regular for marketplace items
-                    'txn_type': 'sale',  # Default to sale
+                    'txn_type': listing[11] or 'sale',  # type (sale, borrow, etc.)
                     'title': listing[1],  # title
                     'description': listing[2],  # description
-                    'price_cents': int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
+                    'price_cents': int(listing[3]) if listing[3] else 0,  # price_cents
                     'currency': listing[4] or 'USD',  # currency
-                    'condition': 'new',  # Default condition for marketplace items
-                    'category_id': None,  # Not used in marketplace table
-                    'subcategory_id': None,  # Not used in marketplace table
+                    'condition': listing[12] or 'new',  # condition
+                    'category_id': listing[13],  # category_id
+                    'subcategory_id': listing[14],  # subcategory_id
                     'city': listing[5],  # city
-                    'region': listing[6],  # state (map to region)
-                    'zip': listing[7],  # zip_code
+                    'region': listing[6],  # region
+                    'zip': listing[7],  # zip
                     'country': 'US',  # Default country
-                    'lat': float(listing[8]) if listing[8] else None,  # latitude
-                    'lng': float(listing[9]) if listing[9] else None,  # longitude
-                    'seller_user_id': None,  # vendor_id doesn't exist in marketplace table
+                    'lat': float(listing[8]) if listing[8] else None,  # lat
+                    'lng': float(listing[9]) if listing[9] else None,  # lng
+                    'seller_user_id': listing[10],  # seller_user_id
                     'attributes': {
-                        'vendor_name': listing[10],  # vendor_name
-                        'vendor_phone': listing[11],  # vendor_phone
-                        'vendor_email': listing[12],  # vendor_email
-                        'kosher_agency': listing[13],  # kosher_agency
-                        'kosher_level': listing[14],  # kosher_level
-                        'is_available': listing[15],  # is_available
-                        'is_featured': listing[16],  # is_featured
-                        'is_on_sale': listing[17],  # is_on_sale
-                        'discount_percentage': listing[18],  # discount_percentage
-                        'stock': listing[19],  # stock
-                        'rating': float(listing[20]) if listing[20] else None,  # rating
-                        'review_count': listing[21] or 0  # review_count
+                        'type': listing[11],  # type
+                        'condition': listing[12],  # condition
+                        'category_id': listing[13],  # category_id
+                        'subcategory_id': listing[14],  # subcategory_id
                     },
                     'endorse_up': 0,  # Default values
                     'endorse_down': 0,  # Default values
-                    'status': listing[22],  # status
-                    'created_at': listing[23].isoformat() if listing[23] else None,  # created_at
-                    'updated_at': listing[24].isoformat() if listing[24] else None,  # updated_at
-                    'category_name': listing[25],  # category
-                    'subcategory_name': listing[26],  # subcategory
-                    'seller_name': listing[10]  # vendor_name as seller_name
+                    'status': listing[15],  # status
+                    'created_at': listing[16].isoformat() if listing[16] else None,  # created_at
+                    'updated_at': listing[17].isoformat() if listing[17] else None,  # updated_at
+                    'category_name': None,  # Will be populated by join if needed
+                    'subcategory_name': None,  # Will be populated by join if needed
+                    'seller_name': listing[10]  # seller_user_id as seller_name
                 }
                 formatted_listings.append(formatted_listing)
             
@@ -217,12 +209,10 @@ class MarketplaceServiceV4(BaseService):
                 from sqlalchemy import text
                 
                 query = """
-                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
-                           m.latitude, m.longitude, m.vendor_name, m.vendor_phone, m.vendor_email,
-                           m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
-                           m.discount_percentage, m.stock, m.rating, m.review_count, m.status, m.created_at, 
-                           m.updated_at, m.category, m.subcategory
-                    FROM marketplace m
+                    SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
+                           m.lat, m.lng, m.seller_user_id, m.type, m.condition,
+                           m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
+                    FROM "Marketplace listings" m
                     WHERE m.id = :listing_id
                 """
                 

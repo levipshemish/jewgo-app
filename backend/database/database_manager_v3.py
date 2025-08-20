@@ -30,6 +30,9 @@ from sqlalchemy.exc import SQLAlchemyError, OperationalError, DBAPIError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 
+# Import models
+from .models import User
+
 # Import ConfigManager at module level
 try:
     from utils.unified_database_config import ConfigManager

@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
 
-import ProductCard from '@/components/marketplace/ProductCard';
+import { EnhancedMarketplaceCard } from '@/components/marketplace';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
@@ -269,10 +269,11 @@ export default function CategoryPage() {
               : 'grid-cols-1'
           }`}>
             {products.map((product) => (
-              <ProductCard
+              <EnhancedMarketplaceCard
                 key={product.id}
-                product={product}
+                listing={product}
                 variant={viewMode === 'list' ? 'compact' : 'default'}
+                onClick={() => router.push(`/marketplace/${product.id}`)}
               />
             ))}
           </div>

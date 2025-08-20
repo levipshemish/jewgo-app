@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -13,16 +13,16 @@ function AuthCallbackContent() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     const processCallback = async () => {
-      if (isProcessing) {
+      if (isProcessingRef.current) {
         return; // Prevent duplicate processing
       }
       
       try {
-        setIsProcessing(true);
+        isProcessingRef.current = true;
         
         // Process the callback
         const result = await supabaseBrowser.auth.exchangeCodeForSession(
@@ -40,22 +40,22 @@ function AuthCallbackContent() {
           // Session established successfully
           const redirectTo = searchParams.get("redirectTo") || '/profile/settings';
           
-          // Force a full page navigation to ensure the redirect works
-          window.location.href = redirectTo;
+          // Use Next.js router instead of window.location for better UX
+          router.push(redirectTo);
         } else {
           setError('Failed to establish session');
         }
       } catch (_error) {
         setError('Authentication failed');
       } finally {
-        setIsProcessing(false);
+        isProcessingRef.current = false;
       }
     };
 
     if (searchParams.get('code')) {
       processCallback();
     }
-  }, [searchParams, router, isProcessing]);
+  }, [searchParams, router]); // Removed isProcessing from deps
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

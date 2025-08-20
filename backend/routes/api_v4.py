@@ -4,6 +4,7 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 from werkzeug.exceptions import HTTPException
+from psycopg2.extras import RealDictCursor
 
 logger = get_logger(__name__)
 

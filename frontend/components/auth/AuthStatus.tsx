@@ -49,20 +49,26 @@ export default function AuthStatus() {
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
-        // Auth state changed: event, session?.user?.email
-        
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || "",
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-            image: session.user.user_metadata?.avatar_url,
-            provider: "supabase"
-          });
-        } else {
+        try {
+          // Auth state changed: event, session?.user?.email
+          
+          if (session?.user) {
+            setUser({
+              id: session.user.id,
+              email: session.user.email || "",
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+              image: session.user.user_metadata?.avatar_url,
+              provider: "supabase"
+            });
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Auth state change error:', error);
           setUser(null);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 

@@ -57,7 +57,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
   // Smart truncation function that shows last 3 letters before ellipsis
   const smartTruncate = (text: string, maxLength: number = 20) => {
-    if (!text || text.length <= maxLength) return text;
+    if (!text || text.length <= maxLength) {
+      return text;
+    }
     
     // Calculate how many characters to show before ellipsis
     // We want to show the last 3 letters, so we need to account for "..." (3 chars)
@@ -82,7 +84,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
   // Title case function
   const titleCase = (str: string) => {
-    if (!str) {return '';}
+    if (!str) {
+      return '';
+    }
     return str.replace(/\w\S*/g, (txt) => 
       txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
     );

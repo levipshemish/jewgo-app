@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { checkUsernameAvailability } from "@/app/actions/update-profile";
 import { UsernameSchema } from "@/lib/validators/profile";
@@ -30,50 +30,52 @@ export function useUsernameValidation(initialUsername: string = "") {
     return result.success;
   }, []);
 
-  // Check username availability
-  const checkAvailability = useCallback(async (value: string) => {
-    if (!value || !validateUsernameFormat(value)) {
+  // Check username availability - memoized to prevent infinite re-renders
+  const checkAvailability = useMemo(() => {
+    return async (value: string) => {
+      if (!value || !validateUsernameFormat(value)) {
+        setValidationState(prev => ({
+          ...prev,
+          isAvailable: null,
+          isChecking: false,
+          error: null,
+        }));
+        return;
+      }
+
       setValidationState(prev => ({
         ...prev,
-        isAvailable: null,
-        isChecking: false,
+        isChecking: true,
         error: null,
       }));
-      return;
-    }
 
-    setValidationState(prev => ({
-      ...prev,
-      isChecking: true,
-      error: null,
-    }));
-
-    try {
-      const result = await checkUsernameAvailability(value);
-      
-      if (result.error) {
+      try {
+        const result = await checkUsernameAvailability(value);
+        
+        if (result.error) {
+          setValidationState(prev => ({
+            ...prev,
+            isAvailable: false,
+            isChecking: false,
+            error: result.error,
+          }));
+        } else {
+          setValidationState(prev => ({
+            ...prev,
+            isAvailable: result.available,
+            isChecking: false,
+            error: result.available ? null : "Username is already taken",
+          }));
+        }
+      } catch (error) {
         setValidationState(prev => ({
           ...prev,
           isAvailable: false,
           isChecking: false,
-          error: result.error,
-        }));
-      } else {
-        setValidationState(prev => ({
-          ...prev,
-          isAvailable: result.available,
-          isChecking: false,
-          error: result.available ? null : "Username is already taken",
+          error: "Failed to check username availability",
         }));
       }
-    } catch (error) {
-      setValidationState(prev => ({
-        ...prev,
-        isAvailable: false,
-        isChecking: false,
-        error: "Failed to check username availability",
-      }));
-    }
+    };
   }, [validateUsernameFormat]);
 
   // Effect to check availability when debounced username changes
