@@ -37,6 +37,11 @@ function optimizeModuleRules(config) {
       // Only add path-browserify if it's available and needed
       ...(config.resolve?.fallback?.path ? {} : { path: false }),
     },
+    // Fix module system issues
+    extensionAlias: {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.mjs': ['.mjs', '.js', '.ts', '.tsx'],
+    },
   };
 
   // Optimize module parsing - but don't disable dynamic imports

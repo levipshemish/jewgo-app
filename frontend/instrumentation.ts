@@ -1,19 +1,19 @@
-// Re-enable Sentry with proper error handling
-import * as Sentry from '@sentry/nextjs';
+// Temporarily disable instrumentation to fix server-side issues
+// import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
-  try {
-    if (process.env.NEXT_RUNTIME === 'nodejs') {
-      await import('./sentry.server.config');
-    }
+  // Temporarily disabled to fix server-side issues
+  // try {
+  //   if (process.env.NEXT_RUNTIME === 'nodejs') {
+  //     await import('./sentry.server.config');
+  //   }
 
-    if (process.env.NEXT_RUNTIME === 'edge') {
-      await import('./sentry.edge.config');
-    }
-  } catch (error) {
-    // Silently handle Sentry initialization errors
-    console.warn('Sentry initialization failed:', error);
-  }
+  //   if (process.env.NEXT_RUNTIME === 'edge') {
+  //     await import('./sentry.edge.config');
+  //   }
+  // } catch (error) {
+  //   console.warn('Sentry initialization failed:', error);
+  // }
 }
 
-export const onRequestError = Sentry.captureRequestError; 
+// export const onRequestError = Sentry.captureRequestError; 

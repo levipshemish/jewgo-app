@@ -160,6 +160,8 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
     // Optimize webpack cache to reduce serialization warnings
     webpackBuildWorker: true,
+    // Fix module system issues
+    esmExternals: 'loose',
   },
 
   // Disable prerendering to avoid build errors
@@ -200,33 +202,36 @@ const nextConfig = {
   },
 };
 
-const { withSentryConfig } = require("@sentry/nextjs");
+// Temporarily disable Sentry to fix server-side issues
+// const { withSentryConfig } = require("@sentry/nextjs");
 
-module.exports = withSentryConfig(
-  nextConfig,
-  {
-    // For all available options, see:
-    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-    
-    // Disable source map upload to avoid build issues
-    dryRun: true,
-    silent: true,
-    
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
-    
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
-    
-    // Ensure webpack cache configuration is preserved
-    webpack: (config, options) => {
-      // Ensure cache type is set to memory for Sentry webpack configurations
-      if (config.cache) {
-        config.cache = {
-          type: 'memory',
-        };
-      }
-      return config;
-    },
-  }
-);
+// module.exports = withSentryConfig(
+//   nextConfig,
+//   {
+//     // For all available options, see:
+//     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+//     
+//     // Disable source map upload to avoid build issues
+//     dryRun: true,
+//     silent: true,
+//     
+//     // Upload a larger set of source maps for prettier stack traces (increases build time)
+//     widenClientFileUpload: true,
+//     
+//     // Automatically tree-shake Sentry logger statements to reduce bundle size
+//     disableLogger: true,
+//     
+//     // Ensure webpack cache configuration is preserved
+//     webpack: (config, options) => {
+//       // Ensure cache type is set to memory for Sentry webpack configurations
+//       if (config.cache) {
+//         config.cache = {
+//           type: 'memory',
+//         };
+//       }
+//       return config;
+//     },
+//   }
+// );
+
+module.exports = nextConfig;

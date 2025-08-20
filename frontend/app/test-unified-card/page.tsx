@@ -1,9 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { RestaurantsAPI } from "@/lib/api/restaurants"
-import { fetchMarketplaceListings } from "@/lib/api/marketplace"
-import EnhancedProductCard from "@/components/ui/UnifiedCard"
+import dynamic from 'next/dynamic'
+
+// Dynamically import components to prevent module system issues
+const EnhancedProductCard = dynamic(() => import("@/components/ui/UnifiedCard"), {
+  ssr: false,
+  loading: () => <div className="w-[200px] h-[200px] bg-gray-200 rounded-2xl animate-pulse" />
+})
+
+// Dynamically import API functions
+const RestaurantsAPI = dynamic(() => import("@/lib/api/restaurants").then(mod => ({ default: mod.RestaurantsAPI })), {
+  ssr: false
+})
+
+const fetchMarketplaceListings = dynamic(() => import("@/lib/api/marketplace").then(mod => ({ default: mod.fetchMarketplaceListings })), {
+  ssr: false
+})
 
 interface Restaurant {
   id: string
@@ -65,49 +78,71 @@ export default function TestUnifiedCardPage() {
   const [marketplaceData, setMarketplaceData] = useState<MarketplaceListing | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [componentsLoaded, setComponentsLoaded] = useState(false)
 
   useEffect(() => {
+    const loadComponents = async () => {
+      try {
+        // Wait for components to be available
+        await new Promise(resolve => setTimeout(resolve, 100))
+        setComponentsLoaded(true)
+      } catch (err) {
+        console.error("Error loading components:", err)
+        setError("Failed to load components")
+      }
+    }
+
+    loadComponents()
+  }, [])
+
+  useEffect(() => {
+    if (!componentsLoaded) return
+
     const fetchData = async () => {
       try {
         setLoading(true)
         setError(null)
 
         // Fetch restaurant data
-        const restaurantsResponse = await RestaurantsAPI.fetchRestaurants(1)
-        if (restaurantsResponse.restaurants && restaurantsResponse.restaurants.length > 0) {
-          const restaurant = restaurantsResponse.restaurants[0]
-          setRestaurantData({
-            id: restaurant.id.toString(),
-            name: restaurant.name,
-            image_url: restaurant.image_url,
-            rating: restaurant.rating,
-            star_rating: restaurant.star_rating,
-            google_rating: restaurant.google_rating,
-            price_range: restaurant.price_range,
-            min_avg_meal_cost: restaurant.min_avg_meal_cost,
-            max_avg_meal_cost: restaurant.max_avg_meal_cost,
-            kosher_category: restaurant.kosher_category,
-            city: restaurant.city,
-            review_snippets: restaurant.review_snippets
-          })
+        if (RestaurantsAPI?.default) {
+          const restaurantsResponse = await RestaurantsAPI.default.fetchRestaurants(1)
+          if (restaurantsResponse.restaurants && restaurantsResponse.restaurants.length > 0) {
+            const restaurant = restaurantsResponse.restaurants[0]
+            setRestaurantData({
+              id: restaurant.id.toString(),
+              name: restaurant.name,
+              image_url: restaurant.image_url,
+              rating: restaurant.rating,
+              star_rating: restaurant.star_rating,
+              google_rating: restaurant.google_rating,
+              price_range: restaurant.price_range,
+              min_avg_meal_cost: restaurant.min_avg_meal_cost,
+              max_avg_meal_cost: restaurant.max_avg_meal_cost,
+              kosher_category: restaurant.kosher_category,
+              city: restaurant.city,
+              review_snippets: restaurant.review_snippets
+            })
+          }
         }
 
         // Fetch marketplace data
-        const marketplaceResponse = await fetchMarketplaceListings({ limit: 1 })
-        if (marketplaceResponse.success && marketplaceResponse.data?.listings && marketplaceResponse.data.listings.length > 0) {
-          const listing = marketplaceResponse.data.listings[0]
-          setMarketplaceData({
-            id: listing.id.toString(),
-            title: listing.title,
-            price_cents: listing.price_cents || 0,
-            currency: listing.currency,
-            city: listing.city,
-            kind: listing.kind || 'sale',
-            category_name: listing.category_name,
-            created_at: listing.created_at,
-            images: listing.images,
-            thumbnail: listing.thumbnail
-          })
+        if (fetchMarketplaceListings?.default) {
+          const marketplaceResponse = await fetchMarketplaceListings.default({ limit: 1 })
+          if (marketplaceResponse.success && marketplaceResponse.data?.listings && marketplaceResponse.data.listings.length > 0) {
+            const listing = marketplaceResponse.data.listings[0]
+            setMarketplaceData({
+              id: listing.id.toString(),
+              title: listing.title,
+              price_cents: listing.price_cents || 0,
+              currency: listing.currency,
+              city: listing.city,
+              kind: listing.kind || 'sale',
+              category_name: listing.category_name,
+              created_at: listing.created_at,
+              images: listing.images,
+              thumbnail: listing.thumbnail
+            })
+          }
         }
       } catch (err) {
         console.error("Error fetching data:", err)
@@ -118,7 +153,7 @@ export default function TestUnifiedCardPage() {
     }
 
     fetchData()
-  }, [])
+  }, [componentsLoaded])
 
   const handleCardClick = (data: any) => {
     console.log("Card clicked:", data)
@@ -163,7 +198,7 @@ export default function TestUnifiedCardPage() {
     isLiked: false
   } : null
 
-  if (loading) {
+  if (loading || !componentsLoaded) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -264,8 +299,8 @@ export default function TestUnifiedCardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-4">
             {/* Row 1 */}
             <EnhancedProductCard
-                             data={{
-                 id: "1",
+              data={{
+                id: "1",
                 imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
                 imageTag: "Italian",
                 imageTagLink: "/eatery?cuisine=italian",
@@ -283,7 +318,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                                 id: "2",
+                id: "2",
                 imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
                 imageTag: "Sushi",
                 imageTagLink: "/eatery?cuisine=japanese",
