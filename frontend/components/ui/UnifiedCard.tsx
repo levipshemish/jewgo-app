@@ -52,19 +52,11 @@ const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
-    y: 0,
-    transition: { 
-      duration: 0.4,
-      ease: "easeOut"
-    }
+    y: 0
   },
   hover: {
     y: -8,
-    scale: 1.02,
-    transition: {
-      duration: 0.3,
-      ease: "easeOut"
-    }
+    scale: 1.02
   }
 };
 
