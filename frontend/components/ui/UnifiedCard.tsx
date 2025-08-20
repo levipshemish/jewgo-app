@@ -308,7 +308,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm w-[60px] flex items-center justify-center leading-tight"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
+                  style={{
+                    maxWidth: '50%',
+                    minWidth: 'fit-content'
+                  }}
                   variants={tagVariants}
                   initial="idle"
                   whileHover="hover"
@@ -319,14 +323,22 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                   tabIndex={0}
                   aria-label={`${cardData.imageTag} tag - click to open link`}
                 >
-                  <span className="truncate">{cardData.imageTag}</span>
+                  <span className={cardData.imageTag.length > 8 ? 'truncate' : ''}>
+                    {cardData.imageTag}
+                  </span>
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium w-[60px] flex items-center justify-center leading-tight shadow-sm"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
+                  style={{
+                    maxWidth: '50%',
+                    minWidth: 'fit-content'
+                  }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
-                  <span className="truncate">{cardData.imageTag}</span>
+                  <span className={cardData.imageTag.length > 8 ? 'truncate' : ''}>
+                    {cardData.imageTag}
+                  </span>
                 </div>
               )}
             </motion.div>
