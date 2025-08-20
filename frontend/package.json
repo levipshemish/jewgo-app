@@ -114,7 +114,6 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^6.0.0",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.0.0",

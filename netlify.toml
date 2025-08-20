@@ -39,10 +39,6 @@
 # Headers (these will be handled by _headers file)
 # The _headers file in your frontend directory will take precedence
 
-# Plugin configuration
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 # Build settings for optimal performance
 [build.processing]
   skip_processing = false
