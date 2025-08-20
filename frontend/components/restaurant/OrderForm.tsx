@@ -3,7 +3,7 @@
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import React, { useState } from 'react';
 
-import { ButtonLoadingState } from '@/components/ui/LoadingState';
+import { LoadingButton } from '@/components/ui/LoadingStates';
 import { Restaurant } from '@/lib/types/restaurant';
 import { validatePhone } from '@/lib/utils/formValidation';
 
@@ -454,14 +454,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
               {/* Submit Button */}
               <div className="flex space-x-3">
-                <ButtonLoadingState
-                  isLoading={isSubmitting}
+                <LoadingButton
+                  loading={isSubmitting}
                   loadingText="Submitting Order..."
                   className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={async () => {
+                    const mockEvent = {} as React.FormEvent;
+                    await handleSubmit(mockEvent);
+                  }}
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Place Order
-                </ButtonLoadingState>
+                </LoadingButton>
                 <button
                   type="button"
                   onClick={onClose}

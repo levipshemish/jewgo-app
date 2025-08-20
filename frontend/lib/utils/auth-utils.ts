@@ -1,4 +1,14 @@
-import { User } from '@/lib/types/user';
+// User type definition - moved here to avoid circular dependencies
+interface User {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    name?: string;
+    username?: string;
+    avatar_url?: string;
+  };
+}
 
 /**
  * Centralized authentication utilities to eliminate code duplication
@@ -9,6 +19,7 @@ export interface TransformedUser {
   id: string;
   email: string | undefined;
   name?: string;
+  username?: string;
   image?: string | null;
   provider: string;
   avatar_url?: string | null;
@@ -32,6 +43,7 @@ export function transformSupabaseUser(user: any): TransformedUser {
     id: user.id,
     email: user.email,
     name: user.user_metadata?.full_name || user.user_metadata?.name,
+    username: user.user_metadata?.username || user.email?.split('@')[0],
     image: user.user_metadata?.avatar_url,
     provider: 'supabase',
     avatar_url: user.user_metadata?.avatar_url || null
@@ -69,6 +81,7 @@ export function createMockUser(): TransformedUser {
     id: 'dev-user-id',
     email: 'dev@example.com',
     name: 'Development User',
+    username: 'dev-user',
     provider: 'development',
     avatar_url: null
   };

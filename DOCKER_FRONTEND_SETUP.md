@@ -30,8 +30,11 @@ This guide covers setting up and running the JewGo frontend application using Do
 The easiest way to run the frontend is using the provided setup script:
 
 ```bash
-# Development mode (with hot reloading)
+# Development mode (with hot reloading) - connects to Render API
 ./scripts/docker-setup.sh dev
+
+# Local development mode - connects to local backend
+./scripts/docker-setup.sh local
 
 # Production mode
 ./scripts/docker-setup.sh prod
@@ -48,7 +51,7 @@ The easiest way to run the frontend is using the provided setup script:
 
 ## 🔧 Manual Docker Commands
 
-### Development Mode
+### Development Mode (Render API)
 
 ```bash
 # Build and run development container
@@ -59,6 +62,19 @@ docker-compose -f docker-compose.frontend.dev.yml up -d
 
 # View logs
 docker-compose -f docker-compose.frontend.dev.yml logs -f
+```
+
+### Local Development Mode (Local Backend)
+
+```bash
+# Build and run local development container
+docker-compose -f docker-compose.frontend.local.yml up --build
+
+# Run in background
+docker-compose -f docker-compose.frontend.local.yml up -d
+
+# View logs
+docker-compose -f docker-compose.frontend.local.yml logs -f
 ```
 
 ### Production Mode
@@ -78,7 +94,8 @@ docker-compose -f docker-compose.frontend.yml logs -f
 
 ```
 ├── docker-compose.frontend.yml          # Production Docker Compose
-├── docker-compose.frontend.dev.yml      # Development Docker Compose
+├── docker-compose.frontend.dev.yml      # Development Docker Compose (Render API)
+├── docker-compose.frontend.local.yml    # Local Development Docker Compose
 ├── frontend/
 │   ├── Dockerfile                       # Production Dockerfile
 │   ├── Dockerfile.dev                   # Development Dockerfile

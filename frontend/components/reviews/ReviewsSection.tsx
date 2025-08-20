@@ -405,7 +405,7 @@ export default function ReviewsSection({
               ) : (
                 // User Review Display
                 <ReviewCard
-                  review={review as Review}
+                  review={review as unknown as Review}
                   onHelpful={handleHelpful}
                   onFlag={handleFlag}
                   onEdit={(review) => {

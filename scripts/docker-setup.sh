@@ -37,6 +37,15 @@ run_dev() {
     docker-compose -f docker-compose.frontend.dev.yml up
 }
 
+# Function to build and run local development container
+run_local() {
+    echo "🔨 Building local development container..."
+    docker-compose -f docker-compose.frontend.local.yml build
+    
+    echo "🚀 Starting local development container..."
+    docker-compose -f docker-compose.frontend.local.yml up
+}
+
 # Function to build and run production container
 run_prod() {
     echo "🔨 Building production container..."
@@ -50,6 +59,7 @@ run_prod() {
 stop_containers() {
     echo "🛑 Stopping containers..."
     docker-compose -f docker-compose.frontend.dev.yml down
+    docker-compose -f docker-compose.frontend.local.yml down
     docker-compose -f docker-compose.frontend.yml down
 }
 
@@ -66,6 +76,10 @@ case "${1:-dev}" in
         check_docker
         run_dev
         ;;
+    "local")
+        check_docker
+        run_local
+        ;;
     "prod")
         check_docker
         run_prod
@@ -77,10 +91,11 @@ case "${1:-dev}" in
         cleanup
         ;;
     "help"|"-h"|"--help")
-        echo "Usage: $0 [dev|prod|stop|cleanup|help]"
+        echo "Usage: $0 [dev|local|prod|stop|cleanup|help]"
         echo ""
         echo "Commands:"
-        echo "  dev     - Run development container with hot reloading"
+        echo "  dev     - Run development container with hot reloading (connects to Render API)"
+        echo "  local   - Run local development container (connects to local backend)"
         echo "  prod    - Run production container"
         echo "  stop    - Stop all containers"
         echo "  cleanup - Clean up Docker resources"
