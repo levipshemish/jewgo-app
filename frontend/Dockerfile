@@ -1,5 +1,5 @@
 # Use Node.js 22.x as specified in package.json
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 # Install curl for health checks
 RUN apk add --no-cache curl
@@ -14,7 +14,7 @@ COPY package-lock.json ./
 # Copy Prisma schema before installing dependencies
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies (including devDependencies for build)
 RUN npm ci
 
 # Copy source code
@@ -34,18 +34,44 @@ RUN npm run validate-env-build
 # Build the application for production (matching Vercel build)
 RUN npm run build
 
-# Expose port 3000
-EXPOSE 3000
+# Production stage
+FROM node:22-alpine AS runner
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Set working directory
+WORKDIR /app
 
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-# Change ownership of the app directory
-RUN chown -R nextjs:nodejs /app
+# Copy package files for production dependencies
+COPY package*.json ./
+COPY package-lock.json ./
+
+# Copy Prisma schema before installing dependencies
+COPY prisma ./prisma/
+
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# Generate Prisma client for production
+RUN npx prisma generate
 
 # Switch to non-root user
 USER nextjs
+
+# Expose port 3000
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

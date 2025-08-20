@@ -1,0 +1,122 @@
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
+
+// Server-side Supabase client
+const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+/**
+ * Persist Apple user name with race-safe UPSERT
+ * Only called when Apple actually sends name data
+ */
+export async function persistAppleUserName(userId: string, name: string | null) {
+  if (!name || !name.trim()) return;
+  
+  try {
+    const { error } = await supabaseServer
+      .from('profiles')
+      .upsert({
+        user_id: userId,
+        name: name.trim(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
+      });
+
+    if (error) {
+      console.error('Failed to persist Apple user name:', error);
+    }
+  } catch (error) {
+    console.error('Error persisting Apple user name:', error);
+  }
+}
+
+/**
+ * Create HMAC-based analytics key for PII-safe logging
+ */
+export function createAnalyticsKey(userId: string): string {
+  const secret = process.env.ANALYTICS_HMAC_SECRET || 'default-secret';
+  return crypto
+    .createHmac('sha256', secret)
+    .update(userId)
+    .digest('hex')
+    .substring(0, 16);
+}
+
+/**
+ * Detect OAuth provider from user metadata
+ */
+export function detectProvider(user: any): 'apple' | 'google' | 'unknown' {
+  const provider = user?.app_metadata?.provider;
+  
+  switch (provider) {
+    case 'apple':
+      return 'apple';
+    case 'google':
+      return 'google';
+    default:
+      return 'unknown';
+  }
+}
+
+/**
+ * Check if user is from Apple OAuth
+ */
+export function isAppleUser(user: any): boolean {
+  return detectProvider(user) === 'apple';
+}
+
+/**
+ * Check if email is a private relay email
+ */
+export function isPrivateRelayEmail(email: string): boolean {
+  return email.endsWith('@privaterelay.appleid.com');
+}
+
+/**
+ * Attempt identity linking using Supabase's official APIs
+ * Returns success status and any conflict information
+ */
+export async function attemptIdentityLinking(userId: string, provider: string) {
+  try {
+    // Use Supabase's official link identity API
+    const { data, error } = await supabaseServer.auth.admin.linkUser({
+      userId,
+      provider,
+      options: {
+        // Link options if needed
+      }
+    });
+
+    if (error) {
+      // Check if this is a conflict error
+      if (error.message.includes('already exists') || error.message.includes('conflict')) {
+        return { success: false, conflict: true, error };
+      }
+      return { success: false, conflict: false, error };
+    }
+
+    return { success: true, conflict: false, data };
+  } catch (error) {
+    console.error('Identity linking error:', error);
+    return { success: false, conflict: false, error };
+  }
+}
+
+/**
+ * Server-side feature flag check
+ */
+export function isAppleOAuthEnabled(): boolean {
+  return process.env.APPLE_OAUTH_ENABLED === 'true';
+}
+
+/**
+ * Log OAuth event with PII-safe analytics
+ */
+export function logOAuthEvent(userId: string, provider: string, event: string) {
+  const analyticsKey = createAnalyticsKey(userId);
+  console.log(`[OAUTH] ${event} - Provider: ${provider} - User: ${analyticsKey}`);
+}

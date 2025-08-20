@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { validatePassword } from "@/lib/utils/password-validation";
+import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
+import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -59,6 +61,33 @@ export default function SignUp() {
     }
     
     setPending(false);
+  };
+
+  const onAppleSignUp = async () => {
+    setPending(true);
+    setError(null);
+    
+    try {
+      // Compute safe redirect URL using corrected validation
+      const safeNext = validateRedirectUrl('/');
+      
+      const { error } = await supabaseBrowser.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          scopes: 'email name',
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+        },
+      });
+
+      if (error) {
+        setError(mapAppleOAuthError(error.message));
+      }
+    } catch (err) {
+      console.error('Apple sign up error:', err);
+      setError('Apple sign up failed');
+    } finally {
+      setPending(false);
+    }
   };
 
   const onGoogleSignUp = async () => {
@@ -181,7 +210,15 @@ export default function SignUp() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-3">
+              {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
+              <AppleSignInButton
+                onClick={onAppleSignUp}
+                disabled={pending}
+                loading={pending}
+                enabled={process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED === 'true'}
+              />
+              
               <button
                 type="button"
                 onClick={onGoogleSignUp}

@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
+import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
@@ -66,6 +68,33 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     } catch (err) {
       console.error('Sign in error:', err);
       setError('Sign in failed');
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const onAppleSignIn = async () => {
+    setPending(true);
+    setError(null);
+    
+    try {
+      // Compute safe redirect URL using corrected validation
+      const safeNext = validateRedirectUrl(redirectTo);
+      
+      const { error } = await supabaseBrowser.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          scopes: 'email name',
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+        },
+      });
+
+      if (error) {
+        setError(mapAppleOAuthError(error.message));
+      }
+    } catch (err) {
+      console.error('Apple sign in error:', err);
+      setError('Apple sign in failed');
     } finally {
       setPending(false);
     }
@@ -185,7 +214,15 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-3">
+              {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
+              <AppleSignInButton
+                onClick={onAppleSignIn}
+                disabled={pending}
+                loading={pending}
+                enabled={process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED === 'true'}
+              />
+              
               <button
                 type="button"
                 onClick={onGoogleSignIn}

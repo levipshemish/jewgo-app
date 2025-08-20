@@ -211,7 +211,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   return (
     <motion.div
       className={cn(
-        "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3",
+        "w-[160px] bg-white rounded-2xl overflow-hidden shadow-lg p-3",
         "hover:shadow-2xl transition-shadow duration-300",
         "mx-auto",
         onCardClick ? "cursor-pointer" : "",
@@ -240,7 +240,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       </span>
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[140px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[112px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
@@ -263,7 +263,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 setImageError(true);
                 setImageLoading(false);
               }}
-              sizes="200px"
+              sizes="160px"
               unoptimized={heroImageUrl.includes('cloudinary.com')}
               priority={priority}
             />
@@ -416,7 +416,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             <p 
               className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
               style={{ 
-                maxWidth: '100px',
+                maxWidth: '80px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -430,7 +430,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             <p 
               className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
               style={{ 
-                maxWidth: '60px',
+                maxWidth: '50px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
