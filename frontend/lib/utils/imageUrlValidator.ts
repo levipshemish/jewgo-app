@@ -4,6 +4,16 @@ import { isProblematicCloudinaryUrl } from './imageValidation';
  * Provides safe image URL handling with fallbacks
  */
 
+// Invalid domains that should be rejected
+const INVALID_DOMAINS = [
+  'example.com',
+  'placeholder.com',
+  'invalid-domain.com',
+  'test.com',
+  'localhost',
+  '127.0.0.1'
+];
+
 /**
  * Get a safe image URL with fallback handling
  * @param imageUrl - The original image URL
