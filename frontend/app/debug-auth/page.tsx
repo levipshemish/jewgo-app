@@ -2,33 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
 
 // Force dynamic rendering to avoid build issues
 export const dynamic = 'force-dynamic';
 
 export default function DebugAuthPage() {
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
-  const [cookies, setCookies] = useState<string>('');
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cookies, setCookies] = useState<string>('');
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check session
-        const { data: { session: sessionData } } = await supabaseBrowser.auth.getSession();
-        setSession(sessionData);
-
-        // Check user
-        const { data: { user: userData } } = await supabaseBrowser.auth.getUser();
-        setUser(userData);
-
-        // Check cookies
-        const cookieString = document.cookie;
-        setCookies(cookieString);
-
-      } catch (_error) {
-        // Auth check error
+        const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user || null);
+      } catch (error) {
+        console.error('Error checking auth:', error);
       } finally {
         setLoading(false);
       }
@@ -38,7 +30,7 @@ export default function DebugAuthPage() {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: any, session: Session | null) => {
         setSession(session);
         setUser(session?.user || null);
       }
@@ -135,20 +127,10 @@ export default function DebugAuthPage() {
             </div>
 
             <div className="bg-yellow-50 p-4 rounded-lg">
-              <h2 className="text-lg font-semibold text-yellow-900 mb-3">Test Links</h2>
-              <div className="space-y-2">
-                <a
-                  href="/profile/settings"
-                  className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 inline-block mr-2"
-                >
-                  Try Profile Settings
-                </a>
-                <a
-                  href="/test-profile"
-                  className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 inline-block"
-                >
-                  Test Profile Page
-                </a>
+              <h2 className="text-lg font-semibold text-yellow-900 mb-3">Environment Variables</h2>
+              <div className="space-y-2 text-sm">
+                <p><strong>NEXT_PUBLIC_SUPABASE_URL:</strong> {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Not set'}</p>
+                <p><strong>NEXT_PUBLIC_SUPABASE_ANON_KEY:</strong> {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Not set'}</p>
               </div>
             </div>
           </div>

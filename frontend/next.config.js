@@ -279,22 +279,13 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
     // Optimize webpack cache to reduce serialization warnings
     webpackBuildWorker: true,
+    // Disable static generation to avoid Supabase issues
+    staticGenerationAsyncStorage: false,
   },
 
   // Disable prerendering to avoid build errors
   trailingSlash: false,
   generateEtags: false,
-  
-  // Disable static generation to avoid Supabase issues
-  experimental: {
-    // Enable modern features for better performance
-    // Removed @prisma/client from optimizePackageImports to prevent Query Engine bundling issues
-    optimizePackageImports: ['lucide-react'],
-    // Optimize webpack cache to reduce serialization warnings
-    webpackBuildWorker: true,
-    // Disable static generation
-    staticGenerationAsyncStorage: false,
-  },
 
   // Redirects configuration
   async redirects() {
