@@ -2,6 +2,7 @@
 
 import { X, MessageCircle, ExternalLink, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
+import { Session } from '@supabase/supabase-js';
 
 import { Review } from '@/components/reviews/ReviewCard';
 import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
@@ -54,7 +55,7 @@ interface ReviewsModalProps {
 }
 
 export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsModalProps) {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +86,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: any, session: any) => {
+      async (event: string, session: Session | null) => {
         setSession(session);
       }
     );

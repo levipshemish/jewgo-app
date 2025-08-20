@@ -195,31 +195,41 @@ export function useErrorHandler() {
     
     // Log to error reporting service
     if (process.env['NODE_ENV'] === 'production') {
-      try {
-        // Send to Sentry
-        Sentry.captureException(error, {
-          extra: {
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            userAgent: navigator.userAgent,
-          }
-        });
-      } catch (sentryError) {
-        // Fallback logging when Sentry fails
-        console.error('Sentry error reporting failed in useErrorHandler, using fallback logging:', {
-          originalError: {
-            message: error.message,
-            stack: error.stack,
-          },
-          sentryError: {
-            message: sentryError instanceof Error ? sentryError.message : String(sentryError),
-            stack: sentryError instanceof Error ? sentryError.stack : undefined,
-          },
-          timestamp: new Date().toISOString(),
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-        });
-      }
+      // Temporarily disabled Sentry to fix module resolution issues
+      // try {
+      //   // Send to Sentry
+      //   Sentry.captureException(error, {
+      //     extra: {
+      //       timestamp: new Date().toISOString(),
+      //       url: window.location.href,
+      //       userAgent: navigator.userAgent,
+      //     }
+      //   });
+      // } catch (sentryError) {
+      //   // Fallback logging when Sentry fails
+      //   console.error('Sentry error reporting failed in useErrorHandler, using fallback logging:', {
+      //     originalError: {
+      //       message: error.message,
+      //       stack: error.stack,
+      //     },
+      //     sentryError: {
+      //       message: sentryError instanceof Error ? sentryError.message : String(sentryError),
+      //       stack: sentryError instanceof Error ? sentryError.stack : undefined,
+      //     },
+      //     timestamp: new Date().toISOString(),
+      //     url: window.location.href,
+      //     userAgent: navigator.userAgent,
+      //   });
+      // }
+      
+      // Simple error logging for now
+      console.error('Production error:', {
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      });
     } else {
       // Development logging
       console.error('Development error:', {
