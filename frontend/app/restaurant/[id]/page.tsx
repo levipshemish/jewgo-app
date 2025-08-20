@@ -53,7 +53,7 @@ const RestaurantDetailPage: React.FC = () => {
         
         // Check if restaurant is in favorites
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-        setIsFavorite(favorites.includes(data.id));
+        setIsFavorite(favorites.includes(data.id.toString()));
       } else {
         throw new Error('Restaurant not found');
       }
@@ -237,8 +237,8 @@ const RestaurantDetailPage: React.FC = () => {
     
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
     const newFavorites = isFavorite 
-      ? favorites.filter((id: number) => id !== restaurant.id)
-      : [...favorites, restaurant.id];
+      ? favorites.filter((id: string) => id !== restaurant.id.toString())
+      : [...favorites, restaurant.id.toString()];
     
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
     setIsFavorite(!isFavorite);
