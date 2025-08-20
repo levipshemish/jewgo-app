@@ -47,7 +47,7 @@ export default function EateryExplorePage() {
   // Location state for filters
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [_locationError, setLocationError] = useState<string | null>(null);
 
   // Calculate items per page based on current screen size and grid columns
   const getItemsPerPage = () => {
@@ -91,52 +91,52 @@ export default function EateryExplorePage() {
     return () => window.removeEventListener('resize', updateItemsPerPage);
   }, []);
 
-  // Get user location
-  const _getUserLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser');
-      return;
-    }
+  // Get user location - currently unused
+  // const getUserLocation = () => {
+  //   if (!navigator.geolocation) {
+  //     setLocationError('Geolocation is not supported by this browser');
+  //     return;
+  //   }
 
-    setLocationLoading(true);
-    setLocationError(null);
+  //   setLocationLoading(true);
+  //   setLocationError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocationLoading(false);
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        setLocationLoading(false);
-        let errorMessage = 'Unable to get your location';
+  //   navigator.geolocation.getCurrentPosition(
+  //     (position) => {
+  //       setLocationLoading(false);
+  //       setUserLocation({
+  //         latitude: position.coords.latitude,
+  //         longitude: position.coords.longitude,
+  //       });
+  //     },
+  //     (_error) => {
+  //       setLocationLoading(false);
+  //       let errorMessage = 'Unable to get your location';
         
-        if (error && typeof error === 'object' && 'code' in error) {
-          const errorCode = (error as GeolocationPositionError).code;
-          switch (errorCode) {
-            case (error as GeolocationPositionError).PERMISSION_DENIED:
-              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-              break;
-            case (error as GeolocationPositionError).POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again.';
-              break;
-            case (error as GeolocationPositionError).TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
-              break;
-          }
-        }
+  //       if (_error && typeof _error === 'object' && 'code' in _error) {
+  //         const errorCode = (_error as GeolocationPositionError).code;
+  //         switch (errorCode) {
+  //           case (_error as GeolocationPositionError).PERMISSION_DENIED:
+  //             errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+  //             break;
+  //           case (_error as GeolocationPositionError).POSITION_UNAVAILABLE:
+  //             errorMessage = 'Location information is unavailable. Please try again.';
+  //             break;
+  //           case (_error as GeolocationPositionError).TIMEOUT:
+  //             errorMessage = 'Location request timed out. Please try again.';
+  //             break;
+  //         }
+  //       }
         
-        setLocationError(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  };
+  //       setLocationError(errorMessage);
+  //     },
+  //     {
+  //       enableHighAccuracy: true,
+  //       timeout: 15000,
+  //       maximumAge: 300000, // 5 minutes
+  //     }
+  //   );
+  // };
 
   // Detect mobile device and enable infinite scroll
   useEffect(() => {

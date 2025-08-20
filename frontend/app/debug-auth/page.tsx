@@ -16,18 +16,18 @@ export default function DebugAuthPage() {
     const checkAuth = async () => {
       try {
         // Check session
-        const { data: { session: sessionData }, error: sessionError } = await supabaseBrowser.auth.getSession();
+        const { data: { session: sessionData } } = await supabaseBrowser.auth.getSession();
         setSession(sessionData);
 
         // Check user
-        const { data: { user: userData }, error: userError } = await supabaseBrowser.auth.getUser();
+        const { data: { user: userData } } = await supabaseBrowser.auth.getUser();
         setUser(userData);
 
         // Check cookies
         const cookieString = document.cookie;
         setCookies(cookieString);
 
-      } catch (error) {
+      } catch (_error) {
         // Auth check error
       } finally {
         setLoading(false);
@@ -49,19 +49,19 @@ export default function DebugAuthPage() {
 
   const handleSignIn = async () => {
     try {
-      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
+      await supabaseBrowser.auth.signInWithPassword({
         email: 'mendel1023@gmail.com',
         password: 'your-password-here' // You'll need to enter this
       });
-    } catch (error) {
+    } catch {
       // Sign in error
     }
   };
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabaseBrowser.auth.signOut();
-    } catch (error) {
+      await supabaseBrowser.auth.signOut();
+    } catch {
       // Sign out error
     }
   };

@@ -1,14 +1,11 @@
-import logging
 import os
-import sys
 import time
 import traceback
-import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 import sentry_sdk
-from flask import Flask, g, jsonify, make_response, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -17,8 +14,6 @@ from flask_session import Session
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from utils.logging_config import get_logger
-from werkzeug.exceptions import HTTPException
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 logger = get_logger(__name__)
 
@@ -1326,31 +1321,8 @@ def create_app(config_class=None):
     return app
 
 
-def _register_all_routes(app, limiter, deps, logger) -> None:
-    """Register all API routes with the Flask application."""
-    # Unpack dependencies
-    EnhancedDatabaseManager = deps.get("EnhancedDatabaseManager")
-    Config = deps.get("Config")
-    ErrorHandler = deps.get("ErrorHandler")
-    APIResponse = deps.get("APIResponse")
-    security = deps.get("security", {})
-    feature_flags = deps.get("feature_flags", {})
-    FeedbackManager = deps.get("FeedbackManager")
-
-    # Import decorators if available
-    require_ip_restriction = security.get("require_ip_restriction", lambda f: f)
-    require_scraper_auth = security.get("require_scraper_auth", lambda f: f)
-    require_admin_auth = security.get("require_admin_auth", lambda f: f)
-    validate_request_data = security.get(
-        "validate_request_data",
-        lambda **kwargs: lambda f: f,
-    )
-    log_request = security.get("log_request", lambda f: f)
-    require_feature_flag = feature_flags.get(
-        "require_feature_flag",
-        lambda flag, **kwargs: lambda f: f,
-    )
-
+def _setup_response_helpers(APIResponse):
+    """Setup response helper functions."""
     # Response helpers (standardized API responses)
     try:
         from utils.api_response import (
@@ -1376,6 +1348,79 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
         if APIResponse:
             return APIResponse(message=message, status_code=status_code).to_response()
         return jsonify({"success": False, "message": message}), status_code
+
+    return {
+        'created_response': created_response,
+        'kosher_types_response': kosher_types_response,
+        'not_found_response': not_found_response,
+        'restaurant_response': restaurant_response,
+        'restaurants_response': restaurants_response,
+        'statistics_response': statistics_response,
+        'success_response': success_response,
+        'validation_error_response': validation_error_response,
+        'error_response': error_response
+    }
+
+
+def _setup_security_decorators(security, feature_flags):
+    """Setup security and feature flag decorators."""
+    # Import decorators if available
+    require_ip_restriction = security.get("require_ip_restriction", lambda f: f)
+    require_scraper_auth = security.get("require_scraper_auth", lambda f: f)
+    require_admin_auth = security.get("require_admin_auth", lambda f: f)
+    validate_request_data = security.get(
+        "validate_request_data",
+        lambda **kwargs: lambda f: f,
+    )
+    log_request = security.get("log_request", lambda f: f)
+    require_feature_flag = feature_flags.get(
+        "require_feature_flag",
+        lambda flag, **kwargs: lambda f: f,
+    )
+
+    return {
+        'require_ip_restriction': require_ip_restriction,
+        'require_scraper_auth': require_scraper_auth,
+        'require_admin_auth': require_admin_auth,
+        'validate_request_data': validate_request_data,
+        'log_request': log_request,
+        'require_feature_flag': require_feature_flag
+    }
+
+
+def _register_all_routes(app, limiter, deps, logger) -> None:
+    """Register all API routes with the Flask application."""
+    # Unpack dependencies
+    EnhancedDatabaseManager = deps.get("EnhancedDatabaseManager")
+    Config = deps.get("Config")
+    ErrorHandler = deps.get("ErrorHandler")
+    APIResponse = deps.get("APIResponse")
+    security = deps.get("security", {})
+    feature_flags = deps.get("feature_flags", {})
+    FeedbackManager = deps.get("FeedbackManager")
+
+    # Setup helpers and decorators
+    response_helpers = _setup_response_helpers(APIResponse)
+    security_decorators = _setup_security_decorators(security, feature_flags)
+    
+    # Extract commonly used helpers
+    created_response = response_helpers['created_response']
+    kosher_types_response = response_helpers['kosher_types_response']
+    not_found_response = response_helpers['not_found_response']
+    restaurant_response = response_helpers['restaurant_response']
+    restaurants_response = response_helpers['restaurants_response']
+    statistics_response = response_helpers['statistics_response']
+    success_response = response_helpers['success_response']
+    validation_error_response = response_helpers['validation_error_response']
+    error_response = response_helpers['error_response']
+    
+    # Extract commonly used decorators
+    require_ip_restriction = security_decorators['require_ip_restriction']
+    require_scraper_auth = security_decorators['require_scraper_auth']
+    require_admin_auth = security_decorators['require_admin_auth']
+    validate_request_data = security_decorators['validate_request_data']
+    log_request = security_decorators['log_request']
+    require_feature_flag = security_decorators['require_feature_flag']
 
     # Database connection test endpoint
     @app.route("/api/db-test", methods=["GET"])

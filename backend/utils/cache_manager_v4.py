@@ -1,8 +1,7 @@
 import hashlib
 import json
-import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from utils.error_handler import handle_cache_operation
 from utils.logging_config import get_logger
