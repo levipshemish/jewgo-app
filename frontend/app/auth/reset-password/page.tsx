@@ -16,6 +16,7 @@ function ResetPasswordForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [hasValidTokens, setHasValidTokens] = useState(false);
 
   // Check if we have the necessary tokens from the URL
   useEffect(() => {
@@ -24,6 +25,9 @@ function ResetPasswordForm() {
     
     if (!accessToken || !refreshToken) {
       setError("Invalid or missing reset link. Please request a new password reset.");
+      setHasValidTokens(false);
+    } else {
+      setHasValidTokens(true);
     }
   }, [searchParams]);
 
@@ -45,6 +49,13 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent submission if tokens are invalid
+    if (!hasValidTokens) {
+      setError("Invalid or missing reset link. Please request a new password reset.");
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
 
@@ -172,9 +183,10 @@ function ResetPasswordForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
+                  disabled={!hasValidTokens}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10"
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Enter new password"
                 />
                 <button
@@ -210,9 +222,10 @@ function ResetPasswordForm() {
                   type={showConfirmPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
+                  disabled={!hasValidTokens}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10"
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Confirm new password"
                 />
                 <button
@@ -238,7 +251,7 @@ function ResetPasswordForm() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !hasValidTokens}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
