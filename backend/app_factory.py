@@ -1803,91 +1803,49 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             )
             return jsonify({"error": "Failed to fetch website"}), 500
 
-    # Restaurant hours endpoint - GET for public access, PUT for admin updates
-    @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["GET", "PUT"])
-    def restaurant_hours(restaurant_id: int):
-        """Handle restaurant hours - GET for display, PUT for admin updates."""
-        if request.method == "GET":
-            # Rate limiting for GET requests
-            if not limiter.test("100 per minute"):
-                return jsonify({"error": "Rate limit exceeded"}), 429
+    # Restaurant hours GET endpoint - public access
+    @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["GET"])
+    def get_restaurant_hours(restaurant_id: int):
+        """Get restaurant hours for display."""
+        try:
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
             
-            try:
-                # Get database manager
-                db_manager = deps.get("get_db_manager")()
-                if not db_manager:
-                    return jsonify({"error": "Database not available"}), 503
-                
-                # Get restaurant data
-                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-                if not restaurant:
-                    return jsonify({"error": "Restaurant not found"}), 404
-                
-                # Get hours data
-                hours_json = restaurant.get("hours_of_operation")
-                if not hours_json:
-                    # Return empty hours response
-                    from utils.hours_formatter import HoursFormatter
-                    return jsonify(HoursFormatter._get_empty_hours_response()), 200
-                
-                # Parse and format hours
+            # Get restaurant data
+            restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+            if not restaurant:
+                return jsonify({"error": "Restaurant not found"}), 404
+            
+            # Get hours data
+            hours_json = restaurant.get("hours_of_operation")
+            if not hours_json:
+                # Return empty hours response
                 from utils.hours_formatter import HoursFormatter
-                from utils.hours_parser import parse_hours_blob
-                
-                try:
-                    if isinstance(hours_json, str):
-                        hours_doc = parse_hours_blob(hours_json)
-                    else:
-                        hours_doc = hours_json
-                    
-                    formatted_hours = HoursFormatter.format_for_display(hours_doc)
-                    return jsonify(formatted_hours), 200
-                    
-                except Exception as e:
-                    logger.warning(f"Error parsing hours for restaurant {restaurant_id}: {e}")
-                    # Return empty hours response on parsing error
-                    return jsonify(HoursFormatter._get_empty_hours_response()), 200
-                
-            except Exception as e:
-                logger.error(f"Error fetching hours for restaurant {restaurant_id}: {e}")
-                return jsonify({"error": "Failed to fetch hours"}), 500
-        
-        elif request.method == "PUT":
-            # Rate limiting for PUT requests
-            if not limiter.test("30 per hour"):
-                return jsonify({"error": "Rate limit exceeded"}), 429
+                return jsonify(HoursFormatter._get_empty_hours_response()), 200
             
-            # Admin authentication for PUT requests
-            if not require_admin_auth(lambda: None)():
-                return jsonify({"error": "Unauthorized"}), 401
+            # Parse and format hours
+            from utils.hours_formatter import HoursFormatter
+            from utils.hours_parser import parse_hours_blob
             
             try:
-                # Get request data
-                data = request.get_json(silent=True) or {}
-                hours_data = data.get("hours_of_operation", {})
-                updated_by = data.get("updated_by", "admin")
+                if isinstance(hours_json, str):
+                    hours_doc = parse_hours_blob(hours_json)
+                else:
+                    hours_doc = hours_json
                 
-                # Get database manager
-                db_manager = deps.get("get_db_manager")()
-                if not db_manager:
-                    return jsonify({"error": "Database not available"}), 503
-                
-                # Create restaurant service
-                restaurant_service = RestaurantService(db_manager)
-                
-                # Update hours
-                updated_hours = restaurant_service.update_restaurant_hours(
-                    restaurant_id, hours_data, updated_by
-                )
-                
-                return jsonify({
-                    "status": "success",
-                    "data": updated_hours
-                }), 200
+                formatted_hours = HoursFormatter.format_for_display(hours_doc)
+                return jsonify(formatted_hours), 200
                 
             except Exception as e:
-                logger.error(f"Admin update hours error: {e}", restaurant_id=restaurant_id)
-                return jsonify({"error": str(e)}), 400
+                logger.warning(f"Error parsing hours for restaurant {restaurant_id}: {e}")
+                # Return empty hours response on parsing error
+                return jsonify(HoursFormatter._get_empty_hours_response()), 200
+            
+        except Exception as e:
+            logger.error(f"Error fetching hours for restaurant {restaurant_id}: {e}")
+            return jsonify({"error": "Failed to fetch hours"}), 500
 
     # Duplicate test-sentry route removed - already defined above
 
