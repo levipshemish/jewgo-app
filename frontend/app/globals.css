@@ -2539,3 +2539,24 @@ div[class*="specials-dynamic-grid"] {
   }
 }
 
+/* Eatery Card Text Alignment Fixes */
+.restaurant-card {
+  text-align: left !important;
+}
+
+.restaurant-card h3 {
+  text-align: left !important;
+  text-align-last: left !important;
+}
+
+.restaurant-card .price-text {
+  text-align: left !important;
+  text-align-last: left !important;
+}
+
+/* Ensure proper spacing between restaurant name and price */
+.restaurant-card .price-text {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+

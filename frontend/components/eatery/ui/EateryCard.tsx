@@ -295,11 +295,11 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       </div>
 
       {/* Text Content Container - Fixed height structure for consistency */}
-      <div className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-2 pb-2' : 'p-2'}`}>
-        {/* Restaurant Name - Fixed height container with smart truncation */}
-        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0' : 'h-8 mb-0'}`}>
+      <div className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-2 pt-2 pb-2' : 'p-3'}`}>
+        {/* Restaurant Name - Fixed height container with proper alignment */}
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-1'}`}>
           <h3 
-            className={`font-bold text-gray-900 leading-tight w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
+            className={`font-bold text-gray-900 leading-tight w-full min-w-0 text-left ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
             title={titleCase(restaurant.name)}
             style={{
               overflow: 'hidden',
@@ -312,13 +312,13 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           </h3>
         </div>
         
-        {/* Price Range and Rating - Fixed height meta row with better spacing */}
+        {/* Price Range and Rating - Fixed height meta row with proper alignment */}
         <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-          <span className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+          <span className={`text-gray-500 font-normal truncate flex-1 min-w-0 text-left price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </span>
           
-          <div className="flex items-center gap-1 flex-shrink-0 rating-container pr-1">
+          <div className="flex items-center gap-1 flex-shrink-0 rating-container">
             <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
             <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
               {getRating().toFixed(1)}
