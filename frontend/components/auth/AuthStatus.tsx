@@ -102,9 +102,9 @@ export default function AuthStatus({ className = "" }: AuthStatusProps) {
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
-        {user.image && (
+        {user.avatar_url && (
           <img
-            src={user.image}
+            src={user.avatar_url}
             alt={user.name || user.email}
             className="h-8 w-8 rounded-full"
           />

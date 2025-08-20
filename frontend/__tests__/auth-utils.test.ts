@@ -118,7 +118,7 @@ describe('transformSupabaseUser', () => {
       id: 'user-123',
       email: 'test@example.com',
       name: 'Test User',
-      avatar: 'https://example.com/avatar.jpg',
+      avatar_url: 'https://example.com/avatar.jpg',
       provider: 'apple',
       providerInfo: {
         name: 'Apple',
@@ -175,7 +175,7 @@ describe('transformSupabaseUser', () => {
     };
     const result = transformSupabaseUser(minimalUser);
     expect(result?.name).toBe(null);
-    expect(result?.avatar).toBe(null);
+    expect(result?.avatar_url).toBe(null);
   });
 });
 

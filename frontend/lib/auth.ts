@@ -73,7 +73,7 @@ export async function getUserProfile() {
     id: user.id,
     email: user.email,
     name: user.name,
-    image: user.image,
+    avatar_url: user.avatar_url,
     provider: user.provider
   };
 }

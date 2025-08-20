@@ -24,11 +24,17 @@ interface User {
 export interface TransformedUser {
   id: string;
   email: string | undefined;
-  name?: string;
+  name: string | null;
   username?: string;
-  image?: string | null;
-  provider: string;
-  avatar_url?: string | null;
+  provider: 'apple' | 'google' | 'unknown';
+  avatar_url: string | null;
+  providerInfo: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
@@ -77,9 +83,12 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
   return {
     id: user.id,
     email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
-    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
-    provider: provider as 'apple' | 'google' | 'unknown'
+    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+    provider: provider as 'apple' | 'google' | 'unknown',
+    providerInfo,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at
   };
 }
 
@@ -116,7 +125,12 @@ export function createMockUser(): TransformedUser {
     name: 'Development User',
     username: 'dev-user',
     provider: 'development',
-    avatar_url: null
+    avatar_url: null,
+    providerInfo: {
+      name: 'Development',
+      icon: '👤',
+      color: '#6B7280'
+    }
   };
 }
 
