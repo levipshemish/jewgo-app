@@ -39,6 +39,7 @@ describe('validateRedirectUrl', () => {
 
   test('filters query parameters to safe ones only', () => {
     expect(validateRedirectUrl('/app?tab=settings')).toBe('/app?tab=settings');
+    expect(validateRedirectUrl('/app?ref=signup')).toBe('/app?ref=signup');
     expect(validateRedirectUrl('/app?utm_source=google')).toBe('/app?utm_source=google');
     expect(validateRedirectUrl('/app?utm_campaign=signup')).toBe('/app?utm_campaign=signup');
     

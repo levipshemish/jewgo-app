@@ -1,11 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
-
-// Server-side Supabase client
-const supabaseServer = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 /**
  * Persist Apple user name with race-safe UPSERT
@@ -15,6 +9,8 @@ export async function persistAppleUserName(userId: string, name: string | null, 
   if (!name || !name.trim()) return;
   
   try {
+    const supabaseServer = await createSupabaseServerClient();
+    
     // Call the SQL function via RPC for race-safe name persistence
     const { error } = await supabaseServer.rpc('upsert_profile_with_name', {
       p_user_id: userId,
@@ -76,14 +72,16 @@ export function isPrivateRelayEmail(email: string): boolean {
 }
 
 /**
- * Attempt identity linking using Supabase's official APIs
+ * Attempt identity linking using Supabase admin API
  * Returns success status and any conflict information
  */
-export async function attemptIdentityLinking(userId: string, provider: string) {
+export async function attemptIdentityLinking(userId: string, identity: {provider: 'apple'|'google', identity_token?: string}) {
   try {
-    // Note: Supabase doesn't have a direct linkUser API
+    const supabaseAdmin = await createSupabaseServerClient();
+    
+    // Note: Supabase doesn't have a direct linkIdentity API in the current version
     // This would need to be implemented differently based on requirements
-    console.log(`Identity linking requested for user ${userId} with provider ${provider}`);
+    console.log(`Identity linking requested for user ${userId} with provider ${identity.provider}`);
     
     // For now, return a placeholder response
     return { success: false, conflict: false, error: new Error('Identity linking not implemented') };

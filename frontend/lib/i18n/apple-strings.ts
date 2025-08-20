@@ -52,29 +52,6 @@
 // - Basque (eu)
 // - Catalan (ca)
 // - Galician (gl)
-// - Occitan (oc)
-// - Breton (br)
-// - Friulian (fur)
-// - Sardinian (sc)
-// - Venetian (vec)
-// - Lombard (lmo)
-// - Piedmontese (pms)
-// - Ligurian (lij)
-// - Emilian (eml)
-// - Romagnol (rgn)
-// - Neapolitan (nap)
-// - Sicilian (scn)
-// - Corsican (co)
-// - Romansh (rm)
-// - Ladino (lad)
-// - Jbo (jbo)
-// - Esperanto (eo)
-// - Interlingua (ia)
-// - Interlingue (ie)
-// - Volapük (vo)
-// - Novial (nov)
-// - Lingua Franca Nova (lfn)
-// - Toki Pona (tok)
 
 interface SupportedLocale {
   code: string;
@@ -128,30 +105,7 @@ const APPLE_SIGN_IN_STRINGS: SupportedLocale[] = [
   { code: 'cy', text: 'Mewngofnodi gydag Apple' },
   { code: 'eu', text: 'Saioa hasi Apple-rekin' },
   { code: 'ca', text: 'Inicia sessió amb Apple' },
-  { code: 'gl', text: 'Iniciar sesión con Apple' },
-  { code: 'oc', text: 'Se connectar amb Apple' },
-  { code: 'br', text: 'Kevreañ gant Apple' },
-  { code: 'fur', text: 'Jentre cun Apple' },
-  { code: 'sc', text: 'Intra cun Apple' },
-  { code: 'vec', text: 'Intra cun Apple' },
-  { code: 'lmo', text: 'Intra cun Apple' },
-  { code: 'pms', text: 'Intra cun Apple' },
-  { code: 'lij', text: 'Intra cun Apple' },
-  { code: 'eml', text: 'Intra cun Apple' },
-  { code: 'rgn', text: 'Intra cun Apple' },
-  { code: 'nap', text: 'Intra cun Apple' },
-  { code: 'scn', text: 'Intra cun Apple' },
-  { code: 'co', text: 'Intra cun Apple' },
-  { code: 'rm', text: 'S\'annunziar cun Apple' },
-  { code: 'lad', text: 'Entrar kon Apple' },
-  { code: 'jbo', text: 'cu\'e Apple co\'e jvinu' },
-  { code: 'eo', text: 'Ensaluti per Apple' },
-  { code: 'ia', text: 'Aperir session con Apple' },
-  { code: 'ie', text: 'Intrar con Apple' },
-  { code: 'vo', text: 'Nunädön me Apple' },
-  { code: 'nov', text: 'Intra kun Apple' },
-  { code: 'lfn', text: 'Intra con Apple' },
-  { code: 'tok', text: 'o open e sitelen tawa jan tan Apple' }
+  { code: 'gl', text: 'Iniciar sesión con Apple' }
 ];
 
 /**

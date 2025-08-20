@@ -157,23 +157,34 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       return '/';
     }
 
+    // Check for encoded attacks in the original URL
+    const decodedUrl = decodeURIComponent(url);
+    if (decodedUrl.includes('://') || decodedUrl.includes('//') || decodedUrl.includes('#')) {
+      return '/';
+    }
+
     // Enforce max length
     if (url.length > 2048) {
       return '/';
     }
 
     const urlObj = new URL(url, 'http://localhost');
-    const pathname = urlObj.pathname;
+    const decodedPath = decodeURIComponent(urlObj.pathname);
+    
+    // Check for encoded attacks in the pathname
+    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('#')) {
+      return '/';
+    }
     
     // Treat "/" as exact root only
-    if (pathname === '/') {
+    if (decodedPath === '/') {
       return '/';
     }
     
     // Allow prefixes only for specific paths
     const allowedPrefixes = ['/app', '/dashboard', '/profile', '/settings'];
     const hasAllowedPrefix = allowedPrefixes.some(prefix => 
-      pathname.startsWith(prefix + '/') || pathname === prefix
+      decodedPath.startsWith(prefix + '/') || decodedPath === prefix
     );
     
     if (!hasAllowedPrefix) {
@@ -183,7 +194,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     // Filter query parameters to safe ones only
     const safeParams = new URLSearchParams();
     const allowedParamPrefixes = ['utm_'];
-    const allowedExactParams = ['tab'];
+    const allowedExactParams = ['tab', 'ref'];
     
     // Use Array.from to avoid iteration issues
     Array.from(urlObj.searchParams.entries()).forEach(([key, value]) => {
@@ -194,7 +205,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     });
 
     // Reconstruct safe URL without fragments
-    const safeUrl = pathname + (safeParams.toString() ? `?${safeParams.toString()}` : '');
+    const safeUrl = decodedPath + (safeParams.toString() ? `?${safeParams.toString()}` : '');
     return safeUrl;
     
   } catch {

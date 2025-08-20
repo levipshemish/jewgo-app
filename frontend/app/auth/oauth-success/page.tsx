@@ -23,6 +23,14 @@ function OAuthSuccessContent() {
           return;
         }
 
+        // Check for authorization code first (from callback route)
+        const code = searchParams.get('code');
+        if (code) {
+          setStatus("Exchanging authorization code for session...");
+          await handleCodeExchange(code);
+          return;
+        }
+
         // Get the hash from the URL
         const hash = window.location.hash.substring(1); // Remove the # symbol
         
@@ -56,6 +64,35 @@ function OAuthSuccessContent() {
         setStatus("Unexpected error occurred");
         // Remove setTimeout delay - redirect immediately
         router.push('/auth/auth-code-error?error=unexpected');
+      }
+    };
+
+    const handleCodeExchange = async (code: string) => {
+      try {
+        const { data, error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          console.error('Code exchange error:', error);
+          setStatus("Error exchanging authorization code");
+          router.push('/auth/auth-code-error?error=code_exchange_failed');
+          return;
+        }
+
+        if (data.session) {
+          setStatus("Authentication successful! Syncing user data...");
+          await syncUserData(data.session.user);
+          
+          // Get the next parameter for redirect
+          const next = searchParams.get('next') || '/eatery';
+          router.push(next);
+        } else {
+          setStatus("No session created from code exchange");
+          router.push('/auth/auth-code-error?error=no_session');
+        }
+      } catch (error) {
+        console.error('Code exchange error:', error);
+        setStatus("Error exchanging authorization code");
+        router.push('/auth/auth-code-error?error=code_exchange_failed');
       }
     };
 
