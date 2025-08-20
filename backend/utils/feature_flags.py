@@ -23,7 +23,6 @@ from functools import wraps
 from typing import Any
 
 from flask import jsonify, make_response, request
-
 from utils.logging_config import get_logger
 
 # Try to import Split.io, but don't fail if not available
@@ -33,6 +32,7 @@ except ImportError:
     get_factory = None
 
 logger = get_logger(__name__)
+
 
 class FeatureFlag:
     """Represents a single feature flag."""
@@ -272,7 +272,7 @@ class FeatureFlagManager:
             "api_v4_marketplace": FeatureFlag(
                 name="api_v4_marketplace",
                 enabled=True,
-                                        description="Marketplace system for buying, selling, and borrowing listings",
+                description="Marketplace system for buying, selling, and borrowing listings",
                 version="1.0",
                 rollout_percentage=100.0,
             ),

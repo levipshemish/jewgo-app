@@ -3,15 +3,14 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
+from services import hours_compute, hours_normalizer, hours_sources
 from services.base_service import BaseService
-from utils.error_handler import NotFoundError, ValidationError
 from utils.cloudinary_uploader import CloudinaryUploader
-from services import hours_normalizer
-from services import hours_compute
-from services import hours_sources
+from utils.error_handler import NotFoundError, ValidationError
 
 #!/usr/bin/env python3
 """Restaurant service v4 - handles all restaurant-related business logic using DatabaseManager v4."""
+
 
 class RestaurantServiceV4(BaseService):
     """Service for restaurant-related operations using DatabaseManager v4."""
@@ -87,7 +86,9 @@ class RestaurantServiceV4(BaseService):
             # Apply any post-processing
             processed_restaurant = self._process_restaurant_data(restaurant)
 
-            self.logger.info("Successfully retrieved restaurant", restaurant_id=restaurant_id)
+            self.logger.info(
+                "Successfully retrieved restaurant", restaurant_id=restaurant_id
+            )
             return processed_restaurant
 
         except (NotFoundError, ValidationError):
@@ -184,7 +185,9 @@ class RestaurantServiceV4(BaseService):
             return processed_restaurants
 
         except Exception as e:
-            self.logger.exception("Error searching restaurants near location", error=str(e))
+            self.logger.exception(
+                "Error searching restaurants near location", error=str(e)
+            )
             raise
 
     def create_restaurant(self, restaurant_data: dict[str, Any]) -> dict[str, Any]:
@@ -248,7 +251,11 @@ class RestaurantServiceV4(BaseService):
             ValidationError: If update data is invalid
 
         """
-        if not restaurant_id or not isinstance(restaurant_id, int) or restaurant_id <= 0:
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("update_restaurant", restaurant_id=restaurant_id)
@@ -261,7 +268,9 @@ class RestaurantServiceV4(BaseService):
             processed_data = self._preprocess_restaurant_data(update_data)
 
             # Use database manager v4's update method
-            success = self.db_manager.update_restaurant_data(restaurant_id, processed_data)
+            success = self.db_manager.update_restaurant_data(
+                restaurant_id, processed_data
+            )
 
             if not success:
                 raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
@@ -275,7 +284,9 @@ class RestaurantServiceV4(BaseService):
             # Apply any post-processing
             processed_restaurant = self._process_restaurant_data(updated_restaurant)
 
-            self.logger.info("Successfully updated restaurant", restaurant_id=restaurant_id)
+            self.logger.info(
+                "Successfully updated restaurant", restaurant_id=restaurant_id
+            )
             return processed_restaurant
 
         except (NotFoundError, ValidationError):
@@ -297,7 +308,11 @@ class RestaurantServiceV4(BaseService):
             NotFoundError: If restaurant doesn't exist
 
         """
-        if not restaurant_id or not isinstance(restaurant_id, int) or restaurant_id <= 0:
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("delete_restaurant", restaurant_id=restaurant_id)
@@ -309,7 +324,9 @@ class RestaurantServiceV4(BaseService):
             if not success:
                 raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
 
-            self.logger.info("Successfully deleted restaurant", restaurant_id=restaurant_id)
+            self.logger.info(
+                "Successfully deleted restaurant", restaurant_id=restaurant_id
+            )
             return True
 
         except NotFoundError:
@@ -335,7 +352,9 @@ class RestaurantServiceV4(BaseService):
             return stats
 
         except Exception as e:
-            self.logger.exception("Error retrieving restaurant statistics", error=str(e))
+            self.logger.exception(
+                "Error retrieving restaurant statistics", error=str(e)
+            )
             raise
 
     def get_restaurant_images(self, restaurant_id: int) -> list[dict[str, Any]]:
@@ -348,7 +367,11 @@ class RestaurantServiceV4(BaseService):
             List of image dictionaries
 
         """
-        if not restaurant_id or not isinstance(restaurant_id, int) or restaurant_id <= 0:
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("get_restaurant_images", restaurant_id=restaurant_id)
@@ -387,7 +410,11 @@ class RestaurantServiceV4(BaseService):
             Created image dictionary
 
         """
-        if not restaurant_id or not isinstance(restaurant_id, int) or restaurant_id <= 0:
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
             raise ValidationError("Invalid restaurant ID")
 
         if not image_url:
@@ -407,7 +434,9 @@ class RestaurantServiceV4(BaseService):
             if not image:
                 raise Exception("Failed to add restaurant image")
 
-            self.logger.info("Successfully added restaurant image", restaurant_id=restaurant_id)
+            self.logger.info(
+                "Successfully added restaurant image", restaurant_id=restaurant_id
+            )
             return image
 
         except Exception as e:
@@ -429,7 +458,9 @@ class RestaurantServiceV4(BaseService):
 
         return processed_filters
 
-    def _process_restaurant_list(self, restaurants: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _process_restaurant_list(
+        self, restaurants: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Process a list of restaurants."""
         processed_restaurants = []
         for restaurant in restaurants:
@@ -451,11 +482,20 @@ class RestaurantServiceV4(BaseService):
 
     def _validate_restaurant_data(self, data: dict[str, Any]) -> None:
         """Validate restaurant data."""
-        required_fields = ["name", "address", "city", "state", "zip_code", "phone_number"]
+        required_fields = [
+            "name",
+            "address",
+            "city",
+            "state",
+            "zip_code",
+            "phone_number",
+        ]
         missing_fields = [field for field in required_fields if not data.get(field)]
-        
+
         if missing_fields:
-            raise ValidationError(f"Missing required fields: {', '.join(missing_fields)}")
+            raise ValidationError(
+                f"Missing required fields: {', '.join(missing_fields)}"
+            )
 
     def _validate_restaurant_update_data(self, data: dict[str, Any]) -> None:
         """Validate restaurant update data."""

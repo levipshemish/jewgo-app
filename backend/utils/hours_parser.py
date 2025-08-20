@@ -1,14 +1,8 @@
-from utils.logging_config import get_logger
-
 import json
 import re
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
-
-
-
-
-
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -34,27 +28,37 @@ UNICODE_SPACES = [
 
 DASHES = ["\u2013", "\u2014", "\u2212"]  # en dash, em dash, minus
 
-DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-DAY_RE = re.compile(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*(.+)$", re.I)
+DAY_NAMES = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+DAY_RE = re.compile(
+    r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday):\s*(.+)$", re.I
+)
 
 
 def _normalize_hours_text(s: str) -> str:
     """Normalize Unicode characters and formatting in hours text."""
     if not isinstance(s, str):
         return ""
-    
+
     # Replace Unicode spaces with regular spaces
     for sp in UNICODE_SPACES:
         s = s.replace(sp, " ")
-    
+
     # Replace Unicode dashes with regular dashes
     for d in DASHES:
         s = s.replace(d, "-")
-    
+
     # Normalize spacing around dashes
     s = re.sub(r"\s+-\s+", "-", s)  # "  -  " → "-"
     s = re.sub(r"\s{2,}", " ", s).strip()  # collapse spaces
-    
+
     return s
 
 
@@ -107,7 +111,7 @@ def validate_hours_format(hours_data: Any) -> Dict[str, Any]:
     """Validate hours data format and return validation results."""
     if not hours_data:
         return {"valid": False, "error": "No hours data provided"}
-    
+
     try:
         if isinstance(hours_data, str):
             # Try to parse as JSON first
@@ -117,19 +121,25 @@ def validate_hours_format(hours_data: Any) -> Dict[str, Any]:
                     return {"valid": True, "format": "json", "data": parsed}
             except json.JSONDecodeError:
                 pass
-            
+
             # Try to parse as human-readable text
             parsed = parse_hours_blob(hours_data)
             if parsed:
                 return {"valid": True, "format": "text", "data": parsed}
             else:
-                return {"valid": False, "error": "Could not parse as JSON or text format"}
-        
+                return {
+                    "valid": False,
+                    "error": "Could not parse as JSON or text format",
+                }
+
         elif isinstance(hours_data, dict):
             return {"valid": True, "format": "dict", "data": hours_data}
-        
+
         else:
-            return {"valid": False, "error": f"Unsupported data type: {type(hours_data)}"}
-    
+            return {
+                "valid": False,
+                "error": f"Unsupported data type: {type(hours_data)}",
+            }
+
     except Exception as e:
         return {"valid": False, "error": f"Validation error: {str(e)}"}

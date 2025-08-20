@@ -3,13 +3,9 @@ import os
 from app_factory import create_app
 from dotenv import load_dotenv
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Test Flask app initialization and database manager."""
+
 
 def test_flask_app() -> None:
     """Test Flask app initialization."""

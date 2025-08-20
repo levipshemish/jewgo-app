@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Test script for streamlined marketplace API endpoints."""
 
-import requests
 import json
 import time
 
+import requests
+
 BASE_URL = "http://localhost:5001/api/v4/marketplace"
+
 
 def test_categories():
     """Test categories endpoint."""
@@ -15,11 +17,12 @@ def test_categories():
     if response.status_code == 200:
         data = response.json()
         print(f"Categories: {len(data.get('data', []))}")
-        for category in data.get('data', [])[:3]:
+        for category in data.get("data", [])[:3]:
             print(f"  - {category['name']} ({category['slug']})")
     else:
         print(f"Error: {response.text}")
     print()
+
 
 def test_listings():
     """Test listings endpoint."""
@@ -34,10 +37,11 @@ def test_listings():
         print(f"Error: {response.text}")
     print()
 
+
 def test_create_regular_listing():
     """Test creating a regular listing."""
     print("Testing create regular listing endpoint...")
-    
+
     listing_data = {
         "title": "Test Dining Table",
         "description": "Solid wood dining table, seats 6",
@@ -47,29 +51,30 @@ def test_create_regular_listing():
         "condition": "used_good",
         "city": "Miami",
         "region": "FL",
-        "attributes": {}
+        "attributes": {},
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/listings",
         headers={"Content-Type": "application/json"},
-        data=json.dumps(listing_data)
+        data=json.dumps(listing_data),
     )
-    
+
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
         print(f"Created listing ID: {data.get('data', {}).get('id')}")
-        return data.get('data', {}).get('id')
+        return data.get("data", {}).get("id")
     else:
         print(f"Error: {response.text}")
     print()
     return None
 
+
 def test_create_vehicle_listing():
     """Test creating a vehicle listing."""
     print("Testing vehicle listing creation...")
-    
+
     listing_data = {
         "title": "2018 Toyota Camry LE",
         "description": "Well maintained, low mileage",
@@ -85,16 +90,16 @@ def test_create_vehicle_listing():
             "make": "Toyota",
             "model": "Camry",
             "year": 2018,
-            "mileage": 72000
-        }
+            "mileage": 72000,
+        },
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/listings",
         headers={"Content-Type": "application/json"},
-        data=json.dumps(listing_data)
+        data=json.dumps(listing_data),
     )
-    
+
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
@@ -103,10 +108,11 @@ def test_create_vehicle_listing():
         print(f"Error: {response.text}")
     print()
 
+
 def test_create_appliance_listing():
     """Test creating an appliance listing."""
     print("Testing appliance listing creation...")
-    
+
     listing_data = {
         "title": "KitchenAid Artisan 5qt Mixer",
         "description": "Lightly used, perfect condition",
@@ -121,16 +127,16 @@ def test_create_appliance_listing():
             "brand": "KitchenAid",
             "model": "Artisan 5qt",
             "kosher_use": "dairy",
-            "never_mixed": True
-        }
+            "never_mixed": True,
+        },
     }
-    
+
     response = requests.post(
         f"{BASE_URL}/listings",
         headers={"Content-Type": "application/json"},
-        data=json.dumps(listing_data)
+        data=json.dumps(listing_data),
     )
-    
+
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
@@ -139,17 +145,18 @@ def test_create_appliance_listing():
         print(f"Error: {response.text}")
     print()
 
+
 def test_get_listing(listing_id):
     """Test getting a specific listing."""
     if not listing_id:
         return
-        
+
     print(f"Testing get listing endpoint for ID: {listing_id}")
     response = requests.get(f"{BASE_URL}/listings/{listing_id}")
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
-        listing = data.get('data', {})
+        listing = data.get("data", {})
         print(f"Title: {listing.get('title')}")
         print(f"Kind: {listing.get('kind')}")
         print(f"Price: ${listing.get('price_cents', 0) / 100}")
@@ -158,6 +165,7 @@ def test_get_listing(listing_id):
         print(f"Error: {response.text}")
     print()
 
+
 def test_filter_by_kind():
     """Test filtering by kind."""
     print("Testing filter by kind (regular)...")
@@ -165,7 +173,7 @@ def test_filter_by_kind():
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         data = response.json()
-        listings = data.get('data', {}).get('listings', [])
+        listings = data.get("data", {}).get("listings", [])
         print(f"Regular listings: {len(listings)}")
         for listing in listings[:2]:
             print(f"  - {listing.get('title')} ({listing.get('kind')})")
@@ -173,26 +181,27 @@ def test_filter_by_kind():
         print(f"Error: {response.text}")
     print()
 
+
 if __name__ == "__main__":
     print("🚀 Testing Streamlined Marketplace API")
     print("=" * 50)
-    
+
     # Wait for server to start
     print("Waiting for server to start...")
     time.sleep(3)
-    
+
     test_categories()
     test_listings()
-    
+
     # Test creating listings
     regular_id = test_create_regular_listing()
     test_create_vehicle_listing()
     test_create_appliance_listing()
-    
+
     # Test getting a specific listing
     test_get_listing(regular_id)
-    
+
     # Test filtering
     test_filter_by_kind()
-    
+
     print("✅ Testing completed!")

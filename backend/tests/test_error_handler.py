@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from flask import Flask, jsonify
-
 from utils.api_response import (
     created_response,
     kosher_types_response,

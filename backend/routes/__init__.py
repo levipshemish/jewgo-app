@@ -7,10 +7,10 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
-from . import restaurants, health_routes, redis_health
+from . import health_routes, redis_health, restaurants
 
 __all__ = [
     "restaurants",
-    "health_routes", 
+    "health_routes",
     "redis_health",
 ]

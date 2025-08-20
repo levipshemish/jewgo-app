@@ -38,7 +38,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
-
 from utils.hours import HoursFormatter
 from utils.logging_config import get_logger
 
@@ -137,7 +136,9 @@ class GooglePlacesManager:
             connect_url = self.database_url
             if "neon.tech" in connect_url and "sslmode=" not in connect_url:
                 connect_url = (
-                    connect_url + ("&" if "?" in connect_url else "?") + "sslmode=require"
+                    connect_url
+                    + ("&" if "?" in connect_url else "?")
+                    + "sslmode=require"
                 )
 
             self.engine = create_engine(

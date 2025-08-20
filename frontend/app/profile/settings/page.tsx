@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+// Dynamically import Supabase client to avoid SSR issues
+const supabaseBrowser = dynamic(
+  () => import("@/lib/supabase/client").then(mod => ({ default: mod.supabaseBrowser })),
+  { ssr: false }
+);
+
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -22,7 +28,6 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("account");
 
-
   // Load user data
   useEffect(() => {
     const loadUser = async () => {
@@ -33,6 +38,8 @@ export default function SettingsPage() {
           return;
         }
         
+        // Dynamically import and use Supabase client
+        const { supabaseBrowser } = await import("@/lib/supabase/client");
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         
         if (user) {
@@ -170,6 +177,7 @@ function AccountSettings({ user }: { user: User }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const { supabaseBrowser } = await import("@/lib/supabase/client");
       const { error } = await supabaseBrowser.auth.updateUser({
         data: { full_name: name }
       });

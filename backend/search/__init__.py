@@ -1,13 +1,7 @@
-
-
 from .core.base_search import BaseSearchProvider
-from .core.search_types import SearchType, SearchResult, SearchFilters
 from .core.search_config import SearchConfig
+from .core.search_types import SearchFilters, SearchResult, SearchType
 from .providers.postgresql_search import PostgreSQLSearchProvider
-
-
-
-
 
 #!/usr/bin/env python3
 """Unified Search System for JewGo App.
@@ -26,14 +20,13 @@ Last Updated: 2024
 # Embedding and index managers removed - vector search is no longer supported
 __all__ = [
     # Core
-    'BaseSearchProvider',
-    'SearchType',
-    'SearchResult', 
-    'SearchFilters',
-    'SearchConfig',
-    
+    "BaseSearchProvider",
+    "SearchType",
+    "SearchResult",
+    "SearchFilters",
+    "SearchConfig",
     # Providers
-    'PostgreSQLSearchProvider',
+    "PostgreSQLSearchProvider",
 ]
 
 __version__ = "1.0.0"

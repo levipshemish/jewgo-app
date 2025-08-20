@@ -28,9 +28,7 @@ def scrape_restaurant_images() -> None:
     os.environ.setdefault("CLOUDINARY_CLOUD_NAME", "your-cloudinary-cloud-name")
     os.environ.setdefault("CLOUDINARY_API_KEY", "your-cloudinary-api-key")
     os.environ.setdefault("CLOUDINARY_API_SECRET", "your-cloudinary-api-secret")
-    os.environ.setdefault(
-        "GOOGLE_PLACES_API_KEY", "your-google-places-api-key"
-    )
+    os.environ.setdefault("GOOGLE_PLACES_API_KEY", "your-google-places-api-key")
 
     try:
         # Import the required modules

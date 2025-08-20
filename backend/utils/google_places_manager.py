@@ -19,10 +19,10 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from sqlalchemy import create_engine, text
-
 from utils.logging_config import get_logger
-from .google_places_validator import GooglePlacesValidator
+
 from .google_places_searcher import GooglePlacesSearcher
+from .google_places_validator import GooglePlacesValidator
 from .validators import validate_website_url as unified_validate_website_url
 
 logger = get_logger(__name__)
@@ -162,7 +162,10 @@ class GooglePlacesManager:
 
         """
         searcher = GooglePlacesSearcher(self.api_key)
-        return searcher.get_place_details(place_id, ["website", "url", "name", "formatted_address", "formatted_phone_number"])
+        return searcher.get_place_details(
+            place_id,
+            ["website", "url", "name", "formatted_address", "formatted_phone_number"],
+        )
 
     def fetch_google_reviews(
         self,
@@ -542,6 +545,7 @@ class GooglePlacesManager:
         Accepts 2xx/3xx responses; falls back to GET if HEAD is blocked.
         """
         from .validators import validate_website_url as unified_validate_website_url
+
         return unified_validate_website_url(url, timeout=5, strict_mode=False)
 
     def update_restaurant_website(self, restaurant_id: int, website_url: str) -> bool:

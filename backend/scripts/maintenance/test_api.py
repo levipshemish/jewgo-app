@@ -1,15 +1,11 @@
 import os
 
-from dotenv import load_dotenv
-
-
-
-
-
 import requests
+from dotenv import load_dotenv
 
 #!/usr/bin/env python3
 """Test script to verify the API endpoint is working correctly."""
+
 
 def test_api() -> None:
     """Test the restaurants API endpoint."""

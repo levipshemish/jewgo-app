@@ -1,18 +1,13 @@
-from utils.logging_config import get_logger
-
 import os
 import time
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse, urlunparse
-from contextlib import contextmanager
-
-
-
-
 
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, DBAPIError
-from sqlalchemy.orm import Session, sessionmaker, scoped_session
+from sqlalchemy.exc import DBAPIError, OperationalError, SQLAlchemyError
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -58,12 +53,13 @@ Version: 1.0
 Last Updated: 2024
 """
 
+
 class DatabaseConnectionManager:
     """Unified database connection manager with comprehensive session management."""
 
     def __init__(self, database_url: Optional[str] = None) -> None:
         """Initialize database connection manager with connection string.
-        
+
         Args:
             database_url: Database connection URL. If not provided, uses DATABASE_URL environment variable.
         """
@@ -86,23 +82,23 @@ class DatabaseConnectionManager:
 
     def connect(self) -> bool:
         """Connect to the database and create session factory.
-        
+
         Returns:
             bool: True if connection successful, False otherwise
         """
         try:
             # Ensure SSL for all non-local Postgres connections
             self._configure_ssl()
-            
+
             # Create the engine with optimized settings
             self._create_engine()
-            
+
             # Test the connection
             self._test_connection()
-            
+
             # Create session factory
             self._create_session_factory()
-            
+
             self._is_connected = True
             logger.info("Database connection successful")
             return True
@@ -121,15 +117,28 @@ class DatabaseConnectionManager:
             parsed = urlparse(self.database_url)
             hostname = (parsed.hostname or "").lower()
             is_local = hostname in ("localhost", "127.0.0.1")
-            
-            if parsed.scheme.startswith("postgres") and (not is_local) and ("sslmode=" not in (parsed.query or "")):
+
+            if (
+                parsed.scheme.startswith("postgres")
+                and (not is_local)
+                and ("sslmode=" not in (parsed.query or ""))
+            ):
                 # Use sslmode=prefer for better compatibility with Neon and other providers
-                new_query = f"{parsed.query}&sslmode=prefer" if parsed.query else "sslmode=prefer"
+                new_query = (
+                    f"{parsed.query}&sslmode=prefer"
+                    if parsed.query
+                    else "sslmode=prefer"
+                )
                 self.database_url = urlunparse(parsed._replace(query=new_query))
-                logger.info("Added sslmode=prefer to database URL for non-local connection", hostname=hostname)
+                logger.info(
+                    "Added sslmode=prefer to database URL for non-local connection",
+                    hostname=hostname,
+                )
         except Exception as e:
             # Non-fatal: continue without altering URL
-            logger.warning("Failed to normalize database URL for SSL; continuing", error=str(e))
+            logger.warning(
+                "Failed to normalize database URL for SSL; continuing", error=str(e)
+            )
 
     def _create_engine(self) -> None:
         """Create SQLAlchemy engine with optimized settings."""
@@ -177,29 +186,41 @@ class DatabaseConnectionManager:
         if is_neon:
             self._setup_neon_timeouts(statement_timeout, idle_tx_timeout)
 
-    def _setup_neon_timeouts(self, statement_timeout: str, idle_tx_timeout: str) -> None:
+    def _setup_neon_timeouts(
+        self, statement_timeout: str, idle_tx_timeout: str
+    ) -> None:
         """Setup per-connection timeouts for Neon database."""
         try:
+
             @event.listens_for(self.engine, "connect")
             def _set_timeouts_on_connect(dbapi_connection, connection_record):
                 try:
                     with dbapi_connection.cursor() as cursor:
                         cursor.execute(f"SET statement_timeout = {statement_timeout}")
-                        cursor.execute(f"SET idle_in_transaction_session_timeout = {idle_tx_timeout}")
-                        logger.debug("Successfully set Neon timeouts", 
-                                   statement_timeout=statement_timeout,
-                                   idle_tx_timeout=idle_tx_timeout)
+                        cursor.execute(
+                            f"SET idle_in_transaction_session_timeout = {idle_tx_timeout}"
+                        )
+                        logger.debug(
+                            "Successfully set Neon timeouts",
+                            statement_timeout=statement_timeout,
+                            idle_tx_timeout=idle_tx_timeout,
+                        )
                 except Exception as e:
-                    logger.warning("Failed to set Neon timeouts on connection", 
-                                 error=str(e),
-                                 error_type=type(e).__name__,
-                                 statement_timeout=statement_timeout,
-                                 idle_tx_timeout=idle_tx_timeout)
+                    logger.warning(
+                        "Failed to set Neon timeouts on connection",
+                        error=str(e),
+                        error_type=type(e).__name__,
+                        statement_timeout=statement_timeout,
+                        idle_tx_timeout=idle_tx_timeout,
+                    )
                     # Non-fatal: leave defaults if SET fails
+
         except Exception as e:
-            logger.warning("Failed to setup Neon timeout event listener", 
-                         error=str(e),
-                         error_type=type(e).__name__)
+            logger.warning(
+                "Failed to setup Neon timeout event listener",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             # Non-fatal: proceed without event listener if unsupported
 
     def _test_connection(self) -> None:
@@ -210,19 +231,21 @@ class DatabaseConnectionManager:
 
     def _create_session_factory(self) -> None:
         """Create SQLAlchemy session factory."""
-        self.SessionLocal = scoped_session(sessionmaker(
-            autocommit=False,
-            autoflush=False,
-            bind=self.engine,
-            expire_on_commit=False,
-        ))
+        self.SessionLocal = scoped_session(
+            sessionmaker(
+                autocommit=False,
+                autoflush=False,
+                bind=self.engine,
+                expire_on_commit=False,
+            )
+        )
 
     def get_session(self) -> Session:
         """Get a new database session, auto-connecting if needed.
-        
+
         Returns:
             Session: SQLAlchemy session object
-            
+
         Raises:
             RuntimeError: If database connection fails
         """
@@ -237,10 +260,10 @@ class DatabaseConnectionManager:
     @contextmanager
     def session_scope(self):
         """Context manager for database sessions with proper error handling.
-        
+
         Yields:
             Session: SQLAlchemy session object
-            
+
         Example:
             with db_manager.session_scope() as session:
                 result = session.execute(text("SELECT * FROM restaurants"))
@@ -261,16 +284,18 @@ class DatabaseConnectionManager:
         finally:
             session.close()
 
-    def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         """Execute a SQL query and return results as list of dictionaries.
-        
+
         Args:
             query: SQL query string
             params: Query parameters (optional)
-            
+
         Returns:
             List[Dict[str, Any]]: Query results as list of dictionaries
-            
+
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -278,16 +303,18 @@ class DatabaseConnectionManager:
             result = session.execute(text(query), params or {})
             return [dict(row._mapping) for row in result.fetchall()]
 
-    def execute_update(self, query: str, params: Optional[Dict[str, Any]] = None) -> int:
+    def execute_update(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> int:
         """Execute an UPDATE query and return number of affected rows.
-        
+
         Args:
             query: SQL UPDATE query string
             params: Query parameters (optional)
-            
+
         Returns:
             int: Number of affected rows
-            
+
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -295,16 +322,18 @@ class DatabaseConnectionManager:
             result = session.execute(text(query), params or {})
             return result.rowcount
 
-    def execute_insert(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def execute_insert(
+        self, query: str, params: Optional[Dict[str, Any]] = None
+    ) -> Any:
         """Execute an INSERT query and return the inserted ID.
-        
+
         Args:
             query: SQL INSERT query string
             params: Query parameters (optional)
-            
+
         Returns:
             Any: Inserted ID or result
-            
+
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -315,15 +344,15 @@ class DatabaseConnectionManager:
 
     def with_retry(self, fn, retries: int = 2, delay: float = 0.2):
         """Retry function with exponential backoff for OperationalError.
-        
+
         Args:
             fn: Function to retry
             retries: Number of retry attempts
             delay: Initial delay between retries (will be multiplied by retry number)
-            
+
         Returns:
             Any: Result of the function
-            
+
         Raises:
             OperationalError: If all retries fail
         """
@@ -343,7 +372,7 @@ class DatabaseConnectionManager:
 
     def health_check(self) -> Dict[str, Any]:
         """Perform database health check.
-        
+
         Returns:
             Dict[str, Any]: Health check results
         """
@@ -352,30 +381,32 @@ class DatabaseConnectionManager:
                 # Test basic connectivity
                 result = session.execute(text("SELECT 1 as test"))
                 test_result = result.fetchone()
-                
+
                 # Get database info
                 version_result = session.execute(text("SELECT version()"))
                 version = version_result.fetchone()[0]
-                
+
                 # Get connection count
-                connections_result = session.execute(text(
-                    "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()"
-                ))
+                connections_result = session.execute(
+                    text(
+                        "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()"
+                    )
+                )
                 connection_count = connections_result.fetchone()[0]
-                
+
                 return {
                     "status": "healthy",
                     "test_result": test_result[0] if test_result else None,
                     "version": version,
                     "connection_count": connection_count,
-                    "connected": self._is_connected
+                    "connected": self._is_connected,
                 }
         except Exception as e:
             logger.error("Database health check failed", error=str(e))
             return {
                 "status": "unhealthy",
                 "error": str(e),
-                "connected": self._is_connected
+                "connected": self._is_connected,
             }
 
     def close(self) -> None:
@@ -406,10 +437,10 @@ _db_manager = None
 
 def get_db_manager(database_url: Optional[str] = None) -> DatabaseConnectionManager:
     """Get or create global database connection manager instance.
-    
+
     Args:
         database_url: Database connection URL (optional)
-        
+
     Returns:
         DatabaseConnectionManager: Database connection manager instance
     """

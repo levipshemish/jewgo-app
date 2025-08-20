@@ -1,19 +1,12 @@
-from utils.logging_config import get_logger
-
 import json
 import re
 from datetime import datetime, time, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytz
+from utils.logging_config import get_logger
 
 from .hours_formatter import HoursFormatter
-
-
-
-
-
-
 
 logger = get_logger(__name__)
 
@@ -31,6 +24,7 @@ Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
+
 
 class HoursManager:
     """Comprehensive hours management system for restaurants."""
@@ -305,16 +299,19 @@ class HoursManager:
     def _format_for_dropdown(self, hours_json: dict[str, Any]) -> list[dict[str, str]]:
         """Format hours for dropdown display."""
         from .unified_hours_formatter import UnifiedHoursFormatter
+
         return UnifiedHoursFormatter.format_for_dropdown(hours_json)
 
     def _format_compact(self, hours_json: dict[str, Any]) -> str:
         """Format hours in compact string format."""
         from .unified_hours_formatter import UnifiedHoursFormatter
+
         return UnifiedHoursFormatter.format_compact(hours_json)
 
     def _format_detailed(self, hours_json: dict[str, Any]) -> list[dict[str, Any]]:
         """Format hours in detailed format with additional info."""
         from .unified_hours_formatter import UnifiedHoursFormatter
+
         return UnifiedHoursFormatter.format_detailed(hours_json)
 
     def _format_today(self, hours_json: dict[str, Any]) -> dict[str, Any]:

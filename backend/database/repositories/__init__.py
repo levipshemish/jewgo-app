@@ -1,11 +1,7 @@
-
-
+from .image_repository import ImageRepository
 from .restaurant_repository import RestaurantRepository
 from .review_repository import ReviewRepository
 from .user_repository import UserRepository
-from .image_repository import ImageRepository
-
-
 
 """Database repositories package.
 
@@ -14,8 +10,8 @@ for specific entities, following the repository pattern.
 """
 
 __all__ = [
-    'RestaurantRepository',
-    'ReviewRepository', 
-    'UserRepository',
-    'ImageRepository',
+    "RestaurantRepository",
+    "ReviewRepository",
+    "UserRepository",
+    "ImageRepository",
 ]

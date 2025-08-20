@@ -1,18 +1,21 @@
-from utils.logging_config import get_logger
-from utils.error_handler import handle_database_operation, handle_operation_with_fallback
-
 import ast
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from utils.error_handler import (
+    handle_database_operation,
+    handle_operation_with_fallback,
+)
+from utils.logging_config import get_logger
+
 from .connection_manager import DatabaseConnectionManager
 from .models import Base
 from .repositories import (
+    ImageRepository,
     RestaurantRepository,
     ReviewRepository,
     UserRepository,
-    ImageRepository,
 )
 
 # Import the dynamic status calculation module
@@ -29,6 +32,7 @@ except ImportError:
 
     def is_restaurant_open(restaurant_data) -> bool:
         return False
+
 
 logger = get_logger(__name__)
 
@@ -60,10 +64,10 @@ Last Updated: 2024
 """
 
 from .repositories import (
+    ImageRepository,
     RestaurantRepository,
     ReviewRepository,
     UserRepository,
-    ImageRepository,
 )
 
 # Import the dynamic status calculation module
@@ -82,7 +86,6 @@ except ImportError:
         return False
 
 
-
 class DatabaseManager:
     """Enhanced database manager using repository pattern."""
 
@@ -90,7 +93,7 @@ class DatabaseManager:
         """Initialize database manager with connection string."""
         # Initialize connection manager
         self.connection_manager = DatabaseConnectionManager(database_url)
-        
+
         # Initialize repositories
         self.restaurant_repo = RestaurantRepository(self.connection_manager)
         self.review_repo = ReviewRepository(self.connection_manager)
@@ -134,8 +137,14 @@ class DatabaseManager:
         """Add a new restaurant to the database."""
         # Validate required fields
         required_fields = [
-            "name", "address", "city", "state", "zip_code",
-            "phone_number", "kosher_category", "listing_type",
+            "name",
+            "address",
+            "city",
+            "state",
+            "zip_code",
+            "phone_number",
+            "kosher_category",
+            "listing_type",
         ]
         for field in required_fields:
             if not restaurant_data.get(field):
@@ -149,12 +158,18 @@ class DatabaseManager:
         restaurant_data.setdefault("hours_parsed", False)
 
         # Handle specials field
-        if "specials" in restaurant_data and isinstance(restaurant_data["specials"], list):
+        if "specials" in restaurant_data and isinstance(
+            restaurant_data["specials"], list
+        ):
             restaurant_data["specials"] = json.dumps(restaurant_data["specials"])
 
         instance = self.restaurant_repo.create(restaurant_data)
         if instance:
-            logger.info("Restaurant added successfully", restaurant_id=instance.id, name=instance.name)
+            logger.info(
+                "Restaurant added successfully",
+                restaurant_id=instance.id,
+                name=instance.name,
+            )
             return True
         return False
 
@@ -176,10 +191,10 @@ class DatabaseManager:
             offset=offset,
             filters=filters,
         )
-        
+
         if as_dict:
             return [self._restaurant_to_dict(restaurant) for restaurant in restaurants]
-        
+
         return restaurants
 
     @handle_operation_with_fallback(fallback_value=0)
@@ -226,7 +241,9 @@ class DatabaseManager:
         return [self._restaurant_to_dict(restaurant) for restaurant in restaurants]
 
     @handle_database_operation
-    def update_restaurant_data(self, restaurant_id: int, update_data: Dict[str, Any]) -> bool:
+    def update_restaurant_data(
+        self, restaurant_id: int, update_data: Dict[str, Any]
+    ) -> bool:
         """Update restaurant data."""
         update_data["updated_at"] = datetime.utcnow()
         return self.restaurant_repo.update(restaurant_id, update_data)
@@ -236,7 +253,7 @@ class DatabaseManager:
         """Delete a restaurant."""
         # Delete associated images first
         self.image_repo.delete_all_restaurant_images(restaurant_id)
-        
+
         # Delete the restaurant
         return self.restaurant_repo.delete(restaurant_id)
 
@@ -354,7 +371,7 @@ class DatabaseManager:
             # Delete associated sessions and accounts first
             self.user_repo.delete_user_sessions(user_id)
             self.user_repo.delete_user_accounts(user_id)
-            
+
             # Delete the user
             return self.user_repo.delete_user(user_id)
         except Exception as e:
@@ -409,13 +426,15 @@ class DatabaseManager:
             # Get restaurant images
             images = self.image_repo.get_restaurant_images(restaurant.id)
             image_dicts = [self._image_to_dict(img) for img in images]
-            
+
             # Get restaurant status
-            status_info = get_restaurant_status({
-                "hours_json": restaurant.hours_json,
-                "timezone": restaurant.timezone,
-            })
-            
+            status_info = get_restaurant_status(
+                {
+                    "hours_json": restaurant.hours_json,
+                    "timezone": restaurant.timezone,
+                }
+            )
+
             return {
                 "id": restaurant.id,
                 "name": restaurant.name,
@@ -433,7 +452,9 @@ class DatabaseManager:
                 "short_description": restaurant.short_description,
                 "hours_of_operation": restaurant.hours_of_operation,
                 "hours_json": restaurant.hours_json,
-                "hours_last_updated": restaurant.hours_last_updated.isoformat() if restaurant.hours_last_updated else None,
+                "hours_last_updated": restaurant.hours_last_updated.isoformat()
+                if restaurant.hours_last_updated
+                else None,
                 "timezone": restaurant.timezone,
                 "latitude": restaurant.latitude,
                 "longitude": restaurant.longitude,
@@ -447,9 +468,15 @@ class DatabaseManager:
                 "google_review_count": restaurant.google_review_count,
                 "google_reviews": self._safe_json_loads(restaurant.google_reviews, []),
                 "user_email": restaurant.user_email,
-                "created_at": restaurant.created_at.isoformat() if restaurant.created_at else None,
-                "updated_at": restaurant.updated_at.isoformat() if restaurant.updated_at else None,
-                "current_time_local": restaurant.current_time_local.isoformat() if restaurant.current_time_local else None,
+                "created_at": restaurant.created_at.isoformat()
+                if restaurant.created_at
+                else None,
+                "updated_at": restaurant.updated_at.isoformat()
+                if restaurant.updated_at
+                else None,
+                "current_time_local": restaurant.current_time_local.isoformat()
+                if restaurant.current_time_local
+                else None,
                 "hours_parsed": restaurant.hours_parsed,
                 "images": image_dicts,
                 "is_open": status_info.get("is_open", False),
@@ -473,8 +500,12 @@ class DatabaseManager:
                 "content": review.content,
                 "images": self._safe_json_loads(review.images, []),
                 "status": review.status,
-                "created_at": review.created_at.isoformat() if review.created_at else None,
-                "updated_at": review.updated_at.isoformat() if review.updated_at else None,
+                "created_at": review.created_at.isoformat()
+                if review.created_at
+                else None,
+                "updated_at": review.updated_at.isoformat()
+                if review.updated_at
+                else None,
                 "moderator_notes": review.moderator_notes,
                 "verified_purchase": review.verified_purchase,
                 "helpful_count": review.helpful_count,
@@ -491,7 +522,9 @@ class DatabaseManager:
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
-                "emailVerified": user.emailVerified.isoformat() if user.emailVerified else None,
+                "emailVerified": user.emailVerified.isoformat()
+                if user.emailVerified
+                else None,
                 "image": user.image,
                 "isSuperAdmin": user.isSuperAdmin,
                 "role": "admin" if user.isSuperAdmin else "user",
@@ -506,22 +539,24 @@ class DatabaseManager:
         """Safely parse JSON string or Python literal with fallback to default value."""
         if not json_str:
             return default_value
-        
+
         # Handle non-string inputs (e.g., already parsed JSON objects)
         if not isinstance(json_str, str):
             # If it's already a list, dict, or other JSON-compatible type, return as is
             if isinstance(json_str, (list, dict, int, float, bool)) or json_str is None:
                 return json_str
-            logger.debug(f"Non-string JSON input: {type(json_str)}, using default value")
+            logger.debug(
+                f"Non-string JSON input: {type(json_str)}, using default value"
+            )
             return default_value
-        
+
         # Remove leading/trailing whitespace
         json_str = json_str.strip()
-        
+
         # Handle empty strings
         if not json_str:
             return default_value
-        
+
         # First try to parse as JSON
         try:
             return json.loads(json_str)
@@ -532,7 +567,9 @@ class DatabaseManager:
                 return parsed_data
             except (ValueError, SyntaxError) as e:
                 # Log the specific error and the problematic string (truncated)
-                json_preview = json_str[:100] + "..." if len(json_str) > 100 else json_str
+                json_preview = (
+                    json_str[:100] + "..." if len(json_str) > 100 else json_str
+                )
                 logger.warning(
                     f"Failed to parse JSON or Python literal: {e}, using default value. JSON preview: {json_preview}"
                 )
@@ -547,8 +584,12 @@ class DatabaseManager:
                 "image_url": image.image_url,
                 "image_order": image.image_order,
                 "cloudinary_public_id": image.cloudinary_public_id,
-                "created_at": image.created_at.isoformat() if image.created_at else None,
-                "updated_at": image.updated_at.isoformat() if image.updated_at else None,
+                "created_at": image.created_at.isoformat()
+                if image.created_at
+                else None,
+                "updated_at": image.updated_at.isoformat()
+                if image.updated_at
+                else None,
             }
         except Exception as e:
             logger.exception("Error converting image to dict", error=str(e))

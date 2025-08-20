@@ -1,5 +1,3 @@
-from utils.logging_config import get_logger
-
 import asyncio
 import csv
 import json
@@ -9,17 +7,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from playwright.async_api import async_playwright
-
-
-
-
-
-
-
 import requests
+from playwright.async_api import async_playwright
+from utils.logging_config import get_logger
 
 from .base_service import BaseService
+
 logger = get_logger(__name__)
 
 """Scraper Service.
@@ -27,6 +20,7 @@ logger = get_logger(__name__)
 This service provides consolidated scraping functionality with shared logic,
 improved error handling, and consistent interfaces for all scraping operations.
 """
+
 
 class ScraperService(BaseService):
     """Consolidated service for all scraping operations."""

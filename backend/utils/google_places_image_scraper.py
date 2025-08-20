@@ -1,17 +1,10 @@
-from utils.logging_config import get_logger
-
 import os
 import time
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
-
-
-
-
-
-
 import requests
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -25,6 +18,7 @@ Fetches high-quality images and prepares them for Cloudinary upload.
 Author: JewGo Development Team
 Version: 1.0
 """
+
 
 class GooglePlacesImageScraper:
     """Scrapes restaurant images from Google Places API."""

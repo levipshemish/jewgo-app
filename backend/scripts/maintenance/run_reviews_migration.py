@@ -1,11 +1,6 @@
 import psycopg2
 from dotenv import load_dotenv
-
 from utils.config_manager import ConfigManager
-
-
-
-
 
 #!/usr/bin/env python3
 """Manual Migration Script: Create Reviews Tables.

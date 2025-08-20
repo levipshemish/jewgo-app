@@ -9,10 +9,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 import structlog
-
-from app import app as flask_app
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.feature_flags import FeatureFlag, FeatureFlagManager
+
+from app import app as flask_app
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -247,7 +247,6 @@ def mock_requests():
         patch("requests.put") as mock_put,
         patch("requests.delete") as mock_delete,
     ):
-
         # Configure default responses
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {}

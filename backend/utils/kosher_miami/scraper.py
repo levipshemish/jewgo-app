@@ -8,16 +8,12 @@ from typing import Dict, List, Optional
 
 from playwright.async_api import async_playwright
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Kosher Miami Scraper.
 
 Web scraping functionality for koshermiami.org to extract kosher establishment data.
 """
+
 
 class KosherMiamiScraper:
     """Scraper for koshermiami.org establishment data."""

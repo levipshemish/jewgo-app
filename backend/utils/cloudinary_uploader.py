@@ -22,6 +22,7 @@ try:
     import cloudinary
     import cloudinary.api
     import cloudinary.uploader
+
     CLOUDINARY_AVAILABLE = True
 except ImportError:
     CLOUDINARY_AVAILABLE = False
@@ -41,7 +42,6 @@ try:
     CLOUDINARY_AVAILABLE = True
 except ImportError:
     CLOUDINARY_AVAILABLE = False
-
 
 
 class CloudinaryUploader:

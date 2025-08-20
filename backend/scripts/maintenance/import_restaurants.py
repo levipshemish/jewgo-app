@@ -6,9 +6,8 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 from database.database_manager_v3 import EnhancedDatabaseManager
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()

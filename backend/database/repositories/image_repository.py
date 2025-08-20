@@ -1,21 +1,14 @@
-from utils.logging_config import get_logger
-
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-
-
-
-
-
-
-
-from sqlalchemy import func, and_, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
+from utils.logging_config import get_logger
 
 from ..base_repository import BaseRepository
 from ..connection_manager import DatabaseConnectionManager
 from ..models import RestaurantImage
+
 logger = get_logger(__name__)
 
 #!/usr/bin/env python3
@@ -24,6 +17,7 @@ logger = get_logger(__name__)
 This module handles all image-related database operations,
 separating data access logic from business logic.
 """
+
 
 class ImageRepository(BaseRepository[RestaurantImage]):
     """Repository for restaurant image database operations."""
@@ -46,10 +40,10 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 .filter(RestaurantImage.restaurant_id == restaurant_id)
                 .order_by(RestaurantImage.image_order.asc())
             )
-            
+
             if limit:
                 query = query.limit(limit)
-            
+
             images = query.all()
             session.close()
             return images
@@ -86,14 +80,14 @@ class ImageRepository(BaseRepository[RestaurantImage]):
             # If no order specified, get the next available order
             if image_order is None:
                 image_order = self._get_next_image_order(restaurant_id)
-            
+
             image_data = {
                 "restaurant_id": restaurant_id,
                 "image_url": image_url,
                 "image_order": image_order,
                 "cloudinary_public_id": cloudinary_public_id,
             }
-            
+
             instance = self.create(image_data)
             if instance:
                 self.logger.info(
@@ -119,10 +113,12 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 "image_order": new_order,
                 "updated_at": datetime.utcnow(),
             }
-            
+
             success = self.update(image_id, update_data)
             if success:
-                self.logger.info("Updated image order", image_id=image_id, new_order=new_order)
+                self.logger.info(
+                    "Updated image order", image_id=image_id, new_order=new_order
+                )
             return success
 
         except Exception as e:
@@ -140,10 +136,12 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 "image_url": new_url,
                 "updated_at": datetime.utcnow(),
             }
-            
+
             success = self.update(image_id, update_data)
             if success:
-                self.logger.info("Updated image URL", image_id=image_id, new_url=new_url)
+                self.logger.info(
+                    "Updated image URL", image_id=image_id, new_url=new_url
+                )
             return success
 
         except Exception as e:
@@ -161,10 +159,14 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 "cloudinary_public_id": cloudinary_public_id,
                 "updated_at": datetime.utcnow(),
             }
-            
+
             success = self.update(image_id, update_data)
             if success:
-                self.logger.info("Updated Cloudinary public ID", image_id=image_id, cloudinary_id=cloudinary_public_id)
+                self.logger.info(
+                    "Updated Cloudinary public ID",
+                    image_id=image_id,
+                    cloudinary_id=cloudinary_public_id,
+                )
             return success
 
         except Exception as e:
@@ -194,8 +196,12 @@ class ImageRepository(BaseRepository[RestaurantImage]):
             )
             session.commit()
             session.close()
-            
-            self.logger.info("Deleted all restaurant images", restaurant_id=restaurant_id, count=deleted_count)
+
+            self.logger.info(
+                "Deleted all restaurant images",
+                restaurant_id=restaurant_id,
+                count=deleted_count,
+            )
             return True
 
         except Exception as e:
@@ -211,25 +217,35 @@ class ImageRepository(BaseRepository[RestaurantImage]):
         try:
             with self.connection_manager.session_scope() as session:
                 for image_id, new_order in image_orders.items():
-                    image = session.query(RestaurantImage).filter(
-                        and_(
-                            RestaurantImage.id == image_id,
-                            RestaurantImage.restaurant_id == restaurant_id
+                    image = (
+                        session.query(RestaurantImage)
+                        .filter(
+                            and_(
+                                RestaurantImage.id == image_id,
+                                RestaurantImage.restaurant_id == restaurant_id,
+                            )
                         )
-                    ).first()
-                    
+                        .first()
+                    )
+
                     if image:
                         image.image_order = new_order
                         image.updated_at = datetime.utcnow()
-                
-                self.logger.info("Reordered restaurant images", restaurant_id=restaurant_id, orders=len(image_orders))
+
+                self.logger.info(
+                    "Reordered restaurant images",
+                    restaurant_id=restaurant_id,
+                    orders=len(image_orders),
+                )
                 return True
 
         except Exception as e:
             self.logger.exception("Error reordering restaurant images", error=str(e))
             return False
 
-    def get_images_without_cloudinary_id(self, limit: int = 50) -> List[RestaurantImage]:
+    def get_images_without_cloudinary_id(
+        self, limit: int = 50
+    ) -> List[RestaurantImage]:
         """Get images that don't have a Cloudinary public ID."""
         try:
             session = self.connection_manager.get_session()
@@ -238,7 +254,7 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 .filter(
                     or_(
                         RestaurantImage.cloudinary_public_id.is_(None),
-                        RestaurantImage.cloudinary_public_id == ""
+                        RestaurantImage.cloudinary_public_id == "",
                     )
                 )
                 .order_by(RestaurantImage.created_at.asc())
@@ -249,10 +265,14 @@ class ImageRepository(BaseRepository[RestaurantImage]):
             return images
 
         except Exception as e:
-            self.logger.exception("Error getting images without Cloudinary ID", error=str(e))
+            self.logger.exception(
+                "Error getting images without Cloudinary ID", error=str(e)
+            )
             return []
 
-    def get_images_by_cloudinary_id(self, cloudinary_public_id: str) -> List[RestaurantImage]:
+    def get_images_by_cloudinary_id(
+        self, cloudinary_public_id: str
+    ) -> List[RestaurantImage]:
         """Get images by Cloudinary public ID."""
         try:
             session = self.connection_manager.get_session()
@@ -273,32 +293,34 @@ class ImageRepository(BaseRepository[RestaurantImage]):
         """Get image statistics."""
         try:
             session = self.connection_manager.get_session()
-            
+
             # Total images
             total_images = session.query(RestaurantImage).count()
-            
+
             # Images with Cloudinary IDs
             images_with_cloudinary = (
                 session.query(RestaurantImage)
                 .filter(RestaurantImage.cloudinary_public_id.isnot(None))
                 .count()
             )
-            
+
             # Images without Cloudinary IDs
             images_without_cloudinary = total_images - images_with_cloudinary
-            
+
             # Restaurants with images
             restaurants_with_images = (
-                session.query(RestaurantImage.restaurant_id)
-                .distinct()
-                .count()
+                session.query(RestaurantImage.restaurant_id).distinct().count()
             )
-            
+
             # Average images per restaurant
-            avg_images_per_restaurant = total_images / restaurants_with_images if restaurants_with_images > 0 else 0
-            
+            avg_images_per_restaurant = (
+                total_images / restaurants_with_images
+                if restaurants_with_images > 0
+                else 0
+            )
+
             session.close()
-            
+
             return {
                 "total_images": total_images,
                 "images_with_cloudinary_id": images_with_cloudinary,
@@ -321,7 +343,7 @@ class ImageRepository(BaseRepository[RestaurantImage]):
                 .scalar()
             )
             session.close()
-            
+
             return (max_order or 0) + 1
 
         except Exception as e:
@@ -336,11 +358,15 @@ class ImageRepository(BaseRepository[RestaurantImage]):
         try:
             with self.connection_manager.session_scope() as session:
                 for image_id, cloudinary_id in updates.items():
-                    image = session.query(RestaurantImage).filter(RestaurantImage.id == image_id).first()
+                    image = (
+                        session.query(RestaurantImage)
+                        .filter(RestaurantImage.id == image_id)
+                        .first()
+                    )
                     if image:
                         image.cloudinary_public_id = cloudinary_id
                         image.updated_at = datetime.utcnow()
-                
+
                 self.logger.info("Bulk updated Cloudinary IDs", count=len(updates))
                 return True
 

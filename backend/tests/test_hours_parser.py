@@ -1,10 +1,9 @@
 import pytest
-from utils.hours_parser import parse_hours_blob, _normalize_hours_text, validate_hours_format
-
-
-
-
-
+from utils.hours_parser import (
+    _normalize_hours_text,
+    parse_hours_blob,
+    validate_hours_format,
+)
 
 #!/usr/bin/env python3
 """Hours Parser Tests for JewGo Backend.
@@ -15,6 +14,7 @@ Tests for robust hours parsing from various formats including JSON and human-rea
 Author: JewGo Development Team
 Version: 1.0
 """
+
 
 def test_parse_json_hours():
     """Test parsing JSON hours format."""
@@ -30,7 +30,7 @@ def test_parse_human_readable_hours():
 Tuesday: 5:00 – 11:00 PM
 Friday: 6:30 – 10:00 PM
 Saturday: 11:30 AM – 2:00 PM"""
-    
+
     out = parse_hours_blob(blob)
     assert "Monday" in out and out["Monday"]
     assert "Tuesday" in out and out["Tuesday"]
@@ -42,7 +42,7 @@ def test_parse_hours_with_unicode_characters():
     """Test parsing hours with Unicode characters."""
     blob = """Monday: 5:00\u202f–\u200911:00 PM
 Tuesday: 5:00\u00a0–\u200a11:00 PM"""
-    
+
     out = parse_hours_blob(blob)
     assert "Monday" in out and out["Monday"]
     assert "Tuesday" in out and out["Tuesday"]
@@ -52,7 +52,7 @@ def test_parse_hours_with_multiple_ranges():
     """Test parsing hours with multiple time ranges per day."""
     blob = """Monday: 9:00 AM - 2:00 PM, 5:00 PM - 10:00 PM
 Tuesday: 9:00 AM - 2:00 PM"""
-    
+
     out = parse_hours_blob(blob)
     assert len(out["Monday"]) == 2
     assert len(out["Tuesday"]) == 1
@@ -62,7 +62,7 @@ def test_parse_empty_hours():
     """Test parsing empty hours data."""
     out = parse_hours_blob("")
     assert out == {}
-    
+
     out = parse_hours_blob(None)
     assert out == {}
 
@@ -91,7 +91,7 @@ def test_normalize_hours_text():
     assert "\u2009" not in normalized
     assert "\u2007" not in normalized
     assert "Monday: 9:00 AM - 5:00 PM" in normalized
-    
+
     # Test Unicode dashes
     text = "Monday: 9:00 AM\u2013 5:00 PM"
     normalized = _normalize_hours_text(text)
@@ -153,7 +153,7 @@ def test_parse_hours_case_insensitive():
     blob = """monday: 9:00 AM - 5:00 PM
 TUESDAY: 10:00 AM - 6:00 PM
 Wednesday: 11:00 AM - 7:00 PM"""
-    
+
     out = parse_hours_blob(blob)
     assert "Monday" in out and out["Monday"]
     assert "Tuesday" in out and out["Tuesday"]
@@ -164,7 +164,7 @@ def test_parse_hours_with_extra_whitespace():
     """Test parsing hours with extra whitespace."""
     blob = """  Monday  :  9:00 AM  -  5:00 PM  
   Tuesday  :  10:00 AM  -  6:00 PM  """
-    
+
     out = parse_hours_blob(blob)
     assert "Monday" in out and out["Monday"]
     assert "Tuesday" in out and out["Tuesday"]

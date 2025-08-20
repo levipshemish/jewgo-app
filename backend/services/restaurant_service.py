@@ -7,31 +7,29 @@ import sys
 from typing import Any, Dict, List, Optional
 
 try:
-    from utils.error_handler import NotFoundError, ValidationError
-    from .base_service import BaseService
-    from . import hours_normalizer
-    from . import hours_compute
-    from . import hours_sources
     from utils.cloudinary_uploader import CloudinaryUploader
+    from utils.error_handler import NotFoundError, ValidationError
     from utils.hours_parser import parse_hours_blob
+
+    from . import hours_compute, hours_normalizer, hours_sources
+    from .base_service import BaseService
 except ImportError:
     try:
-        from utils.error_handler import NotFoundError, ValidationError
-        from .base_service import BaseService
-        from . import hours_normalizer
-        from . import hours_compute
-        from . import hours_sources
         from utils.cloudinary_uploader import CloudinaryUploader
+        from utils.error_handler import NotFoundError, ValidationError
         from utils.hours_parser import parse_hours_blob
+
+        from . import hours_compute, hours_normalizer, hours_sources
+        from .base_service import BaseService
     except ImportError:
         sys.path.append(os.path.dirname(__file__))
         sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-        from utils.error_handler import NotFoundError, ValidationError
-        from base_service import BaseService
-        import hours_normalizer
         import hours_compute
+        import hours_normalizer
         import hours_sources
+        from base_service import BaseService
         from utils.cloudinary_uploader import CloudinaryUploader
+        from utils.error_handler import NotFoundError, ValidationError
         from utils.hours_parser import parse_hours_blob
 
 
@@ -145,7 +143,9 @@ class RestaurantService(BaseService):
             raise NotFoundError(msg)
 
         # Get hours data - try hours_json first, then hours_of_operation
-        hours_json = restaurant.get("hours_json") or restaurant.get("hours_of_operation")
+        hours_json = restaurant.get("hours_json") or restaurant.get(
+            "hours_of_operation"
+        )
         if not hours_json:
             # Return empty hours structure
             return hours_compute.format_hours_for_display({})
@@ -160,7 +160,9 @@ class RestaurantService(BaseService):
                 # hours_json is already a dict, check if it has the expected format
                 if "weekday_text" in hours_json:
                     # This is Google Places format, convert it
-                    hours_doc = self._convert_google_places_hours_to_expected_format(hours_json)
+                    hours_doc = self._convert_google_places_hours_to_expected_format(
+                        hours_json
+                    )
                 else:
                     # Assume it's already in the expected format
                     hours_doc = hours_json
@@ -179,143 +181,137 @@ class RestaurantService(BaseService):
         except Exception as e:
             self.logger.warning(
                 f"Error parsing hours for restaurant {restaurant_id}: {e}",
-                hours_json=hours_json
+                hours_json=hours_json,
             )
             return hours_compute.format_hours_for_display({})
 
     def _convert_parsed_hours_to_expected_format(self, parsed_hours: dict) -> dict:
         """Convert parsed hours from parse_hours_blob format to hours_compute expected format.
-        
+
         Args:
             parsed_hours: Hours in format {"Monday": ["11:00 AM-9:30 PM"], ...}
-            
+
         Returns:
             Hours in format {"hours": {"mon": {"open": "11:00 AM", "close": "9:30 PM", "is_open": true}, ...}}
         """
         day_mapping = {
             "Monday": "mon",
-            "Tuesday": "tue", 
+            "Tuesday": "tue",
             "Wednesday": "wed",
             "Thursday": "thu",
             "Friday": "fri",
             "Saturday": "sat",
-            "Sunday": "sun"
+            "Sunday": "sun",
         }
-        
+
         converted_hours = {}
-        
+
         for day_name, time_ranges in parsed_hours.items():
             if not time_ranges:
                 continue
-                
+
             day_abbr = day_mapping.get(day_name)
             if not day_abbr:
                 continue
-                
+
             # Take the first time range (most restaurants have one range per day)
             time_range = time_ranges[0] if time_ranges else ""
-            
+
             if time_range and time_range.lower() != "closed":
                 # Parse the time range (e.g., "11:00 AM-9:30 PM")
                 parts = time_range.split("-")
                 if len(parts) == 2:
                     open_time = parts[0].strip()
                     close_time = parts[1].strip()
-                    
+
                     converted_hours[day_abbr] = {
                         "open": open_time,
                         "close": close_time,
-                        "is_open": True
+                        "is_open": True,
                     }
                 else:
                     # Invalid format, mark as closed
                     converted_hours[day_abbr] = {
                         "open": "",
                         "close": "",
-                        "is_open": False
+                        "is_open": False,
                     }
             else:
                 # Closed day
-                converted_hours[day_abbr] = {
-                    "open": "",
-                    "close": "",
-                    "is_open": False
-                }
-        
+                converted_hours[day_abbr] = {"open": "", "close": "", "is_open": False}
+
         return {
             "hours": converted_hours,
             "timezone": "America/New_York",
-            "last_updated": None
+            "last_updated": None,
         }
 
-    def _convert_google_places_hours_to_expected_format(self, google_hours: dict) -> dict:
+    def _convert_google_places_hours_to_expected_format(
+        self, google_hours: dict
+    ) -> dict:
         """Convert Google Places hours format to hours_compute expected format.
-        
+
         Args:
             google_hours: Hours in Google Places format with weekday_text array
-            
+
         Returns:
             Hours in format {"hours": {"mon": {"open": "11:00 AM", "close": "9:30 PM", "is_open": true}, ...}}
         """
         day_mapping = {
             "Monday": "mon",
-            "Tuesday": "tue", 
+            "Tuesday": "tue",
             "Wednesday": "wed",
             "Thursday": "thu",
             "Friday": "fri",
             "Saturday": "sat",
-            "Sunday": "sun"
+            "Sunday": "sun",
         }
-        
+
         converted_hours = {}
         weekday_text = google_hours.get("weekday_text", [])
-        
+
         for day_text in weekday_text:
             # Parse format like "Monday: 11:00 AM – 9:30 PM"
             if ":" not in day_text:
                 continue
-                
+
             day_part, time_part = day_text.split(":", 1)
             day_name = day_part.strip()
             time_range = time_part.strip()
-            
+
             day_abbr = day_mapping.get(day_name)
             if not day_abbr:
                 continue
-                
+
             if time_range.lower() == "closed":
-                converted_hours[day_abbr] = {
-                    "open": "",
-                    "close": "",
-                    "is_open": False
-                }
+                converted_hours[day_abbr] = {"open": "", "close": "", "is_open": False}
             else:
                 # Parse time range like "11:00 AM – 9:30 PM"
                 # Handle different dash characters
                 time_range = time_range.replace("–", "-").replace("—", "-")
                 parts = time_range.split("-")
-                
+
                 if len(parts) == 2:
                     open_time = parts[0].strip()
                     close_time = parts[1].strip()
-                    
+
                     converted_hours[day_abbr] = {
                         "open": open_time,
                         "close": close_time,
-                        "is_open": True
+                        "is_open": True,
                     }
                 else:
                     # Invalid format, mark as closed
                     converted_hours[day_abbr] = {
                         "open": "",
                         "close": "",
-                        "is_open": False
+                        "is_open": False,
                     }
-        
+
         return {
             "hours": converted_hours,
             "timezone": "America/New_York",
-            "last_updated": None
+            "last_updated": None,
         }
 
     def update_restaurant_hours(
@@ -323,7 +319,7 @@ class RestaurantService(BaseService):
         restaurant_id: int,
         hours_data: dict[str, Any],
         updated_by: str,
-        merge_strategy: str = "prefer-incoming"
+        merge_strategy: str = "prefer-incoming",
     ) -> dict[str, Any]:
         """Update restaurant hours.
 
@@ -352,7 +348,7 @@ class RestaurantService(BaseService):
             "update_restaurant_hours",
             restaurant_id=restaurant_id,
             updated_by=updated_by,
-            merge_strategy=merge_strategy
+            merge_strategy=merge_strategy,
         )
 
         # Get restaurant data
@@ -390,8 +386,7 @@ class RestaurantService(BaseService):
 
             # Update in database
             success = self.db_manager.update_restaurant_data(
-                restaurant_id,
-                {"hours_of_operation": json.dumps(final_hours)}
+                restaurant_id, {"hours_of_operation": json.dumps(final_hours)}
             )
 
             if not success:
@@ -409,7 +404,7 @@ class RestaurantService(BaseService):
         except Exception as e:
             self.logger.error(
                 f"Error updating hours for restaurant {restaurant_id}: {e}",
-                hours_data=hours_data
+                hours_data=hours_data,
             )
             raise
 
@@ -466,7 +461,9 @@ class RestaurantService(BaseService):
                 timezone = current_hours.get("timezone", timezone)
 
             # Normalize Google hours
-            normalized_hours = hours_normalizer.normalize_from_google(google_hours, timezone)
+            normalized_hours = hours_normalizer.normalize_from_google(
+                google_hours, timezone
+            )
 
             # Merge with existing hours
             if current_hours_json:
@@ -474,7 +471,7 @@ class RestaurantService(BaseService):
                     current_hours = parse_hours_blob(current_hours_json)
                 else:
                     current_hours = current_hours_json
-                
+
                 final_hours = hours_normalizer.merge_hours(
                     current_hours, normalized_hours, "prefer-incoming"
                 )
@@ -483,8 +480,7 @@ class RestaurantService(BaseService):
 
             # Update in database
             success = self.db_manager.update_restaurant_data(
-                restaurant_id,
-                {"hours_of_operation": json.dumps(final_hours)}
+                restaurant_id, {"hours_of_operation": json.dumps(final_hours)}
             )
 
             if not success:
@@ -502,7 +498,7 @@ class RestaurantService(BaseService):
         except Exception as e:
             self.logger.error(
                 f"Error fetching Google hours for restaurant {restaurant_id}: {e}",
-                place_id=place_id
+                place_id=place_id,
             )
             raise
 
@@ -567,7 +563,7 @@ class RestaurantService(BaseService):
                     current_hours = parse_hours_blob(current_hours_json)
                 else:
                     current_hours = current_hours_json
-                
+
                 final_hours = hours_normalizer.merge_hours(
                     current_hours, normalized_hours, "prefer-incoming"
                 )
@@ -576,8 +572,7 @@ class RestaurantService(BaseService):
 
             # Update in database
             success = self.db_manager.update_restaurant_data(
-                restaurant_id,
-                {"hours_of_operation": json.dumps(final_hours)}
+                restaurant_id, {"hours_of_operation": json.dumps(final_hours)}
             )
 
             if not success:
@@ -595,7 +590,7 @@ class RestaurantService(BaseService):
         except Exception as e:
             self.logger.error(
                 f"Error fetching ORB hours for restaurant {restaurant_id}: {e}",
-                cert_url=cert_url
+                cert_url=cert_url,
             )
             raise
 

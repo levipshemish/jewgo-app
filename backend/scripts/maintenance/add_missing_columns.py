@@ -7,10 +7,10 @@ import os
 import sys
 
 import psycopg2
+from database.database_manager_v3 import EnhancedDatabaseManager
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from database.database_manager_v3 import EnhancedDatabaseManager
 
 def add_missing_columns() -> None:
     """Add missing columns to the restaurants table."""
@@ -69,7 +69,6 @@ def add_missing_columns() -> None:
         # Test the database manager
         db = EnhancedDatabaseManager(database_url)
         if db.connect():
-
             # Test getting restaurants
             restaurants = db.get_restaurants(limit=5, as_dict=True)
 

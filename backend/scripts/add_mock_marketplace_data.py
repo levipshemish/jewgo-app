@@ -7,20 +7,22 @@ This script adds sample marketplace listings to test the marketplace functionali
 import os
 import sys
 from datetime import datetime
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 def create_mock_marketplace_data() -> List[Dict[str, Any]]:
     """Create mock marketplace listings data."""
@@ -52,8 +54,8 @@ def create_mock_marketplace_data() -> List[Dict[str, Any]]:
             "thumbnail": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop",
             "images": [
                 "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop",
-                "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop"
-            ]
+                "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop",
+            ],
         },
         {
             "title": "2018 Toyota Camry - Kosher Family Car",
@@ -83,8 +85,8 @@ def create_mock_marketplace_data() -> List[Dict[str, Any]]:
             "thumbnail": "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop",
             "images": [
                 "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
-                "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
-            ]
+                "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+            ],
         },
         {
             "title": "Gemach - Free Loan Items",
@@ -113,7 +115,7 @@ def create_mock_marketplace_data() -> List[Dict[str, Any]]:
             "thumbnail": "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=400&h=300&fit=crop",
             "images": [
                 "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop"
-            ]
+            ],
         },
         {
             "title": "Kosher Cookbook Collection",
@@ -142,34 +144,38 @@ def create_mock_marketplace_data() -> List[Dict[str, Any]]:
             "thumbnail": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=300&fit=crop",
             "images": [
                 "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&h=600&fit=crop"
-            ]
-        }
+            ],
+        },
     ]
+
 
 def add_mock_data_to_database():
     """Add mock marketplace data to the database."""
     try:
         # Initialize database manager
         db_manager = EnhancedDatabaseManager()
-        
+
         # Get database connection
         with db_manager.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Check if marketplace table exists
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_name = 'marketplace'
                     );
-                """)
-                
+                """
+                )
+
                 table_exists = cursor.fetchone()[0]
-                
+
                 if not table_exists:
                     logger.info("Creating marketplace table...")
-                    
+
                     # Create marketplace table
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         CREATE TABLE marketplace (
                             id SERIAL PRIMARY KEY,
                             title VARCHAR(500) NOT NULL,
@@ -201,22 +207,32 @@ def add_mock_data_to_database():
                             created_at TIMESTAMPTZ DEFAULT NOW(),
                             updated_at TIMESTAMPTZ DEFAULT NOW()
                         );
-                    """)
-                    
+                    """
+                    )
+
                     # Create indexes
-                    cursor.execute("CREATE INDEX idx_marketplace_category ON marketplace(category);")
-                    cursor.execute("CREATE INDEX idx_marketplace_city ON marketplace(city);")
-                    cursor.execute("CREATE INDEX idx_marketplace_status ON marketplace(status);")
-                    cursor.execute("CREATE INDEX idx_marketplace_price ON marketplace(price);")
-                    
+                    cursor.execute(
+                        "CREATE INDEX idx_marketplace_category ON marketplace(category);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX idx_marketplace_city ON marketplace(city);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX idx_marketplace_status ON marketplace(status);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX idx_marketplace_price ON marketplace(price);"
+                    )
+
                     logger.info("Marketplace table created successfully")
-                
+
                 # Get mock data
                 mock_data = create_mock_marketplace_data()
-                
+
                 # Insert mock data
                 for item in mock_data:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO marketplace (
                             title, description, price, currency, category, subcategory,
                             city, state, zip_code, vendor_name, vendor_phone, vendor_email,
@@ -227,44 +243,68 @@ def add_mock_data_to_database():
                             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                             %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
-                    """, (
-                        item["title"], item["description"], item["price"], item["currency"],
-                        item["category"], item["subcategory"], item["city"], item["state"],
-                        item["zip_code"], item["vendor_name"], item["vendor_phone"],
-                        item["vendor_email"], item["kosher_agency"], item["kosher_level"],
-                        item["is_available"], item["is_featured"], item["is_on_sale"],
-                        item["discount_percentage"], item["stock"], item["rating"],
-                        item["review_count"], item["status"], item["latitude"],
-                        item["longitude"], item["thumbnail"], item["images"]
-                    ))
-                
+                    """,
+                        (
+                            item["title"],
+                            item["description"],
+                            item["price"],
+                            item["currency"],
+                            item["category"],
+                            item["subcategory"],
+                            item["city"],
+                            item["state"],
+                            item["zip_code"],
+                            item["vendor_name"],
+                            item["vendor_phone"],
+                            item["vendor_email"],
+                            item["kosher_agency"],
+                            item["kosher_level"],
+                            item["is_available"],
+                            item["is_featured"],
+                            item["is_on_sale"],
+                            item["discount_percentage"],
+                            item["stock"],
+                            item["rating"],
+                            item["review_count"],
+                            item["status"],
+                            item["latitude"],
+                            item["longitude"],
+                            item["thumbnail"],
+                            item["images"],
+                        ),
+                    )
+
                 # Commit the transaction
                 conn.commit()
-                
-                logger.info(f"Successfully added {len(mock_data)} mock marketplace listings")
-                
+
+                logger.info(
+                    f"Successfully added {len(mock_data)} mock marketplace listings"
+                )
+
                 # Verify the data was inserted
                 cursor.execute("SELECT COUNT(*) FROM marketplace")
                 count = cursor.fetchone()[0]
                 logger.info(f"Total marketplace listings in database: {count}")
-                
+
                 return True
-                
+
     except Exception as e:
         logger.error(f"Error adding mock marketplace data: {str(e)}")
         return False
 
+
 def main():
     """Main function to run the script."""
     logger.info("Starting to add mock marketplace data...")
-    
+
     success = add_mock_data_to_database()
-    
+
     if success:
         logger.info("✅ Mock marketplace data added successfully!")
     else:
         logger.error("❌ Failed to add mock marketplace data")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

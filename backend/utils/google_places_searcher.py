@@ -14,13 +14,13 @@ Usage:
 
 import os
 import re
-from typing import Optional, Dict, Any, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 class GooglePlacesSearcher:
     """
@@ -42,7 +42,7 @@ class GooglePlacesSearcher:
 
         logger.info(
             "Google Places Searcher initialized",
-            api_key_length=len(self.api_key) if self.api_key else 0
+            api_key_length=len(self.api_key) if self.api_key else 0,
         )
 
     def _normalize_name(self, name: str) -> str:
@@ -100,7 +100,7 @@ class GooglePlacesSearcher:
         state: str = None,
         lat: float = None,
         lng: float = None,
-        search_type: str = "general"
+        search_type: str = "general",
     ) -> Optional[str]:
         """
         Search for a place using Google Places API with multiple fallback strategies.
@@ -127,18 +127,19 @@ class GooglePlacesSearcher:
             clean_addr = self._normalize_address(address or "")
 
             if search_type == "enhanced":
-                return self._search_place_enhanced(clean_name, clean_addr, city, state, lat, lng)
+                return self._search_place_enhanced(
+                    clean_name, clean_addr, city, state, lat, lng
+                )
             elif search_type == "simple":
                 return self._search_place_simple(clean_name, clean_addr)
             else:  # general
-                return self._search_place_general(clean_name, clean_addr, city, state, lat, lng)
+                return self._search_place_general(
+                    clean_name, clean_addr, city, state, lat, lng
+                )
 
         except Exception as e:
             logger.error(
-                "Error in search_place",
-                name=name,
-                address=address,
-                error=str(e)
+                "Error in search_place", name=name, address=address, error=str(e)
             )
             return None
 
@@ -149,11 +150,12 @@ class GooglePlacesSearcher:
         city: str = None,
         state: str = None,
         lat: float = None,
-        lng: float = None
+        lng: float = None,
     ) -> Optional[str]:
         """
         General search strategy with multiple fallbacks.
         """
+
         def _text_search(query: str) -> Optional[str]:
             """Perform text search with location bias."""
             url = f"{self.base_url}/textsearch/json"
@@ -166,19 +168,17 @@ class GooglePlacesSearcher:
             if lat is not None and lng is not None:
                 params["location"] = f"{lat},{lng}"
                 params["radius"] = 5000
-            
+
             logger.info("Text search", query=query)
             resp = requests.get(url, params=params, timeout=10)
             resp.raise_for_status()
             data = resp.json()
-            
+
             if data.get("status") == "OK" and data.get("results"):
                 return data["results"][0].get("place_id")
-            
+
             logger.warning(
-                "Text search no results",
-                query=query,
-                status=data.get("status")
+                "Text search no results", query=query, status=data.get("status")
             )
             return None
 
@@ -191,20 +191,18 @@ class GooglePlacesSearcher:
                 "key": self.api_key,
                 "fields": "place_id,name,formatted_address",
             }
-            
+
             logger.info("Find Place search", query=query)
             resp = requests.get(url, params=params, timeout=10)
             resp.raise_for_status()
             data = resp.json()
-            
+
             candidates = data.get("candidates") or []
             if candidates:
                 return candidates[0].get("place_id")
-            
+
             logger.warning(
-                "Find Place no candidates",
-                query=query,
-                status=data.get("status")
+                "Find Place no candidates", query=query, status=data.get("status")
             )
             return None
 
@@ -254,7 +252,7 @@ class GooglePlacesSearcher:
         city: str = None,
         state: str = None,
         lat: float = None,
-        lng: float = None
+        lng: float = None,
     ) -> Optional[str]:
         """
         Enhanced search strategy with multiple specific approaches.
@@ -303,10 +301,10 @@ class GooglePlacesSearcher:
     def _search_place_single(self, query: str) -> Optional[str]:
         """
         Single search attempt with a specific query.
-        
+
         Args:
             query: Search query string
-            
+
         Returns:
             Place ID if found, None otherwise
         """
@@ -329,18 +327,16 @@ class GooglePlacesSearcher:
             return None
 
     def get_place_details(
-        self,
-        place_id: str,
-        fields: Union[List[str], str] = None
+        self, place_id: str, fields: Union[List[str], str] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Get detailed information about a place.
-        
+
         Args:
             place_id: Google Places place ID
             fields: List of fields to retrieve or string of comma-separated fields.
                    If None, uses default fields.
-                   
+
         Returns:
             Place details dictionary or None if error
         """
@@ -377,26 +373,22 @@ class GooglePlacesSearcher:
             logger.warning(
                 "Error getting place details",
                 place_id=place_id,
-                status=data.get("status")
+                status=data.get("status"),
             )
             return None
 
         except Exception as e:
-            logger.error(
-                "Error getting place details",
-                place_id=place_id,
-                error=str(e)
-            )
+            logger.error("Error getting place details", place_id=place_id, error=str(e))
             return None
 
     def search_place_for_website(self, name: str, address: str) -> str:
         """
         Search for a place and return its website URL.
-        
+
         Args:
             name: Restaurant name
             address: Restaurant address
-            
+
         Returns:
             Website URL if found, empty string otherwise
         """
@@ -422,11 +414,11 @@ class GooglePlacesSearcher:
     def search_place_for_hours(self, name: str, address: str) -> str:
         """
         Search for a place and return its opening hours.
-        
+
         Args:
             name: Restaurant name
             address: Restaurant address
-            
+
         Returns:
             Opening hours string if found, empty string otherwise
         """

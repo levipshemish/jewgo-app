@@ -10,16 +10,16 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import text
-
-from utils.logging_config import get_logger
 from database.database_manager_v3 import EnhancedDatabaseManager
+from sqlalchemy import text
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 """Feedback Manager for JewGo App.
 =============================
 Handles user feedback submissions, storage, and management.
 """
+
 
 class FeedbackManager:
     """Manages user feedback submissions and processing."""

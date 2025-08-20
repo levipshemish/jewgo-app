@@ -6,11 +6,10 @@ Helps configure and test PostgreSQL database connections.
 import os
 import sys
 
+from database_manager import DatabaseManager as OldDB
+from database_manager_v2 import Base, EnhancedDatabaseManager
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-
-from database_manager_v2 import Base, EnhancedDatabaseManager
-from database_manager import DatabaseManager as OldDB
 
 # Load environment variables
 load_dotenv()

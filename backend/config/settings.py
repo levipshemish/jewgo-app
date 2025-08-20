@@ -2,10 +2,6 @@ import os
 from datetime import timedelta
 from typing import Any, Dict
 
-
-
-
-
 """Backend Configuration Settings.
 
 This module contains all configurable settings for the JewGo backend application,

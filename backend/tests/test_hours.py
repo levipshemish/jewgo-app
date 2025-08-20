@@ -5,8 +5,8 @@ from datetime import datetime, time
 
 import pytest
 import pytz
-
 from utils.hours import HoursParser, StatusCalculator, TimezoneHelper
+
 
 class TestHoursParser:
     """Test cases for HoursParser class."""

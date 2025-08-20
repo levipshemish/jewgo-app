@@ -6,6 +6,7 @@ import os
 from app_factory import create_app, deps
 from dotenv import load_dotenv
 
+
 def debug_database_manager() -> None:
     """Debug the database manager initialization."""
     # Load environment variables
@@ -16,15 +17,12 @@ def debug_database_manager() -> None:
 
     # Test database manager in app context
     with app.app_context():
-
         # Get the database manager
         db_manager = deps.get("get_db_manager")()
 
         if db_manager:
-
             # Test connection
             if db_manager.test_connection():
-
                 # Test getting restaurants
                 restaurants = db_manager.get_restaurants(limit=5, as_dict=True)
 

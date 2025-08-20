@@ -11,40 +11,42 @@ Version: 1.0
 Last Updated: 2024
 """
 
-import os
-import psycopg2
-import uuid
 import json
+import os
+import uuid
 from datetime import datetime, timedelta
+
+import psycopg2
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
+
 def add_marketplace_sample_data():
     """Add sample data to the correct marketplace tables."""
-    database_url = os.getenv('DATABASE_URL')
-    
-    if database_url.startswith('postgresql+psycopg://'):
-        database_url = database_url.replace('postgresql+psycopg://', 'postgresql://')
-    
+    database_url = os.getenv("DATABASE_URL")
+
+    if database_url.startswith("postgresql+psycopg://"):
+        database_url = database_url.replace("postgresql+psycopg://", "postgresql://")
+
     try:
         conn = psycopg2.connect(database_url)
         cursor = conn.cursor()
-        
+
         print("✅ Connected to database")
-        
+
         # First, let's check what's already in the tables
         cursor.execute('SELECT COUNT(*) FROM "Marketplace listings"')
         existing_listings = cursor.fetchone()[0]
-        
+
         cursor.execute('SELECT COUNT(*) FROM "Marketplace Catagories"')
         existing_categories = cursor.fetchone()[0]
-        
+
         print(f"📊 Current data:")
         print(f"   Marketplace listings: {existing_listings}")
         print(f"   Marketplace Categories: {existing_categories}")
-        
+
         # Add categories if they don't exist
         categories = [
             ("Appliances", "appliances", 1),
@@ -54,29 +56,34 @@ def add_marketplace_sample_data():
             ("Electronics", "electronics", 5),
             ("Furniture", "furniture", 6),
             ("Clothing", "clothing", 7),
-            ("Toys & Games", "toys-games", 8)
+            ("Toys & Games", "toys-games", 8),
         ]
-        
+
         print(f"\n📂 Adding {len(categories)} categories...")
-        
+
         category_ids = {}
         for name, slug, sort_order in categories:
             # Check if category already exists
-            cursor.execute('SELECT id FROM "Marketplace Catagories" WHERE name = %s', (name,))
+            cursor.execute(
+                'SELECT id FROM "Marketplace Catagories" WHERE name = %s', (name,)
+            )
             existing = cursor.fetchone()
-            
+
             if existing:
                 category_ids[name] = existing[0]
                 print(f"   ✅ Category '{name}' already exists (ID: {existing[0]})")
             else:
-                cursor.execute('''
+                cursor.execute(
+                    """
                     INSERT INTO "Marketplace Catagories" (name, slug, sort_order, active)
                     VALUES (%s, %s, %s, %s) RETURNING id
-                ''', (name, slug, sort_order, True))
+                """,
+                    (name, slug, sort_order, True),
+                )
                 category_id = cursor.fetchone()[0]
                 category_ids[name] = category_id
                 print(f"   ➕ Added category '{name}' (ID: {category_id})")
-        
+
         # Sample marketplace listings
         sample_listings = [
             {
@@ -98,10 +105,7 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=30),
                 "status": "active",
                 "kind": "appliance",
-                "attributes": {
-                    "appliance_type": "blender",
-                    "kosher_use": "dairy"
-                }
+                "attributes": {"appliance_type": "blender", "kosher_use": "dairy"},
             },
             {
                 "title": "Complete Shas Set - Talmud Bavli",
@@ -122,7 +126,7 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=60),
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "title": "Community Gemach - Baby Equipment",
@@ -144,7 +148,7 @@ def add_marketplace_sample_data():
                 "loan_terms": {"duration_days": 30, "deposit_required": False},
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "title": "2019 Honda Odyssey - Family Minivan",
@@ -170,8 +174,8 @@ def add_marketplace_sample_data():
                     "year": 2019,
                     "mileage": 45000,
                     "make": "Honda",
-                    "model": "Odyssey"
-                }
+                    "model": "Odyssey",
+                },
             },
             {
                 "title": "Kosher Smartphone - Separate Apps",
@@ -192,7 +196,7 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=45),
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "title": "Shabbat Table Set - 8 Person",
@@ -213,7 +217,7 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=60),
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "title": "Tzitzit Set - Handmade",
@@ -234,7 +238,7 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=30),
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "title": "Shabbat Activity Kit for Kids",
@@ -255,20 +259,23 @@ def add_marketplace_sample_data():
                 "available_to": datetime.now() + timedelta(days=30),
                 "status": "active",
                 "kind": "regular",
-                "attributes": {}
-            }
+                "attributes": {},
+            },
         ]
-        
+
         print(f"\n📦 Adding {len(sample_listings)} sample listings...")
-        
+
         # Temporarily disable the validate_listing_kind trigger
-        cursor.execute('ALTER TABLE "Marketplace listings" DISABLE TRIGGER trg_validate_listing_kind')
+        cursor.execute(
+            'ALTER TABLE "Marketplace listings" DISABLE TRIGGER trg_validate_listing_kind'
+        )
         print("   🔧 Temporarily disabled validate_listing_kind trigger")
-        
+
         for listing in sample_listings:
             listing_id = str(uuid.uuid4())
-            
-            cursor.execute('''
+
+            cursor.execute(
+                """
                 INSERT INTO "Marketplace listings" (
                     id, title, description, type, category_id, price_cents, currency,
                     condition, city, region, zip, country, lat, lng, seller_user_id,
@@ -276,46 +283,74 @@ def add_marketplace_sample_data():
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
-            ''', (
-                listing_id, listing["title"], listing["description"], listing["type"],
-                listing["category_id"], listing["price_cents"], listing["currency"],
-                listing["condition"], listing["city"], listing["region"], listing["zip"],
-                listing["country"], listing["lat"], listing["lng"], listing["seller_user_id"],
-                listing["available_from"], listing["available_to"], json.dumps(listing.get("loan_terms", {})),
-                json.dumps(listing.get("attributes", {})), 0, 0, listing["status"], datetime.now(), datetime.now()
-            ))
-            
-            price_str = f"${listing['price_cents']/100:,.2f}" if listing['price_cents'] > 0 else "FREE"
+            """,
+                (
+                    listing_id,
+                    listing["title"],
+                    listing["description"],
+                    listing["type"],
+                    listing["category_id"],
+                    listing["price_cents"],
+                    listing["currency"],
+                    listing["condition"],
+                    listing["city"],
+                    listing["region"],
+                    listing["zip"],
+                    listing["country"],
+                    listing["lat"],
+                    listing["lng"],
+                    listing["seller_user_id"],
+                    listing["available_from"],
+                    listing["available_to"],
+                    json.dumps(listing.get("loan_terms", {})),
+                    json.dumps(listing.get("attributes", {})),
+                    0,
+                    0,
+                    listing["status"],
+                    datetime.now(),
+                    datetime.now(),
+                ),
+            )
+
+            price_str = (
+                f"${listing['price_cents']/100:,.2f}"
+                if listing["price_cents"] > 0
+                else "FREE"
+            )
             print(f"   ➕ Added: {listing['title']} - {price_str}")
-        
+
         # Re-enable the trigger
-        cursor.execute('ALTER TABLE "Marketplace listings" ENABLE TRIGGER trg_validate_listing_kind')
+        cursor.execute(
+            'ALTER TABLE "Marketplace listings" ENABLE TRIGGER trg_validate_listing_kind'
+        )
         print("   🔧 Re-enabled validate_listing_kind trigger")
-        
+
         # Commit changes
         conn.commit()
-        
+
         # Final verification
         cursor.execute('SELECT COUNT(*) FROM "Marketplace listings"')
         final_listings = cursor.fetchone()[0]
-        
+
         cursor.execute('SELECT COUNT(*) FROM "Marketplace Catagories"')
         final_categories = cursor.fetchone()[0]
-        
+
         print(f"\n✅ Final data:")
         print(f"   Marketplace listings: {final_listings}")
         print(f"   Marketplace Categories: {final_categories}")
-        
+
         # Show sample of listings
-        cursor.execute('''
+        cursor.execute(
+            """
             SELECT ml.title, ml.price_cents, ml.currency, ml.city, ml.region, mc.name as category
             FROM "Marketplace listings" ml
             JOIN "Marketplace Catagories" mc ON ml.category_id = mc.id
             ORDER BY ml.created_at DESC
             LIMIT 5
-        ''')
+        """
+        )
         recent_listings = cursor.fetchall()
-        
+
         print(f"\n📋 Recent listings:")
         print("-" * 60)
         for title, price_cents, currency, city, region, category in recent_listings:
@@ -323,21 +358,24 @@ def add_marketplace_sample_data():
             print(f"🏷️  {title}")
             print(f"   💰 {price_str} | 📍 {city}, {region} | 📂 {category}")
             print()
-        
+
         cursor.close()
         conn.close()
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Error: {str(e)}")
         return False
+
 
 if __name__ == "__main__":
     print("🚀 Adding sample data to correct marketplace tables...")
     success = add_marketplace_sample_data()
     if success:
         print("✅ Sample marketplace data added successfully!")
-        print("🌐 You can now view the marketplace at: http://localhost:3000/marketplace")
+        print(
+            "🌐 You can now view the marketplace at: http://localhost:3000/marketplace"
+        )
     else:
         print("❌ Failed to add sample marketplace data")

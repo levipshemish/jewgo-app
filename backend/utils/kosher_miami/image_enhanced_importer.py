@@ -1,5 +1,3 @@
-from utils.logging_config import get_logger
-
 import json
 import os
 import sys
@@ -7,12 +5,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-import requests
 
-from config.config import get_config
+import requests
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.cloudinary_uploader import CloudinaryUploader
 from utils.google_places_image_scraper import GooglePlacesImageScraper
+from utils.logging_config import get_logger
+
+from config.config import get_config
+
 from .processor import KosherMiamiProcessor
 
 logger = get_logger(__name__)
@@ -30,6 +31,7 @@ Version: 2.0
 
 # Add backend to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+
 
 class ImageEnhancedKosherMiamiImporter:
     """Enhanced importer with image scraping and Cloudinary upload."""

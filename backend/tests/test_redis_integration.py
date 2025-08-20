@@ -1,19 +1,19 @@
+import json
 import os
 import sys
-import json
 from datetime import datetime
 
 try:
-    from utils.cache_manager import cache_manager
-    from app_factory import create_app
     import redis
+    from app_factory import create_app
     from monitor_redis import RedisMonitor
+    from utils.cache_manager import cache_manager
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    from utils.cache_manager import cache_manager
-    from app_factory import create_app
     import redis
+    from app_factory import create_app
     from monitor_redis import RedisMonitor
+    from utils.cache_manager import cache_manager
 
 #!/usr/bin/env python3
 """
@@ -24,9 +24,9 @@ This script tests the Redis integration with Redis Cloud.
 """
 
 # Set Redis URL
-os.environ["REDIS_URL"] = (
-    "redis://default:p4El96DKlpczWdIIkdelvNUC8JBRm83r@redis-10768.c14.us-east-1-2.ec2.redns.redis-cloud.com:10768"
-)
+os.environ[
+    "REDIS_URL"
+] = "redis://default:p4El96DKlpczWdIIkdelvNUC8JBRm83r@redis-10768.c14.us-east-1-2.ec2.redns.redis-cloud.com:10768"
 
 
 def test_redis_connection():

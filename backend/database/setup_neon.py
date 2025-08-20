@@ -4,16 +4,16 @@ Quick setup for Neon Tech PostgreSQL database.
 """
 
 import os
-import sys
 import subprocess
+import sys
 import time
 
 import requests
+from database_manager import DatabaseManager as OldDB
+from database_manager_v2 import Base
+from database_manager_v2 import EnhancedDatabaseManager as NewDB
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-
-from database_manager import DatabaseManager as OldDB
-from database_manager_v2 import Base, EnhancedDatabaseManager as NewDB
 
 # Load environment variables
 load_dotenv(".env")
@@ -35,7 +35,6 @@ def setup_neon_database() -> bool | None:
     try:
         db = NewDB(database_url)
         if db.connect():
-
             # Create tables
             engine = create_engine(database_url)
             Base.metadata.create_all(engine)
@@ -143,7 +142,6 @@ def test_api() -> None:
 def main() -> None:
     """Main setup function."""
     if setup_neon_database():
-
         # Offer to test API
         test_choice = input("\n🧪 Would you like to test the API? (y/n): ").lower()
         if test_choice == "y":

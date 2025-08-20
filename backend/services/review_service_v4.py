@@ -8,6 +8,7 @@ from utils.error_handler import NotFoundError, ValidationError
 #!/usr/bin/env python3
 """Review service v4 - handles all review-related business logic using DatabaseManager v4."""
 
+
 class ReviewServiceV4(BaseService):
     """Service for review-related operations using DatabaseManager v4."""
 
@@ -73,7 +74,9 @@ class ReviewServiceV4(BaseService):
             Total count of reviews
 
         """
-        self.log_operation("get_reviews_count", restaurant_id=restaurant_id, status=status)
+        self.log_operation(
+            "get_reviews_count", restaurant_id=restaurant_id, status=status
+        )
 
         try:
             # Use database manager v4's get_reviews_count method
@@ -277,7 +280,11 @@ class ReviewServiceV4(BaseService):
             List of review dictionaries
 
         """
-        if not restaurant_id or not isinstance(restaurant_id, int) or restaurant_id <= 0:
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("get_reviews_by_restaurant", restaurant_id=restaurant_id)
@@ -300,7 +307,9 @@ class ReviewServiceV4(BaseService):
             return reviews
 
         except Exception as e:
-            self.logger.exception("Error retrieving reviews by restaurant", error=str(e))
+            self.logger.exception(
+                "Error retrieving reviews by restaurant", error=str(e)
+            )
             raise
 
     def get_reviews_by_user(
@@ -398,20 +407,26 @@ class ReviewServiceV4(BaseService):
         """Validate review data."""
         required_fields = ["restaurant_id", "user_id", "user_name", "rating", "content"]
         missing_fields = [field for field in required_fields if not data.get(field)]
-        
+
         if missing_fields:
-            raise ValidationError(f"Missing required fields: {', '.join(missing_fields)}")
+            raise ValidationError(
+                f"Missing required fields: {', '.join(missing_fields)}"
+            )
 
         # Validate rating
         rating = data.get("rating")
-        if rating is not None and (not isinstance(rating, int) or rating < 1 or rating > 5):
+        if rating is not None and (
+            not isinstance(rating, int) or rating < 1 or rating > 5
+        ):
             raise ValidationError("Rating must be an integer between 1 and 5")
 
     def _validate_review_update_data(self, data: Dict[str, Any]) -> None:
         """Validate review update data."""
         # Validate rating if provided
         rating = data.get("rating")
-        if rating is not None and (not isinstance(rating, int) or rating < 1 or rating > 5):
+        if rating is not None and (
+            not isinstance(rating, int) or rating < 1 or rating > 5
+        ):
             raise ValidationError("Rating must be an integer between 1 and 5")
 
     def _preprocess_review_data(self, data: Dict[str, Any]) -> Dict[str, Any]:

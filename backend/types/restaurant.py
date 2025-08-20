@@ -3,11 +3,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Restaurant Type Definitions for JewGo Backend.
 ============================================
@@ -18,6 +13,7 @@ consistency between frontend and backend.
 Author: JewGo Development Team
 Version: 1.0
 """
+
 
 class KosherCategory(str, Enum):
     """Kosher category enumeration."""

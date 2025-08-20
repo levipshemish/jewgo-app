@@ -19,23 +19,32 @@ Last Updated: 2024
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from database.database_manager_v3 import Restaurant
 from sqlalchemy import or_, text
 from sqlalchemy.orm import Session
-
-from database.database_manager_v3 import Restaurant
 from utils.logging_config import get_logger
 
 from ..core.base_search import BaseSearchProvider, SearchError
-from ..core.search_types import CertifyingAgency, KosherCategory, SearchFilters, SearchResult, SearchSuggestion, SearchType
+from ..core.search_types import (
+    CertifyingAgency,
+    KosherCategory,
+    SearchFilters,
+    SearchResult,
+    SearchSuggestion,
+    SearchType,
+)
 
 logger = get_logger(__name__)
+
 
 class PostgreSQLSearchProvider(BaseSearchProvider):
     """PostgreSQL search provider using full-text search and trigram similarity."""
 
-    def __init__(self, db_session: Session, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self, db_session: Session, config: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Initialize PostgreSQL search provider.
-        
+
         Args:
             db_session: Database session
             config: Provider configuration
@@ -49,29 +58,30 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
         filters: Optional[SearchFilters] = None,
         limit: int = 20,
         offset: int = 0,
-        **kwargs
+        **kwargs,
     ) -> List[SearchResult]:
         """Execute PostgreSQL search and return results.
-        
+
         Args:
             query: Search query string
             filters: Optional search filters
             limit: Maximum number of results to return
             offset: Number of results to skip
             **kwargs: Additional search parameters
-            
+
         Returns:
             List of search results
-            
+
         Raises:
             SearchError: If search fails
         """
         try:
             # Preprocess query
             processed_query = await self.preprocess_query(query)
-            
+
             # Use simple SQL query for now
-            sql_query = text("""
+            sql_query = text(
+                """
                 SELECT 
                     id,
                     name,
@@ -105,27 +115,31 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
                    OR short_description ILIKE :query_any
                 ORDER BY relevance_score DESC
                 LIMIT :limit OFFSET :offset
-            """)
-            
+            """
+            )
+
             # Execute query
-            result = self.session.execute(sql_query, {
-                'query': processed_query,
-                'query_start': f"{processed_query}%",
-                'query_any': f"%{processed_query}%",
-                'limit': limit,
-                'offset': offset
-            })
-            
+            result = self.session.execute(
+                sql_query,
+                {
+                    "query": processed_query,
+                    "query_start": f"{processed_query}%",
+                    "query_any": f"%{processed_query}%",
+                    "limit": limit,
+                    "offset": offset,
+                },
+            )
+
             rows = result.fetchall()
-            
+
             # Convert to SearchResult objects
             search_results = []
             for row in rows:
                 search_result = self._convert_to_search_result(row, processed_query)
                 search_results.append(search_result)
-            
+
             return search_results
-            
+
         except Exception as e:
             self.logger.error("PostgreSQL search failed", error=str(e), query=query)
             raise SearchError(f"PostgreSQL search failed: {str(e)}", self.name, query)
@@ -134,35 +148,35 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
 
     async def get_suggestions(self, query: str, limit: int = 10) -> List[str]:
         """Get search suggestions for autocomplete.
-        
+
         Args:
             query: Partial query string
             limit: Maximum number of suggestions
-            
+
         Returns:
             List of suggestion strings
         """
         try:
             processed_query = await self.preprocess_query(query)
-            
+
             # Get restaurant name suggestions
             name_suggestions = self._get_name_suggestions(processed_query, limit // 2)
-            
+
             # Get city suggestions
             city_suggestions = self._get_city_suggestions(processed_query, limit // 2)
-            
+
             # Combine and return suggestions
             suggestions = name_suggestions + city_suggestions
             return suggestions[:limit]
-            
+
         except Exception as e:
             self.logger.error("Failed to get suggestions", error=str(e), query=query)
             return []
-    
+
     def get_search_type(self) -> str:
         """Return the type of search this provider implements."""
         return SearchType.POSTGRESQL.value
-    
+
     async def is_healthy(self) -> bool:
         """Check if the search provider is healthy and available."""
         try:
@@ -172,7 +186,7 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
         except Exception as e:
             self.logger.error("PostgreSQL search health check failed", error=str(e))
             return False
-    
+
     def _get_name_suggestions(self, query: str, limit: int) -> List[str]:
         """Get restaurant name suggestions."""
         suggestions = (
@@ -182,9 +196,9 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
             .limit(limit)
             .all()
         )
-        
+
         return [suggestion[0] for suggestion in suggestions]
-    
+
     def _get_city_suggestions(self, query: str, limit: int) -> List[str]:
         """Get city suggestions."""
         suggestions = (
@@ -194,43 +208,43 @@ class PostgreSQLSearchProvider(BaseSearchProvider):
             .limit(limit)
             .all()
         )
-        
+
         return [suggestion[0] for suggestion in suggestions]
-    
+
     def _convert_to_search_result(self, row: Any, query: str) -> SearchResult:
         """Convert database row to SearchResult object."""
         # Extract relevance score if available
-        relevance_score = getattr(row, 'relevance_score', 0.0)
-        similarity_score = getattr(row, 'similarity_score', None)
-        
+        relevance_score = getattr(row, "relevance_score", 0.0)
+        similarity_score = getattr(row, "similarity_score", None)
+
         # Extract metadata
         metadata = {
-            'similarity_score': similarity_score,
-            'query': query,
-            'search_provider': self.name
+            "similarity_score": similarity_score,
+            "query": query,
+            "search_provider": self.name,
         }
-        
+
         return SearchResult(
             id=row.id,
             name=row.name,
             address=row.address,
             city=row.city,
             state=row.state,
-            zip_code=getattr(row, 'zip_code', None),
-            phone_number=getattr(row, 'phone_number', None),
-            website=getattr(row, 'website', None),
-            kosher_category=getattr(row, 'kosher_category', None),
-            certifying_agency=getattr(row, 'certifying_agency', None),
-            is_cholov_yisroel=getattr(row, 'is_cholov_yisroel', None),
-            is_pas_yisroel=getattr(row, 'is_pas_yisroel', None),
-            latitude=getattr(row, 'latitude', None),
-            longitude=getattr(row, 'longitude', None),
-            rating=getattr(row, 'rating', None),
-            price_range=getattr(row, 'price_range', None),
+            zip_code=getattr(row, "zip_code", None),
+            phone_number=getattr(row, "phone_number", None),
+            website=getattr(row, "website", None),
+            kosher_category=getattr(row, "kosher_category", None),
+            certifying_agency=getattr(row, "certifying_agency", None),
+            is_cholov_yisroel=getattr(row, "is_cholov_yisroel", None),
+            is_pas_yisroel=getattr(row, "is_pas_yisroel", None),
+            latitude=getattr(row, "latitude", None),
+            longitude=getattr(row, "longitude", None),
+            rating=getattr(row, "rating", None),
+            price_range=getattr(row, "price_range", None),
             relevance_score=relevance_score,
             search_type=SearchType.POSTGRESQL,
             metadata=metadata,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
     def get_autocomplete_suggestions(

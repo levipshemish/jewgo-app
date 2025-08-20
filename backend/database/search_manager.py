@@ -21,13 +21,13 @@ Last Updated: 2024
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
+from database.database_manager_v3 import Restaurant
 from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
-
-from database.database_manager_v3 import Restaurant
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 class AdvancedSearchManager:
     """Advanced search manager using PostgreSQL full-text search capabilities."""

@@ -14,20 +14,32 @@ Last Updated: 2024
 """
 
 import os
+
+# Configure logging using unified logging configuration
 import sys
 from datetime import datetime
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, Float, Integer, MetaData, String, Table, Text,
-    create_engine, text, ForeignKey, UniqueConstraint, CheckConstraint, Index
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    create_engine,
+    text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ENUM
+from sqlalchemy.dialects.postgresql import ENUM, JSONB, UUID
 from sqlalchemy.exc import SQLAlchemyError
 
-# Configure logging using unified logging configuration
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -54,43 +66,57 @@ def run_migration() -> bool:
 
                 # 1. Create extensions
                 logger.info("Creating PostgreSQL extensions")
-                conn.execute(text("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\""))
+                conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gin"))
 
                 # 2. Create enum types
                 logger.info("Creating enum types")
-                
+
                 # Listing type enum
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     DO $$ BEGIN
                         CREATE TYPE listing_type AS ENUM ('sale', 'free', 'borrow', 'gemach');
                     EXCEPTION
                         WHEN duplicate_object THEN null;
                     END $$;
-                """))
+                """
+                    )
+                )
 
                 # Item condition enum
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     DO $$ BEGIN
                         CREATE TYPE item_condition AS ENUM ('new','used_like_new','used_good','used_fair');
                     EXCEPTION
                         WHEN duplicate_object THEN null;
                     END $$;
-                """))
+                """
+                    )
+                )
 
                 # Kosher use enum
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     DO $$ BEGIN
                         CREATE TYPE kosher_use AS ENUM ('meat','dairy','pareve','unspecified');
                     EXCEPTION
                         WHEN duplicate_object THEN null;
                     END $$;
-                """))
+                """
+                    )
+                )
 
                 # 3. Create users table (extend existing if needed)
                 logger.info("Creating/updating users table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS users (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         display_name TEXT NOT NULL,
@@ -102,36 +128,56 @@ def run_migration() -> bool:
                         status TEXT NOT NULL DEFAULT 'active',
                         is_verified BOOLEAN NOT NULL DEFAULT FALSE
                     )
-                """))
+                """
+                    )
+                )
 
                 # Add marketplace-specific columns if they don't exist
                 try:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS username CITEXT UNIQUE"))
+                    conn.execute(
+                        text(
+                            "ALTER TABLE users ADD COLUMN IF NOT EXISTS username CITEXT UNIQUE"
+                        )
+                    )
                 except:
                     pass  # Column might already exist
 
                 try:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_e164 TEXT UNIQUE"))
+                    conn.execute(
+                        text(
+                            "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_e164 TEXT UNIQUE"
+                        )
+                    )
                 except:
                     pass
 
                 try:
-                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE"))
+                    conn.execute(
+                        text(
+                            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE"
+                        )
+                    )
                 except:
                     pass
 
                 # 4. Create usernames table
                 logger.info("Creating usernames table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS usernames (
                         handle CITEXT PRIMARY KEY,
                         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
                     )
-                """))
+                """
+                    )
+                )
 
                 # 5. Create categories table
                 logger.info("Creating categories table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS categories (
                         id SERIAL PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -139,11 +185,15 @@ def run_migration() -> bool:
                         sort_order INT NOT NULL DEFAULT 100,
                         active BOOLEAN NOT NULL DEFAULT TRUE
                     )
-                """))
+                """
+                    )
+                )
 
                 # 6. Create subcategories table
                 logger.info("Creating subcategories table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS subcategories (
                         id SERIAL PRIMARY KEY,
                         category_id INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
@@ -153,11 +203,15 @@ def run_migration() -> bool:
                         active BOOLEAN NOT NULL DEFAULT TRUE,
                         UNIQUE (category_id, slug)
                     )
-                """))
+                """
+                    )
+                )
 
                 # 7. Create gemachs table
                 logger.info("Creating gemachs table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS gemachs (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         name TEXT NOT NULL,
@@ -175,15 +229,27 @@ def run_migration() -> bool:
                         eligibility TEXT,
                         notes TEXT
                     )
-                """))
+                """
+                    )
+                )
 
                 # Create indexes for gemachs
-                conn.execute(text("CREATE INDEX IF NOT EXISTS gemachs_city_idx ON gemachs (city, region)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS gemachs_geo_idx ON gemachs (lat, lng)"))
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS gemachs_city_idx ON gemachs (city, region)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS gemachs_geo_idx ON gemachs (lat, lng)"
+                    )
+                )
 
                 # 8. Create listings table
                 logger.info("Creating listings table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS listings (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         title TEXT NOT NULL,
@@ -212,11 +278,15 @@ def run_migration() -> bool:
                         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
                     )
-                """))
+                """
+                    )
+                )
 
                 # 9. Create updated_at trigger function
                 logger.info("Creating updated_at trigger function")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE OR REPLACE FUNCTION touch_updated_at()
                     RETURNS TRIGGER AS $$
                     BEGIN
@@ -224,115 +294,187 @@ def run_migration() -> bool:
                         RETURN NEW;
                     END;
                     $$ LANGUAGE plpgsql;
-                """))
+                """
+                    )
+                )
 
                 # 10. Create trigger for listings
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     DROP TRIGGER IF EXISTS trg_listings_touch ON listings;
                     CREATE TRIGGER trg_listings_touch
                     BEFORE UPDATE ON listings
                     FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
-                """))
+                """
+                    )
+                )
 
                 # 11. Add business rule constraints
                 logger.info("Adding business rule constraints")
-                
+
                 # Free listings must have price = 0
                 try:
-                    conn.execute(text("""
+                    conn.execute(
+                        text(
+                            """
                         ALTER TABLE listings
                         ADD CONSTRAINT chk_free_price
                         CHECK ( (type <> 'free') OR (price_cents = 0) )
-                    """))
+                    """
+                        )
+                    )
                 except:
                     pass  # Constraint might already exist
 
                 # Borrow/gemach must have loan_terms
                 try:
-                    conn.execute(text("""
+                    conn.execute(
+                        text(
+                            """
                         ALTER TABLE listings
                         ADD CONSTRAINT chk_borrow_terms
                         CHECK (
                             (type NOT IN ('borrow','gemach'))
                             OR (loan_terms IS NOT NULL AND jsonb_typeof(loan_terms) = 'object')
                         )
-                    """))
+                    """
+                        )
+                    )
                 except:
                     pass
 
                 # Gemach requires gemach_id, others must not
                 try:
-                    conn.execute(text("""
+                    conn.execute(
+                        text(
+                            """
                         ALTER TABLE listings
                         ADD CONSTRAINT chk_gemach_seller
                         CHECK (
                             (type <> 'gemach' AND seller_gemach_id IS NULL)
                             OR (type = 'gemach' AND seller_gemach_id IS NOT NULL)
                         )
-                    """))
+                    """
+                        )
+                    )
                 except:
                     pass
 
                 # Sale/free must have user_id, not gemach_id
                 try:
-                    conn.execute(text("""
+                    conn.execute(
+                        text(
+                            """
                         ALTER TABLE listings
                         ADD CONSTRAINT chk_sale_seller
                         CHECK (
                             (type IN ('sale', 'free') AND seller_user_id IS NOT NULL AND seller_gemach_id IS NULL)
                             OR (type IN ('borrow', 'gemach'))
                         )
-                    """))
+                    """
+                        )
+                    )
                 except:
                     pass
 
                 # 12. Create indexes for listings
                 logger.info("Creating indexes for listings")
-                
+
                 # Search and filtering indexes
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_type_status ON listings (type, status)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_category_subcategory ON listings (category_id, subcategory_id)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_price_range ON listings (price_cents) WHERE price_cents > 0"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_created_at ON listings (created_at DESC)"))
-                
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_type_status ON listings (type, status)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_category_subcategory ON listings (category_id, subcategory_id)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_price_range ON listings (price_cents) WHERE price_cents > 0"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_created_at ON listings (created_at DESC)"
+                    )
+                )
+
                 # Full-text search index
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE INDEX IF NOT EXISTS idx_listings_search 
                     ON listings USING gin(to_tsvector('english', title || ' ' || COALESCE(description, '')))
-                """))
-                
+                """
+                    )
+                )
+
                 # JSONB indexes
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_attributes_gin ON listings USING gin(attributes)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_loan_terms_gin ON listings USING gin(loan_terms)"))
-                
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_attributes_gin ON listings USING gin(attributes)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_loan_terms_gin ON listings USING gin(loan_terms)"
+                    )
+                )
+
                 # Location indexes
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_location ON listings (city, region)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listings_geo ON listings (lat, lng)"))
-                
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_location ON listings (city, region)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listings_geo ON listings (lat, lng)"
+                    )
+                )
+
                 # Common marketplace queries
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE INDEX IF NOT EXISTS idx_listings_marketplace 
                     ON listings (type, status, created_at DESC) 
                     WHERE status = 'active'
-                """))
-                
+                """
+                    )
+                )
+
                 # Location-based searches
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE INDEX IF NOT EXISTS idx_listings_location_search 
                     ON listings (city, region, type, status) 
                     WHERE status = 'active'
-                """))
-                
+                """
+                    )
+                )
+
                 # Price-based filtering
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE INDEX IF NOT EXISTS idx_listings_price_filter 
                     ON listings (price_cents, type, status) 
                     WHERE status = 'active' AND price_cents > 0
-                """))
+                """
+                    )
+                )
 
                 # 13. Create listing_endorsements table
                 logger.info("Creating listing_endorsements table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS listing_endorsements (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
@@ -341,11 +483,15 @@ def run_migration() -> bool:
                         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                         UNIQUE(listing_id, user_id)
                     )
-                """))
+                """
+                    )
+                )
 
                 # 14. Create endorsement count update trigger
                 logger.info("Creating endorsement count update trigger")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE OR REPLACE FUNCTION update_endorsement_counts()
                     RETURNS TRIGGER AS $$
                     BEGIN
@@ -371,18 +517,26 @@ def run_migration() -> bool:
                         RETURN COALESCE(NEW, OLD);
                     END;
                     $$ LANGUAGE plpgsql;
-                """))
+                """
+                    )
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     DROP TRIGGER IF EXISTS trg_endorsement_counts ON listing_endorsements;
                     CREATE TRIGGER trg_endorsement_counts
                     AFTER INSERT OR UPDATE OR DELETE ON listing_endorsements
                     FOR EACH ROW EXECUTE FUNCTION update_endorsement_counts();
-                """))
+                """
+                    )
+                )
 
                 # 15. Create listing_transactions table
                 logger.info("Creating listing_transactions table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS listing_transactions (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         listing_id UUID NOT NULL REFERENCES listings(id),
@@ -395,14 +549,26 @@ def run_migration() -> bool:
                         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
                     )
-                """))
+                """
+                    )
+                )
 
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_transactions_listing ON listing_transactions (listing_id)"))
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON listing_transactions (buyer_user_id)"))
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_transactions_listing ON listing_transactions (listing_id)"
+                    )
+                )
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON listing_transactions (buyer_user_id)"
+                    )
+                )
 
                 # 16. Create listing_images table
                 logger.info("Creating listing_images table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE IF NOT EXISTS listing_images (
                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                         listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
@@ -412,13 +578,21 @@ def run_migration() -> bool:
                         is_primary BOOLEAN NOT NULL DEFAULT FALSE,
                         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
                     )
-                """))
+                """
+                    )
+                )
 
-                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_listing_images_order ON listing_images (listing_id, sort_order)"))
+                conn.execute(
+                    text(
+                        "CREATE INDEX IF NOT EXISTS idx_listing_images_order ON listing_images (listing_id, sort_order)"
+                    )
+                )
 
                 # 17. Insert sample categories
                 logger.info("Inserting sample categories")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     INSERT INTO categories (name, slug, sort_order) VALUES
                     ('Electronics', 'electronics', 10),
                     ('Furniture', 'furniture', 20),
@@ -431,22 +605,32 @@ def run_migration() -> bool:
                     ('Jewelry & Accessories', 'jewelry-accessories', 90),
                     ('Other', 'other', 100)
                     ON CONFLICT (slug) DO NOTHING
-                """))
+                """
+                    )
+                )
 
                 # Insert sample subcategories
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     INSERT INTO subcategories (category_id, name, slug, sort_order) 
                     SELECT c.id, 'Smartphones', 'smartphones', 10
                     FROM categories c WHERE c.slug = 'electronics'
                     ON CONFLICT (category_id, slug) DO NOTHING
-                """))
+                """
+                    )
+                )
 
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     INSERT INTO subcategories (category_id, name, slug, sort_order) 
                     SELECT c.id, 'Laptops', 'laptops', 20
                     FROM categories c WHERE c.slug = 'electronics'
                     ON CONFLICT (category_id, slug) DO NOTHING
-                """))
+                """
+                    )
+                )
 
                 # Commit transaction
                 trans.commit()
@@ -494,7 +678,9 @@ def rollback_migration() -> bool:
                 conn.execute(text("DROP TABLE IF EXISTS usernames CASCADE"))
 
                 # Drop functions
-                conn.execute(text("DROP FUNCTION IF EXISTS update_endorsement_counts() CASCADE"))
+                conn.execute(
+                    text("DROP FUNCTION IF EXISTS update_endorsement_counts() CASCADE")
+                )
                 conn.execute(text("DROP FUNCTION IF EXISTS touch_updated_at() CASCADE"))
 
                 # Drop enum types
@@ -519,10 +705,10 @@ def rollback_migration() -> bool:
 
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) > 1 and sys.argv[1] == "rollback":
         success = rollback_migration()
     else:
         success = run_migration()
-    
+
     sys.exit(0 if success else 1)

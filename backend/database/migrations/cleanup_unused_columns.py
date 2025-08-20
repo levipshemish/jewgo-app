@@ -20,7 +20,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
-
 from utils.logging_config import get_logger
 
 # Add the backend directory to the Python path
@@ -28,6 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 # Configure logging
 logger = get_logger(__name__)
+
 
 class DatabaseCleanupMigration:
     """Migration to clean up unused database columns and models."""

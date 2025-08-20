@@ -6,16 +6,12 @@ from typing import Dict, List, Optional
 
 from bs4 import BeautifulSoup
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Kosher Miami Processor.
 
 Data processing, filtering, and analysis functionality for kosher establishment data.
 """
+
 
 class KosherMiamiProcessor:
     """Processor for kosher establishment data."""

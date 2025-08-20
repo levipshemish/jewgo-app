@@ -5,7 +5,7 @@ import os
 # Updated for new file structure for production deployment
 
 # Get port from environment variable or use default
-port = int(os.environ.get('PORT', 8081))
+port = int(os.environ.get("PORT", 8081))
 
 # Server socket
 bind = f"0.0.0.0:{port}"

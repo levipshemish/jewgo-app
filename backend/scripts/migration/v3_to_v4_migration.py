@@ -6,7 +6,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from database.database_manager_v3 import EnhancedDatabaseManager as DatabaseManagerV3
 from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 
 # Add the backend directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
 
 class DatabaseMigrationManager:
     """Manages the migration from DatabaseManager v3 to v4."""
@@ -79,12 +80,16 @@ class DatabaseMigrationManager:
         # Log results
         for category, result in results.items():
             if result["status"] == "success":
-                logger.info(f"{category} comparison: SUCCESS", 
-                          v3_count=result.get("v3_count", 0),
-                          v4_count=result.get("v4_count", 0))
+                logger.info(
+                    f"{category} comparison: SUCCESS",
+                    v3_count=result.get("v3_count", 0),
+                    v4_count=result.get("v4_count", 0),
+                )
             else:
-                logger.error(f"{category} comparison: FAILED", 
-                           error=result.get("error", "Unknown error"))
+                logger.error(
+                    f"{category} comparison: FAILED",
+                    error=result.get("error", "Unknown error"),
+                )
 
         return results
 
@@ -116,10 +121,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def _compare_review_operations(self) -> Dict[str, Any]:
         """Compare review operations between v3 and v4."""
@@ -135,10 +137,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def _compare_user_operations(self) -> Dict[str, Any]:
         """Compare user operations between v3 and v4."""
@@ -154,10 +153,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def _compare_image_operations(self) -> Dict[str, Any]:
         """Compare image operations between v3 and v4."""
@@ -182,10 +178,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def _compare_statistics_operations(self) -> Dict[str, Any]:
         """Compare statistics operations between v3 and v4."""
@@ -201,10 +194,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def test_service_layer_migration(self) -> Dict[str, Any]:
         """Test the new service layer with v4 manager."""
@@ -236,10 +226,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def test_cache_integration(self) -> Dict[str, Any]:
         """Test cache integration with v4 manager."""
@@ -252,10 +239,10 @@ class DatabaseMigrationManager:
 
             # Set cache
             cache_set = self.cache_manager.set(test_key, test_value, ttl=60)
-            
+
             # Get cache
             cache_get = self.cache_manager.get(test_key)
-            
+
             # Delete cache
             cache_delete = self.cache_manager.delete(test_key)
 
@@ -271,10 +258,7 @@ class DatabaseMigrationManager:
             }
 
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            return {"status": "error", "error": str(e)}
 
     def generate_migration_report(self, results: Dict[str, Any]) -> str:
         """Generate a migration report."""
@@ -385,10 +369,12 @@ class DatabaseMigrationManager:
 
         # Generate report
         report = self.generate_migration_report(results)
-        
+
         # Save report to file
-        report_filename = f"migration_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        with open(report_filename, 'w') as f:
+        report_filename = (
+            f"migration_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        )
+        with open(report_filename, "w") as f:
             f.write(report)
 
         logger.info(f"Migration report saved to {report_filename}")
@@ -397,7 +383,7 @@ class DatabaseMigrationManager:
             "status": "success",
             "results": results,
             "report_filename": report_filename,
-            "report": report
+            "report": report,
         }
 
     def cleanup(self):
@@ -427,12 +413,14 @@ def main():
 
         if result["status"] == "success":
             logger.info("Migration test completed successfully")
-            print("\n" + "="*50)
+            print("\n" + "=" * 50)
             print("MIGRATION TEST RESULTS")
-            print("="*50)
+            print("=" * 50)
             print(result["report"])
         else:
-            logger.error("Migration test failed", error=result.get("message", "Unknown error"))
+            logger.error(
+                "Migration test failed", error=result.get("message", "Unknown error")
+            )
             print(f"Migration test failed: {result.get('message', 'Unknown error')}")
 
     except Exception as e:

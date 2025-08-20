@@ -1,5 +1,3 @@
-from utils.logging_config import get_logger
-
 import hashlib
 import hmac
 import ipaddress
@@ -10,12 +8,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-
-
-
-
-
 from flask import jsonify, make_response, request
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 

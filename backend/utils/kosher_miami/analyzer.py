@@ -4,18 +4,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-
-
-
-
-
-
 from .processor import KosherMiamiProcessor
+
 #!/usr/bin/env python3
 """Kosher Miami Analyzer.
 
 Comprehensive data analysis and reporting functionality for kosher establishment data.
 """
+
 
 class KosherMiamiAnalyzer:
     """Analyzer for kosher establishment data."""

@@ -15,7 +15,9 @@ from utils.feature_flags import (
     is_feature_enabled,
     require_feature_flag,
 )
+
 from app import app
+
 
 class TestFeatureFlag:
     """Test the FeatureFlag class."""

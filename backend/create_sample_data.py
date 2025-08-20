@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
 """Create sample data for the streamlined marketplace."""
 
-import requests
 import json
 
+import requests
+
 BASE_URL = "http://localhost:5001/api/v4/marketplace"
+
 
 def create_sample_categories():
     """Create sample categories via direct database insertion."""
     print("📂 Creating sample categories...")
-    
+
     # For now, we'll create listings which will work with whatever categories exist
     # The migration should have already created categories
     pass
 
+
 def create_sample_listings():
     """Create sample listings for testing."""
     print("📦 Creating sample listings...")
-    
+
     # Sample regular item
     regular_listing = {
         "title": "Vintage Judaica Book Collection",
@@ -33,10 +36,10 @@ def create_sample_listings():
             "brand": "Various Publishers",
             "size": "Standard",
             "color": "Brown/Gold",
-            "material": "Leather bound"
-        }
+            "material": "Leather bound",
+        },
     }
-    
+
     # Sample vehicle listing
     vehicle_listing = {
         "title": "2018 Toyota Camry LE - Kosher Family Car",
@@ -57,10 +60,10 @@ def create_sample_listings():
             "transmission": "automatic",
             "fuel_type": "gasoline",
             "color": "Silver",
-            "title_status": "clear"
-        }
+            "title_status": "clear",
+        },
     }
-    
+
     # Sample appliance listing
     appliance_listing = {
         "title": "KitchenAid Stand Mixer - Dairy Kitchen",
@@ -79,10 +82,10 @@ def create_sample_listings():
             "model_number": "KSM150PSER",
             "energy_rating": "N/A",
             "warranty_remaining": "1 year",
-            "installation_required": False
-        }
+            "installation_required": False,
+        },
     }
-    
+
     # Free appliance listing
     free_appliance = {
         "title": "Free Microwave - Meat Kitchen",
@@ -101,34 +104,37 @@ def create_sample_listings():
             "model_number": "NN-SN966S",
             "energy_rating": "Energy Star",
             "warranty_remaining": "Expired",
-            "installation_required": False
-        }
+            "installation_required": False,
+        },
     }
-    
+
     # Create listings
     listings = [regular_listing, vehicle_listing, appliance_listing, free_appliance]
-    
+
     for i, listing in enumerate(listings):
         try:
             print(f"Creating listing {i+1}: {listing['title']}")
             response = requests.post(f"{BASE_URL}/listings", json=listing, timeout=10)
-            
+
             if response.status_code == 200:
                 data = response.json()
-                if data.get('success'):
+                if data.get("success"):
                     print(f"✅ Created listing: {listing['title']}")
                 else:
-                    print(f"❌ Failed to create listing: {data.get('error', 'Unknown error')}")
+                    print(
+                        f"❌ Failed to create listing: {data.get('error', 'Unknown error')}"
+                    )
             else:
                 print(f"❌ HTTP {response.status_code}: {response.text}")
-                
+
         except Exception as e:
             print(f"❌ Error creating listing {i+1}: {e}")
+
 
 def test_api_endpoints():
     """Test that the API endpoints are working."""
     print("🧪 Testing API endpoints...")
-    
+
     try:
         # Test categories
         print("Testing categories endpoint...")
@@ -138,42 +144,45 @@ def test_api_endpoints():
             print(f"✅ Categories: {len(data.get('data', []))} found")
         else:
             print(f"❌ Categories failed: {response.status_code}")
-    
+
         # Test listings
         print("Testing listings endpoint...")
         response = requests.get(f"{BASE_URL}/listings", timeout=10)
         if response.status_code == 200:
             data = response.json()
-            listings_count = len(data.get('data', {}).get('listings', []))
+            listings_count = len(data.get("data", {}).get("listings", []))
             print(f"✅ Listings: {listings_count} found")
         else:
             print(f"❌ Listings failed: {response.status_code}")
-            
+
     except Exception as e:
         print(f"❌ Error testing endpoints: {e}")
+
 
 def main():
     """Main function to create sample data."""
     print("🚀 Creating sample data for streamlined marketplace")
     print("=" * 60)
-    
+
     # Wait for server to be ready
     print("⏳ Waiting for server to be ready...")
     import time
+
     time.sleep(5)
-    
+
     # Test endpoints first
     test_api_endpoints()
-    
+
     print("\n" + "=" * 60)
-    
+
     # Create sample data
     create_sample_categories()
     create_sample_listings()
-    
+
     print("\n" + "=" * 60)
     print("✅ Sample data creation complete!")
     print("You can now view the marketplace at: http://localhost:3000/marketplace")
+
 
 if __name__ == "__main__":
     main()

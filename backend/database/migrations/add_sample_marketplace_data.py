@@ -3,23 +3,27 @@
 This populates the marketplace table with realistic kosher product data.
 """
 
+import json
 import os
 import sys
-import json
+from datetime import date, datetime
+
 from sqlalchemy import create_engine, text
-from datetime import datetime, date
 
 # Add the parent directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
 def add_sample_data() -> bool:
     """Add sample marketplace listings to the database."""
-    
-    database_url = os.getenv('DATABASE_URL')
+
+    database_url = os.getenv("DATABASE_URL")
     if not database_url:
         logger.error("DATABASE_URL environment variable is required")
         return False
@@ -27,14 +31,14 @@ def add_sample_data() -> bool:
     try:
         # Create engine
         engine = create_engine(database_url)
-        
+
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-            
+
             try:
                 logger.info("Adding sample marketplace listings...")
-                
+
                 # Sample marketplace listings
                 sample_listings = [
                     {
@@ -62,7 +66,7 @@ def add_sample_data() -> bool:
                         "thumbnail": "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
                         "additional_images": [
                             "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
-                            "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop"
+                            "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
                         ],
                         "description": "Premium quality beef brisket, perfect for Shabbat meals. Hand-selected and expertly prepared. This tender, flavorful brisket is ideal for special occasions and family gatherings.",
                         "stock": 15,
@@ -82,20 +86,32 @@ def add_sample_data() -> bool:
                         "is_vegetarian": False,
                         "allergens": ["beef"],
                         "tags": ["meat", "brisket", "shabbat", "glatt", "premium"],
-                        "specifications": json.dumps({
-                            "weight": "3-4 lbs",
-                            "cut": "Brisket",
-                            "preparation": "Ready to cook",
-                            "storage": "Refrigerate or freeze"
-                        }),
-                        "shipping_info": json.dumps({
-                            "weight": 4.0,
-                            "dimensions": {"length": 12, "width": 8, "height": 3},
-                            "shipping_methods": [
-                                {"name": "Standard", "price": 5.99, "estimated_days": 3},
-                                {"name": "Express", "price": 12.99, "estimated_days": 1}
-                            ]
-                        }),
+                        "specifications": json.dumps(
+                            {
+                                "weight": "3-4 lbs",
+                                "cut": "Brisket",
+                                "preparation": "Ready to cook",
+                                "storage": "Refrigerate or freeze",
+                            }
+                        ),
+                        "shipping_info": json.dumps(
+                            {
+                                "weight": 4.0,
+                                "dimensions": {"length": 12, "width": 8, "height": 3},
+                                "shipping_methods": [
+                                    {
+                                        "name": "Standard",
+                                        "price": 5.99,
+                                        "estimated_days": 3,
+                                    },
+                                    {
+                                        "name": "Express",
+                                        "price": 12.99,
+                                        "estimated_days": 1,
+                                    },
+                                ],
+                            }
+                        ),
                         "rating": 4.8,
                         "review_count": 127,
                         "status": "active",
@@ -105,7 +121,7 @@ def add_sample_data() -> bool:
                         "approved_by": "admin",
                         "approved_at": datetime.now(),
                         "notes": "Premium brisket from local kosher butcher",
-                        "source": "manual"
+                        "source": "manual",
                     },
                     {
                         "name": "Challah Bread - Traditional",
@@ -149,20 +165,32 @@ def add_sample_data() -> bool:
                         "is_vegetarian": True,
                         "allergens": ["wheat", "eggs", "dairy"],
                         "tags": ["bread", "challah", "shabbat", "bakery", "fresh"],
-                        "specifications": json.dumps({
-                            "weight": "1 lb",
-                            "ingredients": "Flour, water, eggs, sugar, yeast, salt",
-                            "preparation": "Ready to serve",
-                            "storage": "Room temperature or freeze"
-                        }),
-                        "shipping_info": json.dumps({
-                            "weight": 1.0,
-                            "dimensions": {"length": 10, "width": 6, "height": 2},
-                            "shipping_methods": [
-                                {"name": "Standard", "price": 3.99, "estimated_days": 2},
-                                {"name": "Same Day", "price": 8.99, "estimated_days": 0}
-                            ]
-                        }),
+                        "specifications": json.dumps(
+                            {
+                                "weight": "1 lb",
+                                "ingredients": "Flour, water, eggs, sugar, yeast, salt",
+                                "preparation": "Ready to serve",
+                                "storage": "Room temperature or freeze",
+                            }
+                        ),
+                        "shipping_info": json.dumps(
+                            {
+                                "weight": 1.0,
+                                "dimensions": {"length": 10, "width": 6, "height": 2},
+                                "shipping_methods": [
+                                    {
+                                        "name": "Standard",
+                                        "price": 3.99,
+                                        "estimated_days": 2,
+                                    },
+                                    {
+                                        "name": "Same Day",
+                                        "price": 8.99,
+                                        "estimated_days": 0,
+                                    },
+                                ],
+                            }
+                        ),
                         "rating": 4.9,
                         "review_count": 89,
                         "status": "active",
@@ -172,7 +200,7 @@ def add_sample_data() -> bool:
                         "approved_by": "admin",
                         "approved_at": datetime.now(),
                         "notes": "Fresh challah from local kosher bakery",
-                        "source": "manual"
+                        "source": "manual",
                     },
                     {
                         "name": "Chalav Yisrael Milk - Whole",
@@ -216,20 +244,32 @@ def add_sample_data() -> bool:
                         "is_vegetarian": True,
                         "allergens": ["milk"],
                         "tags": ["milk", "chalav_yisrael", "dairy", "fresh", "whole"],
-                        "specifications": json.dumps({
-                            "volume": "1 Gallon",
-                            "fat_content": "3.25%",
-                            "preparation": "Ready to drink",
-                            "storage": "Refrigerate"
-                        }),
-                        "shipping_info": json.dumps({
-                            "weight": 8.6,
-                            "dimensions": {"length": 8, "width": 8, "height": 10},
-                            "shipping_methods": [
-                                {"name": "Standard", "price": 4.99, "estimated_days": 1},
-                                {"name": "Express", "price": 9.99, "estimated_days": 0}
-                            ]
-                        }),
+                        "specifications": json.dumps(
+                            {
+                                "volume": "1 Gallon",
+                                "fat_content": "3.25%",
+                                "preparation": "Ready to drink",
+                                "storage": "Refrigerate",
+                            }
+                        ),
+                        "shipping_info": json.dumps(
+                            {
+                                "weight": 8.6,
+                                "dimensions": {"length": 8, "width": 8, "height": 10},
+                                "shipping_methods": [
+                                    {
+                                        "name": "Standard",
+                                        "price": 4.99,
+                                        "estimated_days": 1,
+                                    },
+                                    {
+                                        "name": "Express",
+                                        "price": 9.99,
+                                        "estimated_days": 0,
+                                    },
+                                ],
+                            }
+                        ),
                         "rating": 4.7,
                         "review_count": 67,
                         "status": "active",
@@ -239,7 +279,7 @@ def add_sample_data() -> bool:
                         "approved_by": "admin",
                         "approved_at": datetime.now(),
                         "notes": "Fresh Chalav Yisrael milk from local dairy",
-                        "source": "manual"
+                        "source": "manual",
                     },
                     {
                         "name": "Kosher Olive Oil - Extra Virgin",
@@ -284,21 +324,39 @@ def add_sample_data() -> bool:
                         "is_vegan": True,
                         "is_vegetarian": True,
                         "allergens": [],
-                        "tags": ["olive_oil", "extra_virgin", "mediterranean", "kosher", "premium"],
-                        "specifications": json.dumps({
-                            "volume": "500ml",
-                            "origin": "Mediterranean",
-                            "extraction": "Cold-pressed",
-                            "storage": "Room temperature"
-                        }),
-                        "shipping_info": json.dumps({
-                            "weight": 0.6,
-                            "dimensions": {"length": 4, "width": 4, "height": 8},
-                            "shipping_methods": [
-                                {"name": "Standard", "price": 3.99, "estimated_days": 3},
-                                {"name": "Express", "price": 7.99, "estimated_days": 1}
-                            ]
-                        }),
+                        "tags": [
+                            "olive_oil",
+                            "extra_virgin",
+                            "mediterranean",
+                            "kosher",
+                            "premium",
+                        ],
+                        "specifications": json.dumps(
+                            {
+                                "volume": "500ml",
+                                "origin": "Mediterranean",
+                                "extraction": "Cold-pressed",
+                                "storage": "Room temperature",
+                            }
+                        ),
+                        "shipping_info": json.dumps(
+                            {
+                                "weight": 0.6,
+                                "dimensions": {"length": 4, "width": 4, "height": 8},
+                                "shipping_methods": [
+                                    {
+                                        "name": "Standard",
+                                        "price": 3.99,
+                                        "estimated_days": 3,
+                                    },
+                                    {
+                                        "name": "Express",
+                                        "price": 7.99,
+                                        "estimated_days": 1,
+                                    },
+                                ],
+                            }
+                        ),
                         "rating": 4.6,
                         "review_count": 45,
                         "status": "active",
@@ -308,7 +366,7 @@ def add_sample_data() -> bool:
                         "approved_by": "admin",
                         "approved_at": datetime.now(),
                         "notes": "Premium olive oil from Mediterranean region",
-                        "source": "manual"
+                        "source": "manual",
                     },
                     {
                         "name": "Gluten-Free Matzo Ball Mix",
@@ -351,21 +409,39 @@ def add_sample_data() -> bool:
                         "is_vegan": False,
                         "is_vegetarian": True,
                         "allergens": ["eggs"],
-                        "tags": ["matzo_balls", "gluten_free", "passover", "soup", "mix"],
-                        "specifications": json.dumps({
-                            "weight": "8 oz",
-                            "servings": "8-10 matzo balls",
-                            "preparation": "Add water and eggs",
-                            "storage": "Room temperature"
-                        }),
-                        "shipping_info": json.dumps({
-                            "weight": 0.5,
-                            "dimensions": {"length": 3, "width": 3, "height": 6},
-                            "shipping_methods": [
-                                {"name": "Standard", "price": 2.99, "estimated_days": 3},
-                                {"name": "Express", "price": 6.99, "estimated_days": 1}
-                            ]
-                        }),
+                        "tags": [
+                            "matzo_balls",
+                            "gluten_free",
+                            "passover",
+                            "soup",
+                            "mix",
+                        ],
+                        "specifications": json.dumps(
+                            {
+                                "weight": "8 oz",
+                                "servings": "8-10 matzo balls",
+                                "preparation": "Add water and eggs",
+                                "storage": "Room temperature",
+                            }
+                        ),
+                        "shipping_info": json.dumps(
+                            {
+                                "weight": 0.5,
+                                "dimensions": {"length": 3, "width": 3, "height": 6},
+                                "shipping_methods": [
+                                    {
+                                        "name": "Standard",
+                                        "price": 2.99,
+                                        "estimated_days": 3,
+                                    },
+                                    {
+                                        "name": "Express",
+                                        "price": 6.99,
+                                        "estimated_days": 1,
+                                    },
+                                ],
+                            }
+                        ),
                         "rating": 4.5,
                         "review_count": 34,
                         "status": "active",
@@ -375,18 +451,18 @@ def add_sample_data() -> bool:
                         "approved_by": "admin",
                         "approved_at": datetime.now(),
                         "notes": "Gluten-free matzo ball mix for Passover",
-                        "source": "manual"
-                    }
+                        "source": "manual",
+                    },
                 ]
-                
+
                 # Insert sample data
                 for listing in sample_listings:
                     # Handle optional fields
-                    if 'original_price' not in listing:
-                        listing['original_price'] = None
-                    if 'discount_percentage' not in listing:
-                        listing['discount_percentage'] = None
-                    
+                    if "original_price" not in listing:
+                        listing["original_price"] = None
+                    if "discount_percentage" not in listing:
+                        listing["discount_percentage"] = None
+
                     insert_sql = """
                     INSERT INTO marketplace (
                         name, title, price, original_price, category, subcategory, location, city, state, zip_code,
@@ -410,23 +486,26 @@ def add_sample_data() -> bool:
                         :status, :priority, :expiry_date, :created_by, :approved_by, :approved_at, :notes, :source
                     )
                     """
-                    
+
                     conn.execute(text(insert_sql), listing)
-                
+
                 # Commit transaction
                 trans.commit()
-                
-                logger.info(f"✅ Successfully added {len(sample_listings)} sample marketplace listings!")
+
+                logger.info(
+                    f"✅ Successfully added {len(sample_listings)} sample marketplace listings!"
+                )
                 return True
-                
+
             except Exception as e:
                 trans.rollback()
                 logger.error(f"❌ Failed to add sample data: {e}")
                 return False
-                
+
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = add_sample_data()

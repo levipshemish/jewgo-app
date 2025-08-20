@@ -8,22 +8,22 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+from unittest.mock import MagicMock, patch
 
+import pytest
 from utils.error_handler import (
-    handle_database_operation,
-    handle_api_operation,
-    handle_google_places_operation,
-    handle_file_operation,
-    handle_validation_operation,
-    handle_cache_operation,
-    handle_operation_with_fallback,
+    APIError,
     DatabaseError,
     ExternalServiceError,
     ValidationError,
-    APIError,
+    handle_api_operation,
+    handle_cache_operation,
+    handle_database_operation,
+    handle_file_operation,
+    handle_google_places_operation,
+    handle_operation_with_fallback,
+    handle_validation_operation,
 )
 
 
@@ -32,6 +32,7 @@ class TestDatabaseOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful database operation."""
+
         @handle_database_operation
         def mock_db_operation(restaurant_id: int) -> Optional[Dict[str, Any]]:
             return {"id": restaurant_id, "name": "Test Restaurant"}
@@ -41,6 +42,7 @@ class TestDatabaseOperationDecorator:
 
     def test_database_error_raises_database_error(self):
         """Test that database errors are re-raised as DatabaseError."""
+
         @handle_database_operation
         def mock_db_operation(restaurant_id: int) -> Optional[Dict[str, Any]]:
             raise Exception("Connection failed")
@@ -54,8 +56,11 @@ class TestDatabaseOperationDecorator:
 
     def test_preserves_function_signature(self):
         """Test that decorator preserves function signature."""
+
         @handle_database_operation
-        def mock_db_operation(restaurant_id: int, include_hours: bool = True) -> Optional[Dict[str, Any]]:
+        def mock_db_operation(
+            restaurant_id: int, include_hours: bool = True
+        ) -> Optional[Dict[str, Any]]:
             return {"id": restaurant_id, "include_hours": include_hours}
 
         # Test that function signature is preserved
@@ -68,6 +73,7 @@ class TestAPIOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful API operation."""
+
         @handle_api_operation
         def mock_api_operation(place_id: str) -> Optional[Dict[str, Any]]:
             return {"place_id": place_id, "name": "Test Place"}
@@ -77,6 +83,7 @@ class TestAPIOperationDecorator:
 
     def test_api_error_raises_external_service_error(self):
         """Test that API errors are re-raised as ExternalServiceError."""
+
         @handle_api_operation
         def mock_api_operation(place_id: str) -> Optional[Dict[str, Any]]:
             raise Exception("API timeout")
@@ -94,6 +101,7 @@ class TestGooglePlacesOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful Google Places operation."""
+
         @handle_google_places_operation
         def mock_places_operation(name: str, address: str) -> Optional[str]:
             return "place_id_123"
@@ -103,6 +111,7 @@ class TestGooglePlacesOperationDecorator:
 
     def test_places_error_raises_external_service_error(self):
         """Test that Google Places errors are re-raised as ExternalServiceError."""
+
         @handle_google_places_operation
         def mock_places_operation(name: str, address: str) -> Optional[str]:
             raise Exception("Quota exceeded")
@@ -120,6 +129,7 @@ class TestFileOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful file operation."""
+
         @handle_file_operation
         def mock_file_operation(file_path: str) -> Dict[str, Any]:
             return {"path": file_path, "content": "test content"}
@@ -129,6 +139,7 @@ class TestFileOperationDecorator:
 
     def test_file_error_raises_api_error(self):
         """Test that file errors are re-raised as APIError."""
+
         @handle_file_operation
         def mock_file_operation(file_path: str) -> Dict[str, Any]:
             raise FileNotFoundError("File not found")
@@ -146,6 +157,7 @@ class TestValidationOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful validation operation."""
+
         @handle_validation_operation
         def mock_validation_operation(data: Dict[str, Any]) -> bool:
             return data.get("name") is not None
@@ -155,6 +167,7 @@ class TestValidationOperationDecorator:
 
     def test_validation_error_raises_validation_error(self):
         """Test that validation errors are re-raised as ValidationError."""
+
         @handle_validation_operation
         def mock_validation_operation(data: Dict[str, Any]) -> bool:
             raise ValueError("Invalid data format")
@@ -171,6 +184,7 @@ class TestCacheOperationDecorator:
 
     def test_successful_operation(self):
         """Test successful cache operation."""
+
         @handle_cache_operation
         def mock_cache_operation(key: str) -> Optional[Dict[str, Any]]:
             return {"key": key, "value": "cached_data"}
@@ -180,6 +194,7 @@ class TestCacheOperationDecorator:
 
     def test_cache_error_returns_none(self):
         """Test that cache errors return None instead of raising."""
+
         @handle_cache_operation
         def mock_cache_operation(key: str) -> Optional[Dict[str, Any]]:
             raise Exception("Redis connection failed")
@@ -193,6 +208,7 @@ class TestOperationWithFallbackDecorator:
 
     def test_successful_operation(self):
         """Test successful operation with fallback."""
+
         @handle_operation_with_fallback(fallback_value={})
         def mock_operation(data: Dict[str, Any]) -> Dict[str, Any]:
             return {"processed": data}
@@ -202,6 +218,7 @@ class TestOperationWithFallbackDecorator:
 
     def test_failed_operation_returns_fallback(self):
         """Test that failed operation returns fallback value."""
+
         @handle_operation_with_fallback(fallback_value={"error": "fallback"})
         def mock_operation(data: Dict[str, Any]) -> Dict[str, Any]:
             raise Exception("Operation failed")
@@ -211,6 +228,7 @@ class TestOperationWithFallbackDecorator:
 
     def test_custom_fallback_value(self):
         """Test custom fallback value."""
+
         @handle_operation_with_fallback(fallback_value=[])
         def mock_operation() -> list:
             raise Exception("Operation failed")
@@ -220,6 +238,7 @@ class TestOperationWithFallbackDecorator:
 
     def test_fallback_without_logging(self):
         """Test fallback without error logging."""
+
         @handle_operation_with_fallback(fallback_value=None, log_error=False)
         def mock_operation() -> str:
             raise Exception("Operation failed")
@@ -233,6 +252,7 @@ class TestDecoratorIntegration:
 
     def test_multiple_decorators(self):
         """Test using multiple decorators together."""
+
         @handle_database_operation
         @handle_operation_with_fallback(fallback_value={})
         def mock_integrated_operation(restaurant_id: int) -> Dict[str, Any]:
@@ -250,6 +270,7 @@ class TestDecoratorIntegration:
 
     def test_decorator_preserves_metadata(self):
         """Test that decorators preserve function metadata."""
+
         @handle_database_operation
         def mock_function(restaurant_id: int) -> Optional[Dict[str, Any]]:
             """Test function with docstring."""
@@ -262,9 +283,10 @@ class TestDecoratorIntegration:
 class TestErrorLogging:
     """Test error logging functionality."""
 
-    @patch('utils.error_handler.logger')
+    @patch("utils.error_handler.logger")
     def test_database_error_logging(self, mock_logger):
         """Test that database errors are properly logged."""
+
         @handle_database_operation
         def mock_db_operation(restaurant_id: int) -> Optional[Dict[str, Any]]:
             raise Exception("Connection failed")
@@ -277,9 +299,10 @@ class TestErrorLogging:
         call_args = mock_logger.error.call_args
         assert "Database operation failed" in call_args[1]["error_message"]
 
-    @patch('utils.error_handler.logger')
+    @patch("utils.error_handler.logger")
     def test_cache_error_logging(self, mock_logger):
         """Test that cache errors are properly logged."""
+
         @handle_cache_operation
         def mock_cache_operation(key: str) -> Optional[Dict[str, Any]]:
             raise Exception("Redis connection failed")
@@ -289,7 +312,9 @@ class TestErrorLogging:
         # Verify warning was logged
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
-        assert "Cache operation failed, continuing without cache" in call_args[1]["error"]
+        assert (
+            "Cache operation failed, continuing without cache" in call_args[1]["error"]
+        )
 
 
 class TestEdgeCases:
@@ -297,6 +322,7 @@ class TestEdgeCases:
 
     def test_decorator_with_no_args_function(self):
         """Test decorator with function that takes no arguments."""
+
         @handle_database_operation
         def mock_no_args_function() -> str:
             return "success"
@@ -306,6 +332,7 @@ class TestEdgeCases:
 
     def test_decorator_with_kwargs_only_function(self):
         """Test decorator with function that takes only keyword arguments."""
+
         @handle_database_operation
         def mock_kwargs_function(*, restaurant_id: int) -> Dict[str, Any]:
             return {"id": restaurant_id}
@@ -315,6 +342,7 @@ class TestEdgeCases:
 
     def test_decorator_with_complex_return_type(self):
         """Test decorator with complex return type."""
+
         @handle_database_operation
         def mock_complex_function() -> tuple[list, dict]:
             return ([1, 2, 3], {"status": "success"})
@@ -324,6 +352,7 @@ class TestEdgeCases:
 
     def test_decorator_with_none_return(self):
         """Test decorator with None return value."""
+
         @handle_database_operation
         def mock_none_function() -> None:
             return None

@@ -1,5 +1,3 @@
-from utils.logging_config import get_logger
-
 import json
 import logging
 import os
@@ -14,21 +12,22 @@ import pytz
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     Integer,
+    Numeric,
     String,
     Text,
     create_engine,
     event,
     text,
-    Numeric,
-    Date,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.exc import SQLAlchemyError, OperationalError, DBAPIError
+from sqlalchemy.exc import DBAPIError, OperationalError, SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, sessionmaker, scoped_session
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from utils.logging_config import get_logger
 
 # Import models
 from .models import User
@@ -39,64 +38,71 @@ try:
 except ImportError:
     # Fallback for when utils module is not available
     import os
-    
+
     class ConfigManager:
         @staticmethod
         def get_database_url():
-            return os.getenv('DATABASE_URL')
-        
+            return os.getenv("DATABASE_URL")
+
         @staticmethod
         def get_pg_keepalives_idle():
-            return int(os.getenv('PG_KEEPALIVES_IDLE', '60'))
-        
+            return int(os.getenv("PG_KEEPALIVES_IDLE", "60"))
+
         @staticmethod
         def get_pg_keepalives_interval():
-            return int(os.getenv('PG_KEEPALIVES_INTERVAL', '20'))
-        
+            return int(os.getenv("PG_KEEPALIVES_INTERVAL", "20"))
+
         @staticmethod
         def get_pg_keepalives_count():
-            return int(os.getenv('PG_KEEPALIVES_COUNT', '5'))
-        
+            return int(os.getenv("PG_KEEPALIVES_COUNT", "5"))
+
         @staticmethod
         def get_pg_statement_timeout():
-            return os.getenv('PG_STATEMENT_TIMEOUT', '60000')
-        
+            return os.getenv("PG_STATEMENT_TIMEOUT", "60000")
+
         @staticmethod
         def get_pg_idle_tx_timeout():
-            return os.getenv('PG_IDLE_TX_TIMEOUT', '120000')
-        
+            return os.getenv("PG_IDLE_TX_TIMEOUT", "120000")
+
         @staticmethod
         def get_pg_sslmode():
-            return os.getenv('PGSSLMODE', 'prefer')
-        
+            return os.getenv("PGSSLMODE", "prefer")
+
         @staticmethod
         def get_pg_sslrootcert():
-            return os.getenv('PGSSLROOTCERT')
+            return os.getenv("PGSSLROOTCERT")
+
 
 try:
     from utils.restaurant_status import get_restaurant_status, is_restaurant_open
 except ImportError:
+
     def get_restaurant_status(restaurant):
         return "unknown"
-    
+
     def is_restaurant_open(restaurant):
         return False
+
 
 try:
     from utils.hours_parser import parse_hours_blob
 except ImportError:
+
     def parse_hours_blob(hours_blob):
         return {}
+
 
 try:
     from utils.hours_manager import HoursManager
 except ImportError:
+
     class HoursManager:
         def __init__(self):
             pass
-        
+
         def parse_hours(self, hours_blob):
             return {}
+
 
 logger = get_logger(__name__)
 
@@ -255,20 +261,22 @@ class Review(Base):
 
 class RestaurantImage(Base):
     """Restaurant Image model for multiple images per restaurant.
-    
+
     This model represents the restaurant_images table that stores
     multiple images for each restaurant with order and Cloudinary info.
     """
-    
+
     __tablename__ = "restaurant_images"
-    
+
     id = Column(Integer, primary_key=True)
     restaurant_id = Column(Integer, nullable=True)
     image_url = Column(String, nullable=True)
     image_order = Column(Integer, nullable=True)
     cloudinary_public_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True
+    )
 
 
 class ReviewFlag(Base):
@@ -289,9 +297,6 @@ class ReviewFlag(Base):
     resolved_by = Column(String(50), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     resolution_notes = Column(Text, nullable=True)
-
-
-
 
 
 class Marketplace(Base):
@@ -345,7 +350,9 @@ class Marketplace(Base):
 
     # 🖼️ Product Images
     product_image = Column(String(2000), nullable=True)  # Main product image
-    additional_images = Column(ARRAY(String), nullable=True)  # Additional product images
+    additional_images = Column(
+        ARRAY(String), nullable=True
+    )  # Additional product images
     thumbnail = Column(String(2000), nullable=True)  # Thumbnail image
 
     # 📋 Product Details
@@ -373,7 +380,9 @@ class Marketplace(Base):
 
     # 🧼 Kosher Certification
     kosher_agency = Column(String(100), nullable=True)  # Kosher certification agency
-    kosher_level = Column(String(50), nullable=True)  # Glatt, regular, chalav_yisrael, pas_yisrael
+    kosher_level = Column(
+        String(50), nullable=True
+    )  # Glatt, regular, chalav_yisrael, pas_yisrael
     kosher_certificate_number = Column(String(100), nullable=True)
     kosher_expiry_date = Column(Date, nullable=True)
     kosher_is_verified = Column(Boolean, default=False, nullable=False)
@@ -396,7 +405,9 @@ class Marketplace(Base):
     review_count = Column(Integer, default=0, nullable=False)
 
     # 📊 Business Logic
-    status = Column(String(20), default="active", nullable=False)  # active, inactive, pending, sold_out
+    status = Column(
+        String(20), default="active", nullable=False
+    )  # active, inactive, pending, sold_out
     priority = Column(Integer, default=0, nullable=False)  # For featured/sorting
     expiry_date = Column(Date, nullable=True)  # Product expiry date
     created_by = Column(String(100), nullable=True)  # Who created the listing
@@ -434,21 +445,32 @@ class EnhancedDatabaseManager:
     def connect(self) -> bool:
         """Connect to the database and create tables if they don't exist."""
         try:
-
-            
             # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
             try:
                 parsed = urlparse(self.database_url)
                 hostname = (parsed.hostname or "").lower()
                 is_local = hostname in ("localhost", "127.0.0.1")
-                if parsed.scheme.startswith("postgres") and (not is_local) and ("sslmode=" not in (parsed.query or "")):
+                if (
+                    parsed.scheme.startswith("postgres")
+                    and (not is_local)
+                    and ("sslmode=" not in (parsed.query or ""))
+                ):
                     # Use sslmode=prefer for better compatibility with Neon and other providers
-                    new_query = f"{parsed.query}&sslmode=prefer" if parsed.query else "sslmode=prefer"
+                    new_query = (
+                        f"{parsed.query}&sslmode=prefer"
+                        if parsed.query
+                        else "sslmode=prefer"
+                    )
                     self.database_url = urlunparse(parsed._replace(query=new_query))
-                    logger.info("Added sslmode=prefer to database URL for non-local connection", hostname=hostname)
+                    logger.info(
+                        "Added sslmode=prefer to database URL for non-local connection",
+                        hostname=hostname,
+                    )
             except Exception as e:
                 # Non-fatal: continue without altering URL
-                logger.warning("Failed to normalize database URL for SSL; continuing", error=str(e))
+                logger.warning(
+                    "Failed to normalize database URL for SSL; continuing", error=str(e)
+                )
 
             # Create the engine with SQLAlchemy 2.0 + psycopg2-binary
             # Add connection pool + TCP keepalive settings for better reliability under TLS
@@ -500,17 +522,21 @@ class EnhancedDatabaseManager:
             # If provider disallowed startup options, set per-connection timeouts
             if is_neon:
                 try:
+
                     @event.listens_for(self.engine, "connect")
                     def _set_timeouts_on_connect(dbapi_connection, connection_record):
                         try:
                             with dbapi_connection.cursor() as cursor:
-                                cursor.execute(f"SET statement_timeout = {statement_timeout}")
+                                cursor.execute(
+                                    f"SET statement_timeout = {statement_timeout}"
+                                )
                                 cursor.execute(
                                     f"SET idle_in_transaction_session_timeout = {idle_tx_timeout}"
                                 )
                         except Exception:
                             # Non-fatal: leave defaults if SET fails
                             pass
+
                 except Exception:
                     # Non-fatal: proceed without event listener if unsupported
                     pass
@@ -522,12 +548,14 @@ class EnhancedDatabaseManager:
                 logger.info("Database connection successful")
 
             # Create session factory
-            self.SessionLocal = scoped_session(sessionmaker(
-                autocommit=False,
-                autoflush=False,
-                bind=self.engine,
-                expire_on_commit=False,
-            ))
+            self.SessionLocal = scoped_session(
+                sessionmaker(
+                    autocommit=False,
+                    autoflush=False,
+                    bind=self.engine,
+                    expire_on_commit=False,
+                )
+            )
 
             # Create tables if they don't exist
             Base.metadata.create_all(bind=self.engine)
@@ -556,10 +584,10 @@ class EnhancedDatabaseManager:
     @contextmanager
     def get_connection(self):
         """Get a raw database connection for direct SQL queries.
-        
+
         This method provides a psycopg2 connection for services that need
         to execute raw SQL queries instead of using SQLAlchemy ORM.
-        
+
         Yields:
             psycopg2 connection object
         """
@@ -569,7 +597,7 @@ class EnhancedDatabaseManager:
             if not connected or not self.engine:
                 msg = "Database not connected. Call connect() first."
                 raise RuntimeError(msg)
-        
+
         connection = self.engine.raw_connection()
         try:
             yield connection
@@ -686,7 +714,7 @@ class EnhancedDatabaseManager:
         for attempt in range(3):  # Retry up to 3 times
             try:
                 session = self.get_session()
-                
+
                 # Optimize query by selecting only needed columns for better performance
                 query = session.query(Restaurant)
 
@@ -694,19 +722,23 @@ class EnhancedDatabaseManager:
                 if filters:
                     if filters.get("search"):
                         search_term = filters["search"]
-                        query = query.filter(
-                            Restaurant.name.ilike(f"%{search_term}%")
-                        )
+                        query = query.filter(Restaurant.name.ilike(f"%{search_term}%"))
                     if filters.get("status"):
                         query = query.filter(Restaurant.status == filters["status"])
                     if filters.get("kosher_category"):
-                        query = query.filter(Restaurant.kosher_category == filters["kosher_category"])
+                        query = query.filter(
+                            Restaurant.kosher_category == filters["kosher_category"]
+                        )
                     if filters.get("business_types"):
                         business_types = filters["business_types"]
                         if isinstance(business_types, list) and business_types:
-                            query = query.filter(Restaurant.business_types.in_(business_types))
+                            query = query.filter(
+                                Restaurant.business_types.in_(business_types)
+                            )
                         elif isinstance(business_types, str):
-                            query = query.filter(Restaurant.business_types == business_types)
+                            query = query.filter(
+                                Restaurant.business_types == business_types
+                            )
 
                 # Apply legacy filters if no filters dict provided
                 if not filters:
@@ -719,14 +751,21 @@ class EnhancedDatabaseManager:
                 query = query.order_by(Restaurant.id)
 
                 restaurants = query.limit(limit).offset(offset).all()
-                
+
                 if as_dict:
                     # Eager load all restaurant images in a single query to avoid N+1
-                    restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
-                    
+                    restaurant_images_map = self._eager_load_restaurant_images(
+                        session, restaurants
+                    )
+
                     # Convert restaurants to dict with pre-loaded images
-                    return [self._restaurant_to_unified_dict_with_images(r, restaurant_images_map.get(r.id, [])) for r in restaurants]
-                
+                    return [
+                        self._restaurant_to_unified_dict_with_images(
+                            r, restaurant_images_map.get(r.id, [])
+                        )
+                        for r in restaurants
+                    ]
+
                 return restaurants
             except (OperationalError, DBAPIError) as db_err:
                 last_error = db_err
@@ -781,13 +820,13 @@ class EnhancedDatabaseManager:
             if filters:
                 if filters.get("search"):
                     search_term = filters["search"]
-                    query = query.filter(
-                        Restaurant.name.ilike(f"%{search_term}%")
-                    )
+                    query = query.filter(Restaurant.name.ilike(f"%{search_term}%"))
                 if filters.get("status"):
                     query = query.filter(Restaurant.status == filters["status"])
                 if filters.get("kosher_category"):
-                    query = query.filter(Restaurant.kosher_category == filters["kosher_category"])
+                    query = query.filter(
+                        Restaurant.kosher_category == filters["kosher_category"]
+                    )
 
             # Apply legacy filters if no filters dict provided
             if not filters:
@@ -809,11 +848,15 @@ class EnhancedDatabaseManager:
         session = None
         try:
             session = self.get_session()
-            count = session.query(Restaurant).filter(
-                Restaurant.hours_of_operation.isnot(None),
-                Restaurant.hours_of_operation != "",
-                Restaurant.hours_of_operation != "None"
-            ).count()
+            count = (
+                session.query(Restaurant)
+                .filter(
+                    Restaurant.hours_of_operation.isnot(None),
+                    Restaurant.hours_of_operation != "",
+                    Restaurant.hours_of_operation != "None",
+                )
+                .count()
+            )
             return count
         except Exception as e:
             logger.exception("Error getting restaurants with hours count", error=str(e))
@@ -822,7 +865,9 @@ class EnhancedDatabaseManager:
             if session:
                 session.close()
 
-    def get_all_places(self, limit: int = 1000, offset: int = 0) -> list[dict[str, Any]]:
+    def get_all_places(
+        self, limit: int = 1000, offset: int = 0
+    ) -> list[dict[str, Any]]:
         """Get all places from the consolidated restaurants table."""
         session = None
         try:
@@ -832,13 +877,17 @@ class EnhancedDatabaseManager:
             logger.info("Found restaurants in database", count=len(restaurants))
 
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
 
             # Convert to unified format with pre-loaded images
             all_places = []
             for restaurant in restaurants:
                 try:
-                    place_dict = self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                    place_dict = self._restaurant_to_unified_dict_with_images(
+                        restaurant, restaurant_images_map.get(restaurant.id, [])
+                    )
                     all_places.append(place_dict)
                 except Exception as e:
                     logger.exception(
@@ -894,12 +943,16 @@ class EnhancedDatabaseManager:
             restaurants = restaurant_query.limit(limit).offset(offset).all()
 
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
 
             # Convert to unified format with pre-loaded images
             all_places = []
             for restaurant in restaurants:
-                place_dict = self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                place_dict = self._restaurant_to_unified_dict_with_images(
+                    restaurant, restaurant_images_map.get(restaurant.id, [])
+                )
                 all_places.append(place_dict)
 
             return all_places
@@ -920,12 +973,16 @@ class EnhancedDatabaseManager:
         try:
             session = self.get_session()
             restaurants = session.query(Restaurant).limit(limit).offset(offset).all()
-            
+
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
-            
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
+
             return [
-                self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                self._restaurant_to_unified_dict_with_images(
+                    restaurant, restaurant_images_map.get(restaurant.id, [])
+                )
                 for restaurant in restaurants
             ]
         except Exception as e:
@@ -1287,25 +1344,31 @@ class EnhancedDatabaseManager:
         try:
             additional_images_data = self.get_restaurant_images(restaurant.id)
             # Extract just the URLs for the frontend
-            additional_images = [img["image_url"] for img in additional_images_data if img.get("image_url")]
+            additional_images = [
+                img["image_url"]
+                for img in additional_images_data
+                if img.get("image_url")
+            ]
             restaurant_data["additional_images"] = additional_images
-            
+
             logger.info(
                 "Added additional images to restaurant",
                 restaurant_id=restaurant.id,
-                image_count=len(additional_images)
+                image_count=len(additional_images),
             )
         except Exception as e:
             logger.warning(
                 "Failed to fetch additional images for restaurant",
                 restaurant_id=restaurant.id,
-                error=str(e)
+                error=str(e),
             )
             restaurant_data["additional_images"] = []
 
         return restaurant_data
 
-    def _restaurant_to_unified_dict_with_images(self, restaurant: Restaurant, preloaded_images: list[dict[str, Any]]) -> dict[str, Any]:
+    def _restaurant_to_unified_dict_with_images(
+        self, restaurant: Restaurant, preloaded_images: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         """Convert restaurant object to unified dictionary format with pre-loaded images to avoid N+1 queries."""
         # Create base restaurant data dictionary (same as _restaurant_to_unified_dict)
         restaurant_data = {
@@ -1395,19 +1458,21 @@ class EnhancedDatabaseManager:
         # Use pre-loaded images instead of making a database query
         try:
             # Extract just the URLs for the frontend from pre-loaded images
-            additional_images = [img["image_url"] for img in preloaded_images if img.get("image_url")]
+            additional_images = [
+                img["image_url"] for img in preloaded_images if img.get("image_url")
+            ]
             restaurant_data["additional_images"] = additional_images
-            
+
             logger.debug(
                 "Added pre-loaded additional images to restaurant",
                 restaurant_id=restaurant.id,
-                image_count=len(additional_images)
+                image_count=len(additional_images),
             )
         except Exception as e:
             logger.warning(
                 "Failed to process pre-loaded images for restaurant",
                 restaurant_id=restaurant.id,
-                error=str(e)
+                error=str(e),
             )
             restaurant_data["additional_images"] = []
 
@@ -1457,9 +1522,11 @@ class EnhancedDatabaseManager:
                 parsed = parse_hours_blob(hours_json_data)
                 if parsed:
                     return parsed
-                logger.warning("Could not parse hours data", data_type=type(hours_json_data))
+                logger.warning(
+                    "Could not parse hours data", data_type=type(hours_json_data)
+                )
                 return {}
-            
+
             # If it's any other type, log and return empty dict
             logger.warning(
                 "Unexpected hours JSON data type", data_type=type(hours_json_data)
@@ -1823,10 +1890,8 @@ class EnhancedDatabaseManager:
             # Delete the restaurant
             session.delete(restaurant)
             session.commit()
-            
-            logger.info(
-                "Successfully deleted restaurant", restaurant_id=restaurant_id
-            )
+
+            logger.info("Successfully deleted restaurant", restaurant_id=restaurant_id)
             return True
 
         except Exception as e:
@@ -2495,12 +2560,16 @@ class EnhancedDatabaseManager:
             restaurants = query.all()
 
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
 
             # Convert to dictionaries with pre-loaded images
             result = []
             for restaurant in restaurants:
-                restaurant_dict = self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                restaurant_dict = self._restaurant_to_unified_dict_with_images(
+                    restaurant, restaurant_images_map.get(restaurant.id, [])
+                )
                 result.append(restaurant_dict)
 
             logger.info("Found restaurants without websites", count=len(result))
@@ -2543,11 +2612,15 @@ class EnhancedDatabaseManager:
             )
 
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
 
             result = []
             for restaurant in restaurants:
-                restaurant_dict = self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                restaurant_dict = self._restaurant_to_unified_dict_with_images(
+                    restaurant, restaurant_images_map.get(restaurant.id, [])
+                )
                 result.append(restaurant_dict)
 
             logger.info("Found restaurants without recent reviews", count=len(result))
@@ -2585,11 +2658,15 @@ class EnhancedDatabaseManager:
             )
 
             # Eager load all restaurant images in a single query to avoid N+1
-            restaurant_images_map = self._eager_load_restaurant_images(session, restaurants)
+            restaurant_images_map = self._eager_load_restaurant_images(
+                session, restaurants
+            )
 
             result = []
             for restaurant in restaurants:
-                restaurant_dict = self._restaurant_to_unified_dict_with_images(restaurant, restaurant_images_map.get(restaurant.id, []))
+                restaurant_dict = self._restaurant_to_unified_dict_with_images(
+                    restaurant, restaurant_images_map.get(restaurant.id, [])
+                )
                 result.append(restaurant_dict)
 
             logger.info("Found restaurants without images", count=len(result))
@@ -2739,19 +2816,25 @@ class EnhancedDatabaseManager:
             result = []
             for image in images:
                 if image.image_url:  # Only include images with valid URLs
-                    result.append({
-                        'id': image.id,
-                        'image_url': image.image_url,
-                        'image_order': image.image_order,
-                        'cloudinary_public_id': image.cloudinary_public_id,
-                        'created_at': image.created_at.isoformat() if image.created_at else None,
-                        'updated_at': image.updated_at.isoformat() if image.updated_at else None
-                    })
+                    result.append(
+                        {
+                            "id": image.id,
+                            "image_url": image.image_url,
+                            "image_order": image.image_order,
+                            "cloudinary_public_id": image.cloudinary_public_id,
+                            "created_at": image.created_at.isoformat()
+                            if image.created_at
+                            else None,
+                            "updated_at": image.updated_at.isoformat()
+                            if image.updated_at
+                            else None,
+                        }
+                    )
 
             logger.info(
                 "Retrieved restaurant images",
                 restaurant_id=restaurant_id,
-                count=len(result)
+                count=len(result),
             )
             return result
 
@@ -2759,7 +2842,7 @@ class EnhancedDatabaseManager:
             logger.exception(
                 "Error getting restaurant images",
                 restaurant_id=restaurant_id,
-                error=str(e)
+                error=str(e),
             )
             return []
         finally:
@@ -3062,7 +3145,7 @@ class EnhancedDatabaseManager:
         try:
             session = self.get_session()
             query = session.query(User)
-            
+
             # Apply filters
             if filters:
                 if filters.get("search"):
@@ -3077,8 +3160,10 @@ class EnhancedDatabaseManager:
                         query = query.filter(User.isSuperAdmin == False)
 
             # Apply pagination
-            users = query.order_by(User.createdAt.desc()).offset(offset).limit(limit).all()
-            
+            users = (
+                query.order_by(User.createdAt.desc()).offset(offset).limit(limit).all()
+            )
+
             # Convert to dict format
             result = []
             for user in users:
@@ -3086,18 +3171,20 @@ class EnhancedDatabaseManager:
                     "id": user.id,
                     "name": user.name,
                     "email": user.email,
-                    "emailVerified": user.emailVerified.isoformat() if user.emailVerified else None,
+                    "emailVerified": user.emailVerified.isoformat()
+                    if user.emailVerified
+                    else None,
                     "image": user.image,
                     "isSuperAdmin": user.isSuperAdmin,
                     "role": "admin" if user.isSuperAdmin else "user",
                     "createdAt": user.createdAt.isoformat() if user.createdAt else None,
                     "updatedAt": user.updatedAt.isoformat() if user.updatedAt else None,
-                    "_count": {"sessions": self._get_user_session_count(user.id)}
+                    "_count": {"sessions": self._get_user_session_count(user.id)},
                 }
                 result.append(user_dict)
-            
+
             return result
-            
+
         except Exception as e:
             logger.exception("Error getting users", error=str(e))
             return []
@@ -3109,7 +3196,7 @@ class EnhancedDatabaseManager:
         try:
             session = self.get_session()
             query = session.query(User)
-            
+
             # Apply filters
             if filters:
                 if filters.get("search"):
@@ -3124,7 +3211,7 @@ class EnhancedDatabaseManager:
                         query = query.filter(User.isSuperAdmin == False)
 
             return query.count()
-            
+
         except Exception as e:
             logger.exception("Error getting users count", error=str(e))
             return 0
@@ -3136,17 +3223,19 @@ class EnhancedDatabaseManager:
         try:
             session = self.get_session()
             user = session.query(User).filter(User.id == user_id).first()
-            
+
             if not user:
                 return False
-                
+
             user.isSuperAdmin = is_super_admin
             user.updatedAt = datetime.utcnow()
             session.commit()
-            
-            logger.info("Updated user role", user_id=user_id, is_super_admin=is_super_admin)
+
+            logger.info(
+                "Updated user role", user_id=user_id, is_super_admin=is_super_admin
+            )
             return True
-            
+
         except Exception as e:
             logger.exception("Error updating user role", user_id=user_id, error=str(e))
             if session:
@@ -3160,23 +3249,25 @@ class EnhancedDatabaseManager:
         try:
             session = self.get_session()
             user = session.query(User).filter(User.id == user_id).first()
-            
+
             if not user:
                 return False
-                
+
             # Don't allow deleting the last super admin
             if user.isSuperAdmin:
-                admin_count = session.query(User).filter(User.isSuperAdmin == True).count()
+                admin_count = (
+                    session.query(User).filter(User.isSuperAdmin == True).count()
+                )
                 if admin_count <= 1:
                     logger.warning("Cannot delete last super admin", user_id=user_id)
                     return False
-            
+
             session.delete(user)
             session.commit()
-            
+
             logger.info("Deleted user", user_id=user_id)
             return True
-            
+
         except Exception as e:
             logger.exception("Error deleting user", user_id=user_id, error=str(e))
             if session:
@@ -3185,23 +3276,25 @@ class EnhancedDatabaseManager:
         finally:
             session.close()
 
-    def _eager_load_restaurant_images(self, session, restaurants: list[Restaurant]) -> dict[int, list[dict[str, Any]]]:
+    def _eager_load_restaurant_images(
+        self, session, restaurants: list[Restaurant]
+    ) -> dict[int, list[dict[str, Any]]]:
         """Eager load all restaurant images for a list of restaurants to avoid N+1 queries.
-        
+
         Args:
             session: Database session
             restaurants: List of restaurant objects
-            
+
         Returns:
             Dictionary mapping restaurant_id to list of image dictionaries
         """
         restaurant_images_map = {}
-        
+
         if not restaurants:
             return restaurant_images_map
-            
+
         restaurant_ids = [r.id for r in restaurants]
-        
+
         # Fetch all images for all restaurants in one query
         images_query = (
             session.query(RestaurantImage)
@@ -3209,45 +3302,52 @@ class EnhancedDatabaseManager:
             .order_by(RestaurantImage.restaurant_id, RestaurantImage.image_order.asc())
             .all()
         )
-        
+
         # Group images by restaurant_id
         for image in images_query:
             if image.restaurant_id not in restaurant_images_map:
                 restaurant_images_map[image.restaurant_id] = []
             if image.image_url:  # Only include images with valid URLs
-                restaurant_images_map[image.restaurant_id].append({
-                    'id': image.id,
-                    'image_url': image.image_url,
-                    'image_order': image.image_order,
-                    'cloudinary_public_id': image.cloudinary_public_id,
-                    'created_at': image.created_at.isoformat() if image.created_at else None,
-                    'updated_at': image.updated_at.isoformat() if image.updated_at else None
-                })
-        
+                restaurant_images_map[image.restaurant_id].append(
+                    {
+                        "id": image.id,
+                        "image_url": image.image_url,
+                        "image_order": image.image_order,
+                        "cloudinary_public_id": image.cloudinary_public_id,
+                        "created_at": image.created_at.isoformat()
+                        if image.created_at
+                        else None,
+                        "updated_at": image.updated_at.isoformat()
+                        if image.updated_at
+                        else None,
+                    }
+                )
+
         logger.info(
             "Eager loaded restaurant images",
             restaurant_count=len(restaurants),
-            total_images=sum(len(images) for images in restaurant_images_map.values())
+            total_images=sum(len(images) for images in restaurant_images_map.values()),
         )
-        
+
         return restaurant_images_map
 
     def _get_user_session_count(self, user_id: str) -> int:
         """Get the number of active sessions for a user.
-        
+
         Args:
             user_id: User ID to get session count for
-            
+
         Returns:
             Number of active sessions
         """
         try:
             session = self.get_session()
             # Count active sessions (not expired)
-            count = session.query(Session).filter(
-                Session.userId == user_id,
-                Session.expires > datetime.utcnow()
-            ).count()
+            count = (
+                session.query(Session)
+                .filter(Session.userId == user_id, Session.expires > datetime.utcnow())
+                .count()
+            )
             return count
         except Exception as e:
             logger.warning("Error getting session count", user_id=user_id, error=str(e))

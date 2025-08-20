@@ -144,20 +144,22 @@ class Review(Base):
 
 class RestaurantImage(Base):
     """Restaurant Image model for multiple images per restaurant.
-    
+
     This model represents the restaurant_images table that stores
     multiple images for each restaurant with order and Cloudinary info.
     """
-    
+
     __tablename__ = "restaurant_images"
-    
+
     id = Column(Integer, primary_key=True)
     restaurant_id = Column(Integer, nullable=True)
     image_url = Column(String, nullable=True)
     image_order = Column(Integer, nullable=True)
     cloudinary_public_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True
+    )
 
 
 class ReviewFlag(Base):
@@ -193,7 +195,9 @@ class User(Base):
     image = Column(String(500), nullable=True)
     isSuperAdmin = Column(Boolean, default=False, nullable=False)
     createdAt = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updatedAt = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    updatedAt = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 class Account(Base):

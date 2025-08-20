@@ -1,15 +1,8 @@
-from utils.logging_config import get_logger
-
 from datetime import datetime
 from typing import Any
 
-
-
-
-
-
-
-from flask import Response, jsonify, g
+from flask import Response, g, jsonify
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -23,6 +16,7 @@ across all endpoints.
 Author: JewGo Development Team
 Version: 2.0
 """
+
 
 class APIResponse:
     """Standardized API response class."""
@@ -81,6 +75,7 @@ class APIResponse:
 # SUCCESS RESPONSES
 # ============================================================================
 
+
 def success_response(
     data: Any = None,
     message: str = "Success",
@@ -129,6 +124,7 @@ def paginated_response(
 # ============================================================================
 # DOMAIN-SPECIFIC RESPONSES
 # ============================================================================
+
 
 def restaurants_response(
     restaurants: list[dict[str, Any]],
@@ -234,6 +230,7 @@ def search_response(
 # HEALTH CHECK RESPONSES
 # ============================================================================
 
+
 def health_response(
     status: str = "ok",
     checks: dict[str, Any] | None = None,
@@ -242,31 +239,31 @@ def health_response(
 ) -> Response:
     """Create a standardized health check response."""
     data = {"status": status}
-    
+
     if checks:
         data["checks"] = checks
-    
+
     if warnings:
         data["warnings"] = warnings
-    
+
     if error:
         data["error"] = error
-    
+
     # Health checks use a simpler format without the standard APIResponse wrapper
     response_data = {
         "status": status,
         "ts": datetime.utcnow().isoformat(),
     }
-    
+
     if checks:
         response_data["checks"] = checks
-    
+
     if warnings:
         response_data["warnings"] = warnings
-    
+
     if error:
         response_data["error"] = error
-    
+
     return jsonify(response_data), 200 if status in ["ok", "healthy"] else 503
 
 
@@ -287,34 +284,34 @@ def redis_health_response(
         "status": status,
         "timestamp": datetime.utcnow().timestamp(),
     }
-    
+
     if redis_url:
         response_data["redis_url"] = redis_url
-    
+
     if ping_time_ms is not None:
         response_data["ping_time_ms"] = round(ping_time_ms, 2)
-    
+
     if set_time_ms is not None:
         response_data["set_time_ms"] = round(set_time_ms, 2)
-    
+
     if get_time_ms is not None:
         response_data["get_time_ms"] = round(get_time_ms, 2)
-    
+
     if redis_version:
         response_data["redis_version"] = redis_version
-    
+
     if connected_clients is not None:
         response_data["connected_clients"] = connected_clients
-    
+
     if used_memory_human:
         response_data["used_memory_human"] = used_memory_human
-    
+
     if total_commands_processed is not None:
         response_data["total_commands_processed"] = total_commands_processed
-    
+
     if error:
         response_data["error"] = error
-    
+
     status_code = 200 if status in ["healthy", "not_configured"] else 503
     return jsonify(response_data), status_code
 
@@ -329,13 +326,13 @@ def redis_stats_response(
         "status": status,
         "timestamp": datetime.utcnow().timestamp(),
     }
-    
+
     if stats:
         response_data["stats"] = stats
-    
+
     if error:
         response_data["error"] = error
-    
+
     status_code = 200 if status in ["ok", "not_configured"] else 503
     return jsonify(response_data), status_code
 
@@ -343,6 +340,7 @@ def redis_stats_response(
 # ============================================================================
 # ERROR RESPONSES
 # ============================================================================
+
 
 def no_content_response() -> Response:
     """Create a 204 No Content response."""
@@ -395,7 +393,7 @@ def unauthorized_response(
     meta = {}
     if details:
         meta["details"] = details
-    
+
     response = APIResponse(message=message, status_code=401, meta=meta)
     return response.to_response()
 
@@ -408,7 +406,7 @@ def forbidden_response(
     meta = {}
     if details:
         meta["details"] = details
-    
+
     response = APIResponse(message=message, status_code=403, meta=meta)
     return response.to_response()
 
@@ -421,7 +419,7 @@ def service_unavailable_response(
     meta = {}
     if details:
         meta["details"] = details
-    
+
     response = APIResponse(message=message, status_code=503, meta=meta)
     return response.to_response()
 
@@ -430,19 +428,20 @@ def service_unavailable_response(
 # LEGACY COMPATIBILITY RESPONSES
 # ============================================================================
 
+
 def legacy_success_response(
     message: str = "Success",
     data: dict[str, Any] | None = None,
 ) -> Response:
     """Create a legacy-style success response for backward compatibility."""
     response_data = {"success": True}
-    
+
     if message:
         response_data["message"] = message
-    
+
     if data:
         response_data.update(data)
-    
+
     return jsonify(response_data), 200
 
 
@@ -452,8 +451,8 @@ def legacy_error_response(
 ) -> Response:
     """Create a legacy-style error response for backward compatibility."""
     response_data = {"error": message}
-    
+
     if status_code == 500:
         response_data["error"] = "Internal server error"
-    
+
     return jsonify(response_data), status_code

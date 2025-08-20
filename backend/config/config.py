@@ -2,10 +2,6 @@ import os
 
 from dotenv import load_dotenv
 
-
-
-
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -42,10 +38,10 @@ class Config:
     CACHE_KEY_PREFIX = "jewgo:"
     CACHE_THRESHOLD = 1000  # Maximum number of items in cache
     CACHE_OPTIONS = {
-        'socket_connect_timeout': 5,
-        'socket_timeout': 5,
-        'retry_on_timeout': True,
-        'max_connections': 20
+        "socket_connect_timeout": 5,
+        "socket_timeout": 5,
+        "retry_on_timeout": True,
+        "max_connections": 20,
     }
 
     # Session Configuration

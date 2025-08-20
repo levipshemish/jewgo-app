@@ -3,13 +3,9 @@ import os
 from database.database_manager_v3 import EnhancedDatabaseManager
 from dotenv import load_dotenv
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Simple test to check database manager functionality."""
+
 
 def test_database() -> None:
     """Test database connection and restaurant retrieval."""
@@ -23,7 +19,6 @@ def test_database() -> None:
 
     # Test connection
     if db.connect():
-
         # Test getting restaurants
         restaurants = db.get_restaurants(limit=10, as_dict=True)
 

@@ -6,10 +6,11 @@ Profile Migration Script
 This script runs the migration to create the profiles table for user profile data.
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -25,8 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -42,30 +42,36 @@ def run_profile_migration():
 
         # Create engine
         engine = create_engine(database_url)
-        
+
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-            
+
             try:
                 logger.info("Starting profiles table migration")
-                
+
                 # Check if profiles table already exists
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text(
+                        """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_schema = 'public' 
                         AND table_name = 'profiles'
                     );
-                """))
-                
+                """
+                    )
+                )
+
                 if result.scalar():
                     logger.info("Profiles table already exists")
                     return True
-                
+
                 # Create profiles table
                 logger.info("Creating profiles table")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE TABLE profiles (
                         id VARCHAR(50) PRIMARY KEY,
                         username VARCHAR(30) UNIQUE NOT NULL,
@@ -80,19 +86,27 @@ def run_profile_migration():
                         created_at TIMESTAMP DEFAULT NOW(),
                         updated_at TIMESTAMP DEFAULT NOW()
                     );
-                """))
-                
+                """
+                    )
+                )
+
                 # Create indexes
                 logger.info("Creating indexes")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     CREATE INDEX idx_profiles_username ON profiles (username);
                     CREATE INDEX idx_profiles_display_name ON profiles (display_name);
                     CREATE INDEX idx_profiles_created_at ON profiles (created_at);
-                """))
-                
+                """
+                    )
+                )
+
                 # Create constraints
                 logger.info("Creating constraints")
-                conn.execute(text("""
+                conn.execute(
+                    text(
+                        """
                     ALTER TABLE profiles 
                     ADD CONSTRAINT check_username_format 
                     CHECK (username ~ '^[a-zA-Z0-9_-]+$');
@@ -120,13 +134,15 @@ def run_profile_migration():
                     ALTER TABLE profiles 
                     ADD CONSTRAINT check_phone_format 
                     CHECK (phone IS NULL OR phone ~ '^[+]?[1-9][0-9]{0,15}$');
-                """))
-                
+                """
+                    )
+                )
+
                 # Commit transaction
                 trans.commit()
                 logger.info("Profiles table migration completed successfully")
                 return True
-                
+
             except SQLAlchemyError as e:
                 trans.rollback()
                 logger.error(f"Database error during migration: {e}")
@@ -135,7 +151,7 @@ def run_profile_migration():
                 trans.rollback()
                 logger.error(f"Unexpected error during migration: {e}")
                 return False
-                
+
     except Exception as e:
         logger.error(f"Failed to run profile migration: {e}")
         return False
@@ -150,60 +166,85 @@ def verify_migration():
             return False
 
         engine = create_engine(database_url)
-        
+
         with engine.connect() as conn:
             # Check if table exists
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
                     WHERE table_schema = 'public' 
                     AND table_name = 'profiles'
                 );
-            """))
-            
+            """
+                )
+            )
+
             if not result.scalar():
                 logger.error("Profiles table does not exist")
                 return False
-            
+
             # Check if columns exist
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT column_name 
                 FROM information_schema.columns 
                 WHERE table_name = 'profiles' 
                 AND table_schema = 'public'
                 ORDER BY ordinal_position;
-            """))
-            
+            """
+                )
+            )
+
             columns = [row[0] for row in result.fetchall()]
             expected_columns = [
-                'id', 'username', 'display_name', 'bio', 'location', 
-                'website', 'phone', 'date_of_birth', 'avatar_url', 
-                'preferences', 'created_at', 'updated_at'
+                "id",
+                "username",
+                "display_name",
+                "bio",
+                "location",
+                "website",
+                "phone",
+                "date_of_birth",
+                "avatar_url",
+                "preferences",
+                "created_at",
+                "updated_at",
             ]
-            
+
             missing_columns = set(expected_columns) - set(columns)
             if missing_columns:
                 logger.error(f"Missing columns: {missing_columns}")
                 return False
-            
+
             # Check if indexes exist
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT indexname 
                 FROM pg_indexes 
                 WHERE tablename = 'profiles';
-            """))
-            
+            """
+                )
+            )
+
             indexes = [row[0] for row in result.fetchall()]
-            expected_indexes = ['idx_profiles_username', 'idx_profiles_display_name', 'idx_profiles_created_at']
-            
+            expected_indexes = [
+                "idx_profiles_username",
+                "idx_profiles_display_name",
+                "idx_profiles_created_at",
+            ]
+
             missing_indexes = set(expected_indexes) - set(indexes)
             if missing_indexes:
                 logger.error(f"Missing indexes: {missing_indexes}")
                 return False
-            
+
             logger.info("Migration verification completed successfully")
             return True
-            
+
     except Exception as e:
         logger.error(f"Failed to verify migration: {e}")
         return False
@@ -211,11 +252,11 @@ def verify_migration():
 
 if __name__ == "__main__":
     logger.info("Starting profile migration process")
-    
+
     # Run migration
     if run_profile_migration():
         logger.info("Migration completed successfully")
-        
+
         # Verify migration
         if verify_migration():
             logger.info("Migration verification passed")

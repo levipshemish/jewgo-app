@@ -24,6 +24,7 @@ from utils.logging_config import get_logger
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -50,16 +51,19 @@ except ImportError:
 
 class CacheError(Exception):
     """Base exception for cache-related errors."""
+
     pass
 
 
 class CacheConnectionError(CacheError):
     """Raised when unable to connect to cache backend."""
+
     pass
 
 
 class CacheOperationError(CacheError):
     """Raised when cache operations fail."""
+
     pass
 
 
@@ -79,7 +83,7 @@ class CacheManager:
         self.memory_cache = {}
         # Base prefix for restaurant list caching
         self.RESTAURANTS_LIST_PREFIX = "restaurants:list"
-        
+
         # Health tracking
         self._is_healthy = True
         self._last_error = None
@@ -124,14 +128,14 @@ class CacheManager:
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get value from cache.
-        
+
         Args:
             key: Cache key
             default: Default value if key not found
-            
+
         Returns:
             Cached value or default
-            
+
         Raises:
             CacheOperationError: If cache operation fails
         """
@@ -154,15 +158,15 @@ class CacheManager:
 
     def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """Set value in cache with TTL.
-        
+
         Args:
             key: Cache key
             value: Value to cache
             ttl: Time to live in seconds
-            
+
         Returns:
             True if successful
-            
+
         Raises:
             CacheOperationError: If cache operation fails
         """
@@ -188,13 +192,13 @@ class CacheManager:
 
     def delete(self, key: str) -> bool:
         """Delete value from cache.
-        
+
         Args:
             key: Cache key to delete
-            
+
         Returns:
             True if successful
-            
+
         Raises:
             CacheOperationError: If cache operation fails
         """
@@ -210,13 +214,13 @@ class CacheManager:
 
     def clear_pattern(self, pattern: str) -> int:
         """Clear all keys matching pattern.
-        
+
         Args:
             pattern: Pattern to match keys
-            
+
         Returns:
             Number of keys deleted
-            
+
         Raises:
             CacheOperationError: If cache operation fails
         """
@@ -247,7 +251,7 @@ class CacheManager:
             "timestamp": datetime.now().isoformat(),
             "type": type(error).__name__,
         }
-        
+
         logger.error(
             "Cache operation failed",
             operation=operation,
@@ -269,7 +273,7 @@ class CacheManager:
             "memory_cache_size": len(self.memory_cache),
             "timestamp": datetime.now().isoformat(),
         }
-        
+
         # Test Redis connection if available
         if self.redis_client:
             try:
@@ -280,7 +284,7 @@ class CacheManager:
                 status["redis_connected"] = False
                 status["redis_error"] = str(e)
                 self._is_healthy = False
-        
+
         return status
 
     def reset_health_status(self) -> None:
@@ -292,7 +296,7 @@ class CacheManager:
 
     def invalidate_restaurant_cache(self, restaurant_id: int | None = None) -> None:
         """Invalidate restaurant-related cache.
-        
+
         Args:
             restaurant_id: Specific restaurant ID to invalidate, or None for all
         """
@@ -306,7 +310,9 @@ class CacheManager:
         except CacheOperationError as e:
             logger.warning("Failed to invalidate restaurant cache", error=str(e))
 
-    def _restaurants_key(self, limit: int | None = None, offset: int | None = None) -> str:
+    def _restaurants_key(
+        self, limit: int | None = None, offset: int | None = None
+    ) -> str:
         """Build a cache key for restaurant lists, optionally including pagination."""
         if limit is None and offset is None:
             return self.RESTAURANTS_LIST_PREFIX
@@ -339,7 +345,9 @@ class CacheManager:
         except CacheOperationError:
             return None
 
-    def get_cached_restaurants_paginated(self, limit: int, offset: int) -> list[dict] | None:
+    def get_cached_restaurants_paginated(
+        self, limit: int, offset: int
+    ) -> list[dict] | None:
         """Get cached restaurant list for specific pagination parameters."""
         try:
             return self.get(self._restaurants_key(limit, offset))

@@ -1,23 +1,19 @@
 import json
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
 
-from database.database_manager_v4 import DatabaseManager
+import pytest
 from database.connection_manager import DatabaseConnectionManager
+from database.database_manager_v4 import DatabaseManager
+from database.models import Restaurant, RestaurantImage, Review, User
+from database.repositories.image_repository import ImageRepository
 from database.repositories.restaurant_repository import RestaurantRepository
 from database.repositories.review_repository import ReviewRepository
 from database.repositories.user_repository import UserRepository
-from database.repositories.image_repository import ImageRepository
-from database.models import Restaurant, Review, User, RestaurantImage
-
-
-
-
-
 
 #!/usr/bin/env python3
 """Comprehensive tests for DatabaseManager v4 and repositories."""
+
 
 # Import the new database components
 class TestDatabaseManagerV4:
@@ -34,7 +30,10 @@ class TestDatabaseManagerV4:
     @pytest.fixture
     def db_manager(self, mock_connection_manager):
         """Create a DatabaseManager instance with mocked dependencies."""
-        with patch('database.database_manager_v4.DatabaseConnectionManager', return_value=mock_connection_manager):
+        with patch(
+            "database.database_manager_v4.DatabaseConnectionManager",
+            return_value=mock_connection_manager,
+        ):
             manager = DatabaseManager()
             manager.connection_manager = mock_connection_manager
             return manager
@@ -82,16 +81,20 @@ class TestRestaurantRepository:
         """Create a RestaurantRepository instance."""
         return RestaurantRepository(mock_connection_manager)
 
-    def test_get_restaurants_with_filters(self, restaurant_repo, mock_connection_manager):
+    def test_get_restaurants_with_filters(
+        self, restaurant_repo, mock_connection_manager
+    ):
         """Test getting restaurants with filters."""
         # Mock session and query
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_restaurant = Mock(spec=Restaurant)
         mock_restaurant.id = 1
         mock_restaurant.name = "Test Restaurant"
-        mock_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_restaurant]
+        mock_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [
+            mock_restaurant
+        ]
 
         # Test with filters
         result = restaurant_repo.get_restaurants_with_filters(
@@ -99,7 +102,7 @@ class TestRestaurantRepository:
             status="active",
             limit=10,
             offset=0,
-            filters={"search": "test"}
+            filters={"search": "test"},
         )
 
         assert len(result) == 1
@@ -110,11 +113,13 @@ class TestRestaurantRepository:
         """Test searching restaurants."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_restaurant = Mock(spec=Restaurant)
         mock_restaurant.id = 1
         mock_restaurant.name = "Test Restaurant"
-        mock_session.query.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_restaurant]
+        mock_session.query.return_value.filter.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [
+            mock_restaurant
+        ]
 
         result = restaurant_repo.search_restaurants("test", limit=10, offset=0)
 
@@ -125,11 +130,13 @@ class TestRestaurantRepository:
         """Test getting restaurant by name."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_restaurant = Mock(spec=Restaurant)
         mock_restaurant.id = 1
         mock_restaurant.name = "Test Restaurant"
-        mock_session.query.return_value.filter.return_value.first.return_value = mock_restaurant
+        mock_session.query.return_value.filter.return_value.first.return_value = (
+            mock_restaurant
+        )
 
         result = restaurant_repo.get_restaurant_by_name("Test Restaurant")
 
@@ -140,10 +147,14 @@ class TestRestaurantRepository:
         """Test getting restaurant statistics."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         # Mock statistics queries
         mock_session.query.return_value.filter.return_value.count.return_value = 100
-        mock_session.query.return_value.filter.return_value.group_by.return_value.all.return_value = [("dairy", 50), ("meat", 30), ("pareve", 20)]
+        mock_session.query.return_value.filter.return_value.group_by.return_value.all.return_value = [
+            ("dairy", 50),
+            ("meat", 30),
+            ("pareve", 20),
+        ]
 
         result = restaurant_repo.get_statistics()
 
@@ -172,14 +183,16 @@ class TestReviewRepository:
         """Test getting reviews."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_review = Mock(spec=Review)
         mock_review.id = "rev_123"
         mock_review.restaurant_id = 1
         mock_review.user_id = "user_123"
         mock_review.rating = 5
         mock_review.content = "Great food!"
-        mock_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [mock_review]
+        mock_session.query.return_value.filter.return_value.order_by.return_value.limit.return_value.offset.return_value.all.return_value = [
+            mock_review
+        ]
 
         result = review_repo.get_reviews(restaurant_id=1, status="approved")
 
@@ -190,15 +203,19 @@ class TestReviewRepository:
     def test_create_review(self, review_repo, mock_connection_manager):
         """Test creating a review."""
         mock_session = Mock()
-        mock_connection_manager.session_scope.return_value.__enter__ = Mock(return_value=mock_session)
-        mock_connection_manager.session_scope.return_value.__exit__ = Mock(return_value=None)
-        
+        mock_connection_manager.session_scope.return_value.__enter__ = Mock(
+            return_value=mock_session
+        )
+        mock_connection_manager.session_scope.return_value.__exit__ = Mock(
+            return_value=None
+        )
+
         review_data = {
             "restaurant_id": 1,
             "user_id": "user_123",
             "user_name": "Test User",
             "rating": 5,
-            "content": "Great food!"
+            "content": "Great food!",
         }
 
         result = review_repo.create_review(review_data)
@@ -209,10 +226,16 @@ class TestReviewRepository:
     def test_update_review_status(self, review_repo, mock_connection_manager):
         """Test updating review status."""
         mock_session = Mock()
-        mock_connection_manager.session_scope.return_value.__enter__ = Mock(return_value=mock_session)
-        mock_connection_manager.session_scope.return_value.__exit__ = Mock(return_value=None)
-        
-        mock_session.query.return_value.filter.return_value.first.return_value = Mock(spec=Review)
+        mock_connection_manager.session_scope.return_value.__enter__ = Mock(
+            return_value=mock_session
+        )
+        mock_connection_manager.session_scope.return_value.__exit__ = Mock(
+            return_value=None
+        )
+
+        mock_session.query.return_value.filter.return_value.first.return_value = Mock(
+            spec=Review
+        )
 
         result = review_repo.update_review_status("rev_123", "approved", "Good review")
 
@@ -222,10 +245,14 @@ class TestReviewRepository:
         """Test getting review statistics."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         # Mock statistics queries
         mock_session.query.return_value.count.return_value = 100
-        mock_session.query.return_value.filter.return_value.group_by.return_value.all.return_value = [("approved", 80), ("pending", 15), ("rejected", 5)]
+        mock_session.query.return_value.filter.return_value.group_by.return_value.all.return_value = [
+            ("approved", 80),
+            ("pending", 15),
+            ("rejected", 5),
+        ]
 
         result = review_repo.get_review_statistics()
 
@@ -254,13 +281,15 @@ class TestUserRepository:
         """Test getting users."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_user = Mock(spec=User)
         mock_user.id = "user_123"
         mock_user.name = "Test User"
         mock_user.email = "test@example.com"
         mock_user.isSuperAdmin = False
-        mock_session.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [mock_user]
+        mock_session.query.return_value.filter.return_value.order_by.return_value.offset.return_value.limit.return_value.all.return_value = [
+            mock_user
+        ]
 
         result = user_repo.get_users(limit=10, offset=0)
 
@@ -271,10 +300,16 @@ class TestUserRepository:
     def test_update_user_role(self, user_repo, mock_connection_manager):
         """Test updating user role."""
         mock_session = Mock()
-        mock_connection_manager.session_scope.return_value.__enter__ = Mock(return_value=mock_session)
-        mock_connection_manager.session_scope.return_value.__exit__ = Mock(return_value=None)
-        
-        mock_session.query.return_value.filter.return_value.first.return_value = Mock(spec=User)
+        mock_connection_manager.session_scope.return_value.__enter__ = Mock(
+            return_value=mock_session
+        )
+        mock_connection_manager.session_scope.return_value.__exit__ = Mock(
+            return_value=None
+        )
+
+        mock_session.query.return_value.filter.return_value.first.return_value = Mock(
+            spec=User
+        )
 
         result = user_repo.update_user_role("user_123", True)
 
@@ -284,7 +319,7 @@ class TestUserRepository:
         """Test getting user statistics."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         # Mock statistics queries
         mock_session.query.return_value.count.return_value = 100
         mock_session.query.return_value.filter.return_value.count.return_value = 10
@@ -316,13 +351,15 @@ class TestImageRepository:
         """Test getting restaurant images."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         mock_image = Mock(spec=RestaurantImage)
         mock_image.id = 1
         mock_image.restaurant_id = 1
         mock_image.image_url = "https://example.com/image.jpg"
         mock_image.image_order = 1
-        mock_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_image]
+        mock_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = [
+            mock_image
+        ]
 
         result = image_repo.get_restaurant_images(1)
 
@@ -333,16 +370,18 @@ class TestImageRepository:
     def test_add_restaurant_image(self, image_repo, mock_connection_manager):
         """Test adding a restaurant image."""
         mock_session = Mock()
-        mock_connection_manager.session_scope.return_value.__enter__ = Mock(return_value=mock_session)
-        mock_connection_manager.session_scope.return_value.__exit__ = Mock(return_value=None)
-        
+        mock_connection_manager.session_scope.return_value.__enter__ = Mock(
+            return_value=mock_session
+        )
+        mock_connection_manager.session_scope.return_value.__exit__ = Mock(
+            return_value=None
+        )
+
         # Mock the max order query
         mock_session.query.return_value.filter.return_value.scalar.return_value = 0
 
         result = image_repo.add_restaurant_image(
-            restaurant_id=1,
-            image_url="https://example.com/image.jpg",
-            image_order=1
+            restaurant_id=1, image_url="https://example.com/image.jpg", image_order=1
         )
 
         assert result is not None
@@ -351,7 +390,7 @@ class TestImageRepository:
         """Test getting image statistics."""
         mock_session = Mock()
         mock_connection_manager.get_session.return_value = mock_session
-        
+
         # Mock statistics queries
         mock_session.query.return_value.count.return_value = 50
         mock_session.query.return_value.filter.return_value.count.return_value = 40
@@ -380,7 +419,10 @@ class TestDatabaseManagerV4Integration:
     @pytest.fixture
     def db_manager(self, mock_connection_manager):
         """Create a DatabaseManager instance with mocked dependencies."""
-        with patch('database.database_manager_v4.DatabaseConnectionManager', return_value=mock_connection_manager):
+        with patch(
+            "database.database_manager_v4.DatabaseConnectionManager",
+            return_value=mock_connection_manager,
+        ):
             manager = DatabaseManager()
             manager.connection_manager = mock_connection_manager
             return manager
@@ -398,11 +440,13 @@ class TestDatabaseManagerV4Integration:
             "phone_number": "555-1234",
             "kosher_category": "dairy",
             "listing_type": "restaurant",
-            "status": "active"
+            "status": "active",
         }
 
         # Mock the repository methods
-        db_manager.restaurant_repo.get_by_id = Mock(return_value=Mock(**restaurant_data))
+        db_manager.restaurant_repo.get_by_id = Mock(
+            return_value=Mock(**restaurant_data)
+        )
         db_manager.image_repo.get_restaurant_images = Mock(return_value=[])
 
         # Test getting restaurant by ID
@@ -422,7 +466,7 @@ class TestDatabaseManagerV4Integration:
             "user_name": "Test User",
             "rating": 5,
             "content": "Great food!",
-            "status": "approved"
+            "status": "approved",
         }
 
         # Mock the repository methods
@@ -442,7 +486,7 @@ class TestDatabaseManagerV4Integration:
             "id": "user_123",
             "name": "Test User",
             "email": "test@example.com",
-            "isSuperAdmin": False
+            "isSuperAdmin": False,
         }
 
         # Mock the repository methods
@@ -462,11 +506,13 @@ class TestDatabaseManagerV4Integration:
             "id": 1,
             "restaurant_id": 1,
             "image_url": "https://example.com/image.jpg",
-            "image_order": 1
+            "image_order": 1,
         }
 
         # Mock the repository methods
-        db_manager.image_repo.get_restaurant_images = Mock(return_value=[Mock(**image_data)])
+        db_manager.image_repo.get_restaurant_images = Mock(
+            return_value=[Mock(**image_data)]
+        )
 
         # Test getting restaurant images
         result = db_manager.get_restaurant_images(1)
@@ -490,7 +536,10 @@ class TestErrorHandling:
     @pytest.fixture
     def db_manager(self, mock_connection_manager):
         """Create a DatabaseManager instance with error-prone dependencies."""
-        with patch('database.database_manager_v4.DatabaseConnectionManager', return_value=mock_connection_manager):
+        with patch(
+            "database.database_manager_v4.DatabaseConnectionManager",
+            return_value=mock_connection_manager,
+        ):
             manager = DatabaseManager()
             manager.connection_manager = mock_connection_manager
             return manager
@@ -508,7 +557,9 @@ class TestErrorHandling:
     def test_repository_error_handling(self, db_manager):
         """Test error handling in repositories."""
         # Mock repository to raise exception
-        db_manager.restaurant_repo.get_by_id = Mock(side_effect=Exception("Database error"))
+        db_manager.restaurant_repo.get_by_id = Mock(
+            side_effect=Exception("Database error")
+        )
 
         # Test that exceptions are properly handled
         result = db_manager.get_restaurant_by_id(1)

@@ -168,7 +168,9 @@ def run_migration() -> bool | None:
                         logger.info("Category column migration not needed")
 
                 except Exception as e:
-                    logger.warning("Category migration failed, continuing", error=str(e))
+                    logger.warning(
+                        "Category migration failed, continuing", error=str(e)
+                    )
 
                 # Migrate hours_open to hours_of_operation
                 try:
@@ -184,7 +186,9 @@ def run_migration() -> bool | None:
                     column_count = result.fetchone()[0]
 
                     if column_count == 2:
-                        logger.info("Migrating data from 'hours_open' to 'hours_of_operation'")
+                        logger.info(
+                            "Migrating data from 'hours_open' to 'hours_of_operation'"
+                        )
                         conn.execute(
                             text(
                                 """
@@ -226,10 +230,13 @@ def run_migration() -> bool | None:
                                 column_name=column_name,
                             )
                             conn.execute(
-                                text(f"ALTER TABLE restaurants DROP COLUMN {column_name}"),
+                                text(
+                                    f"ALTER TABLE restaurants DROP COLUMN {column_name}"
+                                ),
                             )
                             logger.info(
-                                "Successfully removed old column", column_name=column_name
+                                "Successfully removed old column",
+                                column_name=column_name,
                             )
                         else:
                             logger.info(
@@ -354,7 +361,9 @@ def run_migration() -> bool | None:
 
                 # Commit transaction
                 trans.commit()
-                logger.info("Successfully completed restaurants table schema optimization")
+                logger.info(
+                    "Successfully completed restaurants table schema optimization"
+                )
 
                 return True
 

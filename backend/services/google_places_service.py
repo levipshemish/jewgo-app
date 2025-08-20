@@ -1,17 +1,16 @@
-from utils.logging_config import get_logger
-
 import time
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-
-from utils.config_manager import ConfigManager
-from utils.google_places_validator import GooglePlacesValidator
-from utils.google_places_searcher import GooglePlacesSearcher
-from utils.validators import validate_website_url as unified_validate_website_url
-from datetime import datetime
 import requests
+from utils.config_manager import ConfigManager
+from utils.google_places_searcher import GooglePlacesSearcher
+from utils.google_places_validator import GooglePlacesValidator
+from utils.logging_config import get_logger
+from utils.validators import validate_website_url as unified_validate_website_url
 
 from .base_service import BaseService
+
 logger = get_logger(__name__)
 
 """Google Places Service.
@@ -19,6 +18,7 @@ logger = get_logger(__name__)
 This service provides Google Places API interactions for fetching website links,
 reviews, and other place information for restaurants.
 """
+
 
 class GooglePlacesService(BaseService):
     """Service for Google Places API interactions."""
@@ -49,16 +49,14 @@ class GooglePlacesService(BaseService):
         """
         searcher = GooglePlacesSearcher(self.api_key)
         place_id = searcher.search_place(restaurant_name, address, search_type="simple")
-        
+
         if place_id:
             self.log_operation(
                 "place_found", place_id=place_id, restaurant_name=restaurant_name
             )
         else:
-            self.log_operation(
-                "place_not_found", restaurant_name=restaurant_name
-            )
-        
+            self.log_operation("place_not_found", restaurant_name=restaurant_name)
+
         return place_id
 
     def get_place_details(self, place_id: str) -> dict[str, Any] | None:
@@ -73,12 +71,12 @@ class GooglePlacesService(BaseService):
         """
         searcher = GooglePlacesSearcher(self.api_key)
         details = searcher.get_place_details(place_id)
-        
+
         if details:
             self.log_operation("get_place_details", place_id=place_id)
         else:
             self.log_operation("details_error", place_id=place_id)
-        
+
         return details
 
     def fetch_google_reviews(

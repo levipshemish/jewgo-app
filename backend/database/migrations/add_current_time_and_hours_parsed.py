@@ -1,13 +1,8 @@
-from utils.logging_config import get_logger
-
 import os
 import sys
 
-
-
-
-
 from sqlalchemy import create_engine, text
+from utils.logging_config import get_logger
 
 #!/usr/bin/env python3
 """Migration script to add missing columns to the restaurants table.
@@ -23,11 +18,9 @@ import sys
 
 import structlog
 from sqlalchemy import create_engine, text
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 
 
 def run_migration() -> bool | None:

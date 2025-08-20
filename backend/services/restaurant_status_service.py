@@ -7,12 +7,8 @@ import pytz
 from dateutil import parser as date_parser
 from dateutil.relativedelta import relativedelta
 
-
-
-
-
-
 from .base_service import BaseService
+
 """Restaurant Status Service.
 
 This service provides restaurant status calculation based on business hours
@@ -268,9 +264,15 @@ class RestaurantStatusService(BaseService):
                 ) = match
                 days = self._get_days_between(start_day.lower(), end_day.lower())
             else:  # Single day format
-                day, start_hour, start_min, start_ampm, end_hour, end_min, end_ampm = (
-                    match
-                )
+                (
+                    day,
+                    start_hour,
+                    start_min,
+                    start_ampm,
+                    end_hour,
+                    end_min,
+                    end_ampm,
+                ) = match
                 days = [day_mapping.get(day.lower(), day.lower())]
 
             start_time = self._time_from_components(start_hour, start_min, start_ampm)

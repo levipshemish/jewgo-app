@@ -7,10 +7,6 @@ import pytz
 from dateutil import parser as date_parser
 from dateutil.relativedelta import relativedelta
 
-
-
-
-
 """Restaurant Status Calculation Module.
 
 This module provides dynamic restaurant status calculation based on business hours

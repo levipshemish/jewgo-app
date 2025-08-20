@@ -1,15 +1,8 @@
-from utils.logging_config import get_logger
-
 import os
 import sys
 
-
-from utils.logging_config import get_logger
-
-
-
-
 from sqlalchemy import create_engine, text
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 

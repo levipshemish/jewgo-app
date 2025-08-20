@@ -3,9 +3,11 @@
 
 import os
 import sys
+
 sys.path.append(os.path.dirname(__file__))
 
 from database.migrations.create_marketplace_table import upgrade
+
 
 def run_marketplace_migration():
     """Run the marketplace table migration."""
@@ -17,8 +19,10 @@ def run_marketplace_migration():
     except Exception as e:
         print(f"❌ Error running marketplace table migration: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     success = run_marketplace_migration()

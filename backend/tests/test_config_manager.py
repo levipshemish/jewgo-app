@@ -1,13 +1,8 @@
 import os
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-
 from utils.config_manager import ConfigManager
-
-
-
-
-
 
 """
 Test suite for ConfigManager
@@ -20,6 +15,7 @@ Tests the unified configuration manager functionality including:
 - Error handling
 """
 
+
 class TestConfigManager:
     """Test cases for ConfigManager class."""
 
@@ -27,10 +23,15 @@ class TestConfigManager:
         """Set up test environment."""
         # Clear any existing environment variables that might interfere
         self.test_vars = [
-            "DATABASE_URL", "GOOGLE_PLACES_API_KEY", "FLASK_SECRET_KEY",
-            "REDIS_URL", "PORT", "ENVIRONMENT", "FLASK_ENV"
+            "DATABASE_URL",
+            "GOOGLE_PLACES_API_KEY",
+            "FLASK_SECRET_KEY",
+            "REDIS_URL",
+            "PORT",
+            "ENVIRONMENT",
+            "FLASK_ENV",
         ]
-        
+
         # Store original values
         self.original_values = {}
         for var in self.test_vars:
@@ -63,7 +64,9 @@ class TestConfigManager:
     def test_get_database_url(self):
         """Test getting database URL."""
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
-        assert ConfigManager.get_database_url() == "postgresql://test:test@localhost/test"
+        assert (
+            ConfigManager.get_database_url() == "postgresql://test:test@localhost/test"
+        )
 
     def test_get_database_url_not_set(self):
         """Test getting database URL when not set."""
@@ -161,7 +164,10 @@ class TestConfigManager:
 
     def test_get_flask_secret_key_with_default(self):
         """Test getting Flask secret key with default."""
-        assert ConfigManager.get_flask_secret_key() == "dev-secret-key-change-in-production"
+        assert (
+            ConfigManager.get_flask_secret_key()
+            == "dev-secret-key-change-in-production"
+        )
 
     def test_get_flask_secret_key_with_env_value(self):
         """Test getting Flask secret key from environment."""
@@ -219,7 +225,10 @@ class TestConfigManager:
     def test_get_cors_origins_with_env_value(self):
         """Test getting CORS origins from environment."""
         os.environ["CORS_ORIGINS"] = "https://jewgo.com,https://jewgo-app.vercel.app"
-        assert ConfigManager.get_cors_origins() == ["https://jewgo.com", "https://jewgo-app.vercel.app"]
+        assert ConfigManager.get_cors_origins() == [
+            "https://jewgo.com",
+            "https://jewgo-app.vercel.app",
+        ]
 
     def test_get_cors_origins_empty(self):
         """Test getting CORS origins when empty."""
@@ -266,14 +275,14 @@ class TestConfigManager:
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
         os.environ["GOOGLE_PLACES_API_KEY"] = "test_api_key"
         os.environ["FLASK_SECRET_KEY"] = "test_secret"
-        
+
         assert ConfigManager.validate_critical_config() is True
 
     def test_validate_critical_config_missing_vars(self):
         """Test critical configuration validation when variables are missing."""
         # Only set one of the critical variables
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
-        
+
         assert ConfigManager.validate_critical_config() is False
 
     def test_validate_critical_config_none_set(self):
@@ -285,9 +294,9 @@ class TestConfigManager:
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
         os.environ["ENVIRONMENT"] = "production"
         os.environ["PORT"] = "8080"
-        
+
         summary = ConfigManager.get_config_summary()
-        
+
         assert summary["environment"] == "production"
         assert summary["port"] == 8080
         assert summary["database_url_set"] is True
@@ -298,7 +307,7 @@ class TestConfigManager:
     def test_get_config_summary_no_vars_set(self):
         """Test getting configuration summary when no variables are set."""
         summary = ConfigManager.get_config_summary()
-        
+
         assert summary["environment"] == "development"
         assert summary["port"] == 5000
         assert summary["database_url_set"] is False
@@ -315,7 +324,7 @@ class TestConfigManager:
         os.environ["PG_IDLE_TX_TIMEOUT"] = "120000"
         os.environ["PGSSLMODE"] = "verify-full"
         os.environ["PGSSLROOTCERT"] = "/path/to/cert"
-        
+
         assert ConfigManager.get_pg_keepalives_idle() == 60
         assert ConfigManager.get_pg_keepalives_interval() == 20
         assert ConfigManager.get_pg_keepalives_count() == 5
@@ -339,7 +348,7 @@ class TestConfigManager:
         os.environ["UPTIMEROBOT_API_KEY"] = "uptime_key"
         os.environ["CRONITOR_API_KEY"] = "cronitor_key"
         os.environ["SENTRY_DSN"] = "https://sentry.io/test"
-        
+
         assert ConfigManager.get_uptimerobot_api_key() == "uptime_key"
         assert ConfigManager.get_cronitor_api_key() == "cronitor_key"
         assert ConfigManager.get_sentry_dsn() == "https://sentry.io/test"
@@ -355,7 +364,7 @@ class TestConfigManager:
         os.environ["CACHE_TYPE"] = "memory"
         os.environ["SESSION_TYPE"] = "filesystem"
         os.environ["RATELIMIT_STORAGE_URL"] = "redis://localhost:6379/1"
-        
+
         assert ConfigManager.get_cache_type() == "memory"
         assert ConfigManager.get_session_type() == "filesystem"
         assert ConfigManager.get_ratelimit_storage_url() == "redis://localhost:6379/1"
@@ -372,7 +381,7 @@ class TestConfigManager:
         os.environ["FRONTEND_URL"] = "https://frontend.test.com"
         os.environ["RENDER_URL"] = "https://render.test.com"
         os.environ["FLASK_APP_URL"] = "http://localhost:8000"
-        
+
         assert ConfigManager.get_api_url() == "https://api.test.com"
         assert ConfigManager.get_frontend_url() == "https://frontend.test.com"
         assert ConfigManager.get_render_url() == "https://render.test.com"
@@ -400,7 +409,7 @@ class TestConfigManager:
         os.environ["REDIS_PORT"] = "6380"
         os.environ["REDIS_DB"] = "1"
         os.environ["REDIS_PASSWORD"] = "redis_password"
-        
+
         assert ConfigManager.get_redis_host() == "redis.test.com"
         assert ConfigManager.get_redis_port() == 6380
         assert ConfigManager.get_redis_db() == 1
@@ -413,19 +422,21 @@ class TestConfigManager:
         assert ConfigManager.get_redis_db() == 0
         assert ConfigManager.get_redis_password() is None
 
-    @patch('utils.config_manager.logger')
+    @patch("utils.config_manager.logger")
     def test_get_env_var_logs_missing_critical_vars(self, mock_logger):
         """Test that missing critical environment variables are logged."""
         ConfigManager.get_env_var("DATABASE_URL")
-        mock_logger.warning.assert_called_with("Critical environment variable DATABASE_URL is not set")
+        mock_logger.warning.assert_called_with(
+            "Critical environment variable DATABASE_URL is not set"
+        )
 
-    @patch('utils.config_manager.logger')
+    @patch("utils.config_manager.logger")
     def test_get_env_var_does_not_log_non_critical_vars(self, mock_logger):
         """Test that non-critical environment variables are not logged when missing."""
         ConfigManager.get_env_var("NON_CRITICAL_VAR")
         mock_logger.warning.assert_not_called()
 
-    @patch('utils.config_manager.logger')
+    @patch("utils.config_manager.logger")
     def test_validate_critical_config_logs_missing_vars(self, mock_logger):
         """Test that validation logs missing critical variables."""
         ConfigManager.validate_critical_config()
@@ -434,15 +445,17 @@ class TestConfigManager:
         assert "missing_vars" in call_args
         assert len(call_args["missing_vars"]) == 3  # All three critical vars
 
-    @patch('utils.config_manager.logger')
+    @patch("utils.config_manager.logger")
     def test_validate_critical_config_logs_success(self, mock_logger):
         """Test that validation logs success when all vars are present."""
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
         os.environ["GOOGLE_PLACES_API_KEY"] = "test_api_key"
         os.environ["FLASK_SECRET_KEY"] = "test_secret"
-        
+
         ConfigManager.validate_critical_config()
-        mock_logger.info.assert_called_with("All critical configuration validated successfully")
+        mock_logger.info.assert_called_with(
+            "All critical configuration validated successfully"
+        )
 
     def test_get_port_with_invalid_value(self):
         """Test getting port with invalid value raises ValueError."""
@@ -482,21 +495,28 @@ class TestConfigManager:
     def test_get_cors_origins_with_whitespace(self):
         """Test getting CORS origins with whitespace."""
         os.environ["CORS_ORIGINS"] = " https://domain1.com , https://domain2.com "
-        assert ConfigManager.get_cors_origins() == ["https://domain1.com", "https://domain2.com"]
+        assert ConfigManager.get_cors_origins() == [
+            "https://domain1.com",
+            "https://domain2.com",
+        ]
 
     def test_get_cors_origins_with_empty_strings(self):
         """Test getting CORS origins with empty strings in list."""
         os.environ["CORS_ORIGINS"] = "https://domain1.com,,https://domain2.com"
-        assert ConfigManager.get_cors_origins() == ["https://domain1.com", "", "https://domain2.com"]
+        assert ConfigManager.get_cors_origins() == [
+            "https://domain1.com",
+            "",
+            "https://domain2.com",
+        ]
 
     def test_environment_detection_case_insensitive(self):
         """Test environment detection is case insensitive."""
         os.environ["ENVIRONMENT"] = "PRODUCTION"
         assert ConfigManager.is_production() is True
-        
+
         os.environ["ENVIRONMENT"] = "Development"
         assert ConfigManager.is_development() is True
-        
+
         os.environ["ENVIRONMENT"] = "TESTING"
         assert ConfigManager.is_testing() is True
 
@@ -504,7 +524,7 @@ class TestConfigManager:
         """Test Flask environment detection is case insensitive."""
         os.environ["FLASK_ENV"] = "PRODUCTION"
         assert ConfigManager.is_production() is True
-        
+
         os.environ["FLASK_ENV"] = "Development"
         assert ConfigManager.is_development() is True
 
@@ -512,9 +532,9 @@ class TestConfigManager:
         """Test getting configuration summary with partial configuration."""
         os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
         # Don't set other critical vars
-        
+
         summary = ConfigManager.get_config_summary()
-        
+
         assert summary["database_url_set"] is True
         assert summary["google_places_api_key_set"] is False
         assert summary["sentry_dsn_set"] is False
@@ -527,9 +547,9 @@ class TestConfigManager:
         os.environ["SENTRY_DSN"] = "https://sentry.io/test"
         os.environ["ENVIRONMENT"] = "production"
         os.environ["PORT"] = "8080"
-        
+
         summary = ConfigManager.get_config_summary()
-        
+
         assert summary["database_url_set"] is True
         assert summary["google_places_api_key_set"] is True
         assert summary["google_maps_api_key_set"] is True
@@ -551,7 +571,10 @@ class TestConfigManager:
     def test_get_env_var_with_special_characters(self):
         """Test getting environment variable with special characters."""
         os.environ["SPECIAL_VAR"] = "test@#$%^&*()_+-=[]{}|;':\",./<>?"
-        assert ConfigManager.get_env_var("SPECIAL_VAR") == "test@#$%^&*()_+-=[]{}|;':\",./<>?"
+        assert (
+            ConfigManager.get_env_var("SPECIAL_VAR")
+            == "test@#$%^&*()_+-=[]{}|;':\",./<>?"
+        )
 
     def test_get_env_var_with_unicode(self):
         """Test getting environment variable with unicode characters."""
@@ -633,19 +656,24 @@ class TestConfigManager:
     def test_get_env_var_with_list_default(self):
         """Test getting environment variable with list as default."""
         default_list = ["item1", "item2", "item3"]
-        assert ConfigManager.get_env_var("NONEXISTENT_VAR", default_list) == default_list
+        assert (
+            ConfigManager.get_env_var("NONEXISTENT_VAR", default_list) == default_list
+        )
 
     def test_get_env_var_with_dict_default(self):
         """Test getting environment variable with dict as default."""
         default_dict = {"key1": "value1", "key2": "value2"}
-        assert ConfigManager.get_env_var("NONEXISTENT_VAR", default_dict) == default_dict
+        assert (
+            ConfigManager.get_env_var("NONEXISTENT_VAR", default_dict) == default_dict
+        )
 
     def test_get_env_var_with_object_default(self):
         """Test getting environment variable with object as default."""
+
         class TestObject:
             def __init__(self, value):
                 self.value = value
-        
+
         test_obj = TestObject("test")
         assert ConfigManager.get_env_var("NONEXISTENT_VAR", test_obj) == test_obj
 
@@ -657,4 +685,7 @@ class TestConfigManager:
     def test_get_env_var_with_complex_default(self):
         """Test getting environment variable with complex default."""
         complex_default = {"nested": {"list": [1, 2, 3], "string": "test"}}
-        assert ConfigManager.get_env_var("NONEXISTENT_VAR", complex_default) == complex_default
+        assert (
+            ConfigManager.get_env_var("NONEXISTENT_VAR", complex_default)
+            == complex_default
+        )

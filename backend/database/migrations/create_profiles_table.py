@@ -5,8 +5,9 @@ Creates the profiles table for storing user profile information.
 """
 
 import uuid
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
@@ -29,7 +30,9 @@ def upgrade() -> None:
         sa.Column("phone", sa.String(20), nullable=True),
         sa.Column("date_of_birth", sa.Date, nullable=True),
         sa.Column("avatar_url", sa.String(500), nullable=True),
-        sa.Column("preferences", JSONB, nullable=True),  # Store user preferences as JSON
+        sa.Column(
+            "preferences", JSONB, nullable=True
+        ),  # Store user preferences as JSON
         sa.Column("created_at", sa.DateTime, nullable=False, default=sa.func.now()),
         sa.Column(
             "updated_at",
@@ -47,45 +50,39 @@ def upgrade() -> None:
 
     # Add constraints
     op.create_check_constraint(
-        "check_username_format",
-        "profiles",
-        "username ~ '^[a-zA-Z0-9_-]+$'"
+        "check_username_format", "profiles", "username ~ '^[a-zA-Z0-9_-]+$'"
     )
 
     op.create_check_constraint(
         "check_username_length",
         "profiles",
-        "length(username) >= 3 AND length(username) <= 30"
+        "length(username) >= 3 AND length(username) <= 30",
     )
 
     op.create_check_constraint(
         "check_display_name_length",
         "profiles",
-        "length(display_name) >= 1 AND length(display_name) <= 50"
+        "length(display_name) >= 1 AND length(display_name) <= 50",
     )
 
     op.create_check_constraint(
-        "check_bio_length",
-        "profiles",
-        "bio IS NULL OR length(bio) <= 500"
+        "check_bio_length", "profiles", "bio IS NULL OR length(bio) <= 500"
     )
 
     op.create_check_constraint(
         "check_location_length",
         "profiles",
-        "location IS NULL OR length(location) <= 100"
+        "location IS NULL OR length(location) <= 100",
     )
 
     op.create_check_constraint(
-        "check_website_length",
-        "profiles",
-        "website IS NULL OR length(website) <= 500"
+        "check_website_length", "profiles", "website IS NULL OR length(website) <= 500"
     )
 
     op.create_check_constraint(
         "check_phone_format",
         "profiles",
-        "phone IS NULL OR phone ~ '^[+]?[1-9][0-9]{0,15}$'"
+        "phone IS NULL OR phone ~ '^[+]?[1-9][0-9]{0,15}$'",
     )
 
 

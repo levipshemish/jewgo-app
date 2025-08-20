@@ -5,21 +5,39 @@ This creates the marketplace table with all required fields for product listings
 
 import os
 import sys
-from sqlalchemy import create_engine, text, MetaData, Table, Column, Integer, String, Float, Boolean, DateTime, Text, Numeric, Date
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from datetime import datetime
 
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    Integer,
+    MetaData,
+    Numeric,
+    String,
+    Table,
+    Text,
+    create_engine,
+    text,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+
 # Add the parent directory to the path so we can import our modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
 def run_migration() -> bool:
     """Run the migration to create the marketplace table."""
-    
-    database_url = os.getenv('DATABASE_URL')
+
+    database_url = os.getenv("DATABASE_URL")
     if not database_url:
         logger.error("DATABASE_URL environment variable is required")
         return False
@@ -27,14 +45,14 @@ def run_migration() -> bool:
     try:
         # Create engine
         engine = create_engine(database_url)
-        
+
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-            
+
             try:
                 logger.info("Creating marketplace table...")
-                
+
                 # Create marketplace table
                 create_table_sql = """
                 CREATE TABLE IF NOT EXISTS marketplace (
@@ -124,9 +142,9 @@ def run_migration() -> bool:
                     source VARCHAR(50) NOT NULL DEFAULT 'manual'
                 );
                 """
-                
+
                 conn.execute(text(create_table_sql))
-                
+
                 # Create indexes
                 indexes_sql = [
                     "CREATE INDEX IF NOT EXISTS idx_marketplace_name ON marketplace(name);",
@@ -143,12 +161,12 @@ def run_migration() -> bool:
                     "CREATE INDEX IF NOT EXISTS idx_marketplace_kosher_agency ON marketplace(kosher_agency);",
                     "CREATE INDEX IF NOT EXISTS idx_marketplace_kosher_level ON marketplace(kosher_level);",
                     "CREATE INDEX IF NOT EXISTS idx_marketplace_vendor_id ON marketplace(vendor_id);",
-                    "CREATE INDEX IF NOT EXISTS idx_marketplace_external_id ON marketplace(external_id);"
+                    "CREATE INDEX IF NOT EXISTS idx_marketplace_external_id ON marketplace(external_id);",
                 ]
-                
+
                 for index_sql in indexes_sql:
                     conn.execute(text(index_sql))
-                
+
                 # Create check constraints (with proper error handling)
                 constraints_sql = [
                     "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_price_positive') THEN ALTER TABLE marketplace ADD CONSTRAINT check_price_positive CHECK (price >= 0); END IF; END $$;",
@@ -156,12 +174,12 @@ def run_migration() -> bool:
                     "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_rating_range') THEN ALTER TABLE marketplace ADD CONSTRAINT check_rating_range CHECK (rating >= 0 AND rating <= 5); END IF; END $$;",
                     "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_discount_range') THEN ALTER TABLE marketplace ADD CONSTRAINT check_discount_range CHECK (discount_percentage >= 0 AND discount_percentage <= 100); END IF; END $$;",
                     "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_status_valid') THEN ALTER TABLE marketplace ADD CONSTRAINT check_status_valid CHECK (status IN ('active', 'inactive', 'pending', 'sold_out')); END IF; END $$;",
-                    "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_kosher_level_valid') THEN ALTER TABLE marketplace ADD CONSTRAINT check_kosher_level_valid CHECK (kosher_level IN ('glatt', 'regular', 'chalav_yisrael', 'pas_yisrael')); END IF; END $$;"
+                    "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_kosher_level_valid') THEN ALTER TABLE marketplace ADD CONSTRAINT check_kosher_level_valid CHECK (kosher_level IN ('glatt', 'regular', 'chalav_yisrael', 'pas_yisrael')); END IF; END $$;",
                 ]
-                
+
                 for constraint_sql in constraints_sql:
                     conn.execute(text(constraint_sql))
-                
+
                 # Add comments
                 comments_sql = [
                     "COMMENT ON TABLE marketplace IS 'Marketplace product listings with kosher certification and vendor information';",
@@ -183,26 +201,27 @@ def run_migration() -> bool:
                     "COMMENT ON COLUMN marketplace.is_available IS 'Whether product is available for purchase';",
                     "COMMENT ON COLUMN marketplace.is_featured IS 'Whether product is featured';",
                     "COMMENT ON COLUMN marketplace.is_on_sale IS 'Whether product is on sale';",
-                    "COMMENT ON COLUMN marketplace.discount_percentage IS 'Discount percentage (0-100)';"
+                    "COMMENT ON COLUMN marketplace.discount_percentage IS 'Discount percentage (0-100)';",
                 ]
-                
+
                 for comment_sql in comments_sql:
                     conn.execute(text(comment_sql))
-                
+
                 # Commit transaction
                 trans.commit()
-                
+
                 logger.info("✅ Marketplace table created successfully!")
                 return True
-                
+
             except Exception as e:
                 trans.rollback()
                 logger.error(f"❌ Failed to create marketplace table: {e}")
                 return False
-                
+
     except Exception as e:
         logger.error(f"❌ Database connection failed: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = run_migration()

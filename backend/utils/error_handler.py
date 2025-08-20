@@ -1,17 +1,11 @@
-from utils.logging_config import get_logger
-
+import functools
 import logging
 import traceback
-import functools
 from datetime import datetime
 from typing import Any, Callable, TypeVar, Union
 
-
-
-
-
-
-from flask import Response, jsonify, g
+from flask import Response, g, jsonify
+from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,7 +21,7 @@ Version: 2.0
 """
 
 # Type variable for function return types
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class APIError(Exception):
@@ -527,6 +521,7 @@ def handle_database_operation(func: Callable[..., T]) -> Callable[..., T]:
             # Database operation code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -535,7 +530,7 @@ def handle_database_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "Database operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -548,7 +543,7 @@ def handle_database_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # Re-raise as DatabaseError for consistent handling
@@ -557,8 +552,8 @@ def handle_database_operation(func: Callable[..., T]) -> Callable[..., T]:
                 details={
                     "function": func.__name__,
                     "error_type": type(e).__name__,
-                    "original_error": str(e)
-                }
+                    "original_error": str(e),
+                },
             )
 
     return wrapper
@@ -586,6 +581,7 @@ def handle_api_operation(func: Callable[..., T]) -> Callable[..., T]:
             # API call code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -594,7 +590,7 @@ def handle_api_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "API operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -607,7 +603,7 @@ def handle_api_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # Re-raise as ExternalServiceError for consistent handling
@@ -617,8 +613,8 @@ def handle_api_operation(func: Callable[..., T]) -> Callable[..., T]:
                 details={
                     "function": func.__name__,
                     "error_type": type(e).__name__,
-                    "original_error": str(e)
-                }
+                    "original_error": str(e),
+                },
             )
 
     return wrapper
@@ -646,6 +642,7 @@ def handle_google_places_operation(func: Callable[..., T]) -> Callable[..., T]:
             # Google Places API call code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -654,7 +651,7 @@ def handle_google_places_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "Google Places operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -667,7 +664,7 @@ def handle_google_places_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # Re-raise as ExternalServiceError for consistent handling
@@ -677,8 +674,8 @@ def handle_google_places_operation(func: Callable[..., T]) -> Callable[..., T]:
                 details={
                     "function": func.__name__,
                     "error_type": type(e).__name__,
-                    "original_error": str(e)
-                }
+                    "original_error": str(e),
+                },
             )
 
     return wrapper
@@ -705,6 +702,7 @@ def handle_file_operation(func: Callable[..., T]) -> Callable[..., T]:
             # File operation code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -713,7 +711,7 @@ def handle_file_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "File operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -726,7 +724,7 @@ def handle_file_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # Re-raise as APIError for consistent handling
@@ -737,8 +735,8 @@ def handle_file_operation(func: Callable[..., T]) -> Callable[..., T]:
                 details={
                     "function": func.__name__,
                     "error_type": type(e).__name__,
-                    "original_error": str(e)
-                }
+                    "original_error": str(e),
+                },
             )
 
     return wrapper
@@ -765,6 +763,7 @@ def handle_validation_operation(func: Callable[..., T]) -> Callable[..., T]:
             # Validation code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -773,7 +772,7 @@ def handle_validation_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "Validation operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -786,7 +785,7 @@ def handle_validation_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # Re-raise as ValidationError for consistent handling
@@ -795,8 +794,8 @@ def handle_validation_operation(func: Callable[..., T]) -> Callable[..., T]:
                 {
                     "function": func.__name__,
                     "error_type": type(e).__name__,
-                    "original_error": str(e)
-                }
+                    "original_error": str(e),
+                },
             )
 
     return wrapper
@@ -823,6 +822,7 @@ def handle_cache_operation(func: Callable[..., T]) -> Callable[..., T]:
             # Cache operation code
             pass
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> T:
         try:
@@ -831,7 +831,7 @@ def handle_cache_operation(func: Callable[..., T]) -> Callable[..., T]:
                 "Cache operation completed successfully",
                 function=func.__name__,
                 args=args,
-                kwargs=kwargs
+                kwargs=kwargs,
             )
             return result
 
@@ -844,7 +844,7 @@ def handle_cache_operation(func: Callable[..., T]) -> Callable[..., T]:
                 error_message=str(e),
                 args=args,
                 kwargs=kwargs,
-                traceback=traceback.format_exc()
+                traceback=traceback.format_exc(),
             )
 
             # For cache operations, we often want to return None instead of raising
@@ -852,7 +852,7 @@ def handle_cache_operation(func: Callable[..., T]) -> Callable[..., T]:
             logger.warning(
                 "Cache operation failed, continuing without cache",
                 function=func.__name__,
-                error=str(e)
+                error=str(e),
             )
             return None
 
@@ -860,8 +860,7 @@ def handle_cache_operation(func: Callable[..., T]) -> Callable[..., T]:
 
 
 def handle_operation_with_fallback(
-    fallback_value: Any = None,
-    log_error: bool = True
+    fallback_value: Any = None, log_error: bool = True
 ) -> Callable[[Callable[..., T]], Callable[..., Union[T, Any]]]:
     """Decorator for operations that should return a fallback value on error.
 
@@ -881,6 +880,7 @@ def handle_operation_with_fallback(
             # Operation that might fail
             pass
     """
+
     def decorator(func: Callable[..., T]) -> Callable[..., Union[T, Any]]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> Union[T, Any]:
@@ -895,10 +895,11 @@ def handle_operation_with_fallback(
                         function=func.__name__,
                         error_type=type(e).__name__,
                         error_message=str(e),
-                        fallback_value=fallback_value
+                        fallback_value=fallback_value,
                     )
 
                 return fallback_value
 
         return wrapper
+
     return decorator

@@ -1,10 +1,5 @@
-from alembic import op
-
-
-
-
 import sqlalchemy as sa
-
+from alembic import op
 
 #!/usr/bin/env python3
 """Database Migration: Create Feedback Table.

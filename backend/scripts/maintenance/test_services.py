@@ -6,9 +6,10 @@ import sys
 import traceback
 
 from app_factory import create_app
-from config.config import Config
 from database.database_manager_v3 import EnhancedDatabaseManager
 from services import GooglePlacesService, HealthService, RestaurantService
+
+from config.config import Config
 
 # Add the current directory to Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

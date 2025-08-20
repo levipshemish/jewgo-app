@@ -1,22 +1,15 @@
-from utils.logging_config import get_logger
-
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-
-
-
-
-
-
-
-from sqlalchemy import func, and_, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
+from utils.logging_config import get_logger
 
 from ..base_repository import BaseRepository
 from ..connection_manager import DatabaseConnectionManager
 from ..models import Review, ReviewFlag
+
 logger = get_logger(__name__)
 
 #!/usr/bin/env python3
@@ -25,6 +18,7 @@ logger = get_logger(__name__)
 This module handles all review-related database operations,
 separating data access logic from business logic.
 """
+
 
 class ReviewRepository(BaseRepository[Review]):
     """Repository for review database operations."""
@@ -50,7 +44,9 @@ class ReviewRepository(BaseRepository[Review]):
             # Apply filters if provided
             if filters:
                 if filters.get("restaurant_id"):
-                    query = query.filter(Review.restaurant_id == filters["restaurant_id"])
+                    query = query.filter(
+                        Review.restaurant_id == filters["restaurant_id"]
+                    )
                 if filters.get("status"):
                     query = query.filter(Review.status == filters["status"])
                 if filters.get("user_id"):
@@ -98,10 +94,7 @@ class ReviewRepository(BaseRepository[Review]):
             reviews = (
                 session.query(Review)
                 .filter(
-                    and_(
-                        Review.restaurant_id == restaurant_id,
-                        Review.status == status
-                    )
+                    and_(Review.restaurant_id == restaurant_id, Review.status == status)
                 )
                 .order_by(Review.created_at.desc())
                 .limit(limit)
@@ -171,7 +164,9 @@ class ReviewRepository(BaseRepository[Review]):
             # Apply filters if provided
             if filters:
                 if filters.get("restaurant_id"):
-                    query = query.filter(Review.restaurant_id == filters["restaurant_id"])
+                    query = query.filter(
+                        Review.restaurant_id == filters["restaurant_id"]
+                    )
                 if filters.get("status"):
                     query = query.filter(Review.status == filters["status"])
                 if filters.get("user_id"):
@@ -199,20 +194,20 @@ class ReviewRepository(BaseRepository[Review]):
         try:
             # Generate review ID
             review_id = f"rev_{int(datetime.utcnow().timestamp())}_{hash(str(review_data)) % 10000}"
-            
+
             # Add ID to review data
             review_data["id"] = review_id
-            
+
             # Handle images field
             if "images" in review_data and isinstance(review_data["images"], list):
                 review_data["images"] = json.dumps(review_data["images"])
-            
+
             # Set default values
             review_data.setdefault("status", "pending")
             review_data.setdefault("verified_purchase", False)
             review_data.setdefault("helpful_count", 0)
             review_data.setdefault("report_count", 0)
-            
+
             instance = self.create(review_data)
             if instance:
                 self.logger.info(
@@ -227,20 +222,24 @@ class ReviewRepository(BaseRepository[Review]):
             self.logger.exception("Error creating review", error=str(e))
             return None
 
-    def update_review_status(self, review_id: str, status: str, moderator_notes: Optional[str] = None) -> bool:
+    def update_review_status(
+        self, review_id: str, status: str, moderator_notes: Optional[str] = None
+    ) -> bool:
         """Update review status and moderator notes."""
         try:
             update_data = {
                 "status": status,
                 "updated_at": datetime.utcnow(),
             }
-            
+
             if moderator_notes is not None:
                 update_data["moderator_notes"] = moderator_notes
-            
+
             success = self.update(review_id, update_data)
             if success:
-                self.logger.info("Updated review status", review_id=review_id, status=status)
+                self.logger.info(
+                    "Updated review status", review_id=review_id, status=status
+                )
             return success
 
         except Exception as e:
@@ -252,7 +251,7 @@ class ReviewRepository(BaseRepository[Review]):
         try:
             session = self.connection_manager.get_session()
             review = session.query(Review).filter(Review.id == review_id).first()
-            
+
             if review:
                 review.helpful_count += 1
                 review.updated_at = datetime.utcnow()
@@ -260,7 +259,7 @@ class ReviewRepository(BaseRepository[Review]):
                 session.close()
                 self.logger.info("Incremented helpful count", review_id=review_id)
                 return True
-            
+
             session.close()
             return False
 
@@ -273,7 +272,7 @@ class ReviewRepository(BaseRepository[Review]):
         try:
             session = self.connection_manager.get_session()
             review = session.query(Review).filter(Review.id == review_id).first()
-            
+
             if review:
                 review.report_count += 1
                 review.updated_at = datetime.utcnow()
@@ -281,7 +280,7 @@ class ReviewRepository(BaseRepository[Review]):
                 session.close()
                 self.logger.info("Incremented report count", review_id=review_id)
                 return True
-            
+
             session.close()
             return False
 
@@ -293,40 +292,34 @@ class ReviewRepository(BaseRepository[Review]):
         """Get review statistics."""
         try:
             session = self.connection_manager.get_session()
-            
+
             # Total reviews
             total_reviews = session.query(Review).count()
-            
+
             # Reviews by status
             status_stats = (
-                session.query(
-                    Review.status,
-                    func.count(Review.id)
-                )
+                session.query(Review.status, func.count(Review.id))
                 .group_by(Review.status)
                 .all()
             )
-            
+
             # Average rating
             avg_rating = (
                 session.query(func.avg(Review.rating))
                 .filter(Review.status == "approved")
                 .scalar()
             )
-            
+
             # Reviews by rating
             rating_stats = (
-                session.query(
-                    Review.rating,
-                    func.count(Review.id)
-                )
+                session.query(Review.rating, func.count(Review.id))
                 .filter(Review.status == "approved")
                 .group_by(Review.rating)
                 .all()
             )
-            
+
             session.close()
-            
+
             return {
                 "total_reviews": total_reviews,
                 "status_distribution": dict(status_stats),
@@ -341,12 +334,14 @@ class ReviewRepository(BaseRepository[Review]):
             self.logger.exception("Error getting review statistics", error=str(e))
             return {}
 
-    def flag_review(self, review_id: str, reason: str, description: str, reported_by: str) -> bool:
+    def flag_review(
+        self, review_id: str, reason: str, description: str, reported_by: str
+    ) -> bool:
         """Flag a review for moderation."""
         try:
             # Create review flag
             flag_id = f"flag_{int(datetime.utcnow().timestamp())}_{hash(f'{review_id}{reported_by}') % 10000}"
-            
+
             flag_data = {
                 "id": flag_id,
                 "review_id": review_id,
@@ -355,16 +350,16 @@ class ReviewRepository(BaseRepository[Review]):
                 "reported_by": reported_by,
                 "status": "pending",
             }
-            
+
             # Use the connection manager to create the flag
             with self.connection_manager.session_scope() as session:
                 flag = ReviewFlag(**flag_data)
                 session.add(flag)
                 session.flush()
-            
+
             # Increment report count on the review
             self.increment_report_count(review_id)
-            
+
             self.logger.info("Flagged review", review_id=review_id, flag_id=flag_id)
             return True
 
@@ -376,10 +371,10 @@ class ReviewRepository(BaseRepository[Review]):
         """Get reviews that have been flagged for moderation."""
         try:
             session = self.connection_manager.get_session()
-            
+
             # Get reviews with flags
             flagged_reviews = (
-                session.query(Review, func.count(ReviewFlag.id).label('flag_count'))
+                session.query(Review, func.count(ReviewFlag.id).label("flag_count"))
                 .join(ReviewFlag, Review.id == ReviewFlag.review_id)
                 .filter(ReviewFlag.status == "pending")
                 .group_by(Review.id)
@@ -387,7 +382,7 @@ class ReviewRepository(BaseRepository[Review]):
                 .limit(limit)
                 .all()
             )
-            
+
             result = []
             for review, flag_count in flagged_reviews:
                 review_dict = {
@@ -399,11 +394,13 @@ class ReviewRepository(BaseRepository[Review]):
                     "title": review.title,
                     "content": review.content,
                     "status": review.status,
-                    "created_at": review.created_at.isoformat() if review.created_at else None,
+                    "created_at": review.created_at.isoformat()
+                    if review.created_at
+                    else None,
                     "flag_count": flag_count,
                 }
                 result.append(review_dict)
-            
+
             session.close()
             return result
 

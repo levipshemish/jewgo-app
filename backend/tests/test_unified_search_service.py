@@ -8,18 +8,18 @@ Author: JewGo Development Team
 Version: 1.0
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from utils.unified_search_service import (
-    UnifiedSearchService,
-    SearchType,
     SearchFilters,
-    SearchResult,
     SearchResponse,
-    create_search_service
+    SearchResult,
+    SearchType,
+    UnifiedSearchService,
+    create_search_service,
 )
 
 
@@ -34,7 +34,7 @@ class TestSearchFilters:
             state="FL",
             kosher_type="dairy",
             limit=25,
-            offset=10
+            offset=10,
         )
 
         assert filters.query == "pizza"
@@ -47,11 +47,7 @@ class TestSearchFilters:
 
     def test_search_filters_to_dict(self):
         """Test converting SearchFilters to dictionary."""
-        filters = SearchFilters(
-            query="pizza",
-            city="Miami",
-            kosher_type="dairy"
-        )
+        filters = SearchFilters(query="pizza", city="Miami", kosher_type="dairy")
 
         filters_dict = filters.to_dict()
         expected = {
@@ -60,19 +56,14 @@ class TestSearchFilters:
             "kosher_type": "dairy",
             "fuzzy_threshold": 0.3,
             "limit": 50,
-            "offset": 0
+            "offset": 0,
         }
 
         assert filters_dict == expected
 
     def test_search_filters_from_dict(self):
         """Test creating SearchFilters from dictionary."""
-        data = {
-            "query": "pizza",
-            "city": "Miami",
-            "kosher_type": "dairy",
-            "limit": 25
-        }
+        data = {"query": "pizza", "city": "Miami", "kosher_type": "dairy", "limit": 25}
 
         filters = SearchFilters.from_dict(data)
 
@@ -83,11 +74,7 @@ class TestSearchFilters:
 
     def test_search_filters_from_dict_ignores_invalid_keys(self):
         """Test that from_dict ignores invalid keys."""
-        data = {
-            "query": "pizza",
-            "invalid_key": "value",
-            "city": "Miami"
-        }
+        data = {"query": "pizza", "invalid_key": "value", "city": "Miami"}
 
         filters = SearchFilters.from_dict(data)
 
@@ -127,7 +114,7 @@ class TestSearchResult:
             updated_at="2024-01-02T00:00:00",
             relevance_score=0.95,
             similarity_score=0.88,
-            distance=2.5
+            distance=2.5,
         )
 
         assert result.id == 1
@@ -153,7 +140,9 @@ class TestSearchResult:
         restaurant.listing_type = "restaurant"
         restaurant.price_range = "$$"
         restaurant.short_description = "Great food"
-        restaurant.hours_of_operation = {"mon": {"open": "9:00 AM", "close": "10:00 PM"}}
+        restaurant.hours_of_operation = {
+            "mon": {"open": "9:00 AM", "close": "10:00 PM"}
+        }
         restaurant.latitude = 25.7617
         restaurant.longitude = -80.1918
         restaurant.is_cholov_yisroel = True
@@ -165,9 +154,7 @@ class TestSearchResult:
         restaurant.updated_at = datetime(2024, 1, 2)
 
         result = SearchResult.from_restaurant(
-            restaurant,
-            relevance_score=0.95,
-            similarity_score=0.88
+            restaurant, relevance_score=0.95, similarity_score=0.88
         )
 
         assert result.id == 1
@@ -185,14 +172,29 @@ class TestSearchResponse:
         """Test creating SearchResponse with all fields."""
         results = [
             SearchResult(
-                id=1, name="Restaurant 1", address="123 Main St",
-                city="Miami", state="FL", zip_code="33101",
-                phone_number=None, website=None, certifying_agency=None,
-                kosher_category=None, listing_type=None, price_range=None,
-                short_description=None, hours_of_operation=None,
-                latitude=None, longitude=None, is_cholov_yisroel=None,
-                is_pas_yisroel=None, cholov_stam=None, image_url=None,
-                specials=None, created_at=None, updated_at=None
+                id=1,
+                name="Restaurant 1",
+                address="123 Main St",
+                city="Miami",
+                state="FL",
+                zip_code="33101",
+                phone_number=None,
+                website=None,
+                certifying_agency=None,
+                kosher_category=None,
+                listing_type=None,
+                price_range=None,
+                short_description=None,
+                hours_of_operation=None,
+                latitude=None,
+                longitude=None,
+                is_cholov_yisroel=None,
+                is_pas_yisroel=None,
+                cholov_stam=None,
+                image_url=None,
+                specials=None,
+                created_at=None,
+                updated_at=None,
             )
         ]
 
@@ -205,7 +207,7 @@ class TestSearchResponse:
             filters_applied=filters,
             suggestions=["pizza place", "pizza restaurant"],
             cache_hit=False,
-            timestamp=datetime(2024, 1, 1, 12, 0, 0)
+            timestamp=datetime(2024, 1, 1, 12, 0, 0),
         )
 
         assert len(response.results) == 1
@@ -224,7 +226,7 @@ class TestSearchResponse:
             total_count=0,
             search_type=SearchType.BASIC,
             execution_time_ms=100,
-            filters_applied=filters
+            filters_applied=filters,
         )
 
         assert response.suggestions == []
@@ -235,14 +237,29 @@ class TestSearchResponse:
         """Test converting SearchResponse to dictionary."""
         results = [
             SearchResult(
-                id=1, name="Restaurant 1", address="123 Main St",
-                city="Miami", state="FL", zip_code="33101",
-                phone_number=None, website=None, certifying_agency=None,
-                kosher_category=None, listing_type=None, price_range=None,
-                short_description=None, hours_of_operation=None,
-                latitude=None, longitude=None, is_cholov_yisroel=None,
-                is_pas_yisroel=None, cholov_stam=None, image_url=None,
-                specials=None, created_at=None, updated_at=None
+                id=1,
+                name="Restaurant 1",
+                address="123 Main St",
+                city="Miami",
+                state="FL",
+                zip_code="33101",
+                phone_number=None,
+                website=None,
+                certifying_agency=None,
+                kosher_category=None,
+                listing_type=None,
+                price_range=None,
+                short_description=None,
+                hours_of_operation=None,
+                latitude=None,
+                longitude=None,
+                is_cholov_yisroel=None,
+                is_pas_yisroel=None,
+                cholov_stam=None,
+                image_url=None,
+                specials=None,
+                created_at=None,
+                updated_at=None,
             )
         ]
 
@@ -253,7 +270,7 @@ class TestSearchResponse:
             search_type=SearchType.ADVANCED,
             execution_time_ms=150,
             filters_applied=filters,
-            suggestions=["pizza place"]
+            suggestions=["pizza place"],
         )
 
         response_dict = response.to_dict()
@@ -328,7 +345,9 @@ class TestUnifiedSearchService:
         """Test location search without coordinates raises error."""
         filters = SearchFilters(query="pizza")
 
-        with pytest.raises(ValueError, match="Location search requires lat and lng coordinates"):
+        with pytest.raises(
+            ValueError, match="Location search requires lat and lng coordinates"
+        ):
             self.search_service._location_search(filters)
 
     def test_location_search_with_coordinates(self):
@@ -366,12 +385,7 @@ class TestUnifiedSearchService:
 
         self.mock_session.query.return_value = mock_query
 
-        filters = SearchFilters(
-            query="pizza",
-            lat=25.7617,
-            lng=-80.1918,
-            radius=10
-        )
+        filters = SearchFilters(query="pizza", lat=25.7617, lng=-80.1918, radius=10)
 
         results, total_count = self.search_service._location_search(filters)
 
@@ -383,7 +397,7 @@ class TestUnifiedSearchService:
         """Test getting search suggestions."""
         # Mock query results
         mock_suggestions = [("Pizza Place",), ("Pizza Restaurant",)]
-        
+
         mock_query = Mock()
         mock_query.filter.return_value = mock_query
         mock_query.limit.return_value = mock_query
@@ -429,7 +443,7 @@ class TestUnifiedSearchService:
         distance = self.search_service._calculate_distance(lat, lng, lat, lng)
         assert distance == 0.0
 
-    @patch('utils.unified_search_service.func')
+    @patch("utils.unified_search_service.func")
     def test_get_search_statistics(self, mock_func):
         """Test getting search statistics."""
         # Mock count results
@@ -449,7 +463,7 @@ class TestUnifiedSearchService:
             mock_state_counts,
             mock_category_counts,
             mock_agency_counts,
-            mock_type_counts
+            mock_type_counts,
         ]
 
         self.mock_session.query.return_value = mock_query
@@ -465,14 +479,13 @@ class TestUnifiedSearchService:
     def test_search_restaurants_invalid_type(self):
         """Test search with invalid search type."""
         filters = SearchFilters(query="pizza")
-        
+
         with pytest.raises(ValueError, match="Unsupported search type"):
             self.search_service.search_restaurants(
-                search_type="invalid_type",
-                filters=filters
+                search_type="invalid_type", filters=filters
             )
 
-    @patch('utils.unified_search_service.time')
+    @patch("utils.unified_search_service.time")
     def test_search_restaurants_basic(self, mock_time):
         """Test basic search through main interface."""
         mock_time.time.side_effect = [1000.0, 1000.15]  # 150ms execution time
@@ -514,8 +527,7 @@ class TestUnifiedSearchService:
         self.mock_session.query.return_value = mock_query
 
         response = self.search_service.search_restaurants(
-            search_type=SearchType.BASIC,
-            query="pizza"
+            search_type=SearchType.BASIC, query="pizza"
         )
 
         assert response.search_type == SearchType.BASIC

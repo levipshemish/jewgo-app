@@ -8,6 +8,7 @@ from utils.error_handler import NotFoundError, ValidationError
 #!/usr/bin/env python3
 """User service v4 - handles all user-related business logic using DatabaseManager v4."""
 
+
 class UserServiceV4(BaseService):
     """Service for user-related operations using DatabaseManager v4."""
 
@@ -120,7 +121,9 @@ class UserServiceV4(BaseService):
         if not user_id:
             raise ValidationError("User ID is required")
 
-        self.log_operation("update_user_role", user_id=user_id, is_super_admin=is_super_admin)
+        self.log_operation(
+            "update_user_role", user_id=user_id, is_super_admin=is_super_admin
+        )
 
         try:
             # Use database manager v4's update_user_role method
@@ -212,14 +215,18 @@ class UserServiceV4(BaseService):
                 filters={"role": "admin"},
             )
 
-            self.logger.info("Successfully retrieved admin users", count=len(admin_users))
+            self.logger.info(
+                "Successfully retrieved admin users", count=len(admin_users)
+            )
             return admin_users
 
         except Exception as e:
             self.logger.exception("Error retrieving admin users", error=str(e))
             raise
 
-    def get_users_by_role(self, role: str, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_users_by_role(
+        self, role: str, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get users by role.
 
         Args:
@@ -255,7 +262,9 @@ class UserServiceV4(BaseService):
             self.logger.exception("Error retrieving users by role", error=str(e))
             raise
 
-    def search_users(self, query: str, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def search_users(
+        self, query: str, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Search users by name or email.
 
         Args:
@@ -291,7 +300,9 @@ class UserServiceV4(BaseService):
             self.logger.exception("Error searching users", error=str(e))
             raise
 
-    def get_users_with_verified_email(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_users_with_verified_email(
+        self, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get users with verified email addresses.
 
         Args:
@@ -319,10 +330,14 @@ class UserServiceV4(BaseService):
             return users
 
         except Exception as e:
-            self.logger.exception("Error retrieving users with verified email", error=str(e))
+            self.logger.exception(
+                "Error retrieving users with verified email", error=str(e)
+            )
             raise
 
-    def get_users_without_verified_email(self, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_users_without_verified_email(
+        self, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get users without verified email addresses.
 
         Args:
@@ -350,7 +365,9 @@ class UserServiceV4(BaseService):
             return users
 
         except Exception as e:
-            self.logger.exception("Error retrieving users without verified email", error=str(e))
+            self.logger.exception(
+                "Error retrieving users without verified email", error=str(e)
+            )
             raise
 
     # Helper methods
@@ -358,9 +375,11 @@ class UserServiceV4(BaseService):
         """Validate user data."""
         required_fields = ["name", "email"]
         missing_fields = [field for field in required_fields if not data.get(field)]
-        
+
         if missing_fields:
-            raise ValidationError(f"Missing required fields: {', '.join(missing_fields)}")
+            raise ValidationError(
+                f"Missing required fields: {', '.join(missing_fields)}"
+            )
 
         # Validate email format
         email = data.get("email")

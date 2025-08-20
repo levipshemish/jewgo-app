@@ -1,20 +1,16 @@
 import json
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from services.restaurant_service_v4 import RestaurantServiceV4
 from services.review_service_v4 import ReviewServiceV4
 from services.user_service_v4 import UserServiceV4
 from utils.error_handler import NotFoundError, ValidationError
 
-
-
-
-
-
 #!/usr/bin/env python3
 """Comprehensive tests for Service Layer v4."""
+
 
 # Import the new service components
 class TestRestaurantServiceV4:
@@ -55,7 +51,7 @@ class TestRestaurantServiceV4:
                 "phone_number": "555-1234",
                 "kosher_category": "dairy",
                 "listing_type": "restaurant",
-                "status": "active"
+                "status": "active",
             },
             {
                 "id": 2,
@@ -67,8 +63,8 @@ class TestRestaurantServiceV4:
                 "phone_number": "555-5678",
                 "kosher_category": "meat",
                 "listing_type": "restaurant",
-                "status": "active"
-            }
+                "status": "active",
+            },
         ]
         mock_db_manager.get_restaurants.return_value = mock_restaurants
 
@@ -79,14 +75,12 @@ class TestRestaurantServiceV4:
         assert result[1]["name"] == "Test Restaurant 2"
         mock_db_manager.get_restaurants.assert_called_once()
 
-    def test_get_all_restaurants_with_filters(self, restaurant_service, mock_db_manager):
+    def test_get_all_restaurants_with_filters(
+        self, restaurant_service, mock_db_manager
+    ):
         """Test getting all restaurants with filters."""
         mock_restaurants = [
-            {
-                "id": 1,
-                "name": "Test Restaurant",
-                "kosher_category": "dairy"
-            }
+            {"id": 1, "name": "Test Restaurant", "kosher_category": "dairy"}
         ]
         mock_db_manager.get_restaurants.return_value = mock_restaurants
 
@@ -112,7 +106,7 @@ class TestRestaurantServiceV4:
             "phone_number": "555-1234",
             "kosher_category": "dairy",
             "listing_type": "restaurant",
-            "status": "active"
+            "status": "active",
         }
         mock_db_manager.get_restaurant_by_id.return_value = mock_restaurant
 
@@ -144,11 +138,7 @@ class TestRestaurantServiceV4:
     def test_search_restaurants(self, restaurant_service, mock_db_manager):
         """Test searching restaurants."""
         mock_restaurants = [
-            {
-                "id": 1,
-                "name": "Test Restaurant",
-                "kosher_category": "dairy"
-            }
+            {"id": 1, "name": "Test Restaurant", "kosher_category": "dairy"}
         ]
         mock_db_manager.search_restaurants.return_value = mock_restaurants
 
@@ -157,37 +147,31 @@ class TestRestaurantServiceV4:
         assert len(result) == 1
         assert result[0]["name"] == "Test Restaurant"
         mock_db_manager.search_restaurants.assert_called_once_with(
-            query="test",
-            limit=10,
-            offset=0
+            query="test", limit=10, offset=0
         )
 
-    def test_search_restaurants_near_location(self, restaurant_service, mock_db_manager):
+    def test_search_restaurants_near_location(
+        self, restaurant_service, mock_db_manager
+    ):
         """Test searching restaurants near location."""
         mock_restaurants = [
             {
                 "id": 1,
                 "name": "Test Restaurant",
                 "latitude": 25.7617,
-                "longitude": -80.1918
+                "longitude": -80.1918,
             }
         ]
         mock_db_manager.search_restaurants_near_location.return_value = mock_restaurants
 
         result = restaurant_service.search_restaurants_near_location(
-            latitude=25.7617,
-            longitude=-80.1918,
-            radius_miles=5.0,
-            limit=10
+            latitude=25.7617, longitude=-80.1918, radius_miles=5.0, limit=10
         )
 
         assert len(result) == 1
         assert result[0]["name"] == "Test Restaurant"
         mock_db_manager.search_restaurants_near_location.assert_called_once_with(
-            latitude=25.7617,
-            longitude=-80.1918,
-            radius_miles=5.0,
-            limit=10
+            latitude=25.7617, longitude=-80.1918, radius_miles=5.0, limit=10
         )
 
     def test_create_restaurant_success(self, restaurant_service, mock_db_manager):
@@ -200,7 +184,7 @@ class TestRestaurantServiceV4:
             "zip_code": "12347",
             "phone_number": "555-9999",
             "kosher_category": "pareve",
-            "listing_type": "restaurant"
+            "listing_type": "restaurant",
         }
 
         result = restaurant_service.create_restaurant(restaurant_data)
@@ -220,16 +204,13 @@ class TestRestaurantServiceV4:
 
     def test_update_restaurant_success(self, restaurant_service, mock_db_manager):
         """Test updating restaurant successfully."""
-        update_data = {
-            "name": "Updated Restaurant",
-            "phone_number": "555-8888"
-        }
+        update_data = {"name": "Updated Restaurant", "phone_number": "555-8888"}
 
         # Mock the updated restaurant
         updated_restaurant = {
             "id": 1,
             "name": "Updated Restaurant",
-            "phone_number": "555-8888"
+            "phone_number": "555-8888",
         }
         mock_db_manager.get_restaurant_by_id.return_value = updated_restaurant
 
@@ -264,11 +245,7 @@ class TestRestaurantServiceV4:
         """Test getting restaurant statistics."""
         mock_stats = {
             "total_restaurants": 100,
-            "kosher_categories": {
-                "dairy": 40,
-                "meat": 35,
-                "pareve": 25
-            }
+            "kosher_categories": {"dairy": 40, "meat": 35, "pareve": 25},
         }
         mock_db_manager.get_restaurant_statistics.return_value = mock_stats
 
@@ -284,14 +261,14 @@ class TestRestaurantServiceV4:
                 "id": 1,
                 "restaurant_id": 1,
                 "image_url": "https://example.com/image1.jpg",
-                "image_order": 1
+                "image_order": 1,
             },
             {
                 "id": 2,
                 "restaurant_id": 1,
                 "image_url": "https://example.com/image2.jpg",
-                "image_order": 2
-            }
+                "image_order": 2,
+            },
         ]
         mock_db_manager.get_restaurant_images.return_value = mock_images
 
@@ -307,14 +284,12 @@ class TestRestaurantServiceV4:
             "id": 3,
             "restaurant_id": 1,
             "image_url": "https://example.com/image3.jpg",
-            "image_order": 3
+            "image_order": 3,
         }
         mock_db_manager.add_restaurant_image.return_value = mock_image
 
         result = restaurant_service.add_restaurant_image(
-            restaurant_id=1,
-            image_url="https://example.com/image3.jpg",
-            image_order=3
+            restaurant_id=1, image_url="https://example.com/image3.jpg", image_order=3
         )
 
         assert result == mock_image
@@ -322,7 +297,7 @@ class TestRestaurantServiceV4:
             restaurant_id=1,
             image_url="https://example.com/image3.jpg",
             image_order=3,
-            cloudinary_public_id=None
+            cloudinary_public_id=None,
         )
 
     def test_add_restaurant_image_missing_url(self, restaurant_service):
@@ -335,7 +310,7 @@ class TestRestaurantServiceV4:
         restaurant_data = {
             "id": 1,
             "name": "Test Restaurant",
-            "hours_json": '{"monday": {"open": "09:00", "close": "17:00"}}'
+            "hours_json": '{"monday": {"open": "09:00", "close": "17:00"}}',
         }
 
         result = restaurant_service._process_restaurant_data(restaurant_data)
@@ -344,10 +319,7 @@ class TestRestaurantServiceV4:
 
     def test_process_restaurant_data_without_hours(self, restaurant_service):
         """Test processing restaurant data without hours JSON."""
-        restaurant_data = {
-            "id": 1,
-            "name": "Test Restaurant"
-        }
+        restaurant_data = {"id": 1, "name": "Test Restaurant"}
 
         result = restaurant_service._process_restaurant_data(restaurant_data)
 
@@ -385,7 +357,7 @@ class TestReviewServiceV4:
                 "user_name": "Test User",
                 "rating": 5,
                 "content": "Great food!",
-                "status": "approved"
+                "status": "approved",
             }
         ]
         mock_db_manager.get_reviews.return_value = mock_reviews
@@ -413,7 +385,7 @@ class TestReviewServiceV4:
             "restaurant_id": 1,
             "user_id": "user_123",
             "rating": 5,
-            "content": "Great food!"
+            "content": "Great food!",
         }
         mock_db_manager.get_review_by_id.return_value = mock_review
 
@@ -443,7 +415,7 @@ class TestReviewServiceV4:
             "user_id": "user_123",
             "user_name": "Test User",
             "rating": 5,
-            "content": "Great food!"
+            "content": "Great food!",
         }
 
         result = review_service.create_review(review_data)
@@ -469,7 +441,7 @@ class TestReviewServiceV4:
             "user_id": "user_123",
             "user_name": "Test User",
             "rating": 6,  # Invalid rating
-            "content": "Great food!"
+            "content": "Great food!",
         }
 
         with pytest.raises(ValidationError):
@@ -477,10 +449,7 @@ class TestReviewServiceV4:
 
     def test_update_review_success(self, review_service, mock_db_manager):
         """Test updating review successfully."""
-        update_data = {
-            "rating": 4,
-            "content": "Updated review"
-        }
+        update_data = {"rating": 4, "content": "Updated review"}
 
         result = review_service.update_review("rev_123", update_data)
 
@@ -511,15 +480,12 @@ class TestReviewServiceV4:
     def test_update_review_status(self, review_service, mock_db_manager):
         """Test updating review status."""
         result = review_service.update_review_status(
-            review_id="rev_123",
-            status="approved",
-            moderator_notes="Good review"
+            review_id="rev_123", status="approved", moderator_notes="Good review"
         )
 
         assert result is True
         mock_db_manager.update_review.assert_called_once_with(
-            "rev_123",
-            {"status": "approved", "moderator_notes": "Good review"}
+            "rev_123", {"status": "approved", "moderator_notes": "Good review"}
         )
 
     def test_update_review_status_missing_status(self, review_service):
@@ -555,7 +521,7 @@ class TestUserServiceV4:
                 "id": "user_123",
                 "name": "Test User",
                 "email": "test@example.com",
-                "isSuperAdmin": False
+                "isSuperAdmin": False,
             }
         ]
         mock_db_manager.get_users.return_value = mock_users
@@ -582,7 +548,7 @@ class TestUserServiceV4:
             "id": "user_123",
             "name": "Test User",
             "email": "test@example.com",
-            "isSuperAdmin": False
+            "isSuperAdmin": False,
         }
         mock_db_manager.get_user_by_id.return_value = mock_user
 
@@ -636,11 +602,7 @@ class TestUserServiceV4:
 
     def test_get_user_statistics(self, user_service, mock_db_manager):
         """Test getting user statistics."""
-        mock_stats = {
-            "total_users": 100,
-            "admin_users": 5,
-            "verified_users": 80
-        }
+        mock_stats = {"total_users": 100, "admin_users": 5, "verified_users": 80}
         mock_db_manager.get_user_statistics.return_value = mock_stats
 
         result = user_service.get_user_statistics()
@@ -655,7 +617,7 @@ class TestUserServiceV4:
                 "id": "admin_123",
                 "name": "Admin User",
                 "email": "admin@example.com",
-                "isSuperAdmin": True
+                "isSuperAdmin": True,
             }
         ]
         mock_db_manager.get_users.return_value = mock_admin_users
@@ -668,13 +630,7 @@ class TestUserServiceV4:
 
     def test_get_users_by_role(self, user_service, mock_db_manager):
         """Test getting users by role."""
-        mock_users = [
-            {
-                "id": "user_123",
-                "name": "Regular User",
-                "isSuperAdmin": False
-            }
-        ]
+        mock_users = [{"id": "user_123", "name": "Regular User", "isSuperAdmin": False}]
         mock_db_manager.get_users.return_value = mock_users
 
         result = user_service.get_users_by_role("user", limit=10, offset=0)
@@ -691,11 +647,7 @@ class TestUserServiceV4:
     def test_search_users(self, user_service, mock_db_manager):
         """Test searching users."""
         mock_users = [
-            {
-                "id": "user_123",
-                "name": "Test User",
-                "email": "test@example.com"
-            }
+            {"id": "user_123", "name": "Test User", "email": "test@example.com"}
         ]
         mock_db_manager.get_users.return_value = mock_users
 
@@ -713,10 +665,7 @@ class TestUserServiceV4:
     def test_validate_user_data(self, user_service):
         """Test user data validation."""
         # Valid data
-        valid_data = {
-            "name": "Test User",
-            "email": "test@example.com"
-        }
+        valid_data = {"name": "Test User", "email": "test@example.com"}
         user_service._validate_user_data(valid_data)  # Should not raise
 
         # Missing required fields
@@ -728,10 +677,7 @@ class TestUserServiceV4:
             user_service._validate_user_data(invalid_data)
 
         # Invalid email format
-        invalid_email_data = {
-            "name": "Test User",
-            "email": "invalid-email"
-        }
+        invalid_email_data = {"name": "Test User", "email": "invalid-email"}
         with pytest.raises(ValidationError):
             user_service._validate_user_data(invalid_email_data)
 

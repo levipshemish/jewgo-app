@@ -7,20 +7,22 @@ This script adds sample marketplace categories to test the marketplace functiona
 import os
 import sys
 from datetime import datetime
-from typing import List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from database.database_manager_v3 import EnhancedDatabaseManager
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
+
 
 def create_mock_categories_data() -> List[Dict[str, Any]]:
     """Create mock marketplace categories data."""
@@ -33,7 +35,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#3B82F6",
             "description": "Kitchen and household appliances",
             "icon": "blender",
-            "productCount": 15
+            "productCount": 15,
         },
         {
             "name": "Vehicles",
@@ -43,7 +45,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#10B981",
             "description": "Cars, trucks, and other vehicles",
             "icon": "car",
-            "productCount": 8
+            "productCount": 8,
         },
         {
             "name": "Books",
@@ -53,7 +55,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#F59E0B",
             "description": "Jewish books, cookbooks, and literature",
             "icon": "book",
-            "productCount": 25
+            "productCount": 25,
         },
         {
             "name": "Community",
@@ -63,7 +65,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#8B5CF6",
             "description": "Community services and gemach items",
             "icon": "users",
-            "productCount": 12
+            "productCount": 12,
         },
         {
             "name": "Electronics",
@@ -73,7 +75,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#EF4444",
             "description": "Computers, phones, and electronics",
             "icon": "smartphone",
-            "productCount": 20
+            "productCount": 20,
         },
         {
             "name": "Furniture",
@@ -83,7 +85,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#84CC16",
             "description": "Home and office furniture",
             "icon": "sofa",
-            "productCount": 18
+            "productCount": 18,
         },
         {
             "name": "Clothing",
@@ -93,7 +95,7 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#06B6D4",
             "description": "Jewish clothing and accessories",
             "icon": "tshirt",
-            "productCount": 30
+            "productCount": 30,
         },
         {
             "name": "Toys & Games",
@@ -103,34 +105,38 @@ def create_mock_categories_data() -> List[Dict[str, Any]]:
             "color": "#F97316",
             "description": "Children's toys and educational games",
             "icon": "gamepad-2",
-            "productCount": 22
-        }
+            "productCount": 22,
+        },
     ]
+
 
 def add_mock_categories_to_database():
     """Add mock marketplace categories data to the database."""
     try:
         # Initialize database manager
         db_manager = EnhancedDatabaseManager()
-        
+
         # Get database connection
         with db_manager.get_connection() as conn:
             with conn.cursor() as cursor:
                 # Check if categories table exists
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_name = 'categories'
                     );
-                """)
-                
+                """
+                )
+
                 table_exists = cursor.fetchone()[0]
-                
+
                 if not table_exists:
                     logger.info("Creating categories table...")
-                    
+
                     # Create categories table
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         CREATE TABLE categories (
                             id SERIAL PRIMARY KEY,
                             name VARCHAR(255) NOT NULL,
@@ -144,62 +150,81 @@ def add_mock_categories_to_database():
                             created_at TIMESTAMPTZ DEFAULT NOW(),
                             updated_at TIMESTAMPTZ DEFAULT NOW()
                         );
-                    """)
-                    
+                    """
+                    )
+
                     # Create indexes
-                    cursor.execute("CREATE INDEX idx_categories_slug ON categories(slug);")
-                    cursor.execute("CREATE INDEX idx_categories_active ON categories(active);")
-                    cursor.execute("CREATE INDEX idx_categories_sort_order ON categories(sort_order);")
-                    
+                    cursor.execute(
+                        "CREATE INDEX idx_categories_slug ON categories(slug);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX idx_categories_active ON categories(active);"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX idx_categories_sort_order ON categories(sort_order);"
+                    )
+
                     logger.info("Categories table created successfully")
-                
+
                 # Get mock data
                 mock_categories = create_mock_categories_data()
-                
+
                 # Clear existing data (for testing purposes)
                 cursor.execute("DELETE FROM categories")
-                
+
                 # Insert mock data
                 for category in mock_categories:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO categories (
                             name, slug, sort_order, active, color, description, icon, product_count
                         ) VALUES (
                             %s, %s, %s, %s, %s, %s, %s, %s
                         )
-                    """, (
-                        category["name"], category["slug"], category["sort_order"],
-                        category["active"], category["color"], category["description"],
-                        category["icon"], category["productCount"]
-                    ))
-                
+                    """,
+                        (
+                            category["name"],
+                            category["slug"],
+                            category["sort_order"],
+                            category["active"],
+                            category["color"],
+                            category["description"],
+                            category["icon"],
+                            category["productCount"],
+                        ),
+                    )
+
                 # Commit the transaction
                 conn.commit()
-                
-                logger.info(f"Successfully added {len(mock_categories)} mock marketplace categories")
-                
+
+                logger.info(
+                    f"Successfully added {len(mock_categories)} mock marketplace categories"
+                )
+
                 # Verify the data was inserted
                 cursor.execute("SELECT COUNT(*) FROM categories")
                 count = cursor.fetchone()[0]
                 logger.info(f"Total marketplace categories in database: {count}")
-                
+
                 return True
-                
+
     except Exception as e:
         logger.error(f"Error adding mock marketplace categories: {str(e)}")
         return False
 
+
 def main():
     """Main function to run the script."""
     logger.info("Starting to add mock marketplace categories...")
-    
+
     success = add_mock_categories_to_database()
-    
+
     if success:
         logger.info("✅ Mock marketplace categories added successfully!")
     else:
         logger.error("❌ Failed to add mock marketplace categories")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

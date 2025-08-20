@@ -1,31 +1,31 @@
-from utils.logging_config import get_logger
-
+import logging
 import os
 import sys
 import time
-import logging
 import traceback
 import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
-from werkzeug.exceptions import HTTPException
-from werkzeug.middleware.proxy_fix import ProxyFix
 import sentry_sdk
-from flask import Flask, request, jsonify, make_response, send_from_directory, g
+from flask import Flask, g, jsonify, make_response, request, send_from_directory
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
 from flask_session import Session
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from utils.logging_config import get_logger
+from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 logger = get_logger(__name__)
 
 # Import Redis with fallback
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     redis = None
@@ -40,14 +40,16 @@ except ImportError:
 try:
     from utils.config_manager import ConfigManager
 except ImportError:
+
     class ConfigManager:
         @staticmethod
         def get_port():
-            return int(os.getenv('PORT', 5000))
-        
+            return int(os.getenv("PORT", 5000))
+
         @staticmethod
         def is_production():
-            return os.getenv('ENVIRONMENT', 'development') == 'production'
+            return os.getenv("ENVIRONMENT", "development") == "production"
+
 
 try:
     from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
@@ -61,6 +63,7 @@ except ImportError:
 
 try:
     from routes.api_v4 import api_v4
+
     logger.info("Successfully imported api_v4 blueprint")
 except ImportError as e:
     logger.warning(f"Could not import api_v4 blueprint: {e}")
@@ -69,44 +72,47 @@ except Exception as e:
     logger.error(f"Unexpected error importing api_v4 blueprint: {e}")
     api_v4 = None
 
-from utils.logging_config import configure_logging
-from config.config import Config
 from database.database_manager_v3 import EnhancedDatabaseManager
-from utils.api_response import APIResponse
-from utils.error_handler import ErrorHandler, register_error_handlers
+from services.restaurant_service import RestaurantService
+from utils.api_response import (
+    APIResponse,
+    created_response,
+    kosher_types_response,
+    not_found_response,
+    restaurant_response,
+    restaurants_response,
+    statistics_response,
+    success_response,
+    validation_error_response,
+)
+from utils.error_handler import ErrorHandler
+from utils.error_handler import ValidationError as AppValidationError
+from utils.error_handler import register_error_handlers
 from utils.feature_flags import (
+    FeatureFlag,
     feature_flag_manager,
     get_feature_flags,
     is_feature_enabled,
     require_feature_flag,
-    FeatureFlag,
 )
 from utils.feedback_manager import FeedbackManager
+from utils.google_places_manager import GooglePlacesManager
+from utils.logging_config import configure_logging
 from utils.security import (
+    SecurityManager,
+    log_request,
     require_admin_auth,
     require_scraper_auth,
-    log_request,
-    SecurityManager,
     security_manager,
 )
-from utils.api_response import (
-    success_response,
-    created_response,
-    restaurants_response,
-    restaurant_response,
-    statistics_response,
-    kosher_types_response,
-    validation_error_response,
-    not_found_response,
-)
-from utils.error_handler import ValidationError as AppValidationError
-from utils.google_places_manager import GooglePlacesManager
-from services.restaurant_service import RestaurantService
-from utils.validation import validate_payload, ReviewCreateSchema
+from utils.validation import ReviewCreateSchema, validate_payload
+
+from config.config import Config
 
 # Import Redis health blueprint with fallback
 try:
     from routes.redis_health import redis_bp
+
     logger.info("Redis health blueprint imported successfully")
 except ImportError as e:
     logger.warning(f"Could not import Redis health blueprint: {e}")
@@ -114,6 +120,7 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Error importing Redis health blueprint: {e}")
     redis_bp = None
+
 
 # Thread-safe caching functions using CacheManager
 def get_cached_restaurants(cache_key: str, deps=None):
@@ -127,7 +134,7 @@ def get_cached_restaurants(cache_key: str, deps=None):
             "Cache manager import failed",
             error=str(e),
             cache_key=cache_key,
-            operation="get_cached_restaurants"
+            operation="get_cached_restaurants",
         )
         return None
     except Exception as e:
@@ -136,9 +143,10 @@ def get_cached_restaurants(cache_key: str, deps=None):
             error=str(e),
             cache_key=cache_key,
             operation="get_cached_restaurants",
-            traceback=traceback.format_exc()
+            traceback=traceback.format_exc(),
         )
         return None
+
 
 def set_cached_restaurants(cache_key: str, data: Any, deps=None):
     """Cache restaurant data using the thread-safe CacheManager."""
@@ -150,7 +158,7 @@ def set_cached_restaurants(cache_key: str, data: Any, deps=None):
             "Cache manager import failed",
             error=str(e),
             cache_key=cache_key,
-            operation="set_cached_restaurants"
+            operation="set_cached_restaurants",
         )
     except Exception as e:
         logger.error(
@@ -158,14 +166,15 @@ def set_cached_restaurants(cache_key: str, data: Any, deps=None):
             error=str(e),
             cache_key=cache_key,
             operation="set_cached_restaurants",
-            traceback=traceback.format_exc()
+            traceback=traceback.format_exc(),
         )
+
 
 # Initialize Sentry for error tracking
 def _initialize_sentry() -> None:
     """Initialize Sentry error tracking if available."""
     # Get logger for this function
-    
+
     try:
         sentry_dsn = os.environ.get("SENTRY_DSN")
         if sentry_dsn:
@@ -186,13 +195,13 @@ def _initialize_sentry() -> None:
         logger.error(
             "Sentry import failed, error tracking disabled",
             error=str(e),
-            traceback=traceback.format_exc()
+            traceback=traceback.format_exc(),
         )
     except Exception as e:
         logger.error(
             "Sentry initialization failed",
             error=str(e),
-            traceback=traceback.format_exc()
+            traceback=traceback.format_exc(),
         )
 
 
@@ -205,7 +214,7 @@ def _load_dependencies():
     """Load all required dependencies."""
     # Get logger for this function
     logger = get_logger(__name__)
-    
+
     try:
         from utils.feature_flags import (
             feature_flag_context,
@@ -279,8 +288,8 @@ def create_app(config_class=None):
 
     # Import required decorators early to avoid NameError
     try:
-        from utils.security import require_admin_auth, require_scraper_auth, log_request
         from utils.feature_flags import require_feature_flag
+        from utils.security import log_request, require_admin_auth, require_scraper_auth
     except ImportError as e:
         logger.warning(f"Could not import decorators: {e}")
         # Fallback decorators
@@ -291,7 +300,7 @@ def create_app(config_class=None):
 
     # Create Flask app
     app = Flask(__name__)
-    
+
     # Debug routes removed to avoid conflicts
 
     # Temporarily disable middleware for debugging
@@ -487,10 +496,15 @@ def create_app(config_class=None):
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["1000 per minute", "10000 per hour"],  # Very high limits for testing
-        storage_uri=redis_url
+        default_limits=[
+            "1000 per minute",
+            "10000 per hour",
+        ],  # Very high limits for testing
+        storage_uri=redis_url,
     )
-    logger.info(f"Rate limiter configured with storage: {redis_url} (high limits for testing)")
+    logger.info(
+        f"Rate limiter configured with storage: {redis_url} (high limits for testing)"
+    )
 
     # Initialize Redis cache and session
     try:
@@ -507,11 +521,11 @@ def create_app(config_class=None):
     redis_url = os.environ.get("REDIS_URL")
     if redis_url and redis_url != "memory://" and REDIS_AVAILABLE:
         try:
-            app.config['SESSION_TYPE'] = 'redis'
-            app.config['SESSION_REDIS'] = redis.from_url(redis_url)
-            app.config['SESSION_KEY_PREFIX'] = 'jewgo_session:'
-            app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
-            
+            app.config["SESSION_TYPE"] = "redis"
+            app.config["SESSION_REDIS"] = redis.from_url(redis_url)
+            app.config["SESSION_KEY_PREFIX"] = "jewgo_session:"
+            app.config["PERMANENT_SESSION_LIFETIME"] = 3600  # 1 hour
+
             Session(app)
             logger.info("Flask-Session configured with Redis successfully")
         except Exception as e:
@@ -522,12 +536,15 @@ def create_app(config_class=None):
     else:
         # No Redis URL or Redis not available, use default Flask session handling
         app.config["SECRET_KEY"] = app.config.get("SECRET_KEY", "dev-secret-key")
-        logger.info("No Redis URL configured or Redis not available - using default Flask session handling")
+        logger.info(
+            "No Redis URL configured or Redis not available - using default Flask session handling"
+        )
 
     # Initialize cache manager
     cache_manager = None
     try:
         from utils.cache_manager import cache_manager as cache_manager_instance
+
         cache_manager = cache_manager_instance
         logger.info("Cache manager initialized successfully")
     except Exception as e:
@@ -619,13 +636,23 @@ def create_app(config_class=None):
                 if "CacheManagerV4" in deps:
                     logger.info("Creating new cache manager v4 instance")
                     # Get Redis URL from environment (check both REDIS_URL and CACHE_REDIS_URL)
-                    redis_url = os.environ.get("REDIS_URL") or os.environ.get("CACHE_REDIS_URL")
+                    redis_url = os.environ.get("REDIS_URL") or os.environ.get(
+                        "CACHE_REDIS_URL"
+                    )
                     if not redis_url or redis_url == "memory://":
-                        logger.info("No Redis URL configured - CacheManagerV4 will use memory fallback")
-                        cache_manager_v4_instance = deps["CacheManagerV4"](enable_cache=False)
+                        logger.info(
+                            "No Redis URL configured - CacheManagerV4 will use memory fallback"
+                        )
+                        cache_manager_v4_instance = deps["CacheManagerV4"](
+                            enable_cache=False
+                        )
                     else:
-                        logger.info(f"Initializing CacheManagerV4 with Redis: {redis_url[:50]}...")
-                        cache_manager_v4_instance = deps["CacheManagerV4"](redis_url=redis_url)
+                        logger.info(
+                            f"Initializing CacheManagerV4 with Redis: {redis_url[:50]}..."
+                        )
+                        cache_manager_v4_instance = deps["CacheManagerV4"](
+                            redis_url=redis_url
+                        )
                     logger.info("Cache manager v4 initialized")
                 else:
                     logger.warning("CacheManagerV4 not available in dependencies")
@@ -640,7 +667,7 @@ def create_app(config_class=None):
     deps["cache_manager_v4"] = get_cache_manager_v4()
 
     # Make dependencies available to routes
-    app.config['dependencies'] = deps
+    app.config["dependencies"] = deps
 
     # Initialize database on startup (skip during tests)
     with app.app_context():
@@ -651,18 +678,18 @@ def create_app(config_class=None):
                 if db_manager:
                     logger.info("Database manager v3 initialized successfully")
                     # Store in app config for health routes
-                    app.config['DB_MANAGER'] = db_manager
+                    app.config["DB_MANAGER"] = db_manager
                 else:
                     logger.error("Failed to initialize database manager v3")
-                
+
                 db_manager_v4 = get_db_manager_v4()
                 if db_manager_v4:
                     logger.info("Database manager v4 initialized successfully")
                     # Store in app config for health routes
-                    app.config['DB_MANAGER_V4'] = db_manager_v4
+                    app.config["DB_MANAGER_V4"] = db_manager_v4
                 else:
                     logger.error("Failed to initialize database manager v4")
-                    
+
             except Exception as e:
                 logger.exception("Error initializing database managers", error=str(e))
 
@@ -671,6 +698,7 @@ def create_app(config_class=None):
     # Register health blueprint
     try:
         from routes.health_routes import bp as health_bp
+
         app.register_blueprint(health_bp)
         logger.info("Health routes blueprint registered successfully")
     except ImportError as e:
@@ -681,18 +709,19 @@ def create_app(config_class=None):
     if redis_url and redis_url != "memory://":
         try:
             # Check if redis_bp is available
-            if 'redis_bp' in globals() and redis_bp is not None:
+            if "redis_bp" in globals() and redis_bp is not None:
                 app.register_blueprint(redis_bp)
                 logger.info("Redis health routes blueprint registered successfully")
-                
+
                 # Add a simple test route directly to the app for debugging
-                @app.route('/api/redis-debug', methods=['GET'])
+                @app.route("/api/redis-debug", methods=["GET"])
                 def redis_debug():
                     return {
-                        'message': 'Redis debug route working',
-                        'redis_url': redis_url,
-                        'timestamp': time.time()
+                        "message": "Redis debug route working",
+                        "redis_url": redis_url,
+                        "timestamp": time.time(),
                     }
+
                 logger.info("Redis debug route added successfully")
             else:
                 logger.warning("Redis blueprint not available - skipping registration")
@@ -903,27 +932,36 @@ def create_app(config_class=None):
         try:
             # Get all environment variables
             env_vars = dict(os.environ)
-            
+
             # Filter out sensitive variables
             sensitive_keys = [
-                "DATABASE_URL", "REDIS_URL", "REDIS_PASSWORD", 
-                "ADMIN_TOKEN", "SCRAPER_TOKEN", "SECRET_KEY"
+                "DATABASE_URL",
+                "REDIS_URL",
+                "REDIS_PASSWORD",
+                "ADMIN_TOKEN",
+                "SCRAPER_TOKEN",
+                "SECRET_KEY",
             ]
-            
+
             filtered_env = {}
             for key, value in env_vars.items():
                 if key in sensitive_keys:
                     filtered_env[key] = "***HIDDEN***" if value else "NOT_SET"
                 else:
                     filtered_env[key] = value
-            
-            return jsonify({
-                "message": "Environment variables (sensitive values hidden)",
-                "env_vars": filtered_env,
-                "total_vars": len(env_vars),
-                "timestamp": datetime.now().isoformat()
-            }), 200
-            
+
+            return (
+                jsonify(
+                    {
+                        "message": "Environment variables (sensitive values hidden)",
+                        "env_vars": filtered_env,
+                        "total_vars": len(env_vars),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                200,
+            )
+
         except Exception as e:
             logger.exception("Error in debug_env_raw", error=str(e))
             return jsonify({"error": "Internal server error"}), 500
@@ -935,26 +973,35 @@ def create_app(config_class=None):
             # Get admin tokens info without exposing actual tokens
             admin_tokens = security_manager.admin_tokens
             token_count = len(admin_tokens)
-            
+
             # Show token info without exposing actual values
             token_info = []
             for token_hash, info in admin_tokens.items():
-                token_info.append({
-                    "token_hash": token_hash[:8] + "..." if len(token_hash) > 8 else token_hash,
-                    "type": info.get("type"),
-                    "permissions": info.get("permissions"),
-                    "description": info.get("description"),
-                    "created_at": info.get("created_at")
-                })
-            
-            return jsonify({
-                "message": "Admin tokens status",
-                "token_count": token_count,
-                "tokens_loaded": token_count > 0,
-                "token_info": token_info,
-                "timestamp": datetime.now().isoformat()
-            }), 200
-            
+                token_info.append(
+                    {
+                        "token_hash": token_hash[:8] + "..."
+                        if len(token_hash) > 8
+                        else token_hash,
+                        "type": info.get("type"),
+                        "permissions": info.get("permissions"),
+                        "description": info.get("description"),
+                        "created_at": info.get("created_at"),
+                    }
+                )
+
+            return (
+                jsonify(
+                    {
+                        "message": "Admin tokens status",
+                        "token_count": token_count,
+                        "tokens_loaded": token_count > 0,
+                        "token_info": token_info,
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                200,
+            )
+
         except Exception as e:
             logger.exception("Error in debug_admin_tokens", error=str(e))
             return jsonify({"error": "Internal server error"}), 500
@@ -963,10 +1010,15 @@ def create_app(config_class=None):
     @require_admin_auth
     def test_admin_auth():
         """Simple test endpoint to verify admin authentication works."""
-        return jsonify({
-            "message": "Admin authentication successful",
-            "timestamp": datetime.now().isoformat()
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "Admin authentication successful",
+                    "timestamp": datetime.now().isoformat(),
+                }
+            ),
+            200,
+        )
 
     @app.route("/api/debug/cors-config", methods=["GET"])
     def debug_cors_config():
@@ -1009,52 +1061,61 @@ def create_app(config_class=None):
         """Debug endpoint to check marketplace table status."""
         try:
             from database.database_manager_v3 import EnhancedDatabaseManager
-            
+
             db_manager = EnhancedDatabaseManager()
-            
+
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Check if marketplace table exists
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT EXISTS (
                             SELECT FROM information_schema.tables 
                             WHERE table_schema = 'public' 
                             AND table_name = 'marketplace'
                         );
-                    """)
-                    
+                    """
+                    )
+
                     marketplace_exists = cursor.fetchone()[0]
-                    
+
                     # Check if listings table exists
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT EXISTS (
                             SELECT FROM information_schema.tables 
                             WHERE table_schema = 'public' 
                             AND table_name = 'listings'
                         );
-                    """)
-                    
+                    """
+                    )
+
                     listings_exists = cursor.fetchone()[0]
-                    
+
                     if marketplace_exists:
                         # Check if marketplace table has data
                         cursor.execute("SELECT COUNT(*) FROM marketplace")
                         count = cursor.fetchone()[0]
-                        
+
                         # Check table structure
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             SELECT column_name, data_type 
                             FROM information_schema.columns 
                             WHERE table_name = 'marketplace' 
                             ORDER BY ordinal_position
-                        """)
-                        
+                        """
+                        )
+
                         columns = cursor.fetchall()
-                        column_info = [{"name": col[0], "type": col[1]} for col in columns]
-                        
+                        column_info = [
+                            {"name": col[0], "type": col[1]} for col in columns
+                        ]
+
                         # Try to execute the actual marketplace query to see if it works
                         try:
-                            cursor.execute("""
+                            cursor.execute(
+                                """
                                 SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state, m.zip_code, 
                                        m.latitude, m.longitude, m.vendor_id, m.vendor_name, m.vendor_phone, m.vendor_email,
                                        m.kosher_agency, m.kosher_level, m.is_available, m.is_featured, m.is_on_sale, 
@@ -1064,76 +1125,97 @@ def create_app(config_class=None):
                                 FROM marketplace m
                                 WHERE m.status = %s
                                 LIMIT 1
-                            """, ['active'])
-                            
+                            """,
+                                ["active"],
+                            )
+
                             sample_data = cursor.fetchone()
                             query_works = True
                         except Exception as query_error:
                             query_works = False
                             query_error_msg = str(query_error)
-                        
-                        return jsonify({
-                            "success": True,
-                            "marketplace_table_exists": True,
-                            "listings_table_exists": listings_exists,
-                            "record_count": count,
-                            "columns": column_info,
-                            "status": "marketplace_table_found",
-                            "query_works": query_works,
-                            "query_error": query_error_msg if not query_works else None,
-                            "sample_data": sample_data if query_works else None
-                        })
+
+                        return jsonify(
+                            {
+                                "success": True,
+                                "marketplace_table_exists": True,
+                                "listings_table_exists": listings_exists,
+                                "record_count": count,
+                                "columns": column_info,
+                                "status": "marketplace_table_found",
+                                "query_works": query_works,
+                                "query_error": query_error_msg
+                                if not query_works
+                                else None,
+                                "sample_data": sample_data if query_works else None,
+                            }
+                        )
                     elif listings_exists:
                         # Check if listings table has data
                         cursor.execute("SELECT COUNT(*) FROM listings")
                         count = cursor.fetchone()[0]
-                        
+
                         # Check table structure
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             SELECT column_name, data_type 
                             FROM information_schema.columns 
                             WHERE table_name = 'listings' 
                             ORDER BY ordinal_position
-                        """)
-                        
+                        """
+                        )
+
                         columns = cursor.fetchall()
-                        column_info = [{"name": col[0], "type": col[1]} for col in columns]
-                        
-                        return jsonify({
-                            "success": True,
-                            "marketplace_table_exists": False,
-                            "listings_table_exists": True,
-                            "record_count": count,
-                            "columns": column_info,
-                            "status": "listings_table_found_but_service_expects_marketplace"
-                        })
+                        column_info = [
+                            {"name": col[0], "type": col[1]} for col in columns
+                        ]
+
+                        return jsonify(
+                            {
+                                "success": True,
+                                "marketplace_table_exists": False,
+                                "listings_table_exists": True,
+                                "record_count": count,
+                                "columns": column_info,
+                                "status": "listings_table_found_but_service_expects_marketplace",
+                            }
+                        )
                     else:
                         # Check what tables exist
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             SELECT table_name 
                             FROM information_schema.tables 
                             WHERE table_schema = 'public' 
                             ORDER BY table_name
-                        """)
-                        
+                        """
+                        )
+
                         tables = cursor.fetchall()
                         table_names = [table[0] for table in tables]
-                        
-                        return jsonify({
-                            "success": True,
-                            "marketplace_table_exists": False,
-                            "listings_table_exists": False,
-                            "available_tables": table_names,
-                            "status": "no_marketplace_tables_found"
-                        })
-                        
+
+                        return jsonify(
+                            {
+                                "success": True,
+                                "marketplace_table_exists": False,
+                                "listings_table_exists": False,
+                                "available_tables": table_names,
+                                "status": "no_marketplace_tables_found",
+                            }
+                        )
+
         except Exception as e:
-            return jsonify({
-                "success": False,
-                "error": str(e),
-                "marketplace_table_exists": False,
-                "listings_table_exists": False
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": str(e),
+                        "marketplace_table_exists": False,
+                        "listings_table_exists": False,
+                    }
+                ),
+                500,
+            )
 
     @app.route("/api/test/cors", methods=["GET", "POST", "OPTIONS"])
     def test_cors():
@@ -1240,7 +1322,7 @@ def create_app(config_class=None):
 
     # Register all routes
     _register_all_routes(app, limiter, deps, logger)
-    
+
     return app
 
 
@@ -1272,14 +1354,14 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
     # Response helpers (standardized API responses)
     try:
         from utils.api_response import (
-            success_response,
             created_response,
-            restaurants_response,
-            restaurant_response,
-            statistics_response,
             kosher_types_response,
-            validation_error_response,
             not_found_response,
+            restaurant_response,
+            restaurants_response,
+            statistics_response,
+            success_response,
+            validation_error_response,
         )
     except Exception:  # Fallback to simple jsonify if helpers unavailable
         created_response = success_response  # type: ignore
@@ -1305,7 +1387,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             db_status = "disconnected"
             db_error = None
             restaurant_count = 0
-            
+
             try:
                 # Check if DATABASE_URL is available
                 database_url = os.environ.get("DATABASE_URL")
@@ -1319,9 +1401,13 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                             db_status = "connected"
                             # Try to fetch restaurants
                             try:
-                                restaurants = db_manager.get_restaurants(limit=5, as_dict=True)
+                                restaurants = db_manager.get_restaurants(
+                                    limit=5, as_dict=True
+                                )
                                 restaurant_count = len(restaurants)
-                                logger.info(f"Successfully fetched {restaurant_count} restaurants")
+                                logger.info(
+                                    f"Successfully fetched {restaurant_count} restaurants"
+                                )
                             except Exception as e:
                                 db_error = f"Database connected but failed to fetch restaurants: {str(e)}"
                         else:
@@ -1348,11 +1434,16 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
         except Exception as e:
             logger.exception("Database test endpoint failed", error=str(e))
-            return jsonify({
-                "status": "error",
-                "error": str(e),
-                "timestamp": datetime.now().isoformat()
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "error": str(e),
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                ),
+                500,
+            )
 
     # Health check endpoint
     @app.route("/health", methods=["GET"])
@@ -1407,7 +1498,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             # Get version info with fallback
             try:
                 version = os.environ.get("APP_VERSION", "4.1")
-                build_date = os.environ.get("BUILD_DATE", datetime.now().strftime("%Y-%m-%d"))
+                build_date = os.environ.get(
+                    "BUILD_DATE", datetime.now().strftime("%Y-%m-%d")
+                )
             except Exception:
                 version = "4.1"
                 build_date = datetime.now().strftime("%Y-%m-%d")
@@ -1443,38 +1536,50 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             # Get version info with fallback for error case
             try:
                 version = os.environ.get("APP_VERSION", "4.1")
-                build_date = os.environ.get("BUILD_DATE", datetime.now().strftime("%Y-%m-%d"))
+                build_date = os.environ.get(
+                    "BUILD_DATE", datetime.now().strftime("%Y-%m-%d")
+                )
             except Exception:
                 version = "4.1"
                 build_date = datetime.now().strftime("%Y-%m-%d")
 
-            return jsonify({
-                "status": "unhealthy",
-                "timestamp": datetime.now().isoformat(),
-                "service": "jewgo-backend",
-                "version": version,
-                "build_date": build_date,
-                "error": str(e),
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "status": "unhealthy",
+                        "timestamp": datetime.now().isoformat(),
+                        "service": "jewgo-backend",
+                        "version": version,
+                        "build_date": build_date,
+                        "error": str(e),
+                    }
+                ),
+                500,
+            )
 
     # Root endpoint
     @app.route("/", methods=["GET"])
     @limiter.limit("100 per hour")
     def root():
         """Root endpoint with API information."""
-        return jsonify({
-            "message": "JewGo Backend API",
-            "version": "4.0",
-            "status": "running",
-            "timestamp": datetime.now().isoformat(),
-            "endpoints": {
-                "health": "/health",
-                "restaurants": "/api/restaurants",
-                "reviews": "/api/reviews",
-                "specials": "/api/specials",
-                "admin": "/api/admin",
-            },
-        }), 200
+        return (
+            jsonify(
+                {
+                    "message": "JewGo Backend API",
+                    "version": "4.0",
+                    "status": "running",
+                    "timestamp": datetime.now().isoformat(),
+                    "endpoints": {
+                        "health": "/health",
+                        "restaurants": "/api/restaurants",
+                        "reviews": "/api/reviews",
+                        "specials": "/api/specials",
+                        "admin": "/api/admin",
+                    },
+                }
+            ),
+            200,
+        )
 
     # Restaurants endpoints
     @app.route("/api/restaurants", methods=["GET"])
@@ -1486,25 +1591,32 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             kosher_type = request.args.get("kosher_type")
             status = request.args.get("status")  # optional
             # Increase default limit and max limit for better performance
-            limit = min(int(request.args.get("limit", 100)), 1000)  # Increased from 50 to 100 default, 1000 max
+            limit = min(
+                int(request.args.get("limit", 100)), 1000
+            )  # Increased from 50 to 100 default, 1000 max
             offset = int(request.args.get("offset", 0))
-            business_types = request.args.getlist("business_types")  # Get multiple business types
+            business_types = request.args.getlist(
+                "business_types"
+            )  # Get multiple business types
 
             # Create cache key based on request parameters
             cache_key = f"restaurants_{limit}_{offset}_{kosher_type}_{status}_{','.join(sorted(business_types)) if business_types else 'all'}"
-            
+
             # Try simple in-memory cache first
             cached_data = get_cached_restaurants(cache_key)
             if cached_data:
                 logger.info("Serving restaurants from simple cache")
                 return restaurants_response(cached_data, limit=limit, offset=offset)
-            
+
             # Try to get from cache first
             cached_result = deps.get("cache_manager")
             logger.info("Cache manager available", available=cached_result is not None)
             if cached_result:
                 # Try pagination-aware cache first, then fallback to legacy list cache
-                cached_data = cached_result.get_cached_restaurants_paginated(limit, offset) or cached_result.get_cached_restaurants()
+                cached_data = (
+                    cached_result.get_cached_restaurants_paginated(limit, offset)
+                    or cached_result.get_cached_restaurants()
+                )
                 logger.info("Cached data available", available=cached_data is not None)
                 if cached_data:
                     logger.info("Serving restaurants from cache")
@@ -1532,7 +1644,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 filters["business_types"] = business_types
 
             # Get restaurants directly from DB manager
-            logger.info("Calling get_restaurants", limit=limit, offset=offset, filters=filters)
+            logger.info(
+                "Calling get_restaurants", limit=limit, offset=offset, filters=filters
+            )
             restaurants = db_manager.get_restaurants(
                 limit=limit,
                 offset=offset,
@@ -1549,7 +1663,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
             # Cache both paginated and legacy list for broad reuse
             if cached_result:
-                cached_result.cache_restaurants_paginated(restaurants, limit, offset, ttl=600)
+                cached_result.cache_restaurants_paginated(
+                    restaurants, limit, offset, ttl=600
+                )
                 # Also cache a non-paginated snapshot for legacy callers
                 if offset == 0:
                     cached_result.cache_restaurants(restaurants, ttl=600)
@@ -1572,53 +1688,57 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             query = request.args.get("q", "").strip()
             if not query:
                 return error_response("Query parameter 'q' is required", 400)
-            
+
             # Get optional parameters
             limit = min(int(request.args.get("limit", 20)), 100)
             offset = max(int(request.args.get("offset", 0)), 0)
-            
+
             # Use unified search service
-            from utils.unified_search_service import UnifiedSearchService, SearchFilters, SearchType
             from utils.cache_manager_v4 import CacheManagerV4
-            
+            from utils.unified_search_service import (
+                SearchFilters,
+                SearchType,
+                UnifiedSearchService,
+            )
+
             db_manager = EnhancedDatabaseManager()
             cache_manager = CacheManagerV4()
             search_service = UnifiedSearchService(db_manager, cache_manager)
-            
+
             # Create search filters
-            filters = SearchFilters(
-                query=query,
-                limit=limit,
-                offset=offset
-            )
-            
+            filters = SearchFilters(query=query, limit=limit, offset=offset)
+
             # Perform search
             search_response = search_service.search(filters, SearchType.BASIC)
-            
+
             # Format results for backward compatibility
             formatted_results = []
             for result in search_response.results:
-                formatted_results.append({
-                    "id": result.id,
-                    "name": result.name,
-                    "address": result.address,
-                    "city": result.city,
-                    "state": result.state,
-                    "phone": result.phone_number,
-                    "website": result.website,
-                    "cuisine_type": result.kosher_category,
-                    "rating": result.rating,
-                    "image_url": result.image_url,
-                    "relevance_score": result.relevance_score
-                })
-            
-            return success_response({
-                "results": formatted_results,
-                "query": query,
-                "total_results": search_response.total_results,
-                "execution_time": search_response.execution_time
-            })
-            
+                formatted_results.append(
+                    {
+                        "id": result.id,
+                        "name": result.name,
+                        "address": result.address,
+                        "city": result.city,
+                        "state": result.state,
+                        "phone": result.phone_number,
+                        "website": result.website,
+                        "cuisine_type": result.kosher_category,
+                        "rating": result.rating,
+                        "image_url": result.image_url,
+                        "relevance_score": result.relevance_score,
+                    }
+                )
+
+            return success_response(
+                {
+                    "results": formatted_results,
+                    "query": query,
+                    "total_results": search_response.total_results,
+                    "execution_time": search_response.execution_time,
+                }
+            )
+
         except Exception as e:
             logger.exception("Error in search endpoint", error=str(e))
             return error_response("Failed to search restaurants", 500)
@@ -1647,27 +1767,32 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             if not db_manager:
                 logger.error("Database manager not initialized")
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Get database connection
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT DISTINCT business_types 
                         FROM restaurants 
                         WHERE business_types IS NOT NULL 
                         AND business_types != '' 
                         AND business_types != 'None'
                         ORDER BY business_types
-                    """)
-                    
+                    """
+                    )
+
                     results = cursor.fetchall()
                     business_types = [row[0] for row in results if row[0]]
-                    
-                    return success_response({ 'business_types': business_types }, message="Business types retrieved")
-                    
+
+                    return success_response(
+                        {"business_types": business_types},
+                        message="Business types retrieved",
+                    )
+
         except Exception as e:
             logger.exception("Error fetching business types", error=str(e))
-            return error_response('Failed to fetch business types', 500)
+            return error_response("Failed to fetch business types", 500)
 
     @app.route("/api/restaurants/fetch-missing-websites", methods=["POST"])
     @limiter.limit("10 per hour")
@@ -1693,12 +1818,16 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                     api_key_set=bool(api_key),
                     database_url_set=bool(database_url),
                 )
-                return error_response("Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500)
+                return error_response(
+                    "Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500
+                )
 
             # Import locally to avoid import errors if utils not available in some contexts
             manager = GooglePlacesManager(api_key=api_key, database_url=database_url)
             results = manager.update_restaurants_batch(limit=limit)
-            return success_response({"results": results}, message="Websites fetched and updated")
+            return success_response(
+                {"results": results}, message="Websites fetched and updated"
+            )
 
         except Exception as e:
             logger.exception("Error in fetch-missing-websites", error=str(e))
@@ -1744,7 +1873,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             restaurant = db_manager.get_restaurant_by_id(restaurant_id)
 
             if not restaurant:
-                return not_found_response("Restaurant not found", resource_type="restaurant")
+                return not_found_response(
+                    "Restaurant not found", resource_type="restaurant"
+                )
 
             response_data = {"restaurant": restaurant}
 
@@ -1779,7 +1910,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                     api_key_set=bool(api_key),
                     database_url_set=bool(database_url),
                 )
-                return error_response("Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500)
+                return error_response(
+                    "Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500
+                )
 
             # Get restaurant details
             db_manager = deps.get("get_db_manager")()
@@ -1789,7 +1922,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
             restaurant = db_manager.get_restaurant_by_id(restaurant_id)
             if not restaurant:
-                return not_found_response("Restaurant not found", resource_type="restaurant")
+                return not_found_response(
+                    "Restaurant not found", resource_type="restaurant"
+                )
 
             manager = GooglePlacesManager(api_key=api_key, database_url=database_url)
             result = manager.process_restaurant(restaurant)
@@ -1813,68 +1948,72 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 db_manager = deps.get("get_db_manager")()
                 if not db_manager:
                     return jsonify({"error": "Database not available"}), 503
-                
+
                 # Get restaurant data
                 restaurant = db_manager.get_restaurant_by_id(restaurant_id)
                 if not restaurant:
                     return jsonify({"error": "Restaurant not found"}), 404
-                
+
                 # Get hours data
                 hours_json = restaurant.get("hours_of_operation")
                 if not hours_json:
                     # Return empty hours response
                     from utils.hours_formatter import HoursFormatter
+
                     return jsonify(HoursFormatter._get_empty_hours_response()), 200
-                
+
                 # Parse and format hours
                 from utils.hours_formatter import HoursFormatter
                 from utils.hours_parser import parse_hours_blob
-                
+
                 try:
                     if isinstance(hours_json, str):
                         hours_doc = parse_hours_blob(hours_json)
                     else:
                         hours_doc = hours_json
-                    
+
                     formatted_hours = HoursFormatter.for_display(hours_doc)
                     return jsonify(formatted_hours), 200
-                    
+
                 except Exception as e:
-                    logger.warning(f"Error parsing hours for restaurant {restaurant_id}: {e}")
+                    logger.warning(
+                        f"Error parsing hours for restaurant {restaurant_id}: {e}"
+                    )
                     # Return empty hours response on parsing error
                     return jsonify(HoursFormatter._get_empty_hours_response()), 200
-                
+
             except Exception as e:
-                logger.error(f"Error fetching hours for restaurant {restaurant_id}: {e}")
+                logger.error(
+                    f"Error fetching hours for restaurant {restaurant_id}: {e}"
+                )
                 return jsonify({"error": "Failed to fetch hours"}), 500
-        
+
         elif request.method == "PUT":
             try:
                 # Get request data
                 data = request.get_json(silent=True) or {}
                 hours_data = data.get("hours_of_operation", {})
                 updated_by = data.get("updated_by", "admin")
-                
+
                 # Get database manager
                 db_manager = deps.get("get_db_manager")()
                 if not db_manager:
                     return jsonify({"error": "Database not available"}), 503
-                
+
                 # Create restaurant service
                 restaurant_service = RestaurantService(db_manager)
-                
+
                 # Update hours
                 updated_hours = restaurant_service.update_restaurant_hours(
                     restaurant_id, hours_data, updated_by
                 )
-                
-                return jsonify({
-                    "status": "success",
-                    "data": updated_hours
-                }), 200
-                
+
+                return jsonify({"status": "success", "data": updated_hours}), 200
+
             except Exception as e:
-                logger.error(f"Admin update hours error: {e}", restaurant_id=restaurant_id)
+                logger.error(
+                    f"Admin update hours error: {e}", restaurant_id=restaurant_id
+                )
                 return jsonify({"error": str(e)}), 400
 
     # Duplicate test-sentry route removed - already defined above
@@ -1898,7 +2037,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             status = request.args.get("status")
             sort_by = request.args.get("sort_by", "created_at")
             sort_order = request.args.get("sort_order", "desc")
-            
+
             # Convert string parameters to appropriate types
             if min_price:
                 min_price = float(min_price)
@@ -1908,16 +2047,17 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 is_featured = is_featured.lower() == "true"
             if is_on_sale:
                 is_on_sale = is_on_sale.lower() == "true"
-            
+
             # Get database manager
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_products(
                 limit=limit,
                 offset=offset,
@@ -1930,14 +2070,19 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 is_on_sale=is_on_sale,
                 status=status,
                 sort_by=sort_by,
-                sort_order=sort_order
+                sort_order=sort_order,
             )
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to retrieve products")}), 500
-            
+                return (
+                    jsonify(
+                        {"error": result.get("error", "Failed to retrieve products")}
+                    ),
+                    500,
+                )
+
         except ValueError as e:
             return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
         except Exception as e:
@@ -1953,18 +2098,19 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_product(product_id)
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
                 return jsonify({"error": result.get("error", "Product not found")}), 404
-            
+
         except Exception as e:
             logger.error(f"Error fetching marketplace product: {e}")
             return jsonify({"error": "Failed to fetch marketplace product"}), 500
@@ -1975,23 +2121,33 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
         """Get featured marketplace products."""
         try:
             limit = min(int(request.args.get("limit", 10)), 100)
-            
+
             # Get database manager
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_featured_products(limit=limit)
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to retrieve featured products")}), 500
-            
+                return (
+                    jsonify(
+                        {
+                            "error": result.get(
+                                "error", "Failed to retrieve featured products"
+                            )
+                        }
+                    ),
+                    500,
+                )
+
         except ValueError as e:
             return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
         except Exception as e:
@@ -2007,18 +2163,24 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_categories()
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to retrieve categories")}), 500
-            
+                return (
+                    jsonify(
+                        {"error": result.get("error", "Failed to retrieve categories")}
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.error(f"Error fetching marketplace categories: {e}")
             return jsonify({"error": "Failed to fetch marketplace categories"}), 500
@@ -2032,18 +2194,24 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_vendors()
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to retrieve vendors")}), 500
-            
+                return (
+                    jsonify(
+                        {"error": result.get("error", "Failed to retrieve vendors")}
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.error(f"Error fetching marketplace vendors: {e}")
             return jsonify({"error": "Failed to fetch marketplace vendors"}), 500
@@ -2056,26 +2224,32 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             query = request.args.get("q", "").strip()
             if not query:
                 return jsonify({"error": "Query parameter 'q' is required"}), 400
-            
+
             limit = min(int(request.args.get("limit", 50)), 1000)
             offset = int(request.args.get("offset", 0))
-            
+
             # Get database manager
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.search_products(query, limit=limit, offset=offset)
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to search products")}), 500
-            
+                return (
+                    jsonify(
+                        {"error": result.get("error", "Failed to search products")}
+                    ),
+                    500,
+                )
+
         except ValueError as e:
             return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
         except Exception as e:
@@ -2091,18 +2265,22 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             db_manager = deps.get("get_db_manager")()
             if not db_manager:
                 return jsonify({"error": "Database not available"}), 503
-            
+
             # Create marketplace service
             from services.marketplace_service_v4 import MarketplaceServiceV4
+
             service = MarketplaceServiceV4(db_manager)
-            
+
             result = service.get_stats()
-            
+
             if result["success"]:
                 return jsonify(result), 200
             else:
-                return jsonify({"error": result.get("error", "Failed to retrieve stats")}), 500
-            
+                return (
+                    jsonify({"error": result.get("error", "Failed to retrieve stats")}),
+                    500,
+                )
+
         except Exception as e:
             logger.error(f"Error fetching marketplace stats: {e}")
             return jsonify({"error": "Failed to fetch marketplace stats"}), 500

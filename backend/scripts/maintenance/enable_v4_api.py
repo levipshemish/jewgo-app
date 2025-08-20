@@ -5,18 +5,19 @@ This script enables the v4 API endpoints by setting the required environment var
 """
 
 import os
+
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 
 # Environment variables to enable v4 API
 env_vars = {
-    'API_V4_RESTAURANTS': 'true',
-    'API_V4_REVIEWS': 'true',
-    'API_V4_USERS': 'true',
-    'API_V4_STATISTICS': 'true',
-    'API_V4_ENABLED': 'true'
+    "API_V4_RESTAURANTS": "true",
+    "API_V4_REVIEWS": "true",
+    "API_V4_USERS": "true",
+    "API_V4_STATISTICS": "true",
+    "API_V4_ENABLED": "true",
 }
 
 print("Enabling v4 API endpoints...")

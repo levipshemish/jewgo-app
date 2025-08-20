@@ -1,8 +1,8 @@
+import json
 import logging
 import re
 from datetime import datetime, time, timedelta
 from typing import Dict, List, Optional, Tuple, Union
-import json
 
 import pytz
 from dateutil import parser as date_parser
@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 try:
     from timezonefinder import TimezoneFinder
+
     TIMEZONEFINDER_AVAILABLE = True
 except ImportError:
     TimezoneFinder = None
@@ -104,16 +105,20 @@ class HoursParser:
                 data = json.loads(hours_data)
                 return self._convert_json_hours(data)
             except json.JSONDecodeError as e:
-                logger.warning("Failed to parse JSON hours data", 
-                             hours_data=hours_data[:100],  # Log first 100 chars
-                             error=str(e),
-                             line_number=e.lineno if hasattr(e, 'lineno') else None,
-                             column_number=e.colno if hasattr(e, 'colno') else None)
+                logger.warning(
+                    "Failed to parse JSON hours data",
+                    hours_data=hours_data[:100],  # Log first 100 chars
+                    error=str(e),
+                    line_number=e.lineno if hasattr(e, "lineno") else None,
+                    column_number=e.colno if hasattr(e, "colno") else None,
+                )
             except Exception as e:
-                logger.warning("Unexpected error parsing JSON hours data", 
-                             hours_data=hours_data[:100],  # Log first 100 chars
-                             error=str(e),
-                             error_type=type(e).__name__)
+                logger.warning(
+                    "Unexpected error parsing JSON hours data",
+                    hours_data=hours_data[:100],  # Log first 100 chars
+                    error=str(e),
+                    error_type=type(e).__name__,
+                )
 
         # Handle common structured formats
         lines = hours_data.split("\n")
@@ -161,9 +166,14 @@ class HoursParser:
                     start_time, start_ampm, end_time, end_ampm = groups
                     days = self.day_order
                 elif len(groups) == 6:  # Mon-Fri pattern
-                    start_day, end_day, start_time, start_ampm, end_time, end_ampm = (
-                        groups
-                    )
+                    (
+                        start_day,
+                        end_day,
+                        start_time,
+                        start_ampm,
+                        end_time,
+                        end_ampm,
+                    ) = groups
                     days = self._get_days_between(start_day, end_day)
                 elif len(groups) == 5:  # Mon, Tue, Wed pattern
                     days_str, start_time, start_ampm, end_time, end_ampm = groups
@@ -340,11 +350,13 @@ class TimezoneHelper:
                 tz_name = tf.timezone_at(lat=latitude, lng=longitude)
                 return tz_name or default_tz
             except Exception as e:
-                logger.warning("TimezoneFinder failed, falling back to manual lookup", 
-                             error=str(e),
-                             latitude=latitude,
-                             longitude=longitude)
-        
+                logger.warning(
+                    "TimezoneFinder failed, falling back to manual lookup",
+                    error=str(e),
+                    latitude=latitude,
+                    longitude=longitude,
+                )
+
         # Fallback to manual mapping
         return TimezoneHelper._manual_timezone_lookup(
             latitude,

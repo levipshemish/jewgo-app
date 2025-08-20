@@ -11,11 +11,12 @@ Version: 2.0
 from typing import Dict, Type
 
 from .base_service import BaseService
-from .restaurant_service import RestaurantService
 from .google_places_service import GooglePlacesService
+from .health_service import HealthService
+from .restaurant_service import RestaurantService
 from .restaurant_status_service import RestaurantStatusService
 from .scraper_service import ScraperService
-from .health_service import HealthService
+
 # hours_compute doesn't export a service class, it's just functions
 # # hours_compute doesn't export a service class, it's just functions
 # from .hours_compute import HoursComputeService
@@ -38,7 +39,7 @@ SERVICE_REGISTRY: Dict[str, Type[BaseService]] = {
 
 __all__ = [
     "BaseService",
-    "RestaurantService", 
+    "RestaurantService",
     "GooglePlacesService",
     "RestaurantStatusService",
     "ScraperService",

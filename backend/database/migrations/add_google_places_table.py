@@ -15,10 +15,9 @@ import os
 import sys
 from pathlib import Path
 
+from database.google_places_manager import Base
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
-
-from database.google_places_manager import Base
 from utils.logging_config import get_logger
 
 # Add the backend directory to the Python path

@@ -5,10 +5,6 @@ from datetime import datetime
 import psycopg2
 from dotenv import load_dotenv
 
-
-
-
-
 #!/usr/bin/env python3
 """Database Initialization Script
 This script populates the production database with restaurant data when the backend starts.
