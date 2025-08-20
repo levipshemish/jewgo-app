@@ -294,7 +294,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Fixed height container */}
-        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0.5' : 'h-8 mb-0.5'}`}>
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0' : 'h-8 mb-0'}`}>
           <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
@@ -302,7 +302,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         
         {/* Price Range and Rating - Fixed height meta row */}
         <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text pl-0.5 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text pl-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
