@@ -13,7 +13,7 @@ Main Netlify configuration file that specifies:
 - Build directory: `frontend`
 - Build command: `npm install && npm run validate-env && npm run build`
 - Output directory: `.next`
-- Node.js version: 22.x
+- Node.js version: 22
 - Environment variables for different contexts
 
 ### 2. `frontend/netlify.env.example`
@@ -125,18 +125,23 @@ The monitoring configuration now includes both Netlify and Vercel endpoints:
 
 1. **Build Failures**
    - Check that all environment variables are set
-   - Verify Node.js version (22.x)
+   - Verify Node.js version (22)
    - Check build logs in Netlify dashboard
 
-2. **API Routes Not Working**
+2. **Node.js Version Errors**
+   - **Error**: `Attempting Node.js version '22 ' from .nvmrc`
+   - **Solution**: Ensure `.nvmrc` file contains exactly `22` with no trailing spaces
+   - **Fix**: Run `echo "22" > frontend/.nvmrc` to recreate the file
+
+3. **API Routes Not Working**
    - Ensure `NEXT_PUBLIC_BACKEND_URL` is set correctly
    - Check that backend is running on Render
 
-3. **Authentication Issues**
+4. **Authentication Issues**
    - Verify `NEXTAUTH_URL` matches your Netlify domain
    - Check that `NEXTAUTH_SECRET` is set
 
-4. **Database Connection Issues**
+5. **Database Connection Issues**
    - Ensure `DATABASE_URL` is accessible from Netlify
    - Check database connection limits
 
@@ -151,6 +156,9 @@ npm run validate-env
 
 # Check health endpoints
 curl https://your-app.netlify.app/health
+
+# Verify Node.js version
+node --version
 ```
 
 ## Performance Optimization
