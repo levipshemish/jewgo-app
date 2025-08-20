@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
 
-import { EateryCard } from '@/components/eatery/ui';
+import UnifiedRestaurantCard from '@/components/restaurant/UnifiedRestaurantCard';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { createFilterKey } from '@/lib/filters/serialize';
 import { Restaurant } from '@/lib/types/restaurant';
@@ -116,8 +116,9 @@ const ProductResults: React.FC<ProductResultsProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 xl:gap-8">
         {restaurants.map((restaurant: Restaurant) => (
           <div key={restaurant.id} className="relative">
-            <EateryCard
+            <UnifiedRestaurantCard
               restaurant={restaurant}
+              variant="eatery"
               className="w-full"
             />
           </div>

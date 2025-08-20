@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import { EateryCard } from '@/components/eatery/ui';
+import UnifiedRestaurantCard from '@/components/restaurant/UnifiedRestaurantCard';
 import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -492,8 +492,9 @@ export default function EateryExplorePage() {
               <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
                   <div key={restaurant.id} className="relative">
-                    <EateryCard
+                    <UnifiedRestaurantCard
                       restaurant={restaurant}
+                      variant="eatery"
                       className="w-full"
                     />
                   </div>

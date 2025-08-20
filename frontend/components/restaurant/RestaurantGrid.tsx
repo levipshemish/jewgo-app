@@ -4,7 +4,7 @@ import React from 'react';
 
 import { Restaurant } from '@/lib/types/restaurant';
 
-import RestaurantCard from './RestaurantCard';
+import UnifiedRestaurantCard from './UnifiedRestaurantCard';
 
 interface RestaurantGridProps {
   restaurants: Restaurant[];
@@ -78,9 +78,13 @@ export default function RestaurantGrid({
     <div className="container mx-auto px-2 py-2 pb-24">
       <div className="grid grid-cols-2 gap-1">
         {deduplicatedRestaurants.map((restaurant) => (
-          <RestaurantCard
+          <UnifiedRestaurantCard
             key={restaurant.id}
             restaurant={restaurant}
+            variant="default"
+            showFeedbackButton={true}
+            showBusinessType={true}
+            showReviewCount={true}
             {...(onRestaurantClick && { onCardClick: () => onRestaurantClick(restaurant) })}
           />
         ))}

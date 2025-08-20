@@ -20,6 +20,7 @@ export * from './search/AdvancedFilters';
 // Restaurant Components
 export * from './restaurant/RestaurantClaimForm';
 export * from './restaurant/HoursStatusBadge';
+export { default as UnifiedRestaurantCard } from './restaurant/UnifiedRestaurantCard';
 
 // Map Components
 export * from './map/InteractiveRestaurantMap';
@@ -38,4 +39,4 @@ export * from './layout/MobileActionButtons';
 export * from './newsletter/NewsletterSignup';
 
 // Marketplace Components
-export * from './marketplace/MarketplaceListingCard';
+// MarketplaceListingCard has been deleted - use EnhancedMarketplaceCard instead
