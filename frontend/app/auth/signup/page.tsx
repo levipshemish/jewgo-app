@@ -95,10 +95,13 @@ export default function SignUp() {
     setError(null);
     
     try {
+      // Compute safe redirect URL using corrected validation
+      const safeNext = validateRedirectUrl('/');
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent('/')}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

@@ -78,9 +78,16 @@ export async function GET(request: NextRequest) {
 
       // Persist Apple user name if provided (first consent only)
       const appleName = user.user_metadata?.full_name || user.user_metadata?.name;
-      if (appleName) {
+      if (appleName && appleName.trim()) {
         console.log('[OAUTH] Persisting Apple user name for user:', user.id);
-        await persistAppleUserName(user.id, appleName);
+        await persistAppleUserName(
+          user.id, 
+          appleName, 
+          'apple', 
+          user.app_metadata?.provider_user_id
+        );
+      } else {
+        console.log('[OAUTH] No Apple name provided for user:', user.id);
       }
 
       // Handle identity linking if email matches existing account

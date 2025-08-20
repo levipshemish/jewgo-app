@@ -301,8 +301,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                     textRendering: 'optimizeLegibility',
                     // Prevent mobile browser scaling
                     WebkitTextSizeAdjust: '100%',
-                    MozTextSizeAdjust: '100%',
-                    msTextSizeAdjust: '100%'
+                    textSizeAdjust: '100%'
                   }}
                   variants={tagVariants}
                   initial="idle"
@@ -351,8 +350,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                     textRendering: 'optimizeLegibility',
                     // Prevent mobile browser scaling
                     WebkitTextSizeAdjust: '100%',
-                    MozTextSizeAdjust: '100%',
-                    msTextSizeAdjust: '100%'
+                    textSizeAdjust: '100%'
                   }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >

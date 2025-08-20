@@ -105,10 +105,13 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     setError(null);
     
     try {
+      // Compute safe redirect URL using corrected validation
+      const safeNext = validateRedirectUrl(redirectTo);
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo || '/profile/settings')}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
         },
       });
 
