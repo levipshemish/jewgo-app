@@ -67,9 +67,10 @@ netlify env:import frontend/netlify.env
 3. Choose GitHub and select your repository
 4. Configure build settings:
    - Base directory: `frontend`
-   - Build command: `npm install && npm run validate-env && npm run build`
+   - Build command: `npm install && npm run build`
    - Publish directory: `.next`
-5. Click "Deploy site"
+5. **Important**: Set up environment variables in Netlify dashboard before deploying
+6. Click "Deploy site"
 
 #### Option B: Manual Deploy
 ```bash
@@ -124,9 +125,10 @@ The monitoring configuration now includes both Netlify and Vercel endpoints:
 ### Common Issues
 
 1. **Build Failures**
-   - Check that all environment variables are set
+   - Check that all environment variables are set in Netlify dashboard
    - Verify Node.js version (22)
    - Check build logs in Netlify dashboard
+   - **Note**: Environment validation is skipped during build, variables must be set in Netlify dashboard
 
 2. **Node.js Version Errors**
    - **Error**: `Attempting Node.js version '22 ' from .nvmrc`
