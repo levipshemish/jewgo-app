@@ -63,24 +63,20 @@ const cardVariants = {
 const heartVariants = {
   idle: { scale: 1 },
   hover: { 
-    scale: 1.1,
-    transition: { duration: 0.2 }
+    scale: 1.1
   },
   tap: { 
-    scale: 1.2,
-    transition: { duration: 0.15, ease: "easeOut" }
+    scale: 1.2
   }
 };
 
 const tagVariants = {
   idle: { scale: 1 },
   hover: { 
-    scale: 1.05,
-    transition: { duration: 0.2 }
+    scale: 1.05
   },
   tap: { 
-    scale: 0.98,
-    transition: { duration: 0.1 }
+    scale: 0.98
   }
 };
 
