@@ -252,6 +252,382 @@ export default function TestUnifiedCardPage() {
           </div>
         </div>
 
+        {/* Responsive Grid Layout */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            Responsive Grid Layout (2 columns, 4 rows)
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {/* Row 1 */}
+            <EnhancedProductCard
+                             data={{
+                 id: "1",
+                imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+                imageTag: "Italian",
+                imageTagLink: "/eatery?cuisine=italian",
+                title: "Pizza Palace",
+                badge: "4.8",
+                subtitle: "$$",
+                additionalText: "Authentic Italian",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                                 id: "2",
+                imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
+                imageTag: "Sushi",
+                imageTagLink: "/eatery?cuisine=japanese",
+                title: "Sakura Sushi",
+                badge: "4.6",
+                subtitle: "$$$",
+                additionalText: "Fresh & Traditional",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: "3",
+                imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+                imageTag: "Pizza",
+                imageTagLink: "/eatery?cuisine=pizza",
+                title: "Slice House",
+                badge: "4.4",
+                subtitle: "$",
+                additionalText: "Quick & Tasty",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: "4",
+                imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
+                imageTag: "Burger",
+                imageTagLink: "/eatery?cuisine=american",
+                title: "Burger Joint",
+                badge: "4.2",
+                subtitle: "$",
+                additionalText: "Classic American",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 5,
+                imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
+                imageTag: "Coffee",
+                imageTagLink: "/eatery?cuisine=cafe",
+                title: "Brew & Bean",
+                badge: "4.7",
+                subtitle: "$",
+                additionalText: "Artisan Coffee",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+
+            {/* Row 2 */}
+            <EnhancedProductCard
+              data={{
+                id: 6,
+                imageUrl: "https://images.unsplash.com/photo-1504674900240-9a9049b7d8ce?w=400&h=300&fit=crop",
+                imageTag: "Seafood",
+                imageTagLink: "/eatery?cuisine=seafood",
+                title: "Ocean's Catch",
+                badge: "4.9",
+                subtitle: "$$$",
+                additionalText: "Fresh Seafood",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 7,
+                imageUrl: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop",
+                imageTag: "Steak",
+                imageTagLink: "/eatery?cuisine=steakhouse",
+                title: "Prime Cuts",
+                badge: "4.8",
+                subtitle: "$$$$",
+                additionalText: "Premium Steaks",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 8,
+                imageUrl: "https://images.unsplash.com/photo-1563379091339-03246963d60a?w=400&h=300&fit=crop",
+                imageTag: "Thai",
+                imageTagLink: "/eatery?cuisine=thai",
+                title: "Thai Spice",
+                badge: "4.5",
+                subtitle: "$$",
+                additionalText: "Authentic Thai",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 9,
+                imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+                imageTag: "Mexican",
+                imageTagLink: "/eatery?cuisine=mexican",
+                title: "Taco Fiesta",
+                badge: "4.3",
+                subtitle: "$",
+                additionalText: "Street Tacos",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 10,
+                imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
+                imageTag: "Dessert",
+                imageTagLink: "/eatery?cuisine=dessert",
+                title: "Sweet Dreams",
+                badge: "4.6",
+                subtitle: "$$",
+                additionalText: "Artisan Desserts",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+
+            {/* Row 3 */}
+            <EnhancedProductCard
+              data={{
+                id: 11,
+                imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+                imageTag: "Indian",
+                imageTagLink: "/eatery?cuisine=indian",
+                title: "Spice Garden",
+                badge: "4.7",
+                subtitle: "$$",
+                additionalText: "Authentic Indian",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 12,
+                imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
+                imageTag: "Chinese",
+                imageTagLink: "/eatery?cuisine=chinese",
+                title: "Golden Dragon",
+                badge: "4.4",
+                subtitle: "$$",
+                additionalText: "Traditional Chinese",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 13,
+                imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+                imageTag: "Mediterranean",
+                imageTagLink: "/eatery?cuisine=mediterranean",
+                title: "Olive Grove",
+                badge: "4.8",
+                subtitle: "$$$",
+                additionalText: "Fresh Mediterranean",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 14,
+                imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
+                imageTag: "Korean",
+                imageTagLink: "/eatery?cuisine=korean",
+                title: "Kimchi House",
+                badge: "4.5",
+                subtitle: "$$",
+                additionalText: "Authentic Korean",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 15,
+                imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
+                imageTag: "French",
+                imageTagLink: "/eatery?cuisine=french",
+                title: "Le Petit Bistro",
+                badge: "4.9",
+                subtitle: "$$$$",
+                additionalText: "Fine French Dining",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+
+            {/* Row 4 */}
+            <EnhancedProductCard
+              data={{
+                id: 16,
+                imageUrl: "https://images.unsplash.com/photo-1504674900240-9a9049b7d8ce?w=400&h=300&fit=crop",
+                imageTag: "Greek",
+                imageTagLink: "/eatery?cuisine=greek",
+                title: "Athens Taverna",
+                badge: "4.6",
+                subtitle: "$$",
+                additionalText: "Traditional Greek",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 17,
+                imageUrl: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop",
+                imageTag: "Vietnamese",
+                imageTagLink: "/eatery?cuisine=vietnamese",
+                title: "Pho Palace",
+                badge: "4.4",
+                subtitle: "$",
+                additionalText: "Fresh Vietnamese",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 18,
+                imageUrl: "https://images.unsplash.com/photo-1563379091339-03246963d60a?w=400&h=300&fit=crop",
+                imageTag: "Lebanese",
+                imageTagLink: "/eatery?cuisine=lebanese",
+                title: "Cedar House",
+                badge: "4.7",
+                subtitle: "$$",
+                additionalText: "Authentic Lebanese",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 19,
+                imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
+                imageTag: "Turkish",
+                imageTagLink: "/eatery?cuisine=turkish",
+                title: "Istanbul Grill",
+                badge: "4.3",
+                subtitle: "$$",
+                additionalText: "Traditional Turkish",
+                showHeart: true,
+                isLiked: false
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+            <EnhancedProductCard
+              data={{
+                id: 20,
+                imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
+                imageTag: "Spanish",
+                imageTagLink: "/eatery?cuisine=spanish",
+                title: "Tapas Bar",
+                badge: "4.8",
+                subtitle: "$$$",
+                additionalText: "Authentic Spanish",
+                showHeart: true,
+                isLiked: true
+              }}
+              onCardClick={handleCardClick}
+              onLikeToggle={handleLikeToggle}
+              onTagClick={handleTagClick}
+              className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+            />
+          </div>
+        </div>
+
         {/* Raw Data Display */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-md p-6">
