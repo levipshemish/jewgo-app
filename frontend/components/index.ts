@@ -38,5 +38,4 @@ export * from './layout/MobileActionButtons';
 export * from './newsletter/NewsletterSignup';
 
 // Marketplace Components
-export * from './marketplace/ProductCard';
 export * from './marketplace/MarketplaceListingCard';
