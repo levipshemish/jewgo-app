@@ -361,8 +361,6 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
     // Optimize webpack cache to reduce serialization warnings
     webpackBuildWorker: true,
-    // Disable static generation to avoid Supabase issues
-    staticGenerationAsyncStorage: false,
   },
 
   // Disable prerendering to avoid build errors

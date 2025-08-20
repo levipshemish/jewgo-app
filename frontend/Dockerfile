@@ -11,6 +11,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY package-lock.json ./
 
+# Copy Prisma schema before installing dependencies
+COPY prisma ./prisma/
+
 # Install dependencies
 RUN npm ci
 
@@ -40,7 +43,13 @@ RUN adduser -S nextjs -u 1001
 
 # Change ownership of the app directory
 RUN chown -R nextjs:nodejs /app
+
+# Switch to non-root user
 USER nextjs
 
-# Start the application with runtime environment validation
-CMD ["sh", "-c", "npm run validate-env-runtime && npm run start"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# Start the application
+CMD ["npm", "start"]
