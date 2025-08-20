@@ -83,7 +83,11 @@ export async function middleware(req: NextRequest) {
     if ((requiresAuth || requiresAdmin) && !user) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth/signin";
-      url.searchParams.set("redirectTo", path);
+      
+      // If they're trying to access /profile, redirect them to /profile/settings after sign-in
+      const redirectPath = path === "/profile" ? "/profile/settings" : path;
+      url.searchParams.set("redirectTo", redirectPath);
+      
       return NextResponse.redirect(url);
     }
 
@@ -119,7 +123,11 @@ export async function middleware(req: NextRequest) {
     if (requiresAuth || requiresAdmin) {
       const url = req.nextUrl.clone();
       url.pathname = "/auth/signin";
-      url.searchParams.set("redirectTo", path);
+      
+      // If they're trying to access /profile, redirect them to /profile/settings after sign-in
+      const redirectPath = path === "/profile" ? "/profile/settings" : path;
+      url.searchParams.set("redirectTo", redirectPath);
+      
       return NextResponse.redirect(url);
     }
 
