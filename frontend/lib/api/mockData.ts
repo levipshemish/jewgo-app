@@ -237,11 +237,11 @@ export const mockExportUserData = async (): Promise<any> => {
       favoriteCertifications: ['ORB', 'KM']
     },
     favorites: [
-      { id: 1, name: 'Kosher Deli', addedAt: '2024-01-15' },
-      { id: 2, name: 'Miami Kosher Market', addedAt: '2024-01-10' }
+      { id: "1", name: 'Kosher Deli', addedAt: '2024-01-15' },
+      { id: "2", name: 'Miami Kosher Market', addedAt: '2024-01-10' }
     ],
     reviews: [
-      { id: 1, restaurantName: 'Miami Kosher Market', rating: 5, comment: 'Great food!', date: '2024-01-12' }
+      { id: "1", restaurantName: 'Miami Kosher Market', rating: 5, comment: 'Great food!', date: '2024-01-12' }
     ],
     activity: {
       restaurantsVisited: 12,
