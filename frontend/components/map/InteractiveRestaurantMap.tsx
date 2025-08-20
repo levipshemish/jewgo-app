@@ -272,7 +272,7 @@ export default function InteractiveRestaurantMap({
         const marker = createMarker(restaurant, map);
         if (marker) {
           newMarkers.push(marker);
-          markersMapRef.current.set(restaurant.id, marker);
+          markersMapRef.current.set(parseInt(restaurant.id.toString()), marker);
         }
       };
       
@@ -290,7 +290,7 @@ export default function InteractiveRestaurantMap({
       // Update refs and apply clustering after processing
       const finalizeMarkers = () => {
         markersRef.current = newMarkers;
-        currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
+        currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => parseInt(r.id.toString())) : []);
         applyClustering(map);
       };
       
@@ -593,14 +593,14 @@ export default function InteractiveRestaurantMap({
 
     // Smart marker management: only update what's necessary
     const currentIds = new Set(currentRenderedIdsRef.current);
-    const newIds = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
+    const newIds = new Set(Array.isArray(inView) ? inView.map(r => parseInt(r.id.toString())) : []);
     
     // Remove markers that are no longer in view
     const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
     toRemove.forEach(id => {
       const marker = markersMapRef.current.get(id);
       if (marker) {
-        const restaurant = (Array.isArray(inView) ? inView.find(r => r.id === id) : null) || restaurantsWithCoords.find(r => r.id === id);
+        const restaurant = (Array.isArray(inView) ? inView.find(r => parseInt(r.id.toString()) === parseInt(id.toString())) : null) || restaurantsWithCoords.find(r => parseInt(r.id.toString()) === parseInt(id.toString()));
         if (restaurant) {
           const key = getRestaurantKey(restaurant);
           returnMarkerToPool(marker, key);
@@ -610,14 +610,14 @@ export default function InteractiveRestaurantMap({
     });
 
     // Add markers that are newly in view
-    const toAdd = Array.isArray(inView) ? inView.filter(r => !currentIds.has(r.id)) : [];
+    const toAdd = Array.isArray(inView) ? inView.filter(r => !currentIds.has(parseInt(r.id.toString()))) : [];
     
     // Update markers that need visual updates (selected state, rating changes, etc.)
     const toUpdate = Array.isArray(inView) ? inView.filter(r => {
-      if (!currentIds.has(r.id)) { 
+      if (!currentIds.has(parseInt(r.id.toString()))) { 
         return false; 
       }
-      const marker = markersMapRef.current.get(r.id);
+      const marker = markersMapRef.current.get(parseInt(r.id.toString()));
       if (!marker) { 
         return false; 
       }
@@ -634,7 +634,7 @@ export default function InteractiveRestaurantMap({
     // Keep existing markers that don't need updates
     (Array.isArray(inView) ? inView : []).forEach(r => {
       if (!toAdd.some(add => add.id === r.id) && !toUpdate.some(update => update.id === r.id)) {
-        const existingMarker = markersMapRef.current.get(r.id);
+        const existingMarker = markersMapRef.current.get(parseInt(r.id.toString()));
         if (existingMarker) {
           newMarkers.push(existingMarker);
         }
@@ -653,7 +653,7 @@ export default function InteractiveRestaurantMap({
             // Store the restaurant key for future comparison
             (marker as any)._restaurantKey = getRestaurantKey(restaurant);
             newMarkers.push(marker);
-            markersMapRef.current.set(restaurant.id, marker);
+            markersMapRef.current.set(parseInt(restaurant.id.toString()), marker);
           }
         },
         5, // batchSize
@@ -661,7 +661,7 @@ export default function InteractiveRestaurantMap({
         () => {
           // Completion callback
           markersRef.current = newMarkers;
-          currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
+          currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => parseInt(r.id.toString())) : []);
           applyClustering(map);
         }
       );
@@ -670,7 +670,7 @@ export default function InteractiveRestaurantMap({
     } else {
       // No new markers to add/update, just update refs
       markersRef.current = newMarkers;
-      currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => r.id) : []);
+      currentRenderedIdsRef.current = new Set(Array.isArray(inView) ? inView.map(r => parseInt(r.id.toString())) : []);
       applyClustering(map);
     }
   }, [restaurantsWithCoords, selectedRestaurantId, showRatingBubbles, onRestaurantSelect, cleanupMarkers, createMarker, applyClustering, getRestaurantKey, getPooledMarker, returnMarkerToPool]);
@@ -996,7 +996,7 @@ export default function InteractiveRestaurantMap({
 
   // Enhanced info window content creation with caching
   const createInfoWindowContent = useCallback((restaurant: Restaurant, distanceFromUser?: number | null) => {
-    const cacheKey = restaurant.id;
+    const cacheKey = parseInt(restaurant.id.toString());
     const now = Date.now();
     
     // Check cache first

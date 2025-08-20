@@ -279,7 +279,7 @@ export function useMarkerManagement({
 
       // Add event listeners
       marker.addListener('gmp-click', () => {
-        onRestaurantSelect?.(restaurant.id);
+        onRestaurantSelect?.(parseInt(restaurant.id.toString()));
       });
 
       return marker;
