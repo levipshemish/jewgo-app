@@ -69,6 +69,9 @@ export async function middleware(req: NextRequest) {
       error,
     } = await supabase.auth.getUser();
 
+    // Debug logging
+    console.log(`[Middleware] Path: ${path}, User: ${user?.email || 'none'}, Error: ${error?.message || 'none'}`);
+
     // Check if route requires authentication
     const requiresAuth = PROTECTED_PATHS.some((p) => 
       path === p || path.startsWith(`${p  }/`)
@@ -81,6 +84,7 @@ export async function middleware(req: NextRequest) {
 
     // Redirect to sign in if authentication is required but user is not authenticated
     if ((requiresAuth || requiresAdmin) && !user) {
+      console.log(`[Middleware] Redirecting ${path} to signin - no user found`);
       const url = req.nextUrl.clone();
       url.pathname = "/auth/signin";
       
