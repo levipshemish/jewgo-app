@@ -21,7 +21,7 @@ const BACKEND_URL = (() => {
   }
   
   // Default to the correct production URL
-  return 'https://jewgo.onrender.com';
+  return 'https://jewgo-app-oyoh.onrender.com';
 })();
 
 /**

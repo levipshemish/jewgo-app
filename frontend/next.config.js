@@ -3,7 +3,7 @@
 const BACKEND_URL = (
   process.env["NEXT_PUBLIC_BACKEND_URL"] &&
   /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
-) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo.onrender.com';
+) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo-app-oyoh.onrender.com';
 const isCI = process.env.CI === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
 const nextConfig = {
   eslint: {
@@ -17,7 +17,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || '5060e374c6d88aacf8fea324',
-    NEXT_PUBLIC_BACKEND_URL: process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com',
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || Date.now().toString(),
     // Prisma Query Engine configuration
     PRISMA_QUERY_ENGINE_TYPE: process.env.PRISMA_QUERY_ENGINE_TYPE || 'library',
