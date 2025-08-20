@@ -2,8 +2,8 @@
   # Set the directory to the frontend folder where Next.js is located
   base = "frontend"
   
-  # Build command for Next.js (ensure devDependencies are installed)
-  command = "npm ci --include=dev && npm run build"
+  # Build command for Next.js (clear cache and ensure devDependencies are installed)
+  command = "npm ci --include=dev && rm -rf .next && rm -rf .netlify && npm run build"
   
   # Output directory for the built files
   publish = ".next"

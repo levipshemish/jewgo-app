@@ -1,0 +1,34 @@
+# Ignore build cache and temporary files
+.next/
+.netlify/
+.cache/
+*.pack
+*.pack.*
+webpack-cache/
+
+# Ignore reports and analysis files
+reports/
+*.report.json
+jscpd-report.json
+
+# Ignore development files
+.env.local
+.env.development
+.env.test
+
+# Ignore node modules (they'll be installed fresh)
+node_modules/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

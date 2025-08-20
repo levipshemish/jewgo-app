@@ -70,3 +70,11 @@ Thumbs.db
 reports/
 *.report.json
 jscpd-report.json
+
+# Build cache and temporary files
+.next/
+.netlify/
+.cache/
+*.pack
+*.pack.*
+webpack-cache/
