@@ -60,7 +60,9 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       if (data?.user) {
         // User authenticated successfully
         console.log('Sign-in successful, redirecting to:', redirectTo || '/profile/settings');
-        router.push(redirectTo || '/profile/settings');
+        
+        // Force a full page navigation to ensure the redirect works
+        window.location.href = redirectTo || '/profile/settings';
       }
     } catch {
       setError('Sign in failed');

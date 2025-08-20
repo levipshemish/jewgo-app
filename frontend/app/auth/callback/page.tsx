@@ -35,7 +35,9 @@ function AuthCallbackContent() {
           // Session established successfully
           const redirectTo = searchParams.get("redirectTo") || '/profile/settings';
           console.log('Redirecting to:', redirectTo);
-          router.push(redirectTo);
+          
+          // Force a full page navigation to ensure the redirect works
+          window.location.href = redirectTo;
         } else {
           setError('Failed to establish session');
         }
