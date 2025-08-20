@@ -219,7 +219,7 @@ export default function TestUnifiedCardPage() {
                   onCardClick={handleCardClick}
                   onLikeToggle={handleLikeToggle}
                   onTagClick={handleTagClick}
-                  className="w-full max-w-sm !bg-transparent !shadow-none [&_*]:!text-gray-900"
+                  className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
                 />
               </div>
             ) : (
@@ -241,7 +241,7 @@ export default function TestUnifiedCardPage() {
                   onCardClick={handleCardClick}
                   onLikeToggle={handleLikeToggle}
                   onTagClick={handleTagClick}
-                  className="w-full max-w-sm !bg-transparent !shadow-none [&_*]:!text-gray-900"
+                  className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
                 />
               </div>
             ) : (
