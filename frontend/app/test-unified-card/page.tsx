@@ -371,7 +371,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 7,
+                id: "7",
                 imageUrl: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop",
                 imageTag: "Steak",
                 imageTagLink: "/eatery?cuisine=steakhouse",
@@ -389,7 +389,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 8,
+                id: "8",
                 imageUrl: "https://images.unsplash.com/photo-1563379091339-03246963d60a?w=400&h=300&fit=crop",
                 imageTag: "Thai",
                 imageTagLink: "/eatery?cuisine=thai",
@@ -407,7 +407,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 9,
+                id: "9",
                 imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
                 imageTag: "Mexican",
                 imageTagLink: "/eatery?cuisine=mexican",
@@ -425,7 +425,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 10,
+                id: "10",
                 imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
                 imageTag: "Dessert",
                 imageTagLink: "/eatery?cuisine=dessert",
@@ -445,7 +445,7 @@ export default function TestUnifiedCardPage() {
             {/* Row 3 */}
             <EnhancedProductCard
               data={{
-                id: 11,
+                id: "11",
                 imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
                 imageTag: "Indian",
                 imageTagLink: "/eatery?cuisine=indian",
@@ -463,7 +463,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 12,
+                id: "12",
                 imageUrl: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop",
                 imageTag: "Chinese",
                 imageTagLink: "/eatery?cuisine=chinese",
@@ -481,7 +481,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 13,
+                id: "13",
                 imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
                 imageTag: "Mediterranean",
                 imageTagLink: "/eatery?cuisine=mediterranean",
@@ -499,7 +499,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 14,
+                id: "14",
                 imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop",
                 imageTag: "Korean",
                 imageTagLink: "/eatery?cuisine=korean",
@@ -517,7 +517,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 15,
+                id: "15",
                 imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
                 imageTag: "French",
                 imageTagLink: "/eatery?cuisine=french",
@@ -537,7 +537,7 @@ export default function TestUnifiedCardPage() {
             {/* Row 4 */}
             <EnhancedProductCard
               data={{
-                id: 16,
+                id: "16",
                 imageUrl: "https://images.unsplash.com/photo-1504674900240-9a9049b7d8ce?w=400&h=300&fit=crop",
                 imageTag: "Greek",
                 imageTagLink: "/eatery?cuisine=greek",
@@ -555,7 +555,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 17,
+                id: "17",
                 imageUrl: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&h=300&fit=crop",
                 imageTag: "Vietnamese",
                 imageTagLink: "/eatery?cuisine=vietnamese",
@@ -573,7 +573,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 18,
+                id: "18",
                 imageUrl: "https://images.unsplash.com/photo-1563379091339-03246963d60a?w=400&h=300&fit=crop",
                 imageTag: "Lebanese",
                 imageTagLink: "/eatery?cuisine=lebanese",
@@ -591,7 +591,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 19,
+                id: "19",
                 imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop",
                 imageTag: "Turkish",
                 imageTagLink: "/eatery?cuisine=turkish",
@@ -609,7 +609,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 20,
+                id: "20",
                 imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
                 imageTag: "Spanish",
                 imageTagLink: "/eatery?cuisine=spanish",
