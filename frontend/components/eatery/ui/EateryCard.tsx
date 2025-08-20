@@ -30,8 +30,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
   useEffect(() => {
     const checkMobile = () => {
       const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
-      const isMobileView = windowWidth <= 768 || isMobile;
-      console.log('Mobile detection:', { windowWidth, isMobile, isMobileView });
+      const isMobileView = windowWidth <= 768;
       setIsMobileDevice(isMobileView);
     };
     
@@ -40,7 +39,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       window.addEventListener('resize', checkMobile);
       return () => window.removeEventListener('resize', checkMobile);
     }
-  }, [isMobile]);
+  }, []);
 
   // Sync with favorites manager
   useEffect(() => {
