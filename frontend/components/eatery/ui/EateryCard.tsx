@@ -248,7 +248,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, (max-width: 1024px) 50vw, 50vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1440px) 20vw, 16vw"
           unoptimized={heroSrc.includes('cloudinary.com')}
           priority={false}
           quality={85}
