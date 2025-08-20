@@ -8,8 +8,8 @@ services:
     environment:
       - NODE_ENV=development
       # Point to your production backend URL
-      - NEXT_PUBLIC_API_URL=https://jewgo.onrender.com
-      - NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+      - NEXT_PUBLIC_API_URL=https://jewgo-app-oyoh.onrender.com
+      - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
       # Supabase Configuration - Update these with your actual values
       - NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n

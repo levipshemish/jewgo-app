@@ -9,22 +9,19 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY pnpm-lock.yaml* ./
-
-# Install pnpm if not present
-RUN npm install -g pnpm
+COPY package-lock.json ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 # Copy source code
 COPY . .
 
 # Generate Prisma client
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Build the application for production
-RUN pnpm build
+RUN npm run build
 
 # Expose port 3000
 EXPOSE 3000
@@ -38,4 +35,4 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Start the application
-CMD ["pnpm", "start"]
+CMD ["npm", "start"]

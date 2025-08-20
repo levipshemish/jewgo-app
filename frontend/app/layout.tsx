@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { FontOptimizer } from '@/components/ui/FontOptimizer'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
+import DevNavigation from '@/components/dev/DevNavigation'
 
 // NextAuth removed - using Supabase only
 import { roboto } from './fonts'
@@ -170,6 +171,7 @@ export default function RootLayout({
               </FontOptimizer>
               <Analytics />
               <ServiceWorkerRegistration />
+              <DevNavigation />
       
             </NotificationsProvider>
         </ErrorBoundary>

@@ -27,8 +27,8 @@ Sentry.init({
   // Environment
   environment: process.env.NODE_ENV || "development",
   
-  // Debug mode in development
-  debug: process.env.NODE_ENV === "development",
+  // Debug mode in development - only enable in development mode
+  debug: process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SENTRY_DEBUG === "true",
 });
 
 // Export the required hook for router transition tracking
