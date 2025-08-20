@@ -12,7 +12,6 @@ export * from './recaptcha';
 export * from './classNames';
 export * from './stringUtils';
 export * from './imageUrlValidator';
-export * from './imageValidation';
 export * from './favorites';
 export * from './scrollUtils';
 export * from './hours';
