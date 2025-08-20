@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-
-// Dynamically import Supabase client to avoid SSR issues
-const supabaseBrowser = dynamic(
-  () => import("@/lib/supabase/client").then(mod => ({ default: mod.supabaseBrowser })),
-  { ssr: false }
-);
 
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
+
+// Force dynamic rendering to avoid SSR issues
+export const dynamic = 'force-dynamic';
 
 interface User {
   id: string;
