@@ -85,7 +85,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: any, session) => {
+      async (event: any, session: any) => {
         setSession(session);
       }
     );
