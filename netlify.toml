@@ -84,8 +84,3 @@
 # Plugin configuration to work with the active plugin
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  
-  # Plugin inputs to handle secrets scanning properly
-  [plugins.inputs]
-    # Allow public environment variables in build output
-    includeEnvironment = true
