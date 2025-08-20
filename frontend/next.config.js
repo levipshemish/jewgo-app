@@ -24,10 +24,8 @@ const nextConfig = {
   },
   typescript: {
     // Fail builds in CI/production; allow relaxed checks locally
-    ignoreBuildErrors: !isCI,
+    ignoreDuringBuilds: !isCI,
   },
-  // Font optimization to prevent preload warnings
-  optimizeFonts: true,
   // Image optimization
   images: {
     domains: ['res.cloudinary.com', 'maps.googleapis.com'],
