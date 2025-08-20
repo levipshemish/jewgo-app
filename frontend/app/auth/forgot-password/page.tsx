@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

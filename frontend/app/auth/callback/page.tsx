@@ -5,8 +5,9 @@ import { useEffect, useState, Suspense, useRef } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-// Force dynamic rendering to avoid build issues
+// Disable static generation for this page
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function AuthCallbackContent() {
   const [status] = useState<string>("Processing authentication...");
@@ -45,7 +46,8 @@ function AuthCallbackContent() {
         } else {
           setError('Failed to establish session');
         }
-      } catch (_error) {
+      } catch (error) {
+        console.error('Authentication callback error:', error);
         setError('Authentication failed');
       } finally {
         isProcessingRef.current = false;

@@ -107,9 +107,16 @@ export default function FavoritesPage() {
     );
   }
 
-  // Don't render if not authenticated (will redirect)
+  // Show loading state if not authenticated (will redirect)
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="min-h-screen bg-[#f4f4f4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to sign in...</p>
+        </div>
+      </div>
+    );
   }
 
   // Filter favorites based on search query only (other filters require full restaurant data)

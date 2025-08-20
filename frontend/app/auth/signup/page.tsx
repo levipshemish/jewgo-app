@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { validatePassword } from "@/lib/utils/password-validation";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -26,9 +27,10 @@ export default function SignUp() {
       return;
     }
 
-    // Validate password strength
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+    // Use shared password validation
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors.join(", "));
       setPending(false);
       return;
     }

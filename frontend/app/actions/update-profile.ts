@@ -33,8 +33,16 @@ export async function updateProfile(data: ProfileData) {
 
     // Check username uniqueness if username is being changed
     if (validatedData.username) {
-      const currentProfile = user.user_metadata?.profile || {};
-      if (validatedData.username !== currentProfile.username) {
+      // Get current profile from database to check if username is actually changing
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      const currentUsername = currentProfile?.username || user.user_metadata?.profile?.username;
+      
+      if (validatedData.username !== currentUsername) {
         const { data: existingUser, error: checkError } = await supabase
           .from('profiles')
           .select('id')

@@ -6,6 +6,10 @@ import { FormEvent, useState, Suspense, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
   const searchParams = useSearchParams();
@@ -27,7 +31,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const { data, error } = await supabaseBrowser.auth.getSession();
+        const { error } = await supabaseBrowser.auth.getSession();
         if (error) {
           setDebugInfo(`Connection error: ${error.message}`);
         } else {
@@ -61,6 +65,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       // Use Next.js router for better UX and state preservation
       router.push(redirectTo || '/profile/settings');
     } catch (err) {
+      console.error('Sign in error:', err);
       setError('Sign in failed');
     } finally {
       setPending(false);
@@ -83,6 +88,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
         setError(error.message);
       }
     } catch (err) {
+      console.error('Google sign in error:', err);
       setError('Google sign in failed');
     } finally {
       setPending(false);

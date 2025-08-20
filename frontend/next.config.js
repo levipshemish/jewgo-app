@@ -107,6 +107,13 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      // Disable static generation for auth pages
+      {
+        source: '/auth/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
     ];
   },
   // Image optimization configuration
@@ -131,9 +138,14 @@ const nextConfig = {
     // Removed @prisma/client from optimizePackageImports to prevent Query Engine bundling issues
     optimizePackageImports: ['lucide-react'],
   },
+
   // Disable prerendering to avoid build errors
   trailingSlash: false,
   generateEtags: false,
+  // Disable static generation for auth pages to prevent build errors
+  async generateStaticParams() {
+    return [];
+  },
   // Redirects configuration
   async redirects() {
     return [

@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { validatePassword } from "@/lib/utils/password-validation";
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -31,22 +36,6 @@ function ResetPasswordForm() {
     }
   }, [searchParams]);
 
-  const validatePassword = (password: string) => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!/(?=.*[a-z])/.test(password)) {
-      return "Password must contain at least one lowercase letter";
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return "Password must contain at least one uppercase letter";
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -59,16 +48,17 @@ function ResetPasswordForm() {
     setIsLoading(true);
     setError(null);
 
-    // Validate passwords
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      setError(passwordError);
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       setIsLoading(false);
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    // Use shared password validation
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors.join(", "));
       setIsLoading(false);
       return;
     }
