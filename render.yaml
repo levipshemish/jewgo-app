@@ -12,8 +12,8 @@ services:
       - key: PIP_NO_DEFAULT_INDEX
         value: "false"
       - key: CORS_ORIGINS
-        value: "https://jewgo.app,https://jewgo-app.vercel.app,https://jewgo.netlify.app,http://localhost:3000,http://127.0.0.1:3000"
-        # Updated CORS configuration to include Netlify domain
+        value: "https://jewgo.app,https://jewgo-app.vercel.app,https://jewgo.netlify.app,https://jewgo-app.netlify.app,http://localhost:3000,http://127.0.0.1:3000"
+        # Updated CORS configuration to include all Netlify domains
       - key: ENVIRONMENT
         value: "production"
     buildFilter:

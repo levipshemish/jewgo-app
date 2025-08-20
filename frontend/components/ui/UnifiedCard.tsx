@@ -232,8 +232,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       className={cn(
         "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
         "md:hover:shadow-2xl transition-shadow duration-300",
-        "max-md:w-full max-md:max-w-[160px] max-md:mx-auto",
-        "max-sm:max-w-[140px] max-sm:p-2",
+        "max-md:w-full max-md:max-w-[180px] max-md:mx-auto",
+        "max-sm:max-w-[160px] max-sm:p-2",
         "xl:w-[220px]",
         className
       )}
@@ -259,7 +259,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         <div className="w-full h-[140px] max-sm:h-[120px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
-            <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+            <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             </div>
           )}
@@ -271,7 +271,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               alt={cardData.title || 'Product image'}
               fill
               className={cn(
-                "object-cover transition-opacity duration-300",
+                "object-cover transition-opacity duration-300 rounded-[20px]",
                 imageLoading ? 'opacity-0' : 'opacity-100'
               )}
               onLoad={() => setImageLoading(false)}
@@ -288,7 +288,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
           {/* Fallback for Image Errors */}
           {imageError && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-[20px]">
               <div className="text-center">
                 <div className="text-gray-400 text-2xl mb-2">🍽️</div>
                 <div className="text-gray-500 text-xs font-medium truncate px-2">
@@ -417,7 +417,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         <div className="flex justify-between items-center gap-2 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
+              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0 max-w-[60%]"
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
@@ -425,7 +425,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-xs text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0"
+              className="text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 max-w-[35%] truncate"
               aria-label={`Additional info: ${cardData.additionalText}`}
             >
               {cardData.additionalText}
