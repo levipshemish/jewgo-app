@@ -184,6 +184,9 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         })
       }}
     >
+      {/* Persistent live region for announcements */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+      </span>
       {/* Image Container - Fixed aspect ratio for consistent heights */}
       <div className="relative aspect-[5/4] overflow-hidden rounded-3xl flex-shrink-0">
         {/* Loading Placeholder */}
