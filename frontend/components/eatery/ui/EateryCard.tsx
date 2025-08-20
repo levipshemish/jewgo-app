@@ -24,7 +24,20 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
   const [isFavorited, setIsFavorited] = useState(false);
   const { handleImmediateTouch, isMobile } = useMobileTouch();
   
-  const isMobileDevice = isMobile || (typeof window !== 'undefined' && window.innerWidth <= 768);
+  // Enhanced mobile detection with state
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileView = (typeof window !== 'undefined' && window.innerWidth <= 768) || isMobile;
+      setIsMobileDevice(isMobileView);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [isMobile]);
 
   // Sync with favorites manager
   useEffect(() => {

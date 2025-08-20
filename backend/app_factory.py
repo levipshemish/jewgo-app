@@ -1836,7 +1836,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                     else:
                         hours_doc = hours_json
                     
-                    formatted_hours = HoursFormatter.format_for_display(hours_doc)
+                    formatted_hours = HoursFormatter.for_display(hours_doc)
                     return jsonify(formatted_hours), 200
                     
                 except Exception as e:
