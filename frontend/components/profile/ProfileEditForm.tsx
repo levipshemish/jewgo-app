@@ -52,9 +52,13 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        console.log('Loading profile data...');
         const result = await getCurrentProfile();
+        console.log('Profile load result:', result);
+        
         if (result.success && result.data) {
           const profileData = result.data;
+          console.log('Profile data loaded:', profileData);
           
           // Set form values
           setValue("username", profileData.username);
@@ -75,9 +79,11 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
           
           setIsInitialized(true);
         } else {
+          console.error('Failed to load profile:', result.error);
           showError("Failed to load profile data");
         }
       } catch (error) {
+        console.error('Error loading profile:', error);
         showError("Failed to load profile data");
       }
     };

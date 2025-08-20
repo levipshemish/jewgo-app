@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { supabaseBrowser } from "@/lib/supabase/client";
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -28,24 +29,22 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // Check if we're in a browser environment
-        if (typeof window === 'undefined') {
-          setIsLoading(false);
-          return;
-        }
-        
-        // Dynamically import and use Supabase client
-        const { supabaseBrowser } = await import("@/lib/supabase/client");
+        console.log('Loading user data...');
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        console.log('User load result:', { user, error });
         
         if (user) {
-          setUser({
+          const userData = {
             id: user.id,
             email: user.email || '',
             name: user.user_metadata?.full_name || user.user_metadata?.name,
             provider: 'supabase',
             avatar_url: user.user_metadata?.avatar_url || null
-          });
+          };
+          console.log('Setting user data:', userData);
+          setUser(userData);
+        } else {
+          console.log('No user found');
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -173,7 +172,6 @@ function AccountSettings({ user }: { user: User }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { supabaseBrowser } = await import("@/lib/supabase/client");
       const { error } = await supabaseBrowser.auth.updateUser({
         data: { full_name: name }
       });
