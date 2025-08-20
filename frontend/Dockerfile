@@ -20,15 +20,16 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Set production environment
+# Set production environment and Docker flag
 ENV NODE_ENV=production
 ENV CI=true
+ENV DOCKER=true
 
-# Validate environment variables (matching Vercel build)
-RUN npm run validate-env
+# Run build-time environment validation
+RUN npm run validate-env-build
 
 # Build the application for production (matching Vercel build)
-RUN npm run build:production
+RUN npm run build
 
 # Expose port 3000
 EXPOSE 3000
@@ -41,5 +42,5 @@ RUN adduser -S nextjs -u 1001
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
-# Start the application
-CMD ["npm", "start:production"]
+# Start the application with runtime environment validation
+CMD ["sh", "-c", "npm run validate-env-runtime && npm run start"]

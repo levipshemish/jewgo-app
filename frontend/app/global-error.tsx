@@ -1,16 +1,16 @@
 "use client";
 
-// Temporarily disable Sentry to fix module resolution issues
+// Temporarily disable Sentry to fix Edge Runtime module conflicts
 // import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
-    // Temporarily disabled Sentry to fix module resolution issues
+    // Temporarily disabled Sentry to fix Edge Runtime module conflicts
     // try {
     //   Sentry.captureException(error);
     // } catch (sentryError) {
-    //   // Fallback logging for when Sentry is disabled or fails
+    //   // Fallback logging for when Sentry fails
     //   console.error('Global error caught:', error);
     //   console.error('Sentry error:', sentryError);
     // }

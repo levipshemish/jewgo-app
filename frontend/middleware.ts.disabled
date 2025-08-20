@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from "next/server";
+
+// Use nodejs runtime to avoid Edge Runtime module conflicts
+export const runtime = 'nodejs';
+
+// Define protected routes that require authentication
+const PROTECTED_PATHS = [
+  "/profile", 
+  "/favorites", 
+  "/reviews",
+  "/account",
+  "/add-eatery"
+];
+
+// Define admin routes that require admin privileges
+const ADMIN_PATHS = ["/admin"];
+
+// Define public auth routes
+const AUTH_PATHS = [
+  "/auth/signin",
+  "/auth/signup", 
+  "/auth/supabase-signin",
+  "/auth/supabase-signup",
+  "/auth/callback",
+  "/auth/oauth-success"
+];
+
+// Temporarily disable middleware to fix Edge Runtime module issues
+export async function middleware(req: NextRequest) {
+  // Simply pass through all requests to avoid Edge Runtime module conflicts
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - api routes (handled separately)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api).*)",
+  ],
+};

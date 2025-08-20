@@ -1,8 +1,8 @@
-// Temporarily disable instrumentation to fix server-side issues
+// Temporarily disable Sentry to fix Edge Runtime module conflicts
 // import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
-  // Temporarily disabled to fix server-side issues
+  // Temporarily disabled to fix Edge Runtime module conflicts
   // try {
   //   if (process.env.NEXT_RUNTIME === 'nodejs') {
   //     await import('./sentry.server.config');
@@ -12,6 +12,7 @@ export async function register() {
   //     await import('./sentry.edge.config');
   //   }
   // } catch (error) {
+  //   // Silently handle Sentry initialization errors to prevent crashes
   //   console.warn('Sentry initialization failed:', error);
   // }
 }

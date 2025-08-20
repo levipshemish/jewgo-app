@@ -46,6 +46,28 @@ services:
     restart: unless-stopped
     command: python -m flask run --host=0.0.0.0 --port=5000
 
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DOCKER=true
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:5000
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+    env_file:
+      - ./frontend/.env.local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - jewgo-network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
 

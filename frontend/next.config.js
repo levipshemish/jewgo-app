@@ -4,8 +4,12 @@ const BACKEND_URL = (
   process.env["NEXT_PUBLIC_BACKEND_URL"] &&
   /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
 ) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo-app-oyoh.onrender.com';
-const isCI = process.env.CI === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
-const isDocker = process.env.DOCKER === 'true' || process.env.NODE_ENV === 'development'
+
+// Improved environment detection
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
+const isCI = process.env.CI === 'true' || isVercel || process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Import webpack optimization utilities
 const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
@@ -23,9 +27,9 @@ const nextConfig = {
     ignoreBuildErrors: !isCI,
   },
   env: {
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || (isDocker ? 'docker-build-default' : undefined),
     NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || '5060e374c6d88aacf8fea324',
-    NEXT_PUBLIC_BACKEND_URL: process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: process.env["NEXT_PUBLIC_BACKEND_URL"] || (isDocker ? 'http://backend:5000' : 'https://jewgo-app-oyoh.onrender.com'),
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || Date.now().toString(),
     // Prisma Query Engine configuration
     PRISMA_QUERY_ENGINE_TYPE: process.env.PRISMA_QUERY_ENGINE_TYPE || 'library',
@@ -40,7 +44,7 @@ const nextConfig = {
     // Apply webpack optimizations to reduce serialization warnings
     config = optimizeWebpackConfig(config, { isServer });
 
-    // Docker-specific optimizations
+    // Docker-specific optimizations (only apply if explicitly in Docker)
     if (isDocker) {
       // Add fallbacks for Docker environment
       config.resolve.fallback = {
@@ -74,6 +78,37 @@ const nextConfig = {
         '.json',
         ...(config.resolve.extensions || [])
       ];
+    }
+
+    // Vercel-specific optimizations
+    if (isVercel) {
+      // Ensure Vercel gets the same optimizations as production
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Vendor chunk
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      };
     }
 
     // Exclude archive directories from build using webpack resolve
@@ -217,14 +252,15 @@ const nextConfig = {
       const required = ['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY', 'NEXT_PUBLIC_BACKEND_URL'];
       const missing = required.filter((k) => !process.env[k] || String(process.env[k]).trim() === '');
       if (missing.length > 0) {
-        // In dev, warn; in prod (Vercel/CI), fail build
-        const isProd = process.env['NODE_ENV'] === 'production';
+        // In Docker build, use defaults; in prod (Vercel/CI), fail build
+        const isDockerBuild = process.env.DOCKER === 'true' && process.env.CI === 'true';
+        const isProd = process.env['NODE_ENV'] === 'production' && !isDockerBuild;
         const msg = `Missing required environment variables: ${missing.join(', ')}`;
         if (isProd) {
           throw new Error(msg);
         } else {
           // eslint-disable-next-line no-console
-          console.warn(msg);
+          console.warn(`⚠️  ${msg} - using defaults for Docker build`);
         }
       }
     }
@@ -367,7 +403,7 @@ const nextConfig = {
   },
 };
 
-// Temporarily disable Sentry to fix module resolution issues
+// Temporarily disable Sentry to fix Edge Runtime module conflicts
 // const { withSentryConfig } = require("@sentry/nextjs");
 
 // module.exports = withSentryConfig(

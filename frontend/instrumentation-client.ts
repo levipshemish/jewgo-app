@@ -1,4 +1,4 @@
-// Temporarily disable Sentry to fix module resolution issues
+// Temporarily disable Sentry to fix Edge Runtime module conflicts
 // import * as Sentry from "@sentry/nextjs";
 
 // Sentry.init({

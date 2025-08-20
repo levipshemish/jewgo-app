@@ -1,13 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import dynamic from 'next/dynamic'
-
-// Dynamically import components to prevent module system issues
-const EnhancedProductCard = dynamic(() => import("@/components/ui/UnifiedCard"), {
-  ssr: false,
-  loading: () => <div className="w-[200px] h-[200px] bg-gray-200 rounded-2xl animate-pulse" />
-})
+import { useState } from "react"
+import EnhancedProductCard from "@/components/ui/UnifiedCard"
 
 // Mock data for testing
 const mockRestaurantData = {
@@ -37,21 +31,6 @@ const mockMarketplaceData = {
 }
 
 export default function TestUnifiedCardPage() {
-  const [componentsLoaded, setComponentsLoaded] = useState(false)
-
-  useEffect(() => {
-    const loadComponents = async () => {
-      try {
-        // Wait for components to be available
-        await new Promise(resolve => setTimeout(resolve, 100))
-        setComponentsLoaded(true)
-      } catch (err) {
-        console.error("Error loading components:", err)
-      }
-    }
-
-    loadComponents()
-  }, [])
 
   const handleCardClick = (data: any) => {
     console.log("Card clicked:", data)
@@ -64,17 +43,6 @@ export default function TestUnifiedCardPage() {
   const handleTagClick = (tagLink: string, event: React.MouseEvent) => {
     console.log("Tag clicked:", tagLink)
     alert(`Tag link clicked! Would navigate to: ${tagLink}`)
-  }
-
-  if (!componentsLoaded) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading test data...</p>
-        </div>
-      </div>
-    )
   }
 
   return (
