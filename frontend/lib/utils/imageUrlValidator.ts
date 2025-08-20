@@ -1,17 +1,94 @@
 import { isProblematicCloudinaryUrl } from './imageValidation';
 /**
- * Image URL validation and fallback utilities
+ * Image URL validation and fallback utilities for JewGo
+ * Provides safe image URL handling with fallbacks
  */
 
-const INVALID_DOMAINS = [
-  'example.com',
-  'localhost',
-  '127.0.0.1',
-  'test.com',
-  'placeholder.com'
-];
+/**
+ * Get a safe image URL with fallback handling
+ * @param imageUrl - The original image URL
+ * @returns A safe image URL or fallback
+ */
+export function getSafeImageUrl(imageUrl?: string): string {
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    return '/images/default-restaurant.webp';
+  }
 
-const DEFAULT_RESTAURANT_IMAGE = '/images/default-restaurant.webp';
+  // Skip empty or whitespace-only URLs
+  if (imageUrl.trim() === '') {
+    return '/images/default-restaurant.webp';
+  }
+
+  // Check for problematic patterns
+  const problematicPatterns = [
+    'undefined',
+    'null',
+    'placeholder',
+    'default',
+    'fallback'
+  ];
+
+  const hasProblematicPattern = problematicPatterns.some(pattern => 
+    imageUrl.toLowerCase().includes(pattern)
+  );
+
+  if (hasProblematicPattern) {
+    return '/images/default-restaurant.webp';
+  }
+
+  // For Cloudinary URLs, ensure proper format
+  if (imageUrl.includes('cloudinary.com')) {
+    // Normalize known broken 'image_1.{ext}' variants
+    let normalizedUrl = imageUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
+    
+    // Add Cloudinary optimization parameters if missing
+    if (!normalizedUrl.includes('/f_auto,q_auto/')) {
+      normalizedUrl = normalizedUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+    }
+    
+    return normalizedUrl;
+  }
+
+  return imageUrl;
+}
+
+/**
+ * Check if a URL is likely to be accessible
+ */
+export function isLikelyAccessibleUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  // Basic URL validation
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Filter and validate image URLs
+ */
+export function filterValidImageUrls(urls: string[]): string[] {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
+
+  return urls.filter(url => {
+    if (!url || typeof url !== 'string') {
+      return false;
+    }
+
+    if (url.trim() === '') {
+      return false;
+    }
+
+    return isLikelyAccessibleUrl(url) && !getSafeImageUrl(url).includes('default-restaurant.webp');
+  });
+}
 
 /**
  * Validates if an image URL is safe to use with Next.js Image component
@@ -131,40 +208,6 @@ export function fixCloudinaryUrl(url: string): string {
   }
 
   return url;
-}
-
-/**
- * Returns a safe image URL, falling back to default if invalid
- * Updated to be less aggressive
- */
-export function getSafeImageUrl(url: string | null | undefined): string {
-  if (!url) {
-    return DEFAULT_RESTAURANT_IMAGE;
-  }
-  
-  // Initial quick reject for clearly broken Cloudinary URLs
-  if (url.includes('cloudinary.com') && /undefined|null/.test(url)) {
-    return DEFAULT_RESTAURANT_IMAGE;
-  }
-  
-  // Only reject URLs that are clearly problematic, not all image_1 patterns
-  if (url.includes('cloudinary.com') && isProblematicCloudinaryUrl(url)) {
-    return DEFAULT_RESTAURANT_IMAGE;
-  }
-
-  // Fix common URL issues first
-  const fixedUrl = fixCloudinaryUrl(url);
-
-  // Re-check after fixes in case the shape still matches a problematic pattern
-  if (fixedUrl.includes('cloudinary.com') && isProblematicCloudinaryUrl(fixedUrl)) {
-    return DEFAULT_RESTAURANT_IMAGE;
-  }
-
-  if (isValidImageUrl(fixedUrl)) {
-    return fixedUrl;
-  }
-
-  return DEFAULT_RESTAURANT_IMAGE;
 }
 
 /**

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { RestaurantsAPI } from "@/lib/api/restaurants"
 import { fetchMarketplaceListings } from "@/lib/api/marketplace"
-import UnifiedCard, { CardData } from "@/components/ui/UnifiedCard"
+import EnhancedProductCard from "@/components/ui/UnifiedCard"
 
 interface Restaurant {
   id: string
@@ -33,6 +33,33 @@ interface MarketplaceListing {
   thumbnail?: string
 }
 
+// Helper functions
+const formatPriceRange = (priceRange?: string, minCost?: number, maxCost?: number): string => {
+  if (priceRange) return priceRange
+  if (minCost && maxCost) return `$${minCost} - $${maxCost}`
+  if (minCost) return `From $${minCost}`
+  return "$10 - $35"
+}
+
+const formatPrice = (cents: number, currency = "USD"): string => {
+  const amount = cents / 100
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency,
+  }).format(amount)
+}
+
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return "Just now"
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  return `${Math.floor(diffInSeconds / 86400)}d ago`
+}
+
 export default function TestUnifiedCardPage() {
   const [restaurantData, setRestaurantData] = useState<Restaurant | null>(null)
   const [marketplaceData, setMarketplaceData] = useState<MarketplaceListing | null>(null)
@@ -47,7 +74,7 @@ export default function TestUnifiedCardPage() {
 
         // Fetch restaurant data
         const restaurantsResponse = await RestaurantsAPI.fetchRestaurants(1)
-        if (restaurantsResponse.restaurants?.length > 0) {
+        if (restaurantsResponse.restaurants && restaurantsResponse.restaurants.length > 0) {
           const restaurant = restaurantsResponse.restaurants[0]
           setRestaurantData({
             id: restaurant.id.toString(),
@@ -83,8 +110,8 @@ export default function TestUnifiedCardPage() {
           })
         }
       } catch (err) {
-        console.error('Error fetching data:', err)
-        setError('Failed to fetch data. Please try again.')
+        console.error("Error fetching data:", err)
+        setError("Failed to fetch data. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -93,13 +120,45 @@ export default function TestUnifiedCardPage() {
     fetchData()
   }, [])
 
-  const handleRestaurantLike = (data: CardData) => {
-    console.log('Restaurant liked:', data.name)
+  const handleCardClick = (data: any) => {
+    console.log("Card clicked:", data)
   }
 
-  const handleMarketplaceLike = (data: CardData) => {
-    console.log('Marketplace listing liked:', data.name)
+  const handleLikeToggle = (id: string, isLiked: boolean) => {
+    console.log("Like toggled:", { id, isLiked })
   }
+
+  const handleTagClick = (tagLink: string, event: React.MouseEvent) => {
+    console.log("Tag clicked:", tagLink)
+  }
+
+  // Transform restaurant data for the card
+  const restaurantCardData = restaurantData ? {
+    id: restaurantData.id,
+    imageUrl: restaurantData.image_url,
+    imageTag: restaurantData.kosher_category || "Kosher",
+    imageTagLink: "#",
+    title: restaurantData.name,
+    badge: restaurantData.rating?.toString() || "4.5",
+    subtitle: formatPriceRange(restaurantData.price_range, restaurantData.min_avg_meal_cost, restaurantData.max_avg_meal_cost),
+    additionalText: "Secondary additional text placeholder",
+    showHeart: true,
+    isLiked: false
+  } : null
+
+  // Transform marketplace data for the card
+  const marketplaceCardData = marketplaceData ? {
+    id: marketplaceData.id,
+    imageUrl: marketplaceData.thumbnail || marketplaceData.images?.[0],
+    imageTag: marketplaceData.category_name || "Category",
+    imageTagLink: "#",
+    title: marketplaceData.title,
+    badge: "Placeholder Badge",
+    subtitle: formatPrice(marketplaceData.price_cents, marketplaceData.currency),
+    additionalText: formatTimeAgo(marketplaceData.created_at),
+    showHeart: true,
+    isLiked: false
+  } : null
 
   if (loading) {
     return (
@@ -116,11 +175,11 @@ export default function TestUnifiedCardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-2xl mb-4">⚠️</div>
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
           <p className="text-gray-600 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
           </button>
@@ -130,168 +189,99 @@ export default function TestUnifiedCardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             UnifiedCard Component Test
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            This page demonstrates the UnifiedCard utility component with real API data from your database.
-            Both restaurant and marketplace cards use the same component with different data structures.
+            Testing the enhanced UnifiedCard component with real API data from your database.
+            This demonstrates how both restaurant and marketplace cards should look with standardized design.
           </p>
         </div>
 
         {/* Cards Container */}
-        <div className="flex flex-col lg:flex-row gap-8 justify-center items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Restaurant Card */}
-          <div className="flex-1 max-w-sm">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 text-center">
-                🍽️ Restaurant Card
-              </h2>
-              <div className="space-y-4">
-                {restaurantData ? (
-                              <UnifiedCard
-              data={restaurantData}
-              type="restaurant"
-              onFavoriteClick={handleRestaurantLike}
-              className="w-full"
-            />
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No restaurant data available
-                  </div>
-                )}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+              Restaurant Card
+            </h2>
+            {restaurantCardData ? (
+              <div className="flex justify-center">
+                <EnhancedProductCard
+                  data={restaurantCardData}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={handleLikeToggle}
+                  onTagClick={handleTagClick}
+                  className="w-full max-w-sm"
+                />
               </div>
-              
-              {/* Restaurant Data Structure */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Data Structure:</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• <strong>Tag:</strong> Kosher category (top left)</li>
-                  <li>• <strong>Title:</strong> Restaurant name</li>
-                  <li>• <strong>Badge:</strong> Rating (top right)</li>
-                  <li>• <strong>Additional Text:</strong> Price range</li>
-                  <li>• <strong>Secondary Text:</strong> City location</li>
-                </ul>
+            ) : (
+              <div className="text-center text-gray-500">
+                No restaurant data available
               </div>
-            </div>
+            )}
           </div>
 
           {/* Marketplace Card */}
-          <div className="flex-1 max-w-sm">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 text-center">
-                🛍️ Marketplace Card
-              </h2>
-              <div className="space-y-4">
-                {marketplaceData ? (
-                  <UnifiedCard
-                    data={{
-                      ...marketplaceData,
-                      name: marketplaceData.title // Map title to name for CardData
-                    }}
-                    type="marketplace"
-                    onFavoriteClick={handleMarketplaceLike}
-                    className="w-full"
-                  />
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No marketplace data available
-                  </div>
-                )}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+              Marketplace Card
+            </h2>
+            {marketplaceCardData ? (
+              <div className="flex justify-center">
+                <EnhancedProductCard
+                  data={marketplaceCardData}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={handleLikeToggle}
+                  onTagClick={handleTagClick}
+                  className="w-full max-w-sm"
+                />
               </div>
-              
-              {/* Marketplace Data Structure */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Data Structure:</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• <strong>Tag:</strong> Category name (top left)</li>
-                  <li>• <strong>Title:</strong> Product title</li>
-                  <li>• <strong>Badge:</strong> Listing type (top right)</li>
-                  <li>• <strong>Additional Text:</strong> Price in bold</li>
-                  <li>• <strong>Secondary Text:</strong> Timestamp</li>
-                </ul>
+            ) : (
+              <div className="text-center text-gray-500">
+                No marketplace data available
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* API Information */}
-        <div className="mt-12 bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            API Integration Details
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Restaurant API:</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Endpoint: <code className="bg-gray-100 px-1 rounded">/api/restaurants</code></li>
-                <li>• Data Source: PostgreSQL restaurants table</li>
-                <li>• Fields: name, image_url, rating, price_range, kosher_category, city</li>
-                <li>• Validation: Database field mapping constants</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Marketplace API:</h3>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Endpoint: <code className="bg-gray-100 px-1 rounded">/api/v4/marketplace/listings</code></li>
-                <li>• Data Source: PostgreSQL marketplace table</li>
-                <li>• Fields: title, price_cents, category_name, created_at, images</li>
-                <li>• Validation: Type-safe data handling</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Component Features */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            UnifiedCard Features
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">🎨 Design System</h3>
-              <p className="text-sm text-blue-700">
-                Consistent visual design across all card types with unified spacing, typography, and interactions.
-              </p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">🔗 Database Integration</h3>
-              <p className="text-sm text-green-700">
-                Direct mapping to your database schemas with validation utilities and type safety.
-              </p>
-            </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h3 className="font-semibold text-purple-900 mb-2">⚡ Performance</h3>
-              <p className="text-sm text-purple-700">
-                Optimized image loading, error handling, and accessibility features for production use.
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Raw Data Display */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            Raw API Data
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Restaurant Data:</h3>
-              <pre className="bg-gray-100 p-4 rounded-lg text-xs overflow-auto max-h-64">
-                {restaurantData ? JSON.stringify(restaurantData, null, 2) : 'No data available'}
-              </pre>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Marketplace Data:</h3>
-              <pre className="bg-gray-100 p-4 rounded-lg text-xs overflow-auto max-h-64">
-                {marketplaceData ? JSON.stringify(marketplaceData, null, 2) : 'No data available'}
-              </pre>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Restaurant API Data
+            </h3>
+            <pre className="text-xs text-gray-600 bg-gray-50 p-4 rounded overflow-auto max-h-64">
+              {restaurantData ? JSON.stringify(restaurantData, null, 2) : "No data"}
+            </pre>
           </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Marketplace API Data
+            </h3>
+            <pre className="text-xs text-gray-600 bg-gray-50 p-4 rounded overflow-auto max-h-64">
+              {marketplaceData ? JSON.stringify(marketplaceData, null, 2) : "No data"}
+            </pre>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="mt-12 bg-blue-50 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-800 mb-4">
+            Test Instructions
+          </h3>
+          <ul className="text-blue-700 space-y-2">
+            <li>• Click on the cards to test navigation</li>
+            <li>• Click the heart buttons to test favorites functionality</li>
+            <li>• Click the tags to test tag interactions</li>
+            <li>• Check the console for interaction logs</li>
+            <li>• Verify the responsive design on different screen sizes</li>
+          </ul>
         </div>
       </div>
     </div>

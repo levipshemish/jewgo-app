@@ -56,6 +56,8 @@
     "optimize:bundles": "node scripts/optimize-bundles.js",
     "optimize:css": "node scripts/optimize-css.js",
     "optimize:performance": "node scripts/performance-optimization.js",
+    "optimize:build": "node scripts/optimize-build.js",
+    "build:optimized": "npm run optimize:build && npm run build",
     "performance:audit": "npm run build && npx lighthouse --output=json --output-path=./performance-audit.json",
     "performance:report": "node scripts/generate-performance-report.js",
     "test:fonts": "node scripts/test-font-loading.js",

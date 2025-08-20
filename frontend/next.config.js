@@ -5,6 +5,9 @@ const BACKEND_URL = (
   /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
 ) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo-app-oyoh.onrender.com';
 const isCI = process.env.CI === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
+
+// Import webpack optimization utilities
+const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
 const nextConfig = {
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
@@ -24,19 +27,8 @@ const nextConfig = {
   },
   // Validate required env vars at build time (especially in CI/production)
   webpack: (config, { isServer }) => {
-    // Suppress OpenTelemetry warnings from Sentry
-    config.ignoreWarnings = [
-      /Critical dependency: the request of a dependency is an expression/,
-      /Module not found: Can't resolve 'encoding'/,
-    ];
-
-    // Optimize webpack cache to reduce serialization warnings
-    config.cache = {
-      ...config.cache,
-      type: 'filesystem',
-      compression: 'gzip',
-      maxAge: 172800000, // 2 days
-    };
+    // Apply webpack optimizations to reduce serialization warnings
+    config = optimizeWebpackConfig(config, { isServer });
 
     // Exclude archive directories from build
     config.module.rules.push({
@@ -46,12 +38,6 @@ const nextConfig = {
 
     // Handle Prisma Query Engine binaries for server-side rendering
     if (isServer) {
-      // Copy Prisma Query Engine binaries to the output directory
-      config.externals = config.externals || [];
-      config.externals.push({
-        '@prisma/client': 'commonjs @prisma/client',
-      });
-
       // Ensure Prisma binaries are properly bundled
       config.module.rules.push({
         test: /\.node$/,
