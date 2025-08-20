@@ -64,12 +64,42 @@ const formatTimeAgo = (dateString: string): string => {
   return `${Math.floor(diffInSeconds / 86400)}d ago`
 }
 
+// Mock data for Docker environment testing
+const mockRestaurantData: Restaurant = {
+  id: "1",
+  name: "Sample Restaurant",
+  image_url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop",
+  rating: 4.5,
+  star_rating: 4.5,
+  google_rating: 4.5,
+  price_range: "$$",
+  min_avg_meal_cost: 15,
+  max_avg_meal_cost: 30,
+  kosher_category: "Kosher",
+  city: "Miami",
+  review_snippets: "Great food and atmosphere!"
+}
+
+const mockMarketplaceData: MarketplaceListing = {
+  id: "1",
+  title: "Sample Marketplace Item",
+  price_cents: 2500,
+  currency: "USD",
+  city: "Miami",
+  kind: "sale",
+  category_name: "Electronics",
+  created_at: new Date().toISOString(),
+  images: ["https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop"],
+  thumbnail: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&h=300&fit=crop"
+}
+
 export default function TestUnifiedCardPage() {
   const [restaurantData, setRestaurantData] = useState<Restaurant | null>(null)
   const [marketplaceData, setMarketplaceData] = useState<MarketplaceListing | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [componentsLoaded, setComponentsLoaded] = useState(false)
+  const [useMockData, setUseMockData] = useState(false)
 
   useEffect(() => {
     const loadComponents = async () => {
@@ -94,6 +124,18 @@ export default function TestUnifiedCardPage() {
         setLoading(true)
         setError(null)
 
+        // Check if we're in a Docker environment or if APIs are available
+        const isDocker = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        
+        if (isDocker) {
+          console.log("Docker environment detected, using mock data")
+          setUseMockData(true)
+          setRestaurantData(mockRestaurantData)
+          setMarketplaceData(mockMarketplaceData)
+          setLoading(false)
+          return
+        }
+
         // Fetch restaurant data using dynamic import
         try {
           const { RestaurantsAPI } = await import("@/lib/api/restaurants")
@@ -117,6 +159,8 @@ export default function TestUnifiedCardPage() {
           }
         } catch (apiError) {
           console.warn("Failed to fetch restaurant data:", apiError)
+          setUseMockData(true)
+          setRestaurantData(mockRestaurantData)
         }
 
         // Fetch marketplace data using dynamic import
@@ -140,10 +184,15 @@ export default function TestUnifiedCardPage() {
           }
         } catch (apiError) {
           console.warn("Failed to fetch marketplace data:", apiError)
+          setUseMockData(true)
+          setMarketplaceData(mockMarketplaceData)
         }
       } catch (err) {
         console.error("Error fetching data:", err)
-        setError("Failed to fetch data. Please try again.")
+        setError("Failed to fetch data. Using mock data instead.")
+        setUseMockData(true)
+        setRestaurantData(mockRestaurantData)
+        setMarketplaceData(mockMarketplaceData)
       } finally {
         setLoading(false)
       }
@@ -206,7 +255,7 @@ export default function TestUnifiedCardPage() {
     )
   }
 
-  if (error) {
+  if (error && !useMockData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -236,9 +285,16 @@ export default function TestUnifiedCardPage() {
             UnifiedCard Component Test
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Testing the enhanced UnifiedCard component with real API data from your database.
+            Testing the enhanced UnifiedCard component with {useMockData ? 'mock' : 'real API'} data.
             This demonstrates how both restaurant and marketplace cards should look with standardized design.
           </p>
+          {useMockData && (
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+              <p className="text-yellow-800">
+                ⚠️ Using mock data (Docker environment detected or API unavailable)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Cards Container */}
@@ -696,6 +752,9 @@ export default function TestUnifiedCardPage() {
             <li>• Click the tags to test tag interactions</li>
             <li>• Check the console for interaction logs</li>
             <li>• Verify the responsive design on different screen sizes</li>
+            {useMockData && (
+              <li>• <strong>Note:</strong> Using mock data due to Docker environment or API unavailability</li>
+            )}
           </ul>
         </div>
       </div>

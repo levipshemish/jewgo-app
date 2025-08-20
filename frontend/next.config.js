@@ -40,6 +40,41 @@ const nextConfig = {
       config.resolve.alias['@/components/archive'] = false;
     }
 
+    // Fix module format conflicts for problematic dependencies
+    config.module.rules.push({
+      test: /node_modules\/require-in-the-middle/,
+      use: 'null-loader',
+    });
+
+    // Handle CommonJS/ESM conflicts
+    config.module.rules.push({
+      test: /\.m?js$/,
+      resolve: {
+        fullySpecified: false,
+      },
+    });
+
+    // Exclude problematic OpenTelemetry instrumentation from client bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'require-in-the-middle': false,
+        '@opentelemetry/instrumentation': false,
+        '@opentelemetry/instrumentation-http': false,
+        '@opentelemetry/instrumentation-express': false,
+        '@opentelemetry/instrumentation-pg': false,
+      };
+    }
+
+    // Add externals for problematic server-side modules
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'require-in-the-middle': 'commonjs require-in-the-middle',
+        '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation',
+      });
+    }
+
     // Handle Prisma Query Engine binaries for server-side rendering
     if (isServer) {
       // Ensure Prisma binaries are properly bundled

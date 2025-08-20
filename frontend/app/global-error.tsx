@@ -5,7 +5,14 @@ import { useEffect } from "react";
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    // Only capture exceptions if Sentry is enabled (check if DSN is set)
+    try {
+      Sentry.captureException(error);
+    } catch (sentryError) {
+      // Fallback logging for when Sentry is disabled or fails
+      console.error('Global error caught:', error);
+      console.error('Sentry error:', sentryError);
+    }
   }, [error]);
 
   return (

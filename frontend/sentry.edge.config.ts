@@ -5,15 +5,22 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// Temporarily disabled to fix Docker module format conflicts
+// Sentry.init({
+//   dsn: "https://48a8a5542011706348cddd01c6dc685a@o4509798929858560.ingest.us.sentry.io/4509798933004288",
+
+//   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+//   tracesSampleRate: 1,
+
+//   // Enable logs to be sent to Sentry
+//   enableLogs: true,
+
+//   // Setting this option to true will print useful information to the console while you're setting up Sentry.
+//   debug: false,
+// });
+
+// No-op initialization to prevent errors
 Sentry.init({
-  dsn: "https://48a8a5542011706348cddd01c6dc685a@o4509798929858560.ingest.us.sentry.io/4509798933004288",
-
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  debug: false,
+  dsn: "",
+  enabled: false,
 });
