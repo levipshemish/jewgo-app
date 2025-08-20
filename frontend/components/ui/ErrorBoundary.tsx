@@ -1,6 +1,7 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
+// Temporarily disable Sentry to fix module resolution issues
+// import * as Sentry from '@sentry/nextjs';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
@@ -42,33 +43,44 @@ export class ErrorBoundary extends Component<Props, State> {
   private logErrorToService(error: Error, errorInfo: ErrorInfo): void {
     // In production, this would send to your error reporting service
     if (process.env['NODE_ENV'] === 'production') {
-      try {
-        // Send to Sentry
-        Sentry.captureException(error, { 
-          extra: {
-            componentStack: errorInfo.componentStack,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            userAgent: navigator.userAgent,
-          }
-        });
-      } catch (sentryError) {
-        // Fallback logging when Sentry fails
-        console.error('Sentry error reporting failed, using fallback logging:', {
-          originalError: {
-            message: error.message,
-            stack: error.stack,
-            componentStack: errorInfo.componentStack,
-          },
-          sentryError: {
-            message: sentryError instanceof Error ? sentryError.message : String(sentryError),
-            stack: sentryError instanceof Error ? sentryError.stack : undefined,
-          },
-          timestamp: new Date().toISOString(),
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-        });
-      }
+      // Temporarily disabled Sentry to fix module resolution issues
+      // try {
+      //   // Send to Sentry
+      //   Sentry.captureException(error, { 
+      //     extra: {
+      //       componentStack: errorInfo.componentStack,
+      //       timestamp: new Date().toISOString(),
+      //       url: window.location.href,
+      //       userAgent: navigator.userAgent,
+      //     }
+      //   });
+      // } catch (sentryError) {
+      //   // Fallback logging when Sentry fails
+      //   console.error('Sentry error reporting failed, using fallback logging:', {
+      //     originalError: {
+      //       message: error.message,
+      //       stack: error.stack,
+      //       componentStack: errorInfo.componentStack,
+      //     },
+      //     sentryError: {
+      //       message: sentryError instanceof Error ? sentryError.message : String(sentryError),
+      //       stack: sentryError instanceof Error ? sentryError.stack : undefined,
+      //     },
+      //     timestamp: new Date().toISOString(),
+      //     url: window.location.href,
+      //     userAgent: navigator.userAgent,
+      //   });
+      // }
+      
+      // Simple error logging for now
+      console.error('Production error:', {
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      });
     } else {
       // Development logging
       console.error('Development error:', {

@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
+import { BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -191,10 +191,41 @@ export default function FavoritesPage() {
         />
         
         <div className="flex flex-col h-full">
-          <CategoryTabs 
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
+          {/* Simple tab navigation */}
+          <div className="bg-white border-b border-gray-200">
+            <div className="flex space-x-8 px-4">
+              <button
+                onClick={() => handleTabChange('favorites')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'favorites'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Favorites ({favorites.length})
+              </button>
+              <button
+                onClick={() => handleTabChange('recent')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'recent'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Recent (0)
+              </button>
+              <button
+                onClick={() => handleTabChange('saved')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'saved'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Saved (0)
+              </button>
+            </div>
+          </div>
 
           <div className="flex-1 overflow-hidden">
             {activeTab === 'favorites' && (
@@ -237,14 +268,27 @@ export default function FavoritesPage() {
                             ❤️
                           </button>
                         </div>
-                        {/* Image placeholder since FavoriteRestaurant doesn't have image_url */}
-                        <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center">
-                          <span className="text-gray-500 text-sm">No image</span>
-                        </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 space-y-1">
                           <p>Added: {new Date(restaurant.addedAt).toLocaleDateString()}</p>
-                          {restaurant.visitCount > 0 && <p>Visited: {restaurant.visitCount} times</p>}
-                          {restaurant.notes && <p>Notes: {restaurant.notes}</p>}
+                          <p>Visits: {restaurant.visitCount}</p>
+                          {restaurant.lastVisited && (
+                            <p>Last visited: {new Date(restaurant.lastVisited).toLocaleDateString()}</p>
+                          )}
+                          {restaurant.notes && (
+                            <p className="italic text-gray-500">"{restaurant.notes}"</p>
+                          )}
+                          {restaurant.tags && restaurant.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {restaurant.tags.map((tag, index) => (
+                                <span 
+                                  key={index}
+                                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -272,9 +316,11 @@ export default function FavoritesPage() {
               onFilterChange={handleFilterChange}
               onToggleFilter={handleToggleFilter}
               onDistanceChange={handleDistanceChange}
-              onClose={handleCloseFilters}
-              onApply={handleApplyFilters}
-              onReset={handleResetFilters}
+              onClearAll={handleResetFilters}
+              onApplyFilters={handleApplyFilters}
+              onCancelFilters={handleCloseFilters}
+              userLocation={null}
+              locationLoading={false}
             />
           )}
 

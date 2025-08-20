@@ -3,7 +3,8 @@
  * Provides consistent logging across the application with different log levels
  */
 
-import * as Sentry from '@sentry/nextjs';
+// Temporarily disable Sentry to fix module resolution issues
+// import * as Sentry from '@sentry/nextjs';
 
 export enum LogLevel {
   DEBUG = 0,
@@ -88,29 +89,48 @@ class Logger {
   }
 
   private sendToExternalService(level: LogLevel, message: string, context?: LogContext, error?: Error): void {
+    // Temporarily disabled Sentry to fix module resolution issues
     // Send to Sentry
+    // if (typeof window !== 'undefined') {
+    //   if (error) {
+    //     Sentry.captureException(error, {
+    //       level: LogLevel[level].toLowerCase() as any,
+    //       extra: {
+    //         message,
+    //         context,
+    //         timestamp: new Date().toISOString(),
+    //         url: window.location.href,
+    //         userAgent: navigator.userAgent,
+    //       }
+    //     });
+    //   } else {
+    //     Sentry.captureMessage(message, {
+    //       level: LogLevel[level].toLowerCase() as any,
+    //       extra: {
+    //         context,
+    //         timestamp: new Date().toISOString(),
+    //         url: window.location.href,
+    //         userAgent: navigator.userAgent,
+    //       }
+    //     });
+    //   }
+    // }
+    
+    // Simple console logging for now
     if (typeof window !== 'undefined') {
+      const logData = {
+        level: LogLevel[level],
+        message,
+        context,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      };
+      
       if (error) {
-        Sentry.captureException(error, {
-          level: LogLevel[level].toLowerCase() as any,
-          extra: {
-            message,
-            context,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            userAgent: navigator.userAgent,
-          }
-        });
+        console.error('Logger error:', { ...logData, error });
       } else {
-        Sentry.captureMessage(message, {
-          level: LogLevel[level].toLowerCase() as any,
-          extra: {
-            context,
-            timestamp: new Date().toISOString(),
-            url: window.location.href,
-            userAgent: navigator.userAgent,
-          }
-        });
+        console.log('Logger message:', logData);
       }
     }
   }
