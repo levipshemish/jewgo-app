@@ -30,9 +30,15 @@ const createFallbackClient = () => {
         persistSession: true,
         autoRefreshToken: true,
       },
+      // Disable realtime to prevent RealtimeClient constructor errors
       realtime: {
         params: {
           eventsPerSecond: 10,
+        },
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'jewgo-frontend',
         },
       },
     }
@@ -89,6 +95,11 @@ export const supabaseBrowser = (() => {
       realtime: {
         params: {
           eventsPerSecond: 10,
+        },
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'jewgo-frontend',
         },
       },
     }

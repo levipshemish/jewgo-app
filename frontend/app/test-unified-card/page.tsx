@@ -67,7 +67,7 @@ export default function TestUnifiedCardPage() {
               Restaurant Card
             </h2>
             <div className="flex justify-center w-full">
-              <div className="w-[160px] sm:w-[200px] flex-shrink-0">
+              <div className="w-[200px] flex-shrink-0">
                 <EnhancedProductCard
                   data={mockRestaurantData}
                   onCardClick={handleCardClick}
@@ -85,7 +85,7 @@ export default function TestUnifiedCardPage() {
               Marketplace Card
             </h2>
             <div className="flex justify-center w-full">
-              <div className="w-[160px] sm:w-[200px] flex-shrink-0">
+              <div className="w-[200px] flex-shrink-0">
                 <EnhancedProductCard
                   data={mockMarketplaceData}
                   onCardClick={handleCardClick}

@@ -104,7 +104,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
-    if (!cardData.imageUrl) return null;
+    if (!cardData.imageUrl) {
+      return null;
+    }
     
     let safeUrl = getSafeImageUrl(cardData.imageUrl);
     
@@ -121,7 +123,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
   // Handlers
   const handleLikeToggle = useCallback(() => {
-    if (isAnimating) return;
+    if (isAnimating) {
+      return;
+    }
     
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 200);
@@ -160,6 +164,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       // Clear the announcement after screen readers have processed it
       setTimeout(() => setAnnouncement(''), 1000);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('Card error:', error);
     }
   }, [isLiked, isAnimating, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
@@ -206,7 +211,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   return (
     <motion.div
       className={cn(
-        "w-[160px] sm:w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-2 sm:p-3",
+        "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3",
         "hover:shadow-2xl transition-shadow duration-300",
         "mx-auto",
         onCardClick ? "cursor-pointer" : "",
@@ -235,7 +240,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       </span>
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[112px] sm:h-[140px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[140px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
@@ -258,7 +263,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 setImageError(true);
                 setImageLoading(false);
               }}
-              sizes="160px"
+              sizes="200px"
               unoptimized={heroImageUrl.includes('cloudinary.com')}
               priority={priority}
             />
@@ -278,10 +283,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
                   style={{
-                    width: '48px',
-                    minWidth: '48px'
+                    width: '60px',
+                    minWidth: '60px'
                   }}
                   variants={tagVariants}
                   initial="idle"
@@ -299,10 +304,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
                   style={{
-                    width: '48px',
-                    minWidth: '48px'
+                    width: '60px',
+                    minWidth: '60px'
                   }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
@@ -368,14 +373,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       >
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
-            className="text-xs sm:text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
+            className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
           {cardData.badge && (
             <motion.div
-              className="inline-block bg-gray-100 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap flex-shrink-0"
+              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
@@ -389,8 +394,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         <div className="flex justify-between items-center gap-2 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-[10px] sm:text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
-              style={{ maxWidth: '96px' }}
+              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
+              style={{ maxWidth: '120px' }}
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
@@ -398,8 +403,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-[8px] sm:text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
-              style={{ maxWidth: '56px' }}
+              className="text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
+              style={{ maxWidth: '70px' }}
               aria-label={`Additional info: ${cardData.additionalText}`}
             >
               {cardData.additionalText}
