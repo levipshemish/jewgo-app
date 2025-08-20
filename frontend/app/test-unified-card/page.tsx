@@ -353,7 +353,7 @@ export default function TestUnifiedCardPage() {
             {/* Row 2 */}
             <EnhancedProductCard
               data={{
-                id: 6,
+                id: "6",
                 imageUrl: "https://images.unsplash.com/photo-1504674900240-9a9049b7d8ce?w=400&h=300&fit=crop",
                 imageTag: "Seafood",
                 imageTagLink: "/eatery?cuisine=seafood",

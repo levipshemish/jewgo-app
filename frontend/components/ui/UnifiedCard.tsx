@@ -308,7 +308,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
                   style={{
                     maxWidth: '50%',
                     minWidth: 'fit-content'
@@ -329,7 +329,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-1.5 py-0.5 md:px-2 md:py-1 rounded-full text-[10px] md:text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
                   style={{
                     maxWidth: '50%',
                     minWidth: 'fit-content'
