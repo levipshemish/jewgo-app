@@ -306,7 +306,7 @@ export class RestaurantsAPI {
       
       // Fallback to mock data for better UX when API is unavailable
       const mockRestaurants = this.getMockRestaurants();
-      const mockRestaurant = mockRestaurants.find(r => r.id === id);
+      const mockRestaurant = mockRestaurants.find(r => parseInt(r.id.toString()) === id);
       
       if (mockRestaurant) {
         return mockRestaurant;

@@ -370,7 +370,7 @@ export default function UnifiedLiveMapClient() {
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
-    const restaurant = allRestaurants.find(r => r.id === restaurantId);
+    const restaurant = allRestaurants.find(r => parseInt(r.id.toString()) === restaurantId);
     setSelectedRestaurant(restaurant || null);
     setShowRestaurantCard(true);
   }, [allRestaurants]);
@@ -533,7 +533,7 @@ export default function UnifiedLiveMapClient() {
           <InteractiveRestaurantMap
             restaurants={displayedRestaurants}
             userLocation={userLocation}
-            selectedRestaurantId={selectedRestaurant?.id}
+            selectedRestaurantId={selectedRestaurant?.id ? parseInt(selectedRestaurant.id.toString()) : undefined}
             onRestaurantSelect={handleRestaurantSelect}
             mapCenter={mapCenter}
             className="h-full rounded-none shadow-none bg-transparent"

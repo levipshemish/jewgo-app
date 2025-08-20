@@ -379,7 +379,7 @@ export default function UnifiedRestaurantCard({
         {showFeedbackButton && (
           <div className="absolute top-2 right-2">
             <FeedbackButton
-              restaurantId={restaurant.id}
+              restaurantId={parseInt(restaurant.id.toString())}
               restaurantName={restaurant.name}
               variant="minimal"
             />

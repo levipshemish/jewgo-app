@@ -996,7 +996,7 @@ export default function InteractiveRestaurantMap({
 
   // Enhanced info window content creation with caching
   const createInfoWindowContent = useCallback((restaurant: Restaurant, distanceFromUser?: number | null) => {
-    const cacheKey = parseInt(restaurant.id.toString());
+    const cacheKey: number = parseInt(restaurant.id.toString());
     const now = Date.now();
     
     // Check cache first

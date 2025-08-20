@@ -558,7 +558,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
               {showForm && (
                 <div className="mb-6">
                   <ReviewForm
-                    restaurantId={restaurant.id}
+                    restaurantId={parseInt(restaurant.id.toString())}
                     restaurantName={restaurant.name}
                     onSubmit={handleReviewSubmit}
                     onCancel={() => {
