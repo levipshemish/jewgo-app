@@ -1847,6 +1847,40 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             logger.error(f"Error fetching hours for restaurant {restaurant_id}: {e}")
             return jsonify({"error": "Failed to fetch hours"}), 500
 
+    # Restaurant hours PUT endpoint - admin updates
+    @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["PUT"])
+    @limiter.limit("30 per hour")
+    @require_admin_auth
+    def admin_update_hours(restaurant_id: int):
+        """Update restaurant hours manually."""
+        try:
+            # Get request data
+            data = request.get_json(silent=True) or {}
+            hours_data = data.get("hours_of_operation", {})
+            updated_by = data.get("updated_by", "admin")
+            
+            # Get database manager
+            db_manager = deps.get("get_db_manager")()
+            if not db_manager:
+                return jsonify({"error": "Database not available"}), 503
+            
+            # Create restaurant service
+            restaurant_service = RestaurantService(db_manager)
+            
+            # Update hours
+            updated_hours = restaurant_service.update_restaurant_hours(
+                restaurant_id, hours_data, updated_by
+            )
+            
+            return jsonify({
+                "status": "success",
+                "data": updated_hours
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Admin update hours error: {e}", restaurant_id=restaurant_id)
+            return jsonify({"error": str(e)}), 400
+
     # Duplicate test-sentry route removed - already defined above
 
     # Marketplace Routes
