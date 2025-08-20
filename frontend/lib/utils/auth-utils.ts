@@ -7,6 +7,7 @@ interface User {
     name?: string;
     username?: string;
     avatar_url?: string;
+    picture?: string;
   };
   app_metadata?: {
     provider?: string;
@@ -76,12 +77,9 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
   return {
     id: user.id,
     email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-    avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-    provider: provider as 'apple' | 'google' | 'unknown',
-    providerInfo,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at
+    name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
+    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
+    provider: provider as 'apple' | 'google' | 'unknown'
   };
 }
 
@@ -173,12 +171,13 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     const allowedParamPrefixes = ['utm_'];
     const allowedExactParams = ['tab'];
     
-    for (const [key, value] of urlObj.searchParams.entries()) {
+    // Use Array.from to avoid iteration issues
+    Array.from(urlObj.searchParams.entries()).forEach(([key, value]) => {
       if (allowedExactParams.includes(key) || 
           allowedParamPrefixes.some(prefix => key.startsWith(prefix))) {
         safeParams.set(key, value);
       }
-    }
+    });
 
     // Reconstruct safe URL without fragments
     const safeUrl = pathname + (safeParams.toString() ? `?${safeParams.toString()}` : '');

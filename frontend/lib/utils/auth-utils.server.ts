@@ -11,23 +11,22 @@ const supabaseServer = createClient(
  * Persist Apple user name with race-safe UPSERT
  * Only called when Apple actually sends name data
  */
-export async function persistAppleUserName(userId: string, name: string | null) {
+export async function persistAppleUserName(userId: string, name: string | null, provider: string = 'apple', providerUserId?: string) {
   if (!name || !name.trim()) return;
   
   try {
-    const { error } = await supabaseServer
-      .from('profiles')
-      .upsert({
-        user_id: userId,
-        name: name.trim(),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id',
-        ignoreDuplicates: false
-      });
+    // Call the SQL function via RPC for race-safe name persistence
+    const { error } = await supabaseServer.rpc('upsert_profile_with_name', {
+      p_user_id: userId,
+      p_name: name.trim(),
+      p_provider: provider,
+      p_provider_user_id: providerUserId || null
+    });
 
     if (error) {
-      console.error('Failed to persist Apple user name:', error);
+      console.error('Failed to persist Apple user name via RPC:', error);
+    } else {
+      console.log(`Successfully persisted Apple user name for user: ${userId}`);
     }
   } catch (error) {
     console.error('Error persisting Apple user name:', error);
@@ -82,24 +81,12 @@ export function isPrivateRelayEmail(email: string): boolean {
  */
 export async function attemptIdentityLinking(userId: string, provider: string) {
   try {
-    // Use Supabase's official link identity API
-    const { data, error } = await supabaseServer.auth.admin.linkUser({
-      userId,
-      provider,
-      options: {
-        // Link options if needed
-      }
-    });
-
-    if (error) {
-      // Check if this is a conflict error
-      if (error.message.includes('already exists') || error.message.includes('conflict')) {
-        return { success: false, conflict: true, error };
-      }
-      return { success: false, conflict: false, error };
-    }
-
-    return { success: true, conflict: false, data };
+    // Note: Supabase doesn't have a direct linkUser API
+    // This would need to be implemented differently based on requirements
+    console.log(`Identity linking requested for user ${userId} with provider ${provider}`);
+    
+    // For now, return a placeholder response
+    return { success: false, conflict: false, error: new Error('Identity linking not implemented') };
   } catch (error) {
     console.error('Identity linking error:', error);
     return { success: false, conflict: false, error };

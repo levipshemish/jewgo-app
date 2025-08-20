@@ -283,12 +283,26 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 rounded-full font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center"
                   style={{
-                    width: '60px',          // Fixed width
-                    maxWidth: '60px',       // Prevent expansion - KEY FIX
-                    minWidth: '60px',       // Maintain minimum
-                    overflow: 'hidden'      // Ensure content doesn't overflow - KEY FIX
+                    width: '60px',
+                    maxWidth: '60px',
+                    minWidth: '60px',
+                    height: '24px',           // Fixed height prevents vertical expansion
+                    overflow: 'hidden',
+                    padding: '0',             // Remove Tailwind padding, use custom
+                    paddingLeft: '8px',       // Explicit padding for consistency
+                    paddingRight: '8px',
+                    fontSize: '12px',         // Explicit font size instead of text-xs
+                    lineHeight: '1',          // Fixed line height
+                    fontWeight: '500',        // Explicit font weight
+                    WebkitFontSmoothing: 'antialiased',  // Consistent font rendering
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    // Prevent mobile browser scaling
+                    WebkitTextSizeAdjust: '100%',
+                    MozTextSizeAdjust: '100%',
+                    msTextSizeAdjust: '100%'
                   }}
                   variants={tagVariants}
                   initial="idle"
@@ -301,12 +315,17 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                   aria-label={`${cardData.imageTag} tag - click to open link`}
                 >
                   <span 
-                    className="truncate block w-full text-center"  // Added block and text-center
                     style={{
-                      overflow: 'hidden',           // Explicit overflow hidden
-                      textOverflow: 'ellipsis',     // Explicit ellipsis
-                      whiteSpace: 'nowrap',         // Prevent wrapping
-                      maxWidth: '100%'              // Ensure span doesn't exceed parent
+                      display: 'block',
+                      width: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      textAlign: 'center',
+                      maxWidth: '44px',        // Account for padding (60px - 16px padding)
+                      fontSize: 'inherit',     // Inherit from parent
+                      lineHeight: 'inherit',
+                      fontWeight: 'inherit'
                     }}
                   >
                     {cardData.imageTag}
@@ -314,22 +333,41 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
+                  className="absolute top-2 left-2 bg-white/95 text-gray-900 rounded-full font-medium flex items-center justify-center shadow-sm"
                   style={{
-                    width: '60px',          // Fixed width
-                    maxWidth: '60px',       // Prevent expansion - KEY FIX
-                    minWidth: '60px',       // Maintain minimum
-                    overflow: 'hidden'      // Ensure content doesn't overflow - KEY FIX
+                    width: '60px',
+                    maxWidth: '60px',
+                    minWidth: '60px',
+                    height: '24px',           // Fixed height
+                    overflow: 'hidden',
+                    padding: '0',
+                    paddingLeft: '8px',
+                    paddingRight: '8px',
+                    fontSize: '12px',
+                    lineHeight: '1',
+                    fontWeight: '500',
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                    textRendering: 'optimizeLegibility',
+                    // Prevent mobile browser scaling
+                    WebkitTextSizeAdjust: '100%',
+                    MozTextSizeAdjust: '100%',
+                    msTextSizeAdjust: '100%'
                   }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
                   <span 
-                    className="truncate block w-full text-center"  // Added block and text-center
                     style={{
-                      overflow: 'hidden',           // Explicit overflow hidden
-                      textOverflow: 'ellipsis',     // Explicit ellipsis
-                      whiteSpace: 'nowrap',         // Prevent wrapping
-                      maxWidth: '100%'              // Ensure span doesn't exceed parent
+                      display: 'block',
+                      width: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      textAlign: 'center',
+                      maxWidth: '44px',
+                      fontSize: 'inherit',
+                      lineHeight: 'inherit',
+                      fontWeight: 'inherit'
                     }}
                   >
                     {cardData.imageTag}
