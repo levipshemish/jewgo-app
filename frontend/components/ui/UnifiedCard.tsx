@@ -231,7 +231,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     <motion.div
       className={cn(
         "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
-        "md:hover:shadow-2xl transition-shadow duration-300",
+        "hover:shadow-2xl transition-shadow duration-300",
         "mx-auto",
         className
       )}
@@ -350,7 +350,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           {cardData.showHeart && (
             <motion.button
               className={cn(
-                "absolute top-2 right-2 w-4 h-4 md:w-6 md:h-6 rounded-full flex items-center justify-center",
+                "absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center",
                 "shadow-lg transition-colors duration-200 group",
                 isLiked ? 'bg-white' : 'bg-white/90 hover:bg-white'
               )}
@@ -375,9 +375,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               }}
             >
               <Heart
-                size={12}
+                size={13}
                 className={cn(
-                  "transition-all duration-200 md:size-3.5",
+                  "transition-all duration-200",
                   isLiked 
                     ? 'fill-red-500 stroke-red-500' 
                     : 'fill-none stroke-gray-400 group-hover:fill-red-500 group-hover:stroke-red-500'
@@ -398,14 +398,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       >
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
-            className="text-sm max-sm:text-xs font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
+            className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
           {cardData.badge && (
             <motion.div
-              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 max-sm:px-1.5 max-sm:py-0.5 rounded-lg text-xs max-sm:text-[10px] font-medium whitespace-nowrap flex-shrink-0"
+              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
