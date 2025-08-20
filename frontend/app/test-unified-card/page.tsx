@@ -241,7 +241,7 @@ export default function TestUnifiedCardPage() {
                   onCardClick={handleCardClick}
                   onLikeToggle={handleLikeToggle}
                   onTagClick={handleTagClick}
-                  className="w-full max-w-sm"
+                  className="w-full max-w-sm !bg-transparent"
                 />
               </div>
             ) : (
