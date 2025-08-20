@@ -24,9 +24,9 @@ const ENV_TEMPLATES = {
     SMTP_HOST: 'smtp.gmail.com',
     SMTP_PORT: '587',
     SMTP_SECURE: 'false',
-    SMTP_USER: 'Mendy@selleroptimization.net',
-    SMTP_PASS: 'wmkr lmud pxxh iler',
-    SMTP_FROM: 'info@selleroptimization.net',
+    SMTP_USER: 'your-smtp-user@example.com',
+    SMTP_PASS: 'your-smtp-password',
+    SMTP_FROM: 'noreply@example.com',
     
     // Application URLs
     NEXT_PUBLIC_URL: 'https://jewgo-app.vercel.app',
@@ -58,9 +58,9 @@ const ENV_TEMPLATES = {
     SMTP_HOST: 'smtp.gmail.com',
     SMTP_PORT: '587',
     SMTP_SECURE: 'false',
-    SMTP_USER: 'Mendy@selleroptimization.net',
-    SMTP_PASS: 'wmkr lmud pxxh iler',
-    SMTP_FROM: 'info@selleroptimization.net',
+    SMTP_USER: 'your-smtp-user@example.com',
+    SMTP_PASS: 'your-smtp-password',
+    SMTP_FROM: 'noreply@example.com',
     
     // Database
     DATABASE_URL: 'postgresql://username:password@host:5432/database_name?sslmode=require',
@@ -75,8 +75,8 @@ const ENV_TEMPLATES = {
     
     // Redis Configuration
     REDIS_URL: 'redis://user:password@host:6379',
-    REDIS_HOST: 'redis-10768.c14.us-east-1-2.ec2.redns.redis-cloud.com',
-    REDIS_PORT: '10768',
+    REDIS_HOST: 'your-redis-host.com',
+    REDIS_PORT: '6379',
     REDIS_DB: '0',
     REDIS_USERNAME: 'default',
     REDIS_PASSWORD: 'your-redis-password',
@@ -237,9 +237,9 @@ function validateFileStructure(platform = 'FRONTEND') {
 function checkHardcodedSecrets(platform = 'FRONTEND') {
   const filesToCheck = REQUIRED_FILES[platform] || [];
   const suspiciousPatterns = [
-    /wmkr lmud pxxh iler/,
-    /selleroptimization\.net/,
-    /Mendy@selleroptimization\.net/,
+    /your-smtp-password/,
+    /your-smtp-user@example\.com/,
+    /noreply@example\.com/,
     /your-secure-admin-token/,
     /your-secure-scraper-token/,
     /your-google-maps-api-key/,

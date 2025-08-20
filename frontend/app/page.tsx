@@ -159,10 +159,10 @@ export default function HomePage() {
                     → Supabase Sign In
                   </Link>
                   <Link
-                    href="/test-supabase"
+                    href="/test-auth"
                     className="block text-sm text-blue-600 hover:text-blue-800"
                   >
-                    → Test Supabase Config
+                    → Test Auth Status
                   </Link>
                 </div>
               </div>

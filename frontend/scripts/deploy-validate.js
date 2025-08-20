@@ -53,9 +53,9 @@ function validateEnvironment() {
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8')
       const suspiciousPatterns = [
-        /wmkr lmud pxxh iler/,
-        /selleroptimization\.net/,
-        /Mendy@selleroptimization\.net/
+        /your-smtp-password/,
+        /your-smtp-user@example\.com/,
+        /noreply@example\.com/
       ]
       
       suspiciousPatterns.forEach(pattern => {

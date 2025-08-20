@@ -9,9 +9,9 @@ const VERCEL_ENV_VARS = {
   SMTP_HOST: 'smtp.gmail.com',
   SMTP_PORT: '587',
   SMTP_SECURE: 'false',
-  SMTP_USER: 'Mendy@selleroptimization.net',
-  SMTP_PASS: 'wmkr lmud pxxh iler',
-  SMTP_FROM: 'info@selleroptimization.net',
+  SMTP_USER: 'your-smtp-user@example.com',
+  SMTP_PASS: 'your-smtp-password',
+  SMTP_FROM: 'noreply@example.com',
   
   // Application URLs
   NEXT_PUBLIC_URL: 'https://jewgo-app.vercel.app',
@@ -43,9 +43,9 @@ const RENDER_ENV_VARS = {
   SMTP_HOST: 'smtp.gmail.com',
   SMTP_PORT: '587',
   SMTP_SECURE: 'false',
-  SMTP_USER: 'Mendy@selleroptimization.net',
-  SMTP_PASS: 'wmkr lmud pxxh iler',
-  SMTP_FROM: 'info@selleroptimization.net',
+  SMTP_USER: 'your-smtp-user@example.com',
+  SMTP_PASS: 'your-smtp-password',
+  SMTP_FROM: 'noreply@example.com',
   
   // Database
   DATABASE_URL: 'postgresql://username:password@host:5432/database_name?sslmode=require',
@@ -60,8 +60,8 @@ const RENDER_ENV_VARS = {
   
   // Redis Configuration
   REDIS_URL: 'redis://user:password@host:6379',
-  REDIS_HOST: 'redis-10768.c14.us-east-1-2.ec2.redns.redis-cloud.com',
-  REDIS_PORT: '10768',
+  REDIS_HOST: 'your-redis-host.com',
+  REDIS_PORT: '6379',
   REDIS_DB: '0',
   REDIS_USERNAME: 'default',
   REDIS_PASSWORD: 'your-redis-password',

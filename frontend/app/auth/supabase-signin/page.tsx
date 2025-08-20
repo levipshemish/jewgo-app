@@ -41,8 +41,8 @@ export default function SupabaseSignIn() {
         }
         
         if (session && session.user) {
-          // Session is established, redirect to test page first to verify
-          window.location.href = "/test-supabase";
+          // Session is established, redirect to profile settings
+          window.location.href = "/profile/settings";
         } else {
           setError("Authentication successful but session not established. Please try again.");
         }
