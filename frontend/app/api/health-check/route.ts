@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest) {
             'User-Agent': 'JewGo-Frontend-Health-Check/1.0',
             'Accept': 'application/json',
           },
-          signal: AbortSignal.timeout(attempt === 1 ? 10000 : 20000), // Longer timeout on retries
+          signal: AbortSignal.timeout(attempt === 1 ? 20000 : 30000), // Longer timeout on retries to handle cold starts
         });
         
         // If we get a response, break out of retry loop
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           'User-Agent': 'JewGo-Frontend-Warm-Up/1.0',
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(15000), // 15 second timeout for warm-up
+        signal: AbortSignal.timeout(25000), // 25 second timeout for warm-up to handle cold starts
       });
       
       if (warmUpResponse.ok) {

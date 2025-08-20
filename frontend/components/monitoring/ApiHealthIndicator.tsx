@@ -34,8 +34,8 @@ export default function ApiHealthIndicator() {
         headers: {
           'Accept': 'application/json',
         },
-        // Increase timeout to 15 seconds to handle cold starts
-        signal: AbortSignal.timeout(15000)
+        // Increase timeout to 25 seconds to handle cold starts
+        signal: AbortSignal.timeout(25000)
       });
 
       if (response.ok) {

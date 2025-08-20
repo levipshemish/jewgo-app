@@ -42,7 +42,7 @@ export default function RestaurantGrid({
   if (loading) {
     return (
       <div className="container mx-auto px-2 py-2 pb-24">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+        <div className="grid grid-cols-2 gap-1">
           {Array.from({ length: 8 }).map((_, index) => (
             <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse min-w-0">
               <div className="relative aspect-[5/4] bg-gray-200"></div>
@@ -76,7 +76,7 @@ export default function RestaurantGrid({
 
   return (
     <div className="container mx-auto px-2 py-2 pb-24">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+      <div className="grid grid-cols-2 gap-1">
         {deduplicatedRestaurants.map((restaurant) => (
           <RestaurantCard
             key={restaurant.id}

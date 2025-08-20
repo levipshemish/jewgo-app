@@ -90,8 +90,12 @@ export class RestaurantsAPI {
         clearTimeout(timeoutId);
         
         if (!response.ok) {
+          let errorMessage = `HTTP error! status: ${response.status}`;
+          if (response.status === 504) {
+            errorMessage = 'Request timed out - backend may be starting up. Please try again.';
+          }
           const error: ApiError = {
-            message: `HTTP error! status: ${response.status}`,
+            message: errorMessage,
             status: response.status,
             retryable: response.status >= 500 || response.status === 429
           };

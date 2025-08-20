@@ -290,9 +290,12 @@ export async function GET(request: NextRequest) {
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(15000), // 15 second timeout to prevent 504 errors
+        signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts and prevent 504 errors
       });
       if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error(`Backend API timeout: ${response.status} ${response.statusText}`);
+        }
         throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
       }
       const pageData = await response.json();

@@ -49,30 +49,10 @@ export default function EateryExplorePage() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [_locationError, setLocationError] = useState<string | null>(null);
 
-  // Calculate items per page based on current screen size and grid columns
+  // Calculate items per page based on 2-column grid layout
   const getItemsPerPage = () => {
-    // Get the current window width to determine grid columns
-    if (typeof window !== 'undefined') {
-      const width = window.innerWidth;
-      
-          // Match the grid breakpoints from the CSS
-    if (width >= 1536) {
-      return 6 * rowsPerPage; // 2xl: grid-cols-6
-    }
-    if (width >= 1280) {
-      return 5 * rowsPerPage; // xl: grid-cols-5
-    }
-    if (width >= 1024) {
-      return 4 * rowsPerPage; // lg: grid-cols-4
-    }
-    if (width >= 640) {
-      return 3 * rowsPerPage;  // sm: grid-cols-3
-    }
-    return 2 * rowsPerPage; // default: grid-cols-2
-    }
-    
-    // Fallback for SSR or when window is not available
-    return 8; // 2 columns * 4 rows = 8 cards
+    // Always use 2 columns as per project requirements
+    return 2 * rowsPerPage; // 2 columns * 4 rows = 8 cards
   };
 
   // Update items per page when window resizes
@@ -495,7 +475,7 @@ export default function EateryExplorePage() {
       )}
 
       {/* Restaurant Grid */}
-      <div className="px-2 sm:px-6 lg:px-8 py-2 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
+      <div className="px-2 sm:px-6 lg:px-8 py-2 sm:py-4 lg:py-6 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto">
           {filteredRestaurants.length === 0 ? (
             <div className="text-center py-16 lg:py-24">
@@ -509,7 +489,7 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
                   <div key={restaurant.id} className="relative">
                     <EateryCard

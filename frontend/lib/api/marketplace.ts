@@ -21,7 +21,7 @@ const BACKEND_URL = (() => {
   }
   
   // Default to the correct production URL
-  return 'https://jewgo-app-oyoh.onrender.com';
+  return 'https://jewgo.onrender.com';
 })();
 
 /**
@@ -60,6 +60,7 @@ export async function fetchMarketplaceListings(
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
     });
 
     if (!response.ok) {
@@ -102,6 +103,7 @@ export async function fetchMarketplaceListing(
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
     });
 
     if (!response.ok) {
@@ -138,6 +140,7 @@ export async function createMarketplaceListing(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(listingData),
+      signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
     });
 
     if (!response.ok) {
@@ -166,6 +169,7 @@ export async function fetchMarketplaceCategories(): Promise<CategoriesResponse> 
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
     });
 
     if (!response.ok) {
@@ -199,6 +203,7 @@ export async function endorseListing(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ type: endorsementType }),
+      signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
     });
 
     if (!response.ok) {
