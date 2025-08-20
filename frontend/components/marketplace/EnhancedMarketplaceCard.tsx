@@ -7,6 +7,15 @@ import { useState, useEffect } from "react"
 
 import type { MarketplaceListing } from "@/lib/types/marketplace"
 import { cn } from "@/lib/utils/classNames"
+import { 
+  formatPrice, 
+  formatTimeAgo, 
+  getListingTypeIcon, 
+  getListingTypeColor, 
+  getConditionColor,
+  getHeroImage,
+  cardStyles
+} from "@/lib/utils/cardUtils"
 
 interface EnhancedMarketplaceCardProps {
   listing: MarketplaceListing
@@ -47,88 +56,8 @@ export default function EnhancedMarketplaceCard({
     }
   }
 
-  const formatPrice = (priceCents: number, currency: string) => {
-    if (priceCents === 0) {
-      return "Free"
-    }
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency || "USD",
-    }).format(priceCents / 100)
-  }
-
-  const getListingTypeIcon = (type: string) => {
-    switch (type) {
-      case "sale":
-        return "💰"
-      case "free":
-        return "🎁"
-      case "borrow":
-        return "📚"
-      case "gemach":
-        return "🤝"
-      default:
-        return "🛍️"
-    }
-  }
-
-  const getListingTypeColor = (type: string) => {
-    switch (type) {
-      case "sale":
-        return "bg-green-100 text-green-800"
-      case "free":
-        return "bg-blue-100 text-blue-800"
-      case "borrow":
-        return "bg-purple-100 text-purple-800"
-      case "gemach":
-        return "bg-orange-100 text-orange-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getConditionColor = (condition?: string) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-100 text-green-800"
-      case "used_like_new":
-        return "bg-blue-100 text-blue-800"
-      case "used_good":
-        return "bg-yellow-100 text-yellow-800"
-      case "used_fair":
-        return "bg-orange-100 text-orange-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (diffInSeconds < 60) {
-      return "Just now"
-    }
-    if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)}m ago`
-    }
-    if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)}h ago`
-    }
-    if (diffInSeconds < 2592000) {
-      return `${Math.floor(diffInSeconds / 86400)}d ago`
-    }
-
-    return date.toLocaleDateString()
-  }
-
-  const getHeroImage = () => {
-    const imageUrl = listing.images?.[0] || listing.thumbnail
-    if (!imageUrl || imageError) {
-      return getListingTypeIcon(listing.kind)
-    }
-    return imageUrl
+  const getHeroImageUrl = () => {
+    return getHeroImage(listing.images, listing.thumbnail, getListingTypeIcon(listing.kind), imageError)
   }
 
   const handleImageLoad = () => setImageLoading(false)
@@ -137,7 +66,8 @@ export default function EnhancedMarketplaceCard({
     setImageLoading(false)
   }
 
-  const isImageUrl = typeof getHeroImage() === "string" && getHeroImage().startsWith("http")
+  const heroImageUrl = getHeroImageUrl()
+  const isImageUrl = typeof heroImageUrl === "string" && heroImageUrl.startsWith("http")
 
   return (
     <div
@@ -149,12 +79,12 @@ export default function EnhancedMarketplaceCard({
       )}
     >
       {/* Image Section */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-t-xl">
+      <div className={cardStyles.imageContainer.default}>
         {isImageUrl ? (
           <>
             {imageLoading && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
             <Image
-              src={(getHeroImage() as string) || "/placeholder.svg"}
+              src={(heroImageUrl as string) || "/placeholder.svg"}
               alt={listing.title}
               fill
               className={cn(
@@ -168,13 +98,13 @@ export default function EnhancedMarketplaceCard({
           </>
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <div className="text-4xl text-gray-400">{getHeroImage()}</div>
+            <div className="text-4xl text-gray-400">{heroImageUrl}</div>
           </div>
         )}
 
         {/* Category Badge */}
         {listing.category_name && (
-          <div className="absolute top-2 left-2">
+          <div className={cardStyles.badge.topLeft}>
             <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm">
               {listing.category_name}
             </span>
@@ -185,7 +115,8 @@ export default function EnhancedMarketplaceCard({
         <button
           onClick={handleLikeClick}
           className={cn(
-            "absolute top-2 right-2 p-1 rounded-full transition-all duration-200",
+            cardStyles.button.topRight,
+            "p-1 rounded-full transition-all duration-200",
             isLiked
               ? "text-red-500 bg-red-50 shadow-sm"
               : "text-gray-400 bg-white/90 backdrop-blur-sm hover:text-red-500 hover:bg-red-50 shadow-sm",
@@ -196,7 +127,7 @@ export default function EnhancedMarketplaceCard({
 
         {/* Condition Badge */}
         {listing.condition && (
-          <div className="absolute bottom-2 left-2">
+          <div className={cardStyles.badge.bottomLeft}>
             <span
               className={cn(
                 "px-1.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
@@ -210,7 +141,7 @@ export default function EnhancedMarketplaceCard({
 
         {/* Rating Badge */}
         {listing.rating && listing.rating > 0 && (
-          <div className="absolute bottom-2 right-2 flex items-center bg-white/90 backdrop-blur-sm rounded-full px-1.5 py-0.5 shadow-sm">
+          <div className={cn(cardStyles.badge.bottomRight, "flex items-center bg-white/90 backdrop-blur-sm rounded-full px-1.5 py-0.5 shadow-sm")}>
             <Star className="w-3 h-3 text-yellow-500 fill-current mr-0.5" />
             <span className="text-xs font-medium text-gray-700">{listing.rating.toFixed(1)}</span>
           </div>
@@ -218,7 +149,7 @@ export default function EnhancedMarketplaceCard({
       </div>
 
       {/* Content Section */}
-      <div className="p-1.5">
+      <div className={cardStyles.content.marketplace}>
         {/* Header */}
         <div className="flex items-start justify-between mb-1">
           <div className="flex-1 min-w-0">
