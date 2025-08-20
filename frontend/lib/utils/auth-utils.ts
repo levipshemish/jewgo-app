@@ -39,12 +39,12 @@ export interface TransformedUser {
 
 /**
  * Check if Supabase is properly configured
+ * Updated to use centralized utility
  */
 export function isSupabaseConfigured(): boolean {
-  return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && 
-    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
-  );
+  // Import the centralized utility to avoid duplication
+  const { isSupabaseConfigured: checkConfig } = require('./supabase-utils');
+  return checkConfig();
 }
 
 /**

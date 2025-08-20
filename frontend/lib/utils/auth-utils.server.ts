@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { isPrivateRelayEmail } from '@/lib/utils/auth-utils';
 import crypto from 'crypto';
 
 /**
@@ -64,32 +65,12 @@ export function isAppleUser(user: any): boolean {
   return detectProvider(user) === 'apple';
 }
 
-/**
- * Check if email is a private relay email
- */
-export function isPrivateRelayEmail(email: string): boolean {
-  return email.endsWith('@privaterelay.appleid.com');
-}
 
-/**
- * Attempt identity linking using Supabase admin API
- * Returns success status and any conflict information
- */
-export async function attemptIdentityLinking(userId: string, identity: {provider: 'apple'|'google', identity_token?: string}) {
-  try {
-    const supabaseAdmin = await createSupabaseServerClient();
-    
-    // Note: Supabase doesn't have a direct linkIdentity API in the current version
-    // This would need to be implemented differently based on requirements
-    console.log(`Identity linking requested for user ${userId} with provider ${identity.provider}`);
-    
-    // For now, return a placeholder response
-    return { success: false, conflict: false, error: new Error('Identity linking not implemented') };
-  } catch (error) {
-    console.error('Identity linking error:', error);
-    return { success: false, conflict: false, error };
-  }
-}
+
+// Identity linking functionality removed - implement using official APIs when needed
+// For proactive link: call the official link identity API while the user is authenticated
+// For reactive collisions: use the link attempt's error to branch UX and require re-auth with the primary method
+// Do not query auth.identities from anon/client contexts
 
 /**
  * Server-side feature flag check

@@ -30,7 +30,7 @@ const createFallbackClient = () => {
         persistSession: true,
         autoRefreshToken: true,
       },
-      // Disable realtime to prevent RealtimeClient constructor errors
+      // Configure realtime with minimal settings to prevent RealtimeClient constructor errors
       realtime: {
         params: {
           eventsPerSecond: 10,
@@ -66,6 +66,7 @@ export const supabaseBrowser = (() => {
     } as any;
   }
 
+  // Return existing instance if already created
   if (supabaseBrowserInstance) {
     return supabaseBrowserInstance;
   }
@@ -83,6 +84,7 @@ export const supabaseBrowser = (() => {
     return supabaseBrowserInstance;
   }
 
+  // Create the actual client with proper configuration
   supabaseBrowserInstance = createClient(
     supabaseUrl!,
     supabaseAnonKey!,
@@ -91,7 +93,11 @@ export const supabaseBrowser = (() => {
         // Keep cookies-first auth; tokens auto-refresh in browser
         persistSession: true,
         autoRefreshToken: true,
+        // Prevent multiple auth instances
+        detectSessionInUrl: false,
+        flowType: 'pkce',
       },
+      // Configure realtime with minimal settings to prevent RealtimeClient constructor errors
       realtime: {
         params: {
           eventsPerSecond: 10,
@@ -107,3 +113,6 @@ export const supabaseBrowser = (() => {
 
   return supabaseBrowserInstance;
 })();
+
+// Export a function to get the client (for consistency)
+export const getSupabaseClient = () => supabaseBrowser;

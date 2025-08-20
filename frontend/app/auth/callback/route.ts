@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { 
-  persistAppleUserName, 
-  detectProvider, 
-  isAppleUser, 
-  isPrivateRelayEmail,
-  isAppleOAuthEnabled,
-  logOAuthEvent,
-  attemptIdentityLinking,
-  createAnalyticsKey
-} from '@/lib/utils/auth-utils.server';
 import { validateRedirectUrl } from '@/lib/utils/auth-utils';
+import { detectProvider, isAppleUser, persistAppleUserName, logOAuthEvent, isAppleOAuthEnabled } from '@/lib/utils/auth-utils.server';
 
-// Node.js runtime for reliable session management
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,7 +12,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
-    const next = searchParams.get('next') || '/';
+    const safeNext = validateRedirectUrl(searchParams.get('next'));
+
+    // Enforce Apple OAuth feature flag
+    if (!isAppleOAuthEnabled()) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
 
     // Handle OAuth errors
     if (error) {
@@ -37,13 +32,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
     }
 
-    // For SSR compatibility, we'll redirect to the client-side auth handler
-    // The client-side will handle the code exchange
-    const redirectUrl = new URL('/auth/oauth-success', request.url);
-    redirectUrl.searchParams.set('code', code);
-    redirectUrl.searchParams.set('next', next);
+    // Perform server-side code exchange
+    const supabase = await createSupabaseServerClient();
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     
-    return NextResponse.redirect(redirectUrl);
+    if (exchangeError) {
+      console.error('[OAUTH] Code exchange error:', exchangeError);
+      return NextResponse.redirect(new URL('/auth/signin?error=invalid_grant', request.url));
+    }
+
+    // Get user data and perform post-authentication processing
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const provider = detectProvider(user);
+      logOAuthEvent(user.id, provider, 'callback_success');
+      
+      // Handle Apple-specific name persistence
+      if (isAppleUser(user)) {
+        const name = user.user_metadata?.full_name || user.user_metadata?.name || null;
+        await persistAppleUserName(user.id, name);
+      }
+    }
+
+    // Redirect to the validated next URL
+    return NextResponse.redirect(new URL(safeNext, request.url));
 
   } catch (error) {
     console.error('[OAUTH] Callback error:', error);

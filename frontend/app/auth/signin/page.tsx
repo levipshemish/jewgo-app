@@ -64,7 +64,8 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       
       // User authenticated successfully - redirect immediately
       // Supabase handles session management automatically
-      router.push(redirectTo || '/profile/settings');
+      const safeNext = validateRedirectUrl(redirectTo);
+      router.push(safeNext || '/profile/settings');
     } catch (err) {
       console.error('Sign in error:', err);
       setError('Sign in failed');

@@ -49,6 +49,17 @@ export async function createSupabaseServerClient() {
           cookieStore.set({ name, value: "", ...options, maxAge: 0 });
         },
       },
+      // Disable realtime on server side to prevent RealtimeClient errors
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'jewgo-server',
+        },
+      },
     }
   );
   return supabase;

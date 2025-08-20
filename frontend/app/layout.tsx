@@ -5,7 +5,8 @@ import Script from 'next/script'
 
 import Analytics from '@/components/analytics/Analytics'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import { FontOptimizer } from '@/components/ui/FontOptimizer'
+// Remove FontOptimizer to prevent font preload warnings
+// import { FontOptimizer } from '@/components/ui/FontOptimizer'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import DevNavigation from '@/components/dev/DevNavigation'
@@ -155,8 +156,7 @@ export default function RootLayout({
         <CustomHead />
         <ErrorBoundary>
             <NotificationsProvider>
-              <FontOptimizer>
-                <div 
+              <div 
                   className="min-h-full bg-[#f4f4f4] flex flex-col"
                   style={{
                     WebkitTapHighlightColor: 'transparent',
@@ -168,7 +168,6 @@ export default function RootLayout({
                 >
                   {children}
                 </div>
-              </FontOptimizer>
               <Analytics />
               <ServiceWorkerRegistration />
               <DevNavigation />

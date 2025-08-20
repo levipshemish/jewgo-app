@@ -1,12 +1,12 @@
-import { Inter } from 'next/font/google'
+import { Roboto } from 'next/font/google'
 
-// Use Inter font which is more reliable, or fallback to system fonts
-export const roboto = Inter({ 
+// Configure Roboto font with optimized loading to prevent preload warnings
+export const roboto = Roboto({
   subsets: ['latin'],
   weight: ['300', '400', '500', '700'],
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-  variable: '--font-roboto',
-  adjustFontFallback: true,
+  display: 'swap', // Use swap to prevent layout shift and preload warnings
+  preload: true, // Keep preload but with proper configuration
+  fallback: ['system-ui', 'arial'], // Provide fallback fonts
+  adjustFontFallback: true, // Adjust fallback font metrics
+  variable: '--font-roboto', // CSS variable for easy access
 })

@@ -47,6 +47,9 @@ DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
 CREATE POLICY "Users can update their own profile" ON profiles
     FOR UPDATE USING (auth.uid() = user_id);
 
+-- RLS SELECT policy restricts viewing profiles to self only
+-- This is a deliberate product decision to ensure user privacy
+-- Adjust this policy if public profile viewing is required
 DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 CREATE POLICY "Users can view their own profile" ON profiles
     FOR SELECT USING (auth.uid() = user_id);
@@ -85,7 +88,7 @@ BEGIN
         updated_at = NOW()
     WHERE profiles.user_id = p_user_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- Grant execute permission on the function
 GRANT EXECUTE ON FUNCTION upsert_profile_with_name(UUID, TEXT, VARCHAR(50), VARCHAR(255)) TO authenticated;

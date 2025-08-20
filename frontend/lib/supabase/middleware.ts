@@ -51,6 +51,17 @@ export function createSupabaseMiddlewareClient(
           response.cookies.set(name, "", { ...options, maxAge: 0 });
         },
       },
+      // Disable realtime on middleware to prevent RealtimeClient errors
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'jewgo-middleware',
+        },
+      },
     }
   );
   return supabase;
