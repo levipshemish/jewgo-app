@@ -411,11 +411,16 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-2 min-h-[16px]">
+        <div className="flex justify-between items-center gap-3 min-h-[16px]">
           {cardData.subtitle && (
             <p 
               className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
-              style={{ maxWidth: '120px' }}
+              style={{ 
+                maxWidth: '100px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
@@ -423,8 +428,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
-              style={{ maxWidth: '70px' }}
+              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
+              style={{ 
+                maxWidth: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
               aria-label={`Additional info: ${cardData.additionalText}`}
             >
               {cardData.additionalText}
