@@ -5,6 +5,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // Supabase authentication system
 export async function getSessionUser() {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
+        process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+      console.log('[Auth] Supabase not configured, returning null');
+      return null;
+    }
+
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -18,6 +25,7 @@ export async function getSessionUser() {
       };
     }
   } catch (error) {
+    console.error('[Auth] Supabase auth check failed:', error);
     // Supabase auth check failed - silent fail
   }
 

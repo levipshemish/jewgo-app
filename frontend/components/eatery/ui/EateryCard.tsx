@@ -22,7 +22,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
-  const { handleImmediateTouch, isMobile } = useMobileTouch();
+  const { handleImmediateTouch } = useMobileTouch();
   
   // Enhanced mobile detection with state
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -61,9 +61,33 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       return text;
     }
     
+    // Responsive truncation based on screen size
+    let responsiveMaxLength = maxLength;
+    
+    // Increase character limit for larger screens
+    if (typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      if (width >= 1440) { // Desktop
+        responsiveMaxLength = Math.max(maxLength, 35);
+      } else if (width >= 1024) { // Large tablet/desktop
+        responsiveMaxLength = Math.max(maxLength, 28);
+      } else if (width >= 768) { // Tablet
+        responsiveMaxLength = Math.max(maxLength, 22);
+      } else if (width >= 640) { // Large mobile
+        responsiveMaxLength = Math.max(maxLength, 18);
+      } else { // Small mobile
+        responsiveMaxLength = Math.max(maxLength, 16);
+      }
+    }
+    
+    // If text is shorter than responsive max, return as is
+    if (text.length <= responsiveMaxLength) {
+      return text;
+    }
+    
     // Calculate how many characters to show before ellipsis
     // We want to show the last 3 letters, so we need to account for "..." (3 chars)
-    const visibleChars = maxLength - 3; // Account for "..."
+    const visibleChars = responsiveMaxLength - 3; // Account for "..."
     const lastThreeChars = text.slice(-3);
     const remainingChars = visibleChars - 3; // Space for last 3 chars
     
@@ -125,12 +149,22 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
   const getHeroImage = () => {
     // Use the centralized safe image URL function that fixes Cloudinary URLs
     let safeUrl = getSafeImageUrl(restaurant.image_url);
+    
     // Normalize known broken 'image_1.{ext}' variant
     safeUrl = safeUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
     
     // If we get back the default image, or there's an image error, use category placeholder
     if (safeUrl === '/images/default-restaurant.webp' || imageError) {
       return getCategoryPlaceholder(restaurant.kosher_category || restaurant.listing_type);
+    }
+    
+    // Additional validation for Cloudinary URLs
+    if (safeUrl.includes('cloudinary.com')) {
+      // Ensure proper Cloudinary URL format
+      if (!safeUrl.includes('/f_auto,q_auto/')) {
+        // Add Cloudinary optimization parameters if missing
+        safeUrl = safeUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+      }
     }
     
     return safeUrl;
@@ -171,33 +205,15 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       onClick={handleCardClick}
       onTouchStart={(_e) => {
         // Don't prevent default - let the click event fire
-        }}
-      onTouchEnd={(_e) => {
-        // Don't prevent default - let the click event fire
-        }}
-      className={`w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation restaurant-card eatery-card flex flex-col ${className}`}
-      data-clickable="true"
-      {...(isMobileDevice ? {} : {
-        initial: { opacity: 0, scale: 0.95 },
-        animate: { opacity: 1, scale: 1 },
-        transition: { duration: 0.3, ease: "easeOut" },
-        whileHover: { 
-          scale: 1.02,
-          transition: { duration: 0.2 }
-        },
-        whileTap: { 
-          scale: 0.98,
-          transition: { duration: 0.1 }
-        }
-      })}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleCardClick(e as any);
-        }
       }}
+      className={`eatery-card bg-white rounded-3xl shadow-soft hover:shadow-medium transition-all duration-200 cursor-pointer overflow-hidden group ${className}`}
+      {...(isMobileDevice ? {} : {
+        whileHover: { y: -4, scale: 1.02 },
+        whileTap: { scale: 0.98 },
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.3, ease: "easeOut" }
+      })}
       aria-label={`View details for ${restaurant.name}`}
       style={{
         // Ensure proper touch handling on mobile
@@ -216,7 +232,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       }}
     >
       {/* Image Container - Fixed aspect ratio for consistent heights */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl flex-shrink-0">
+      <div className="restaurant-image-container flex-shrink-0">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -232,9 +248,23 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
           onLoad={handleImageLoad}
           onError={handleImageError}
-          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, (max-width: 1024px) 50vw, 50vw"
           unoptimized={heroSrc.includes('cloudinary.com')}
+          priority={false}
+          quality={85}
         />
+
+        {/* Fallback Image for Loading Errors */}
+        {imageError && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-gray-400 text-2xl mb-2">🍽️</div>
+              <div className="text-gray-500 text-xs font-medium truncate px-2">
+                {titleCase(restaurant.name)}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Kosher Category Badge - Properly positioned with consistent spacing */}
         <AnimatePresence>
@@ -313,35 +343,31 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
       {/* Text Content Container - Fixed height structure for consistency */}
       <motion.div 
-        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-2 pb-2' : 'p-2'}`}
+        className={`restaurant-card-content bg-transparent flex-1 flex flex-col`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Fixed height container with smart truncation */}
-        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0' : 'h-8 mb-0'}`}>
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-8 mb-1' : 'h-10 mb-1'}`}>
           <h3 
-            className={`font-bold text-gray-900 leading-tight w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
+            className={`restaurant-name font-bold text-gray-900 leading-tight w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
             title={titleCase(restaurant.name)}
             style={{
-              // Custom truncation that shows last 3 letters
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              display: 'block'
+              lineHeight: isMobileDevice ? '1.2' : '1.3'
             }}
           >
-            {smartTruncate(titleCase(restaurant.name), isMobileDevice ? 15 : 20)}
+            {smartTruncate(titleCase(restaurant.name), isMobileDevice ? 18 : 25)}
           </h3>
         </div>
         
-        {/* Price Range and Rating - Fixed height meta row */}
-        <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
+        {/* Price Range and Rating - Fixed height meta row with better spacing */}
+        <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-6 gap-1' : 'h-7 gap-2'}`}>
           <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1 flex-shrink-0 rating-container pr-1">
+          <div className="flex items-center gap-1 flex-shrink-0 rating-container">
             <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
             <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
               {getRating().toFixed(1)}

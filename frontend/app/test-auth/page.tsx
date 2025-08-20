@@ -1,74 +1,91 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { supabaseBrowser } from "@/lib/supabase/client";
+
+interface User {
+  id: string;
+  email: string | undefined;
+  name?: string;
+  provider: string;
+  avatar_url?: string | null;
+}
 
 export default function TestAuthPage() {
-  const [authState, setAuthState] = useState<any>(null);
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check session
-        const { data: sessionData, error: sessionError } = await supabaseBrowser.auth.getSession();
-        setSession(sessionData);
+        setDebugInfo("Checking authentication...");
         
-        // Check user
-        const { data: userData, error: userError } = await supabaseBrowser.auth.getUser();
-        setUser(userData);
+        // Check environment variables
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
-        // Set auth state
-        setAuthState({
-          hasSession: !!sessionData.session,
-          hasUser: !!userData.user,
-          sessionError: sessionError?.message,
-          userError: userError?.message,
-          sessionExpiry: sessionData.session?.expires_at,
-          userEmail: userData.user?.email,
-          userId: userData.user?.id
-        });
+        setDebugInfo(prev => prev + `\nSupabase URL: ${supabaseUrl || 'not set'}`);
+        setDebugInfo(prev => prev + `\nSupabase Key: ${supabaseKey ? 'set' : 'not set'}`);
+        
+        // Check if using placeholder values
+        if (supabaseUrl === 'https://placeholder.supabase.co') {
+          setDebugInfo(prev => prev + '\nUsing placeholder Supabase configuration');
+        }
+        
+        // Get user session
+        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        
+        if (error) {
+          setDebugInfo(prev => prev + `\nAuth error: ${error.message}`);
+        } else if (user) {
+          const userData = {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.full_name || user.user_metadata?.name,
+            provider: 'supabase',
+            avatar_url: user.user_metadata?.avatar_url || null
+          };
+          setUser(userData);
+          setDebugInfo(prev => prev + `\nUser authenticated: ${user.email}`);
+        } else {
+          setDebugInfo(prev => prev + '\nNo user found');
+        }
+        
+        // Get session info
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        setDebugInfo(prev => prev + `\nSession: ${session ? 'active' : 'none'}`);
         
       } catch (error) {
-        console.error('Auth check error:', error);
-        setAuthState({ error: error instanceof Error ? error.message : 'Unknown error' });
+        setDebugInfo(prev => prev + `\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-
+    
     checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user);
-        setAuthState({
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          event,
-          userEmail: session?.user?.email,
-          userId: session?.user?.id
-        });
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
-    await supabaseBrowser.auth.signOut();
+    try {
+      await supabaseBrowser.auth.signOut();
+      setUser(null);
+      setDebugInfo(prev => prev + '\nSigned out successfully');
+    } catch (error) {
+      setDebugInfo(prev => prev + `\nSign out error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Checking authentication state...</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h1 className="text-2xl font-bold text-gray-900">Testing Authentication...</h1>
+          </div>
         </div>
       </div>
     );
@@ -77,60 +94,73 @@ export default function TestAuthPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Authentication Test Page</h1>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Authentication Test</h1>
           
-          <div className="space-y-6">
-            {/* Auth State */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">Authentication State</h2>
-              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
-                {JSON.stringify(authState, null, 2)}
-              </pre>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">User Status</h2>
+            {user ? (
+              <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                <p className="text-green-800">
+                  <strong>Authenticated:</strong> {user.email}
+                </p>
+                <p className="text-green-700 text-sm">ID: {user.id}</p>
+                <p className="text-green-700 text-sm">Name: {user.name || 'Not set'}</p>
+              </div>
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-red-800">
+                  <strong>Not Authenticated</strong>
+                </p>
+              </div>
+            )}
+          </div>
 
-            {/* Session Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">Session Info</h2>
-              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
-                {JSON.stringify(session, null, 2)}
-              </pre>
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Debug Information</h2>
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+              <pre className="text-sm text-gray-800 whitespace-pre-wrap">{debugInfo}</pre>
             </div>
+          </div>
 
-            {/* User Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">User Info</h2>
-              <pre className="text-sm bg-white p-3 rounded border overflow-auto">
-                {JSON.stringify(user, null, 2)}
-              </pre>
-            </div>
-
-            {/* Actions */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h2 className="text-lg font-semibold mb-3">Actions</h2>
-              <div className="space-y-2">
+          <div className="flex space-x-4">
+            {user ? (
+              <>
                 <button
                   onClick={handleSignOut}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
                 >
                   Sign Out
                 </button>
-                <br />
-                <a
-                  href="/auth/signin"
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 inline-block"
-                >
-                  Go to Sign In
-                </a>
-                <br />
-                <a
+                <Link
                   href="/profile/settings"
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 inline-block"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                 >
                   Go to Profile Settings
-                </a>
-              </div>
-            </div>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+            <Link
+              href="/"
+              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+            >
+              Back to Home
+            </Link>
           </div>
         </div>
       </div>

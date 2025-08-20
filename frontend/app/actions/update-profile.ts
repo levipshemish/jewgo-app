@@ -197,6 +197,29 @@ export async function checkUsernameAvailability(username: string) {
  */
 export async function getCurrentProfile() {
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
+        process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+      // Return mock profile for development
+      const mockProfile: ProfileData = {
+        username: "dev-user",
+        displayName: "Development User",
+        bio: "This is a development profile",
+        location: "Development Environment",
+        website: "",
+        phone: "",
+        dateOfBirth: null,
+        preferences: {
+          emailNotifications: true,
+          pushNotifications: true,
+          marketingEmails: false,
+          publicProfile: true,
+          showLocation: false,
+        },
+      };
+      return { success: true, data: mockProfile };
+    }
+
     const supabase = await createSupabaseServerClient();
     
     // Get the current user

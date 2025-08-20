@@ -61,6 +61,15 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       }
       
       // User authenticated successfully
+      // Wait a moment for the session to be fully established
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Refresh the session to ensure cookies are synced
+      const { error: sessionError } = await supabaseBrowser.auth.getSession();
+      if (sessionError) {
+        console.error('Session refresh error:', sessionError);
+      }
+      
       // Use Next.js router for better UX and state preservation
       router.push(redirectTo || '/profile/settings');
     } catch (err) {

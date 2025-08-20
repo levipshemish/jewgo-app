@@ -30,6 +30,22 @@ export default function SettingsPage() {
     const loadUser = async () => {
       try {
         console.log('Loading user data...');
+        
+        // Check if Supabase is configured
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
+            process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
+          console.warn('Supabase not configured, allowing access for development');
+          // For development, create a mock user
+          setUser({
+            id: 'dev-user-id',
+            email: 'dev@example.com',
+            name: 'Development User',
+            provider: 'development',
+            avatar_url: null
+          });
+          return;
+        }
+        
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         console.log('User load result:', { user, error });
         

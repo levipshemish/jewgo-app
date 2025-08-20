@@ -81,10 +81,14 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
         } else {
           console.error('Failed to load profile:', result.error);
           showError("Failed to load profile data");
+          // Still set as initialized so we show the form
+          setIsInitialized(true);
         }
       } catch (error) {
         console.error('Error loading profile:', error);
         showError("Failed to load profile data");
+        // Still set as initialized so we show the form
+        setIsInitialized(true);
       }
     };
 
@@ -105,9 +109,8 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
     }
 
     setIsLoading(true);
-
     try {
-      // Transform form data to match server schema
+      // Transform form data to match ProfileData structure
       const profileData = {
         username: data.username,
         displayName: data.displayName,
@@ -126,53 +129,31 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
       };
 
       const result = await updateProfile(profileData);
-
+      
       if (result.success) {
         showSuccess("Profile updated successfully!");
         onProfileUpdate?.(data);
-        
-        // Reset form dirty state
-        reset(data);
-        
-        // Show link to public profile if username was updated
-        if (data.username) {
-          showInfo(`Your public profile is available at /u/${data.username}`);
-        }
       } else {
         showError(result.error || "Failed to update profile");
       }
     } catch (error) {
+      console.error('Profile update error:', error);
       showError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getUsernameStatusColor = () => {
-    const status = getValidationStatus();
-    switch (status) {
-      case "checking":
-        return "text-blue-500";
-      case "available":
-        return "text-green-500";
-      case "unavailable":
-        return "text-red-500";
-      case "error":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
+  // Show loading state while initializing
   if (!isInitialized) {
     return (
-      <div className={`animate-pulse ${className}`}>
-        <div className="space-y-6">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+      <div className={`space-y-6 ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="space-y-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded"></div>
-            ))}
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-20 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
@@ -181,84 +162,74 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
-      {/* Basic Information */}
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="space-y-4">
           {/* Username */}
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username *
+              Username
             </label>
             <div className="mt-1 relative">
               <input
                 {...register("username")}
                 type="text"
                 id="username"
-                className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                  errors.username ? "border-red-300" : ""
-                }`}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Enter username"
               />
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+              )}
               {watchedUsername && (
-                <div className={`mt-1 text-sm ${getUsernameStatusColor()}`}>
-                  {getValidationMessage()}
+                <div className="mt-1 text-sm">
+                  <span className={`${
+                    getValidationStatus() === 'available' ? 'text-green-600' :
+                    getValidationStatus() === 'unavailable' ? 'text-red-600' :
+                    getValidationStatus() === 'checking' ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    {getValidationMessage()}
+                  </span>
                 </div>
               )}
             </div>
-            {errors.username && (
-              <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
-            )}
           </div>
 
           {/* Display Name */}
           <div>
             <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
-              Display Name *
+              Display Name
             </label>
             <input
               {...register("displayName")}
               type="text"
               id="displayName"
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                errors.displayName ? "border-red-300" : ""
-              }`}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="Enter display name"
             />
             {errors.displayName && (
               <p className="mt-1 text-sm text-red-600">{errors.displayName.message}</p>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Bio */}
-      <div>
-        <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-          Bio
-        </label>
-        <textarea
-          {...register("bio")}
-          id="bio"
-          rows={3}
-          className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-            errors.bio ? "border-red-300" : ""
-          }`}
-          placeholder="Tell us about yourself..."
-        />
-        <div className="mt-1 flex justify-between text-sm text-gray-500">
-          <span>Optional</span>
-          <span>{watch("bio")?.length || 0}/500</span>
-        </div>
-        {errors.bio && (
-          <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
-        )}
-      </div>
+          {/* Bio */}
+          <div>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+              Bio
+            </label>
+            <textarea
+              {...register("bio")}
+              id="bio"
+              rows={3}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Tell us about yourself"
+            />
+            {errors.bio && (
+              <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
+            )}
+          </div>
 
-      {/* Contact Information */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {/* Location */}
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">
@@ -268,10 +239,8 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
               {...register("location")}
               type="text"
               id="location"
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                errors.location ? "border-red-300" : ""
-              }`}
-              placeholder="City, State"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Enter your location"
             />
             {errors.location && (
               <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
@@ -287,9 +256,7 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
               {...register("website")}
               type="url"
               id="website"
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                errors.website ? "border-red-300" : ""
-              }`}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               placeholder="https://example.com"
             />
             {errors.website && (
@@ -300,16 +267,14 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
           {/* Phone */}
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-              Phone
+              Phone Number
             </label>
             <input
               {...register("phone")}
               type="tel"
               id="phone"
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                errors.phone ? "border-red-300" : ""
-              }`}
-              placeholder="+1 (555) 123-4567"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              placeholder="Enter phone number"
             />
             {errors.phone && (
               <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
@@ -325,9 +290,7 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
               {...register("dateOfBirth")}
               type="date"
               id="dateOfBirth"
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
-                errors.dateOfBirth ? "border-red-300" : ""
-              }`}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
             {errors.dateOfBirth && (
               <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>

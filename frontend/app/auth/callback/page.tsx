@@ -34,6 +34,9 @@ function AuthCallbackContent() {
           return;
         }
 
+        // Wait a moment for the session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
         // Get session to verify authentication
         const session = await supabaseBrowser.auth.getSession();
         if (session?.data?.session) {

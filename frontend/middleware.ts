@@ -45,9 +45,21 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
+    // Check if Supabase is properly configured
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    // If Supabase is not configured, skip authentication checks for now
+    if (!supabaseUrl || !supabaseAnonKey || 
+        supabaseUrl === 'https://placeholder.supabase.co' || 
+        supabaseAnonKey === 'placeholder-key') {
+      console.log('[Middleware] Supabase not configured, allowing access');
+      return res;
+    }
+
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         cookies: {
           get(name: string) {
@@ -71,6 +83,8 @@ export async function middleware(req: NextRequest) {
 
     // Debug logging
     console.log(`[Middleware] Path: ${path}, User: ${user?.email || 'none'}, Error: ${error?.message || 'none'}`);
+    console.log(`[Middleware] Supabase URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL}`);
+    console.log(`[Middleware] Supabase Key: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'set' : 'not set'}`);
 
     // Check if route requires authentication
     const requiresAuth = PROTECTED_PATHS.some((p) => 
