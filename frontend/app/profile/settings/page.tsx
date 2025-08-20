@@ -27,7 +27,10 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
+        console.log('[Profile Settings] Loading user data...');
+        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        console.log('[Profile Settings] User check result:', { user: user?.email, error });
+        
         if (user) {
           setUser({
             id: user.id,
@@ -36,9 +39,12 @@ export default function SettingsPage() {
             provider: 'supabase',
             avatar_url: user.user_metadata?.avatar_url || null
           });
+          console.log('[Profile Settings] User set successfully');
+        } else {
+          console.log('[Profile Settings] No user found');
         }
       } catch (error) {
-        console.error("Failed to load user:", error);
+        console.error("[Profile Settings] Failed to load user:", error);
       } finally {
         setIsLoading(false);
       }
