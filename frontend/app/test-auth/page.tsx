@@ -44,13 +44,12 @@ export default function TestAuthPage() {
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user);
         setAuthState({
           hasSession: !!session,
           hasUser: !!session?.user,
-          event: event,
+          event,
           userEmail: session?.user?.email,
           userId: session?.user?.id
         });

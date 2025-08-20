@@ -55,6 +55,25 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
     setIsFavorited(!isFavorited);
   });
 
+  // Smart truncation function that shows last 3 letters before ellipsis
+  const smartTruncate = (text: string, maxLength: number = 20) => {
+    if (!text || text.length <= maxLength) return text;
+    
+    // Calculate how many characters to show before ellipsis
+    // We want to show the last 3 letters, so we need to account for "..." (3 chars)
+    const visibleChars = maxLength - 3; // Account for "..."
+    const lastThreeChars = text.slice(-3);
+    const remainingChars = visibleChars - 3; // Space for last 3 chars
+    
+    if (remainingChars <= 0) {
+      // If we can't fit the last 3 chars + ellipsis, just show ellipsis
+      return '...';
+    }
+    
+    const firstPart = text.slice(0, remainingChars);
+    return `${firstPart}...${lastThreeChars}`;
+  };
+
   // Get category-based placeholder image
   const getCategoryPlaceholder = (_category: string) => {
     // Use optimized WebP placeholder
@@ -295,16 +314,26 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Fixed height container */}
+        {/* Restaurant Name - Fixed height container with smart truncation */}
         <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-0' : 'h-8 mb-0'}`}>
-          <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} title={titleCase(restaurant.name)}>
-            {titleCase(restaurant.name)}
+          <h3 
+            className={`font-bold text-gray-900 leading-tight w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
+            title={titleCase(restaurant.name)}
+            style={{
+              // Custom truncation that shows last 3 letters
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              display: 'block'
+            }}
+          >
+            {smartTruncate(titleCase(restaurant.name), isMobileDevice ? 15 : 20)}
           </h3>
         </div>
         
         {/* Price Range and Rating - Fixed height meta row */}
         <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text pl-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           

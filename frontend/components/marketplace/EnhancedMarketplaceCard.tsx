@@ -1,0 +1,312 @@
+'use client';
+
+import { Heart, MapPin, Clock, User, Eye, Star } from 'lucide-react';
+import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
+
+import { MarketplaceListing } from '@/lib/types/marketplace';
+import { cn } from '@/lib/utils/classNames';
+
+interface EnhancedMarketplaceCardProps {
+  listing: MarketplaceListing;
+  onClick?: () => void;
+  className?: string;
+  showEndorsements?: boolean;
+  variant?: 'default' | 'compact' | 'featured';
+  onLike?: (listing: MarketplaceListing) => void;
+  isLiked?: boolean;
+}
+
+export default function EnhancedMarketplaceCard({
+  listing,
+  onClick,
+  className = "",
+  showEndorsements = true,
+  variant = 'default',
+  onLike,
+  isLiked: externalIsLiked
+}: EnhancedMarketplaceCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Sync with external like state
+  useEffect(() => {
+    if (externalIsLiked !== undefined) {
+      setIsLiked(externalIsLiked);
+    }
+  }, [externalIsLiked]);
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newLikeState = !isLiked;
+    setIsLiked(newLikeState);
+    if (onLike) {
+      onLike(listing);
+    }
+  };
+
+  const formatPrice = (priceCents: number, currency: string) => {
+    if (priceCents === 0) {
+      return 'Free';
+    }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(priceCents / 100);
+  };
+
+  const getListingTypeIcon = (type: string) => {
+    switch (type) {
+      case 'sale':
+        return '💰';
+      case 'free':
+        return '🎁';
+      case 'borrow':
+        return '📚';
+      case 'gemach':
+        return '🤝';
+      default:
+        return '🛍️';
+    }
+  };
+
+  const getListingTypeColor = (type: string) => {
+    switch (type) {
+      case 'sale':
+        return 'bg-green-100 text-green-800';
+      case 'free':
+        return 'bg-blue-100 text-blue-800';
+      case 'borrow':
+        return 'bg-purple-100 text-purple-800';
+      case 'gemach':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getConditionColor = (condition?: string) => {
+    switch (condition) {
+      case 'new':
+        return 'bg-green-100 text-green-800';
+      case 'used_like_new':
+        return 'bg-blue-100 text-blue-800';
+      case 'used_good':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'used_fair':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    }
+    if (diffInSeconds < 3600) {
+      return `${Math.floor(diffInSeconds / 60)}m ago`;
+    }
+    if (diffInSeconds < 86400) {
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    }
+    if (diffInSeconds < 2592000) {
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    }
+    
+    return date.toLocaleDateString();
+  };
+
+  const getHeroImage = () => {
+    const imageUrl = listing.images?.[0] || listing.thumbnail;
+    if (!imageUrl || imageError) {
+      return getListingTypeIcon(listing.kind);
+    }
+    return imageUrl;
+  };
+
+  const handleImageLoad = () => setImageLoading(false);
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoading(false);
+  };
+
+  const isImageUrl = typeof getHeroImage() === 'string' && getHeroImage().startsWith('http');
+
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group",
+        variant === 'featured' && "ring-2 ring-blue-200",
+        className
+      )}
+    >
+      {/* Image Section */}
+      <div className="relative aspect-[5/4] overflow-hidden">
+        {isImageUrl ? (
+          <>
+            {imageLoading && (
+              <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+            )}
+            <Image
+              src={getHeroImage() as string}
+              alt={listing.title}
+              fill
+              className={cn(
+                "object-cover transition-transform duration-200 group-hover:scale-105",
+                imageLoading ? "opacity-0" : "opacity-100"
+              )}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </>
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+            <div className="text-4xl text-gray-400">
+              {getHeroImage()}
+            </div>
+          </div>
+        )}
+
+        {/* Category Badge */}
+        {listing.category_name && (
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm">
+              {listing.category_name}
+            </span>
+          </div>
+        )}
+
+        {/* Like Button */}
+        <button
+          onClick={handleLikeClick}
+          className={cn(
+            "absolute top-2 right-2 p-1.5 rounded-full transition-all duration-200",
+            isLiked 
+              ? 'text-red-500 bg-red-50 shadow-sm' 
+              : 'text-gray-400 bg-white/90 backdrop-blur-sm hover:text-red-500 hover:bg-red-50 shadow-sm'
+          )}
+        >
+          <Heart className={cn("w-4 h-4", isLiked ? 'fill-current' : '')} />
+        </button>
+
+        {/* Condition Badge */}
+        {listing.condition && (
+          <div className="absolute bottom-2 left-2">
+            <span className={cn(
+              "px-2 py-1 text-xs font-medium rounded-full shadow-sm",
+              getConditionColor(listing.condition)
+            )}>
+              {listing.condition.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+          </div>
+        )}
+
+        {/* Rating Badge */}
+        {listing.rating && listing.rating > 0 && (
+          <div className="absolute bottom-2 right-2 flex items-center bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">
+            <Star className="w-3 h-3 text-yellow-500 fill-current mr-1" />
+            <span className="text-xs font-medium text-gray-700">
+              {listing.rating.toFixed(1)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Content Section */}
+      <div className="p-3">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 leading-tight">
+              {listing.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* Price and Type */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-gray-900">
+              {formatPrice(listing.price_cents, listing.currency)}
+            </span>
+            {listing.originalPrice && listing.originalPrice > listing.price_cents && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(listing.originalPrice, listing.currency)}
+              </span>
+            )}
+          </div>
+          
+          <span className={cn(
+            "px-2 py-1 text-xs font-medium rounded-full",
+            getListingTypeColor(listing.kind)
+          )}>
+            {listing.kind.charAt(0).toUpperCase() + listing.kind.slice(1)}
+          </span>
+        </div>
+
+        {/* Description */}
+        {listing.description && variant !== 'compact' && (
+          <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+            {listing.description}
+          </p>
+        )}
+
+        {/* Location */}
+        {listing.city && (
+          <div className="flex items-center text-xs text-gray-500 mb-1">
+            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">
+              {listing.city}{listing.region && `, ${listing.region}`}
+            </span>
+          </div>
+        )}
+
+        {/* Seller */}
+        {listing.seller_name && variant !== 'compact' && (
+          <div className="flex items-center text-xs text-gray-500 mb-1">
+            <User className="w-3 h-3 mr-1 flex-shrink-0" />
+            <span className="truncate">{listing.seller_name}</span>
+          </div>
+        )}
+
+        {/* Endorsements */}
+        {showEndorsements && (listing.endorse_up > 0 || listing.endorse_down > 0) && variant !== 'compact' && (
+          <div className="flex items-center text-xs text-gray-500 mb-1">
+            <div className="flex items-center mr-3">
+              <span className="text-green-600 mr-1">👍</span>
+              <span>{listing.endorse_up}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-red-600 mr-1">👎</span>
+              <span>{listing.endorse_down}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <div className="flex items-center gap-3">
+            {listing.views && (
+              <div className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                <span>{listing.views}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>{formatTimeAgo(listing.created_at)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

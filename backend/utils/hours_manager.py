@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pytz
 
-from backend.utils.hours_formatter import HoursFormatter
+from .hours_formatter import HoursFormatter
 
 
 

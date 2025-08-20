@@ -11,7 +11,6 @@ export default function TestRedirectPage() {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          console.log('Redirecting to profile settings...');
           router.push('/profile/settings');
           return 0;
         }
@@ -36,14 +35,13 @@ export default function TestRedirectPage() {
             {countdown}
           </div>
           <p className="text-sm text-gray-500">
-            If the redirect doesn't work, there might be an issue with client-side navigation.
+            If the redirect doesn&apos;t work, there might be an issue with client-side navigation.
           </p>
         </div>
         
         <div className="space-y-4">
           <button
             onClick={() => {
-              console.log('Manual redirect to profile settings...');
               router.push('/profile/settings');
             }}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
@@ -53,7 +51,6 @@ export default function TestRedirectPage() {
           
           <button
             onClick={() => {
-              console.log('Manual redirect to sign-in...');
               router.push('/auth/signin');
             }}
             className="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
@@ -63,7 +60,6 @@ export default function TestRedirectPage() {
           
           <button
             onClick={() => {
-              console.log('Manual redirect to home...');
               router.push('/');
             }}
             className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"

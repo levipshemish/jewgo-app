@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 import datetime
 import pytz
 
-from backend.utils.logging_config import get_logger
+from .logging_config import get_logger
             
 
 

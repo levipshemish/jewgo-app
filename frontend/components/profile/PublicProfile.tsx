@@ -228,7 +228,7 @@ export default function PublicProfile({ profile, stats, username }: PublicProfil
             <div className="text-center py-8 text-gray-500">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium">No recent activity</p>
-              <p className="text-sm">When {display_name} writes reviews or adds favorites, they'll appear here.</p>
+              <p className="text-sm">When {display_name} writes reviews or adds favorites, they&apos;ll appear here.</p>
             </div>
           </div>
         </div>

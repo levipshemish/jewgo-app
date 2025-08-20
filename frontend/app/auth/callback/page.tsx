@@ -17,7 +17,9 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const processCallback = async () => {
-      if (isProcessing) return; // Prevent duplicate processing
+      if (isProcessing) {
+        return; // Prevent duplicate processing
+      }
       
       try {
         setIsProcessing(true);
@@ -37,15 +39,13 @@ function AuthCallbackContent() {
         if (session?.data?.session) {
           // Session established successfully
           const redirectTo = searchParams.get("redirectTo") || '/profile/settings';
-          console.log('Redirecting to:', redirectTo);
           
           // Force a full page navigation to ensure the redirect works
           window.location.href = redirectTo;
         } else {
           setError('Failed to establish session');
         }
-      } catch (error) {
-        console.error('Auth callback error:', error);
+      } catch (_error) {
         setError('Authentication failed');
       } finally {
         setIsProcessing(false);

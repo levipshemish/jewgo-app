@@ -17,21 +17,18 @@ export default function DebugAuthPage() {
       try {
         // Check session
         const { data: { session: sessionData }, error: sessionError } = await supabaseBrowser.auth.getSession();
-        console.log('Session check:', { sessionData, sessionError });
         setSession(sessionData);
 
         // Check user
         const { data: { user: userData }, error: userError } = await supabaseBrowser.auth.getUser();
-        console.log('User check:', { userData, userError });
         setUser(userData);
 
         // Check cookies
         const cookieString = document.cookie;
         setCookies(cookieString);
-        console.log('Cookies:', cookieString);
 
       } catch (error) {
-        console.error('Auth check error:', error);
+        // Auth check error
       } finally {
         setLoading(false);
       }
@@ -42,7 +39,6 @@ export default function DebugAuthPage() {
     // Listen for auth state changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user || null);
       }
@@ -57,18 +53,16 @@ export default function DebugAuthPage() {
         email: 'mendel1023@gmail.com',
         password: 'your-password-here' // You'll need to enter this
       });
-      console.log('Sign in result:', { data, error });
     } catch (error) {
-      console.error('Sign in error:', error);
+      // Sign in error
     }
   };
 
   const handleSignOut = async () => {
     try {
       const { error } = await supabaseBrowser.auth.signOut();
-      console.log('Sign out result:', { error });
     } catch (error) {
-      console.error('Sign out error:', error);
+      // Sign out error
     }
   };
 

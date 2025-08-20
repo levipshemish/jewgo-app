@@ -103,11 +103,9 @@ export class RestaurantsAPI {
           
           // For 429 errors, implement exponential backoff with longer delays
           if (response.status === 429) {
-            console.warn(`Rate limited (429) on attempt ${attempt}/${retries}`);
             if (attempt < retries) {
               // Longer delay for rate limiting: 2^attempt seconds + random jitter
               const delay = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 2000, 10000);
-              console.log(`Waiting ${Math.round(delay)}ms before retry...`);
               await new Promise(resolve => setTimeout(resolve, delay));
               continue;
             }
@@ -138,14 +136,11 @@ export class RestaurantsAPI {
         clearTimeout(timeoutId);
         
         if (error.name === 'AbortError') {
-          console.error(`Request timed out after ${timeout}ms`);
           if (attempt < retries) {
             const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
-        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-          console.error('Network error - possible CORS or connectivity issue');
         }
         
         if (attempt === retries) {
