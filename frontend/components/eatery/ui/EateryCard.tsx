@@ -275,13 +275,13 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
       {/* Text Content Container - Fixed height structure for consistency */}
       <motion.div 
-        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-3 pb-2' : 'p-2'}`}
+        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-2 pb-2' : 'p-2'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
         {/* Restaurant Name - Fixed height container */}
-        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-8 mb-2' : 'h-10 mb-2'}`}>
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-1'}`}>
           <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
