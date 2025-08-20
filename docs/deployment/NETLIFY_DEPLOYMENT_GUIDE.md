@@ -138,15 +138,21 @@ The monitoring configuration now includes both Netlify and Vercel endpoints:
    - **Solution**: The app uses Netlify's built-in Next.js support, no plugin needed
    - **Note**: Next.js 15 is fully supported by Netlify without additional plugins
 
-4. **API Routes Not Working**
+4. **SSR/Static Generation Errors**
+   - **Error**: `Cannot read properties of undefined (reading 'call')` during build
+   - **Solution**: Add `export const dynamic = 'force-dynamic'` to pages using client-side libraries
+   - **Fix**: This prevents static generation for pages that need client-side rendering
+   - **Example**: Profile settings page uses this to avoid Supabase SSR conflicts
+
+5. **API Routes Not Working**
    - Ensure `NEXT_PUBLIC_BACKEND_URL` is set correctly
    - Check that backend is running on Render
 
-5. **Authentication Issues**
+6. **Authentication Issues**
    - Verify `NEXTAUTH_URL` matches your Netlify domain
    - Check that `NEXTAUTH_SECRET` is set
 
-6. **Database Connection Issues**
+7. **Database Connection Issues**
    - Ensure `DATABASE_URL` is accessible from Netlify
    - Check database connection limits
 
