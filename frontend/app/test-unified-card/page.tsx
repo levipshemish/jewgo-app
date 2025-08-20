@@ -333,7 +333,7 @@ export default function TestUnifiedCardPage() {
             />
             <EnhancedProductCard
               data={{
-                id: 5,
+                id: "5",
                 imageUrl: "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop",
                 imageTag: "Coffee",
                 imageTagLink: "/eatery?cuisine=cafe",
