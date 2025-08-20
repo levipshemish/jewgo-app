@@ -43,7 +43,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     onLoad?.(e);
   };
 
-  const defaultSizes = sizes || "(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw";
+  const defaultSizes = sizes || "200px";
 
   return (
     <div className={cn(
@@ -71,8 +71,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         sizes={defaultSizes}
         priority={priority}
         loading={loading}
-        placeholder="blur"
-        blurDataURL="data:image/webp;base64,UklGRnoGAABXRUJQVlA4IG4GAACwYwCdASoKAAYABUB8JYwCdAEO/v7+AA=="
+
         onError={handleError}
         onLoad={handleLoad}
         unoptimized={currentSrc?.includes('cloudinary.com')}

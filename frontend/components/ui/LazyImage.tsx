@@ -36,7 +36,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
     custom: customAspectRatio || 'aspect-[3/4]'
   };
 
-  const defaultSizes = sizes || "(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw";
+  const defaultSizes = sizes || "200px";
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     // Mark only this instance as errored; component already swaps to fallbackSrc via imageError flag
@@ -86,8 +86,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
           sizes={defaultSizes}
           priority={priority}
           loading="lazy"
-          placeholder="blur"
-          blurDataURL="data:image/webp;base64,UklGRnoGAABXRUJQVlA4IG4GAACwYwCdASoKAAYABUB8JYwCdAEO/v7+AA=="
+
           onError={handleError}
           onLoad={handleLoad}
           unoptimized={src?.includes('cloudinary.com')}

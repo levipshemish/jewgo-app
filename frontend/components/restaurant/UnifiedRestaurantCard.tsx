@@ -263,10 +263,9 @@ export default function UnifiedRestaurantCard({
             className={`object-cover transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
-            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1440px) 20vw, 16vw"
+            sizes="200px"
             unoptimized={heroSrc.includes('cloudinary.com')}
             priority={false}
-            quality={85}
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -274,17 +273,7 @@ export default function UnifiedRestaurantCard({
           </div>
         )}
 
-        {/* Fallback Image for Loading Errors */}
-        {imageError && (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-gray-400 text-2xl mb-2">🍽️</div>
-              <div className="text-gray-500 text-xs font-medium truncate px-2">
-                {titleCase(restaurant.name)}
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Kosher Category Badge */}
         <AnimatePresence>

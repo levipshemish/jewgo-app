@@ -540,7 +540,7 @@ const RestaurantDetailPage: React.FC = () => {
           {/* Hours - enhanced expandable display */}
           <div className="flex justify-center mb-3 px-4">
             <div className="w-full max-w-md">
-              <EnhancedHoursDisplay restaurantId={restaurant.id} className="mx-auto" showTimezone={false} />
+              <EnhancedHoursDisplay restaurantId={parseInt(restaurant.id.toString())} className="mx-auto" showTimezone={false} />
             </div>
           </div>
 

@@ -183,25 +183,15 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 className={`object-cover transition-opacity duration-300 ${
                   imageLoading[index] ? 'opacity-0' : 'opacity-100'
                 }`}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+                sizes="200px"
                 priority={index === 0}
                 onError={() => handleImageError(index)}
                 onLoad={() => handleImageLoad(index)}
                 unoptimized={Boolean(image && (image.includes('cloudinary.com') || image.includes('googleusercontent.com') || image.includes('images.unsplash.com')))}
                 loading={index === 0 ? 'eager' : 'lazy'}
-                placeholder="blur"
-                blurDataURL="data:image/webp;base64,UklGRnoGAABXRUJQVlA4IG4GAACwYwCdASoKAAYABUB8JYwCdAEO/v7+AA=="
               />
               
-              {/* Error fallback */}
-              {imageError[index] && (
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">📷</div>
-                    <p className="text-gray-600 text-sm">Image unavailable</p>
-                  </div>
-                </div>
-              )}
+
             </div>
           ))}
         </div>

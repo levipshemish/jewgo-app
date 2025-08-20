@@ -131,11 +131,6 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       return '/images/default-restaurant.webp';
     }
     
-    // Add Cloudinary optimization parameters if missing
-    if (safeUrl.includes('cloudinary.com') && !safeUrl.includes('/f_auto,q_auto/')) {
-      safeUrl = safeUrl.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
-    }
-    
     return safeUrl;
   }, [cardData.imageUrl, imageError]);
 
@@ -279,24 +274,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 setImageError(true);
                 setImageLoading(false);
               }}
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+              sizes="200px"
               unoptimized={heroImageUrl.includes('cloudinary.com')}
               priority={priority}
-              quality={85}
             />
           )}
 
-          {/* Fallback for Image Errors */}
-          {imageError && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-[20px]">
-              <div className="text-center">
-                <div className="text-gray-400 text-2xl mb-2">🍽️</div>
-                <div className="text-gray-500 text-xs font-medium truncate px-2">
-                  {cardData.title}
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
         
         {/* Image Tag */}

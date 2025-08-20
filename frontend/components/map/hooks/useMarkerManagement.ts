@@ -52,7 +52,7 @@ export function useMarkerManagement({
 
   // Enhanced restaurant key generation with content versioning
   const getRestaurantKey = useCallback((restaurant: Restaurant) => {
-    const isSelected = selectedRestaurantId === restaurant.id;
+    const isSelected = selectedRestaurantId === parseInt(restaurant.id);
     const rating = restaurant.quality_rating || restaurant.rating || restaurant.star_rating || restaurant.google_rating || 0;
     
     // Calculate distance hash if user location is available
@@ -179,7 +179,7 @@ export function useMarkerManagement({
 
   // Separate content creation from marker creation
   const createMarkerContent = useCallback((restaurant: Restaurant) => {
-    const isSelected = selectedRestaurantId === restaurant.id;
+    const isSelected = selectedRestaurantId === parseInt(restaurant.id.toString());
     const markerColor = getMarkerColor(restaurant.kosher_category);
     const finalColor = isSelected ? '#FFD700' : markerColor;
     
