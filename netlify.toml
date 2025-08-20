@@ -21,6 +21,9 @@
   # Ensure proper environment
   NODE_ENV = "production"
   
+  # Configure Next.js plugin to avoid edge function issues
+  NETLIFY_NEXT_PLUGIN_SKIP = "false"
+  
   # Configure secrets scanning to allow NEXT_PUBLIC_ environment variables and ignore placeholder values
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,SMTP_PASS"
   SECRETS_SCAN_OMIT_PATHS = ".next/cache/**,.next/static/**,.next/server/**,.next/required-server-files.json,scripts/**,docs/reports/**,*.env.example,*.env.production"

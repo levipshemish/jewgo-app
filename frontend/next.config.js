@@ -10,6 +10,10 @@ const isDocker = process.env.DOCKER === 'true' || process.env.NODE_ENV === 'deve
 // Import webpack optimization utilities
 const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
 const nextConfig = {
+  // Enable node middleware for nodejs runtime support
+  experimental: {
+    nodeMiddleware: true,
+  },
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
     ignoreDuringBuilds: !isCI,

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Explicitly set runtime to nodejs to avoid edge runtime issues with Netlify
+export const runtime = 'nodejs';
+
 // Define protected routes that require authentication
 const PROTECTED_PATHS = [
   "/profile", 
