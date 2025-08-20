@@ -11,10 +11,10 @@ const path = require('path');
  * @returns {Object} Optimized webpack configuration
  */
 function optimizeWebpackCache(config) {
-  // Enhanced cache configuration
+  // Enhanced cache configuration - use memory type for compatibility
   config.cache = {
     ...config.cache,
-    type: 'filesystem',
+    type: 'memory', // Changed from 'filesystem' to 'memory' for compatibility
     compression: 'gzip',
     maxAge: 172800000, // 2 days
     store: 'pack',
