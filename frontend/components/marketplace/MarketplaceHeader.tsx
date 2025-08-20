@@ -41,7 +41,7 @@ export default function MarketplaceHeader({ onSearch, className = "" }: Marketpl
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: any) => {
         if (session?.user) {
           setUser(transformSupabaseUser(session.user));
         } else {

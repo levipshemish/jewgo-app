@@ -101,6 +101,14 @@ export default function FavoritesPage() {
     setShowFilters(true);
   };
 
+  const handleShowMap = () => {
+    router.push('/live-map');
+  };
+
+  const handleAddEatery = () => {
+    router.push('/add-eatery');
+  };
+
   const handleFilterChange = (filterType: 'agency' | 'dietary' | 'category', value: string) => {
     setActiveFilters(prev => ({
       ...prev,
@@ -345,7 +353,8 @@ export default function FavoritesPage() {
 
           <ActionButtons
             onShowFilters={handleShowFilters}
-            onTouch={handleImmediateTouch}
+            onShowMap={handleShowMap}
+            onAddEatery={handleAddEatery}
           />
 
           <BottomNavigation />
