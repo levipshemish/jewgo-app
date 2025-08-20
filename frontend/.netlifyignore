@@ -1,5 +1,4 @@
-# Ignore build cache and temporary files
-.next/
+# Ignore build cache and temporary files (but allow .next for deployment)
 .netlify/
 .cache/
 *.pack
@@ -32,3 +31,7 @@ node_modules/
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+# Ignore specific cache files that may contain environment variables
+.next/cache/webpack/**
+.next/server/chunks/**

@@ -62,6 +62,19 @@ NODE_ENV=production
 PRISMA_QUERY_ENGINE_TYPE=library
 ```
 
+### Secrets Scanning Configuration
+
+Netlify's secrets scanning is configured to properly handle public environment variables:
+
+```toml
+# In netlify.toml
+[build.environment]
+SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
+SECRETS_SCAN_OMIT_PATHS = ".next/cache/**,.next/static/**,.next/server/**"
+```
+
+**Note**: `NEXT_PUBLIC_*` environment variables are intentionally public and safe to include in client-side bundles. The configuration above prevents false positives in Netlify's security scanning.
+
 ## Deployment Methods
 
 ### Method 1: Automated Deployment (Recommended)
@@ -207,6 +220,13 @@ Located in `frontend/_headers`, configures security headers:
    - Verify `DATABASE_URL` is correct
    - Check that database is accessible from Netlify
    - Ensure Prisma migrations are up to date
+
+5. **Secrets Scanning Issues**
+   - **Error**: "Secrets scanning found secrets in build"
+   - **Cause**: Netlify detected public environment variables in build output
+   - **Solution**: The configuration in `netlify.toml` handles this automatically
+   - **Manual Fix**: Set `SECRETS_SCAN_OMIT_KEYS` to include your public variables
+   - **Note**: `NEXT_PUBLIC_*` variables are safe to be public
 
 ### Debugging Steps
 
