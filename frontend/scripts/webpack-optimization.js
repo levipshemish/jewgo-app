@@ -11,11 +11,10 @@ const path = require('path');
  * @returns {Object} Optimized webpack configuration
  */
 function optimizeWebpackCache(config) {
-  // Let Next.js handle cache configuration with its defaults
-  // Remove custom cache configuration to avoid compatibility issues
-  if (config.cache) {
-    delete config.cache;
-  }
+  // Ensure cache type is set to memory for compatibility
+  config.cache = {
+    type: 'memory',
+  };
 
   return config;
 }

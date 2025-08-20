@@ -115,7 +115,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
   // Sync with favorites manager
   useEffect(() => {
-    setIsLiked(isFavorite(data.id));
+    setIsLiked(isFavorite(Number(data.id)));
   }, [isFavorite, data.id]);
 
   // Memoized computations
@@ -163,13 +163,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       
       if (newIsLiked) {
         addFavorite({
-          id: data.id,
+          id: Number(data.id),
           name: data.title,
           addedAt: new Date().toISOString(),
           visitCount: 0
         });
       } else {
-        removeFavorite(data.id);
+        removeFavorite(Number(data.id));
       }
       
       setIsLiked(newIsLiked);

@@ -27,6 +27,11 @@ const nextConfig = {
   },
   // Validate required env vars at build time (especially in CI/production)
   webpack: (config, { isServer }) => {
+    // Ensure cache type is set to memory for all webpack configurations
+    config.cache = {
+      type: 'memory',
+    };
+
     // Apply webpack optimizations to reduce serialization warnings
     config = optimizeWebpackConfig(config, { isServer });
 
@@ -190,5 +195,16 @@ module.exports = withSentryConfig(
     
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
+    
+    // Ensure webpack cache configuration is preserved
+    webpack: (config, options) => {
+      // Ensure cache type is set to memory for Sentry webpack configurations
+      if (config.cache) {
+        config.cache = {
+          type: 'memory',
+        };
+      }
+      return config;
+    },
   }
 );
