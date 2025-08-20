@@ -5,6 +5,7 @@ const BACKEND_URL = (
   /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
 ) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo-app-oyoh.onrender.com';
 const isCI = process.env.CI === 'true' || process.env.VERCEL === '1' || process.env.NODE_ENV === 'production'
+const isDocker = process.env.DOCKER === 'true' || process.env.NODE_ENV === 'development'
 
 // Import webpack optimization utilities
 const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
@@ -35,44 +36,45 @@ const nextConfig = {
     // Apply webpack optimizations to reduce serialization warnings
     config = optimizeWebpackConfig(config, { isServer });
 
+    // Docker-specific optimizations
+    if (isDocker) {
+      // Add fallbacks for Docker environment
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+      };
+
+      // Optimize module resolution for Docker
+      config.resolve.modules = [
+        'node_modules',
+        ...(config.resolve.modules || [])
+      ];
+
+      // Add extensions for better module resolution
+      config.resolve.extensions = [
+        '.js',
+        '.jsx',
+        '.ts',
+        '.tsx',
+        '.json',
+        ...(config.resolve.extensions || [])
+      ];
+    }
+
     // Exclude archive directories from build using webpack resolve
     if (config.resolve && config.resolve.alias) {
       config.resolve.alias['@/components/archive'] = false;
-    }
-
-    // Fix module format conflicts for problematic dependencies
-    config.module.rules.push({
-      test: /node_modules\/require-in-the-middle/,
-      use: 'null-loader',
-    });
-
-    // Handle CommonJS/ESM conflicts
-    config.module.rules.push({
-      test: /\.m?js$/,
-      resolve: {
-        fullySpecified: false,
-      },
-    });
-
-    // Exclude problematic OpenTelemetry instrumentation from client bundle
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'require-in-the-middle': false,
-        '@opentelemetry/instrumentation': false,
-        '@opentelemetry/instrumentation-http': false,
-        '@opentelemetry/instrumentation-express': false,
-        '@opentelemetry/instrumentation-pg': false,
-      };
-    }
-
-    // Add externals for problematic server-side modules
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push({
-        'require-in-the-middle': 'commonjs require-in-the-middle',
-        '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation',
-      });
     }
 
     // Handle Prisma Query Engine binaries for server-side rendering
@@ -235,36 +237,33 @@ const nextConfig = {
   },
 };
 
-// Temporarily disable Sentry to fix server-side issues
-// const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require("@sentry/nextjs");
 
-// module.exports = withSentryConfig(
-//   nextConfig,
-//   {
-//     // For all available options, see:
-//     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-//     
-//     // Disable source map upload to avoid build issues
-//     dryRun: true,
-//     silent: true,
-//     
-//     // Upload a larger set of source maps for prettier stack traces (increases build time)
-//     widenClientFileUpload: true,
-//     
-//     // Automatically tree-shake Sentry logger statements to reduce bundle size
-//     disableLogger: true,
-//     
-//     // Ensure webpack cache configuration is preserved
-//     webpack: (config, options) => {
-//       // Ensure cache type is set to memory for Sentry webpack configurations
-//       if (config.cache) {
-//         config.cache = {
-//           type: 'memory',
-//         };
-//       }
-//       return config;
-//     },
-//   }
-// );
-
-module.exports = nextConfig;
+module.exports = withSentryConfig(
+  nextConfig,
+  {
+    // For all available options, see:
+    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+    
+    // Disable source map upload to avoid build issues
+    dryRun: true,
+    silent: true,
+    
+    // Upload a larger set of source maps for prettier stack traces (increases build time)
+    widenClientFileUpload: true,
+    
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    disableLogger: true,
+    
+    // Ensure webpack cache configuration is preserved
+    webpack: (config, options) => {
+      // Ensure cache type is set to memory for Sentry webpack configurations
+      if (config.cache) {
+        config.cache = {
+          type: 'memory',
+        };
+      }
+      return config;
+    },
+  }
+);
