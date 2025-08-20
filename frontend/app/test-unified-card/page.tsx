@@ -46,8 +46,8 @@ export default function TestUnifiedCardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -60,20 +60,22 @@ export default function TestUnifiedCardPage() {
         </div>
 
         {/* Cards Container */}
-        <div className="grid grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-2 gap-4 sm:gap-8 mb-12 min-w-0" style={{ minWidth: 'fit-content' }}>
           {/* Restaurant Card */}
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
               Restaurant Card
             </h2>
-            <div className="flex justify-center">
-              <EnhancedProductCard
-                data={mockRestaurantData}
-                onCardClick={handleCardClick}
-                onLikeToggle={handleLikeToggle}
-                onTagClick={handleTagClick}
-                className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
-              />
+            <div className="flex justify-center w-full">
+              <div className="w-[200px] flex-shrink-0">
+                <EnhancedProductCard
+                  data={mockRestaurantData}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={handleLikeToggle}
+                  onTagClick={handleTagClick}
+                  className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+                />
+              </div>
             </div>
           </div>
 
@@ -82,14 +84,16 @@ export default function TestUnifiedCardPage() {
             <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
               Marketplace Card
             </h2>
-            <div className="flex justify-center">
-              <EnhancedProductCard
-                data={mockMarketplaceData}
-                onCardClick={handleCardClick}
-                onLikeToggle={handleLikeToggle}
-                onTagClick={handleTagClick}
-                className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
-              />
+            <div className="flex justify-center w-full">
+              <div className="w-[200px] flex-shrink-0">
+                <EnhancedProductCard
+                  data={mockMarketplaceData}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={handleLikeToggle}
+                  onTagClick={handleTagClick}
+                  className="!bg-transparent !shadow-none [&_*]:!text-gray-900"
+                />
+              </div>
             </div>
           </div>
         </div>

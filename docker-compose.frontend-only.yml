@@ -1,0 +1,22 @@
+services:
+  # Frontend Service (configured to use Render backend)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DOCKER=true
+      - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+    env_file:
+      - ./frontend/.env.local
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge

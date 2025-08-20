@@ -1,5 +1,5 @@
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (optional - for local development)
   postgres:
     image: postgres:15-alpine
     environment:
@@ -9,12 +9,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - jewgo-network
     restart: unless-stopped
 
-  # Redis for caching
+  # Redis for caching (optional - for local development)
   redis:
     image: redis:7-alpine
     ports:
@@ -23,30 +23,7 @@ services:
       - jewgo-network
     restart: unless-stopped
 
-  # Backend Service
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    environment:
-      - FLASK_ENV=development
-      - DATABASE_URL=postgresql://jewgo_user:jewgo_password@postgres:5432/jewgo
-      - REDIS_URL=redis://redis:6379
-      - PYTHONPATH=/app
-    volumes:
-      - ./backend:/app
-      - ./config/environment/backend.env.example:/app/.env:ro
-    ports:
-      - "5000:5000"
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - jewgo-network
-    restart: unless-stopped
-    command: python -m flask run --host=0.0.0.0 --port=5000
-
-  # Frontend Service
+  # Frontend Service (configured to use Render backend)
   frontend:
     build:
       context: ./frontend
@@ -54,16 +31,14 @@ services:
     environment:
       - NODE_ENV=production
       - DOCKER=true
-      - NEXT_PUBLIC_BACKEND_URL=http://backend:5000
+      - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
     env_file:
       - ./frontend/.env.local
     ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+      - "3001:3000"
     networks:
       - jewgo-network
     restart: unless-stopped
