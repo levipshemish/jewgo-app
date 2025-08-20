@@ -14,6 +14,12 @@
   
   # Set NPM version for consistency
   NPM_VERSION = "10"
+  
+  # Build optimization settings
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  
+  # Ensure proper environment
+  NODE_ENV = "production"
 
 # Environment variables (these will be overridden by Netlify UI or CLI)
 [context.production.environment]
@@ -46,6 +52,21 @@
 # Asset optimization
 [build.processing.images]
   compress = true
+
+# Build optimization
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+# Build timeout (in seconds)
+[build]
+  command = "npm ci --include=dev && npm run build"
+  publish = ".next"
+  base = "frontend"
 
 # Security headers (handled by _headers file)
 # Content security policy and other security headers are in _headers

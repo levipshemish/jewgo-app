@@ -9,7 +9,7 @@ import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
 import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
-import MarketplaceListingCard from '@/components/marketplace/MarketplaceListingCard';
+import { EnhancedMarketplaceCard, EnhancedMarketplaceGrid } from '@/components/marketplace';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
@@ -264,15 +264,12 @@ export default function MarketplacePage() {
 
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {listings.map((listing) => (
-              <MarketplaceListingCard
-                key={listing.id}
-                listing={listing}
-                onClick={() => handleListingClick(listing)}
-              />
-            ))}
-          </div>
+          <EnhancedMarketplaceGrid
+            listings={listings}
+            loading={false}
+            onListingClick={handleListingClick}
+            className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          />
         )}
 
         {/* Load More */}
