@@ -9,11 +9,11 @@
   publish = ".next"
 
 [build.environment]
-  # Set Node.js version to match your package.json engines
-  NODE_VERSION = "22.x"
+  # Set Node.js version to match your package.json engines and .nvmrc
+  NODE_VERSION = "22"
   
   # Set NPM version for consistency
-  NPM_VERSION = "10.x"
+  NPM_VERSION = "10"
 
 # Environment variables (these will be overridden by Netlify UI or CLI)
 [context.production.environment]
