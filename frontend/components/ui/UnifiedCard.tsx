@@ -162,12 +162,23 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       const newIsLiked = !isLiked;
       
       if (newIsLiked) {
-        addFavorite({
+        // Create a minimal restaurant object with required fields
+        const minimalRestaurant = {
           id: Number(data.id),
           name: data.title,
-          addedAt: new Date().toISOString(),
-          visitCount: 0
-        });
+          address: '',
+          city: '',
+          state: '',
+          zip_code: '',
+          phone_number: '',
+          kosher_category: 'unknown' as any,
+          certifying_agency: '',
+          listing_type: 'restaurant',
+          status: 'active' as any,
+          hours: {} as any,
+          category: 'restaurant' as any
+        };
+        addFavorite(minimalRestaurant);
       } else {
         removeFavorite(Number(data.id));
       }
