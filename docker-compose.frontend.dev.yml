@@ -1,0 +1,29 @@
+services:
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      # Point to your real backend URL
+      - NEXT_PUBLIC_API_URL=http://host.docker.internal:5000
+      - NEXT_PUBLIC_BACKEND_URL=http://host.docker.internal:5000
+    volumes:
+      # Mount source code for hot reloading
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+      # Mount environment files
+      - ./config/environment/frontend.env.example:/app/.env.local:ro
+    networks:
+      - frontend-dev-network
+    restart: unless-stopped
+    # Use host.docker.internal to access host machine services
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  frontend-dev-network:
+    driver: bridge

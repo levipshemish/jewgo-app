@@ -19,6 +19,12 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.sentry-build-plugin
+vercel.env.production
+render.env.production
+netlify.env.example
+env.example
+email-env-template.txt
 
 # Logs
 *.log
@@ -70,6 +76,7 @@ Thumbs.db
 reports/
 *.report.json
 jscpd-report.json
+docs/reports/
 
 # Build cache and temporary files
 .next/

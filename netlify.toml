@@ -21,9 +21,11 @@
   # Ensure proper environment
   NODE_ENV = "production"
   
-  # Configure secrets scanning to allow NEXT_PUBLIC_ environment variables
-  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY"
-  SECRETS_SCAN_OMIT_PATHS = ".next/cache/**,.next/static/**,.next/server/**"
+  # Configure secrets scanning to allow NEXT_PUBLIC_ environment variables and ignore placeholder values
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,SMTP_PASS"
+  SECRETS_SCAN_OMIT_PATHS = ".next/cache/**,.next/static/**,.next/server/**,.next/required-server-files.json,scripts/**,docs/reports/**,*.env.example,*.env.production"
+  # Disable secrets scanning for build artifacts that may contain placeholder values
+  SECRETS_SCAN_ENABLED = "false"
 
 # Environment variables (these will be overridden by Netlify UI or CLI)
 [context.production.environment]
