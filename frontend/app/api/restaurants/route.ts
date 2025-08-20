@@ -270,7 +270,7 @@ export async function GET(request: NextRequest) {
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
     const targetLimit = Number.isFinite(limit) ? Math.max(0, limit) : 50;
     // Increase perPage size to reduce number of backend calls
-    const perPage = Math.min(500, targetLimit || 500); // Increased from 200 to 500
+    const perPage = Math.min(200, targetLimit || 200); // Reduced from 500 to 200 to prevent timeouts
     let currentOffset = Number.isFinite(offset) ? Math.max(0, offset) : 0;
     let aggregated: any[] = [];
 
@@ -281,7 +281,7 @@ export async function GET(request: NextRequest) {
     baseParams.delete('offset');
 
     // Page until we meet targetLimit or no more results
-    for (let page = 0; page < 10; page++) { // Reduced from 20 to 10 pages max
+    for (let page = 0; page < 5; page++) { // Reduced from 10 to 5 pages max to prevent timeouts
       const pageParams = new URLSearchParams(baseParams.toString());
       pageParams.set('limit', String(perPage));
       pageParams.set('offset', String(currentOffset));
@@ -290,6 +290,7 @@ export async function GET(request: NextRequest) {
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(15000), // 15 second timeout to prevent 504 errors
       });
       if (!response.ok) {
         throw new Error(`Backend API error: ${response.status} ${response.statusText}`);

@@ -28,12 +28,12 @@ export default function ActionButtons({
   return (
     <div className="bg-white px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
       <div className="max-w-screen-sm sm:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto">
-        <div className="flex items-center justify-between space-x-2 sm:space-x-3 lg:space-x-6">
+        <div className="flex items-center justify-between space-x-2 sm:space-x-3 lg:space-x-6" style={{ alignItems: 'stretch' }}>
           {/* Live Map Button */}
           <button
             type="button"
             onClick={handleMapClick}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation h-full"
             style={{
               minHeight: '44px',
               minWidth: '44px',
@@ -53,7 +53,7 @@ export default function ActionButtons({
           <button
             type="button"
             onClick={handleAddEateryClick}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation"
+            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 lg:px-6 py-3 lg:py-4 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-all duration-200 flex-1 font-medium text-xs sm:text-sm lg:text-base min-w-0 touch-manipulation h-full"
             style={{
               minHeight: '44px',
               minWidth: '44px',
