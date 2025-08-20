@@ -298,7 +298,7 @@ export default function TestUnifiedCardPage() {
         </div>
 
         {/* Cards Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-2 gap-8 mb-12">
           {/* Restaurant Card */}
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
@@ -349,7 +349,7 @@ export default function TestUnifiedCardPage() {
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
             Responsive Grid Layout (2 columns, 4 rows)
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-4">
+          <div className="grid grid-cols-2 gap-6 sm:gap-4">
             {/* Row 1 */}
             <EnhancedProductCard
               data={{
@@ -721,7 +721,7 @@ export default function TestUnifiedCardPage() {
         </div>
 
         {/* Raw Data Display */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-8">
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Restaurant API Data

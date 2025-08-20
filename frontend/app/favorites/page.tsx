@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -10,9 +11,17 @@ import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { supabaseBrowser } from '@/lib/supabase/client';
 import { useFavorites } from '@/lib/utils/favorites';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
+
+// Dynamically import Supabase client to prevent SSR issues
+const getSupabaseClient = async () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const { supabaseBrowser } = await import('@/lib/supabase/client');
+  return supabaseBrowser;
+};
 
 interface FilterState {
   agency?: string;
@@ -33,11 +42,18 @@ export default function FavoritesPage() {
   const [activeFilters, setActiveFilters] = useState<FilterState>({});
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [clientLoaded, setClientLoaded] = useState(false);
 
   // Check authentication status using centralized approach
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Wait for client to be loaded
+        if (!clientLoaded) {
+          setClientLoaded(true);
+          return;
+        }
+
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
           console.log('[Favorites] Supabase not configured');
@@ -46,7 +62,15 @@ export default function FavoritesPage() {
           return;
         }
 
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const supabase = await getSupabaseClient();
+        if (!supabase) {
+          console.log('[Favorites] Supabase client not available');
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           // Redirect to sign in if not authenticated
           router.push('/auth/signin?redirectTo=/favorites');
@@ -63,7 +87,7 @@ export default function FavoritesPage() {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, clientLoaded]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -98,172 +122,178 @@ export default function FavoritesPage() {
   const handleDistanceChange = (distance: number) => {
     setActiveFilters(prev => ({
       ...prev,
-      maxDistance: distance,
+      maxDistance: distance
     }));
   };
 
-  const handleCloseFilters = handleImmediateTouch(() => {
+  const handleCloseFilters = () => {
     setShowFilters(false);
-  });
+  };
+
+  const handleApplyFilters = () => {
+    setShowFilters(false);
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters({});
+    setShowFilters(false);
+  };
+
+  const handleCardClick = (restaurantId: string) => {
+    router.push(`/restaurant/${restaurantId}`);
+  };
+
+  const handleAddToFavorites = (restaurantId: string) => {
+    // This will be handled by the useFavorites hook
+    console.log('Add to favorites:', restaurantId);
+  };
+
+  const handleRemoveFromFavorites = (restaurantId: string) => {
+    // This will be handled by the useFavorites hook
+    console.log('Remove from favorites:', restaurantId);
+  };
 
   // Show loading state while checking authentication
-  if (loading || isAuthenticated === null) {
-    return <LoadingState message="Loading favorites..." />;
+  if (loading || !clientLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingState />
+      </div>
+    );
   }
 
-  // Show loading state if not authenticated (will redirect)
-  if (!isAuthenticated) {
-    return <LoadingState message="Redirecting to sign in..." />;
+  // Show error state if not authenticated
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-gray-600 mb-4">Authentication required to view favorites</p>
+          <button 
+            onClick={() => router.push('/auth/signin?redirectTo=/favorites')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
   }
-
-  // Filter favorites based on search query only (other filters require full restaurant data)
-  const filteredFavorites = favorites.filter(restaurant => {
-    // Search query filter
-    if (searchQuery && !restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-
-    // Note: Advanced filtering (agency, category, dietary) would require fetching full restaurant data
-    // For now, we only filter by search query using the available name property
-
-    return true;
-  });
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#f4f4f4]">
-        {/* Search Header */}
-        <Header
+      <div className="min-h-screen bg-gray-50">
+        <Header 
+          title="Favorites" 
           onSearch={handleSearch}
-          placeholder="Search your favorites..."
-          showFilters={true}
-          onShowFilters={handleShowFilters}
+          searchQuery={searchQuery}
+          showSearch={true}
         />
+        
+        <div className="flex flex-col h-full">
+          <CategoryTabs 
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            tabs={[
+              { id: 'favorites', label: 'Favorites', count: favorites.length },
+              { id: 'recent', label: 'Recent', count: 0 },
+              { id: 'saved', label: 'Saved', count: 0 }
+            ]}
+          />
 
-        {/* Category Tabs */}
-        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
-
-        {/* Action Buttons - Responsive */}
-        <ActionButtons
-          onShowFilters={handleShowFilters}
-          onShowMap={() => router.push('/live-map')}
-          onAddEatery={() => router.push('/add-eatery')}
-        />
-
-        {/* Filters Modal */}
-        {showFilters && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Filters</h3>
-                  <button
-                    onClick={handleCloseFilters}
-                    className="text-gray-400 hover:text-gray-600"
-                    style={{
-                      minHeight: '44px',
-                      minWidth: '44px',
-                      touchAction: 'manipulation',
-                      WebkitTapHighlightColor: 'transparent'
-                    }}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+          <div className="flex-1 overflow-hidden">
+            {activeTab === 'favorites' && (
               <div className="p-4">
-                <AdvancedFilters
-                  activeFilters={activeFilters}
-                  onFilterChange={handleFilterChange}
-                  onToggleFilter={handleToggleFilter}
-                  onDistanceChange={handleDistanceChange}
-                  onClearAll={handleClearAllFilters}
-                  userLocation={null}
-                  locationLoading={false}
-                  onRequestLocation={undefined}
-                />
-              </div>
-              <div
-                className="p-4 border-t border-gray-200"
-                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
-              >
-                  <button
-                    type="button"
-                  onClick={handleCloseFilters}
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
-                  style={{
-                    minHeight: '44px',
-                    minWidth: '44px',
-                    touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Results Count */}
-        <div className="px-4 sm:px-6 py-3 bg-gray-50 text-sm text-gray-600 border-b border-gray-200">
-          {filteredFavorites.length} {filteredFavorites.length === 1 ? 'favorite' : 'favorites'} found
-          {Object.values(activeFilters).some(filter => filter !== undefined && filter !== false) && (
-            <button 
-              onClick={handleImmediateTouch(() => handleClearAllFilters())}
-              className="ml-2 text-blue-600 hover:text-blue-800 underline"
-              style={{
-                minHeight: '44px',
-                minWidth: '44px',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent'
-              }}
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-
-        {/* Favorites Grid */}
-        <div className="container mx-auto px-4 py-6 pb-24">
-          {filteredFavorites.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-gray-400 text-6xl mb-4">❤️</div>
-              <div className="text-gray-500 text-lg mb-3 font-medium">
-                No favorites found
-              </div>
-              <div className="text-gray-400 text-sm">
-                {searchQuery || Object.values(activeFilters).some(filter => filter !== undefined && filter !== false) 
-                  ? 'Try adjusting your search or filters' 
-                  : 'Start adding restaurants to your favorites'}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {filteredFavorites.map((restaurant) => (
-                <div key={restaurant.id} className="bg-white rounded-2xl shadow-lg p-4">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">{restaurant.name}</h3>
-                  <p className="text-gray-600 text-sm mb-2">
-                    Added: {new Date(restaurant.addedAt).toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    Visits: {restaurant.visitCount}
-                  </p>
-                  {restaurant.notes && (
-                    <p className="text-gray-500 text-sm mt-2 italic">
-                      &quot;{restaurant.notes}&quot;
+                {favorites.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-6xl mb-4">❤️</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      No favorites yet
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      Start exploring restaurants and add them to your favorites!
                     </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    <button 
+                      onClick={() => router.push('/eatery')}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      Explore Restaurants
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favorites.map((restaurant) => (
+                      <div 
+                        key={restaurant.id}
+                        className="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => handleCardClick(restaurant.id)}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold text-gray-800 truncate">
+                            {restaurant.name}
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveFromFavorites(restaurant.id);
+                            }}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            ❤️
+                          </button>
+                        </div>
+                        {restaurant.image_url && (
+                          <img 
+                            src={restaurant.image_url} 
+                            alt={restaurant.name}
+                            className="w-full h-32 object-cover rounded mb-2"
+                          />
+                        )}
+                        <div className="text-sm text-gray-600">
+                          {restaurant.city && <p>{restaurant.city}</p>}
+                          {restaurant.rating && <p>Rating: {restaurant.rating}</p>}
+                          {restaurant.price_range && <p>Price: {restaurant.price_range}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-        {/* Bottom Navigation */}
-        <BottomNavigation />
+            {activeTab === 'recent' && (
+              <div className="p-4 text-center text-gray-500">
+                <p>Recent activity will appear here</p>
+              </div>
+            )}
+
+            {activeTab === 'saved' && (
+              <div className="p-4 text-center text-gray-500">
+                <p>Saved items will appear here</p>
+              </div>
+            )}
+          </div>
+
+          {showFilters && (
+            <AdvancedFilters
+              activeFilters={activeFilters}
+              onFilterChange={handleFilterChange}
+              onToggleFilter={handleToggleFilter}
+              onDistanceChange={handleDistanceChange}
+              onClose={handleCloseFilters}
+              onApply={handleApplyFilters}
+              onReset={handleResetFilters}
+            />
+          )}
+
+          <ActionButtons
+            onShowFilters={handleShowFilters}
+            showFilters={showFilters}
+            onTouch={handleImmediateTouch}
+          />
+
+          <BottomNavigation />
+        </div>
       </div>
     </ErrorBoundary>
   );

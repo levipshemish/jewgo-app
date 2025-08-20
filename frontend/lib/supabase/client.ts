@@ -1,4 +1,4 @@
-// Browser client (for client components)
+// Browser client (for client components only)
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // Validate environment variables
@@ -30,6 +30,11 @@ const createFallbackClient = () => {
         persistSession: true,
         autoRefreshToken: true,
       },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     }
   );
 };
@@ -38,6 +43,23 @@ const createFallbackClient = () => {
 let supabaseBrowserInstance: SupabaseClient | null = null;
 
 export const supabaseBrowser = (() => {
+  // Only create client on the client side
+  if (typeof window === 'undefined') {
+    // Return a mock client for SSR
+    return {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        signOut: async () => ({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+      from: () => ({
+        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+        insert: () => ({ select: async () => ({ data: null, error: null }) }),
+        delete: () => ({ eq: async () => ({ data: null, error: null }) }),
+      }),
+    } as any;
+  }
+
   if (supabaseBrowserInstance) {
     return supabaseBrowserInstance;
   }
@@ -63,6 +85,11 @@ export const supabaseBrowser = (() => {
         // Keep cookies-first auth; tokens auto-refresh in browser
         persistSession: true,
         autoRefreshToken: true,
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
       },
     }
   );
