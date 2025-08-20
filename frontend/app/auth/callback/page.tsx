@@ -5,6 +5,9 @@ import { useEffect, useState, Suspense } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+// Force dynamic rendering to avoid build issues
+export const dynamic = 'force-dynamic';
+
 function AuthCallbackContent() {
   const [status] = useState<string>("Processing authentication...");
   const [error, setError] = useState<string | null>(null);

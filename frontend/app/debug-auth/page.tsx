@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 
+// Force dynamic rendering to avoid build issues
+export const dynamic = 'force-dynamic';
+
 export default function DebugAuthPage() {
   const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
