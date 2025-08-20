@@ -59,6 +59,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       
       if (data?.user) {
         // User authenticated successfully
+        console.log('Sign-in successful, redirecting to:', redirectTo || '/profile/settings');
         router.push(redirectTo || '/profile/settings');
       }
     } catch {

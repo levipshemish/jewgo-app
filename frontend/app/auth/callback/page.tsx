@@ -14,7 +14,11 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const processCallback = async () => {
+      if (isProcessing) return; // Prevent duplicate processing
+      
       try {
+        setIsProcessing(true);
+        
         // Process the callback
         const result = await supabaseBrowser.auth.exchangeCodeForSession(
           searchParams.get('code') || ''
@@ -29,42 +33,22 @@ function AuthCallbackContent() {
         const session = await supabaseBrowser.auth.getSession();
         if (session?.data?.session) {
           // Session established successfully
-          router.push(searchParams.get("redirectTo") || '/profile/settings');
+          const redirectTo = searchParams.get("redirectTo") || '/profile/settings';
+          console.log('Redirecting to:', redirectTo);
+          router.push(redirectTo);
         } else {
           setError('Failed to establish session');
         }
-      } catch {
+      } catch (error) {
+        console.error('Auth callback error:', error);
         setError('Authentication failed');
+      } finally {
+        setIsProcessing(false);
       }
     };
 
     if (searchParams.get('code')) {
       processCallback();
-    }
-  }, [searchParams, router]);
-
-  useEffect(() => {
-    const processCodeExchange = async () => {
-      try {
-        const result = await supabaseBrowser.auth.exchangeCodeForSession(
-          searchParams.get('code') || ''
-        );
-
-        if (result?.error) {
-          setError(result.error.message);
-          return;
-        }
-
-        // Session established via code exchange
-        router.push(searchParams.get("redirectTo") || '/profile/settings');
-      } catch {
-        setError('Code exchange failed');
-      }
-    };
-
-    if (searchParams.get('code') && !isProcessing) {
-      setIsProcessing(true);
-      processCodeExchange();
     }
   }, [searchParams, router, isProcessing]);
 
