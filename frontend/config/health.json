@@ -1,5 +1,7 @@
 {
   "endpoints": [
+    "https://jewgo-app.netlify.app",
+    "https://jewgo-app.netlify.app/health",
     "https://jewgo-app.vercel.app",
     "https://jewgo-app.vercel.app/health",
     "https://jewgo.onrender.com/health"

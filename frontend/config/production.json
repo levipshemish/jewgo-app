@@ -1,7 +1,8 @@
 {
   "environment": "production",
   "urls": {
-    "frontend": "https://jewgo-app.vercel.app",
+    "frontend": "https://jewgo-app.netlify.app",
+    "frontend_vercel": "https://jewgo-app.vercel.app",
     "backend": "https://jewgo.onrender.com"
   },
   "monitoring": {

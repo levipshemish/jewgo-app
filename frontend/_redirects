@@ -1,8 +1,20 @@
-# Ensure all routes work properly
+# Netlify redirects for Next.js app
+
+# Handle client-side routing - redirect all routes to index.html for SPA behavior
 /*    /index.html   200
 
-# Handle API routes
+# Handle API routes - proxy to backend
 /api/*  https://jewgo.onrender.com/api/:splat  200
 
-# Force HTTPS
-http://jewgo-app.pages.dev/* https://jewgo-app.pages.dev/:splat 301! 
+# Force HTTPS (Netlify handles this automatically, but keeping for compatibility)
+# Vercel-specific redirect (commented out for Netlify deployment)
+# http://jewgo-app.pages.dev/* https://jewgo-app.pages.dev/:splat 301!
+
+# Handle Next.js static assets
+/_next/static/* /_next/static/:splat 200
+
+# Handle Next.js image optimization
+/_next/image/* /_next/image/:splat 200
+
+# Handle Next.js data routes
+/_next/data/* /_next/data/:splat 200 

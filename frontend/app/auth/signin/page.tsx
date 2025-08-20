@@ -8,7 +8,6 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {

@@ -1,0 +1,60 @@
+[build]
+  # Set the directory to the frontend folder where Next.js is located
+  base = "frontend"
+  
+  # Build command for Next.js
+  command = "npm install && npm run validate-env && npm run build"
+  
+  # Output directory for the built files
+  publish = ".next"
+
+[build.environment]
+  # Set Node.js version to match your package.json engines
+  NODE_VERSION = "22.x"
+  
+  # Set NPM version for consistency
+  NPM_VERSION = "10.x"
+
+# Environment variables (these will be overridden by Netlify UI or CLI)
+[context.production.environment]
+  NODE_ENV = "production"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "production"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+
+[context.branch-deploy.environment]
+  NODE_ENV = "production"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+
+# Functions configuration (if you need serverless functions)
+[functions]
+  # Directory for Netlify functions (if needed)
+  directory = "netlify/functions"
+
+# Redirects and rewrites (these will be handled by _redirects file)
+# The _redirects file in your frontend directory will take precedence
+
+# Headers (these will be handled by _headers file)
+# The _headers file in your frontend directory will take precedence
+
+# Plugin configuration
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Build settings for optimal performance
+[build.processing]
+  skip_processing = false
+
+# Asset optimization
+[build.processing.images]
+  compress = true
+
+# Security headers (handled by _headers file)
+# Content security policy and other security headers are in _headers
+
+# Edge functions (if needed in the future)
+# [[edge_functions]]
+#   function = "my-edge-function"
+#   path = "/api/edge-function"

@@ -142,10 +142,7 @@ const nextConfig = {
   // Disable prerendering to avoid build errors
   trailingSlash: false,
   generateEtags: false,
-  // Disable static generation for auth pages to prevent build errors
-  async generateStaticParams() {
-    return [];
-  },
+
   // Redirects configuration
   async redirects() {
     return [

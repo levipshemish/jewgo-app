@@ -1,7 +1,8 @@
 {
   "environment": "staging",
   "urls": {
-    "frontend": "https://staging.jewgo-app.vercel.app",
+    "frontend": "https://staging.jewgo-app.netlify.app",
+    "frontend_vercel": "https://staging.jewgo-app.vercel.app",
     "backend": "https://staging.jewgo.onrender.com"
   },
   "monitoring": {

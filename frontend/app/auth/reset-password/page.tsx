@@ -7,9 +7,8 @@ import { useEffect, useState, Suspense } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { validatePassword } from "@/lib/utils/password-validation";
 
-// Disable static generation for this page
+// Force dynamic rendering to avoid build issues
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -78,6 +77,7 @@ function ResetPasswordForm() {
         }, 3000);
       }
     } catch (err) {
+      console.error('Password reset error:', err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
