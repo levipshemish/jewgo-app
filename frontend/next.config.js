@@ -79,9 +79,15 @@ const nextConfig = {
         source: '/(.*)',
         headers: [
           { key: 'X-Frame-Options', value: 'ALLOWALL' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
+        ],
+      },
+      // Apply nosniff only to non-static content
+      {
+        source: '/((?!_next/static|static|favicon.ico).*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
       {
@@ -95,6 +101,21 @@ const nextConfig = {
       // Let Next.js handle static assets natively
       {
         source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Ensure CSS files are served with correct MIME type
+      {
+        source: '/_next/static/css/:path*',
+        headers: [
+          { key: 'Content-Type', value: 'text/css' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Ensure image optimization works correctly
+      {
+        source: '/_next/image',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
@@ -123,6 +144,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'maps.googleapis.com', pathname: '/**' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' },
       { protocol: 'https', hostname: 'jewgo.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'jewgo.netlify.app', pathname: '/**' },
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -130,6 +152,7 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+    unoptimized: false,
   },
   // Configure experimental features for optimal performance
   experimental: {
