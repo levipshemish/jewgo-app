@@ -16,6 +16,7 @@ interface User {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [redirectStatus, setRedirectStatus] = useState<string>('');
   const router = useRouter();
 
   // Load user data
@@ -23,12 +24,17 @@ export default function ProfilePage() {
     const loadUser = async () => {
       try {
         console.log('Profile page: Loading user data...');
+        console.log('Profile page: Current URL:', window.location.href);
         
         // Check if Supabase is configured
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || 
             process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') {
           console.warn('Profile page: Supabase not configured, redirecting to settings');
-          router.push('/profile/settings');
+          console.log('Profile page: About to redirect to /profile/settings');
+          setRedirectStatus('Supabase not configured, redirecting to settings...');
+          setTimeout(() => {
+            router.push('/profile/settings');
+          }, 1000); // Add a delay to see the status
           return;
         }
         
@@ -47,15 +53,27 @@ export default function ProfilePage() {
           setUser(userData);
           
           // Redirect to settings page
-          router.push('/profile/settings');
+          console.log('Profile page: About to redirect to /profile/settings');
+          setRedirectStatus('Redirecting to /profile/settings...');
+          setTimeout(() => {
+            router.push('/profile/settings');
+          }, 1000); // Add a delay to see the status
         } else {
           console.log('Profile page: No user found, redirecting to signin');
-          router.push('/auth/signin');
+          console.log('Profile page: About to redirect to /auth/signin');
+          setRedirectStatus('Redirecting to /auth/signin...');
+          setTimeout(() => {
+            router.push('/auth/signin');
+          }, 1000); // Add a delay to see the status
         }
-      } catch (error) {
-        console.error('Profile page: Error loading user:', error);
-        router.push('/auth/signin');
-      } finally {
+              } catch (error) {
+          console.error('Profile page: Error loading user:', error);
+          console.log('Profile page: About to redirect to /auth/signin due to error');
+          setRedirectStatus('Error occurred, redirecting to /auth/signin...');
+          setTimeout(() => {
+            router.push('/auth/signin');
+          }, 1000); // Add a delay to see the status
+        } finally {
         setIsLoading(false);
       }
     };
@@ -82,6 +100,16 @@ export default function ProfilePage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Loading Profile...</h1>
           <p className="text-gray-600">Redirecting to profile settings...</p>
+          {redirectStatus && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-blue-800 text-sm">{redirectStatus}</p>
+            </div>
+          )}
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
+            <p className="text-gray-600 text-sm">Current URL: {typeof window !== 'undefined' ? window.location.href : 'Loading...'}</p>
+            <p className="text-gray-600 text-sm">User: {user ? user.email : 'None'}</p>
+            <p className="text-gray-600 text-sm">Loading: {isLoading ? 'Yes' : 'No'}</p>
+          </div>
         </div>
       </div>
     </div>

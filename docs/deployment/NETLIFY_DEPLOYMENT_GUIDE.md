@@ -1,210 +1,316 @@
-# Netlify Deployment Guide
+# Netlify Deployment Guide for JewGo App
 
-This guide explains how to deploy the JewGo app to Netlify while preserving all Vercel configuration for future use.
+This guide provides step-by-step instructions for deploying the JewGo app to Netlify.
 
-## Overview
+## Prerequisites
 
-The app has been configured to work with both Vercel and Netlify. All Vercel-specific configurations have been preserved (commented out or duplicated) so you can easily switch between platforms.
+- Node.js 22.x installed
+- Netlify CLI installed (`npm install -g netlify-cli`)
+- A Netlify account
+- All required environment variables configured
 
-## Files Added for Netlify
+## Required Environment Variables
 
-### 1. `netlify.toml` (Root Directory)
-Main Netlify configuration file that specifies:
-- Build directory: `frontend`
-- Build command: `npm install && npm run validate-env && npm run build`
-- Output directory: `.next`
-- Node.js version: 22
-- Environment variables for different contexts
+Set these environment variables in your Netlify dashboard:
 
-### 2. `frontend/netlify.env.example`
-Template for Netlify environment variables. Copy this to `netlify.env` and fill in your actual values.
-
-### 3. Updated Configuration Files
-- `frontend/_redirects`: Updated for Netlify compatibility
-- `frontend/_headers`: Already Netlify-compatible
-- Config files: Added Netlify URLs while preserving Vercel URLs
-
-## Deployment Steps
-
-### 1. Install Netlify CLI (Optional)
-```bash
-npm install -g netlify-cli
+### Core Application Variables
+```
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=5060e374c6d88aacf8fea324
+NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+NEXT_PUBLIC_APP_VERSION=1.0.0
 ```
 
-### 2. Set Up Environment Variables
-
-#### Option A: Using Netlify CLI
-```bash
-# Copy the template
-cp frontend/netlify.env.example frontend/netlify.env
-
-# Edit the file with your actual values
-nano frontend/netlify.env
-
-# Import to Netlify
-netlify env:import frontend/netlify.env
+### Database Configuration
+```
+DATABASE_URL=your_postgresql_database_url
 ```
 
-#### Option B: Using Netlify Dashboard
+### Authentication Configuration
+```
+NEXTAUTH_URL=https://your-app-name.netlify.app
+NEXTAUTH_SECRET=your_nextauth_secret_here
+```
+
+### Supabase Configuration (if using)
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+### Email Configuration (if using)
+```
+EMAIL_SERVER_HOST=your_email_host
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=your_email_user
+EMAIL_SERVER_PASSWORD=your_email_password
+EMAIL_FROM=noreply@yourdomain.com
+```
+
+### Sentry Configuration (if using)
+```
+SENTRY_DSN=your_sentry_dsn
+SENTRY_ORG=your_sentry_org
+SENTRY_PROJECT=your_sentry_project
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+```
+
+### Build Configuration
+```
+NODE_ENV=production
+PRISMA_QUERY_ENGINE_TYPE=library
+```
+
+## Deployment Methods
+
+### Method 1: Automated Deployment (Recommended)
+
+1. **Connect GitHub Repository**
+   - Go to your Netlify dashboard
+   - Click "New site from Git"
+   - Connect your GitHub repository
+   - Set build settings:
+     - **Base directory**: `frontend`
+     - **Build command**: `npm ci --include=dev && npx prisma generate && npm run build`
+     - **Publish directory**: `.next`
+
+2. **Configure Environment Variables**
+   - In your Netlify site settings, go to "Environment variables"
+   - Add all required environment variables listed above
+
+3. **Deploy**
+   - Netlify will automatically build and deploy your site
+   - Each push to your main branch will trigger a new deployment
+
+### Method 2: Manual Deployment
+
+1. **Prepare Your Environment**
+   ```bash
+   # Clone the repository
+   git clone <your-repo-url>
+   cd jewgo-app
+   
+   # Install Netlify CLI if not already installed
+   npm install -g netlify-cli
+   ```
+
+2. **Run the Deployment Script**
+   ```bash
+   # Run the automated deployment script
+   ./scripts/deploy-netlify.sh
+   
+   # Or skip tests for faster deployment
+   ./scripts/deploy-netlify.sh --skip-tests
+   ```
+
+3. **Link to Netlify Site**
+   ```bash
+   cd frontend
+   netlify link
+   ```
+
+4. **Deploy**
+   ```bash
+   netlify deploy --prod --dir=.next
+   ```
+
+## Important: Disable Netlify Next.js Plugin
+
+**CRITICAL STEP**: The `@netlify/plugin-nextjs` plugin must be disabled in the Netlify UI:
+
 1. Go to your Netlify dashboard
-2. Navigate to Site settings > Environment variables
-3. Add the following variables:
-   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-   - `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`
-   - `NEXT_PUBLIC_BACKEND_URL`
-   - `DATABASE_URL`
-   - `NEXTAUTH_URL`
-   - `NEXTAUTH_SECRET`
-   - `NEXT_PUBLIC_SUPABASE_URL` (if using Supabase)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (if using Supabase)
-   - `SUPABASE_SERVICE_ROLE_KEY` (if using Supabase)
+2. Navigate to **Site settings > Build & deploy > Build plugins**
+3. Find `@netlify/plugin-nextjs` in the list
+4. Click the toggle to **disable** it
+5. Save the changes
 
-### 3. Deploy to Netlify
+**Why this is needed**: 
+- Next.js 15 has built-in support for Netlify deployment
+- The plugin is not needed and can cause build failures
+- The plugin tries to access files that may not exist during the build process
 
-#### Option A: Connect GitHub Repository
-1. Go to [Netlify](https://netlify.com)
-2. Click "New site from Git"
-3. Choose GitHub and select your repository
-4. Configure build settings:
-   - Base directory: `frontend`
-   - Build command: `npm install && npm run build`
-   - Publish directory: `.next`
-5. **Important**: Set up environment variables in Netlify dashboard before deploying
-6. Click "Deploy site"
+## Configuration Files
 
-#### Option B: Manual Deploy
-```bash
-# Build the project
-cd frontend
-npm install
-npm run build
+### netlify.toml
+The main Netlify configuration file is located in the project root:
 
-# Deploy to Netlify
-netlify deploy --prod --dir=.next
+```toml
+[build]
+  base = "frontend"
+  command = "npm ci --include=dev && npx prisma generate && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_VERSION = "10"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  NODE_ENV = "production"
 ```
 
-### 4. Configure Custom Domain (Optional)
-1. In Netlify dashboard, go to Site settings > Domain management
-2. Add your custom domain
-3. Configure DNS settings as instructed
+### _redirects
+Located in `frontend/_redirects`, handles routing and API proxying:
 
-## Environment-Specific URLs
+```
+# Handle client-side routing for Next.js
+/*    /index.html   200
 
-The app now supports both platforms:
+# Handle API routes - proxy to backend
+/api/specials/*  https://jewgo.onrender.com/api/specials/:splat  200
+/api/health/*  https://jewgo.onrender.com/api/health/:splat  200
+# ... other API routes
 
-### Production
-- **Netlify**: `https://jewgo-app.netlify.app`
-- **Vercel**: `https://jewgo-app.vercel.app` (preserved)
+# Handle Next.js static assets
+/_next/static/* /_next/static/:splat 200
+/_next/image/* /_next/image/:splat 200
+/_next/data/* /_next/data/:splat 200
+```
 
-### Staging
-- **Netlify**: `https://staging.jewgo-app.netlify.app`
-- **Vercel**: `https://staging.jewgo-app.vercel.app` (preserved)
+### _headers
+Located in `frontend/_headers`, configures security headers:
 
-## Switching Between Platforms
+```
+/*
+  X-Frame-Options: ALLOWALL
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 
-### To Switch to Netlify
-1. Update `NEXTAUTH_URL` to your Netlify URL
-2. Update any hardcoded URLs in your code
-3. Deploy to Netlify
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
 
-### To Switch Back to Vercel
-1. Update `NEXTAUTH_URL` to your Vercel URL
-2. Uncomment Vercel-specific configurations
-3. Deploy to Vercel
-
-## Monitoring and Health Checks
-
-The monitoring configuration now includes both Netlify and Vercel endpoints:
-- `https://jewgo-app.netlify.app`
-- `https://jewgo-app.netlify.app/health`
-- `https://jewgo-app.vercel.app` (preserved)
-- `https://jewgo-app.vercel.app/health` (preserved)
+/api/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, Authorization
+  X-Content-Type-Options: nosniff
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Build Failures**
-   - Check that all environment variables are set in Netlify dashboard
-   - Verify Node.js version (22)
-   - Check build logs in Netlify dashboard
-   - **Note**: Environment validation is skipped during build, variables must be set in Netlify dashboard
+   - Check that all environment variables are set
+   - Ensure Node.js version is 22.x
+   - Verify Prisma schema is valid
+   - Check for TypeScript errors
+   - **IMPORTANT**: Disable the `@netlify/plugin-nextjs` plugin in Netlify UI
 
-2. **Node.js Version Errors**
-   - **Error**: `Attempting Node.js version '22 ' from .nvmrc`
-   - **Solution**: Ensure `.nvmrc` file contains exactly `22` with no trailing spaces
-   - **Fix**: Run `echo "22" > frontend/.nvmrc` to recreate the file
+2. **API Routes Not Working**
+   - Verify `NEXT_PUBLIC_BACKEND_URL` is correct
+   - Check that backend is running and accessible
+   - Ensure CORS is properly configured on backend
 
-3. **Package Version Errors**
-   - **Error**: `No matching version found for @netlify/plugin-nextjs@^6.0.0`
-   - **Solution**: The app uses Netlify's built-in Next.js support, no plugin needed
-   - **Note**: Next.js 15 is fully supported by Netlify without additional plugins
-
-4. **SSR/Static Generation Errors**
-   - **Error**: `Cannot read properties of undefined (reading 'call')` during build
-   - **Solution**: Add `export const dynamic = 'force-dynamic'` to pages using client-side libraries
-   - **Fix**: This prevents static generation for pages that need client-side rendering
-   - **Example**: Profile settings page uses this to avoid Supabase SSR conflicts
-
-5. **API Routes Not Working**
-   - Ensure `NEXT_PUBLIC_BACKEND_URL` is set correctly
-   - Check that backend is running on Render
-
-6. **Authentication Issues**
+3. **Authentication Issues**
    - Verify `NEXTAUTH_URL` matches your Netlify domain
    - Check that `NEXTAUTH_SECRET` is set
+   - Ensure database connection is working
 
-7. **Database Connection Issues**
-   - Ensure `DATABASE_URL` is accessible from Netlify
-   - Check database connection limits
+4. **Database Connection Issues**
+   - Verify `DATABASE_URL` is correct
+   - Check that database is accessible from Netlify
+   - Ensure Prisma migrations are up to date
 
-### Debug Commands
-```bash
-# Test build locally
-cd frontend
-npm run build
+### Debugging Steps
 
-# Test environment variables
-npm run validate-env
+1. **Check Build Logs**
+   - Go to your Netlify dashboard
+   - Click on the failed deployment
+   - Review the build logs for errors
 
-# Check health endpoints
-curl https://your-app.netlify.app/health
+2. **Test Locally**
+   ```bash
+   cd frontend
+   npm run build
+   npm start
+   ```
 
-# Verify Node.js version
-node --version
-```
+3. **Validate Environment**
+   ```bash
+   cd frontend
+   npm run validate-env
+   ```
+
+4. **Check Prisma**
+   ```bash
+   cd frontend
+   npx prisma generate
+   npx prisma db push
+   ```
 
 ## Performance Optimization
 
-Netlify automatically provides:
-- Global CDN
-- Automatic HTTPS
-- Image optimization
-- Asset compression
-- Edge functions (if needed)
+### Build Optimization
+- The build process includes Prisma client generation
+- Static assets are optimized and cached
+- Images are processed with Next.js Image optimization
+
+### Caching Strategy
+- Static assets are cached for 1 year
+- API responses are not cached by default
+- Next.js handles its own caching internally
+
+### Monitoring
+- Use Netlify Analytics to monitor performance
+- Set up error tracking with Sentry
+- Monitor build times and success rates
 
 ## Security Considerations
 
-- All security headers are configured in `frontend/_headers`
-- HTTPS is enforced automatically
-- Environment variables are encrypted
-- No sensitive data in build artifacts
+1. **Environment Variables**
+   - Never commit sensitive data to version control
+   - Use Netlify's environment variable management
+   - Rotate secrets regularly
 
-## Rollback Strategy
+2. **Headers**
+   - Security headers are configured in `_headers`
+   - CORS is properly configured for API routes
+   - Content Security Policy is implemented
 
-If you need to rollback to Vercel:
-1. All Vercel configurations are preserved
-2. Simply update environment variables
-3. Deploy to Vercel instead of Netlify
+3. **Authentication**
+   - NextAuth.js handles secure authentication
+   - Sessions are properly managed
+   - CSRF protection is enabled
+
+## Maintenance
+
+### Regular Tasks
+1. **Update Dependencies**
+   ```bash
+   cd frontend
+   npm update
+   npm audit fix
+   ```
+
+2. **Database Migrations**
+   ```bash
+   cd frontend
+   npx prisma migrate deploy
+   ```
+
+3. **Monitor Performance**
+   - Check Netlify Analytics
+   - Review error logs
+   - Monitor build times
+
+### Backup Strategy
+- Database backups should be configured separately
+- Environment variables are stored in Netlify
+- Code is version controlled in GitHub
 
 ## Support
 
-For Netlify-specific issues:
-- [Netlify Documentation](https://docs.netlify.com)
-- [Netlify Community](https://community.netlify.com)
-- [Netlify Support](https://www.netlify.com/support/)
+If you encounter issues:
 
-For app-specific issues:
-- Check the main documentation in `/docs`
-- Review deployment logs
-- Test locally first
+1. Check the troubleshooting section above
+2. Review Netlify's documentation
+3. Check the project's GitHub issues
+4. Contact the development team
+
+## Additional Resources
+
+- [Netlify Documentation](https://docs.netlify.com/)
+- [Next.js Deployment Guide](https://nextjs.org/docs/deployment)
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- [NextAuth.js Documentation](https://next-auth.js.org/)
