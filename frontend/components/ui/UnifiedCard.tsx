@@ -310,7 +310,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-black/85 max-w-[80%] truncate text-center"
+                  className="absolute top-2 left-2 bg-black/75 text-white px-1.5 py-0.5 rounded-full text-[10px] font-medium cursor-pointer hover:bg-black/85 max-w-[75%] truncate text-center leading-tight"
                   variants={tagVariants}
                   initial="idle"
                   whileHover="hover"
@@ -325,7 +325,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-full text-xs font-medium max-w-[80%] truncate text-center"
+                  className="absolute top-2 left-2 bg-black/75 text-white px-1.5 py-0.5 rounded-full text-[10px] font-medium max-w-[75%] truncate text-center leading-tight"
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
                   {cardData.imageTag}
