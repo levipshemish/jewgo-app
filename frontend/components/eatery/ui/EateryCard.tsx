@@ -137,7 +137,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
       onTouchEnd={(_e) => {
         // Don't prevent default - let the click event fire
         }}
-      className={`w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation restaurant-card eatery-card ${className}`}
+      className={`w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation restaurant-card eatery-card flex flex-col ${className}`}
       data-clickable="true"
       {...(isMobileDevice ? {} : {
         initial: { opacity: 0, scale: 0.95 },
@@ -177,8 +177,8 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         })
       }}
     >
-      {/* Image Container - Using balanced aspect ratio */}
-      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl">
+      {/* Image Container - Fixed aspect ratio for consistent heights */}
+      <div className="relative aspect-[5/4] overflow-hidden rounded-3xl flex-shrink-0">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -198,11 +198,11 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           unoptimized={heroSrc.includes('cloudinary.com')}
         />
 
-        {/* Kosher Category Badge - Top Left - aligned with favorite button */}
+        {/* Kosher Category Badge - Properly positioned with consistent spacing */}
         <AnimatePresence>
           {restaurant.kosher_category && (
             <SpanContainer 
-              className={`absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium shadow-sm max-w-[calc(100%-3rem)] truncate kosher-badge ${getKosherCategoryStyle()}`}
+              className={`absolute top-3 left-3 text-xs px-2.5 py-1.5 rounded-full font-medium shadow-md max-w-[calc(100%-4rem)] truncate kosher-badge ${getKosherCategoryStyle()}`}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
@@ -213,10 +213,10 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           )}
         </AnimatePresence>
         
-        {/* Favorite Button - Top Right */}
+        {/* Favorite Button - Properly positioned with consistent spacing */}
         <ButtonContainer
           onClick={handleFavoriteClick}
-          className="absolute top-2 right-2 w-10 h-10 px-2 py-0 transition-all duration-200 hover:scale-105 z-10 flex items-start justify-center active:scale-95 group"
+          className="absolute top-3 right-3 w-10 h-10 px-2 py-0 transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 group"
           aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
           title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
           {...(isMobileDevice ? {} : {
@@ -273,29 +273,29 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         </ButtonContainer>
       </div>
 
-      {/* Text Content Container - Tighter spacing for mobile */}
+      {/* Text Content Container - Fixed height structure for consistency */}
       <motion.div 
-        className={`bg-transparent ${isMobileDevice ? 'px-1 pt-2 pb-1' : 'p-1'}`}
+        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-2 pt-3 pb-2' : 'p-2'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
       >
-        {/* Restaurant Name - Compact for mobile */}
-        <div className={`flex items-center w-full min-w-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-0.5'}`}>
-          <h3 className={`font-bold text-gray-900 leading-tight truncate w-full min-w-0 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={titleCase(restaurant.name)}>
+        {/* Restaurant Name - Fixed height container */}
+        <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-8 mb-2' : 'h-10 mb-2'}`}>
+          <h3 className={`font-bold text-gray-900 leading-tight line-clamp-2 w-full min-w-0 ${isMobileDevice ? 'text-sm' : 'text-base'}`} title={titleCase(restaurant.name)}>
             {titleCase(restaurant.name)}
           </h3>
         </div>
         
-        {/* Price Range and Rating - Compact spacing for mobile */}
-        <div className={`flex items-center justify-between min-w-0 w-full ${isMobileDevice ? 'gap-2' : ''}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs mr-2' : 'text-xs mr-2'}`} title={formatPriceRange()}>
+        {/* Price Range and Rating - Fixed height meta row */}
+        <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-3' : 'h-6 gap-4'}`}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1 flex-shrink-0 rating-container">
-            <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
-            <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
+          <div className="flex items-center gap-1.5 flex-shrink-0 rating-container">
+            <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
+            <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
               {getRating().toFixed(1)}
             </span>
           </div>
@@ -304,7 +304,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         {/* Additional Details - Only show if showDetails is true */}
         {showDetails && (
           <motion.div 
-            className={`${isMobileDevice ? 'space-y-1 mt-2 pt-2' : 'space-y-2 mt-3 pt-3'} border-t border-gray-100`}
+            className={`${isMobileDevice ? 'space-y-1 mt-3 pt-3' : 'space-y-2 mt-4 pt-4'} border-t border-gray-100 flex-1`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             transition={{ duration: 0.3 }}
@@ -317,7 +317,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
             )}
 
             {/* Kosher Details */}
-            <div className={`flex flex-wrap gap-1 min-w-0 ${isMobileDevice ? 'mt-1' : 'mt-2'}`}>
+            <div className={`flex flex-wrap gap-1 min-w-0 ${isMobileDevice ? 'mt-2' : 'mt-3'}`}>
               {restaurant.is_cholov_yisroel && (
                 <SpanContainer className={`inline-block bg-[#FCC0C5]/20 text-[#8a4a4a] rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge ${isMobileDevice ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'}`} title="Chalav Yisroel">
                   Chalav Yisroel
