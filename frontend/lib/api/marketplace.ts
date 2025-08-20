@@ -11,7 +11,18 @@ import {
   MarketplaceStats
 } from '@/lib/types/marketplace';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com';
+// Ensure we're using the correct backend URL
+const BACKEND_URL = (() => {
+  const envUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  // If environment variable is set and looks valid, use it
+  if (envUrl && envUrl.startsWith('http')) {
+    return envUrl;
+  }
+  
+  // Default to the correct production URL
+  return 'https://jewgo.onrender.com';
+})();
 
 /**
  * Fetch marketplace listings with filtering and pagination
@@ -20,6 +31,15 @@ export async function fetchMarketplaceListings(
   params: MarketplaceSearchParams = {}
 ): Promise<MarketplaceSearchResponse> {
   try {
+    // Debug logging to help identify URL issues
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Marketplace API Debug:', {
+        BACKEND_URL,
+        envUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
+        nodeEnv: process.env.NODE_ENV
+      });
+    }
+    
     const searchParams = new URLSearchParams();
     
     // Add all parameters to search params
@@ -29,7 +49,13 @@ export async function fetchMarketplaceListings(
       }
     });
 
-    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/listings?${searchParams.toString()}`, {
+    const apiUrl = `${BACKEND_URL}/api/v4/marketplace/listings?${searchParams.toString()}`;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Making marketplace API request to:', apiUrl);
+    }
+
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -44,9 +70,22 @@ export async function fetchMarketplaceListings(
     return data;
   } catch (error) {
     console.error('Error fetching marketplace listings:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to fetch marketplace listings';
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error: Unable to connect to marketplace server';
+      } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+        errorMessage = 'Server error: Invalid backend URL configuration';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return {
       success: false,
-      error: 'Failed to fetch marketplace listings'
+      error: errorMessage
     };
   }
 }
