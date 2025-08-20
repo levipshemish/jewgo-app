@@ -9,15 +9,6 @@ const EnhancedProductCard = dynamic(() => import("@/components/ui/UnifiedCard"),
   loading: () => <div className="w-[200px] h-[200px] bg-gray-200 rounded-2xl animate-pulse" />
 })
 
-// Dynamically import API functions
-const RestaurantsAPI = dynamic(() => import("@/lib/api/restaurants").then(mod => ({ default: mod.RestaurantsAPI })), {
-  ssr: false
-})
-
-const fetchMarketplaceListings = dynamic(() => import("@/lib/api/marketplace").then(mod => ({ default: mod.fetchMarketplaceListings })), {
-  ssr: false
-})
-
 interface Restaurant {
   id: string
   name: string
@@ -103,9 +94,10 @@ export default function TestUnifiedCardPage() {
         setLoading(true)
         setError(null)
 
-        // Fetch restaurant data
-        if (RestaurantsAPI?.default) {
-          const restaurantsResponse = await RestaurantsAPI.default.fetchRestaurants(1)
+        // Fetch restaurant data using dynamic import
+        try {
+          const { RestaurantsAPI } = await import("@/lib/api/restaurants")
+          const restaurantsResponse = await RestaurantsAPI.fetchRestaurants(1)
           if (restaurantsResponse.restaurants && restaurantsResponse.restaurants.length > 0) {
             const restaurant = restaurantsResponse.restaurants[0]
             setRestaurantData({
@@ -123,11 +115,14 @@ export default function TestUnifiedCardPage() {
               review_snippets: restaurant.review_snippets
             })
           }
+        } catch (apiError) {
+          console.warn("Failed to fetch restaurant data:", apiError)
         }
 
-        // Fetch marketplace data
-        if (fetchMarketplaceListings?.default) {
-          const marketplaceResponse = await fetchMarketplaceListings.default({ limit: 1 })
+        // Fetch marketplace data using dynamic import
+        try {
+          const { fetchMarketplaceListings } = await import("@/lib/api/marketplace")
+          const marketplaceResponse = await fetchMarketplaceListings({ limit: 1 })
           if (marketplaceResponse.success && marketplaceResponse.data?.listings && marketplaceResponse.data.listings.length > 0) {
             const listing = marketplaceResponse.data.listings[0]
             setMarketplaceData({
@@ -143,6 +138,8 @@ export default function TestUnifiedCardPage() {
               thumbnail: listing.thumbnail
             })
           }
+        } catch (apiError) {
+          console.warn("Failed to fetch marketplace data:", apiError)
         }
       } catch (err) {
         console.error("Error fetching data:", err)

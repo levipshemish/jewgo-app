@@ -100,6 +100,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
 
   // Sync with favorites manager
   useEffect(() => {
@@ -169,17 +170,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       setIsLiked(newIsLiked);
       onLikeToggle?.(data.id, newIsLiked);
       
-      // Announce to screen readers
-      if (typeof document !== 'undefined') {
-        const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
-        const announcement = document.createElement('div');
-        announcement.setAttribute('aria-live', 'polite');
-        announcement.setAttribute('aria-atomic', 'true');
-        announcement.className = 'sr-only';
-        announcement.textContent = message;
-        document.body.appendChild(announcement);
-        setTimeout(() => document.body.removeChild(announcement), 1000);
-      }
+      // Announce to screen readers using persistent live region
+      const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
+      setAnnouncement(message);
+      // Clear the announcement after screen readers have processed it
+      setTimeout(() => setAnnouncement(''), 1000);
     } catch (error) {
       catchError(error as Error);
     }
@@ -227,16 +222,17 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   return (
     <motion.div
       className={cn(
-        "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
+        "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3",
         "hover:shadow-2xl transition-shadow duration-300",
         "mx-auto",
+        onCardClick ? "cursor-pointer" : "",
         className
       )}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       whileHover="hover"
-      role="article"
+      role={onCardClick ? "button" : "article"}
       aria-label={`Product card for ${cardData.title}`}
       tabIndex={onCardClick ? 0 : -1}
       onClick={handleCardClick}
@@ -249,6 +245,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         touchAction: 'manipulation'
       }}
     >
+      {/* Persistent live region for announcements */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </span>
       {/* Image Container */}
       <div className="relative w-full">
         <div className="w-full h-[140px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">

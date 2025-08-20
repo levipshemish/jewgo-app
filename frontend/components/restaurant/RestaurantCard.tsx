@@ -90,15 +90,20 @@ export default function RestaurantCard({ restaurant, className, onCardClick }: R
 
   return (
     <div 
-      role="button"
-      tabIndex={0}
+      role={onCardClick ? "button" : "article"}
+      tabIndex={onCardClick ? 0 : -1}
       onKeyDown={(e) => e.key === 'Enter' && handleCardClick()}
       className={cn(
-        'bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer min-w-0 w-full',
+        'bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300',
+        onCardClick ? 'cursor-pointer' : '',
+        'min-w-0 w-full',
         className
       )}
       onClick={handleCardClick}
     >
+      {/* Persistent live region for announcements */}
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+      </span>
       {/* Image Section */}
       <div className="relative">
         <OptimizedImage

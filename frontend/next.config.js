@@ -160,8 +160,6 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
     // Optimize webpack cache to reduce serialization warnings
     webpackBuildWorker: true,
-    // Fix module system issues
-    esmExternals: 'loose',
   },
 
   // Disable prerendering to avoid build errors
