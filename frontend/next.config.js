@@ -77,6 +77,88 @@ const nextConfig = {
       config.resolve.alias['@/components/archive'] = false;
     }
 
+    // Fix module format conflicts for problematic dependencies
+    config.module.rules.push({
+      test: /node_modules\/require-in-the-middle/,
+      use: 'null-loader',
+    });
+
+    // Handle CommonJS/ESM conflicts
+    config.module.rules.push({
+      test: /\.m?js$/,
+      resolve: {
+        fullySpecified: false,
+      },
+    });
+
+    // Exclude problematic OpenTelemetry instrumentation from client bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'require-in-the-middle': false,
+        '@opentelemetry/instrumentation': false,
+        '@opentelemetry/instrumentation-http': false,
+        '@opentelemetry/instrumentation-express': false,
+        '@opentelemetry/instrumentation-pg': false,
+      };
+    }
+
+    // Add externals for problematic server-side modules
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'require-in-the-middle': 'commonjs require-in-the-middle',
+        '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation',
+      });
+    }
+
+    // Handle Edge Runtime specific issues
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      // Exclude problematic modules from Edge Runtime
+      '@supabase/realtime-js': false,
+      'require-in-the-middle': false,
+    };
+
+    // Add fallbacks for Edge Runtime
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'process': false,
+      'util': false,
+      'buffer': false,
+      'stream': false,
+      'crypto': false,
+      'fs': false,
+      'path': false,
+      'os': false,
+      'url': false,
+      'querystring': false,
+      'http': false,
+      'https': false,
+      'zlib': false,
+      'events': false,
+      'assert': false,
+      'constants': false,
+      'domain': false,
+      'punycode': false,
+      'string_decoder': false,
+      'timers': false,
+      'tty': false,
+      'vm': false,
+      'worker_threads': false,
+      'child_process': false,
+      'cluster': false,
+      'dgram': false,
+      'dns': false,
+      'module': false,
+      'net': false,
+      'readline': false,
+      'repl': false,
+      'tls': false,
+      'v8': false,
+      'wasi': false,
+    };
+
     // Handle Prisma Query Engine binaries for server-side rendering
     if (isServer) {
       // Ensure Prisma binaries are properly bundled
@@ -145,7 +227,7 @@ const nextConfig = {
       {
         source: '/_next/static/css/:path*',
         headers: [
-          { key: 'Content-Type', value: 'text/css' },
+          { key: 'Content-Type', value: 'text/css; charset=utf-8' },
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },

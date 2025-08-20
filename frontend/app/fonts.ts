@@ -5,7 +5,7 @@ export const roboto = Roboto({
   subsets: ['latin'],
   weight: ['300', '400', '500', '700'],
   display: 'swap',
-  preload: false,
+  preload: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
   variable: '--font-roboto',
   adjustFontFallback: true,

@@ -3,6 +3,9 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
+// Force dynamic rendering to prevent Supabase issues during build
+export const dynamic = 'force-dynamic';
+
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function OAuthSuccessContent() {
