@@ -232,9 +232,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       className={cn(
         "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
         "md:hover:shadow-2xl transition-shadow duration-300",
-        "max-md:w-full max-md:max-w-[180px] max-md:mx-auto",
-        "max-sm:max-w-[160px] max-sm:p-2",
-        "xl:w-[220px]",
+        "max-md:w-[200px] max-md:mx-auto",
+        "max-sm:w-[200px] max-sm:p-3",
+        "xl:w-[200px]",
         className
       )}
       variants={cardVariants}
@@ -256,7 +256,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     >
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[140px] max-sm:h-[120px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[140px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
