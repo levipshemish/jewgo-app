@@ -63,10 +63,7 @@
   minify = true
 
 # Build timeout (in seconds)
-[build]
-  command = "npm ci --include=dev && npm run build"
-  publish = ".next"
-  base = "frontend"
+# Note: Build settings are defined at the top of the file
 
 # Security headers (handled by _headers file)
 # Content security policy and other security headers are in _headers

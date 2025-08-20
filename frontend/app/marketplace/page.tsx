@@ -267,7 +267,6 @@ export default function MarketplacePage() {
           <EnhancedMarketplaceGrid
             listings={listings}
             loading={false}
-            onListingClick={handleListingClick}
             className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
           />
         )}
