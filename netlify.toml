@@ -2,7 +2,7 @@
   # Set the directory to the frontend folder where Next.js is located
   base = "frontend"
   
-  # Build command for Next.js (ensure devDependencies are installed)
+  # Build command for Next.js (work with @netlify/plugin-nextjs)
   command = "npm ci --include=dev && npx prisma generate && npm run build"
   
   # Output directory for the built files
@@ -73,6 +73,10 @@
 #   function = "my-edge-function"
 #   path = "/api/edge-function"
 
-# IMPORTANT: The @netlify/plugin-nextjs plugin must be disabled in the Netlify UI
-# Go to Site settings > Build & deploy > Build plugins and disable @netlify/plugin-nextjs
-# Next.js 15 has built-in support for Netlify deployment and the plugin is not needed
+# Note: @netlify/plugin-nextjs plugin is active in Netlify UI
+# The build configuration is set up to work with the plugin
+# Next.js 15 has built-in support for Netlify deployment
+
+# Plugin configuration to work with the active plugin
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

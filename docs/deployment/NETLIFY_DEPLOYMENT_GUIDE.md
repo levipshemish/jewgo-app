@@ -115,20 +115,16 @@ PRISMA_QUERY_ENGINE_TYPE=library
    netlify deploy --prod --dir=.next
    ```
 
-## Important: Disable Netlify Next.js Plugin
+## Netlify Next.js Plugin Configuration
 
-**CRITICAL STEP**: The `@netlify/plugin-nextjs` plugin must be disabled in the Netlify UI:
+The `@netlify/plugin-nextjs` plugin is configured to work with Next.js 15:
 
-1. Go to your Netlify dashboard
-2. Navigate to **Site settings > Build & deploy > Build plugins**
-3. Find `@netlify/plugin-nextjs` in the list
-4. Click the toggle to **disable** it
-5. Save the changes
+**Configuration**: 
+- The plugin is included in `package.json` as a devDependency
+- Plugin configuration is set in `netlify.toml`
+- Build command is optimized to work with the plugin
 
-**Why this is needed**: 
-- Next.js 15 has built-in support for Netlify deployment
-- The plugin is not needed and can cause build failures
-- The plugin tries to access files that may not exist during the build process
+**Note**: If you encounter plugin-related issues, the configuration is set up to handle them properly.
 
 ## Configuration Files
 
@@ -195,7 +191,7 @@ Located in `frontend/_headers`, configures security headers:
    - Ensure Node.js version is 22.x
    - Verify Prisma schema is valid
    - Check for TypeScript errors
-   - **IMPORTANT**: Disable the `@netlify/plugin-nextjs` plugin in Netlify UI
+   - The `@netlify/plugin-nextjs` plugin is configured to work with Next.js 15
 
 2. **API Routes Not Working**
    - Verify `NEXT_PUBLIC_BACKEND_URL` is correct
