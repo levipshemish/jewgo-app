@@ -230,11 +230,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   return (
     <motion.div
       className={cn(
-        "w-[280px] bg-white rounded-2xl overflow-hidden shadow-lg p-4 cursor-pointer",
+        "w-[200px] bg-white rounded-2xl overflow-hidden shadow-lg p-3 cursor-pointer",
         "md:hover:shadow-2xl transition-shadow duration-300",
-        "max-md:w-full max-md:max-w-[320px] max-md:mx-auto",
-        "max-sm:max-w-[280px] max-sm:p-3",
-        "xl:w-[300px]",
+        "max-md:w-full max-md:max-w-[160px] max-md:mx-auto",
+        "max-sm:max-w-[140px] max-sm:p-2",
+        "xl:w-[220px]",
         className
       )}
       variants={cardVariants}
@@ -256,7 +256,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     >
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[190px] max-sm:h-[160px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[140px] max-sm:h-[120px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
@@ -310,7 +310,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             >
               {cardData.imageTagLink ? (
                 <motion.div
-                  className="absolute top-3.5 left-3.5 bg-black/75 text-white px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer hover:bg-black/85"
+                  className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-black/85"
                   variants={tagVariants}
                   initial="idle"
                   whileHover="hover"
@@ -325,7 +325,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 </motion.div>
               ) : (
                 <div 
-                  className="absolute top-3.5 left-3.5 bg-black/75 text-white px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="absolute top-2 left-2 bg-black/75 text-white px-2 py-1 rounded-full text-xs font-medium"
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
                   {cardData.imageTag}
@@ -340,7 +340,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           {cardData.showHeart && (
             <motion.button
               className={cn(
-                "absolute top-3.5 right-3.5 w-9 h-9 rounded-full flex items-center justify-center",
+                "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center",
                 "shadow-lg transition-colors duration-200 group",
                 isLiked ? 'bg-white' : 'bg-white/90 hover:bg-white'
               )}
@@ -360,8 +360,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
-                minHeight: '44px',
-                minWidth: '44px',
+                minHeight: '32px',
+                minWidth: '32px',
                 zIndex: 10
               }}
             >
@@ -372,7 +372,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 transition={{ duration: 0.3 }}
               >
                 <Heart
-                  size={18}
+                  size={16}
                   className={cn(
                     "transition-all duration-200 -translate-y-px",
                     isLiked 
@@ -389,21 +389,21 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       
       {/* Content */}
       <motion.div 
-        className="pt-4"
+        className="pt-3"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <div className="flex justify-between items-start gap-3 mb-1.5 min-h-[24px]">
+        <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
-            className="text-lg max-sm:text-base font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
+            className="text-sm max-sm:text-xs font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
           {cardData.badge && (
             <motion.div
-              className="inline-block bg-gray-100 text-gray-700 px-2.5 py-1 max-sm:px-2 max-sm:py-0.5 rounded-xl text-xs max-sm:text-[11px] font-medium whitespace-nowrap flex-shrink-0"
+              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 max-sm:px-1.5 max-sm:py-0.5 rounded-lg text-xs max-sm:text-[10px] font-medium whitespace-nowrap flex-shrink-0"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
@@ -414,10 +414,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-3 min-h-[20px]">
+        <div className="flex justify-between items-center gap-2 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-sm text-gray-600 m-0 flex-1 truncate min-w-0"
+              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
@@ -425,7 +425,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-sm text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0"
+              className="text-xs text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0"
               aria-label={`Additional info: ${cardData.additionalText}`}
             >
               {cardData.additionalText}
