@@ -130,6 +130,9 @@ export default function TestUnifiedCardPage() {
 
   const handleTagClick = (tagLink: string, event: React.MouseEvent) => {
     console.log("Tag clicked:", tagLink)
+    // Show a notification or alert to demonstrate the link functionality
+    alert(`Tag link clicked! Would navigate to: ${tagLink}`)
+    // In a real app, you might use router.push(tagLink) or window.open(tagLink)
   }
 
   // Transform restaurant data for the card
@@ -137,7 +140,7 @@ export default function TestUnifiedCardPage() {
     id: restaurantData.id,
     imageUrl: restaurantData.image_url,
     imageTag: restaurantData.kosher_category || "Kosher",
-    imageTagLink: "#",
+    imageTagLink: `/eatery?kosher=${encodeURIComponent(restaurantData.kosher_category || "Kosher")}`,
     title: restaurantData.name,
     badge: restaurantData.rating?.toString() || "4.5",
     subtitle: formatPriceRange(restaurantData.price_range, restaurantData.min_avg_meal_cost, restaurantData.max_avg_meal_cost),
@@ -151,7 +154,7 @@ export default function TestUnifiedCardPage() {
     id: marketplaceData.id,
     imageUrl: marketplaceData.thumbnail || marketplaceData.images?.[0],
     imageTag: marketplaceData.category_name || "Category",
-    imageTagLink: "#",
+    imageTagLink: `/marketplace?category=${encodeURIComponent(marketplaceData.category_name || "Category")}`,
     title: marketplaceData.title,
     badge: "Placeholder Badge",
     subtitle: formatPrice(marketplaceData.price_cents, marketplaceData.currency),
