@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
+import { Session } from '@supabase/supabase-js';
 
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
@@ -41,7 +42,7 @@ export default function MarketplaceHeader({ onSearch, className = "" }: Marketpl
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: string, session: any) => {
+      async (event: string, session: Session | null) => {
         if (session?.user) {
           setUser(transformSupabaseUser(session.user));
         } else {

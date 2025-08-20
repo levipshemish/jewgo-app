@@ -63,7 +63,7 @@ export default function ReviewForm({
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: any) => {
         setSession(session);
         setLoading(false);
       }
