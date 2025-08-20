@@ -288,7 +288,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
       {/* Text Content Container - Fixed height structure for consistency */}
       <motion.div 
-        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'pt-2 pb-2' : 'p-2'}`}
+        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-2 pb-2' : 'p-2'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}
@@ -302,11 +302,11 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         
         {/* Price Range and Rating - Fixed height meta row */}
         <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+          <SpanContainer className={`text-gray-500 font-normal truncate flex-1 min-w-0 price-text pl-0.5 ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
             {formatPriceRange()}
           </SpanContainer>
           
-          <div className="flex items-center gap-1 flex-shrink-0 rating-container pr-0.5">
+          <div className="flex items-center gap-1 flex-shrink-0 rating-container pr-1">
             <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
             <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
               {getRating().toFixed(1)}
