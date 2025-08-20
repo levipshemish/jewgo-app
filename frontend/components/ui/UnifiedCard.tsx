@@ -256,7 +256,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     >
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[190px] max-sm:h-[160px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[190px] max-sm:h-[160px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
