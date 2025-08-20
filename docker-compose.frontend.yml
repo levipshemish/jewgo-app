@@ -6,7 +6,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
+      - CI=true
       # Point to your production backend URL
       - NEXT_PUBLIC_API_URL=https://jewgo-app-oyoh.onrender.com
       - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
@@ -22,6 +23,9 @@ services:
       - ADMIN_TOKEN=${ADMIN_TOKEN}
       # Database URL
       - DATABASE_URL=${DATABASE_URL}
+      # Additional production environment variables
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
     volumes:
       # Mount environment files if needed
       - ./config/environment/frontend.env.example:/app/.env.local:ro

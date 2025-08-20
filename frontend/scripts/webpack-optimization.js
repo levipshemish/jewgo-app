@@ -30,23 +30,24 @@ function optimizeModuleRules(config) {
     ...config.resolve,
     cacheWithContext: false,
     symlinks: false,
-    // Add fallbacks for better performance
+    // Add fallbacks for better performance - but be more careful with path-browserify
     fallback: {
       ...config.resolve?.fallback,
       fs: false,
-      path: require.resolve('path-browserify'),
+      // Only add path-browserify if it's available and needed
+      ...(config.resolve?.fallback?.path ? {} : { path: false }),
     },
   };
 
-  // Optimize module parsing
+  // Optimize module parsing - but don't disable dynamic imports
   config.module = {
     ...config.module,
     parser: {
       ...config.module.parser,
       javascript: {
         ...config.module.parser?.javascript,
-        // Disable dynamic imports in certain contexts to reduce serialization
-        dynamicImport: false,
+        // Keep dynamic imports enabled for proper module resolution
+        // dynamicImport: false, // Removed to fix module resolution issues
         // Optimize parsing for large files
         requireEnsure: false,
       },

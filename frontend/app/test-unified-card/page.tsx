@@ -181,7 +181,11 @@ export default function TestUnifiedCardPage() {
           <div className="text-red-500 text-xl mb-4">⚠️</div>
           <p className="text-gray-600 mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
@@ -253,11 +257,11 @@ export default function TestUnifiedCardPage() {
         </div>
 
         {/* Responsive Grid Layout */}
-        <div className="mb-12">
+        <div className="mb-12 px-4 sm:px-0">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
             Responsive Grid Layout (2 columns, 4 rows)
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 sm:gap-4">
             {/* Row 1 */}
             <EnhancedProductCard
                              data={{

@@ -20,6 +20,12 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Set development environment
+ENV NODE_ENV=development
+
+# Validate environment variables (but don't fail in dev)
+RUN npm run validate-env || echo "Environment validation warnings in development mode"
+
 # Expose port 3000
 EXPOSE 3000
 

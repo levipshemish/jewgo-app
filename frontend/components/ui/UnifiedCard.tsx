@@ -175,14 +175,16 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       onLikeToggle?.(data.id, newIsLiked);
       
       // Announce to screen readers
-      const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
-      const announcement = document.createElement('div');
-      announcement.setAttribute('aria-live', 'polite');
-      announcement.setAttribute('aria-atomic', 'true');
-      announcement.className = 'sr-only';
-      announcement.textContent = message;
-      document.body.appendChild(announcement);
-      setTimeout(() => document.body.removeChild(announcement), 1000);
+      if (typeof document !== 'undefined') {
+        const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
+        const announcement = document.createElement('div');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+        setTimeout(() => document.body.removeChild(announcement), 1000);
+      }
     } catch (error) {
       catchError(error as Error);
     }
@@ -200,7 +202,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     
     if (cardData.imageTagLink && onTagClick) {
       onTagClick(cardData.imageTagLink, event);
-    } else if (cardData.imageTagLink) {
+    } else if (cardData.imageTagLink && typeof window !== 'undefined') {
       // Default behavior - open link in new tab
       window.open(cardData.imageTagLink, '_blank', 'noopener,noreferrer');
     }
