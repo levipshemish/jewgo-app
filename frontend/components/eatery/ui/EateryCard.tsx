@@ -275,7 +275,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
 
       {/* Text Content Container - Fixed height structure for consistency */}
       <motion.div 
-        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-2 pt-3 pb-2' : 'p-2'}`}
+        className={`bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-1 pt-3 pb-2' : 'p-2'}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.3 }}

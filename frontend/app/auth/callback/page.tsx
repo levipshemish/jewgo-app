@@ -29,7 +29,7 @@ function AuthCallbackContent() {
         const session = await supabaseBrowser.auth.getSession();
         if (session?.data?.session) {
           // Session established successfully
-          router.push(searchParams.get("redirectTo") || '/');
+          router.push(searchParams.get("redirectTo") || '/profile/settings');
         } else {
           setError('Failed to establish session');
         }
@@ -56,7 +56,7 @@ function AuthCallbackContent() {
         }
 
         // Session established via code exchange
-        router.push(searchParams.get("redirectTo") || '/');
+        router.push(searchParams.get("redirectTo") || '/profile/settings');
       } catch {
         setError('Code exchange failed');
       }

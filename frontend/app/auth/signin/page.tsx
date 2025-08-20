@@ -9,7 +9,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/";
+  const redirectTo = searchParams.get("redirectTo") || "/profile/settings";
   const errorParam = searchParams.get("error");
   
   return <SignInForm redirectTo={redirectTo} initialError={errorParam} />;
@@ -59,7 +59,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       
       if (data?.user) {
         // User authenticated successfully
-        router.push(redirectTo || '/');
+        router.push(redirectTo || '/profile/settings');
       }
     } catch {
       setError('Sign in failed');
@@ -76,7 +76,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo || '/')}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo || '/profile/settings')}`,
         },
       });
 
