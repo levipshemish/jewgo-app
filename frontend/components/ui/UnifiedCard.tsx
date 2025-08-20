@@ -340,7 +340,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           {cardData.showHeart && (
             <motion.button
               className={cn(
-                "absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center",
+                "absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center",
                 "shadow-lg transition-colors duration-200 group",
                 isLiked ? 'bg-white' : 'bg-white/90 hover:bg-white'
               )}
@@ -360,8 +360,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
-                minHeight: '32px',
-                minWidth: '32px',
+                minHeight: '24px',
+                minWidth: '24px',
                 zIndex: 10
               }}
             >
@@ -372,9 +372,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 transition={{ duration: 0.3 }}
               >
                 <Heart
-                  size={16}
+                  size={14}
                   className={cn(
-                    "transition-all duration-200 -translate-y-px",
+                    "transition-all duration-200 -translate-y-0.5",
                     isLiked 
                       ? 'fill-red-500 stroke-red-500' 
                       : 'fill-none stroke-gray-400 group-hover:fill-red-500 group-hover:stroke-red-500'
