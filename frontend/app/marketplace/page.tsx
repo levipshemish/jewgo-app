@@ -141,12 +141,6 @@ export default function MarketplacePage() {
     }
   };
 
-  const handleListingClick = (listing: MarketplaceListing) => {
-    router.push(`/marketplace/${listing.id}`);
-  };
-
-
-
   const handleSell = () => {
     router.push('/marketplace/add');
   };
