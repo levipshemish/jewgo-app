@@ -11,24 +11,11 @@ const path = require('path');
  * @returns {Object} Optimized webpack configuration
  */
 function optimizeWebpackCache(config) {
-  // Enhanced cache configuration - use memory type for compatibility
-  config.cache = {
-    ...config.cache,
-    type: 'memory', // Changed from 'filesystem' to 'memory' for compatibility
-    compression: 'gzip',
-    maxAge: 172800000, // 2 days
-    store: 'pack',
-    memoryCacheUnaffected: true,
-    allowCollectingMemory: true,
-    // Add cache optimization for large strings
-    buildDependencies: {
-      config: [__filename],
-    },
-    // Use more efficient serialization
-    compressionOptions: {
-      level: 6, // Balanced compression
-    },
-  };
+  // Let Next.js handle cache configuration with its defaults
+  // Remove custom cache configuration to avoid compatibility issues
+  if (config.cache) {
+    delete config.cache;
+  }
 
   return config;
 }
