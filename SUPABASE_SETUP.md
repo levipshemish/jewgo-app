@@ -55,15 +55,48 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 Add these to your environment configuration:
 
 ```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
 # Apple OAuth Feature Flags
+# Client-side flag for UI rendering
 NEXT_PUBLIC_APPLE_OAUTH_ENABLED=true
+
+# Server-side flag for route handler enforcement
 APPLE_OAUTH_ENABLED=true
 
 # Analytics HMAC Secret for PII-safe logging
 ANALYTICS_HMAC_SECRET=your_analytics_hmac_secret_here
+
+# Other Environment Variables
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 **Important:** Apple OAuth credentials are configured server-side in Supabase dashboard only. Do NOT add Apple credentials as client-side environment variables.
+
+### Environment Variable Setup
+
+#### Local Development (.env.local)
+Create `frontend/.env.local` with the above variables for local development.
+
+#### Production Deployment
+Set these environment variables in your deployment platform:
+
+- **Vercel**: Add to Project Settings → Environment Variables
+- **Netlify**: Add to Site Settings → Environment Variables  
+- **Railway**: Add to Project Variables
+- **Render**: Add to Environment Variables section
+
+#### Feature Flag Strategy
+The implementation uses dual-layer feature flag protection:
+
+1. **Client-side flag** (`NEXT_PUBLIC_APPLE_OAUTH_ENABLED`): Controls UI rendering
+2. **Server-side flag** (`APPLE_OAUTH_ENABLED`): Controls route handler processing
+
+This ensures that even if the client-side flag is bypassed, the server-side flag provides additional security.
 
 ## Identity Mapping and Linking
 

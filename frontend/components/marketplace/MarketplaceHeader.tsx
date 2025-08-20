@@ -88,9 +88,9 @@ export default function MarketplaceHeader({ onSearch, className = "" }: Marketpl
       {user ? (
         <Link href="/profile">
           <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center">
-            {user.image ? (
+            {user.avatar_url ? (
               <img
-                src={user.image}
+                src={user.avatar_url}
                 alt={user.name || user.email}
                 className="w-12 h-12 rounded-full object-cover"
               />

@@ -124,7 +124,7 @@ export function createMockUser(): TransformedUser {
     email: 'dev@example.com',
     name: 'Development User',
     username: 'dev-user',
-    provider: 'development',
+    provider: 'unknown',
     avatar_url: null,
     providerInfo: {
       name: 'Development',

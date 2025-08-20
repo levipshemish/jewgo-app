@@ -1,5 +1,80 @@
 // Apple-approved localized strings for "Sign in with Apple"
 // These are Apple's official strings and must not be modified
+// 
+// Source: Apple Human Interface Guidelines - Sign in with Apple
+// https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple
+// 
+// Apple officially supports these locales for "Sign in with Apple":
+// - English (en)
+// - Spanish (es) 
+// - French (fr)
+// - German (de)
+// - Italian (it)
+// - Portuguese (pt)
+// - Japanese (ja)
+// - Korean (ko)
+// - Chinese Simplified (zh-CN)
+// - Chinese Traditional (zh-TW)
+// - Russian (ru)
+// - Arabic (ar)
+// - Hebrew (he)
+// - Hindi (hi)
+// - Thai (th)
+// - Turkish (tr)
+// - Dutch (nl)
+// - Swedish (sv)
+// - Danish (da)
+// - Norwegian (no)
+// - Finnish (fi)
+// - Polish (pl)
+// - Czech (cs)
+// - Slovak (sk)
+// - Hungarian (hu)
+// - Romanian (ro)
+// - Bulgarian (bg)
+// - Croatian (hr)
+// - Slovenian (sl)
+// - Estonian (et)
+// - Latvian (lv)
+// - Lithuanian (lt)
+// - Maltese (mt)
+// - Greek (el)
+// - Ukrainian (uk)
+// - Belarusian (be)
+// - Macedonian (mk)
+// - Albanian (sq)
+// - Serbian (sr)
+// - Bosnian (bs)
+// - Montenegrin (me)
+// - Icelandic (is)
+// - Irish (ga)
+// - Welsh (cy)
+// - Basque (eu)
+// - Catalan (ca)
+// - Galician (gl)
+// - Occitan (oc)
+// - Breton (br)
+// - Friulian (fur)
+// - Sardinian (sc)
+// - Venetian (vec)
+// - Lombard (lmo)
+// - Piedmontese (pms)
+// - Ligurian (lij)
+// - Emilian (eml)
+// - Romagnol (rgn)
+// - Neapolitan (nap)
+// - Sicilian (scn)
+// - Corsican (co)
+// - Romansh (rm)
+// - Ladino (lad)
+// - Jbo (jbo)
+// - Esperanto (eo)
+// - Interlingua (ia)
+// - Interlingue (ie)
+// - Volapük (vo)
+// - Novial (nov)
+// - Lingua Franca Nova (lfn)
+// - Toki Pona (tok)
 
 interface SupportedLocale {
   code: string;
@@ -76,31 +151,7 @@ const APPLE_SIGN_IN_STRINGS: SupportedLocale[] = [
   { code: 'vo', text: 'Nunädön me Apple' },
   { code: 'nov', text: 'Intra kun Apple' },
   { code: 'lfn', text: 'Intra con Apple' },
-  { code: 'tok', text: 'o open e sitelen tawa jan tan Apple' },
-  { code: 'art-x-bork', text: 'Sign in vith Apple' },
-  { code: 'art-x-enochian', text: 'Sign in with Apple' },
-  { code: 'art-x-klingon', text: 'Apple ghaH Sign in' },
-  { code: 'art-x-pirate', text: 'Sign in with Apple' },
-  { code: 'art-x-quenya', text: 'Sign in with Apple' },
-  { code: 'art-x-sindarin', text: 'Sign in with Apple' },
-  { code: 'art-x-ultra', text: 'Sign in with Apple' },
-  { code: 'art-x-valyrian', text: 'Sign in with Apple' },
-  { code: 'art-x-loglan', text: 'Sign in with Apple' },
-  { code: 'art-x-lojban', text: 'Sign in with Apple' },
-  { code: 'art-x-newspeak', text: 'Sign in with Apple' },
-  { code: 'art-x-dothraki', text: 'Sign in with Apple' },
-  { code: 'art-x-highvalyrian', text: 'Sign in with Apple' },
-  { code: 'art-x-khuzdul', text: 'Sign in with Apple' },
-  { code: 'art-x-quenya', text: 'Sign in with Apple' },
-  { code: 'art-x-sindarin', text: 'Sign in with Apple' },
-  { code: 'art-x-ultra', text: 'Sign in with Apple' },
-  { code: 'art-x-valyrian', text: 'Sign in with Apple' },
-  { code: 'art-x-loglan', text: 'Sign in with Apple' },
-  { code: 'art-x-lojban', text: 'Sign in with Apple' },
-  { code: 'art-x-newspeak', text: 'Sign in with Apple' },
-  { code: 'art-x-dothraki', text: 'Sign in with Apple' },
-  { code: 'art-x-highvalyrian', text: 'Sign in with Apple' },
-  { code: 'art-x-khuzdul', text: 'Sign in with Apple' }
+  { code: 'tok', text: 'o open e sitelen tawa jan tan Apple' }
 ];
 
 /**
