@@ -184,21 +184,16 @@ export default function FavoritesPage() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
         <Header 
-          title="Favorites" 
           onSearch={handleSearch}
-          searchQuery={searchQuery}
-          showSearch={true}
+          placeholder="Search your favorites..."
+          showFilters={true}
+          onShowFilters={handleShowFilters}
         />
         
         <div className="flex flex-col h-full">
           <CategoryTabs 
             activeTab={activeTab}
             onTabChange={handleTabChange}
-            tabs={[
-              { id: 'favorites', label: 'Favorites', count: favorites.length },
-              { id: 'recent', label: 'Recent', count: 0 },
-              { id: 'saved', label: 'Saved', count: 0 }
-            ]}
           />
 
           <div className="flex-1 overflow-hidden">
@@ -242,17 +237,14 @@ export default function FavoritesPage() {
                             ❤️
                           </button>
                         </div>
-                        {restaurant.image_url && (
-                          <img 
-                            src={restaurant.image_url} 
-                            alt={restaurant.name}
-                            className="w-full h-32 object-cover rounded mb-2"
-                          />
-                        )}
+                        {/* Image placeholder since FavoriteRestaurant doesn't have image_url */}
+                        <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center">
+                          <span className="text-gray-500 text-sm">No image</span>
+                        </div>
                         <div className="text-sm text-gray-600">
-                          {restaurant.city && <p>{restaurant.city}</p>}
-                          {restaurant.rating && <p>Rating: {restaurant.rating}</p>}
-                          {restaurant.price_range && <p>Price: {restaurant.price_range}</p>}
+                          <p>Added: {new Date(restaurant.addedAt).toLocaleDateString()}</p>
+                          {restaurant.visitCount > 0 && <p>Visited: {restaurant.visitCount} times</p>}
+                          {restaurant.notes && <p>Notes: {restaurant.notes}</p>}
                         </div>
                       </div>
                     ))}

@@ -280,8 +280,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 <motion.div
                   className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-white shadow-sm flex items-center justify-center leading-tight"
                   style={{
-                    maxWidth: '80px',
-                    minWidth: 'fit-content'
+                    width: '60px',
+                    minWidth: '60px'
                   }}
                   variants={tagVariants}
                   initial="idle"
@@ -293,7 +293,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                   tabIndex={0}
                   aria-label={`${cardData.imageTag} tag - click to open link`}
                 >
-                  <span className={cardData.imageTag.length > 8 ? 'truncate' : ''}>
+                  <span className="truncate">
                     {cardData.imageTag}
                   </span>
                 </motion.div>
@@ -301,12 +301,12 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 <div 
                   className="absolute top-2 left-2 bg-white/95 text-gray-900 px-2 py-1 rounded-full text-xs font-medium flex items-center justify-center leading-tight shadow-sm"
                   style={{
-                    maxWidth: '80px',
-                    minWidth: 'fit-content'
+                    width: '60px',
+                    minWidth: '60px'
                   }}
                   aria-label={`Tag: ${cardData.imageTag}`}
                 >
-                  <span className={cardData.imageTag.length > 8 ? 'truncate' : ''}>
+                  <span className="truncate">
                     {cardData.imageTag}
                   </span>
                 </div>
@@ -389,7 +389,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         <div className="flex justify-between items-center gap-2 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0 max-w-[60%]"
+              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
+              style={{ maxWidth: '120px' }}
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
@@ -397,7 +398,8 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 max-w-[35%] truncate"
+              className="text-[10px] text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
+              style={{ maxWidth: '70px' }}
               aria-label={`Additional info: ${cardData.additionalText}`}
             >
               {cardData.additionalText}

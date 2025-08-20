@@ -91,34 +91,76 @@ const nextConfig = {
       },
     });
 
-    // Exclude problematic OpenTelemetry instrumentation from client bundle
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        'require-in-the-middle': false,
-        '@opentelemetry/instrumentation': false,
-        '@opentelemetry/instrumentation-http': false,
-        '@opentelemetry/instrumentation-express': false,
-        '@opentelemetry/instrumentation-pg': false,
-      };
-    }
+    // Fix OpenTelemetry and Sentry module resolution issues
+    config.module.rules.push({
+      test: /node_modules\/@opentelemetry/,
+      use: 'null-loader',
+    });
 
-    // Add externals for problematic server-side modules
-    if (isServer) {
-      config.externals = config.externals || [];
-      config.externals.push({
-        'require-in-the-middle': 'commonjs require-in-the-middle',
-        '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation',
-      });
-    }
+    config.module.rules.push({
+      test: /node_modules\/@sentry/,
+      use: 'null-loader',
+    });
 
-    // Handle Edge Runtime specific issues
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      // Exclude problematic modules from Edge Runtime
-      '@supabase/realtime-js': false,
-      'require-in-the-middle': false,
-    };
+         // Exclude problematic OpenTelemetry instrumentation from client bundle
+     if (!isServer) {
+       config.resolve.fallback = {
+         ...config.resolve.fallback,
+         'require-in-the-middle': false,
+         '@opentelemetry/instrumentation': false,
+         '@opentelemetry/instrumentation-http': false,
+         '@opentelemetry/instrumentation-express': false,
+         '@opentelemetry/instrumentation-pg': false,
+         '@opentelemetry/api': false,
+         '@opentelemetry/core': false,
+         '@opentelemetry/semantic-conventions': false,
+         '@opentelemetry/resources': false,
+         '@opentelemetry/context-base': false,
+         '@opentelemetry/tracing': false,
+         '@opentelemetry/metrics': false,
+         '@sentry/node': false,
+         '@sentry/nextjs': false,
+         '@sentry/tracing': false,
+       };
+     }
+
+         // Add externals for problematic server-side modules
+     if (isServer) {
+       config.externals = config.externals || [];
+       config.externals.push({
+         'require-in-the-middle': 'commonjs require-in-the-middle',
+         '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation',
+         '@opentelemetry/api': 'commonjs @opentelemetry/api',
+         '@opentelemetry/core': 'commonjs @opentelemetry/core',
+         '@opentelemetry/semantic-conventions': 'commonjs @opentelemetry/semantic-conventions',
+         '@opentelemetry/resources': 'commonjs @opentelemetry/resources',
+         '@opentelemetry/context-base': 'commonjs @opentelemetry/context-base',
+         '@opentelemetry/tracing': 'commonjs @opentelemetry/tracing',
+         '@opentelemetry/metrics': 'commonjs @opentelemetry/metrics',
+         '@sentry/node': 'commonjs @sentry/node',
+         '@sentry/nextjs': 'commonjs @sentry/nextjs',
+         '@sentry/tracing': 'commonjs @sentry/tracing',
+       });
+     }
+
+         // Handle Edge Runtime specific issues
+     config.resolve.alias = {
+       ...config.resolve.alias,
+       // Exclude problematic modules from Edge Runtime
+       '@supabase/realtime-js': false,
+       'require-in-the-middle': false,
+       '@opentelemetry/instrumentation': false,
+       '@opentelemetry/api': false,
+       '@opentelemetry/core': false,
+       '@opentelemetry/semantic-conventions': false,
+       '@opentelemetry/resources': false,
+       '@opentelemetry/context-base': false,
+       '@opentelemetry/tracing': false,
+       '@opentelemetry/metrics': false,
+       '@sentry/node': false,
+       '@sentry/nextjs': false,
+       '@sentry/tracing': false,
+     };
 
     // Add fallbacks for Edge Runtime
     config.resolve.fallback = {
@@ -321,33 +363,36 @@ const nextConfig = {
   },
 };
 
-const { withSentryConfig } = require("@sentry/nextjs");
+// Temporarily disable Sentry to fix module resolution issues
+// const { withSentryConfig } = require("@sentry/nextjs");
 
-module.exports = withSentryConfig(
-  nextConfig,
-  {
-    // For all available options, see:
-    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-    
-    // Disable source map upload to avoid build issues
-    dryRun: true,
-    silent: true,
-    
-    // Upload a larger set of source maps for prettier stack traces (increases build time)
-    widenClientFileUpload: true,
-    
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
-    
-    // Ensure webpack cache configuration is preserved
-    webpack: (config, options) => {
-      // Ensure cache type is set to memory for Sentry webpack configurations
-      if (config.cache) {
-        config.cache = {
-          type: 'memory',
-        };
-      }
-      return config;
-    },
-  }
-);
+// module.exports = withSentryConfig(
+//   nextConfig,
+//   {
+//     // For all available options, see:
+//     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+//     
+//     // Disable source map upload to avoid build issues
+//     dryRun: true,
+//     silent: true,
+//     
+//     // Upload a larger set of source maps for prettier stack traces (increases build time)
+//     widenClientFileUpload: true,
+//     
+//     // Automatically tree-shake Sentry logger statements to reduce bundle size
+//     disableLogger: true,
+//     
+//     // Ensure webpack cache configuration is preserved
+//     webpack: (config, options) => {
+//       // Ensure cache type is set to memory for Sentry webpack configurations
+//       if (config.cache) {
+//         config.cache = {
+//           type: 'memory',
+//         };
+//       }
+//       return config;
+//     },
+//   }
+// );
+
+module.exports = nextConfig;

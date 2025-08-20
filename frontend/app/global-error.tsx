@@ -1,18 +1,22 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
+// Temporarily disable Sentry to fix module resolution issues
+// import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
-    // Only capture exceptions if Sentry is enabled (check if DSN is set)
-    try {
-      Sentry.captureException(error);
-    } catch (sentryError) {
-      // Fallback logging for when Sentry is disabled or fails
-      console.error('Global error caught:', error);
-      console.error('Sentry error:', sentryError);
-    }
+    // Temporarily disabled Sentry to fix module resolution issues
+    // try {
+    //   Sentry.captureException(error);
+    // } catch (sentryError) {
+    //   // Fallback logging for when Sentry is disabled or fails
+    //   console.error('Global error caught:', error);
+    //   console.error('Sentry error:', sentryError);
+    // }
+    
+    // Simple error logging for now
+    console.error('Global error caught:', error);
   }, [error]);
 
   return (
