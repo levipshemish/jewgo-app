@@ -103,7 +103,7 @@ export interface Restaurant {
   category: RestaurantCategory;
   
   // Core identification
-  id: number;
+  id: string;
   name: string;
   
   // Location information

@@ -200,36 +200,33 @@ const nextConfig = {
   },
 };
 
-// Temporarily disable Sentry to fix module resolution issues
-// const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require("@sentry/nextjs");
 
-// module.exports = withSentryConfig(
-//   nextConfig,
-//   {
-//     // For all available options, see:
-//     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-//     
-//     // Disable source map upload to avoid build issues
-//     dryRun: true,
-//     silent: true,
-//     
-//     // Upload a larger set of source maps for prettier stack traces (increases build time)
-//     widenClientFileUpload: true,
-//     
-//     // Automatically tree-shake Sentry logger statements to reduce bundle size
-//     disableLogger: true,
-//     
-//     // Ensure webpack cache configuration is preserved
-//     webpack: (config, options) => {
-//       // Ensure cache type is set to memory for Sentry webpack configurations
-//       if (config.cache) {
-//         config.cache = {
-//           type: 'memory',
-//         };
-//       }
-//       return config;
-//     },
-//   }
-// );
-
-module.exports = nextConfig;
+module.exports = withSentryConfig(
+  nextConfig,
+  {
+    // For all available options, see:
+    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+    
+    // Disable source map upload to avoid build issues
+    dryRun: true,
+    silent: true,
+    
+    // Upload a larger set of source maps for prettier stack traces (increases build time)
+    widenClientFileUpload: true,
+    
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    disableLogger: true,
+    
+    // Ensure webpack cache configuration is preserved
+    webpack: (config, options) => {
+      // Ensure cache type is set to memory for Sentry webpack configurations
+      if (config.cache) {
+        config.cache = {
+          type: 'memory',
+        };
+      }
+      return config;
+    },
+  }
+);

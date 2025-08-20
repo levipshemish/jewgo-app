@@ -103,7 +103,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
   // Sync with favorites manager
   useEffect(() => {
-    setIsLiked(isFavorite(Number(data.id)));
+    setIsLiked(isFavorite(data.id));
   }, [isFavorite, data.id]);
 
   // Memoized computations
@@ -152,7 +152,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       if (newIsLiked) {
         // Create a minimal restaurant object with required fields
         const minimalRestaurant = {
-          id: Number(data.id),
+          id: data.id,
           name: data.title,
           address: '',
           city: '',
@@ -168,7 +168,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         };
         addFavorite(minimalRestaurant);
       } else {
-        removeFavorite(Number(data.id));
+        removeFavorite(data.id);
       }
       
       setIsLiked(newIsLiked);

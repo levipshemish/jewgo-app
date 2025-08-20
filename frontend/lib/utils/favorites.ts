@@ -8,7 +8,7 @@ const FAVORITES_STORAGE_KEY = 'jewgo_favorites';
 
 
 export interface FavoriteRestaurant {
-  id: number;
+  id: string;
   name: string;
   addedAt: string;
   lastVisited?: string;
@@ -25,7 +25,7 @@ export interface FavoritesData {
 
 class FavoritesManager {
   private static instance: FavoritesManager;
-  private favorites: Map<number, FavoriteRestaurant> = new Map();
+  private favorites: Map<string, FavoriteRestaurant> = new Map();
   private listeners: Set<(favorites: FavoriteRestaurant[]) => void> = new Set();
 
   private constructor() {
@@ -96,7 +96,7 @@ class FavoritesManager {
   addFavorite(restaurant: Restaurant, notes?: string, tags?: string[]): boolean {
     try {
       const favorite: FavoriteRestaurant = {
-        id: restaurant.id,
+        id: restaurant.id.toString(),
         name: restaurant.name,
         addedAt: new Date().toISOString(),
         visitCount: 0,
@@ -104,7 +104,7 @@ class FavoritesManager {
         tags: tags || []
       };
 
-      this.favorites.set(restaurant.id, favorite);
+      this.favorites.set(restaurant.id.toString(), favorite);
       this.saveToStorage();
       this.notifyListeners();
       return true;
@@ -115,7 +115,7 @@ class FavoritesManager {
   }
 
   // Remove a restaurant from favorites
-  removeFavorite(restaurantId: number): boolean {
+  removeFavorite(restaurantId: string): boolean {
     try {
       const removed = this.favorites.delete(restaurantId);
       if (removed) {
@@ -130,7 +130,7 @@ class FavoritesManager {
   }
 
   // Check if a restaurant is favorited
-  isFavorite(restaurantId: number): boolean {
+  isFavorite(restaurantId: string): boolean {
     return this.favorites.has(restaurantId);
   }
 
@@ -142,12 +142,12 @@ class FavoritesManager {
   }
 
   // Get favorite by ID
-  getFavorite(restaurantId: number): FavoriteRestaurant | undefined {
+  getFavorite(restaurantId: string): FavoriteRestaurant | undefined {
     return this.favorites.get(restaurantId);
   }
 
   // Update favorite notes
-  updateNotes(restaurantId: number, notes: string): boolean {
+  updateNotes(restaurantId: string, notes: string): boolean {
     try {
       const favorite = this.favorites.get(restaurantId);
       if (favorite) {
@@ -164,7 +164,7 @@ class FavoritesManager {
   }
 
   // Add tags to favorite
-  addTags(restaurantId: number, tags: string[]): boolean {
+  addTags(restaurantId: string, tags: string[]): boolean {
     try {
       const favorite = this.favorites.get(restaurantId);
       if (favorite) {
@@ -183,7 +183,7 @@ class FavoritesManager {
   }
 
   // Remove tags from favorite
-  removeTags(restaurantId: number, tags: string[]): boolean {
+  removeTags(restaurantId: string, tags: string[]): boolean {
     try {
       const favorite = this.favorites.get(restaurantId);
       if (favorite) {
@@ -202,7 +202,7 @@ class FavoritesManager {
   }
 
   // Increment visit count
-  incrementVisitCount(restaurantId: number): boolean {
+  incrementVisitCount(restaurantId: string): boolean {
     try {
       const favorite = this.favorites.get(restaurantId);
       if (favorite) {
@@ -373,8 +373,8 @@ export const useFavorites = () => {
 
 // Utility functions
 export const toggleFavorite = (restaurant: Restaurant): boolean => {
-  if (favoritesManager.isFavorite(restaurant.id)) {
-    return favoritesManager.removeFavorite(restaurant.id);
+  if (favoritesManager.isFavorite(restaurant.id.toString())) {
+    return favoritesManager.removeFavorite(restaurant.id.toString());
   } else {
     return favoritesManager.addFavorite(restaurant);
   }
