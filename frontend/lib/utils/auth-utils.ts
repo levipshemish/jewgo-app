@@ -666,3 +666,25 @@ export function mapAppleOAuthError(error: string): string {
       return 'Sign in failed. Please try again.';
   }
 }
+
+/**
+ * Feature support guard stub for client-side usage
+ * Re-exports from auth-utils.server when running server-side and returns true (with a console.warn) on the client
+ */
+export function validateSupabaseFeatureSupport(): boolean {
+  // Check if we're in a server environment
+  if (typeof window === 'undefined') {
+    // Server-side - re-export from auth-utils.server
+    try {
+      const { validateSupabaseFeatureSupport: serverValidate } = require('./auth-utils.server');
+      return serverValidate();
+    } catch (error) {
+      console.error('Failed to import server-side validateSupabaseFeatureSupport:', error);
+      return false;
+    }
+  } else {
+    // Client-side - return true with a console.warn
+    console.warn('validateSupabaseFeatureSupport called on client-side - assuming features are available');
+    return true;
+  }
+}

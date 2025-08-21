@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
     
     // Check idempotency to prevent duplicate merges
     const idempotencyKey = generateIdempotencyKey('merge_anonymous', `${sourceUid}_${targetUid}`);
-    const idempotencyCheck = await checkIdempotency(idempotencyKey, 3600); // 1 hour TTL
+    const idempotencyCheck = await checkIdempotency(idempotencyKey); // 1 hour TTL
     
     if (idempotencyCheck.exists) {
       console.log(`Idempotent merge operation for correlation ID: ${correlationId}`, {
