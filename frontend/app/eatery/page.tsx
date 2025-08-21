@@ -79,35 +79,9 @@ export default function EateryExplorePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
-  // Calculate items per page based on screen size and responsive grid
+  // Simple items per page calculation for 2-column grid
   const getItemsPerPage = () => {
-    const screenWidth = window.innerWidth;
-    
-    // Determine columns based on screen size
-    let columns = 2; // Default for mobile
-    
-    if (screenWidth >= 1536) { // 2xl breakpoint
-      columns = 10;
-    } else if (screenWidth >= 1280) { // xl breakpoint
-      columns = 7;
-    } else if (screenWidth >= 1024) { // lg breakpoint
-      columns = 5;
-    } else if (screenWidth >= 640) { // sm breakpoint
-      columns = 3;
-    }
-    // Mobile: 2 columns (default)
-    
-    // Calculate rows based on screen size
-    let rows = 4; // Default for large screens
-    
-    if (screenWidth < 640) { // sm breakpoint
-      rows = 2; // Mobile: 2 rows
-    } else if (screenWidth < 1024) { // lg breakpoint
-      rows = 3; // Tablet: 3 rows
-    }
-    // Desktop: 4 rows (default)
-    
-    return columns * rows;
+    return 20; // Fixed number that works well with 2-column layout
   };
 
   // Update items per page when window resizes
@@ -656,23 +630,23 @@ export default function EateryExplorePage() {
       )}
 
       {/* Restaurant Grid */}
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
+      <div className="px-4 py-4">
         <div className="max-w-7xl mx-auto">
           {filteredRestaurants.length === 0 ? (
-            <div className="text-center py-16 lg:py-24">
-              <div className="text-gray-400 text-6xl lg:text-8xl mb-4 lg:mb-6">🍽️</div>
-              <div className="text-gray-500 text-lg lg:text-xl mb-3 font-medium">
+            <div className="text-center py-16">
+              <div className="text-gray-400 text-6xl mb-4">🍽️</div>
+              <div className="text-gray-500 text-lg mb-3 font-medium">
                 {searchQuery ? 'No restaurants found' : 'No restaurants available'}
               </div>
-              <div className="text-gray-400 text-sm lg:text-base">
+              <div className="text-gray-400 text-sm">
                 {searchQuery ? 'Try adjusting your search' : 'Please check back later'}
               </div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-10 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid">
+              <div className="grid grid-cols-2 gap-4">
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <div key={restaurant.id} className="relative">
+                  <div key={restaurant.id}>
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
                       variant="default"
@@ -692,7 +666,7 @@ export default function EateryExplorePage() {
                 ))}
               </div>
               
-              {/* Debug info and status - moved to bottom */}
+              {/* Debug info and status */}
               <div className="text-sm text-gray-500 mt-6 text-center">
                 {infiniteScrollEnabled ? (
                   <>
@@ -702,7 +676,7 @@ export default function EateryExplorePage() {
                   </>
                 ) : (
                   <>
-                    Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages}) - {getItemsPerPage()} cards per page
+                    Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages})
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
                   </>
                 )}
@@ -727,111 +701,47 @@ export default function EateryExplorePage() {
               
               {/* Smart Pagination Controls - Hidden on mobile when infinite scroll is enabled */}
               {(!infiniteScrollEnabled || !isMobile) && (
-                <div className="pagination-container flex justify-center items-center mt-8 mb-4 sm:mb-6 md:mb-8 lg:mb-8 xl:mb-10 bg-white py-4 rounded-lg shadow-sm">
-                  <div className="flex items-center space-x-1 sm:space-x-2 max-w-full overflow-x-auto px-4">
+                <div className="flex justify-center items-center mt-8">
+                  <div className="flex items-center space-x-2">
                     {/* Previous Button */}
                     <button
                       onClick={handlePreviousPage}
                       disabled={currentPage === 1}
-                      className="pagination-button disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                      style={{
-                        minHeight: '44px', minWidth: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent'
-                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span className="hidden sm:inline">Previous</span>
-                      <span className="sm:hidden">←</span>
+                      Previous
                     </button>
                   
-                  {totalPages > 1 ? (
-                    // Simplified pagination that's always visible
-                    (() => {
-                      const pages: (number | string)[] = [];
-                      const current = currentPage;
-                      const total = totalPages;
-                      
-                      // Always show first page
-                      pages.push(1);
-                      
-                      if (total <= 7) {
-                        // Show all pages if total is small
-                        for (let i = 2; i <= total; i++) {
-                          pages.push(i);
-                        }
-                      } else {
-                        // Smart pagination with ellipsis
-                        if (current <= 3) {
-                          // Near the beginning
-                          for (let i = 2; i <= Math.min(4, total - 1); i++) {
-                            pages.push(i);
-                          }
-                          if (total > 4) {
-                            pages.push('...');
-                            pages.push(total);
-                          }
-                        } else if (current >= total - 2) {
-                          // Near the end
-                          if (total > 4) {
-                            pages.push('...');
-                          }
-                          for (let i = Math.max(2, total - 3); i < total; i++) {
-                            pages.push(i);
-                          }
-                          pages.push(total);
-                        } else {
-                          // In the middle
-                          pages.push('...');
-                          for (let i = current - 1; i <= current + 1; i++) {
-                            pages.push(i);
-                          }
-                          pages.push('...');
-                          pages.push(total);
-                        }
-                      }
-                      
-                      return pages.map((page, index) => (
-                        <React.Fragment key={index}>
-                          {page === '...' ? (
-                            <span className="px-2 py-2 text-gray-400">...</span>
-                          ) : (
-                            <button
-                              onClick={() => handlePageChange(page as number)}
-                              className={`pagination-button ${currentPage === page ? 'active' : ''} min-w-[2.5rem]`}
-                              style={{
-                                minHeight: '44px',
-                                minWidth: '44px',
-                                touchAction: 'manipulation',
-                                WebkitTapHighlightColor: 'transparent'
-                              }}
-                            >
-                              {page}
-                            </button>
-                          )}
-                        </React.Fragment>
-                      ));
-                    })()
-                  ) : (
-                    // Show single page indicator when there's only one page
-                    <span className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-xl whitespace-nowrap shadow-sm">
-                      <span className="hidden sm:inline">Page 1 of 1</span>
-                      <span className="sm:hidden">1/1</span>
-                    </span>
-                  )}
-                  
-                  {/* Next Button */}
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className="pagination-button disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                    style={{
-                      minHeight: '44px', minWidth: '44px', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent'
-                    }}
-                  >
-                    <span className="hidden sm:inline">Next</span>
-                    <span className="sm:hidden">→</span>
-                  </button>
+                    {/* Page Numbers */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-2 rounded-lg ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Next Button */}
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </>
           )}
         </div>
