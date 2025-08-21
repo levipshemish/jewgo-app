@@ -1997,6 +1997,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return jsonify({"error": "Failed to fetch website"}), 500
 
     # Restaurant hours endpoint - GET for public access, PUT for admin updates
+    # Force restart 2025-01-21
     @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["GET", "PUT"])
     def restaurant_hours(restaurant_id: int):
         """Handle restaurant hours - GET for display, PUT for admin updates."""
