@@ -10,8 +10,6 @@ const requiredEnvVars = [
   'NEXTAUTH_SECRET',
   'NEXTAUTH_URL',
   'NEXT_PUBLIC_BACKEND_URL',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
 ];
 
 const optionalEnvVars = [
@@ -19,6 +17,8 @@ const optionalEnvVars = [
   'NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
 ];
 
 // Load .env.local if present to assist local checks (non-fatal if missing)

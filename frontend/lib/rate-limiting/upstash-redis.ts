@@ -127,12 +127,12 @@ export async function checkRateLimit(
       reset_in_seconds: windowExpiry > 0 ? windowExpiry : config.window
     };
     
-  } catch (error) {
-    console.error('Rate limiting error:', error);
-    // Fail open for security - allow request to proceed when Redis is unavailable
-    return { allowed: true };
+      } catch (error) {
+      console.error('Rate limiting error:', error);
+      // Fail open for security - allow request to proceed when Redis is unavailable
+      return { allowed: true };
+    }
   }
-}
 
 /**
  * Generate idempotency key for merge operations

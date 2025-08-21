@@ -28,48 +28,54 @@ console.log(`UPSTASH_REDIS_REST_URL: ${upstashRedisUrl ? '✅ Set' : '❌ Not se
 console.log(`UPSTASH_REDIS_REST_TOKEN: ${upstashRedisToken ? '✅ Set' : '❌ Not set'}`);
 
 if (!upstashRedisUrl) {
-  console.error('\n❌ UPSTASH_REDIS_REST_URL is not set');
-  console.error('This is required for rate limiting functionality.');
-  console.error('');
-  console.error('🔧 TO FIX:');
-  console.error('1. Go to your Vercel dashboard');
-  console.error('2. Go to Settings > Environment Variables');
-  console.error('3. Add UPSTASH_REDIS_REST_URL with your Upstash Redis REST URL');
-  console.error('4. Add UPSTASH_REDIS_REST_TOKEN with your Upstash Redis REST token');
-  console.error('5. Redeploy your project');
-  console.error('');
-  console.error('📚 SETUP GUIDE:');
-  console.error('1. Go to https://upstash.com/');
-  console.error('2. Create a new Redis database');
-  console.error('3. Copy the REST URL and REST Token from your database dashboard');
-  console.error('4. Add them to your Vercel environment variables');
-  process.exit(1);
+  console.warn('\n⚠️  UPSTASH_REDIS_REST_URL is not set');
+  console.warn('Rate limiting will be disabled. This is not recommended for production.');
+  console.warn('');
+  console.warn('🔧 TO ENABLE RATE LIMITING:');
+  console.warn('1. Go to your Vercel dashboard');
+  console.warn('2. Go to Settings > Environment Variables');
+  console.warn('3. Add UPSTASH_REDIS_REST_URL with your Upstash Redis REST URL');
+  console.warn('4. Add UPSTASH_REDIS_REST_TOKEN with your Upstash Redis REST token');
+  console.warn('5. Redeploy your project');
+  console.warn('');
+  console.warn('📚 SETUP GUIDE:');
+  console.warn('1. Go to https://upstash.com/');
+  console.warn('2. Create a new Redis database');
+  console.warn('3. Copy the REST URL and REST Token from your database dashboard');
+  console.warn('4. Add them to your Vercel environment variables');
+  console.warn('');
+  console.warn('✅ Build will continue without rate limiting...');
+  return; // Don't exit, just warn
 }
 
 if (!upstashRedisToken) {
-  console.error('\n❌ UPSTASH_REDIS_REST_TOKEN is not set');
-  console.error('This is required for rate limiting functionality.');
-  console.error('');
-  console.error('🔧 TO FIX:');
-  console.error('1. Go to your Vercel dashboard');
-  console.error('2. Go to Settings > Environment Variables');
-  console.error('3. Add UPSTASH_REDIS_REST_TOKEN with your Upstash Redis REST token');
-  console.error('4. Redeploy your project');
-  process.exit(1);
+  console.warn('\n⚠️  UPSTASH_REDIS_REST_TOKEN is not set');
+  console.warn('Rate limiting will be disabled. This is not recommended for production.');
+  console.warn('');
+  console.warn('🔧 TO ENABLE RATE LIMITING:');
+  console.warn('1. Go to your Vercel dashboard');
+  console.warn('2. Go to Settings > Environment Variables');
+  console.warn('3. Add UPSTASH_REDIS_REST_TOKEN with your Upstash Redis REST token');
+  console.warn('4. Redeploy your project');
+  console.warn('');
+  console.warn('✅ Build will continue without rate limiting...');
+  return; // Don't exit, just warn
 }
 
 if (!isValidUpstashRedisUrl(upstashRedisUrl)) {
-  console.error('\n❌ Invalid UPSTASH_REDIS_REST_URL');
-  console.error('Current value:', upstashRedisUrl);
-  console.error('');
-  console.error('Expected format: https://your-database-id.upstash.io');
-  console.error('');
-  console.error('🔧 TO FIX:');
-  console.error('1. Go to your Upstash dashboard');
-  console.error('2. Copy the REST URL from your Redis database');
-  console.error('3. Update UPSTASH_REDIS_REST_URL in your Vercel environment variables');
-  console.error('4. Redeploy your project');
-  process.exit(1);
+  console.warn('\n⚠️  Invalid UPSTASH_REDIS_REST_URL');
+  console.warn('Current value:', upstashRedisUrl);
+  console.warn('');
+  console.warn('Expected format: https://your-database-id.upstash.io');
+  console.warn('');
+  console.warn('🔧 TO FIX:');
+  console.warn('1. Go to your Upstash dashboard');
+  console.warn('2. Copy the REST URL from your Redis database');
+  console.warn('3. Update UPSTASH_REDIS_REST_URL in your Vercel environment variables');
+  console.warn('4. Redeploy your project');
+  console.warn('');
+  console.warn('✅ Build will continue without rate limiting...');
+  return; // Don't exit, just warn
 }
 
 console.log('\n✅ All Upstash Redis environment variables are correctly configured!');
