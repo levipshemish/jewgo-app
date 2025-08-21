@@ -379,7 +379,7 @@ export default function EateryExplorePage() {
       title: restaurant.name,
       badge: ratingBadge,
       subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
-      additionalText: distanceText || restaurant.city || restaurant.state,
+      additionalText: distanceText, // Only show distance if location is granted, otherwise blank
       showHeart: true,
       isLiked: false // This will be handled by the component internally
     };
