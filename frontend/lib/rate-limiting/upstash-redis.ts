@@ -16,6 +16,12 @@ const RATE_LIMITS = {
     max_requests: 5,
     window_daily: 86400, // 24 hours
     max_requests_daily: 20
+  },
+  email_upgrade: {
+    window: 3600, // 1 hour
+    max_requests: 3,
+    window_daily: 86400, // 24 hours
+    max_requests_daily: 10
   }
 };
 

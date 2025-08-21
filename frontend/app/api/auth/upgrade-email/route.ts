@@ -25,7 +25,7 @@ const ERROR_CODES = {
   RATE_LIMITED: 'RATE_LIMITED',
   CSRF: 'CSRF',
   INTERNAL_ERROR: 'INTERNAL_ERROR'
-} as const;
+};
 
 /**
  * Email upgrade API with normalized error codes
