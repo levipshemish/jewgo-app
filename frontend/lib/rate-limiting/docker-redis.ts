@@ -135,14 +135,9 @@ export async function checkRateLimit(
     return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
   }
   
-  // For production, try to use Upstash Redis
-  try {
-    const { checkRateLimit: upstashCheckRateLimit } = await import('./upstash-redis');
-    return await upstashCheckRateLimit(key, limitType, requestIP, forwardedFor);
-  } catch (error) {
-    console.warn('Upstash Redis not available, falling back to in-memory rate limiting:', error);
-    return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
-  }
+  // In Docker environment, always use in-memory rate limiting
+  console.warn('Upstash Redis not available in Docker environment, using in-memory rate limiting');
+  return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
 }
 
 /**
@@ -167,7 +162,7 @@ export async function clearRateLimit(
   // For production, try to use Upstash Redis
   try {
     const { clearRateLimit: upstashClearRateLimit } = await import('./upstash-redis');
-    return await upstashClearRateLimit(key, limitType, requestIP, forwardedFor);
+    return await upstashClearRateLimit(key);
   } catch (error) {
     console.warn('Upstash Redis not available for clearing rate limits:', error);
   }
