@@ -612,7 +612,7 @@ export default function EateryExplorePage() {
       )}
 
       {/* Restaurant Grid */}
-      <div className="px-2 sm:px-6 lg:px-8 py-2 sm:py-4 lg:py-6 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24 md:pb-28 lg:pb-28 xl:pb-32 2xl:pb-36">
         <div className="max-w-7xl mx-auto">
           {filteredRestaurants.length === 0 ? (
             <div className="text-center py-16 lg:py-24">
