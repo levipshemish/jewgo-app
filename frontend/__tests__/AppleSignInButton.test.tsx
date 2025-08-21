@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AppleSignInButton } from '@/components/ui/AppleSignInButton';
 
-// Mock the i18n function
+// Mock the i18n function only for UI component tests
 jest.mock('@/lib/i18n/apple-strings', () => ({
   getAppleSignInText: jest.fn((locale) => {
     if (locale === 'es-MX') return 'Iniciar sesión con Apple';
@@ -63,6 +63,31 @@ describe('AppleSignInButton', () => {
   test('displays Apple-approved text', () => {
     render(<AppleSignInButton onClick={mockOnClick} />);
     
+    expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
+  });
+
+  test('displays localized Apple-approved text for Spanish', () => {
+    render(<AppleSignInButton onClick={mockOnClick} locale="es-MX" />);
+    
+    expect(screen.getByText('Iniciar sesión con Apple')).toBeInTheDocument();
+  });
+
+  test('displays localized Apple-approved text for French', () => {
+    render(<AppleSignInButton onClick={mockOnClick} locale="fr-CA" />);
+    
+    expect(screen.getByText('Se connecter avec Apple')).toBeInTheDocument();
+  });
+
+  test('falls back to English for unsupported locale', () => {
+    render(<AppleSignInButton onClick={mockOnClick} locale="xx-XX" />);
+    
+    expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
+  });
+
+  test('uses browser locale when no locale prop provided', () => {
+    render(<AppleSignInButton onClick={mockOnClick} />);
+    
+    // Should fall back to English when no locale is provided
     expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
   });
 
@@ -232,29 +257,5 @@ describe('AppleSignInButton', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons[0]).toHaveTextContent('Sign in with Apple');
     expect(buttons[1]).toHaveTextContent('Google Sign In');
-  });
-});
-
-describe('Apple Sign In Strings', () => {
-  test('returns exact Apple-approved strings for supported locales', () => {
-    // Test that the function exists and returns a string
-    const { getAppleSignInText } = require('@/lib/i18n/apple-strings');
-    expect(typeof getAppleSignInText).toBe('function');
-    expect(typeof getAppleSignInText('en')).toBe('string');
-  });
-
-  test('falls back to English for unsupported locales', () => {
-    const { getAppleSignInText } = require('@/lib/i18n/apple-strings');
-    
-    expect(getAppleSignInText('invalid-locale')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('xx')).toBe('Sign in with Apple');
-  });
-
-  test('handles language-only locale codes', () => {
-    const { getAppleSignInText } = require('@/lib/i18n/apple-strings');
-    
-    expect(getAppleSignInText('en-US')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('es-MX')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('fr-CA')).toBe('Se connecter avec Apple');
   });
 });

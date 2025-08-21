@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 
 import { FeedbackData } from '@/types';
-import { logInfo, logError, logApiCall } from '@/lib/utils/logger';
+import { appLogger } from '@/lib/utils/logger';
 
 
 export async function POST(request: NextRequest) {
@@ -130,15 +130,19 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(backendData),
     });
     const duration = Date.now() - startTime;
-    logApiCall('/api/feedback', 'POST', backendResponse.status, duration, {
+    appLogger.info('API call completed', {
+      endpoint: '/api/feedback',
+      method: 'POST',
+      status: backendResponse.status,
+      duration,
       feedbackId: feedbackData.id,
       type: feedbackData.type,
-      priority: feedbackData.priority
+      category: feedbackData.category
     });
 
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
-      logError('Backend API error', { 
+      appLogger.error('Backend API error', { 
         status: backendResponse.status, 
         feedbackId: feedbackData.id,
         error: errorText 
@@ -154,10 +158,11 @@ export async function POST(request: NextRequest) {
       try {
         await sendNotificationEmail(contactEmail, feedbackData);
       } catch (error) {
-        logError('Failed to send notification email', { 
+        appLogger.error('Failed to send notification email', { 
           feedbackId: feedbackData.id, 
-          email: contactEmail 
-        }, error instanceof Error ? error : new Error('Unknown error'));
+          email: contactEmail,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
         // Don't fail the request if email fails
       }
     }
@@ -166,20 +171,18 @@ export async function POST(request: NextRequest) {
     try {
       await sendAdminNotification(feedbackData);
     } catch (error) {
-      logError('Failed to send admin notification', { 
-        feedbackId: feedbackData.id 
-      }, error instanceof Error ? error : new Error('Unknown error'));
-      // Don't fail the request if admin notification fails
+      appLogger.error('Failed to send admin notification', { 
+        feedbackId: feedbackData.id,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Feedback submitted successfully',
-      feedbackId: feedbackData.id,
-    });
+    return NextResponse.json({ success: true, feedbackId: feedbackData.id });
 
   } catch (error) {
-    logError('Error processing feedback', {}, error instanceof Error ? error : new Error('Unknown error'));
+    appLogger.error('Error processing feedback', { 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -190,7 +193,7 @@ export async function POST(request: NextRequest) {
 async function sendNotificationEmail(email: string, feedbackData: FeedbackData) {
   // This would integrate with your email service (SendGrid, AWS SES, etc.)
   // For now, we'll just log it
-      logInfo('Sending notification email', { email, feedbackId: feedbackData.id });
+      appLogger.info('Sending notification email', { email, feedbackId: feedbackData.id });
   
   // Example implementation with a hypothetical email service:
   /*
@@ -211,7 +214,7 @@ async function sendNotificationEmail(email: string, feedbackData: FeedbackData) 
 
 async function sendAdminNotification(feedbackData: FeedbackData) {
   // This would send a notification to admin about new feedback
-      logInfo('Sending admin notification', { feedbackId: feedbackData.id });
+      appLogger.info('Sending admin notification', { feedbackId: feedbackData.id });
   
   // Example implementation:
   /*
@@ -264,7 +267,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error) {
-    logError('Error fetching feedback', {}, error instanceof Error ? error : new Error('Unknown error'));
+    appLogger.error('Error fetching feedback', { 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

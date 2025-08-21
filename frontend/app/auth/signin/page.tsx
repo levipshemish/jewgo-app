@@ -24,7 +24,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(initialError || null);
+  const [error, setError] = useState<string | null>(initialError ? mapAppleOAuthError(initialError) : null);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const router = useRouter();
 
@@ -86,7 +86,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
         provider: 'apple',
         options: {
           scopes: 'email name',
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple`,
         },
       });
 

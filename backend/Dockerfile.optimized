@@ -1,0 +1,57 @@
+# Use Python 3.11 slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies in a single layer
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    fonts-liberation \
+    fonts-unifont \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy requirements first for better caching
+COPY requirements-optimized.txt .
+
+# Install Python dependencies with optimizations
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements-optimized.txt
+
+# Create non-root user early
+RUN useradd -m -u 1000 appuser
+
+# Copy only essential application code (excluding tests, docs, etc.)
+COPY app_factory.py .
+COPY app.py .
+COPY wsgi.py .
+COPY __init__.py .
+
+# Copy core directories (exclude heavy directories via .dockerignore)
+COPY routes/ ./routes/
+COPY services/ ./services/
+COPY database/ ./database/
+COPY utils/ ./utils/
+COPY types/ ./types/
+COPY config/ ./config/
+COPY search/ ./search/
+
+# Set ownership after copying files
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Default command
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000"]

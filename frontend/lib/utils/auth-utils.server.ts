@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isPrivateRelayEmail } from '@/lib/utils/auth-utils';
+import { authLogger } from '@/lib/utils/logger';
 import crypto from 'crypto';
 
 /**
@@ -21,12 +22,15 @@ export async function persistAppleUserName(userId: string, name: string | null, 
     });
 
     if (error) {
-      console.error('Failed to persist Apple user name via RPC:', error);
+      authLogger.error('Failed to persist Apple user name via RPC', { error: error.message, userId });
     } else {
-      console.log(`Successfully persisted Apple user name for user: ${userId}`);
+      authLogger.info('Successfully persisted Apple user name', { userId });
     }
   } catch (error) {
-    console.error('Error persisting Apple user name:', error);
+    authLogger.error('Error persisting Apple user name', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId 
+    });
   }
 }
 
@@ -42,7 +46,7 @@ export function createAnalyticsKey(userId: string): string {
       throw new Error('ANALYTICS_HMAC_SECRET is required in production environment');
     }
     // Use a weak default only in development
-    console.warn('[ANALYTICS] Using weak default secret in development');
+    authLogger.warn('Using weak default secret in development');
   }
   
   const finalSecret = secret || 'default-secret';
@@ -95,5 +99,5 @@ export function isAppleOAuthEnabled(): boolean {
  */
 export function logOAuthEvent(userId: string, provider: string, event: string) {
   const analyticsKey = createAnalyticsKey(userId);
-  console.log(`[OAUTH] ${event} - Provider: ${provider} - User: ${analyticsKey}`);
+  authLogger.info(`[OAUTH] ${event} - Provider: ${provider} - User: ${analyticsKey}`);
 }

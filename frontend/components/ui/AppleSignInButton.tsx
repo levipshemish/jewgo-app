@@ -9,6 +9,7 @@ interface AppleSignInButtonProps {
   loading?: boolean;
   enabled?: boolean;
   className?: string;
+  locale?: string;
 }
 
 export function AppleSignInButton({
@@ -16,9 +17,17 @@ export function AppleSignInButton({
   disabled = false,
   loading = false,
   enabled = true,
-  className = ''
+  className = '',
+  locale
 }: AppleSignInButtonProps) {
   const [isClicked, setIsClicked] = React.useState(false);
+
+  // Reset isClicked when both loading and disabled are false
+  React.useEffect(() => {
+    if (!loading && !disabled) {
+      setIsClicked(false);
+    }
+  }, [loading, disabled]);
 
   const handleClick = () => {
     if (disabled || loading || isClicked) return;
@@ -35,7 +44,7 @@ export function AppleSignInButton({
       type="button"
       onClick={handleClick}
       disabled={disabled || loading || isClicked}
-      aria-label={getAppleSignInText()}
+      aria-label={getAppleSignInText(locale)}
       aria-busy={loading}
       className={`
         inline-flex items-center justify-center
@@ -70,7 +79,7 @@ export function AppleSignInButton({
       
       {/* Sign in with Apple text */}
       <span className="font-medium">
-        {getAppleSignInText()}
+        {getAppleSignInText(locale)}
       </span>
       
       {/* Loading indicator */}

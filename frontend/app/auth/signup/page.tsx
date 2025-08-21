@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
-export default function SignUp() {
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
+
+// Separate component to handle search params with proper Suspense boundary
+function SignUpFormWithParams() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/profile/settings";
+  
+  return <SignUpForm redirectTo={redirectTo} />;
+}
+
+function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,13 +81,13 @@ export default function SignUp() {
     
     try {
       // Compute safe redirect URL using corrected validation
-      const safeNext = validateRedirectUrl('/');
+      const safeNext = validateRedirectUrl(redirectTo);
       
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'apple',
         options: {
           scopes: 'email name',
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple`,
         },
       });
 
@@ -96,7 +108,7 @@ export default function SignUp() {
     
     try {
       // Compute safe redirect URL using corrected validation
-      const safeNext = validateRedirectUrl('/');
+      const safeNext = validateRedirectUrl(redirectTo);
       
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
@@ -267,5 +279,13 @@ export default function SignUp() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignUp() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignUpFormWithParams />
+    </Suspense>
   );
 }

@@ -223,10 +223,16 @@ export function isPrivateRelayEmail(email: string): boolean {
 
 /**
  * Map Apple OAuth errors to user-friendly messages
+ * Handles both error codes and error messages with robust fallback
  */
 export function mapAppleOAuthError(error: string): string {
-  switch (error) {
+  // Normalize error string for case-insensitive matching
+  const normalizedError = error.toLowerCase().trim();
+  
+  // Map by exact error codes first (most reliable)
+  switch (normalizedError) {
     case 'user_cancelled':
+    case 'user_canceled':
       return 'You cancelled Sign in with Apple';
     case 'invalid_grant':
       return 'Session expired—try again';
@@ -236,7 +242,48 @@ export function mapAppleOAuthError(error: string): string {
       return 'Service temporarily unavailable';
     case 'network_error':
       return 'Connection failed';
+    case 'server_error':
+      return 'Service temporarily unavailable';
+    case 'temporarily_unavailable':
+      return 'Service temporarily unavailable';
+    case 'invalid_request':
+      return 'Invalid request—try again';
+    case 'unsupported_response_type':
+      return 'Service configuration error';
+    case 'invalid_scope':
+      return 'Service configuration error';
+    case 'invalid_client':
+      return 'Service configuration error';
+    case 'unauthorized_client':
+      return 'Service configuration error';
+    case 'redirect_uri_mismatch':
+      return 'Service configuration error';
+    case 'invalid_state':
+      return 'Session expired—try again';
     default:
+      // Fallback to substring matching for error messages
+      if (normalizedError.includes('cancelled') || normalizedError.includes('canceled')) {
+        return 'You cancelled Sign in with Apple';
+      }
+      if (normalizedError.includes('expired') || normalizedError.includes('invalid_grant')) {
+        return 'Session expired—try again';
+      }
+      if (normalizedError.includes('denied') || normalizedError.includes('access_denied')) {
+        return 'Access denied';
+      }
+      if (normalizedError.includes('configuration') || normalizedError.includes('config')) {
+        return 'Service temporarily unavailable';
+      }
+      if (normalizedError.includes('network') || normalizedError.includes('connection')) {
+        return 'Connection failed';
+      }
+      if (normalizedError.includes('server') || normalizedError.includes('service')) {
+        return 'Service temporarily unavailable';
+      }
+      if (normalizedError.includes('invalid') || normalizedError.includes('error')) {
+        return 'Sign in failed. Please try again.';
+      }
+      // Generic fallback for unknown errors
       return 'Sign in failed. Please try again.';
   }
 }
