@@ -351,13 +351,33 @@ export default function EateryExplorePage() {
       distanceText = formatDistance(distance);
     }
 
+    // Debug rating data
+    console.log(`Restaurant ${restaurant.name}:`, {
+      google_rating: restaurant.google_rating,
+      rating: restaurant.rating,
+      star_rating: restaurant.star_rating,
+      quality_rating: restaurant.quality_rating
+    });
+
+    // Try multiple rating sources
+    let ratingBadge: string | undefined;
+    if (restaurant.google_rating) {
+      ratingBadge = restaurant.google_rating.toString();
+    } else if (restaurant.rating) {
+      ratingBadge = restaurant.rating.toString();
+    } else if (restaurant.star_rating) {
+      ratingBadge = restaurant.star_rating.toString();
+    } else if (restaurant.quality_rating) {
+      ratingBadge = restaurant.quality_rating.toString();
+    }
+
     return {
       id: restaurant.id,
       imageUrl: restaurant.image_url,
       imageTag: restaurant.kosher_category || restaurant.certifying_agency,
       imageTagLink: `/eatery?kosher=${restaurant.kosher_category}&agency=${restaurant.certifying_agency}`,
       title: restaurant.name,
-      badge: restaurant.google_rating ? restaurant.google_rating.toString() : undefined,
+      badge: ratingBadge,
       subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
       additionalText: distanceText || restaurant.city || restaurant.state,
       showHeart: true,

@@ -208,43 +208,31 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
   return (
     <motion.div
-        className={cn(
-          variantStyles.cardClass,
-          "transition-all duration-300 ease-out",
-          "mx-auto",
-          "bg-transparent",
-          "group", // Add group for hover effects
-          onCardClick ? "cursor-pointer" : "",
-          className
-        )}
-      style={{
-        // Completely transparent background
-        backgroundColor: 'transparent !important',
-        background: 'transparent !important',
-        boxShadow: 'none',
-        WebkitTapHighlightColor: 'transparent',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
-        touchAction: 'manipulation'
-      }}
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      whileHover={{
-        y: -8,
-        scale: 1.02,
+      whileHover={{ 
+        y: -4,
         transition: { duration: 0.2, ease: "easeOut" }
       }}
-      whileTap={{
+      whileTap={{ 
         scale: 0.98,
         transition: { duration: 0.1 }
       }}
-      role={onCardClick ? "button" : "article"}
-      aria-label={`Product card for ${cardData.title}`}
-      tabIndex={onCardClick ? 0 : -1}
+      className={cn(
+        'relative bg-transparent rounded-xl overflow-hidden cursor-pointer group',
+        'border border-gray-200/50 hover:border-gray-300/70',
+        'transition-all duration-200 ease-out',
+        'flex flex-col h-full', // Ensure consistent height
+        className
+      )}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${cardData.title}`}
+      aria-live="polite"
+      aria-describedby={`card-${cardData.id}`}
     >
       {/* Persistent live region for announcements */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
@@ -431,7 +419,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <motion.div 
-        className="pt-3"
+        className="pt-3 flex-1 flex flex-col justify-between"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
@@ -462,24 +450,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-3 min-h-[16px]">
-          {cardData.additionalText && (
-            <p 
-              className="text-xs text-gray-500 m-0 text-left whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
-              style={{ 
-                width: '60px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              aria-label={`Additional info: ${cardData.additionalText}`}
-            >
-              {cardData.additionalText}
-            </p>
-          )}
+        <div className="flex justify-between items-center gap-3 min-h-[16px] mt-auto">
           {cardData.subtitle && (
             <p 
-              className="text-xs text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
+              className="text-xs text-gray-600 m-0 text-left whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
               style={{ 
                 maxWidth: cardData.additionalText ? '80px' : '100px',
                 overflow: 'hidden',
@@ -489,6 +463,20 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
+            </p>
+          )}
+          {cardData.additionalText && (
+            <p 
+              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
+              style={{ 
+                width: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+              aria-label={`Additional info: ${cardData.additionalText}`}
+            >
+              {cardData.additionalText}
             </p>
           )}
         </div>
