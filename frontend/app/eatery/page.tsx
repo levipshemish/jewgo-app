@@ -54,7 +54,7 @@ export default function EateryExplorePage() {
   const [activeTab, setActiveTab] = useState('eatery');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 4; // Show 4 rows of cards per page
+  const [rowsPerPage, setRowsPerPage] = useState(4); // Default to 4 rows
   const [itemsPerPage, setItemsPerPage] = useState(8); // Default fallback
   
   // Infinite scroll state
@@ -80,10 +80,21 @@ export default function EateryExplorePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
-  // Calculate items per page based on 2-column grid layout
+  // Calculate items per page based on 2-column grid layout and responsive rows
   const getItemsPerPage = () => {
     // Always use 2 columns as per project requirements
-    return 2 * rowsPerPage; // 2 columns * 4 rows = 8 cards
+    // Use 4 rows on larger screens, 3 rows on medium screens, 2 rows on small screens
+    const screenWidth = window.innerWidth;
+    let rows = 4; // Default for large screens
+    
+    if (screenWidth < 640) { // sm breakpoint
+      rows = 2;
+    } else if (screenWidth < 1024) { // lg breakpoint
+      rows = 3;
+    }
+    
+    setRowsPerPage(rows);
+    return 2 * rows; // 2 columns * rows
   };
 
   // Update items per page when window resizes
@@ -626,9 +637,9 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4 restaurant-grid justify-items-center" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <div key={restaurant.id} className="relative flex justify-center">
+                  <div key={restaurant.id} className="relative">
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
                       variant="default"
@@ -642,7 +653,7 @@ export default function EateryExplorePage() {
                         // Handle tag click - you can add navigation logic here
                         console.log('Tag clicked:', tagLink);
                       }}
-                      className="flex-shrink-0"
+                      className="w-full"
                     />
                   </div>
                 ))}
