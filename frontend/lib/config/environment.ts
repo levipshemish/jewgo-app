@@ -122,6 +122,10 @@ export function validateEnvironment(): void {
     if (!hasStandardRedis) {
       const errorMessage = 'Redis configuration is required in production for rate limiting and idempotency. Set REDIS_URL or REDIS_HOST+REDIS_PASSWORD.';
       console.error('🚨 CRITICAL:', errorMessage);
+      console.error('🚨 Required environment variables:');
+      console.error('🚨   - REDIS_URL (preferred)');
+      console.error('🚨   - OR REDIS_HOST + REDIS_PASSWORD');
+      console.error('🚨   - Optional: REDIS_PORT, REDIS_DB');
       throw new Error(errorMessage);
     }
     

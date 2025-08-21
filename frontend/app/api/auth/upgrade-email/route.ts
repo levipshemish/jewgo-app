@@ -7,7 +7,8 @@ import {
 import { 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII
+  scrubPII,
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { validateCSRFServer, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
 import { 
@@ -25,7 +26,8 @@ const ERROR_CODES = {
   AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
   RATE_LIMITED: 'RATE_LIMITED',
   CSRF: 'CSRF',
-  SESSION_ERROR: 'SESSION_ERROR'
+  SESSION_ERROR: 'SESSION_ERROR',
+  ANONYMOUS_USER: 'ANONYMOUS_USER'
 } as const;
 
 /**
@@ -133,12 +135,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse request body
-    let body;
+    let requestBody;
     try {
-      body = await request.json();
+      requestBody = await request.json();
     } catch (error) {
       return NextResponse.json(
-        { error: 'INVALID_REQUEST' },
+        { error: 'Invalid JSON' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { email } = body;
+    const { email } = requestBody;
     
     // Validate email format
     if (!email || typeof email !== 'string') {
@@ -223,11 +225,27 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Update user email using Supabase auth.updateUser
+    // Verify user is anonymous
+    if (!extractIsAnonymous(user)) {
+      console.error(`Non-anonymous user attempted email upgrade for correlation ID: ${correlationId}`, {
+        user_id: user.id,
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { error: ERROR_CODES.ANONYMOUS_USER },
+        { 
+          status: 400,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
+    // Attempt to update user email
     const { error: updateError } = await supabase.auth.updateUser({ email });
     
     if (updateError) {
-      console.error(`Email update failed for correlation ID: ${correlationId}`, {
+      console.error(`Email upgrade failed for correlation ID: ${correlationId}`, {
         error: updateError,
         correlationId
       });
@@ -243,7 +261,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      if (updateError.message.includes('invalid email') || updateError.message.includes('malformed')) {
+      if (updateError.message.includes('invalid email') || updateError.message.includes('email format')) {
         return NextResponse.json(
           { error: ERROR_CODES.INVALID_EMAIL },
           { 
@@ -253,7 +271,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // Default to authentication error for other cases
+      // Default error response
       return NextResponse.json(
         { error: ERROR_CODES.AUTHENTICATION_ERROR },
         { 
@@ -266,6 +284,7 @@ export async function POST(request: NextRequest) {
     // Success response
     console.log(`Email upgrade successful for correlation ID: ${correlationId}`, {
       user_id: user.id,
+      email,
       correlationId,
       duration_ms: Date.now() - startTime
     });
@@ -273,8 +292,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         ok: true, 
-        correlation_id: correlationId,
-        message: 'Email update initiated. Please check your email for confirmation.'
+        message: 'Email upgrade initiated. Please check your email for verification.',
+        correlation_id: correlationId
       },
       { 
         status: 200,

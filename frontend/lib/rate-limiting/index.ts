@@ -37,7 +37,6 @@ function getRedisClient(): Redis | null {
     if (redisUrl) {
       redisClient = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
-        retryDelayOnFailover: 100,
         enableReadyCheck: true,
         lazyConnect: true,
         connectTimeout: 10000,
@@ -50,7 +49,6 @@ function getRedisClient(): Redis | null {
         password: redisPassword,
         db: redisDb,
         maxRetriesPerRequest: 3,
-        retryDelayOnFailover: 100,
         enableReadyCheck: true,
         lazyConnect: true,
         connectTimeout: 10000,
