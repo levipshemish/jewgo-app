@@ -512,9 +512,9 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
+              <div className="grid grid-cols-2 gap-4 restaurant-grid justify-items-center" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <div key={restaurant.id} className="relative">
+                  <div key={restaurant.id} className="relative flex justify-center">
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
                       variant="default"
@@ -528,7 +528,7 @@ export default function EateryExplorePage() {
                         // Handle tag click - you can add navigation logic here
                         console.log('Tag clicked:', tagLink);
                       }}
-                      className="w-full"
+                      className="flex-shrink-0"
                     />
                   </div>
                 ))}
