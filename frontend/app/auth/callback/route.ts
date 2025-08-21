@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const next = searchParams.get('next') || searchParams.get('redirectTo');
     const reauth = searchParams.get('reauth') === 'true';
-    const state = searchParams.get('state');
-    const provider = searchParams.get('provider');
+    const _state = searchParams.get('state');
+    const _provider = searchParams.get('provider');
     const safeNext = validateRedirectUrl(next);
 
     // Handle OAuth errors
@@ -31,6 +31,11 @@ export async function GET(request: NextRequest) {
     if (!code) {
       oauthLogger.error('OAuth callback missing authorization code');
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
+    }
+
+    // Early short-circuit for Apple OAuth feature flag
+    if (!isAppleOAuthEnabled() && _provider === 'apple') {
+      return NextResponse.redirect(new URL('/', request.url));
     }
 
     // Note: Removed early provider gating to prevent spoofing attacks
@@ -52,11 +57,11 @@ export async function GET(request: NextRequest) {
     // Get user data and perform post-authentication processing
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const provider = detectProvider(user);
-      logOAuthEvent(user.id, provider, 'callback_success');
+      const detectedProvider = detectProvider(user);
+      logOAuthEvent(user.id, detectedProvider, 'callback_success');
       
       // Enforce Apple OAuth feature flag only for Apple users
-      if (provider === 'apple' && !isAppleOAuthEnabled()) {
+      if (detectedProvider === 'apple' && !isAppleOAuthEnabled()) {
         // Sign out to avoid leaving an Apple session established when the feature is disabled
         await supabase.auth.signOut();
         return NextResponse.redirect(new URL('/', request.url));
@@ -73,24 +78,24 @@ export async function GET(request: NextRequest) {
             isReauth: reauth
           });
           
-          if (reauth && provider) {
+          if (reauth && detectedProvider) {
             // This is a re-authentication flow - attempt to link identities
             try {
               // For re-authentication, we can attempt to link the identities
               // This is safer because the user has just re-authenticated
               oauthLogger.info('Re-authentication flow detected, attempting identity linking', { 
                 userId: user.id,
-                reauthProvider: provider
+                reauthProvider: detectedProvider
               });
               
               // Complete the identity linking
-              const linkingResult = await completeIdentityLinking(user.id, provider);
+              const linkingResult = await completeIdentityLinking(user.id, detectedProvider);
               
               if (linkingResult.success) {
-                // Redirect to account page with success message
-                const accountUrl = new URL('/account', request.url);
-                accountUrl.searchParams.set('linked', 'true');
-                return NextResponse.redirect(accountUrl);
+                // Redirect to account link page with success message
+                const linkUrl = new URL('/account/link', request.url);
+                linkUrl.searchParams.set('linked', 'true');
+                return NextResponse.redirect(linkUrl);
               } else {
                 oauthLogger.error('Re-authentication linking failed', { 
                   error: linkingResult.error,
@@ -107,13 +112,13 @@ export async function GET(request: NextRequest) {
             }
           }
           
-          // Store collision info in URL params for the linking page
-          const linkUrl = new URL('/account/link', request.url);
-          linkUrl.searchParams.set('collision', 'true');
-          linkUrl.searchParams.set('providers', user.identities.map(id => id.provider).join(','));
+          // Store collision info in URL params for the profile settings page
+          const settingsUrl = new URL('/profile/settings', request.url);
+          settingsUrl.searchParams.set('collision', 'true');
+          settingsUrl.searchParams.set('providers', user.identities.map(id => id.provider).join(','));
           
-          // Redirect to guarded linking flow when collision is inferred
-          return NextResponse.redirect(linkUrl);
+          // Redirect to guaranteed route when collision is inferred
+          return NextResponse.redirect(settingsUrl);
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 
@@ -127,9 +132,9 @@ export async function GET(request: NextRequest) {
       if (isAppleUser(user)) {
         const name = user.user_metadata?.full_name || user.user_metadata?.name || null;
         // Find the identity whose provider matches the detected provider
-        const matchingIdentity = user.identities?.find(identity => identity.provider === provider);
+        const matchingIdentity = user.identities?.find(identity => identity.provider === detectedProvider);
         const providerUserId = matchingIdentity?.identity_data?.sub || null;
-        await persistAppleUserName(user.id, name, provider, providerUserId);
+        await persistAppleUserName(user.id, name, detectedProvider, providerUserId);
       }
     }
 

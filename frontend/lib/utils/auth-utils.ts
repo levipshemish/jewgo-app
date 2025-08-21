@@ -437,28 +437,20 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       return '/';
     }
     
-    // Reject protocol-relative URLs, fragments, and dangerous patterns
-    if (url.includes('://') || url.includes('//') || url.includes('..') || url.includes('#')) {
-      return '/';
-    }
-
     // Check for encoded attacks in the original URL
     const decodedUrl = decodeURIComponent(url);
-    if (decodedUrl.includes('://') || decodedUrl.includes('//') || decodedUrl.includes('#')) {
-      return '/';
-    }
-
+    
     // Enforce max length
     if (url.length > 2048) {
       return '/';
     }
 
-    // Use the already decoded URL for parsing
+    // Use the decoded URL for parsing
     const urlObj = new URL(decodedUrl, 'http://localhost');
     const decodedPath = urlObj.pathname;
     
-    // Check for encoded attacks in the pathname
-    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('#')) {
+    // Reject protocol-relative URLs, fragments, and dangerous patterns in pathname only
+    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('..') || decodedPath.includes('#')) {
       return '/';
     }
     
