@@ -1,89 +1,133 @@
--- Transactional merge function for anonymous user data
--- This function handles all table migrations atomically with proper conflict resolution
+-- Migration: Create merge_anonymous_user_data function
+-- This function safely merges data from an anonymous user to a target user
+-- It handles all tables with user ownership and prevents data loss
 
 CREATE OR REPLACE FUNCTION merge_anonymous_user_data(
   source_user_id UUID,
   target_user_id UUID
 ) RETURNS TEXT[] AS $$
 DECLARE
-  result TEXT[] := '{}';
-  table_name TEXT;
-  owner_column TEXT;
-  existing_count INTEGER;
-  conflict_count INTEGER;
-  moved_count INTEGER;
-  deleted_count INTEGER;
+  moved_records TEXT[] := ARRAY[]::TEXT[];
+  record_count INTEGER;
 BEGIN
-  -- Validate input parameters
+  -- Validate inputs
   IF source_user_id IS NULL OR target_user_id IS NULL THEN
-    RAISE EXCEPTION 'Source and target user IDs cannot be null';
+    RAISE EXCEPTION 'Both source_user_id and target_user_id must be provided';
   END IF;
   
   IF source_user_id = target_user_id THEN
-    RAISE EXCEPTION 'Source and target user IDs cannot be the same';
+    RAISE EXCEPTION 'Cannot merge user with themselves';
   END IF;
   
-  -- Define table mappings
-  CREATE TEMP TABLE table_mappings (
-    table_name TEXT,
-    owner_column TEXT
-  ) ON COMMIT DROP;
+  -- Ensure source user exists and is anonymous
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.users 
+    WHERE id = source_user_id 
+    AND (raw_user_meta_data->>'is_anonymous')::boolean = true
+  ) THEN
+    RAISE EXCEPTION 'Source user does not exist or is not anonymous';
+  END IF;
   
-  INSERT INTO table_mappings VALUES
-    ('restaurants', 'user_id'),
-    ('reviews', 'user_id'),
-    ('favorites', 'user_id'),
-    ('marketplace_items', 'seller_id'),
-    ('user_profiles', 'user_id'),
-    ('notifications', 'user_id');
+  -- Ensure target user exists and is not anonymous
+  IF NOT EXISTS (
+    SELECT 1 FROM auth.users 
+    WHERE id = target_user_id 
+    AND (raw_user_meta_data->>'is_anonymous')::boolean = false
+  ) THEN
+    RAISE EXCEPTION 'Target user does not exist or is anonymous';
+  END IF;
   
-  -- Process each table in a transaction
-  FOR table_name, owner_column IN 
-    SELECT tm.table_name, tm.owner_column 
-    FROM table_mappings tm
-  LOOP
-    -- Check if source user has records in this table
-    EXECUTE format('SELECT COUNT(*) FROM %I WHERE %I = $1', table_name, owner_column)
-    INTO existing_count
-    USING source_user_id;
-    
-    IF existing_count > 0 THEN
-      -- Check for conflicts with target user
-      EXECUTE format('SELECT COUNT(*) FROM %I WHERE %I = $1', table_name, owner_column)
-      INTO conflict_count
-      USING target_user_id;
-      
-      IF conflict_count > 0 THEN
-        -- Conflicts exist - remove source records (deterministic: source loses)
-        EXECUTE format('DELETE FROM %I WHERE %I = $1', table_name, owner_column)
-        USING source_user_id;
-        
-        GET DIAGNOSTICS deleted_count = ROW_COUNT;
-        result := result || format('%s:%s(deleted)', table_name, deleted_count);
-      ELSE
-        -- No conflicts - perform safe update
-        EXECUTE format('UPDATE %I SET %I = $1 WHERE %I = $2', table_name, owner_column, owner_column)
-        USING target_user_id, source_user_id;
-        
-        GET DIAGNOSTICS moved_count = ROW_COUNT;
-        result := result || format('%s:%s', table_name, moved_count);
-      END IF;
-    END IF;
-  END LOOP;
+  -- Merge restaurants
+  UPDATE restaurants 
+  SET user_id = target_user_id, 
+      updated_at = NOW()
+  WHERE user_id = source_user_id;
   
-  RETURN result;
-EXCEPTION
-  WHEN OTHERS THEN
-    -- Rollback the entire transaction on any error
-    RAISE EXCEPTION 'Merge operation failed: %', SQLERRM;
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'restaurants:' || record_count);
+  END IF;
+  
+  -- Merge reviews
+  UPDATE reviews 
+  SET user_id = target_user_id, 
+      updated_at = NOW()
+  WHERE user_id = source_user_id;
+  
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'reviews:' || record_count);
+  END IF;
+  
+  -- Merge favorites
+  UPDATE favorites 
+  SET user_id = target_user_id, 
+      updated_at = NOW()
+  WHERE user_id = source_user_id;
+  
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'favorites:' || record_count);
+  END IF;
+  
+  -- Merge marketplace items
+  UPDATE marketplace_items 
+  SET seller_id = target_user_id, 
+      updated_at = NOW()
+  WHERE seller_id = source_user_id;
+  
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'marketplace_items:' || record_count);
+  END IF;
+  
+  -- Merge user profiles (upsert to handle conflicts)
+  INSERT INTO user_profiles (user_id, name, email, avatar_url, bio, is_public, status, created_at, updated_at)
+  SELECT target_user_id, name, email, avatar_url, bio, is_public, status, NOW(), NOW()
+  FROM user_profiles 
+  WHERE user_id = source_user_id
+  ON CONFLICT (user_id) DO UPDATE SET
+    name = COALESCE(EXCLUDED.name, user_profiles.name),
+    email = COALESCE(EXCLUDED.email, user_profiles.email),
+    avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
+    bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
+    is_public = COALESCE(EXCLUDED.is_public, user_profiles.is_public),
+    status = COALESCE(EXCLUDED.status, user_profiles.status),
+    updated_at = NOW();
+  
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'user_profiles:' || record_count);
+  END IF;
+  
+  -- Merge notifications
+  UPDATE notifications 
+  SET user_id = target_user_id, 
+      updated_at = NOW()
+  WHERE user_id = source_user_id;
+  
+  GET DIAGNOSTICS record_count = ROW_COUNT;
+  IF record_count > 0 THEN
+    moved_records := array_append(moved_records, 'notifications:' || record_count);
+  END IF;
+  
+  -- Delete the anonymous user profile after successful merge
+  DELETE FROM user_profiles WHERE user_id = source_user_id;
+  
+  -- Note: We don't delete the auth.users record here as that should be handled
+  -- by the application logic after confirming the merge was successful
+  
+  RETURN moved_records;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION merge_anonymous_user_data(UUID, UUID) TO authenticated;
 
+-- Create index for efficient user lookups during merge
+CREATE INDEX IF NOT EXISTS idx_merge_user_lookup ON auth.users(id) 
+WHERE (raw_user_meta_data->>'is_anonymous')::boolean = true;
+
 -- Add comment for documentation
 COMMENT ON FUNCTION merge_anonymous_user_data(UUID, UUID) IS 
-'Atomically merges all data from an anonymous user to a target user. 
-Handles conflicts by removing source records when conflicts exist.
-Returns an array of strings describing the operations performed.';
+'Merge data from anonymous user to target user. Returns array of moved record counts by table.';

@@ -93,23 +93,27 @@ export default function RootLayout({
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
         {/* Google Analytics */}
-        <script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
-                page_title: document.title,
-                page_location: window.location.href,
-              });
-            `,
-          }}
-        />
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+            />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                    page_title: document.title,
+                    page_location: window.location.href,
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
         
         {/* App version tracking and mobile optimizations */}
         <Script id="app-version" strategy="afterInteractive">

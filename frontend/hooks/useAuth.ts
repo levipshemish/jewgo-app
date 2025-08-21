@@ -23,6 +23,11 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{
+    remaining_attempts?: number;
+    reset_in_seconds?: number;
+    retry_after?: number;
+  } | null>(null);
   const router = useRouter();
   
   // Guard against concurrent anonymous signin calls
@@ -103,7 +108,7 @@ export function useAuth() {
     }
   };
 
-  const signInAnonymously = async () => {
+  const signInAnonymously = async (turnstileToken?: string) => {
     // Prevent concurrent calls
     if (isStartingAnonRef.current) {
       return { error: 'Sign-in already in progress' };
@@ -132,19 +137,38 @@ export function useAuth() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({ turnstileToken })
       });
 
       const result = await response.json();
 
       if (!response.ok) {
         // Handle normalized error codes
+        // Clear any previous rate limit info
+        setRateLimitInfo(null);
+        
         switch (result.error) {
           case 'ANON_SIGNIN_UNSUPPORTED':
             setError('Anonymous sign-in is not supported');
             return { error: 'Anonymous sign-in is not supported' };
+          case 'TURNSTILE_REQUIRED':
+            setError('Security verification required');
+            return { error: 'Security verification required', requiresTurnstile: true };
+          case 'TURNSTILE_FAILED':
+            setError('Security verification failed');
+            return { error: 'Security verification failed' };
           case 'RATE_LIMITED':
+            const rateLimitData = {
+              remaining_attempts: result.remaining_attempts,
+              reset_in_seconds: result.reset_in_seconds,
+              retry_after: result.retry_after
+            };
+            setRateLimitInfo(rateLimitData);
             setError('Too many attempts. Please try again later.');
-            return { error: 'Too many attempts. Please try again later.' };
+            return { 
+              error: 'Too many attempts. Please try again later.',
+              ...rateLimitData
+            };
           case 'CSRF':
             setError('Security validation failed');
             return { error: 'Security validation failed' };
@@ -364,6 +388,7 @@ export function useAuth() {
     isLoading,
     error,
     isAnonymous,
+    rateLimitInfo,
     isAuthenticated,
     isFullyAuthenticated,
     canWrite,

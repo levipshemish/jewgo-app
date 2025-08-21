@@ -591,3 +591,22 @@ export function validateCSRFServer(
   
   return refererValid;
 }
+
+/**
+ * Generate a secure random password for anonymous users using crypto
+ * Server-side only to prevent client bundle bloat
+ */
+export function generateSecurePassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  const array = new Uint8Array(32);
+  
+  // Use Node.js crypto for server-side generation
+  randomBytes(32).copy(array);
+  
+  let password = '';
+  for (let i = 0; i < 32; i++) {
+    password += chars.charAt(array[i] % chars.length);
+  }
+  
+  return password;
+}

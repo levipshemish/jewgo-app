@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { validateSupabaseFeaturesWithLogging, validateCSRFServer, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
+import { validateSupabaseFeatureSupport, validateCSRFServer, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
 import { extractIsAnonymous, validateTrustedIP } from '@/lib/utils/auth-utils';
 import { checkRateLimit } from '@/lib/rate-limiting';
@@ -38,6 +38,22 @@ export async function POST(request: NextRequest) {
     // Get origin for CORS
     const origin = request.headers.get('origin');
     
+    // Feature support validation with logging
+    const featuresSupported = validateSupabaseFeatureSupport();
+    if (!featuresSupported) {
+      console.error('Anonymous signin not supported - feature validation failed');
+      return NextResponse.json(
+        { error: 'ANON_SIGNIN_UNSUPPORTED' },
+        { 
+          status: 500,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
+    }
+    
     // Parse request body to get Turnstile token
     const body = await request.json();
     const turnstileToken = body.turnstileToken || body.recaptchaToken; // Support both for backward compatibility
@@ -51,7 +67,10 @@ export async function POST(request: NextRequest) {
           { error: 'TURNSTILE_FAILED', details: turnstileResult.errors },
           { 
             status: 400,
-            headers: getCORSHeaders(origin || undefined)
+            headers: {
+              ...getCORSHeaders(origin || undefined),
+              'Cache-Control': 'no-store'
+            }
           }
         );
       }
@@ -62,20 +81,60 @@ export async function POST(request: NextRequest) {
         { error: 'TURNSTILE_REQUIRED', message: 'Turnstile token is required for anonymous sign-in' },
         { 
           status: 400,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
-    // Basic CSRF validation (simplified for testing)
+    // CSRF validation
     const referer = request.headers.get('referer');
-    if (!referer && !origin) {
-      console.error('CSRF validation failed - missing referer and origin');
+    const csrfToken = request.headers.get('x-csrf-token');
+    
+    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+      console.error('CSRF validation failed for anonymous signin');
       return NextResponse.json(
         { error: 'CSRF' },
         { 
           status: 403,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
+    }
+    
+    // Rate limiting
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip') || 'unknown';
+    const validatedIP = validateTrustedIP(reqIp, forwardedFor || undefined);
+    const ipHash = hashIPForPrivacy(validatedIP);
+    
+    const rateLimitResult = await checkRateLimit(
+      `anonymous_auth:${ipHash}`,
+      'anonymous_auth',
+      validatedIP,
+      forwardedFor || undefined
+    );
+    
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for anonymous auth IP hash: ${ipHash}`);
+      return NextResponse.json(
+        {
+          error: 'RATE_LIMITED',
+          remaining_attempts: rateLimitResult.remaining_attempts,
+          reset_in_seconds: rateLimitResult.reset_in_seconds,
+          retry_after: rateLimitResult.retry_after
+        },
+        { 
+          status: 429,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -89,7 +148,10 @@ export async function POST(request: NextRequest) {
         { error: 'CONFIGURATION_ERROR' },
         { 
           status: 500,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -126,7 +188,10 @@ export async function POST(request: NextRequest) {
         { ok: true },
         { 
           status: 200,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -151,7 +216,10 @@ export async function POST(request: NextRequest) {
         { error: 'ANON_SIGNIN_FAILED', details: signInError.message },
         { 
           status: 500,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -159,17 +227,20 @@ export async function POST(request: NextRequest) {
     console.log('Anonymous signin successful:', data.user?.id);
     
     // Success response
-    return NextResponse.json(
-      { 
-        ok: true, 
-        user_id: data.user?.id,
-        message: 'Anonymous signin successful'
-      },
-      { 
-        status: 200,
-        headers: getCORSHeaders(origin || undefined)
-      }
-    );
+          return NextResponse.json(
+        { 
+          ok: true, 
+          user_id: data.user?.id,
+          message: 'Anonymous signin successful'
+        },
+        { 
+          status: 200,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
     
   } catch (error) {
     console.error('Unexpected error in anonymous auth:', error);
@@ -181,7 +252,10 @@ export async function POST(request: NextRequest) {
       },
       { 
         status: 500,
-        headers: getCORSHeaders(request.headers.get('origin') || undefined)
+        headers: {
+          ...getCORSHeaders(request.headers.get('origin') || undefined),
+          'Cache-Control': 'no-store'
+        }
       }
     );
   }

@@ -5,9 +5,27 @@ export async function POST(request: NextRequest) {
     // Parse the request body
     const event = await request.json();
     
+    // Validate the event structure
+    if (!event || typeof event !== 'object') {
+      return NextResponse.json(
+        { error: 'Invalid event data' },
+        { status: 400 }
+      );
+    }
+    
     // Log analytics event (in production, you'd send this to your analytics service)
     if (process.env.NODE_ENV === 'development') {
       console.log('Analytics event received:', event);
+    }
+
+    // Check if Google Analytics is properly configured
+    const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+    if (!gaMeasurementId || gaMeasurementId === 'G-XXXXXXXXXX') {
+      // Analytics not configured, but don't fail the request
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Analytics not configured' 
+      });
     }
 
     // In production, you might want to:
@@ -27,9 +45,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   // Return analytics configuration or status
+  const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const isGaConfigured = gaMeasurementId && gaMeasurementId !== 'G-XXXXXXXXXX';
+  
   return NextResponse.json({
     enabled: true,
-    googleAnalytics: !!process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'],
+    googleAnalytics: isGaConfigured,
     timestamp: new Date().toISOString(),
+    message: isGaConfigured ? 'Analytics configured' : 'Analytics not configured - GA measurement ID missing or invalid'
   });
 }

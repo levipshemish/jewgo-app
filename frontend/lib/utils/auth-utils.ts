@@ -339,30 +339,7 @@ export function extractIsAnonymous(u?: any): boolean {
   return Boolean(u.is_anonymous ?? u.isAnonymous ?? u.app_metadata?.is_anonymous ?? u.user_metadata?.is_anonymous ?? u['is_anonymous']);
 }
 
-/**
- * Generate a secure random password for anonymous users using crypto
- */
-export function generateSecurePassword(): string {
-  // Use crypto.getRandomValues for secure random generation
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  const array = new Uint8Array(32);
-  
-  if (typeof window !== 'undefined') {
-    // Browser environment
-    crypto.getRandomValues(array);
-  } else {
-    // Node.js environment
-    const crypto = require('crypto');
-    crypto.randomFillSync(array);
-  }
-  
-  let password = '';
-  for (let i = 0; i < 32; i++) {
-    password += chars.charAt(array[i] % chars.length);
-  }
-  
-  return password;
-}
+
 
 /**
  * Check if Supabase is properly configured

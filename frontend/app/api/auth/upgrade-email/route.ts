@@ -10,7 +10,7 @@ import {
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
-import { validateCSRFServer, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, hashIPForPrivacy, validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders,
@@ -78,6 +78,19 @@ export async function POST(request: NextRequest) {
   try {
     // Get request details for security validation
     const origin = request.headers.get('origin');
+    
+    // Feature support validation
+    const featuresSupported = validateSupabaseFeatureSupport();
+    if (!featuresSupported) {
+      console.error('Email upgrade not supported - feature validation failed');
+      return NextResponse.json(
+        { error: 'SERVICE_UNAVAILABLE' },
+        { 
+          status: 503,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');

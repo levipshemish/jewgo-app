@@ -41,7 +41,9 @@ class Analytics {
     
     // In production, send to analytics service
     if (process.env.NODE_ENV === 'production') {
-      this.sendToAnalyticsService(analyticsEvent);
+      this.sendToAnalyticsService(analyticsEvent).catch(() => {
+        // Silently handle analytics errors
+      });
     } else {
       // Development logging removed for production readiness
     }
@@ -207,10 +209,34 @@ class Analytics {
     return query.replace(/[<>]/g, '').substring(0, 100);
   }
 
-  private sendToAnalyticsService(_event: AnalyticsEventData) {
+  private async sendToAnalyticsService(event: AnalyticsEventData) {
     // In production, implement actual analytics service integration
     // For now, silently process the event
     // TODO: Integrate with actual analytics service (Google Analytics, Mixpanel, etc.)
+    
+    // Check if Google Analytics is properly configured
+    const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+    if (!gaMeasurementId || gaMeasurementId === 'G-XXXXXXXXXX') {
+      // Analytics not configured, skip sending
+      return;
+    }
+    
+    // Google Analytics example:
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', event.event, event.properties);
+    }
+
+    // Or send to custom analytics endpoint
+    try {
+      await fetch('/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+    } catch (error) {
+      // Silently handle analytics errors to prevent breaking the app
+      // console.error('[Analytics] Failed to send event:', error);
+    }
   }
 }
 

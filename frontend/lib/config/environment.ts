@@ -115,12 +115,12 @@ export function validateEnvironment(): void {
     process.env.CLEANUP_CRON_SECRET = 'development-cleanup-secret';
   }
 
-  // Validate Redis configuration in production (simplified for Docker)
+  // Validate Redis configuration in production
   if (IS_PRODUCTION) {
     const hasStandardRedis = !!(REDIS_URL || (REDIS_HOST && REDIS_PASSWORD));
     
     if (!hasStandardRedis) {
-      console.warn('Redis configuration not found in production - using in-memory rate limiting');
+      throw new Error('Redis configuration is required in production for rate limiting');
     }
   }
 }

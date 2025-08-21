@@ -18,9 +18,10 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
   const [isInitialized, setIsInitialized] = useState(false);
 
   const initializeAnalytics = useCallback(() => {
-    // Initialize Google Analytics if available
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('config', process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'] || '', {
+    // Initialize Google Analytics if available and properly configured
+    const gaMeasurementId = process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'];
+    if (typeof window !== 'undefined' && window.gtag && gaMeasurementId && gaMeasurementId !== 'G-XXXXXXXXXX') {
+      window.gtag('config', gaMeasurementId, {
         page_title: pageName || document.title,
         page_location: window.location.href,
         user_id: userId,
