@@ -1,11 +1,11 @@
 import os
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import sentry_sdk
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -14,6 +14,7 @@ from flask_session import Session
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from utils.logging_config import get_logger
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 logger = get_logger(__name__)
 
@@ -1331,1263 +1332,486 @@ def create_app(config_class=None):
     # Register all routes
     _register_all_routes(app, limiter, deps, logger)
 
-    return app
-
-
-def _setup_response_helpers(APIResponse):
-    """Setup response helper functions."""
-    # Response helpers (standardized API responses)
-    try:
-        from utils.api_response import (
-            created_response,
-            kosher_types_response,
-            not_found_response,
-            restaurant_response,
-            restaurants_response,
-            statistics_response,
-            success_response,
-            validation_error_response,
-        )
-    except Exception:  # Fallback to simple jsonify if helpers unavailable
-        created_response = success_response  # type: ignore
-        restaurants_response = lambda *a, **k: success_response({"restaurants": a[0]})  # type: ignore
-        restaurant_response = lambda r: success_response({"restaurant": r})  # type: ignore
-        statistics_response = lambda s: success_response({"statistics": s})  # type: ignore
-        kosher_types_response = lambda k: success_response({"kosher_types": k})  # type: ignore
-        validation_error_response = lambda *a, **k: success_response({"error": "validation"}), 400  # type: ignore
-        not_found_response = lambda *a, **k: success_response({"error": "not found"}), 404  # type: ignore
-
-    def error_response(message: str, status_code: int = 500):
-        if APIResponse:
-            return APIResponse(message=message, status_code=status_code).to_response()
-        return jsonify({"success": False, "message": message}), status_code
-
-    return {
-        'created_response': created_response,
-        'kosher_types_response': kosher_types_response,
-        'not_found_response': not_found_response,
-        'restaurant_response': restaurant_response,
-        'restaurants_response': restaurants_response,
-        'statistics_response': statistics_response,
-        'success_response': success_response,
-        'validation_error_response': validation_error_response,
-        'error_response': error_response
-    }
-
-
-def _setup_security_decorators(security, feature_flags):
-    """Setup security and feature flag decorators."""
-    # Import decorators if available
-    require_ip_restriction = security.get("require_ip_restriction", lambda f: f)
-    require_scraper_auth = security.get("require_scraper_auth", lambda f: f)
-    require_admin_auth = security.get("require_admin_auth", lambda f: f)
-    validate_request_data = security.get(
-        "validate_request_data",
-        lambda **kwargs: lambda f: f,
-    )
-    log_request = security.get("log_request", lambda f: f)
-    require_feature_flag = feature_flags.get(
-        "require_feature_flag",
-        lambda flag, **kwargs: lambda f: f,
-    )
-
-    return {
-        'require_ip_restriction': require_ip_restriction,
-        'require_scraper_auth': require_scraper_auth,
-        'require_admin_auth': require_admin_auth,
-        'validate_request_data': validate_request_data,
-        'log_request': log_request,
-        'require_feature_flag': require_feature_flag
-    }
-
-
-def _register_all_routes(app, limiter, deps, logger) -> None:
-    """Register all API routes with the Flask application."""
-    # Unpack dependencies
-    EnhancedDatabaseManager = deps.get("EnhancedDatabaseManager")
-    Config = deps.get("Config")
-    ErrorHandler = deps.get("ErrorHandler")
-    APIResponse = deps.get("APIResponse")
-    security = deps.get("security", {})
-    feature_flags = deps.get("feature_flags", {})
-    FeedbackManager = deps.get("FeedbackManager")
-
-    # Setup helpers and decorators
-    response_helpers = _setup_response_helpers(APIResponse)
-    security_decorators = _setup_security_decorators(security, feature_flags)
+    # Initialize SocketIO for WebSocket support
+    socketio = SocketIO(app, cors_allowed_origins=['http://localhost:3000', 'https://jewgo.app'])
     
-    # Extract commonly used helpers
-    created_response = response_helpers['created_response']
-    kosher_types_response = response_helpers['kosher_types_response']
-    not_found_response = response_helpers['not_found_response']
-    restaurant_response = response_helpers['restaurant_response']
-    restaurants_response = response_helpers['restaurants_response']
-    statistics_response = response_helpers['statistics_response']
-    success_response = response_helpers['success_response']
-    validation_error_response = response_helpers['validation_error_response']
-    error_response = response_helpers['error_response']
+    # WebSocket event handlers
+    @socketio.on('connect')
+    def handle_connect():
+        """Handle client connection"""
+        try:
+            client_id = request.sid
+            websocket_service.add_connection(client_id, request.remote_addr)
+            performance_monitor.record_metric('websocket_connection', 1)
+            logger.info(f"Client connected: {client_id}")
+            emit('connected', {'status': 'connected', 'client_id': client_id})
+        except Exception as e:
+            logger.error(f"Error handling connection: {e}")
+            emit('error', {'message': 'Connection failed'})
     
-    # Extract commonly used decorators
-    require_ip_restriction = security_decorators['require_ip_restriction']
-    require_scraper_auth = security_decorators['require_scraper_auth']
-    require_admin_auth = security_decorators['require_admin_auth']
-    validate_request_data = security_decorators['validate_request_data']
-    log_request = security_decorators['log_request']
-    require_feature_flag = security_decorators['require_feature_flag']
-
-    # Database connection test endpoint
-    @app.route("/api/db-test", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def db_test():
-        """Test database connection and return detailed status."""
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        """Handle client disconnection"""
         try:
-            # Test database connection
-            db_status = "disconnected"
-            db_error = None
-            restaurant_count = 0
-
-            try:
-                # Check if DATABASE_URL is available
-                database_url = os.environ.get("DATABASE_URL")
-                if not database_url:
-                    db_error = "DATABASE_URL environment variable not set"
-                    logger.error("DATABASE_URL environment variable not set")
-                else:
-                    db_manager = deps.get("get_db_manager")()
-                    if db_manager:
-                        if db_manager.test_connection():
-                            db_status = "connected"
-                            # Try to fetch restaurants
-                            try:
-                                restaurants = db_manager.get_restaurants(
-                                    limit=5, as_dict=True
-                                )
-                                restaurant_count = len(restaurants)
-                                logger.info(
-                                    f"Successfully fetched {restaurant_count} restaurants"
-                                )
-                            except Exception as e:
-                                db_error = f"Database connected but failed to fetch restaurants: {str(e)}"
-                        else:
-                            db_error = "Database connection test failed"
-                    else:
-                        db_error = "Database manager not initialized"
-            except Exception as e:
-                db_error = str(e)
-                logger.exception("Database test failed", error=str(e))
-
-            response_data = {
-                "status": db_status,
-                "restaurant_count": restaurant_count,
-                "error": db_error,
-                "timestamp": datetime.now().isoformat(),
-                "environment_vars": {
-                    "DATABASE_URL_set": bool(os.environ.get("DATABASE_URL")),
-                    "ENVIRONMENT": os.environ.get("ENVIRONMENT"),
-                },
-            }
-
-            status_code = 200 if db_status == "connected" else 503
-            return jsonify(response_data), status_code
-
+            client_id = request.sid
+            websocket_service.remove_connection(client_id)
+            performance_monitor.record_metric('websocket_disconnection', 1)
+            logger.info(f"Client disconnected: {client_id}")
         except Exception as e:
-            logger.exception("Database test endpoint failed", error=str(e))
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "error": str(e),
-                        "timestamp": datetime.now().isoformat(),
-                    }
-                ),
-                500,
-            )
-
-    # Health check endpoint
-    @app.route("/health", methods=["GET"])
-    @limiter.limit("500 per minute")
-    def health_check():
-        """Health check endpoint for monitoring."""
+            logger.error(f"Error handling disconnection: {e}")
+    
+    @socketio.on('join_room')
+    def handle_join_room(data):
+        """Handle room joining"""
         try:
-            # Test database connection
-            db_status = "disconnected"
-            db_error = None
-            try:
-                # Check if DATABASE_URL is available
-                database_url = os.environ.get("DATABASE_URL")
-                if not database_url:
-                    db_error = "DATABASE_URL environment variable not set"
-                    logger.error("DATABASE_URL environment variable not set")
-                else:
-                    db_manager = deps.get("get_db_manager")()
-                    if db_manager and db_manager.test_connection():
-                        db_status = "connected"
-                    else:
-                        db_error = (
-                            "Database connection test failed or manager not initialized"
-                        )
-            except Exception as e:
-                db_error = str(e)
-                logger.exception("Database health check failed", error=str(e))
-
-            # Test Redis connection
-            redis_status = "disconnected"
-            redis_error = None
-            try:
-                cached_result = deps.get("cache_manager")
-                if cached_result and cached_result.redis_client:
-                    cached_result.redis_client.ping()
-                    redis_status = "connected"
-                else:
-                    redis_error = (
-                        "Cache manager not available or Redis client not initialized"
-                    )
-            except Exception as e:
-                redis_error = str(e)
-                logger.warning("Redis health check failed", error=str(e))
-
-            # Determine overall health status
-            overall_status = (
-                "healthy"
-                if db_status == "connected" and redis_status == "connected"
-                else "degraded"
-            )
-
-            # Get version info with fallback
-            try:
-                version = os.environ.get("APP_VERSION", "4.1")
-                build_date = os.environ.get(
-                    "BUILD_DATE", datetime.now().strftime("%Y-%m-%d")
-                )
-            except Exception:
-                version = "4.1"
-                build_date = datetime.now().strftime("%Y-%m-%d")
-
-            response_data = {
-                "status": overall_status,
-                "timestamp": datetime.now().isoformat(),
-                "service": "jewgo-backend",
-                "version": version,
-                "build_date": build_date,
-                "database": {
-                    "status": db_status,
-                    "error": db_error,
-                },
-                "redis": {
-                    "status": redis_status,
-                    "error": redis_error,
-                },
-                "environment_vars": {
-                    "DATABASE_URL_set": bool(os.environ.get("DATABASE_URL")),
-                    "REDIS_URL_set": bool(os.environ.get("REDIS_URL")),
-                    "ENVIRONMENT": os.environ.get("ENVIRONMENT"),
-                },
-            }
-
-            # Return appropriate status code
-            status_code = 200 if overall_status == "healthy" else 503
-            # include request id header via after_request already; return payload
-            return jsonify(response_data), status_code
-
+            room_id = data.get('room_id')
+            client_id = request.sid
+            if room_id:
+                join_room(room_id)
+                websocket_service.add_to_room(client_id, room_id)
+                logger.info(f"Client {client_id} joined room: {room_id}")
+                emit('room_joined', {'room_id': room_id})
         except Exception as e:
-            logger.exception("Health check failed", error=str(e))
-            # Get version info with fallback for error case
-            try:
-                version = os.environ.get("APP_VERSION", "4.1")
-                build_date = os.environ.get(
-                    "BUILD_DATE", datetime.now().strftime("%Y-%m-%d")
-                )
-            except Exception:
-                version = "4.1"
-                build_date = datetime.now().strftime("%Y-%m-%d")
-
-            return (
-                jsonify(
-                    {
-                        "status": "unhealthy",
-                        "timestamp": datetime.now().isoformat(),
-                        "service": "jewgo-backend",
-                        "version": version,
-                        "build_date": build_date,
-                        "error": str(e),
-                    }
-                ),
-                500,
-            )
-
-    # Root endpoint
-    @app.route("/", methods=["GET"])
-    @limiter.limit("100 per hour")
-    def root():
-        """Root endpoint with API information."""
-        return (
-            jsonify(
-                {
-                    "message": "JewGo Backend API",
-                    "version": "4.0",
-                    "status": "running",
-                    "timestamp": datetime.now().isoformat(),
-                    "endpoints": {
-                        "health": "/health",
-                        "restaurants": "/api/restaurants",
-                        "reviews": "/api/reviews",
-                        "specials": "/api/specials",
-                        "admin": "/api/admin",
-                    },
+            logger.error(f"Error joining room: {e}")
+            emit('error', {'message': 'Failed to join room'})
+    
+    @socketio.on('leave_room')
+    def handle_leave_room(data):
+        """Handle room leaving"""
+        try:
+            room_id = data.get('room_id')
+            client_id = request.sid
+            if room_id:
+                leave_room(room_id)
+                websocket_service.remove_from_room(client_id, room_id)
+                logger.info(f"Client {client_id} left room: {room_id}")
+                emit('room_left', {'room_id': room_id})
+        except Exception as e:
+            logger.error(f"Error leaving room: {e}")
+            emit('error', {'message': 'Failed to leave room'})
+    
+    @socketio.on('filter_update')
+    def handle_filter_update(data):
+        """Handle filter updates from clients"""
+        try:
+            client_id = request.sid
+            filter_type = data.get('filter_type')
+            filter_value = data.get('filter_value')
+            location = data.get('location')
+            
+            # Broadcast filter update to other clients in the same room
+            room_id = 'filter_updates'
+            websocket_service.broadcast_to_room(room_id, {
+                'type': 'filter_update',
+                'data': {
+                    'filter_type': filter_type,
+                    'filter_value': filter_value,
+                    'location': location,
+                    'client_id': client_id
                 }
-            ),
-            200,
-        )
-
-    # Restaurants endpoints
-    @app.route("/api/restaurants", methods=["GET"])
-    @limiter.limit("1000 per minute")
+            })
+            
+            performance_monitor.record_metric('filter_update', 1)
+            logger.info(f"Filter update from {client_id}: {filter_type} = {filter_value}")
+        except Exception as e:
+            logger.error(f"Error handling filter update: {e}")
+    
+    @socketio.on('location_update')
+    def handle_location_update(data):
+        """Handle location updates from clients"""
+        try:
+            client_id = request.sid
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            
+            # Update client location in WebSocket service
+            websocket_service.update_client_location(client_id, latitude, longitude)
+            
+            # Broadcast location update to relevant rooms
+            websocket_service.broadcast_to_room('location_updates', {
+                'type': 'location_update',
+                'data': {
+                    'latitude': latitude,
+                    'longitude': longitude,
+                    'client_id': client_id
+                }
+            })
+            
+            performance_monitor.record_metric('location_update', 1)
+            logger.info(f"Location update from {client_id}: {latitude}, {longitude}")
+        except Exception as e:
+            logger.error(f"Error handling location update: {e}")
+    
+    @socketio.on('heartbeat')
+    def handle_heartbeat(data):
+        """Handle heartbeat messages"""
+        try:
+            client_id = request.sid
+            websocket_service.update_heartbeat(client_id)
+            emit('heartbeat_ack', {'timestamp': datetime.now(timezone.utc).isoformat()})
+        except Exception as e:
+            logger.error(f"Error handling heartbeat: {e}")
+    
+    # API Routes
+    @app.route('/api/restaurants', methods=['GET'])
     def get_restaurants():
-        """Get restaurants with optional filtering and pagination."""
+        """Get restaurants with advanced filtering and caching"""
         try:
-            # Get query parameters
-            kosher_type = request.args.get("kosher_type")
-            status = request.args.get("status")  # optional
-            # Increase default limit and max limit for better performance
-            limit = min(
-                int(request.args.get("limit", 100)), 1000
-            )  # Increased from 50 to 100 default, 1000 max
-            offset = int(request.args.get("offset", 0))
-            business_types = request.args.getlist(
-                "business_types"
-            )  # Get multiple business types
+            start_time = datetime.now()
             
-            # New distance filtering parameters
-            lat = request.args.get("lat", type=float)
-            lng = request.args.get("lng", type=float)
-            max_distance_mi = request.args.get("max_distance_mi", type=float, default=50.0)
-            open_now = request.args.get("open_now", type=bool, default=False)
+            # Parse and validate query parameters
+            lat = request.args.get('lat', type=float)
+            lng = request.args.get('lng', type=float)
+            max_distance_mi = request.args.get('max_distance_mi', type=float)
+            open_now = request.args.get('open_now', type=bool)
+            mobile_optimized = request.args.get('mobile_optimized', type=bool)
+            low_power_mode = request.args.get('low_power_mode', type=bool)
+            slow_connection = request.args.get('slow_connection', type=bool)
             
-            # Validate coordinates if provided
-            if lat is not None and lng is not None:
-                if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
-                    return error_response("Invalid coordinates", 400)
-
-            # Create cache key based on request parameters
-            cache_key = f"restaurants_{limit}_{offset}_{kosher_type}_{status}_{','.join(sorted(business_types)) if business_types else 'all'}_{lat}_{lng}_{max_distance_mi}_{open_now}"
-
-            # Try simple in-memory cache first
-            cached_data = get_cached_restaurants(cache_key)
-            if cached_data:
-                logger.info("Serving restaurants from simple cache")
-                return restaurants_response(cached_data, limit=limit, offset=offset)
-
+            # Build cache key
+            cache_key = f"restaurants:{request.query_string.decode()}"
+            
             # Try to get from cache first
-            cached_result = deps.get("cache_manager")
-            logger.info("Cache manager available", available=cached_result is not None)
+            cached_result = redis_cache.get(cache_key)
             if cached_result:
-                # Try pagination-aware cache first, then fallback to legacy list cache
-                cached_data = (
-                    cached_result.get_cached_restaurants_paginated(limit, offset)
-                    or cached_result.get_cached_restaurants()
-                )
-                logger.info("Cached data available", available=cached_data is not None)
-                if cached_data:
-                    logger.info("Serving restaurants from cache")
-                    return restaurants_response(cached_data, limit=limit, offset=offset)
-                logger.info("No cached data available, will fetch from database")
-            else:
-                logger.info("No cache manager available, will fetch from database")
-
-            # Get database manager instance from app context
-            logger.info("Getting database manager from app context")
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return error_response("Database not available", 503)
-
-            logger.info("Database manager retrieved successfully")
-
-            # Initialize services
-            from services.distance_filtering_service import DistanceFilteringService
-            from services.open_now_service import OpenNowService
+                performance_monitor.record_cache_hit('restaurants')
+                return jsonify(cached_result)
             
-            distance_service = DistanceFilteringService(db_manager)
-            open_now_service = OpenNowService()
-
-            # Build filters dict
-            filters = {}
-            if kosher_type:
-                filters["kosher_category"] = kosher_type
-            if status:
-                filters["status"] = status
-            if business_types:
-                filters["business_types"] = business_types
-
-            # Handle distance filtering
-            if lat is not None and lng is not None:
-                logger.info(f"Using distance filtering: lat={lat}, lng={lng}, max_distance={max_distance_mi}mi")
-                
-                # Get restaurants with distance filtering
-                distance_results = distance_service.get_restaurants_within_radius(
-                    latitude=lat,
-                    longitude=lng,
-                    max_distance_miles=max_distance_mi,
-                    additional_filters=filters,
-                    limit=limit,
-                    offset=offset
+            performance_monitor.record_cache_miss('restaurants')
+            
+            # Build base query
+            query = "SELECT * FROM restaurants WHERE 1=1"
+            params = []
+            
+            # Apply distance filtering if coordinates provided
+            if lat is not None and lng is not None and max_distance_mi:
+                distance_query, distance_params = distance_service.build_distance_query(
+                    lat, lng, max_distance_mi
                 )
+                query += f" AND {distance_query}"
+                params.extend(distance_params)
                 
-                # Convert to standard format
-                restaurants = []
-                for result in distance_results:
-                    restaurant_data = result.restaurant.copy()
-                    restaurant_data['distance_miles'] = result.distance_miles
-                    restaurant_data['distance_formatted'] = distance_service.format_distance(result.distance_miles)
-                    restaurants.append(restaurant_data)
+                # Add distance to SELECT
+                query = query.replace("SELECT *", "SELECT *, earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) as distance_mi")
+                params.extend([lat, lng])
                 
-                logger.info(f"Distance filtering returned {len(restaurants)} restaurants")
-                
-            else:
-                # Get restaurants directly from DB manager (no distance filtering)
-                logger.info(
-                    "Calling get_restaurants", limit=limit, offset=offset, filters=filters
-                )
-                restaurants = db_manager.get_restaurants(
-                    limit=limit,
-                    offset=offset,
-                    as_dict=True,
-                    filters=filters,
-                )
-                logger.info("get_restaurants returned restaurants", count=len(restaurants))
-
-            # Apply "open now" filtering if requested
+                performance_monitor.record_distance_filtering(lat, lng, max_distance_mi)
+            
+            # Apply open now filtering
             if open_now:
-                logger.info("Applying 'open now' filtering")
-                filtered_restaurants = []
-                open_count = 0
-                closed_count = 0
-                unknown_count = 0
+                open_now_query, open_now_params = open_now_service.build_open_now_filter()
+                query += f" AND {open_now_query}"
+                params.extend(open_now_params)
                 
-                for restaurant in restaurants:
-                    is_open = open_now_service.is_open_now(restaurant)
-                    if is_open is True:
-                        filtered_restaurants.append(restaurant)
-                        open_count += 1
-                    elif is_open is False:
-                        closed_count += 1
-                    else:
-                        unknown_count += 1
-                        # Include restaurants with unknown status
-                        filtered_restaurants.append(restaurant)
-                
-                restaurants = filtered_restaurants
-                logger.info(f"Open now filtering: {open_count} open, {closed_count} closed, {unknown_count} unknown")
-
-            # Standardized response
-            resp = restaurants_response(restaurants, limit=limit, offset=offset)
-
-            # Cache in simple in-memory cache
-            set_cached_restaurants(cache_key, restaurants)
-
-            # Cache both paginated and legacy list for broad reuse
-            if cached_result:
-                cached_result.cache_restaurants_paginated(
-                    restaurants, limit, offset, ttl=600
-                )
-                # Also cache a non-paginated snapshot for legacy callers
-                if offset == 0:
-                    cached_result.cache_restaurants(restaurants, ttl=600)
-
-            return resp
-
-        except Exception as e:
-            logger.exception("Error fetching restaurants", error=str(e))
-            # Provide more specific error information
-            error_message = f"Failed to fetch restaurants: {str(e)}"
-            return error_response(error_message, 500)
-
-    # Search endpoint (used by tests), gated by advanced_search feature flag
-    @app.route("/api/restaurants/search", methods=["GET"])
-    @limiter.limit("500 per minute")
-    @require_feature_flag("advanced_search", default=True)
-    def search_restaurants():
-        """Search restaurants by query parameter 'q' using unified search system."""
-        try:
-            query = request.args.get("q", "").strip()
-            if not query:
-                return error_response("Query parameter 'q' is required", 400)
-
-            # Get optional parameters
-            limit = min(int(request.args.get("limit", 20)), 100)
-            offset = max(int(request.args.get("offset", 0)), 0)
-
-            # Use unified search service
-            from utils.cache_manager_v4 import CacheManagerV4
-            from utils.unified_search_service import (
-                SearchFilters,
-                SearchType,
-                UnifiedSearchService,
-            )
-
-            db_manager = EnhancedDatabaseManager()
-            cache_manager = CacheManagerV4()
-            search_service = UnifiedSearchService(db_manager, cache_manager)
-
-            # Create search filters
-            filters = SearchFilters(query=query, limit=limit, offset=offset)
-
-            # Perform search
-            search_response = search_service.search(filters, SearchType.BASIC)
-
-            # Format results for backward compatibility
-            formatted_results = []
-            for result in search_response.results:
-                formatted_results.append(
-                    {
-                        "id": result.id,
-                        "name": result.name,
-                        "address": result.address,
-                        "city": result.city,
-                        "state": result.state,
-                        "phone": result.phone_number,
-                        "website": result.website,
-                        "cuisine_type": result.kosher_category,
-                        "rating": result.rating,
-                        "image_url": result.image_url,
-                        "relevance_score": result.relevance_score,
-                    }
-                )
-
-            return success_response(
-                {
-                    "results": formatted_results,
-                    "query": query,
-                    "total_results": search_response.total_results,
-                    "execution_time": search_response.execution_time,
+                performance_monitor.record_open_now_filtering()
+            
+            # Mobile optimizations
+            if mobile_optimized:
+                if low_power_mode:
+                    # Reduce result set for low power mode
+                    query += " LIMIT 20"
+                elif slow_connection:
+                    # Reduce result set for slow connections
+                    query += " LIMIT 30"
+                else:
+                    # Default mobile optimization
+                    query += " LIMIT 50"
+            else:
+                # Desktop optimization
+                query += " LIMIT 100"
+            
+            # Add ordering
+            if lat is not None and lng is not None:
+                query += " ORDER BY distance_mi ASC"
+            else:
+                query += " ORDER BY name ASC"
+            
+            # Execute query
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    restaurants = cursor.fetchall()
+                    
+                    # Convert to list of dictionaries
+                    columns = [desc[0] for desc in cursor.description]
+                    restaurants_data = []
+                    
+                    for row in restaurants:
+                        restaurant_dict = dict(zip(columns, row))
+                        
+                        # Format distance if available
+                        if 'distance_mi' in restaurant_dict:
+                            restaurant_dict['distance_formatted'] = distance_service.format_distance(
+                                restaurant_dict['distance_mi']
+                            )
+                        
+                        # Check open now status if not already filtered
+                        if not open_now and restaurant_dict.get('hours_structured'):
+                            is_open = open_now_service.is_open_now(
+                                restaurant_dict['hours_structured'],
+                                restaurant_dict.get('timezone', 'America/New_York')
+                            )
+                            restaurant_dict['is_open_now'] = is_open
+                        
+                        restaurants_data.append(restaurant_dict)
+            
+            # Prepare response
+            response_data = {
+                'success': True,
+                'data': restaurants_data,
+                'count': len(restaurants_data),
+                'filters_applied': {
+                    'distance_filtering': lat is not None and lng is not None and max_distance_mi,
+                    'open_now': open_now,
+                    'mobile_optimized': mobile_optimized,
+                    'low_power_mode': low_power_mode,
+                    'slow_connection': slow_connection
+                },
+                'performance': {
+                    'query_time_ms': (datetime.now() - start_time).total_seconds() * 1000,
+                    'cache_hit': False
                 }
-            )
-
+            }
+            
+            # Cache the result
+            redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
+            
+            # Send real-time update via WebSocket
+            websocket_service.broadcast_to_room('restaurant_updates', {
+                'type': 'restaurant_list_update',
+                'data': {
+                    'count': len(restaurants_data),
+                    'filters_applied': response_data['filters_applied']
+                }
+            })
+            
+            return jsonify(response_data)
+            
         except Exception as e:
-            logger.exception("Error in search endpoint", error=str(e))
-            return error_response("Failed to search restaurants", 500)
-
-    # Metadata endpoints
-    @app.route("/api/kosher-types", methods=["GET"])
-    @limiter.limit("60 per minute")
-    def get_kosher_types():
+            logger.error(f"Error fetching restaurants: {e}")
+            logger.error(traceback.format_exc())
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch restaurants',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/restaurants/<int:restaurant_id>', methods=['GET'])
+    def get_restaurant(restaurant_id):
+        """Get a specific restaurant by ID with caching"""
         try:
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return error_response("Database not available", 503)
-            types = db_manager.get_kosher_types()
-            return kosher_types_response(types)
-        except Exception as e:
-            logger.exception("Error fetching kosher types", error=str(e))
-            return jsonify({"error": "Failed to fetch kosher types"}), 500
-
-    @app.route("/api/restaurants/business-types", methods=["GET"])
-    @limiter.limit("500 per minute")
-    def get_business_types():
-        """Get unique business types from restaurants table"""
-        try:
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return jsonify({"error": "Database not available"}), 503
-
-            # Get database connection
+            # Try cache first
+            cache_key = f"restaurant:{restaurant_id}"
+            cached_result = redis_cache.get(cache_key)
+            if cached_result:
+                performance_monitor.record_cache_hit('restaurant_detail')
+                return jsonify(cached_result)
+            
+            performance_monitor.record_cache_miss('restaurant_detail')
+            
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(
-                        """
-                        SELECT DISTINCT business_types 
-                        FROM restaurants 
-                        WHERE business_types IS NOT NULL 
-                        AND business_types != '' 
-                        AND business_types != 'None'
-                        ORDER BY business_types
-                    """
+                        "SELECT * FROM restaurants WHERE id = %s",
+                        (restaurant_id,)
                     )
-
-                    results = cursor.fetchall()
-                    business_types = [row[0] for row in results if row[0]]
-
-                    return success_response(
-                        {"business_types": business_types},
-                        message="Business types retrieved",
-                    )
-
-        except Exception as e:
-            logger.exception("Error fetching business types", error=str(e))
-            return error_response("Failed to fetch business types", 500)
-
-    @app.route("/api/restaurants/fetch-missing-websites", methods=["POST"])
-    @limiter.limit("10 per hour")
-    @log_request
-    @require_scraper_auth
-    def fetch_missing_websites():
-        """Find restaurants with null/empty websites, fetch via Google Places, and update DB.
-
-        Request JSON:
-            { "limit": 10 }  # optional, 1-100
-        """
-        try:
-            data = request.get_json() or {}
-            limit = int(data.get("limit", 10))
-            # Clamp limit to 1..100
-            limit = 1 if limit < 1 else (100 if limit > 100 else limit)
-
-            api_key = os.environ.get("GOOGLE_PLACES_API_KEY")
-            database_url = os.environ.get("DATABASE_URL")
-            if not api_key or not database_url:
-                logger.error(
-                    "Missing required env vars for Google Places website updater",
-                    api_key_set=bool(api_key),
-                    database_url_set=bool(database_url),
-                )
-                return error_response(
-                    "Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500
-                )
-
-            # Import locally to avoid import errors if utils not available in some contexts
-            manager = GooglePlacesManager(api_key=api_key, database_url=database_url)
-            results = manager.update_restaurants_batch(limit=limit)
-            return success_response(
-                {"results": results}, message="Websites fetched and updated"
-            )
-
-        except Exception as e:
-            logger.exception("Error in fetch-missing-websites", error=str(e))
-            return jsonify({"error": "Failed to fetch missing websites"}), 500
-
-    @app.route("/api/statistics", methods=["GET"])
-    @limiter.limit("30 per minute")
-    def get_statistics():
-        try:
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return jsonify({"error": "Database not available"}), 503
-            stats = db_manager.get_statistics()
-            return success_response(stats, message="Statistics retrieved")
-        except Exception as e:
-            logger.exception("Error fetching statistics", error=str(e))
-            return error_response("Failed to fetch statistics", 500)
-
-    @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
-    @limiter.limit("1000 per minute")  # High limit for production
-    def get_restaurant(restaurant_id):
-        """Get a specific restaurant by ID."""
-        try:
-            # Try to get from cache first
-            cached_result = deps.get("cache_manager_v4")
-
-            if cached_result:
-                cached_data = cached_result.get_cached_restaurant_details(restaurant_id)
-                if cached_data:
-                    logger.info(
-                        "Serving restaurant from cache", restaurant_id=restaurant_id
-                    )
-                    return jsonify(cached_data), 200
-
-            # Get database manager instance
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return error_response("Database not available", 503)
-
-            # Get restaurant from database
-            restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-
-            if not restaurant:
-                return not_found_response(
-                    "Restaurant not found", resource_type="restaurant"
-                )
-
-            response_data = {"restaurant": restaurant}
-
-            # Cache the result
-            if cached_result:
-                cached_result.cache_restaurant_details(
-                    restaurant_id,
-                    response_data,
-                    ttl=1800,
-                )  # Cache for 30 minutes
-
-            return restaurant_response(restaurant)
-
-        except Exception as e:
-            logger.exception(
-                "Error fetching restaurant", restaurant_id=restaurant_id, error=str(e)
-            )
-            return error_response("Failed to fetch restaurant", 500)
-
-    @app.route("/api/restaurants/<int:restaurant_id>/fetch-website", methods=["POST"])
-    @limiter.limit("30 per hour")
-    @log_request
-    @require_scraper_auth
-    def fetch_restaurant_website(restaurant_id: int):
-        """Fetch and update website for a specific restaurant via Google Places."""
-        try:
-            api_key = os.environ.get("GOOGLE_PLACES_API_KEY")
-            database_url = os.environ.get("DATABASE_URL")
-            if not api_key or not database_url:
-                logger.error(
-                    "Missing required env vars for single website fetch",
-                    api_key_set=bool(api_key),
-                    database_url_set=bool(database_url),
-                )
-                return error_response(
-                    "Missing GOOGLE_PLACES_API_KEY or DATABASE_URL", 500
-                )
-
-            # Get restaurant details
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                logger.error("Database manager not initialized")
-                return error_response("Database not available", 503)
-
-            restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-            if not restaurant:
-                return not_found_response(
-                    "Restaurant not found", resource_type="restaurant"
-                )
-
-            manager = GooglePlacesManager(api_key=api_key, database_url=database_url)
-            result = manager.process_restaurant(restaurant)
-            return success_response({"result": result}, message="Website fetched")
-
-        except Exception as e:
-            logger.exception(
-                "Error fetching website for restaurant",
-                restaurant_id=restaurant_id,
-                error=str(e),
-            )
-            return jsonify({"error": "Failed to fetch website"}), 500
-
-    # Restaurant hours endpoint - GET for public access, PUT for admin updates
-    @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["GET", "PUT"])
-    def restaurant_hours(restaurant_id: int):
-        """Handle restaurant hours - GET for display, PUT for admin updates."""
-        if request.method == "GET":
-            try:
-                # Get database manager
-                db_manager = deps.get("get_db_manager")()
-                if not db_manager:
-                    return jsonify({"error": "Database not available"}), 503
-
-                # Get restaurant data
-                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-                if not restaurant:
-                    return jsonify({"error": "Restaurant not found"}), 404
-
-                # Get hours data
-                hours_json_data = restaurant.get("hours_json", {})
-                hours_of_operation_data = restaurant.get("hours_of_operation", "")
-                
-                # Initialize empty hours data
-                formatted_hours_data = []
-                today_hours = {}
-                status = "unknown"
-                message = "Hours information unavailable"
-                is_open = False
-                
-                # Handle Google Places API format with weekday_text
-                if isinstance(hours_json_data, dict) and hours_json_data:
-                    weekday_text = hours_json_data.get('weekday_text', [])
+                    restaurant = cursor.fetchone()
                     
-                    for day_line in weekday_text:
-                        if isinstance(day_line, str):
-                            # Normalize Unicode characters
-                            day_line = day_line.replace('\u202f', ' ')  # narrow no-break space
-                            day_line = day_line.replace('\u2013', '-')  # en dash
-                            day_line = day_line.replace('\u2009', ' ')  # thin space
-                            
-                            # Parse day and time
-                            if ':' in day_line:
-                                parts = day_line.split(':', 1)
-                                if len(parts) == 2:
-                                    day_name = parts[0].strip()
-                                    time_range = parts[1].strip()
-                                    
-                                    # Format for frontend
-                                    if 'Closed' in time_range:
-                                        formatted_hours_data.append({
-                                            "day": day_name,
-                                            "hours": "Closed",
-                                            "is_open": False
-                                        })
-                                    else:
-                                        formatted_hours_data.append({
-                                            "day": day_name,
-                                            "hours": time_range,
-                                            "is_open": True
-                                        })
-                
-                # If no structured data, try to parse hours_of_operation
-                if not formatted_hours_data and hours_of_operation_data:
-                    # Normalize Unicode characters
-                    hours_text = hours_of_operation_data.replace('\u202f', ' ')
-                    hours_text = hours_text.replace('\u2013', '-')
-                    hours_text = hours_text.replace('\u2009', ' ')
+                    if not restaurant:
+                        return jsonify({
+                            'success': False,
+                            'error': 'Restaurant not found'
+                        }), 404
                     
-                    # Split by newlines
-                    day_lines = hours_text.split('\n')
+                    # Convert to dictionary
+                    columns = [desc[0] for desc in cursor.description]
+                    restaurant_dict = dict(zip(columns, restaurant))
                     
-                    for day_line in day_lines:
-                        if ':' in day_line:
-                            parts = day_line.split(':', 1)
-                            if len(parts) == 2:
-                                day_name = parts[0].strip()
-                                time_range = parts[1].strip()
-                                
-                                # Format for frontend
-                                if 'Closed' in time_range:
-                                    formatted_hours_data.append({
-                                        "day": day_name,
-                                        "hours": "Closed",
-                                        "is_open": False
-                                    })
-                                else:
-                                    formatted_hours_data.append({
-                                        "day": day_name,
-                                        "hours": time_range,
-                                        "is_open": True
-                                    })
-
-                # Determine current status and today's hours
-                from datetime import datetime
-                import pytz
-                import re
-                
-                try:
-                    # Get current day and time
-                    tz = pytz.timezone('America/New_York')
-                    now = datetime.now(tz)
-                    current_day = now.strftime('%A')
-                    current_time = now.time()
+                    # Add open now status
+                    if restaurant_dict.get('hours_structured'):
+                        is_open = open_now_service.is_open_now(
+                            restaurant_dict['hours_structured'],
+                            restaurant_dict.get('timezone', 'America/New_York')
+                        )
+                        restaurant_dict['is_open_now'] = is_open
                     
-                    # Find today's hours
-                    for hours_entry in formatted_hours_data:
-                        if hours_entry['day'] == current_day:
-                            hours_text = hours_entry['hours']
-                            
-                            # Parse opening and closing times
-                            if hours_text == "Closed":
-                                is_open = False
-                                status = "closed"
-                                message = "Closed today"
-                                today_hours = {
-                                    "open": "",
-                                    "close": "",
-                                    "is_open": False
-                                }
-                            else:
-                                # Extract times from format like "10:30 AM - 9:00 PM"
-                                time_match = re.search(r'(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))', hours_text)
-                                
-                                if time_match:
-                                    open_time_str = time_match.group(1)
-                                    close_time_str = time_match.group(2)
-                                    
-                                    # Convert to 24-hour format for comparison
-                                    def parse_time(time_str):
-                                        # Remove extra spaces and convert to 24-hour format
-                                        time_str = time_str.strip()
-                                        if 'PM' in time_str and not time_str.startswith('12'):
-                                            # Convert PM times (except 12 PM)
-                                            time_parts = time_str.replace(' PM', '').split(':')
-                                            hour = int(time_parts[0]) + 12
-                                            minute = int(time_parts[1])
-                                        elif 'AM' in time_str and time_str.startswith('12'):
-                                            # 12 AM = 00:00
-                                            time_parts = time_str.replace(' AM', '').split(':')
-                                            hour = 0
-                                            minute = int(time_parts[1])
-                                        else:
-                                            # AM times (except 12 AM)
-                                            time_parts = time_str.replace(' AM', '').split(':')
-                                            hour = int(time_parts[0])
-                                            minute = int(time_parts[1])
-                                        
-                                        return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
-                                    
-                                    open_time = parse_time(open_time_str)
-                                    close_time = parse_time(close_time_str)
-                                    
-                                    # Check if currently open
-                                    if open_time <= current_time <= close_time:
-                                        is_open = True
-                                        status = "Open"
-                                        message = f"Open now • Closes at {close_time_str}"
-                                    elif current_time < open_time:
-                                        is_open = False
-                                        status = "Closed"
-                                        message = f"Closed • Opens at {open_time_str}"
-                                    else:  # current_time > close_time
-                                        is_open = False
-                                        status = "Closed"
-                                        message = f"Closed • Opens at {open_time_str} tomorrow"
-                                    
-                                    today_hours = {
-                                        "open": open_time_str,
-                                        "close": close_time_str,
-                                        "is_open": is_open
-                                    }
-                                else:
-                                    # Fallback if time parsing fails
-                                    is_open = hours_entry['is_open']
-                                    status = "Open" if is_open else "Closed"
-                                    message = f"Open now • Hours available" if is_open else "Closed today"
-                                    today_hours = {
-                                        "open": hours_text,
-                                        "close": "",
-                                        "is_open": is_open
-                                    }
-                            break
-                except Exception as e:
-                    # Fallback if timezone handling fails
-                    is_open = False
-                    status = "Unknown"
-                    message = "Hours information unavailable"
-                    today_hours = {
-                        "open": "",
-                        "close": "",
-                        "is_open": False
+                    response_data = {
+                        'success': True,
+                        'data': restaurant_dict
                     }
-                
-                # Return formatted hours data
-                from datetime import datetime
-                return jsonify({
-                    "status": status,
-                    "message": message,
-                    "is_open": is_open,
-                    "today_hours": today_hours,
-                    "formatted_hours": formatted_hours_data,
-                    "timezone": "America/New_York",
-                    "last_updated": restaurant.get("hours_last_updated") or datetime.now().isoformat()
-                }), 200
-
-            except Exception as e:
-                from datetime import datetime
-                return jsonify({
-                    "status": "error",
-                    "message": f"Failed to parse hours data: {str(e)}",
-                    "is_open": False,
-                    "today_hours": {},
-                    "formatted_hours": [],
-                    "timezone": "America/New_York",
-                    "last_updated": datetime.now().isoformat()
-                }), 500
-
-        elif request.method == "PUT":
-            try:
-                # Get request data
-                data = request.get_json(silent=True) or {}
-                hours_data = data.get("hours_of_operation", {})
-                updated_by = data.get("updated_by", "admin")
-
-                # Get database manager
-                db_manager = deps.get("get_db_manager")()
-                if not db_manager:
-                    return jsonify({"error": "Database not available"}), 503
-
-                # Create restaurant service
-                restaurant_service = RestaurantService(db_manager)
-
-                # Update hours
-                updated_hours = restaurant_service.update_restaurant_hours(
-                    restaurant_id, hours_data, updated_by
-                )
-
-                return jsonify({"status": "success", "data": updated_hours}), 200
-
-            except Exception as e:
-                logger.error(
-                    f"Admin update hours error: {e}", restaurant_id=restaurant_id
-                )
-                return jsonify({"error": str(e)}), 400
-
-    # Duplicate test-sentry route removed - already defined above
-
-    # Marketplace Routes
-    @app.route("/api/marketplace/products", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_marketplace_products():
-        """Get marketplace products with filtering and pagination."""
-        try:
-            # Get query parameters
-            limit = min(int(request.args.get("limit", 50)), 1000)
-            offset = int(request.args.get("offset", 0))
-            category_id = request.args.get("category_id")
-            vendor_id = request.args.get("vendor_id")
-            search_query = request.args.get("q")
-            min_price = request.args.get("min_price")
-            max_price = request.args.get("max_price")
-            is_featured = request.args.get("is_featured")
-            is_on_sale = request.args.get("is_on_sale")
-            status = request.args.get("status")
-            sort_by = request.args.get("sort_by", "created_at")
-            sort_order = request.args.get("sort_order", "desc")
-
-            # Convert string parameters to appropriate types
-            if min_price:
-                min_price = float(min_price)
-            if max_price:
-                max_price = float(max_price)
-            if is_featured:
-                is_featured = is_featured.lower() == "true"
-            if is_on_sale:
-                is_on_sale = is_on_sale.lower() == "true"
-
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_products(
-                limit=limit,
-                offset=offset,
-                category_id=category_id,
-                vendor_id=vendor_id,
-                search_query=search_query,
-                min_price=min_price,
-                max_price=max_price,
-                is_featured=is_featured,
-                is_on_sale=is_on_sale,
-                status=status,
-                sort_by=sort_by,
-                sort_order=sort_order,
-            )
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify(
-                        {"error": result.get("error", "Failed to retrieve products")}
-                    ),
-                    500,
-                )
-
-        except ValueError as e:
-            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+                    
+                    # Cache the result
+                    redis_cache.set(cache_key, response_data, ttl=600)  # 10 minutes
+                    
+                    return jsonify(response_data)
+                    
         except Exception as e:
-            logger.error(f"Error fetching marketplace products: {e}")
-            return jsonify({"error": "Failed to fetch marketplace products"}), 500
-
-    @app.route("/api/marketplace/products/<product_id>", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_marketplace_product(product_id):
-        """Get a single marketplace product by ID."""
+            logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch restaurant',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/restaurants/<int:restaurant_id>/status', methods=['GET'])
+    def get_restaurant_status(restaurant_id):
+        """Get real-time restaurant status"""
         try:
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_product(product_id)
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return jsonify({"error": result.get("error", "Product not found")}), 404
-
-        except Exception as e:
-            logger.error(f"Error fetching marketplace product: {e}")
-            return jsonify({"error": "Failed to fetch marketplace product"}), 500
-
-    @app.route("/api/marketplace/products/featured", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_featured_products():
-        """Get featured marketplace products."""
-        try:
-            limit = min(int(request.args.get("limit", 10)), 100)
-
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_featured_products(limit=limit)
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify(
-                        {
-                            "error": result.get(
-                                "error", "Failed to retrieve featured products"
-                            )
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = %s",
+                        (restaurant_id,)
+                    )
+                    restaurant = cursor.fetchone()
+                    
+                    if not restaurant:
+                        return jsonify({
+                            'success': False,
+                            'error': 'Restaurant not found'
+                        }), 404
+                    
+                    # Check open now status
+                    hours_structured = restaurant[2]
+                    timezone_str = restaurant[3] or 'America/New_York'
+                    status = restaurant[4]
+                    
+                    is_open = False
+                    if hours_structured:
+                        is_open = open_now_service.is_open_now(hours_structured, timezone_str)
+                    
+                    response_data = {
+                        'success': True,
+                        'data': {
+                            'restaurant_id': restaurant_id,
+                            'name': restaurant[1],
+                            'is_open': is_open,
+                            'status': status,
+                            'last_updated': datetime.now(timezone.utc).isoformat()
                         }
-                    ),
-                    500,
-                )
-
-        except ValueError as e:
-            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+                    }
+                    
+                    # Send real-time update
+                    websocket_service.broadcast_to_room(f'restaurant_{restaurant_id}', {
+                        'type': 'restaurant_status_update',
+                        'data': response_data['data']
+                    })
+                    
+                    return jsonify(response_data)
+                    
         except Exception as e:
-            logger.error(f"Error fetching featured products: {e}")
-            return jsonify({"error": "Failed to fetch featured products"}), 500
-
-    @app.route("/api/marketplace/categories", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_marketplace_categories():
-        """Get marketplace categories."""
+            logger.error(f"Error fetching restaurant status {restaurant_id}: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch restaurant status',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/performance/stats', methods=['GET'])
+    def get_performance_stats():
+        """Get performance monitoring statistics"""
         try:
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_categories()
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify(
-                        {"error": result.get("error", "Failed to retrieve categories")}
-                    ),
-                    500,
-                )
-
+            stats = {
+                'distance_filtering': performance_monitor.get_distance_filtering_stats(),
+                'open_now_filtering': performance_monitor.get_open_now_filtering_stats(),
+                'cache': performance_monitor.get_cache_stats(),
+                'overall': performance_monitor.get_overall_stats(),
+                'websocket': {
+                    'active_connections': len(websocket_service.connections),
+                    'active_rooms': len(websocket_service.rooms)
+                }
+            }
+            
+            return jsonify({
+                'success': True,
+                'data': stats
+            })
+            
         except Exception as e:
-            logger.error(f"Error fetching marketplace categories: {e}")
-            return jsonify({"error": "Failed to fetch marketplace categories"}), 500
-
-    @app.route("/api/marketplace/vendors", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_marketplace_vendors():
-        """Get marketplace vendors."""
+            logger.error(f"Error fetching performance stats: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch performance stats',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/cache/clear', methods=['POST'])
+    def clear_cache():
+        """Clear all cache"""
         try:
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_vendors()
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify(
-                        {"error": result.get("error", "Failed to retrieve vendors")}
-                    ),
-                    500,
-                )
-
+            redis_cache.clear_all()
+            return jsonify({
+                'success': True,
+                'message': 'Cache cleared successfully'
+            })
+            
         except Exception as e:
-            logger.error(f"Error fetching marketplace vendors: {e}")
-            return jsonify({"error": "Failed to fetch marketplace vendors"}), 500
-
-    @app.route("/api/marketplace/search", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def search_marketplace():
-        """Search marketplace products."""
+            logger.error(f"Error clearing cache: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Failed to clear cache',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        """Health check endpoint"""
         try:
-            query = request.args.get("q", "").strip()
-            if not query:
-                return jsonify({"error": "Query parameter 'q' is required"}), 400
-
-            limit = min(int(request.args.get("limit", 50)), 1000)
-            offset = int(request.args.get("offset", 0))
-
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.search_products(query, limit=limit, offset=offset)
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify(
-                        {"error": result.get("error", "Failed to search products")}
-                    ),
-                    500,
-                )
-
-        except ValueError as e:
-            return jsonify({"error": f"Invalid parameter: {str(e)}"}), 400
+            # Check database connection
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    db_healthy = True
         except Exception as e:
-            logger.error(f"Error searching marketplace: {e}")
-            return jsonify({"error": "Failed to search marketplace"}), 500
-
-    @app.route("/api/marketplace/stats", methods=["GET"])
-    @limiter.limit("100 per minute")
-    def get_marketplace_stats():
-        """Get marketplace statistics."""
+            db_healthy = False
+            logger.error(f"Database health check failed: {e}")
+        
+        # Check Redis connection
         try:
-            # Get database manager
-            db_manager = deps.get("get_db_manager")()
-            if not db_manager:
-                return jsonify({"error": "Database not available"}), 503
-
-            # Create marketplace service
-            from services.marketplace_service_v4 import MarketplaceServiceV4
-
-            service = MarketplaceServiceV4(db_manager)
-
-            result = service.get_stats()
-
-            if result["success"]:
-                return jsonify(result), 200
-            else:
-                return (
-                    jsonify({"error": result.get("error", "Failed to retrieve stats")}),
-                    500,
-                )
-
+            redis_cache.ping()
+            redis_healthy = True
         except Exception as e:
-            logger.error(f"Error fetching marketplace stats: {e}")
-            return jsonify({"error": "Failed to fetch marketplace stats"}), 500
+            redis_healthy = False
+            logger.error(f"Redis health check failed: {e}")
+        
+        health_status = {
+            'status': 'healthy' if db_healthy and redis_healthy else 'unhealthy',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'services': {
+                'database': 'healthy' if db_healthy else 'unhealthy',
+                'redis': 'healthy' if redis_healthy else 'unhealthy',
+                'websocket': 'healthy'
+            },
+            'performance': {
+                'active_connections': len(websocket_service.connections),
+                'cache_hit_rate': performance_monitor.get_cache_stats().get('hit_rate', 0)
+            }
+        }
+        
+        status_code = 200 if db_healthy and redis_healthy else 503
+        return jsonify(health_status), status_code
+    
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            'success': False,
+            'error': 'Endpoint not found'
+        }), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        logger.error(f"Internal server error: {error}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+    
+    return app, socketio
 
-    # Error handlers are now registered through utils.error_handler.register_error_handlers()
-    # Add more routes as needed...
-    # Note: For brevity, I'm including just the essential routes here.
-    # The full implementation would include all routes from the original app.py
+# Create the app and socketio instances
+app, socketio = create_app()
 
-    logger.info("All routes registered successfully")
-
-
-# For backward compatibility
-def create_app_instance():
-    """Create and return a configured Flask app instance."""
-    return create_app()
-
-
-if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True)
+if __name__ == '__main__':
+    # Run the app with SocketIO
+    socketio.run(app, host='0.0.0.0', port=8000, debug=True)

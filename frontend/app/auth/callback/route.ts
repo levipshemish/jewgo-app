@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
-    const next = searchParams.get('next') || searchParams.get('redirectTo');
+    const next = searchParams.get('next') || searchParams.get('redirectTo') || '/location-access';
     const reauth = searchParams.get('reauth') === 'true';
     const _link_state = searchParams.get('link_state');
     const _provider = searchParams.get('provider');

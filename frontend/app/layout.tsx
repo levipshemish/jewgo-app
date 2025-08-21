@@ -15,9 +15,7 @@ import DevNavigation from '@/components/dev/DevNavigation'
 // NextAuth removed - using Supabase only
 import { roboto } from './fonts'
 import { CustomHead } from './head'
-
-
-
+import { initializeFeatureGuard } from '@/lib/feature-guard';
 
 
 export const metadata: Metadata = {
@@ -83,29 +81,35 @@ export default function RootLayout({
   children, }: {
   children: React.ReactNode
 }) {
+  // Initialize Feature Guard at boot time
+  if (typeof window !== 'undefined') {
+    // Client-side initialization
+    initializeFeatureGuard().catch(error => {
+      console.error('Failed to initialize Feature Guard:', error);
+    });
+  }
+
   return (
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
         {/* Google Analytics */}
-        {process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'] && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID']}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID']}', {
-                  page_title: document.title,
-                  page_location: window.location.href,
-                });
-              `}
-            </Script>
-          </>
-        )}
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                page_title: document.title,
+                page_location: window.location.href,
+              });
+            `,
+          }}
+        />
         
         {/* App version tracking and mobile optimizations */}
         <Script id="app-version" strategy="afterInteractive">

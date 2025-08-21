@@ -1,23 +1,29 @@
 services:
+  # Backend API Service
   - type: web
     name: jewgo-backend
     env: python
-    buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: cd backend && PYTHONPATH=. gunicorn --config config/gunicorn.conf.py wsgi:app
+    plan: starter
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python app_factory.py
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.8
-      - key: NODE_VERSION
-        value: 24.5.0
-      - key: PIP_NO_DEFAULT_INDEX
-        value: "false"
-      - key: CORS_ORIGINS
-        value: "https://jewgo.app,https://jewgo-app.vercel.app,https://jewgo.netlify.app,https://jewgo-app.netlify.app,https://jewgo.netlify.app,http://localhost:3000,http://127.0.0.1:3000"
-        # Updated CORS configuration to include all Netlify domains
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
       - key: ENVIRONMENT
-        value: "production"
-    buildFilter:
-      paths:
-        - backend/**
-        - build.sh
-        - pyproject.toml
+        value: production
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+  # Redis Service
+  - type: redis
+    name: jewgo-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru

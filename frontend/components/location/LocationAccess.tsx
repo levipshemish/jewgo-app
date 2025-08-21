@@ -47,6 +47,7 @@ export default function LocationAccess({
           }, 1000);
         },
         (error) => {
+          // eslint-disable-next-line no-console
           console.error('Geolocation error:', error);
           setStatus('denied');
           
@@ -68,6 +69,9 @@ export default function LocationAccess({
           if (onLocationDenied) {
             onLocationDenied();
           }
+          
+          // Mark that location was requested (even if denied)
+          localStorage.setItem('locationRequested', 'true');
         },
         {
           enableHighAccuracy: true,
@@ -76,6 +80,7 @@ export default function LocationAccess({
         }
       );
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Location request error:', err);
       setError('Failed to request location access.');
       setStatus('error');
@@ -87,6 +92,8 @@ export default function LocationAccess({
     if (onLocationDenied) {
       onLocationDenied();
     }
+    // Mark that location was requested (even if skipped)
+    localStorage.setItem('locationRequested', 'true');
     router.push(redirectTo);
   };
 

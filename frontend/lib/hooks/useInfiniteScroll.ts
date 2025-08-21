@@ -1,45 +1,78 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
-interface UseInfiniteScrollOptions {
-  onLoadMore: () => void;
-  hasMore: boolean;
-  loading: boolean;
-  threshold?: number; // Distance from bottom to trigger load (default: 100px)
-  rootMargin?: string; // CSS margin for intersection observer
+export interface InfiniteScrollOptions {
+  threshold?: number;
+  rootMargin?: string;
+  root?: Element | null;
+  disabled?: boolean;
 }
 
-export function useInfiniteScroll({
-  onLoadMore, hasMore, loading, threshold = 100, rootMargin = '0px'
-}: UseInfiniteScrollOptions) {
-  const observerRef = useRef<IntersectionObserver | null>(null);
+export interface UseInfiniteScrollReturn {
+  loadMore: () => void;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  loadingRef: React.RefObject<HTMLDivElement>;
+  setHasMore: (hasMore: boolean) => void;
+  setIsLoadingMore: (loading: boolean) => void;
+}
+
+export function useInfiniteScroll(
+  onLoadMore: () => void | Promise<void>,
+  options: InfiniteScrollOptions = {}
+): UseInfiniteScrollReturn {
+  const {
+    threshold = 0.1,
+    rootMargin = '100px',
+    root = null,
+    disabled = false
+  } = options;
+
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const handleObserver = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [target] = entries;
-      if (target && target.isIntersecting && hasMore && !loading) {
-        onLoadMore();
-      }
-    },
-    [onLoadMore, hasMore, loading]
-  );
-
-  useEffect(() => {
-    const element = loadingRef.current;
-    
-    // Guard against null/undefined elements and ensure it's a valid Element
-    if (!element || !(element instanceof Element)) {
+  // Load more function with loading state management
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || disabled) {
       return;
     }
 
-    observerRef.current = new IntersectionObserver(handleObserver, {
-      rootMargin: `${threshold}px ${rootMargin}`,
-      threshold: 0.1
-    });
+    setIsLoadingMore(true);
+    
+    try {
+      await onLoadMore();
+    } catch (error) {
+      console.error('Error in infinite scroll load more:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
 
-    // Guard before observe call
-    if (element && element instanceof Element) {
-      observerRef.current.observe(element);
+  // Set up intersection observer
+  useEffect(() => {
+    if (disabled || !hasMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      {
+        threshold,
+        rootMargin,
+        root
+      }
+    );
+
+    observerRef.current = observer;
+
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
     }
 
     return () => {
@@ -47,7 +80,165 @@ export function useInfiniteScroll({
         observerRef.current.disconnect();
       }
     };
-  }, [handleObserver, threshold, rootMargin]);
+  }, [threshold, rootMargin, root, disabled, hasMore, isLoadingMore, loadMore]);
 
-  return { loadingRef };
+  // Re-observe when loading ref changes
+  useEffect(() => {
+    if (observerRef.current && loadingRef.current && !disabled && hasMore) {
+      observerRef.current.observe(loadingRef.current);
+    }
+  }, [disabled, hasMore]);
+
+  return {
+    loadMore,
+    hasMore,
+    isLoadingMore,
+    loadingRef,
+    setHasMore,
+    setIsLoadingMore
+  };
+}
+
+// Hook for manual infinite scroll with scroll event
+export function useScrollInfiniteScroll(
+  onLoadMore: () => void | Promise<void>,
+  options: InfiniteScrollOptions & { scrollThreshold?: number } = {}
+): UseInfiniteScrollReturn {
+  const {
+    scrollThreshold = 100,
+    disabled = false
+  } = options;
+
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadingRef = useRef<HTMLDivElement>(null);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || disabled) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    
+    try {
+      await onLoadMore();
+    } catch (error) {
+      console.error('Error in scroll infinite scroll load more:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
+
+  // Handle scroll events
+  useEffect(() => {
+    if (disabled || !hasMore) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (isLoadingMore) {
+        return;
+      }
+
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+
+      if (scrollTop + windowHeight >= documentHeight - scrollThreshold) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [disabled, hasMore, isLoadingMore, scrollThreshold, loadMore]);
+
+  return {
+    loadMore,
+    hasMore,
+    isLoadingMore,
+    loadingRef,
+    setHasMore,
+    setIsLoadingMore
+  };
+}
+
+// Hook for virtualized infinite scroll (for large lists)
+export function useVirtualizedInfiniteScroll(
+  onLoadMore: () => void | Promise<void>,
+  options: InfiniteScrollOptions & { 
+    itemHeight: number;
+    containerHeight: number;
+    overscan?: number;
+  }
+): UseInfiniteScrollReturn & {
+  virtualItems: Array<{
+    index: number;
+    start: number;
+    end: number;
+    size: number;
+  }>;
+  totalHeight: number;
+} {
+  const {
+    itemHeight,
+    containerHeight,
+    overscan = 5,
+    disabled = false
+  } = options;
+
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [itemCount, setItemCount] = useState(0);
+  const loadingRef = useRef<HTMLDivElement>(null);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || disabled) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    
+    try {
+      await onLoadMore();
+      setItemCount(prev => prev + 1); // Increment item count
+    } catch (error) {
+      console.error('Error in virtualized infinite scroll load more:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [onLoadMore, isLoadingMore, hasMore, disabled]);
+
+  // Calculate virtual items
+  const virtualItems = [];
+  const totalHeight = itemCount * itemHeight;
+  
+  const startIndex = Math.max(0, Math.floor(0 / itemHeight) - overscan);
+  const endIndex = Math.min(
+    itemCount - 1,
+    Math.ceil((containerHeight || 0) / itemHeight) + overscan
+  );
+
+  for (let i = startIndex; i <= endIndex; i++) {
+    virtualItems.push({
+      index: i,
+      start: i * itemHeight,
+      end: (i + 1) * itemHeight,
+      size: itemHeight
+    });
+  }
+
+  return {
+    loadMore,
+    hasMore,
+    isLoadingMore,
+    loadingRef,
+    setHasMore,
+    setIsLoadingMore,
+    virtualItems,
+    totalHeight
+  };
 }

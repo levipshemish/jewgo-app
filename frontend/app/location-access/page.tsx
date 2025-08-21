@@ -32,10 +32,15 @@ export default function LocationAccessPage() {
   const handleLocationGranted = (coords: { latitude: number; longitude: number }) => {
     // Store location in localStorage or state management
     localStorage.setItem('userLocation', JSON.stringify(coords));
+    localStorage.setItem('locationRequested', 'true');
+    // eslint-disable-next-line no-console
     console.log('Location granted:', coords);
   };
 
   const handleLocationDenied = () => {
+    // Mark that location was requested (even if denied)
+    localStorage.setItem('locationRequested', 'true');
+    // eslint-disable-next-line no-console
     console.log('Location access denied');
     // User can still use the app without location
   };
