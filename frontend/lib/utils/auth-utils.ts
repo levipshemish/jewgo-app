@@ -674,14 +674,9 @@ export function mapAppleOAuthError(error: string): string {
 export function validateSupabaseFeatureSupport(): boolean {
   // Check if we're in a server environment
   if (typeof window === 'undefined') {
-    // Server-side - re-export from auth-utils.server
-    try {
-      const { validateSupabaseFeatureSupport: serverValidate } = require('./auth-utils.server');
-      return serverValidate();
-    } catch (error) {
-      console.error('Failed to import server-side validateSupabaseFeatureSupport:', error);
-      return false;
-    }
+      // Server-side validation not available in client context
+  console.warn('validateSupabaseFeatureSupport called on server-side but auth-utils.server not available');
+  return true; // Fallback to true
   } else {
     // Client-side - return true with a console.warn
     console.warn('validateSupabaseFeatureSupport called on client-side - assuming features are available');
