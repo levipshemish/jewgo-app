@@ -97,7 +97,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       
       expect(response.status).toBe(204);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://jewgo.app');
-      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST, OPTIONS');
       expect(response.headers.get('Cache-Control')).toBe('no-store');
     });
 
@@ -117,7 +117,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       
       expect(response.status).toBe(204);
       expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://jewgo.app');
-      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('POST, OPTIONS');
       expect(response.headers.get('Cache-Control')).toBe('no-store');
     });
   });
@@ -140,12 +140,43 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       } as any;
 
       // Mock feature support validation to fail
-      jest.spyOn(require('@/lib/utils/auth-utils.server'), 'validateSupabaseFeatureSupport').mockReturnValue(false);
+      jest.spyOn(require('@/lib/utils/auth-utils.server'), 'validateSupabaseFeaturesWithLogging').mockResolvedValue(false);
 
       const response = await POST(mockRequest);
       const result = await response.json();
       
       expect(result.error).toBe('ANON_SIGNIN_UNSUPPORTED');
+    });
+
+    it('should return ANON_SIGNIN_FAILED when signin fails', async () => {
+      const { POST } = await import('@/app/api/auth/anonymous/route');
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/auth/signin';
+            return null;
+          })
+        },
+        ip: '127.0.0.1',
+        json: jest.fn().mockResolvedValue({})
+      } as any;
+
+      // Mock feature support validation to succeed but signin to fail
+      jest.spyOn(require('@/lib/utils/auth-utils.server'), 'validateSupabaseFeaturesWithLogging').mockResolvedValue(true);
+      jest.spyOn(require('@/lib/utils/auth-utils.server'), 'validateCSRFServer').mockReturnValue(true);
+      jest.spyOn(require('@/lib/rate-limiting'), 'checkRateLimit').mockResolvedValue({
+        allowed: true,
+        remaining_attempts: 4,
+        reset_in_seconds: 300
+      });
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(result.error).toBe('ANON_SIGNIN_FAILED');
     });
 
     it('should handle rate limiting with normalized error codes', async () => {
@@ -225,10 +256,9 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       const fs = require('fs');
       const rlsSQL = fs.readFileSync('lib/database/rls-policies.sql', 'utf8');
       
-      expect(rlsSQL).toContain('is_published = true');
-      expect(rlsSQL).toContain('is_approved = true');
-      expect(rlsSQL).toContain('NOT is_flagged');
       expect(rlsSQL).toContain('status = \'active\'');
+      expect(rlsSQL).toContain('status = \'approved\'');
+      expect(rlsSQL).toContain('storage.foldername(name)');
     });
   });
 

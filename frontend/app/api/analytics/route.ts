@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    // const event = await request.json();
+    // Parse the request body
+    const event = await request.json();
     
     // Log analytics event (in production, you'd send this to your analytics service)
     if (process.env.NODE_ENV === 'development') {
-      // Analytics logging removed for production
+      console.log('Analytics event received:', event);
     }
 
     // In production, you might want to:
@@ -15,9 +16,8 @@ export async function POST(_request: NextRequest) {
     // 3. Send to a third-party analytics service
     
     return NextResponse.json({ success: true });
-  } catch {
-    // eslint-disable-next-line no-console
-    // // console.error('Analytics API Error:', error);
+  } catch (error) {
+    console.error('Analytics API Error:', error);
     return NextResponse.json(
       { error: 'Failed to process analytics event' },
       { status: 500 }

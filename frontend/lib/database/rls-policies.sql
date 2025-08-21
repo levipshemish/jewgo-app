@@ -25,45 +25,34 @@ ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
 -- to prevent ingestion breakage and maintain analytics functionality
 
 -- Comprehensive moderated public read policies
--- Only published, approved, non-flagged, and active content is publicly readable
+-- Only active content is publicly readable
 
 -- Restaurants public read policy
 CREATE POLICY "restaurants_public_read" ON restaurants
 FOR SELECT TO anon, authenticated
 USING (
-  is_published = true 
-  AND is_approved = true 
-  AND NOT is_flagged 
-  AND status = 'active'
+  status = 'active'
 );
 
 -- Reviews public read policy
 CREATE POLICY "reviews_public_read" ON reviews
 FOR SELECT TO anon, authenticated
 USING (
-  is_published = true 
-  AND is_approved = true 
-  AND NOT is_flagged 
-  AND status = 'active'
+  status = 'approved'
 );
 
 -- Marketplace items public read policy
 CREATE POLICY "marketplace_items_public_read" ON marketplace_items
 FOR SELECT TO anon, authenticated
 USING (
-  is_published = true 
-  AND is_approved = true 
-  AND NOT is_flagged 
-  AND status = 'active'
+  status = 'active'
 );
 
 -- User profiles public read policy (limited information)
 CREATE POLICY "user_profiles_public_read" ON user_profiles
 FOR SELECT TO anon, authenticated
 USING (
-  is_public = true 
-  AND NOT is_flagged 
-  AND status = 'active'
+  status = 'active'
 );
 
 -- Complete CRUD policies with ownership and non-anonymous checks
@@ -212,6 +201,7 @@ USING (
 
 -- Supabase Storage bucket policies
 -- Mirror public read moderation filters for file access
+-- Note: Uses built-in Supabase storage.foldername() function for path parsing
 
 -- Public images bucket policy
 CREATE POLICY "public_images_read" ON storage.objects
@@ -221,10 +211,7 @@ USING (
   AND (storage.foldername(name))[1] IN (
     SELECT id::text 
     FROM restaurants 
-    WHERE is_published = true 
-    AND is_approved = true 
-    AND NOT is_flagged 
-    AND status = 'active'
+    WHERE status = 'active'
   )
 );
 
@@ -236,9 +223,7 @@ USING (
   AND (storage.foldername(name))[1] IN (
     SELECT id::text 
     FROM user_profiles 
-    WHERE is_public = true 
-    AND NOT is_flagged 
-    AND status = 'active'
+    WHERE status = 'active'
   )
 );
 
@@ -276,5 +261,5 @@ USING (
 -- Collision-safe patterns and comprehensive comments
 -- These policies ensure data security and prevent unauthorized access
 -- Anonymous users are blocked from all write operations
--- Public read access is limited to published, approved, non-flagged content
+-- Public read access is limited to active content
 -- Storage access is controlled and mirrors database moderation filters

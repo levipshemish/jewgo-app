@@ -3,26 +3,27 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
-// Comprehensive route protection - protect all routes except public ones
+// Minimal private route protection - only guard admin and messaging routes
+// All other auth is handled by route handlers + RLS policies for better performance
 export const config = {
   matcher: [
-    // Exclude public routes and static assets
-    '/((?!auth|api/auth|_next|favicon|icon|manifest|robots|sitemap|healthz|test-|$).*)',
+    '/admin/:path*',
+    '/messages/:path*', 
+    '/api/admin/:path*'
   ]
 };
 
 /**
- * Comprehensive middleware with route protection and redirect sanitization
- * Handles authentication checks for all protected routes with security safeguards
+ * Minimal middleware with redirect sanitization for private routes only
+ * Handles authentication checks for admin and messaging routes with security safeguards
  * Redirects unauthenticated users to sign-in page
+ * 
+ * Note: Only these specific routes are guarded in middleware to avoid performance impact
+ * on public routes. All other authentication is handled by individual route handlers
+ * and Row Level Security (RLS) policies for better scalability.
  */
 export async function middleware(request: NextRequest) {
   try {
-    // Skip authentication for the root path (/) as it's a sign-in page
-    if (request.nextUrl.pathname === '/') {
-      return NextResponse.next();
-    }
-
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
     

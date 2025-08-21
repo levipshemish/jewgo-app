@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { supabaseBrowser } from '@/lib/supabase/client';
@@ -24,6 +24,9 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const router = useRouter();
+  
+  // Guard against concurrent anonymous signin calls
+  const isStartingAnonRef = useRef(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -101,9 +104,26 @@ export function useAuth() {
   };
 
   const signInAnonymously = async () => {
+    // Prevent concurrent calls
+    if (isStartingAnonRef.current) {
+      return { error: 'Sign-in already in progress' };
+    }
+    
     try {
+      isStartingAnonRef.current = true;
       setIsLoading(true);
       setError(null);
+
+      // Check for existing anonymous session before calling API
+      const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
+      
+      if (!getUserError && user && extractIsAnonymous(user)) {
+        console.log('User already has anonymous session:', user.id);
+        const transformedUser = transformSupabaseUser(user);
+        setUser(transformedUser);
+        setIsAnonymous(true);
+        return { user: transformedUser };
+      }
 
       // Call the server endpoint instead of SDK directly
       const response = await fetch('/api/auth/anonymous', {
@@ -160,6 +180,7 @@ export function useAuth() {
       return { error: errorMessage };
     } finally {
       setIsLoading(false);
+      isStartingAnonRef.current = false;
     }
   };
 
