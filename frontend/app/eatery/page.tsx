@@ -14,6 +14,36 @@ import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
 
 import { Restaurant } from '@/lib/types/restaurant';
 
+// Utility function to calculate distance between two points using Haversine formula
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return distance;
+};
+
+// Utility function to format distance for display
+const formatDistance = (distance: number): string => {
+  if (distance < 0.1) {
+    return `${Math.round(distance * 5280)}ft`; // Convert to feet
+  } else if (distance < 1) {
+    return `${(distance * 10).toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
+  } else {
+    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
+  }
+};
+
 export default function EateryExplorePage() {
   const router = useRouter();
 
@@ -44,10 +74,11 @@ export default function EateryExplorePage() {
     getFilterCount
   } = useAdvancedFilters();
   
-  // Location state for filters
+  // Location state for distance calculation
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [_locationError, setLocationError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
   // Calculate items per page based on 2-column grid layout
   const getItemsPerPage = () => {
@@ -71,52 +102,59 @@ export default function EateryExplorePage() {
     return () => window.removeEventListener('resize', updateItemsPerPage);
   }, []);
 
-  // Get user location - currently unused
-  // const getUserLocation = () => {
-  //   if (!navigator.geolocation) {
-  //     setLocationError('Geolocation is not supported by this browser');
-  //     return;
-  //   }
+  // Get user location for distance calculation
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by this browser');
+      return;
+    }
 
-  //   setLocationLoading(true);
-  //   setLocationError(null);
+    setLocationLoading(true);
+    setLocationError(null);
 
-  //   navigator.geolocation.getCurrentPosition(
-  //     (position) => {
-  //       setLocationLoading(false);
-  //       setUserLocation({
-  //         latitude: position.coords.latitude,
-  //         longitude: position.coords.longitude,
-  //       });
-  //     },
-  //     (_error) => {
-  //       setLocationLoading(false);
-  //       let errorMessage = 'Unable to get your location';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationLoading(false);
+        setLocationPermissionGranted(true);
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      (error) => {
+        setLocationLoading(false);
+        setLocationPermissionGranted(false);
+        let errorMessage = 'Unable to get your location';
         
-  //       if (_error && typeof _error === 'object' && 'code' in _error) {
-  //         const errorCode = (_error as GeolocationPositionError).code;
-  //         switch (errorCode) {
-  //           case (_error as GeolocationPositionError).PERMISSION_DENIED:
-  //             errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-  //             break;
-  //           case (_error as GeolocationPositionError).POSITION_UNAVAILABLE:
-  //             errorMessage = 'Location information is unavailable. Please try again.';
-  //             break;
-  //           case (_error as GeolocationPositionError).TIMEOUT:
-  //             errorMessage = 'Location request timed out. Please try again.';
-  //             break;
-  //         }
-  //       }
+        if (error && typeof error === 'object' && 'code' in error) {
+          const errorCode = (error as GeolocationPositionError).code;
+          switch (errorCode) {
+            case (error as GeolocationPositionError).PERMISSION_DENIED:
+              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+              break;
+            case (error as GeolocationPositionError).POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable. Please try again.';
+              break;
+            case (error as GeolocationPositionError).TIMEOUT:
+              errorMessage = 'Location request timed out. Please try again.';
+              break;
+          }
+        }
         
-  //       setLocationError(errorMessage);
-  //     },
-  //     {
-  //       enableHighAccuracy: true,
-  //       timeout: 15000,
-  //       maximumAge: 300000, // 5 minutes
-  //     }
-  //   );
-  // };
+        setLocationError(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000, // 5 minutes
+      }
+    );
+  };
+
+  // Request location permission on component mount
+  useEffect(() => {
+    getUserLocation();
+  }, []);
 
   // Detect mobile device and enable infinite scroll
   useEffect(() => {
@@ -131,12 +169,6 @@ export default function EateryExplorePage() {
 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Removed automatic location request to comply with browser geolocation policy
-  // Location will only be requested when user explicitly clicks location button
-  // useEffect(() => {
-  //   getUserLocation();
-  // }, []);
 
   // Load restaurants with filters
   useEffect(() => {
@@ -282,6 +314,19 @@ export default function EateryExplorePage() {
 
   // Transform restaurant data to UnifiedCard format
   const transformRestaurantToCardData = (restaurant: Restaurant) => {
+    // Calculate distance only if location permission is granted and both coordinates are available
+    let distanceText: string | undefined;
+    
+    if (locationPermissionGranted && userLocation && restaurant.latitude && restaurant.longitude) {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        restaurant.latitude,
+        restaurant.longitude
+      );
+      distanceText = formatDistance(distance);
+    }
+
     return {
       id: restaurant.id,
       imageUrl: restaurant.image_url,
@@ -290,7 +335,7 @@ export default function EateryExplorePage() {
       title: restaurant.name,
       badge: restaurant.rating ? restaurant.rating.toString() : undefined,
       subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
-      additionalText: restaurant.city || restaurant.state,
+      additionalText: distanceText || restaurant.city || restaurant.state,
       showHeart: true,
       isLiked: false // This will be handled by the component internally
     };
@@ -392,6 +437,75 @@ export default function EateryExplorePage() {
         onShowMap={handleShowMap}
         onAddEatery={handleAddEatery}
       />
+      
+      {/* Location Permission Banner */}
+      {!locationPermissionGranted && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-blue-800">
+                Enable location to see distance from you
+              </span>
+            </div>
+            <button
+              onClick={getUserLocation}
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
+              style={{
+                minHeight: '32px',
+                minWidth: '44px',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              Enable
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Loading Indicator */}
+      {locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-blue-800">Getting your location...</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Error Banner */}
+      {locationError && !locationPermissionGranted && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="text-sm text-red-800">
+                {locationError}
+              </span>
+            </div>
+            <button
+              onClick={getUserLocation}
+              className="text-sm text-red-600 hover:text-red-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-red-100"
+              style={{
+                minHeight: '32px',
+                minWidth: '44px',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Active Filters Indicator */}
       {hasActiveFilters && (
