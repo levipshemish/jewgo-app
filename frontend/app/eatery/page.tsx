@@ -42,6 +42,17 @@ function EateryPageContent() {
   const { isMobile, isTouch, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Debug mobile detection
+  useEffect(() => {
+    console.log('Mobile detection:', { 
+      isMobile, 
+      isTouch, 
+      viewportWidth, 
+      viewportHeight,
+      userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'N/A'
+    });
+  }, [isMobile, isTouch, viewportWidth, viewportHeight]);
+  
   // Mobile gesture support
   const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
     () => router.push('/marketplace'), // Swipe left to marketplace
@@ -86,6 +97,18 @@ function EateryPageContent() {
       disabled: !isMobile // Only enable infinite scroll on mobile
     }
   );
+
+  // Debug infinite scroll setup
+  useEffect(() => {
+    console.log('Infinite scroll setup:', {
+      isMobile,
+      hasMore,
+      isLoadingMore,
+      disabled: !isMobile,
+      threshold: isMobile ? 0.2 : 0.3,
+      rootMargin: isMobile ? '100px' : '200px'
+    });
+  }, [isMobile, hasMore, isLoadingMore]);
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(!isMobile); // Auto-hide filters on mobile
@@ -193,6 +216,10 @@ function EateryPageContent() {
       setLoading(true);
       setError(null);
 
+      console.log('Fetching restaurants with filters:', filters);
+      console.log('User location:', userLocation);
+      console.log('Is mobile:', isMobile);
+
       // Mobile-optimized parameters
       const params = new URLSearchParams();
       
@@ -217,17 +244,25 @@ function EateryPageContent() {
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
       
+      console.log('Received restaurants:', response.restaurants.length);
+      
       // Apply distance sorting if location is enabled
       let sortedRestaurants = response.restaurants;
       if (userLocation && filters.nearMe) {
+        console.log('Applying distance sorting');
         sortedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+        console.log('Sorted restaurants:', sortedRestaurants.length);
+      } else {
+        console.log('Skipping distance sorting - no location or nearMe filter');
       }
       
       setRestaurants(sortedRestaurants);
       setCurrentPage(1);
       
       // Update hasMore state for infinite scroll
-      setHasMore(response.restaurants.length >= mobileOptimizedItemsPerPage);
+      const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
+      console.log('Setting hasMore:', hasMoreContent, 'for mobile:', isMobile);
+      setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching restaurants:', err);
       setError('An error occurred while fetching restaurants');
@@ -237,7 +272,12 @@ function EateryPageContent() {
   };
 
   const fetchMoreRestaurants = async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (isLoadingMore || !hasMore) {
+      console.log('Skipping fetchMoreRestaurants:', { isLoadingMore, hasMore });
+      return;
+    }
+
+    console.log('Fetching more restaurants, page:', currentPage + 1);
 
     try {
       const nextPage = currentPage + 1;
@@ -256,9 +296,12 @@ function EateryPageContent() {
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
       
+      console.log('Received more restaurants:', response.restaurants.length);
+      
       // Apply distance sorting to new restaurants if location is enabled
       let sortedNewRestaurants = response.restaurants;
       if (userLocation && activeFilters.nearMe) {
+        console.log('Applying distance sorting to new restaurants');
         sortedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
       }
       
@@ -266,7 +309,9 @@ function EateryPageContent() {
       setCurrentPage(nextPage);
       
       // Update hasMore state
-      setHasMore(response.restaurants.length >= mobileOptimizedItemsPerPage);
+      const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
+      console.log('Setting hasMore for more restaurants:', hasMoreContent);
+      setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching more restaurants:', err);
     }
