@@ -146,7 +146,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       
       if (reauth && state) {
         callbackParams.set('reauth', 'true');
-        callbackParams.set('state', state);
+        callbackParams.set('link_state', state);
       }
       
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
@@ -184,7 +184,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       
       if (reauth && state) {
         callbackParams.set('reauth', 'true');
-        callbackParams.set('state', state);
+        callbackParams.set('link_state', state);
       }
       
       const { error } = await supabaseBrowser.auth.signInWithOAuth({

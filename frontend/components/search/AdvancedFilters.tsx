@@ -1,35 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
 import { cn } from '@/lib/utils/classNames';
+import { Filters } from '@/lib/filters/schema';
 
 interface AdvancedFiltersProps {
-  activeFilters: {
-    agency?: string;
-    dietary?: string;
-    openNow?: boolean;
-    category?: string;
-    nearMe?: boolean;
-    maxDistance?: number;
-  };
-  draftFilters?: {
-    agency?: string;
-    dietary?: string;
-    openNow?: boolean;
-    category?: string;
-    nearMe?: boolean;
-    maxDistance?: number;
-  };
-  onFilterChange: (filterType: 'agency' | 'dietary' | 'category', value: string) => void;
-  onToggleFilter: (filterType: 'openNow' | 'nearMe', value: boolean) => void;
-  onDistanceChange: (distance: number) => void;
+  activeFilters: Filters;
+  onFilterChange: (filterType: keyof Filters, value: Filters[keyof Filters]) => void;
+  onToggleFilter: (filterType: keyof Filters) => void;
   onClearAll: () => void;
-  onApplyFilters?: () => void;
-  onCancelFilters?: () => void;
   userLocation: { latitude: number; longitude: number } | null;
   locationLoading: boolean;
   onRequestLocation?: () => void;
-  enableDraftMode?: boolean;
-  hasDraftFilters?: boolean;
 }
 
 interface FilterOptions {
@@ -39,7 +20,7 @@ interface FilterOptions {
 }
 
 const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
-  activeFilters, draftFilters = {}, onFilterChange, onToggleFilter, onDistanceChange, onClearAll, onApplyFilters, onCancelFilters, userLocation, locationLoading, onRequestLocation, enableDraftMode = true, hasDraftFilters = false
+  activeFilters, onFilterChange, onToggleFilter, onClearAll, userLocation, locationLoading, onRequestLocation
 }) => {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
@@ -47,9 +28,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     listingTypes: []
   });
   const [loading, setLoading] = useState(true);
-
-  // Use draft filters for display if in draft mode, otherwise use active filters
-  const displayFilters = enableDraftMode ? { ...activeFilters, ...draftFilters } : activeFilters;
 
   // Fetch filter options from API
   useEffect(() => {
@@ -81,7 +59,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     fetchFilterOptions();
   }, []);
 
-  const hasActiveFilters = Object.values(activeFilters).some(filter => filter !== undefined && filter !== false);
+  const hasActiveFilters = Object.values(activeFilters).some(filter => 
+    filter !== undefined && filter !== false && filter !== '' && filter !== null
+  );
 
   // Normalize kosher category for display
   const normalizeKosherCategory = (category: string) => {
@@ -168,11 +148,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
           <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-          {hasDraftFilters && (
-            <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-              Draft
-            </span>
-          )}
         </div>
         <div className="flex items-center space-x-2">
           {hasActiveFilters && (
@@ -199,12 +174,12 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => onToggleFilter('openNow', !displayFilters.openNow)}
+              onClick={() => onToggleFilter('openNow')}
               disabled={locationLoading}
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-2",
                 "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
-                displayFilters.openNow
+                activeFilters.openNow
                   ? "bg-green-100 text-green-800 border-2 border-green-200"
                   : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-gray-200"
               )}
@@ -214,14 +189,14 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToggleFilter('nearMe', !displayFilters.nearMe)}
+              onClick={() => onToggleFilter('nearMe')}
               disabled={!userLocation || locationLoading}
               title={!userLocation ? 'Enable location to use this filter' : ''}
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-2",
                 "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
                 !userLocation || locationLoading ? "opacity-50 cursor-not-allowed" : "",
-                displayFilters.nearMe
+                activeFilters.nearMe
                   ? "bg-blue-100 text-blue-800 border-2 border-blue-200"
                   : "bg-gray-100 text-gray-700 border-2 border-gray-200 hover:bg-gray-200"
               )}
@@ -249,7 +224,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Max Distance</span>
                 <span className="text-sm font-medium text-jewgo-primary">
-                  {displayFilters.maxDistance || 25} miles
+                  {activeFilters.maxDistanceMi || 25} miles
                 </span>
               </div>
               <div className="relative">
@@ -258,15 +233,15 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   min="1"
                   max="50"
                   step="1"
-                  value={displayFilters.maxDistance || 25}
-                  onChange={(e) => onDistanceChange(parseInt(e.target.value))}
+                  value={activeFilters.maxDistanceMi || 25}
+                  onChange={(e) => onFilterChange('maxDistanceMi', parseInt(e.target.value))}
                   className={cn(
                     "w-full h-2 rounded-lg appearance-none cursor-pointer",
                     "bg-gray-200 slider-thumb",
                     "focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20"
                   )}
                   style={{
-                    background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${((displayFilters.maxDistance || 25) / 50) * 100}%, #E5E7EB ${((displayFilters.maxDistance || 25) / 50) * 100}%, #E5E7EB 100%)`
+                    background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${((activeFilters.maxDistanceMi || 25) / 50) * 100}%, #E5E7EB ${((activeFilters.maxDistanceMi || 25) / 50) * 100}%, #E5E7EB 100%)`
                   }}
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -327,18 +302,18 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </h4>
             <div className="relative">
               <select
-                value={displayFilters.agency || 'all'}
-                onChange={(e) => onFilterChange('agency', e.target.value)}
+                value={activeFilters.agency || ''}
+                onChange={(e) => onFilterChange('agency', e.target.value || undefined)}
                 className={cn(
                   "w-full px-4 py-3 rounded-xl border-2 transition-all duration-200",
                   "focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
                   "appearance-none bg-white",
-                  displayFilters.agency && displayFilters.agency !== 'all'
+                  activeFilters.agency
                     ? "border-blue-200 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300"
                 )}
               >
-                <option value="all" className="py-2">All Agencies</option>
+                <option value="" className="py-2">All Agencies</option>
                 {filterOptions.agencies.map((agency) => (
                   <option key={agency} value={agency} className="py-2">
                     {getAgencyDisplayName(agency)}
@@ -363,18 +338,18 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </h4>
             <div className="relative">
               <select
-                value={displayFilters.dietary || 'all'}
-                onChange={(e) => onFilterChange('dietary', e.target.value)}
+                value={activeFilters.dietary || ''}
+                onChange={(e) => onFilterChange('dietary', e.target.value || undefined)}
                 className={cn(
                   "w-full px-4 py-3 rounded-xl border-2 transition-all duration-200",
                   "focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
                   "appearance-none bg-white",
-                  displayFilters.dietary && displayFilters.dietary !== 'all'
+                  activeFilters.dietary
                     ? "border-blue-200 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300"
                 )}
               >
-                <option value="all" className="py-2">All Types</option>
+                <option value="" className="py-2">All Types</option>
                 {filterOptions.kosherCategories.map((category) => {
                   const normalizedCategory = normalizeKosherCategory(category);
                   return (
@@ -402,18 +377,18 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </h4>
             <div className="relative">
               <select
-                value={displayFilters.category || 'all'}
-                onChange={(e) => onFilterChange('category', e.target.value)}
+                value={activeFilters.category || ''}
+                onChange={(e) => onFilterChange('category', e.target.value || undefined)}
                 className={cn(
                   "w-full px-4 py-3 rounded-xl border-2 transition-all duration-200",
                   "focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
                   "appearance-none bg-white",
-                  displayFilters.category && displayFilters.category !== 'all'
+                  activeFilters.category
                     ? "border-blue-200 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300"
                 )}
               >
-                <option value="all" className="py-2">All Categories</option>
+                <option value="" className="py-2">All Categories</option>
                 {filterOptions.listingTypes.map((type) => (
                   <option key={type} value={type} className="py-2">
                     {getListingTypeDisplayName(type)}
@@ -427,55 +402,14 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           </div>
         )}
 
-        {/* Draft Mode Actions */}
-        {enableDraftMode && hasDraftFilters && (
-          <div className="pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                {(() => {
-                  let count = 0;
-                  Object.values(draftFilters).forEach(f => {
-                    if (f !== undefined && f !== false && f !== '' && (!Array.isArray(f) || f.length > 0)) {
-                      count++;
-                    }
-                  });
-                  return count;
-                })()} draft filter(s) ready to apply
-              </span>
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={onCancelFilters}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={onApplyFilters}
-                  className="px-4 py-2 bg-jewgo-primary text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Active Filters Summary */}
         {hasActiveFilters && (
           <div className="pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">
-                {(() => {
-                  let count = 0;
-                  Object.values(activeFilters).forEach(f => {
-                    if (f !== undefined && f !== false && f !== '' && (!Array.isArray(f) || f.length > 0)) {
-                      count++;
-                    }
-                  });
-                  return count;
-                })()} active filter(s)
+                {Object.values(activeFilters).filter(f => 
+                  f !== undefined && f !== false && f !== '' && f !== null
+                ).length} active filter(s)
               </span>
               <button
                 type="button"

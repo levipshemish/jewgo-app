@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef, useMemo } from 'react';
+import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -12,69 +12,38 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
 import { useLocation } from '@/lib/contexts/LocationContext';
+import { toSearchParams, Filters } from '@/lib/filters/schema';
 
 import { Restaurant } from '@/lib/types/restaurant';
 
-// Utility function to calculate distance between two points using Haversine formula
-const calculateDistance = (
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number => {
-  const R = 3959; // Earth's radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c;
-  return distance;
-};
-
-// Utility function to format distance for display
-const formatDistance = (distance: number): string => {
-  if (distance < 0.1) {
-    return `${Math.round(distance * 5280)}ft`; // Convert to feet
-  } else if (distance < 1) {
-    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
-  } else {
-    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
-  }
-};
-
 export default function EateryExplorePage() {
   const router = useRouter();
-
+  const [isPending, startTransition] = useTransition();
+  const abortRef = useRef<AbortController | null>(null);
+  
+  // State management
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('eatery');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8); // Default fallback
-  
-  // Infinite scroll state
   const [isMobile, setIsMobile] = useState(false);
   const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState(false);
-  const [displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
-  const [infiniteScrollPage, setInfiniteScrollPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [infiniteScrollLoading, setInfiniteScrollLoading] = useState(false);
-  
-  // Filter state
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // URL-backed filter state
   const {
     activeFilters,
     hasActiveFilters,
     setFilter,
+    toggleFilter,
     clearAllFilters,
-    getFilterCount
+    getFilterCount,
+    updateFilters
   } = useAdvancedFilters();
-  
-  // Location state from context
+
+  // Location context
   const {
     userLocation,
     permissionStatus,
@@ -142,120 +111,131 @@ export default function EateryExplorePage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load restaurants with filters
+  // Sync location with filters when user location changes
+  useEffect(() => {
+    if (userLocation && activeFilters.nearMe) {
+      updateFilters({
+        lat: userLocation.latitude,
+        lng: userLocation.longitude
+      });
+    }
+  }, [userLocation, activeFilters.nearMe, updateFilters]);
+
+  // Load restaurants with filters - using stable serialized filters
   useEffect(() => {
     const loadRestaurants = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Build query parameters for filtering
-        const params = new URLSearchParams();
-        if (searchQuery) {
-          params.append('search', searchQuery);
-        }
-        if (activeFilters.agency && activeFilters.agency !== 'all') {
-          params.append('certifying_agency', activeFilters.agency);
-        }
-        if (activeFilters.dietary && activeFilters.dietary !== 'all') {
-          params.append('kosher_category', activeFilters.dietary);
-        }
-        if (activeFilters.category && activeFilters.category !== 'all') {
-          params.append('listing_type', activeFilters.category);
+        // Abort previous request
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+        
+        // Build filters with location data if available
+        const filters: Filters = {
+          ...activeFilters,
+          q: searchQuery || undefined,
+        };
+        
+        // Add location data if nearMe is enabled and we have coordinates
+        if (filters.nearMe && userLocation) {
+          filters.lat = userLocation.latitude;
+          filters.lng = userLocation.longitude;
         }
         
-        const data = await fetchRestaurants(200, params.toString());
-        setRestaurants(data.restaurants || []);
-      } catch (_err) {
-        // console.error('Error loading restaurants:', err);
+        // Convert to URLSearchParams for API call
+        const params = toSearchParams(filters);
+        
+        startTransition(async () => {
+          try {
+            const data = await fetchRestaurants(200, params.toString());
+            if (!controller.signal.aborted) {
+              setRestaurants(data.restaurants || []);
+            }
+          } catch (err) {
+            if (!controller.signal.aborted) {
+              console.error('Error loading restaurants:', err);
+              setError('Failed to load restaurants. Please try again.');
+            }
+          } finally {
+            if (!controller.signal.aborted) {
+              setLoading(false);
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error in loadRestaurants:', err);
         setError('Failed to load restaurants. Please try again.');
-      } finally {
         setLoading(false);
       }
     };
 
     loadRestaurants();
-  }, [searchQuery, activeFilters]);
+  }, [searchQuery, activeFilters, userLocation]);
 
-  // Sort restaurants by distance when location is available
-  const sortedRestaurants = useMemo(() => {
-    if (permissionStatus !== 'granted' || !userLocation) {
-      return restaurants;
-    }
-
-    return [...restaurants].sort((a, b) => {
-      // If either restaurant doesn't have coordinates, keep original order
-      if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) {
-        return 0;
-      }
-
-      const distanceA = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        a.latitude,
-        a.longitude
-      );
-
-      const distanceB = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        b.latitude,
-        b.longitude
-      );
-
-      // Debug logging for distance calculations
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Distance comparison: ${a.name} (${distanceA.toFixed(2)}mi) vs ${b.name} (${distanceB.toFixed(2)}mi)`);
-      }
-
-      return distanceA - distanceB;
-    });
-  }, [restaurants, permissionStatus, userLocation]);
-
-  // Use sorted restaurants for display
-  const filteredRestaurants = sortedRestaurants;
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredRestaurants.length / itemsPerPage);
+  const totalPages = Math.ceil(restaurants.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedRestaurants = filteredRestaurants.slice(startIndex, endIndex);
+  const paginatedRestaurants = restaurants.slice(startIndex, endIndex);
 
   // Debug information
   // Reset to first page when search or filters change
   useEffect(() => {
     setCurrentPage(1);
-    setInfiniteScrollPage(1);
-    setDisplayedRestaurants([]);
   }, [searchQuery, activeFilters]);
-
-  // Update displayed restaurants for infinite scroll
-  useEffect(() => {
-    if (infiniteScrollEnabled) {
-      const startIndex = 0;
-      const endIndex = infiniteScrollPage * itemsPerPage;
-      const newDisplayedRestaurants = filteredRestaurants.slice(startIndex, endIndex);
-      setDisplayedRestaurants(newDisplayedRestaurants);
-      setHasMore(endIndex < filteredRestaurants.length);
-    }
-  }, [filteredRestaurants, infiniteScrollPage, itemsPerPage, infiniteScrollEnabled]);
 
   // Infinite scroll load more function
   const handleLoadMore = () => {
-    if (!infiniteScrollLoading && hasMore) {
-      setInfiniteScrollLoading(true);
-      setTimeout(() => {
-        setInfiniteScrollPage(prev => prev + 1);
-        setInfiniteScrollLoading(false);
-      }, 300); // Small delay for smooth UX
+    if (!isPending && restaurants.length > 0) {
+      startTransition(async () => {
+        try {
+          const controller = new AbortController();
+          abortRef.current = controller;
+
+          const filters: Filters = {
+            ...activeFilters,
+            q: searchQuery || undefined,
+          };
+
+          if (filters.nearMe && userLocation) {
+            filters.lat = userLocation.latitude;
+            filters.lng = userLocation.longitude;
+          }
+
+          const params = toSearchParams(filters);
+          const data = await fetchRestaurants(200, params.toString());
+          if (!controller.signal.aborted) {
+            setRestaurants(prev => [...prev, ...(data.restaurants || [])]);
+          }
+        } catch (err) {
+          if (!abortRef.current?.signal.aborted) {
+            console.error('Error loading more restaurants:', err);
+            setError('Failed to load more restaurants. Please try again.');
+          }
+        } finally {
+          if (!abortRef.current?.signal.aborted) {
+            setLoading(false);
+          }
+        }
+      });
     }
   };
 
   // Infinite scroll hook
   const { loadingRef } = useInfiniteScroll({
     onLoadMore: handleLoadMore,
-    hasMore,
-    loading: infiniteScrollLoading,
+    hasMore: !isPending && restaurants.length > 0,
+    loading: isPending,
     threshold: 200
   });
 
@@ -662,7 +642,7 @@ export default function EateryExplorePage() {
       {/* Restaurant Grid */}
       <div className="px-4 py-4 pb-24">
         <div className="max-w-7xl lg:max-w-none mx-auto">
-          {filteredRestaurants.length === 0 ? (
+          {paginatedRestaurants.length === 0 ? (
             <div className="text-center py-16 pb-24">
               <div className="text-gray-400 text-6xl mb-4">🍽️</div>
               <div className="text-gray-500 text-lg mb-3 font-medium">
@@ -675,7 +655,7 @@ export default function EateryExplorePage() {
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-                {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
+                {paginatedRestaurants.map((restaurant) => (
                   <div key={restaurant.id}>
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
@@ -699,36 +679,23 @@ export default function EateryExplorePage() {
               
               {/* Debug info and status */}
               <div className="text-sm text-gray-500 mt-6 text-center pb-4">
-                {infiniteScrollEnabled ? (
-                  <>
-                    Showing {displayedRestaurants.length} of {filteredRestaurants.length} items
-                    {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
-                    {permissionStatus === 'granted' && userLocation && (
-                      <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
-                    )}
-                    {isMobile && <span className="block text-xs text-blue-600 mt-1">Scroll to load more</span>}
-                  </>
-                ) : (
-                  <>
-                    Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages})
-                    {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
-                    {permissionStatus === 'granted' && userLocation && (
-                      <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
-                    )}
-                  </>
+                Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages})
+                {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
+                {permissionStatus === 'granted' && userLocation && (
+                  <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
                 )}
               </div>
 
               {/* Infinite Scroll Loading Indicator */}
-              {infiniteScrollEnabled && (
+              {isPending && (
                 <div ref={loadingRef} className="flex justify-center items-center py-8 pb-24">
-                  {infiniteScrollLoading && (
+                  {isPending && (
                     <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                       <span className="text-gray-600">Loading more...</span>
                     </div>
                   )}
-                  {!hasMore && displayedRestaurants.length > 0 && (
+                  {!isPending && restaurants.length > 0 && (
                     <div className="text-center py-4">
                       <span className="text-gray-500 text-sm">You&apos;ve reached the end</span>
                     </div>
@@ -803,7 +770,7 @@ export default function EateryExplorePage() {
       </div>
 
       {/* Back to Top Button - Only show on mobile with infinite scroll */}
-      {infiniteScrollEnabled && isMobile && displayedRestaurants.length > 8 && (
+      {infiniteScrollEnabled && isMobile && paginatedRestaurants.length > 8 && (
         <button
           onClick={() => {
             if (topRef.current) {
@@ -832,3 +799,33 @@ export default function EateryExplorePage() {
     </div>
   );
 }
+
+// Utility function to calculate distance between two points using Haversine formula
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  return distance;
+};
+
+// Utility function to format distance for display
+const formatDistance = (distance: number): string => {
+  if (distance < 0.1) {
+    return `${Math.round(distance * 5280)}ft`; // Convert to feet
+  } else if (distance < 1) {
+    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
+  } else {
+    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
+  }
+};

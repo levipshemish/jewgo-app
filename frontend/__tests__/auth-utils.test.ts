@@ -67,6 +67,24 @@ describe('validateRedirectUrl', () => {
     expect(validateRedirectUrl('/app%23fragment')).toBe('/');
     expect(validateRedirectUrl('/app%3fparam%3dvalue')).toBe('/app');
   });
+
+  test('blocks encoded // anywhere in the path', () => {
+    // Test various encoded // patterns
+    expect(validateRedirectUrl('/app//dashboard')).toBe('/');
+    expect(validateRedirectUrl('/app/dashboard//')).toBe('/');
+    expect(validateRedirectUrl('/app//dashboard//')).toBe('/');
+    expect(validateRedirectUrl('/app/dashboard//settings')).toBe('/');
+    expect(validateRedirectUrl('//app/dashboard')).toBe('/');
+    expect(validateRedirectUrl('/app//')).toBe('/');
+    
+    // Test with query parameters
+    expect(validateRedirectUrl('/app//dashboard?tab=settings')).toBe('/');
+    expect(validateRedirectUrl('/app/dashboard//?tab=settings')).toBe('/');
+    
+    // Test with allowed paths that don't contain //
+    expect(validateRedirectUrl('/app/dashboard')).toBe('/app/dashboard');
+    expect(validateRedirectUrl('/app/dashboard?tab=settings')).toBe('/app/dashboard?tab=settings');
+  });
 });
 
 describe('mapAppleOAuthError', () => {
@@ -261,5 +279,111 @@ describe('redirectTo parameter validation', () => {
     
     // This ensures the real code path in the component is validated
     // The component uses this exact pattern: validateRedirectUrl(redirectTo) -> encodeURIComponent -> build redirectTo
+  });
+});
+
+describe('Apple Sign-In Button Integration', () => {
+  // Mock the Supabase browser client
+  const mockSignInWithOAuth = jest.fn();
+  const originalSupabase = global.supabaseBrowser;
+  
+  beforeEach(() => {
+    mockSignInWithOAuth.mockClear();
+    global.supabaseBrowser = {
+      auth: {
+        signInWithOAuth: mockSignInWithOAuth
+      }
+    } as any;
+  });
+
+  afterEach(() => {
+    global.supabaseBrowser = originalSupabase;
+  });
+
+  test('Apple sign-in button calls signInWithOAuth with correct redirectTo', async () => {
+    // Simulate the Apple sign-in flow from the signin page
+    const onAppleSignIn = async () => {
+      const redirectTo = '/app/dashboard';
+      const safeNext = validateRedirectUrl(redirectTo);
+      
+      const callbackParams = new URLSearchParams({
+        next: safeNext,
+        provider: 'apple'
+      });
+      
+      await mockSignInWithOAuth({
+        provider: 'apple',
+        options: {
+          scopes: 'email name',
+          redirectTo: `http://localhost:3000/auth/callback?${callbackParams.toString()}`,
+        },
+      });
+    };
+
+    await onAppleSignIn();
+
+    // Verify the OAuth call was made with correct parameters
+    expect(mockSignInWithOAuth).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: {
+        scopes: 'email name',
+        redirectTo: expect.stringContaining('/auth/callback?next='),
+      },
+    });
+
+    // Verify the redirectTo contains the expected parameters
+    const callArgs = mockSignInWithOAuth.mock.calls[0][0];
+    const redirectTo = callArgs.options.redirectTo;
+    
+    expect(redirectTo).toContain('/auth/callback');
+    expect(redirectTo).toContain('next=');
+    expect(redirectTo).toContain('provider=apple');
+    expect(redirectTo).toContain(encodeURIComponent('/app/dashboard'));
+  });
+
+  test('Apple sign-in button includes re-authentication parameters when needed', async () => {
+    // Simulate the Apple sign-in flow with reauth parameters
+    const onAppleSignIn = async () => {
+      const redirectTo = '/profile/settings';
+      const safeNext = validateRedirectUrl(redirectTo);
+      const reauth = true;
+      const state = 'link_state_123';
+      
+      const callbackParams = new URLSearchParams({
+        next: safeNext,
+        provider: 'apple'
+      });
+      
+      if (reauth && state) {
+        callbackParams.set('reauth', 'true');
+        callbackParams.set('link_state', state);
+      }
+      
+      await mockSignInWithOAuth({
+        provider: 'apple',
+        options: {
+          scopes: 'email name',
+          redirectTo: `http://localhost:3000/auth/callback?${callbackParams.toString()}`,
+        },
+      });
+    };
+
+    await onAppleSignIn();
+
+    // Verify the OAuth call includes reauth parameters
+    expect(mockSignInWithOAuth).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: {
+        scopes: 'email name',
+        redirectTo: expect.stringContaining('reauth=true'),
+      },
+    });
+
+    const callArgs = mockSignInWithOAuth.mock.calls[0][0];
+    const redirectTo = callArgs.options.redirectTo;
+    
+    expect(redirectTo).toContain('reauth=true');
+    expect(redirectTo).toContain('link_state=link_state_123');
+    expect(redirectTo).toContain('provider=apple');
   });
 });

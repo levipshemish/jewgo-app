@@ -442,6 +442,16 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       return '/';
     }
 
+    // Block fragments in the original URL (before decoding) - both literal and encoded
+    if (url.includes('#') || url.includes('%23')) {
+      return '/';
+    }
+
+    // Block // anywhere in the decoded URL before parsing to prevent external redirects
+    if (decodedUrl.includes('//')) {
+      return '/';
+    }
+
     // Use the decoded URL for parsing
     const urlObj = new URL(decodedUrl, 'http://localhost');
     const decodedPath = urlObj.pathname;

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const next = searchParams.get('next') || searchParams.get('redirectTo');
     const reauth = searchParams.get('reauth') === 'true';
-    const _state = searchParams.get('state');
+    const _link_state = searchParams.get('link_state');
     const _provider = searchParams.get('provider');
     const safeNext = validateRedirectUrl(next);
 
@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
     }
 
-    // Early short-circuit for Apple OAuth feature flag
-    if (!isAppleOAuthEnabled() && _provider === 'apple') {
+    // Early Apple OAuth feature flag check to prevent unnecessary code exchange
+    const provider = searchParams.get('provider');
+    if (provider === 'apple' && !isAppleOAuthEnabled()) {
+      oauthLogger.warn('Apple OAuth callback received but feature is disabled');
       return NextResponse.redirect(new URL('/', request.url));
     }
 
@@ -67,24 +69,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
       
-      // Handle reactive identity collision using official Supabase APIs
+      // Handle identity collision detection for re-authentication flows
       try {
-        // Check if user has multiple identities (potential collision)
-        if (user.identities && user.identities.length > 1) {
-          oauthLogger.info('Multiple identities detected, redirecting to linking flow', { 
+        const providers = user.identities?.map(i => i.provider) ?? [];
+        if (reauth && _provider && !providers.includes(_provider)) {
+          oauthLogger.info('Re-authentication required for identity linking', { 
             userId: user.id, 
-            identityCount: user.identities.length,
-            providers: user.identities.map(id => id.provider),
-            isReauth: reauth
+            targetProvider: _provider,
+            existingProviders: providers
           });
           
-          // Redirect to guarded linking screen without attempting to link until official API is wired
-          // Store collision info in URL params for the profile settings page
           const settingsUrl = new URL('/profile/settings', request.url);
-          settingsUrl.searchParams.set('collision', 'true');
-          settingsUrl.searchParams.set('providers', user.identities.map(id => id.provider).join(','));
-          
-          // Redirect to guaranteed route when collision is inferred
+          settingsUrl.searchParams.set('link', 'required');
           return NextResponse.redirect(settingsUrl);
         }
       } catch (linkError) {

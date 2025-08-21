@@ -62,10 +62,10 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocatio
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return '1d';
-    if (diffDays < 7) return `${diffDays}d`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)}m`;
+    if (diffDays === 1) {return '1d';}
+    if (diffDays < 7) {return `${diffDays}d`;}
+    if (diffDays < 30) {return `${Math.floor(diffDays / 7)}w`;}
+    if (diffDays < 365) {return `${Math.floor(diffDays / 30)}m`;}
     return `${Math.floor(diffDays / 365)}y`;
   };
 
