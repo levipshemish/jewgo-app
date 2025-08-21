@@ -6,7 +6,7 @@ export const roboto = Roboto({
   subsets: ['latin'],
   weight: ['300', '400', '500', '700'],
   display: 'swap', // Use swap to prevent layout shift and preload warnings
-  preload: process.env.NODE_ENV === 'production' && !process.env.DOCKER, // Disable preload in Docker builds
+  preload: true, // Enable preload for better performance
   fallback: ['system-ui', 'arial'], // Provide fallback fonts
   adjustFontFallback: true, // Adjust fallback font metrics
   variable: '--font-roboto', // CSS variable for easy access

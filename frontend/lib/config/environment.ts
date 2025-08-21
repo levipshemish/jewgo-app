@@ -171,9 +171,9 @@ export function getEnvironmentConfig() {
   };
 }
 
-// Validate environment on module load
-if (typeof window === 'undefined') {
-  // Only validate on server side
+// Validate environment on module load (only during runtime, not build time)
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+  // Only validate on server side and not during build/test
   try {
     validateEnvironment();
     
@@ -184,8 +184,9 @@ if (typeof window === 'undefined') {
     }
   } catch (error) {
     console.error('Environment validation failed:', error);
-    if (IS_PRODUCTION) {
-      throw error; // Fail fast in production
+    // Don't throw during build time, only during runtime
+    if (IS_PRODUCTION && process.env.NEXT_PHASE !== 'phase-production-build') {
+      throw error; // Fail fast in production runtime
     }
   }
 }
