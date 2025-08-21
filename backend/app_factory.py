@@ -1656,9 +1656,20 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             business_types = request.args.getlist(
                 "business_types"
             )  # Get multiple business types
+            
+            # New distance filtering parameters
+            lat = request.args.get("lat", type=float)
+            lng = request.args.get("lng", type=float)
+            max_distance_mi = request.args.get("max_distance_mi", type=float, default=50.0)
+            open_now = request.args.get("open_now", type=bool, default=False)
+            
+            # Validate coordinates if provided
+            if lat is not None and lng is not None:
+                if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+                    return error_response("Invalid coordinates", 400)
 
             # Create cache key based on request parameters
-            cache_key = f"restaurants_{limit}_{offset}_{kosher_type}_{status}_{','.join(sorted(business_types)) if business_types else 'all'}"
+            cache_key = f"restaurants_{limit}_{offset}_{kosher_type}_{status}_{','.join(sorted(business_types)) if business_types else 'all'}_{lat}_{lng}_{max_distance_mi}_{open_now}"
 
             # Try simple in-memory cache first
             cached_data = get_cached_restaurants(cache_key)
@@ -1692,6 +1703,13 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
             logger.info("Database manager retrieved successfully")
 
+            # Initialize services
+            from services.distance_filtering_service import DistanceFilteringService
+            from services.open_now_service import OpenNowService
+            
+            distance_service = DistanceFilteringService(db_manager)
+            open_now_service = OpenNowService()
+
             # Build filters dict
             filters = {}
             if kosher_type:
@@ -1701,17 +1719,65 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             if business_types:
                 filters["business_types"] = business_types
 
-            # Get restaurants directly from DB manager
-            logger.info(
-                "Calling get_restaurants", limit=limit, offset=offset, filters=filters
-            )
-            restaurants = db_manager.get_restaurants(
-                limit=limit,
-                offset=offset,
-                as_dict=True,
-                filters=filters,
-            )
-            logger.info("get_restaurants returned restaurants", count=len(restaurants))
+            # Handle distance filtering
+            if lat is not None and lng is not None:
+                logger.info(f"Using distance filtering: lat={lat}, lng={lng}, max_distance={max_distance_mi}mi")
+                
+                # Get restaurants with distance filtering
+                distance_results = distance_service.get_restaurants_within_radius(
+                    latitude=lat,
+                    longitude=lng,
+                    max_distance_miles=max_distance_mi,
+                    additional_filters=filters,
+                    limit=limit,
+                    offset=offset
+                )
+                
+                # Convert to standard format
+                restaurants = []
+                for result in distance_results:
+                    restaurant_data = result.restaurant.copy()
+                    restaurant_data['distance_miles'] = result.distance_miles
+                    restaurant_data['distance_formatted'] = distance_service.format_distance(result.distance_miles)
+                    restaurants.append(restaurant_data)
+                
+                logger.info(f"Distance filtering returned {len(restaurants)} restaurants")
+                
+            else:
+                # Get restaurants directly from DB manager (no distance filtering)
+                logger.info(
+                    "Calling get_restaurants", limit=limit, offset=offset, filters=filters
+                )
+                restaurants = db_manager.get_restaurants(
+                    limit=limit,
+                    offset=offset,
+                    as_dict=True,
+                    filters=filters,
+                )
+                logger.info("get_restaurants returned restaurants", count=len(restaurants))
+
+            # Apply "open now" filtering if requested
+            if open_now:
+                logger.info("Applying 'open now' filtering")
+                filtered_restaurants = []
+                open_count = 0
+                closed_count = 0
+                unknown_count = 0
+                
+                for restaurant in restaurants:
+                    is_open = open_now_service.is_open_now(restaurant)
+                    if is_open is True:
+                        filtered_restaurants.append(restaurant)
+                        open_count += 1
+                    elif is_open is False:
+                        closed_count += 1
+                    else:
+                        unknown_count += 1
+                        # Include restaurants with unknown status
+                        filtered_restaurants.append(restaurant)
+                
+                restaurants = filtered_restaurants
+                logger.info(f"Open now filtering: {open_count} open, {closed_count} closed, {unknown_count} unknown")
 
             # Standardized response
             resp = restaurants_response(restaurants, limit=limit, offset=offset)

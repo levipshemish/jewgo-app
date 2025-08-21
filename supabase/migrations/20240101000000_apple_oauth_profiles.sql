@@ -34,19 +34,25 @@ $$;
 -- Enable RLS on profiles table
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (for idempotent re-runs)
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "RPC can upsert profiles" ON profiles;
+
 -- RLS Policy: Users can read their own profile
 CREATE POLICY "Users can view own profile" ON profiles
     FOR SELECT USING (auth.uid() = user_id);
+
+-- RLS Policy: Users can insert their own profile
+CREATE POLICY "Users can insert own profile" ON profiles
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- RLS Policy: Users can update their own profile
 CREATE POLICY "Users can update own profile" ON profiles
     FOR UPDATE USING (auth.uid() = user_id);
 
--- RLS Policy: Allow RPC function to insert/update profiles
-CREATE POLICY "RPC can upsert profiles" ON profiles
-    FOR ALL USING (true);
-
--- Grant necessary permissions
+-- Grant necessary permissions (tightened)
 GRANT USAGE ON SCHEMA public TO authenticated;
-GRANT ALL ON profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON profiles TO authenticated;
 GRANT EXECUTE ON FUNCTION upsert_profile_with_name(UUID, TEXT) TO authenticated;
