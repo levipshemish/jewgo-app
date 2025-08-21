@@ -2026,9 +2026,33 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
                 try:
                     if isinstance(hours_json, str):
-                        hours_doc = parse_hours_blob(hours_json)
+                        parsed_hours = parse_hours_blob(hours_json)
                     else:
-                        hours_doc = hours_json
+                        parsed_hours = hours_json
+
+                    # Convert parsed hours to the format expected by for_display
+                    formatted_hours_data = {}
+                    for day_name, time_ranges in parsed_hours.items():
+                        if time_ranges:
+                            # Get the first time range (assuming single range per day)
+                            time_range = time_ranges[0]
+                            # Parse the time range to extract open and close times
+                            if " - " in time_range:
+                                open_time, close_time = time_range.split(" - ", 1)
+                                # Convert day name to abbreviation
+                                day_abbr = HoursFormatter._get_day_abbreviation(day_name.lower())
+                                formatted_hours_data[day_abbr] = {
+                                    "open": open_time.strip(),
+                                    "close": close_time.strip(),
+                                    "is_open": True
+                                }
+
+                    # Create the hours document in the expected format
+                    hours_doc = {
+                        "hours": formatted_hours_data,
+                        "timezone": restaurant.get("timezone", "America/New_York"),
+                        "last_updated": restaurant.get("hours_last_updated")
+                    }
 
                     formatted_hours = HoursFormatter.for_display(hours_doc)
                     return jsonify(formatted_hours), 200
