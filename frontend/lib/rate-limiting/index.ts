@@ -7,43 +7,43 @@
 const isDockerEnvironment = process.env.DOCKER === 'true' || process.env.NODE_ENV === 'development';
 
 // Export all functions with dynamic loading
-export async function checkRateLimit(...args: any[]) {
+export async function checkRateLimit(key: string, limitType: string, requestIP: string, forwardedFor?: string) {
   if (isDockerEnvironment) {
     const { checkRateLimit } = await import('./docker-redis');
-    return checkRateLimit(...args);
+    return checkRateLimit(key, limitType, requestIP, forwardedFor);
   } else {
     const { checkRateLimit } = await import('./upstash-redis');
-    return checkRateLimit(...args);
+    return checkRateLimit(key, limitType, requestIP, forwardedFor);
   }
 }
 
-export async function clearRateLimit(...args: any[]) {
+export async function clearRateLimit(key: string) {
   if (isDockerEnvironment) {
     const { clearRateLimit } = await import('./docker-redis');
-    return clearRateLimit(...args);
+    return clearRateLimit(key);
   } else {
     const { clearRateLimit } = await import('./upstash-redis');
-    return clearRateLimit(...args);
+    return clearRateLimit(key);
   }
 }
 
-export async function checkIdempotency(...args: any[]) {
+export async function checkIdempotency(key: string) {
   if (isDockerEnvironment) {
     const { checkIdempotency } = await import('./docker-redis');
-    return checkIdempotency(...args);
+    return checkIdempotency(key);
   } else {
     const { checkIdempotency } = await import('./upstash-redis');
-    return checkIdempotency(...args);
+    return checkIdempotency(key);
   }
 }
 
-export async function storeIdempotencyResult(...args: any[]) {
+export async function storeIdempotencyResult(key: string, result: any, ttl?: number) {
   if (isDockerEnvironment) {
     const { storeIdempotencyResult } = await import('./docker-redis');
-    return storeIdempotencyResult(...args);
+    return storeIdempotencyResult(key, result, ttl);
   } else {
     const { storeIdempotencyResult } = await import('./upstash-redis');
-    return storeIdempotencyResult(...args);
+    return storeIdempotencyResult(key, result, ttl);
   }
 }
 

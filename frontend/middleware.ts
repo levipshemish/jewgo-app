@@ -11,26 +11,7 @@ export const config = {
     '/api/admin/:path*',
     
     // User-specific routes
-    '/profile/:path*',
-    '/settings/:path*',
     '/messages/:path*',
-    '/notifications/:path*',
-    
-    // Protected features
-    '/favorites/:path*',
-    '/marketplace/sell/:path*',
-    '/marketplace/messages/:path*',
-    
-    // Protected API routes
-    '/api/auth/prepare-merge',
-    '/api/auth/merge-anonymous',
-    '/api/auth/upgrade-email',
-    '/api/restaurants/:path*',
-    '/api/reviews/:path*',
-    '/api/marketplace/:path*',
-    
-    // Exclude public routes and static assets
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ]
 };
 
@@ -89,8 +70,8 @@ export async function middleware(request: NextRequest) {
     
     if (error) {
       console.error('Middleware auth error:', error);
-      // Continue to allow the request to proceed (fail open for security)
-      return response;
+      // Redirect to signin for matched private routes when auth fails
+      return redirectToSignin(request, pathname, response);
     }
 
     // Check if user exists and is non-anonymous for private routes

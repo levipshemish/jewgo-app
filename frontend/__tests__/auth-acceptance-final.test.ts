@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
-import { checkRateLimit, validateTrustedIP } from '@/lib/rate-limiting/upstash-redis';
+import { checkRateLimit } from '@/lib/rate-limiting';
+import { validateTrustedIP } from '@/lib/utils/auth-utils';
 import { getCORSHeaders, getCookieOptions } from '@/lib/config/environment';
 
 // Mock Supabase client
