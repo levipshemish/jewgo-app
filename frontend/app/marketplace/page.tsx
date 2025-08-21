@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
-import { UnifiedCard } from '@/components/ui/UnifiedCard';
+import UnifiedCard from '@/components/ui/UnifiedCard';
 
 import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
