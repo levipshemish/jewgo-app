@@ -17,13 +17,13 @@ export async function checkRateLimit(key: string, limitType: "anonymous_auth" | 
   }
 }
 
-export async function clearRateLimit(key: string) {
+export async function clearRateLimit(key: string, limitType: "anonymous_auth" | "merge_operations" | "email_upgrade", requestIP: string) {
   if (isDockerEnvironment) {
     const { clearRateLimit } = await import('./docker-redis');
-    return clearRateLimit(key);
+    return clearRateLimit(key, limitType, requestIP);
   } else {
     const { clearRateLimit } = await import('./upstash-redis');
-    return clearRateLimit(key);
+    return clearRateLimit(key, limitType, requestIP);
   }
 }
 

@@ -181,14 +181,9 @@ export async function checkIdempotency(
     return { exists: false };
   }
   
-  // For production, try to use Upstash Redis
-  try {
-    const { checkIdempotency: upstashCheckIdempotency } = await import('./upstash-redis');
-    return await upstashCheckIdempotency(idempotencyKey, ttlSeconds);
-  } catch (error) {
-    console.warn('Upstash Redis not available for idempotency check:', error);
-    return { exists: false };
-  }
+  // In Docker environment, always use in-memory rate limiting
+  console.warn('Upstash Redis not available in Docker environment for idempotency check');
+  return { exists: false };
 }
 
 /**
