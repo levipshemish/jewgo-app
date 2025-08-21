@@ -22,6 +22,12 @@ describe('validateRedirectUrl', () => {
     expect(validateRedirectUrl('/settings')).toBe('/settings');
     expect(validateRedirectUrl('/profile/edit')).toBe('/profile/edit');
     
+    // New valid paths added for redirect sanitization
+    expect(validateRedirectUrl('/add-eatery')).toBe('/add-eatery');
+    expect(validateRedirectUrl('/restaurant/123')).toBe('/restaurant/123');
+    expect(validateRedirectUrl('/eatery/456')).toBe('/eatery/456');
+    expect(validateRedirectUrl('/shuls/789')).toBe('/shuls/789');
+    
     // Invalid paths
     expect(validateRedirectUrl('/invalid')).toBe('/');
     expect(validateRedirectUrl('/api/users')).toBe('/');

@@ -1,3 +1,5 @@
+import ipaddr from 'ipaddr.js';
+
 // User type definition - moved here to avoid circular dependencies
 interface User {
   id: string;
@@ -186,38 +188,16 @@ function isIPInRange(ip: string, cidr: string): boolean {
 }
 
 /**
- * Check if IPv6 is in CIDR range
+ * Check if IPv6 is in CIDR range using ipaddr.js library
  */
 function isIPv6InRange(ip: string, cidr: string): boolean {
   try {
-    const [range, bits = '128'] = cidr.split('/');
-    const ipParts = ipToIPv6Parts(ip);
-    const rangeParts = ipToIPv6Parts(range);
-    const maskBits = parseInt(bits);
-    
-    // Compare each 16-bit block
-    for (let i = 0; i < 8; i++) {
-      const blockMask = i < Math.floor(maskBits / 16) ? 0xFFFF : 
-                       i === Math.floor(maskBits / 16) ? (0xFFFF << (16 - (maskBits % 16))) : 0;
-      
-      if ((ipParts[i] & blockMask) !== (rangeParts[i] & blockMask)) {
-        return false;
-      }
-    }
-    return true;
+    const ipAddr = ipaddr.parse(ip);
+    const cidrRange = ipaddr.parseCIDR(cidr);
+    return ipAddr.match(cidrRange);
   } catch {
     return false;
   }
-}
-
-/**
- * Convert IPv6 to array of 16-bit parts
- */
-function ipToIPv6Parts(ip: string): number[] {
-  // Handle compressed IPv6 notation
-  const expanded = ip.replace(/::/g, ':'.repeat(9 - ip.split(':').length));
-  const parts = expanded.split(':').map(part => parseInt(part, 16));
-  return parts;
 }
 
 /**

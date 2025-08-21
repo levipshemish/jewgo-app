@@ -164,7 +164,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       } as any;
 
       // Mock rate limiting to fail
-      jest.spyOn(require('@/lib/rate-limiting/upstash-redis'), 'checkRateLimit').mockResolvedValue({
+      jest.spyOn(require('@/lib/rate-limiting'), 'checkRateLimit').mockResolvedValue({
         allowed: false,
         remaining_attempts: 0,
         reset_in_seconds: 3600,

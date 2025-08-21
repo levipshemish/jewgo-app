@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { 
-  checkRateLimit
+  checkRateLimit,
+  checkIdempotency,
+  storeIdempotencyResult
 } from '@/lib/rate-limiting';
 import { 
   validateTrustedIP,
@@ -67,6 +69,20 @@ export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
   
+  // Validate origin against allowlist
+  const origin = request.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return NextResponse.json(
+      { error: 'FORBIDDEN' },
+      { 
+        status: 403,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+  
   // Kill switch check for anonymous auth feature flag
   if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
     return NextResponse.json(
@@ -74,7 +90,7 @@ export async function POST(request: NextRequest) {
       { 
         status: 503,
         headers: {
-          ...getCORSHeaders(request.headers.get('origin') || undefined),
+          ...getCORSHeaders(origin || undefined),
           'Cache-Control': 'no-store'
         }
       }
@@ -228,6 +244,25 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Server-side idempotency check to prevent concurrent duplicate creations
+    const idempotencyKey = `anon_signin:${validatedIP}`;
+    const idempotencyCheck = await checkIdempotency(idempotencyKey, 5); // 5 second TTL
+    
+    if (idempotencyCheck.exists) {
+      console.log(`Idempotency check found existing anonymous signin for correlation ID: ${correlationId}`, {
+        correlationId,
+        validatedIP
+      });
+      
+      return NextResponse.json(
+        { ok: true, correlation_id: correlationId },
+        { 
+          status: 200,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
     // Create anonymous user using signInAnonymously
     const { error: signInError } = await supabase.auth.signInAnonymously();
     
@@ -245,6 +280,9 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    
+    // Store idempotency result for successful signin
+    await storeIdempotencyResult(idempotencyKey, { success: true }, 5);
     
     // Success response
     return NextResponse.json(

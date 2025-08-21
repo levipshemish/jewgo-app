@@ -1,10 +1,9 @@
 /**
  * Docker-compatible rate limiting for development
- * Falls back to in-memory storage when Upstash Redis is not available
+ * Uses in-memory storage for development and testing
  */
 
 import { validateTrustedIP } from './utils';
-import { generateIdempotencyKey } from './upstash-redis';
 
 // Rate limit configurations
 const RATE_LIMITS = {
@@ -135,8 +134,7 @@ export async function checkRateLimit(
     return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
   }
   
-  // In Docker environment, always use in-memory rate limiting
-  console.warn('Upstash Redis not available in Docker environment, using in-memory rate limiting');
+  // Use in-memory rate limiting for Docker environment
   return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
 }
 
@@ -159,8 +157,7 @@ export async function clearRateLimit(
     return;
   }
   
-  // In Docker environment, always use in-memory rate limiting
-  console.warn('Upstash Redis not available in Docker environment for clearing rate limits');
+  // Use in-memory rate limiting for Docker environment
 }
 
 /**
@@ -181,8 +178,7 @@ export async function checkIdempotency(
     return { exists: false };
   }
   
-  // In Docker environment, always use in-memory rate limiting
-  console.warn('Upstash Redis not available in Docker environment for idempotency check');
+  // Use in-memory rate limiting for Docker environment
   return { exists: false };
 }
 
@@ -203,14 +199,12 @@ export async function storeIdempotencyResult(
     return;
   }
   
-  // For production, try to use Upstash Redis
-  try {
-    const { storeIdempotencyResult: upstashStoreIdempotencyResult } = await import('./upstash-redis');
-    return await upstashStoreIdempotencyResult(idempotencyKey, result, ttlSeconds);
-  } catch (error) {
-    console.warn('Upstash Redis not available for storing idempotency result:', error);
-  }
+  // Use in-memory rate limiting for Docker environment
 }
 
-// Export the generateIdempotencyKey function
-export { generateIdempotencyKey };
+/**
+ * Generate idempotency key for request deduplication
+ */
+export function generateIdempotencyKey(operation: string, identifier: string): string {
+  return `${operation}:${identifier}:${Date.now()}`;
+}

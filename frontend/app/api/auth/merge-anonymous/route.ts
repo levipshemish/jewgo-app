@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
   
+  // Validate origin against allowlist
+  const origin = request.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return NextResponse.json(
+      { error: 'FORBIDDEN' },
+      { 
+        status: 403,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+  
   // Kill switch check for anonymous auth feature flag
   if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
     return NextResponse.json(
@@ -71,7 +85,7 @@ export async function POST(request: NextRequest) {
       { 
         status: 503,
         headers: {
-          ...getCORSHeaders(request.headers.get('origin') || undefined),
+          ...getCORSHeaders(origin || undefined),
           'Cache-Control': 'no-store'
         }
       }

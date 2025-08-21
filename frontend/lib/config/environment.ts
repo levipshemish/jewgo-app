@@ -76,8 +76,6 @@ export function validateEnvironment(): void {
     { name: 'NEXT_PUBLIC_SUPABASE_URL', value: SUPABASE_URL },
     { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: SUPABASE_ANON_KEY },
     { name: 'SUPABASE_SERVICE_ROLE_KEY', value: SUPABASE_SERVICE_ROLE_KEY },
-    { name: 'UPSTASH_REDIS_REST_URL', value: process.env.UPSTASH_REDIS_REST_URL },
-    { name: 'UPSTASH_REDIS_REST_TOKEN', value: process.env.UPSTASH_REDIS_REST_TOKEN },
   ];
 
   const missingVars = requiredVars.filter(({ value }) => !value);
@@ -86,23 +84,7 @@ export function validateEnvironment(): void {
     const missingNames = missingVars.map(({ name }) => name).join(', ');
     const errorMessage = `Missing required environment variables: ${missingNames}`;
     
-    // Add helpful setup instructions for Redis
-    if (missingNames.includes('UPSTASH_REDIS_REST_URL') || missingNames.includes('UPSTASH_REDIS_REST_TOKEN')) {
-      const setupInstructions = `
-      
-UPSTASH REDIS SETUP REQUIRED:
-1. Create an account at https://upstash.com/
-2. Create a new Redis database
-3. Copy the REST URL and REST Token from your database dashboard
-4. Add them to your environment variables:
-   - UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
-   - UPSTASH_REDIS_REST_TOKEN=your-token-here
 
-For local development, you can use the free tier.
-For production, ensure you have sufficient capacity for rate limiting and caching.
-`;
-      throw new Error(errorMessage + setupInstructions);
-    }
     
     throw new Error(errorMessage);
   }
@@ -155,17 +137,22 @@ export function getCookieOptions(): {
 
 /**
  * Get CORS headers for API responses
+ * Returns either the matched origin or no Access-Control-Allow-Origin header for disallowed origins
  */
 export function getCORSHeaders(origin?: string): Record<string, string> {
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+  const headers: Record<string, string> = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
     'Access-Control-Allow-Credentials': CORS_CREDENTIALS_ENABLED ? 'true' : 'false',
     'Cache-Control': 'no-store',
   };
+  
+  // Only set Access-Control-Allow-Origin if origin is allowed
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+  
+  return headers;
 }
 
 /**
