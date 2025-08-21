@@ -59,23 +59,7 @@ export default function UnifiedRestaurantCard({
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const { handleImmediateTouch } = useMobileTouch();
-
-  // Enhanced mobile detection with state
-  useEffect(() => {
-    const checkMobile = () => {
-      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
-      const isMobileView = windowWidth <= 768;
-      setIsMobileDevice(isMobileView);
-    };
-    
-    checkMobile();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }
-  }, []);
 
   // Sync with external like state
   useEffect(() => {
@@ -204,7 +188,7 @@ export default function UnifiedRestaurantCard({
   const getContentStyle = () => {
     switch (variant) {
       case 'eatery':
-        return `bg-transparent flex-1 flex flex-col ${isMobileDevice ? 'px-2 pt-2 pb-2' : 'p-3'}`;
+        return 'bg-transparent flex-1 flex flex-col p-3';
       case 'compact':
         return 'p-2';
       default:
@@ -238,11 +222,7 @@ export default function UnifiedRestaurantCard({
         touchAction: 'manipulation',
         position: 'relative',
         zIndex: 1,
-        // Force opacity and scale for mobile
-        ...(isMobileDevice && {
-          opacity: 1,
-          transform: 'scale(1)'
-        })
+
       }}
     >
       {/* Image Container */}
@@ -280,9 +260,10 @@ export default function UnifiedRestaurantCard({
           {restaurant.kosher_category && (
             <motion.span 
               className={cn(
+                "absolute rounded-full shadow-md font-medium truncate",
                 variant === 'eatery' 
-                  ? `absolute top-3 left-3 text-xs px-2.5 py-1.5 rounded-full font-medium shadow-md max-w-[calc(100%-4rem)] truncate kosher-badge ${getKosherCategoryStyle()}`
-                  : `absolute top-2 left-2 px-1.5 py-0.5 rounded-full shadow-md ${commonTypography.badge} ${getKosherCategoryBadgeClasses(restaurant.kosher_category)}`
+                  ? `top-3 left-3 text-xs px-2.5 py-1.5 max-w-[calc(100%-4rem)] kosher-badge ${getKosherCategoryStyle()}`
+                  : `top-2 left-2 px-1.5 py-0.5 ${commonTypography.badge} ${getKosherCategoryBadgeClasses(restaurant.kosher_category)}`
               )}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -312,13 +293,13 @@ export default function UnifiedRestaurantCard({
           )}
           aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
           title={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-          {...(isMobileDevice || variant !== 'eatery' ? {} : {
+          {...(variant === 'eatery' ? {
             whileHover: { scale: 1.1 },
             whileTap: { scale: 0.9 },
             initial: { opacity: 0, scale: 0.8 },
             animate: { opacity: 1, scale: 1 },
             transition: { delay: 0.3, duration: 0.3 }
-          })}
+          } : {})}
           style={{
             // Ensure button is clickable on mobile
             WebkitTapHighlightColor: 'transparent',
@@ -326,44 +307,23 @@ export default function UnifiedRestaurantCard({
             minHeight: variant === 'eatery' ? '44px' : '24px',
             minWidth: variant === 'eatery' ? '44px' : '24px',
             zIndex: 10,
-            // Force opacity and scale for mobile
-            ...(isMobileDevice && {
-              opacity: 1,
-              transform: 'scale(1)'
-            })
+
           }}
         >
           {variant === 'eatery' ? (
-            isMobileDevice ? (
-              <div
-                style={{
-                  transform: isLiked ? 'scale(1.1)' : 'scale(1)',
-                  transition: 'transform 0.15s ease-out'
-                }}
-              >
-                <Heart
-                  className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
-                    isLiked 
-                      ? 'fill-red-500 text-red-500' 
-                      : 'fill-transparent text-white group-hover:fill-red-500 group-hover:text-red-500'
-                  }`}
-                />
-              </div>
-            ) : (
-              <motion.div
-                whileTap={{ scale: 0.8 }}
-                animate={{ scale: isLiked ? 1.1 : 1 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-              >
-                <Heart
-                  className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
-                    isLiked 
-                      ? 'fill-red-500 text-red-500' 
-                      : 'fill-transparent text-white group-hover:fill-red-500 group-hover:text-red-500'
-                  }`}
-                />
-              </motion.div>
-            )
+            <motion.div
+              whileTap={{ scale: 0.8 }}
+              animate={{ scale: isLiked ? 1.1 : 1 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
+              <Heart
+                className={`w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 drop-shadow-sm ${
+                  isLiked 
+                    ? 'fill-red-500 text-red-500' 
+                    : 'fill-transparent text-white group-hover:fill-red-500 group-hover:text-red-500'
+                }`}
+              />
+            </motion.div>
           ) : (
             <Heart 
               size={12} 
@@ -393,9 +353,9 @@ export default function UnifiedRestaurantCard({
           // Eatery-style content layout
           <>
             {/* Restaurant Name - Fixed height container with proper alignment */}
-            <div className={`flex items-start w-full min-w-0 flex-shrink-0 ${isMobileDevice ? 'h-6 mb-1' : 'h-8 mb-1'}`}>
+            <div className="flex items-start w-full min-w-0 flex-shrink-0 h-8 mb-1">
               <h3 
-                className={`font-bold text-gray-900 leading-tight w-full min-w-0 text-left ${isMobileDevice ? 'text-sm' : 'text-base'}`} 
+                className="font-bold text-gray-900 leading-tight w-full min-w-0 text-left text-base" 
                 title={titleCase(restaurant.name)}
                 style={{
                   overflow: 'hidden',
@@ -409,14 +369,14 @@ export default function UnifiedRestaurantCard({
             </div>
             
             {/* Price Range and Rating - Fixed height meta row with consistent alignment */}
-            <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-              <span className={`text-gray-500 font-normal truncate flex-1 min-w-0 text-left price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}>
+            <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-3">
+              <span className="text-gray-500 font-normal truncate flex-1 min-w-0 text-left price-text text-sm" title={formatPriceRange(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}>
                 {formatPriceRange(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}
               </span>
               
               <div className="flex items-center gap-1 flex-shrink-0 rating-container" style={{ minWidth: 'fit-content' }}>
-                <Star className={`fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon ${isMobileDevice ? 'w-3 h-3' : 'w-3.5 h-3.5'}`} />
-                <span className={`font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon w-3.5 h-3.5" />
+                <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text text-sm">
                   {getRating().toFixed(1)}
                 </span>
               </div>
@@ -425,7 +385,7 @@ export default function UnifiedRestaurantCard({
             {/* Additional Details - Only show if showDetails is true */}
             {showDetails && (
               <div 
-                className={`${isMobileDevice ? 'space-y-1 mt-3 pt-3' : 'space-y-2 mt-4 pt-4'} border-t border-gray-100 flex-1`}
+                className="space-y-2 mt-4 pt-4 border-t border-gray-100 flex-1"
               >
                 {/* Location */}
                 {restaurant.city && (
@@ -435,14 +395,14 @@ export default function UnifiedRestaurantCard({
                 )}
 
                 {/* Kosher Details */}
-                <div className={`flex flex-wrap gap-1 min-w-0 ${isMobileDevice ? 'mt-2' : 'mt-3'}`}>
+                <div className="flex flex-wrap gap-1 min-w-0 mt-3">
                   {restaurant.is_cholov_yisroel && (
-                    <span className={`inline-block bg-[#FCC0C5]/20 text-[#8a4a4a] rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge ${isMobileDevice ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'}`} title="Chalav Yisroel">
+                    <span className="inline-block bg-[#FCC0C5]/20 text-[#8a4a4a] rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge px-2 py-1 text-xs" title="Chalav Yisroel">
                       Chalav Yisroel
                     </span>
                   )}
                   {restaurant.is_pas_yisroel && (
-                    <span className={`inline-block bg-[#74E1A0]/20 text-[#1a4a2a] rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge ${isMobileDevice ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-1 text-xs'}`} title="Pas Yisroel">
+                    <span className="inline-block bg-[#74E1A0]/20 text-[#1a4a2a] rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge px-2 py-1 text-xs" title="Pas Yisroel">
                       Pas Yisroel
                     </span>
                   )}

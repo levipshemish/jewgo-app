@@ -9,7 +9,6 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
-// TypeScript Interfaces (keeping original)
 interface CardData {
   id: string;
   imageUrl?: string;
@@ -23,7 +22,7 @@ interface CardData {
   isLiked?: boolean;
 }
 
-interface EnhancedProductCardProps {
+interface UnifiedCardConsistentProps {
   data: CardData;
   onLikeToggle?: (id: string, isLiked: boolean) => void;
   onCardClick?: (data: CardData) => void;
@@ -32,19 +31,8 @@ interface EnhancedProductCardProps {
   priority?: boolean;
 }
 
-
-
-// Motion variants for animations
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0
-  }
-};
-
-// Main Enhanced Product Card Component
-const EnhancedProductCard = memo<EnhancedProductCardProps>(({
+// Simplified component with NO hover states or device-specific styling
+const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
   data,
   onLikeToggle,
   onCardClick,
@@ -55,19 +43,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   
-  // State management
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
 
-  // Sync with favorites manager
   useEffect(() => {
     setIsLiked(isFavorite(data.id));
   }, [isFavorite, data.id]);
 
-  // Memoized computations
   const cardData = useMemo(() => ({
     ...data,
     imageTag: data.imageTag || '',
@@ -78,18 +61,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     showHeart: data.showHeart !== false
   }), [data]);
 
-  // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
     if (!cardData.imageUrl) {
       return null;
     }
     
     let safeUrl = getSafeImageUrl(cardData.imageUrl);
-    
-    // Normalize known broken Cloudinary URLs
     safeUrl = safeUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
     
-    // If we get back the default image or there's an error, use placeholder
     if (safeUrl === '/images/default-restaurant.webp' || imageError) {
       return '/images/default-restaurant.webp';
     }
@@ -97,20 +76,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     return safeUrl;
   }, [cardData.imageUrl, imageError]);
 
-  // Handlers
   const handleLikeToggle = useCallback(() => {
-    if (isAnimating) {
-      return;
-    }
-    
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 200);
-
     try {
       const newIsLiked = !isLiked;
       
       if (newIsLiked) {
-        // Create a minimal restaurant object with required fields
         const minimalRestaurant = {
           id: data.id,
           name: data.title,
@@ -133,17 +103,10 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       
       setIsLiked(newIsLiked);
       onLikeToggle?.(data.id, newIsLiked);
-      
-      // Announce to screen readers using persistent live region
-      const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
-      setAnnouncement(message);
-      // Clear the announcement after screen readers have processed it
-      setTimeout(() => setAnnouncement(''), 1000);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.warn('Card error:', error);
     }
-  }, [isLiked, isAnimating, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
+  }, [isLiked, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {
@@ -157,79 +120,78 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     
     if (cardData.imageTagLink && onTagClick) {
       onTagClick(cardData.imageTagLink, event);
-    } else if (cardData.imageTagLink && typeof window !== 'undefined') {
-      // Default behavior - open link in new tab
-      window.open(cardData.imageTagLink, '_blank', 'noopener,noreferrer');
     }
   }, [cardData.imageTagLink, onTagClick]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleCardClick();
-    }
-  }, [handleCardClick]);
+  // Fixed styles for consistency
+  const tagStyle = {
+    position: 'absolute' as const,
+    top: '8px',
+    left: '8px',
+    width: '60px',
+    height: '24px',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    color: '#111827',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    cursor: cardData.imageTagLink ? 'pointer' : 'default',
+    overflow: 'hidden',
+    padding: '0 8px'
+  };
 
-  const handleHeartKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleLikeToggle();
-    }
-  }, [handleLikeToggle]);
-
-  const handleTagKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleTagClick(event as any);
-    }
-  }, [handleTagClick]);
+  const heartStyle = {
+    position: 'absolute' as const,
+    top: '8px',
+    right: '8px',
+    width: '20px',
+    height: '20px',
+    backgroundColor: isLiked ? '#ffffff' : 'rgba(255, 255, 255, 0.9)',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    cursor: 'pointer',
+    border: 'none',
+    padding: 0,
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'manipulation'
+  };
 
   return (
-    <motion.div
-        className={cn(
-          "w-[180px] rounded-2xl overflow-hidden p-3",
-          "transition-all duration-300",
-          "mx-auto",
-          "hover:-translate-y-1 hover:shadow-xl",
-          "bg-transparent",
-          onCardClick ? "cursor-pointer" : "",
-          className
-        )}
+    <div
+      className={cn(
+        "w-[180px] rounded-2xl overflow-hidden p-3 mx-auto",
+        "bg-transparent",
+        onCardClick ? "cursor-pointer" : "",
+        className
+      )}
       style={{
-        // Transparent background with subtle shadow
         backgroundColor: 'transparent !important',
         background: 'transparent !important',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         WebkitTapHighlightColor: 'transparent',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none',
         touchAction: 'manipulation'
       }}
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
+      onClick={handleCardClick}
       role={onCardClick ? "button" : "article"}
       aria-label={`Product card for ${cardData.title}`}
       tabIndex={onCardClick ? 0 : -1}
-      onClick={handleCardClick}
-      onKeyDown={handleKeyDown}
     >
-      {/* Persistent live region for announcements */}
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </span>
       {/* Image Container */}
       <div className="relative w-full">
         <div className="w-full h-[126px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
-          {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             </div>
           )}
 
-          {/* Next.js Image Component */}
           {heroImageUrl && (
             <Image
               src={heroImageUrl}
@@ -249,15 +211,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               priority={priority}
             />
           )}
-
-
         </div>
         
-        {/* Image Tag - Unified styling for consistency */}
+        {/* Image Tag - Consistent styling */}
         {cardData.imageTag && (
           <>
             <style jsx>{`
-              .unified-card-tag {
+              .unified-card-tag-consistent {
                 position: absolute !important;
                 top: 8px !important;
                 left: 8px !important;
@@ -274,7 +234,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 font-weight: 500 !important;
                 background-color: rgba(255, 255, 255, 0.95) !important;
                 color: #111827 !important;
-                border-radius: 9999px !important;
+                border-radius: 12px !important;
                 box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
                 display: flex !important;
                 align-items: center !important;
@@ -287,28 +247,26 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 transition: none !important;
                 transform: none !important;
               }
-              .unified-card-tag {
+              .unified-card-tag-consistent {
                 cursor: default !important;
               }
-              .unified-card-tag:active {
+              .unified-card-tag-consistent:active {
                 transform: none !important;
                 opacity: 1 !important;
               }
             `}</style>
             <div
-              className="unified-card-tag"
+              className="unified-card-tag-consistent"
               aria-label={`Tag: ${cardData.imageTag}`}
             >
-              <span 
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  fontWeight: 'inherit'
-                }}
-              >
+              <span style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
+                fontSize: 'inherit',
+                lineHeight: '1',
+                fontWeight: 'inherit'
+              }}>
                 {cardData.imageTag}
               </span>
             </div>
@@ -319,7 +277,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         {cardData.showHeart && (
           <>
             <style jsx>{`
-              .unified-card-heart {
+              .unified-card-heart-consistent {
                 position: absolute !important;
                 top: 6px !important;
                 right: 8px !important;
@@ -340,29 +298,24 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 -webkit-tap-highlight-color: transparent !important;
                 touch-action: manipulation !important;
                 z-index: 10 !important;
-                transition: transform 200ms !important;
-                transform: ${isAnimating ? 'scale(0.9)' : 'scale(1)'} !important;
+                transition: none !important;
+                transform: none !important;
               }
-              .unified-card-heart:hover svg {
-                fill: #ef4444 !important;
-                stroke: #ef4444 !important;
-              }
-              .unified-card-heart:active {
-                transform: scale(0.9) !important;
+              .unified-card-heart-consistent:active {
+                transform: scale(0.95) !important;
                 opacity: 1 !important;
               }
-              .unified-card-heart svg {
+              .unified-card-heart-consistent svg {
                 width: 20px !important;
                 height: 20px !important;
               }
             `}</style>
             <button
-              className="unified-card-heart"
+              className="unified-card-heart-consistent"
               onClick={(e) => {
                 e.stopPropagation();
                 handleLikeToggle();
               }}
-              onKeyDown={handleHeartKeyDown}
               aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
               aria-pressed={isLiked}
             >
@@ -372,7 +325,6 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                   fill: isLiked ? '#ef4444' : '#e5e7eb',
                   stroke: '#ffffff',
                   strokeWidth: 2,
-                  transition: 'all 200ms',
                   filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
                 }}
               />
@@ -382,12 +334,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       </div>
       
       {/* Content */}
-      <motion.div 
-        className="pt-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
-      >
+      <div className="pt-3">
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
             className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
@@ -396,15 +343,12 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             {cardData.title}
           </h3>
           {cardData.badge && (
-            <motion.div
+            <div
               className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.2 }}
               aria-label={`Rating: ${cardData.badge}`}
             >
               {cardData.badge}
-            </motion.div>
+            </div>
           )}
         </div>
         
@@ -438,11 +382,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
             </p>
           )}
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 });
 
-EnhancedProductCard.displayName = 'EnhancedProductCard';
+UnifiedCardConsistent.displayName = 'UnifiedCardConsistent';
 
-export default EnhancedProductCard;
+export default UnifiedCardConsistent;
