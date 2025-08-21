@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: ERROR_CODES.SESSION_ERROR },
         { 
-          status: 500,
+          status: 401,
           headers: getCORSHeaders(origin || undefined)
         }
       );
