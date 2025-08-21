@@ -4,7 +4,6 @@ import { ArrowLeft, SlidersHorizontal, Heart, X, Star, MapPin, Search } from 'lu
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
-import { LocationPermissionPrompt } from '@/components/location';
 import InteractiveRestaurantMap from '@/components/map/InteractiveRestaurantMap';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { fetchRestaurants, getMockRestaurants } from '@/lib/api/restaurants';
@@ -13,6 +12,7 @@ import { Restaurant } from '@/lib/types/restaurant';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { safeFilter } from '@/lib/utils/validation';
+import { useLocation } from '@/lib/contexts/LocationContext';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -60,9 +60,16 @@ export default function UnifiedLiveMapClient() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  // Location state from context
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    setPermissionStatus
+  } = useLocation();
+  
   const [activeFilters, setActiveFilters] = useState<FilterState>({});
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   // Removed activeTab state since we're only showing map view
@@ -340,33 +347,7 @@ export default function UnifiedLiveMapClient() {
     throttledPost(message);
   }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost]);
 
-  // Location handlers
-  const handleLocationGranted = (location: { latitude: number; longitude: number }) => {
-    setUserLocation(location);
-    setShowLocationPrompt(false);
-    setLocationLoading(false);
 
-    localStorage.setItem('userLocation', JSON.stringify(location));
-    localStorage.setItem('locationPermissionHandled', 'granted');
-  };
-
-  const handleLocationDenied = () => {
-    setShowLocationPrompt(false);
-    setLocationError('Location access denied');
-    setLocationLoading(false);
-    localStorage.setItem('locationPermissionHandled', 'denied');
-  };
-
-  const handleLocationPromptDismiss = () => {
-    setShowLocationPrompt(false);
-    setLocationLoading(false);
-    localStorage.setItem('locationPermissionHandled', 'dismissed');
-  };
-
-  const handleLocationRequest = () => {
-    setLocationLoading(true);
-    setLocationError(null);
-  };
 
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
@@ -538,7 +519,6 @@ export default function UnifiedLiveMapClient() {
             mapCenter={mapCenter}
             className="h-full rounded-none shadow-none bg-transparent"
             showRatingBubbles={true}
-            onUserLocationUpdate={setUserLocation}
             onMapStateUpdate={setMapState}
           />
         </div>
@@ -730,14 +710,41 @@ export default function UnifiedLiveMapClient() {
         </div>
       )}
 
-      {/* Location Permission Prompt */}
-      {showLocationPrompt && (
-        <LocationPermissionPrompt
-          onLocationGranted={handleLocationGranted}
-          onLocationDenied={handleLocationDenied}
-          onDismiss={handleLocationPromptDismiss}
-          onLocationRequest={handleLocationRequest}
-        />
+      {/* Location Permission Prompt - now handled by context */}
+      {showLocationPrompt && permissionStatus === 'prompt' && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 border border-gray-200">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Enable Location Services</h3>
+              <p className="text-gray-600 mb-6">
+                Allow location access to see restaurants near you and get distance information.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    requestLocation();
+                    setShowLocationPrompt(false);
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Enable
+                </button>
+                <button
+                  onClick={() => setShowLocationPrompt(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                >
+                  Not Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

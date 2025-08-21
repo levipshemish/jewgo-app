@@ -12,6 +12,7 @@ import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceC
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+import { useLocation } from '@/lib/contexts/LocationContext';
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -112,11 +113,15 @@ export default function MarketplacePage() {
   const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
   
-  // Location state
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  // Location state from context
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    setPermissionStatus
+  } = useLocation();
   
   // Filter state
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
@@ -135,7 +140,7 @@ export default function MarketplacePage() {
 
   // Sort listings by distance when location is available
   const sortedListings = useMemo(() => {
-    if (!locationPermissionGranted || !userLocation) {
+    if (permissionStatus !== 'granted' || !userLocation) {
       return listings;
     }
 
@@ -166,61 +171,12 @@ export default function MarketplacePage() {
 
       return distanceA - distanceB;
     });
-  }, [listings, locationPermissionGranted, userLocation]);
+  }, [listings, permissionStatus, userLocation]);
 
   // Load initial listings
   useEffect(() => {
     loadListings();
   }, []);
-
-  // Get user location for distance calculation
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser');
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocationLoading(false);
-        setLocationPermissionGranted(true);
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        setLocationLoading(false);
-        setLocationPermissionGranted(false);
-        let errorMessage = 'Unable to get your location';
-        
-        if (error && typeof error === 'object' && 'code' in error) {
-          const errorCode = (error as GeolocationPositionError).code;
-          switch (errorCode) {
-            case (error as GeolocationPositionError).PERMISSION_DENIED:
-              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-              break;
-            case (error as GeolocationPositionError).POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again.';
-              break;
-            case (error as GeolocationPositionError).TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
-              break;
-          }
-        }
-        
-        setLocationError(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  };
 
   // NOTE: Location is only requested when user explicitly clicks the "Enable" button
   // This prevents browser security violations for geolocation requests without user gestures
@@ -410,7 +366,7 @@ export default function MarketplacePage() {
       />
 
       {/* Location Permission Banner */}
-      {!locationPermissionGranted && !locationLoading && (
+      {permissionStatus !== 'granted' && !locationLoading && (
         <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -423,7 +379,7 @@ export default function MarketplacePage() {
               </span>
             </div>
             <button
-              onClick={getUserLocation}
+              onClick={requestLocation}
               className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
             >
               Enable
@@ -445,7 +401,7 @@ export default function MarketplacePage() {
       )}
       
       {/* Location Error Banner */}
-      {locationError && !locationPermissionGranted && !locationLoading && (
+      {locationError && permissionStatus !== 'granted' && !locationLoading && (
         <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-100">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -459,7 +415,7 @@ export default function MarketplacePage() {
       )}
 
       {/* Location-Based Sorting Indicator */}
-      {locationPermissionGranted && userLocation && (
+      {permissionStatus === 'granted' && userLocation && (
         <div className="px-4 sm:px-6 py-2 bg-green-50 border-b border-green-100">
           <div className="max-w-7xl mx-auto flex items-center justify-center">
             <div className="flex items-center space-x-2">

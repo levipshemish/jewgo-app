@@ -11,6 +11,7 @@ import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
+import { useLocation } from '@/lib/contexts/LocationContext';
 
 import { Restaurant } from '@/lib/types/restaurant';
 
@@ -73,11 +74,15 @@ export default function EateryExplorePage() {
     getFilterCount
   } = useAdvancedFilters();
   
-  // Location state for distance calculation
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+  // Location state from context
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    setPermissionStatus
+  } = useLocation();
 
   // Calculate items per page based on responsive grid columns
   const getItemsPerPage = () => {
@@ -119,55 +124,6 @@ export default function EateryExplorePage() {
     // Cleanup
     return () => window.removeEventListener('resize', updateItemsPerPage);
   }, []);
-
-  // Get user location for distance calculation
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser');
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocationLoading(false);
-        setLocationPermissionGranted(true);
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      (error) => {
-        setLocationLoading(false);
-        setLocationPermissionGranted(false);
-        let errorMessage = 'Unable to get your location';
-        
-        if (error && typeof error === 'object' && 'code' in error) {
-          const errorCode = (error as GeolocationPositionError).code;
-          switch (errorCode) {
-            case (error as GeolocationPositionError).PERMISSION_DENIED:
-              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-              break;
-            case (error as GeolocationPositionError).POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Please try again.';
-              break;
-            case (error as GeolocationPositionError).TIMEOUT:
-              errorMessage = 'Location request timed out. Please try again.';
-              break;
-          }
-        }
-        
-        setLocationError(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  };
 
   // NOTE: Location is only requested when user explicitly clicks the "Enable" button
   // This prevents browser security violations for geolocation requests without user gestures
@@ -223,7 +179,7 @@ export default function EateryExplorePage() {
 
   // Sort restaurants by distance when location is available
   const sortedRestaurants = useMemo(() => {
-    if (!locationPermissionGranted || !userLocation) {
+    if (permissionStatus !== 'granted' || !userLocation) {
       return restaurants;
     }
 
@@ -254,7 +210,7 @@ export default function EateryExplorePage() {
 
       return distanceA - distanceB;
     });
-  }, [restaurants, locationPermissionGranted, userLocation]);
+  }, [restaurants, permissionStatus, userLocation]);
 
   // Use sorted restaurants for display
   const filteredRestaurants = sortedRestaurants;
@@ -368,7 +324,7 @@ export default function EateryExplorePage() {
     // Calculate distance only if location permission is granted and both coordinates are available
     let distanceText: string | undefined;
     
-    if (locationPermissionGranted && userLocation && restaurant.latitude && restaurant.longitude) {
+    if (permissionStatus === 'granted' && userLocation && restaurant.latitude && restaurant.longitude) {
       const distance = calculateDistance(
         userLocation.latitude,
         userLocation.longitude,
@@ -514,7 +470,7 @@ export default function EateryExplorePage() {
       />
       
       {/* Location Permission Banner */}
-      {!locationPermissionGranted && !locationLoading && (
+      {permissionStatus !== 'granted' && !locationLoading && (
         <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -527,7 +483,7 @@ export default function EateryExplorePage() {
               </span>
             </div>
             <button
-              onClick={getUserLocation}
+              onClick={requestLocation}
               className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
               style={{
                 minHeight: '32px',
@@ -555,7 +511,7 @@ export default function EateryExplorePage() {
       )}
       
       {/* Location Error Banner */}
-      {locationError && !locationPermissionGranted && !locationLoading && (
+      {locationError && permissionStatus !== 'granted' && !locationLoading && (
         <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-100">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -567,7 +523,7 @@ export default function EateryExplorePage() {
               </span>
             </div>
             <button
-              onClick={getUserLocation}
+              onClick={requestLocation}
               className="text-sm text-red-600 hover:text-red-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-red-100"
               style={{
                 minHeight: '32px',
@@ -583,7 +539,7 @@ export default function EateryExplorePage() {
       )}
       
       {/* Location-Based Sorting Indicator */}
-      {locationPermissionGranted && userLocation && (
+      {permissionStatus === 'granted' && userLocation && (
         <div className="px-4 sm:px-6 py-2 bg-green-50 border-b border-green-100">
           <div className="max-w-7xl mx-auto flex items-center justify-center">
             <div className="flex items-center space-x-2">
@@ -747,7 +703,7 @@ export default function EateryExplorePage() {
                   <>
                     Showing {displayedRestaurants.length} of {filteredRestaurants.length} items
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
-                    {locationPermissionGranted && userLocation && (
+                    {permissionStatus === 'granted' && userLocation && (
                       <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
                     )}
                     {isMobile && <span className="block text-xs text-blue-600 mt-1">Scroll to load more</span>}
@@ -756,7 +712,7 @@ export default function EateryExplorePage() {
                   <>
                     Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages})
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
-                    {locationPermissionGranted && userLocation && (
+                    {permissionStatus === 'granted' && userLocation && (
                       <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
                     )}
                   </>

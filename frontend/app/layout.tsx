@@ -9,6 +9,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 // import { FontOptimizer } from '@/components/ui/FontOptimizer'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
+import { LocationProvider } from '@/lib/contexts/LocationContext'
 import DevNavigation from '@/components/dev/DevNavigation'
 
 // NextAuth removed - using Supabase only
@@ -156,22 +157,24 @@ export default function RootLayout({
         <CustomHead />
         <ErrorBoundary>
             <NotificationsProvider>
-              <div 
-                  className="min-h-full bg-[#f4f4f4] flex flex-col"
-                  style={{
-                    WebkitTapHighlightColor: 'transparent',
-                    WebkitTouchCallout: 'none',
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none',
-                    touchAction: 'manipulation'
-                  }}
-                >
-                  {children}
-                </div>
-              <Analytics />
-              <ServiceWorkerRegistration />
-              <DevNavigation />
-      
+              <LocationProvider>
+                <div 
+                    className="min-h-full bg-[#f4f4f4] flex flex-col"
+                    style={{
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
+                      touchAction: 'manipulation'
+                    }}
+                  >
+                    {children}
+                  </div>
+                <Analytics />
+                <ServiceWorkerRegistration />
+                <DevNavigation />
+        
+              </LocationProvider>
             </NotificationsProvider>
         </ErrorBoundary>
       </body>
