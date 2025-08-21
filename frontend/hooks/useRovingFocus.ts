@@ -4,7 +4,8 @@ export interface UseRovingFocusOptions {
   itemCount: number;
   selectedId?: string;
   onSelect?: (id: string) => void;
-  onOverflowToggle?: (hasOverflow: boolean) => void;
+  direction: 'ltr' | 'rtl';
+  itemRefs: React.MutableRefObject<(HTMLElement | null)[]>;
 }
 
 export interface UseRovingFocusReturn {
@@ -15,92 +16,153 @@ export interface UseRovingFocusReturn {
   handleItemBlur: () => void;
 }
 
+// Helper to map arrow keys to direction based on RTL
+const mapArrowToDelta = (key: string, dir: 'ltr' | 'rtl') => {
+  if (dir === 'rtl') {
+    return key === 'ArrowLeft' ? 1 : key === 'ArrowRight' ? -1 : 0;
+  }
+  return key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : 0;
+};
+
+// Helper to find next enabled item
+const findNextEnabledItem = (currentIndex: number, delta: number, itemCount: number, itemRefs: React.MutableRefObject<(HTMLElement | null)[]>) => {
+  let nextIndex = currentIndex + delta;
+  
+  // Wrap around
+  if (nextIndex < 0) nextIndex = itemCount - 1;
+  if (nextIndex >= itemCount) nextIndex = 0;
+  
+  // Find next enabled item
+  let attempts = 0;
+  while (attempts < itemCount) {
+    const item = itemRefs.current[nextIndex];
+    if (item && !item.getAttribute('data-disabled')) {
+      return nextIndex;
+    }
+    nextIndex += delta;
+    if (nextIndex < 0) nextIndex = itemCount - 1;
+    if (nextIndex >= itemCount) nextIndex = 0;
+    attempts++;
+  }
+  
+  return currentIndex; // No enabled items found
+};
+
+// Helper to find first enabled item
+const findFirstEnabledItem = (itemCount: number, itemRefs: React.MutableRefObject<(HTMLElement | null)[]>) => {
+  for (let i = 0; i < itemCount; i++) {
+    const item = itemRefs.current[i];
+    if (item && !item.getAttribute('data-disabled')) {
+      return i;
+    }
+  }
+  return -1;
+};
+
+// Helper to find last enabled item
+const findLastEnabledItem = (itemCount: number, itemRefs: React.MutableRefObject<(HTMLElement | null)[]>) => {
+  for (let i = itemCount - 1; i >= 0; i--) {
+    const item = itemRefs.current[i];
+    if (item && !item.getAttribute('data-disabled')) {
+      return i;
+    }
+  }
+  return -1;
+};
+
 export function useRovingFocus({
   itemCount,
   selectedId,
   onSelect,
-  onOverflowToggle,
+  direction,
+  itemRefs,
 }: UseRovingFocusOptions): UseRovingFocusReturn {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [isKeyboardNavigating, setIsKeyboardNavigating] = useState(false);
   const lastFocusedIndexRef = useRef(-1);
-  const rtlCacheRef = useRef<boolean | null>(null);
 
-  // Cache RTL detection to avoid repeated calculations
-  const isRTL = useCallback(() => {
-    if (rtlCacheRef.current === null) {
-      rtlCacheRef.current = document.documentElement.dir === 'rtl';
-    }
-    return rtlCacheRef.current;
-  }, []);
-
-  // Event handling hygiene - prevent default and stop propagation when consuming navigation keys
+  // Event handling with proper gating and containment
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    const { key, ctrlKey, metaKey, shiftKey } = event;
+    const { key, ctrlKey, metaKey, shiftKey, altKey } = event;
     
-    // Ignore if modifier keys are pressed (except Shift for selection)
-    if (ctrlKey || metaKey) return;
+    // Gate handling: check containment and modifiers
+    if (!event.currentTarget.contains(document.activeElement)) return;
+    if (altKey || ctrlKey || metaKey || shiftKey) return;
 
     let handled = false;
+    let nextIndex = focusedIndex;
+
+    // If no item is focused, focus the first enabled item
+    if (focusedIndex === -1) {
+      const firstEnabledIndex = findFirstEnabledItem(itemCount, itemRefs);
+      if (firstEnabledIndex !== -1) {
+        setFocusedIndex(firstEnabledIndex);
+        nextIndex = firstEnabledIndex;
+        handled = true;
+      }
+    }
 
     switch (key) {
       case 'ArrowLeft':
-        if (isRTL()) {
-          // RTL: ArrowLeft moves to next item
-          if (focusedIndex < itemCount - 1) {
-            setFocusedIndex(focusedIndex + 1);
-            handled = true;
-          }
-        } else {
-          // LTR: ArrowLeft moves to previous item
-          if (focusedIndex > 0) {
-            setFocusedIndex(focusedIndex - 1);
-            handled = true;
-          }
-        }
-        break;
-
       case 'ArrowRight':
-        if (isRTL()) {
-          // RTL: ArrowRight moves to previous item
-          if (focusedIndex > 0) {
-            setFocusedIndex(focusedIndex - 1);
-            handled = true;
-          }
-        } else {
-          // LTR: ArrowRight moves to next item
-          if (focusedIndex < itemCount - 1) {
-            setFocusedIndex(focusedIndex + 1);
+        if (focusedIndex !== -1) {
+          const delta = mapArrowToDelta(key, direction);
+          nextIndex = findNextEnabledItem(focusedIndex, delta, itemCount, itemRefs);
+          if (nextIndex !== focusedIndex) {
+            setFocusedIndex(nextIndex);
             handled = true;
           }
         }
         break;
 
       case 'Home':
-        if (focusedIndex !== 0) {
-          setFocusedIndex(0);
+        const firstIndex = findFirstEnabledItem(itemCount, itemRefs);
+        if (firstIndex !== -1 && firstIndex !== focusedIndex) {
+          setFocusedIndex(firstIndex);
+          nextIndex = firstIndex;
           handled = true;
         }
         break;
 
       case 'End':
-        if (focusedIndex !== itemCount - 1) {
-          setFocusedIndex(itemCount - 1);
+        const lastIndex = findLastEnabledItem(itemCount, itemRefs);
+        if (lastIndex !== -1 && lastIndex !== focusedIndex) {
+          setFocusedIndex(lastIndex);
+          nextIndex = lastIndex;
           handled = true;
         }
         break;
 
       case ' ':
+        // Space only for buttons, not links
+        if (focusedIndex >= 0) {
+          const focusedItem = itemRefs.current[focusedIndex];
+          if (focusedItem && focusedItem.tagName === 'BUTTON' && !focusedItem.getAttribute('data-disabled')) {
+            if (onSelect) {
+              const itemId = focusedItem.closest('[data-item-id]')?.getAttribute('data-item-id');
+              if (itemId) {
+                onSelect(itemId);
+                handled = true;
+              }
+            }
+          }
+        }
+        break;
+
       case 'Enter':
-        // Only handle if we have a focused item and onSelect callback
-        if (focusedIndex >= 0 && onSelect) {
-          // Find the item at the focused index
-          const focusedItem = document.querySelector(`[data-index="${focusedIndex}"]`);
-          if (focusedItem) {
-            const itemId = focusedItem.getAttribute('data-item-id');
-            if (itemId) {
-              onSelect(itemId);
-              handled = true;
+        // Enter for both buttons and links
+        if (focusedIndex >= 0) {
+          const focusedItem = itemRefs.current[focusedIndex];
+          if (focusedItem && !focusedItem.getAttribute('data-disabled')) {
+            if (onSelect) {
+              const itemId = focusedItem.closest('[data-item-id]')?.getAttribute('data-item-id');
+              if (itemId) {
+                onSelect(itemId);
+                // Only prevent default for buttons, let links handle their own navigation
+                if (focusedItem.tagName === 'BUTTON') {
+                  handled = true;
+                }
+              }
             }
           }
         }
@@ -111,16 +173,22 @@ export function useRovingFocus({
         return;
     }
 
-    // Event handling hygiene: prevent default and stop propagation when consuming navigation keys
+    // Event handling hygiene: prevent default and stop propagation only when consuming navigation
     if (handled) {
       event.preventDefault();
       event.stopPropagation();
       setIsKeyboardNavigating(true);
       
+      // Move focus to the new item
+      const nextItem = itemRefs.current[nextIndex];
+      if (nextItem) {
+        nextItem.focus();
+      }
+      
       // Reset keyboard navigation flag after a short delay
       setTimeout(() => setIsKeyboardNavigating(false), 100);
     }
-  }, [focusedIndex, itemCount, onSelect, isRTL]);
+  }, [focusedIndex, itemCount, onSelect, direction, itemRefs]);
 
   // Handle item focus
   const handleItemFocus = useCallback((index: number) => {
@@ -142,43 +210,39 @@ export function useRovingFocus({
   useEffect(() => {
     if (selectedId) {
       // Find the index of the selected item
-      const selectedElement = document.querySelector(`[data-item-id="${selectedId}"]`);
-      if (selectedElement) {
-        const index = selectedElement.getAttribute('data-index');
-        if (index !== null) {
-          const newIndex = parseInt(index, 10);
-          if (newIndex !== focusedIndex) {
-            setFocusedIndex(newIndex);
-            lastFocusedIndexRef.current = newIndex;
+      for (let i = 0; i < itemRefs.current.length; i++) {
+        const item = itemRefs.current[i];
+        if (item) {
+          const itemId = item.closest('[data-item-id]')?.getAttribute('data-item-id');
+          if (itemId === selectedId) {
+            if (i !== focusedIndex) {
+              setFocusedIndex(i);
+              lastFocusedIndexRef.current = i;
+            }
+            break;
           }
         }
       }
     }
-  }, [selectedId, focusedIndex]);
+  }, [selectedId, focusedIndex, itemRefs]);
 
   // Robust first focus logic
   useEffect(() => {
     // If no item is focused but we have a selected item, focus it
     if (focusedIndex === -1 && selectedId) {
-      const selectedElement = document.querySelector(`[data-item-id="${selectedId}"]`);
-      if (selectedElement) {
-        const index = selectedElement.getAttribute('data-index');
-        if (index !== null) {
-          const newIndex = parseInt(index, 10);
-          setFocusedIndex(newIndex);
-          lastFocusedIndexRef.current = newIndex;
+      for (let i = 0; i < itemRefs.current.length; i++) {
+        const item = itemRefs.current[i];
+        if (item) {
+          const itemId = item.closest('[data-item-id]')?.getAttribute('data-item-id');
+          if (itemId === selectedId) {
+            setFocusedIndex(i);
+            lastFocusedIndexRef.current = i;
+            break;
+          }
         }
       }
     }
-  }, [selectedId, focusedIndex]);
-
-  // Overflow toggle handling
-  useEffect(() => {
-    if (onOverflowToggle) {
-      const hasOverflow = itemCount > 0; // Simplified - actual overflow detection is in the component
-      onOverflowToggle(hasOverflow);
-    }
-  }, [itemCount, onOverflowToggle]);
+  }, [selectedId, focusedIndex, itemRefs]);
 
   return {
     focusedIndex,

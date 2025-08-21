@@ -57,10 +57,6 @@ export const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PO
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 export const REDIS_DB = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
 
-// Upstash Redis configuration (removed - using Docker-compatible rate limiting)
-// export const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
-// export const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-
 // Sentry configuration
 export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 export const SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'development';
@@ -120,8 +116,10 @@ export function validateEnvironment(): void {
     const hasStandardRedis = !!(REDIS_URL || (REDIS_HOST && REDIS_PASSWORD));
     
     if (!hasStandardRedis) {
-      throw new Error('Redis configuration is required in production for rate limiting');
+      throw new Error('Standard Redis configuration is required in production for rate limiting. Set either REDIS_URL or REDIS_HOST/REDIS_PASSWORD');
     }
+    
+    console.log('✅ Standard Redis configured for production rate limiting');
   }
 }
 

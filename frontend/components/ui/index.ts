@@ -197,6 +197,8 @@ export { useRovingFocus } from '@/hooks/useRovingFocus';
 export type { UseRovingFocusOptions, UseRovingFocusReturn } from '@/hooks/useRovingFocus';
 
 // Re-export other UI components as needed
+export { default as Logo } from './Logo';
+export { default as LogoIcon } from './LogoIcon';
 // export { Button } from './Button';
 // export { Input } from './Input';
 // export { Modal } from './Modal';

@@ -17,6 +17,7 @@ import {
   getCookieOptions,
   FEATURE_FLAGS
 } from '@/lib/config/environment';
+import { initializeServer } from '@/lib/server-init';
 
 export const runtime = 'nodejs';
 
@@ -36,6 +37,24 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
+  
+  // Initialize server-side functionality
+  const serverInitialized = await initializeServer();
+  if (!serverInitialized) {
+    console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
+      correlationId
+    });
+    
+    return NextResponse.json(
+      { error: 'SERVICE_UNAVAILABLE' },
+      { 
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
   
   // Validate origin against allowlist
   const origin = request.headers.get('origin');

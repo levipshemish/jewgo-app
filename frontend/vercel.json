@@ -39,5 +39,11 @@
       "source": "/api/(.*)",
       "destination": "/api/$1"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/maintenance/cleanup-anonymous",
+      "schedule": "0 2 * * *"
+    }
   ]
 }

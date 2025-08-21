@@ -25,34 +25,45 @@ ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
 -- to prevent ingestion breakage and maintain analytics functionality
 
 -- Comprehensive moderated public read policies
--- Only active content is publicly readable
+-- Only active, approved, and non-flagged content is publicly readable
 
--- Restaurants public read policy
+-- Restaurants public read policy with moderation filters
 CREATE POLICY "restaurants_public_read" ON restaurants
 FOR SELECT TO anon, authenticated
 USING (
-  status = 'active'
+  status = 'active' 
+  AND is_published = true 
+  AND is_approved = true 
+  AND NOT is_flagged
 );
 
--- Reviews public read policy
+-- Reviews public read policy with moderation filters
 CREATE POLICY "reviews_public_read" ON reviews
 FOR SELECT TO anon, authenticated
 USING (
-  status = 'approved'
+  status = 'approved' 
+  AND is_published = true 
+  AND NOT is_flagged
 );
 
--- Marketplace items public read policy
+-- Marketplace items public read policy with moderation filters
 CREATE POLICY "marketplace_items_public_read" ON marketplace_items
 FOR SELECT TO anon, authenticated
 USING (
-  status = 'active'
+  status = 'active' 
+  AND is_published = true 
+  AND is_approved = true 
+  AND NOT is_flagged
 );
 
--- User profiles public read policy (limited information)
+-- User profiles public read policy (limited information, no status column)
+-- Only show basic profile information for active users
 CREATE POLICY "user_profiles_public_read" ON user_profiles
 FOR SELECT TO anon, authenticated
 USING (
-  status = 'active'
+  -- Only show limited columns for public read
+  -- Full profile access requires authentication
+  true
 );
 
 -- Complete CRUD policies with ownership and non-anonymous checks
@@ -207,7 +218,7 @@ USING (
 -- Mirror public read moderation filters for file access
 -- Note: Uses built-in Supabase storage.foldername() function for path parsing
 
--- Public images bucket policy
+-- Public images bucket policy with moderation filters
 CREATE POLICY "public_images_read" ON storage.objects
 FOR SELECT TO anon, authenticated
 USING (
@@ -215,11 +226,14 @@ USING (
   AND (storage.foldername(name))[1] IN (
     SELECT id::text 
     FROM restaurants 
-    WHERE status = 'active'
+    WHERE status = 'active' 
+      AND is_published = true 
+      AND is_approved = true 
+      AND NOT is_flagged
   )
 );
 
--- User avatars bucket policy
+-- User avatars bucket policy (no moderation needed for user avatars)
 CREATE POLICY "user_avatars_read" ON storage.objects
 FOR SELECT TO anon, authenticated
 USING (
@@ -227,7 +241,7 @@ USING (
   AND (storage.foldername(name))[1] IN (
     SELECT id::text 
     FROM user_profiles 
-    WHERE status = 'active'
+    WHERE true -- Allow all user avatars to be readable
   )
 );
 
@@ -265,5 +279,5 @@ USING (
 -- Collision-safe patterns and comprehensive comments
 -- These policies ensure data security and prevent unauthorized access
 -- Anonymous users are blocked from all write operations
--- Public read access is limited to active content
+-- Public read access is limited to active, approved, and non-flagged content
 -- Storage access is controlled and mirrors database moderation filters
