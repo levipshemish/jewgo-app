@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { validateSupabaseFeatureSupport, verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit, validateTrustedIP } from '@/lib/rate-limiting/upstash-redis';
 import { getCORSHeaders, getCookieOptions } from '@/lib/config/environment';
 
@@ -205,8 +206,8 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       const fs = require('fs');
       const rlsSQL = fs.readFileSync('frontend/lib/database/rls-policies.sql', 'utf8');
       
-      // Check that all write policies include non-anonymous checks
-      expect(rlsSQL).toContain('NOT (auth.jwt() ->> \'user_metadata\' ->> \'is_anonymous\')::boolean');
+      // Check that all write policies include non-anonymous checks using coalesce pattern
+      expect(rlsSQL).toContain('coalesce((auth.jwt()->>\'is_anonymous\')::boolean, false) = false');
     });
   });
 

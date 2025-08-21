@@ -115,14 +115,17 @@ export function sanitizeRedirectUrl(url: string | null | undefined): string {
   return validateRedirectUrl(url);
 }
 
-// Trusted IP configuration
+// Trusted IP configuration - IPv4 and IPv6 ranges
 const TRUSTED_CDN_IPS = [
-  // Cloudflare
+  // Cloudflare IPv4
   '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
   '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
   '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
   '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
-  // EdgeCast
+  // Cloudflare IPv6
+  '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+  '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+  // EdgeCast IPv4
   '103.245.222.0/23', '103.245.224.0/24', '103.245.225.0/24', '103.245.226.0/23',
   // Add other CDNs as needed
 ];
@@ -161,11 +164,18 @@ export function validateTrustedIP(requestIP: string, forwardedFor?: string): str
 }
 
 /**
- * Check if IP is in CIDR range
+ * Check if IP is in CIDR range (IPv4 and IPv6 support)
  */
 function isIPInRange(ip: string, cidr: string): boolean {
   try {
     const [range, bits = '32'] = cidr.split('/');
+    
+    // Handle IPv6
+    if (range.includes(':')) {
+      return isIPv6InRange(ip, cidr);
+    }
+    
+    // Handle IPv4
     const mask = ~((1 << (32 - parseInt(bits))) - 1);
     const ipLong = ipToLong(ip);
     const rangeLong = ipToLong(range);
@@ -176,22 +186,62 @@ function isIPInRange(ip: string, cidr: string): boolean {
 }
 
 /**
- * Convert IP to long integer
+ * Check if IPv6 is in CIDR range
+ */
+function isIPv6InRange(ip: string, cidr: string): boolean {
+  try {
+    const [range, bits = '128'] = cidr.split('/');
+    const ipParts = ipToIPv6Parts(ip);
+    const rangeParts = ipToIPv6Parts(range);
+    const maskBits = parseInt(bits);
+    
+    // Compare each 16-bit block
+    for (let i = 0; i < 8; i++) {
+      const blockMask = i < Math.floor(maskBits / 16) ? 0xFFFF : 
+                       i === Math.floor(maskBits / 16) ? (0xFFFF << (16 - (maskBits % 16))) : 0;
+      
+      if ((ipParts[i] & blockMask) !== (rangeParts[i] & blockMask)) {
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Convert IPv6 to array of 16-bit parts
+ */
+function ipToIPv6Parts(ip: string): number[] {
+  // Handle compressed IPv6 notation
+  const expanded = ip.replace(/::/g, ':'.repeat(9 - ip.split(':').length));
+  const parts = expanded.split(':').map(part => parseInt(part, 16));
+  return parts;
+}
+
+/**
+ * Convert IP to long integer (IPv4 only)
  */
 function ipToLong(ip: string): number {
   return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet), 0) >>> 0;
 }
 
 /**
- * Validate IP address format
+ * Validate IP address format (IPv4 and IPv6)
  */
 function isValidIP(ip: string): boolean {
-  const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  return ipRegex.test(ip);
+  // IPv4 regex
+  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  
+  // IPv6 regex (simplified - allows compressed notation)
+  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$|^(?:[0-9a-fA-F]{1,4}:){0,7}::(?:[0-9a-fA-F]{1,4}:){0,7}[0-9a-fA-F]{1,4}$/;
+  
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 }
 
 /**
- * Comprehensive CSRF validation with strict Origin+Referer checks and token fallback
+ * Comprehensive CSRF validation with strict Origin+Referer checks and signed token fallback
  * Accepts valid signed CSRF token when Origin/Referer are missing
  */
 export function validateCSRF(
@@ -200,14 +250,14 @@ export function validateCSRF(
   allowedOrigins: string[],
   csrfToken?: string | null
 ): boolean {
-  // If both Origin and Referer are missing, accept a valid CSRF token
+  // If both Origin and Referer are missing, require a valid signed CSRF token
   if (!origin && !referer) {
-    // For now, accept any non-empty token as a temporary measure
-    // TODO: Implement proper signed token verification
-    if (csrfToken && csrfToken.trim().length > 0) {
-      return true;
+    if (!csrfToken) {
+      return false;
     }
-    return false;
+    
+    // Verify signed CSRF token using HMAC
+    return verifySignedCSRFToken(csrfToken);
   }
   
   // If either Origin or Referer is present, require both to be valid
@@ -235,6 +285,21 @@ export function validateCSRF(
   });
   
   return refererValid;
+}
+
+/**
+ * Verify signed CSRF token using HMAC
+ * Server-side only function that validates token signature
+ */
+function verifySignedCSRFToken(token: string): boolean {
+  try {
+    // Import server-side utilities dynamically to avoid client bundle inclusion
+    const { verifySignedCSRFToken: serverVerify } = require('./auth-utils.server');
+    return serverVerify(token);
+  } catch (error) {
+    console.error('CSRF token verification failed:', error);
+    return false;
+  }
 }
 
 /**
@@ -454,9 +519,22 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     }
     
     // Allow prefixes only for specific paths
-    const allowedPrefixes = ['/app', '/dashboard', '/profile', '/settings'];
+    // These paths are allowed for redirect sanitization to maintain UX consistency
+    // with the application's navigation structure and user expectations
+    const allowedPrefixes = [
+      '/app',           // Main application routes
+      '/dashboard',     // Admin and user dashboard
+      '/profile',       // User profile management
+      '/settings',      // User settings
+      '/favorites',     // User favorites (added for UX consistency)
+      '/messages',      // Messaging system
+      '/marketplace',   // Marketplace features
+      '/live-map',      // Live map functionality
+      '/mikva',         // Mikva-related features
+      '/notifications'  // Notification center
+    ];
     const hasAllowedPrefix = allowedPrefixes.some(prefix => 
-      decodedPath.startsWith(`${prefix  }/`) || decodedPath === prefix
+      decodedPath.startsWith(`${prefix}/`) || decodedPath === prefix
     );
     
     if (!hasAllowedPrefix) {

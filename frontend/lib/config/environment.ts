@@ -76,13 +76,35 @@ export function validateEnvironment(): void {
     { name: 'NEXT_PUBLIC_SUPABASE_URL', value: SUPABASE_URL },
     { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: SUPABASE_ANON_KEY },
     { name: 'SUPABASE_SERVICE_ROLE_KEY', value: SUPABASE_SERVICE_ROLE_KEY },
+    { name: 'UPSTASH_REDIS_REST_URL', value: process.env.UPSTASH_REDIS_REST_URL },
+    { name: 'UPSTASH_REDIS_REST_TOKEN', value: process.env.UPSTASH_REDIS_REST_TOKEN },
   ];
 
   const missingVars = requiredVars.filter(({ value }) => !value);
   
   if (missingVars.length > 0) {
     const missingNames = missingVars.map(({ name }) => name).join(', ');
-    throw new Error(`Missing required environment variables: ${missingNames}`);
+    const errorMessage = `Missing required environment variables: ${missingNames}`;
+    
+    // Add helpful setup instructions for Redis
+    if (missingNames.includes('UPSTASH_REDIS_REST_URL') || missingNames.includes('UPSTASH_REDIS_REST_TOKEN')) {
+      const setupInstructions = `
+      
+UPSTASH REDIS SETUP REQUIRED:
+1. Create an account at https://upstash.com/
+2. Create a new Redis database
+3. Copy the REST URL and REST Token from your database dashboard
+4. Add them to your environment variables:
+   - UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
+   - UPSTASH_REDIS_REST_TOKEN=your-token-here
+
+For local development, you can use the free tier.
+For production, ensure you have sufficient capacity for rate limiting and caching.
+`;
+      throw new Error(errorMessage + setupInstructions);
+    }
+    
+    throw new Error(errorMessage);
   }
 
   // Validate HMAC keys in production
@@ -177,6 +199,35 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   // Only validate on server side and not during build/test
   try {
     validateEnvironment();
+    
+    // Boot-time feature support validation
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      // Import and run feature validation asynchronously
+      import('@/lib/utils/auth-utils.server').then(async ({ validateSupabaseFeaturesWithLogging }) => {
+        try {
+          const featuresSupported = await validateSupabaseFeaturesWithLogging();
+          if (!featuresSupported) {
+            console.error('🚨 CRITICAL: Supabase features not available at boot time');
+            if (IS_PRODUCTION) {
+              // In production, this is a critical error that should fail fast
+              process.exit(1);
+            }
+          } else {
+            console.log('✅ Supabase features validated successfully at boot time');
+          }
+        } catch (error) {
+          console.error('🚨 CRITICAL: Feature validation failed at boot time:', error);
+          if (IS_PRODUCTION) {
+            process.exit(1);
+          }
+        }
+      }).catch((error) => {
+        console.error('🚨 CRITICAL: Failed to import feature validation module:', error);
+        if (IS_PRODUCTION) {
+          process.exit(1);
+        }
+      });
+    }
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime

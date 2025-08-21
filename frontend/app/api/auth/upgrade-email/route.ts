@@ -8,21 +8,28 @@ import {
   validateCSRF, 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII,
-  extractIsAnonymous
+  scrubPII
 } from '@/lib/utils/auth-utils';
-import { signMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  getCookieOptions 
+  getCORSHeaders
 } from '@/lib/config/environment';
 
 export const runtime = 'nodejs';
 
+// Normalized error codes
+const ERROR_CODES = {
+  EMAIL_IN_USE: 'EMAIL_IN_USE',
+  INVALID_EMAIL: 'INVALID_EMAIL',
+  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+  RATE_LIMITED: 'RATE_LIMITED',
+  CSRF: 'CSRF',
+  INTERNAL_ERROR: 'INTERNAL_ERROR'
+} as const;
+
 /**
- * Prepare merge API with versioned HMAC cookie generation
- * Handles OPTIONS/CORS preflight and POST requests for merge preparation
+ * Email upgrade API with normalized error codes
+ * Handles OPTIONS/CORS preflight and POST requests for email upgrades
  */
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'CSRF validation failed' },
+        { error: ERROR_CODES.CSRF },
         { 
           status: 403,
           headers: getCORSHeaders(origin || undefined)
@@ -76,16 +83,16 @@ export async function POST(request: NextRequest) {
     // Trusted IP validation with left-most X-Forwarded-For parsing
     const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
     
-    // Rate limiting for merge operations
+    // Rate limiting for email upgrade operations
     const rateLimitResult = await checkRateLimit(
-      `merge_prepare:${validatedIP}`,
-      'merge_operations',
+      `email_upgrade:${validatedIP}`,
+      'email_upgrade',
       validatedIP,
       forwardedFor || undefined
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for merge prepare IP: ${validatedIP}`, {
+      console.warn(`Rate limit exceeded for email upgrade IP: ${validatedIP}`, {
         correlationId,
         remaining_attempts: rateLimitResult.remaining_attempts,
         reset_in_seconds: rateLimitResult.reset_in_seconds
@@ -93,7 +100,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(
         {
-          error: 'RATE_LIMITED',
+          error: ERROR_CODES.RATE_LIMITED,
           remaining_attempts: rateLimitResult.remaining_attempts,
           reset_in_seconds: rateLimitResult.reset_in_seconds,
           retry_after: rateLimitResult.retry_after,
@@ -101,6 +108,32 @@ export async function POST(request: NextRequest) {
         },
         { 
           status: 429,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
+    // Parse request body
+    const body = await request.json();
+    const { email } = body;
+    
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json(
+        { error: ERROR_CODES.INVALID_EMAIL },
+        { 
+          status: 400,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: ERROR_CODES.INVALID_EMAIL },
+        { 
+          status: 400,
           headers: getCORSHeaders(origin || undefined)
         }
       );
@@ -129,14 +162,14 @@ export async function POST(request: NextRequest) {
     // Get current user session
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
     
-    if (getUserError) {
-      console.error(`Failed to get user for merge prepare correlation ID: ${correlationId}`, {
+    if (getUserError || !user) {
+      console.error(`Authentication error for email upgrade correlation ID: ${correlationId}`, {
         error: getUserError,
         correlationId
       });
       
       return NextResponse.json(
-        { error: 'Authentication error' },
+        { error: ERROR_CODES.AUTHENTICATION_ERROR },
         { 
           status: 401,
           headers: getCORSHeaders(origin || undefined)
@@ -144,29 +177,34 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!user) {
-      console.error(`No user found for merge prepare correlation ID: ${correlationId}`, {
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: 'No authenticated user' },
-        { 
-          status: 401,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
+    // Attempt to update user with email
+    const { data, error } = await supabase.auth.updateUser({ email });
     
-    // Verify user is anonymous
-    if (!extractIsAnonymous(user)) {
-      console.error(`Non-anonymous user attempted merge prepare for correlation ID: ${correlationId}`, {
-        user_id: user.id,
+    if (error) {
+      // Normalize error codes based on Supabase error messages
+      let normalizedError = ERROR_CODES.INTERNAL_ERROR;
+      
+      if (error.message.includes('EMAIL_IN_USE') || 
+          error.message.includes('already registered') ||
+          error.message.includes('already exists')) {
+        normalizedError = ERROR_CODES.EMAIL_IN_USE;
+      } else if (error.message.includes('invalid') || 
+                 error.message.includes('format')) {
+        normalizedError = ERROR_CODES.INVALID_EMAIL;
+      }
+      
+      console.error(`Email upgrade failed for correlation ID: ${correlationId}`, {
+        error: error.message,
+        normalizedError,
         correlationId
       });
       
       return NextResponse.json(
-        { error: 'User is not anonymous' },
+        { 
+          error: normalizedError,
+          details: error.message,
+          correlation_id: correlationId
+        },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -174,41 +212,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Generate versioned HMAC cookie with reduced expiration (10 minutes)
-    const cookiePayload = {
-      anon_uid: user.id,
-      exp: Math.floor(Date.now() / 1000) + 600 // 10 minutes expiration
-    };
-    
-    const signedCookie = signMergeCookieVersioned(cookiePayload);
-    
-    // Set HttpOnly cookie with environment-specific domain and security attributes
-    const cookieOptions = getCookieOptions();
-    const response = new NextResponse(null, { 
-      status: 204,
-      headers: getCORSHeaders(origin || undefined)
-    });
-    
-    response.cookies.set('merge_token', signedCookie, {
-      httpOnly: cookieOptions.httpOnly,
-      secure: cookieOptions.secure,
-      sameSite: cookieOptions.sameSite,
-      domain: cookieOptions.domain,
-      maxAge: cookieOptions.maxAge,
-      path: '/'
-    });
-    
-    // Log successful merge preparation
-    console.log(`Merge preparation successful for correlation ID: ${correlationId}`, {
-      user_id: user.id,
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
-    
-    return response;
+    // Success response
+    return NextResponse.json(
+      { 
+        ok: true, 
+        user: data.user,
+        correlation_id: correlationId
+      },
+      { 
+        status: 200,
+        headers: getCORSHeaders(origin || undefined)
+      }
+    );
     
   } catch (error) {
-    console.error(`Unexpected error in merge prepare for correlation ID: ${correlationId}`, {
+    console.error(`Unexpected error in email upgrade for correlation ID: ${correlationId}`, {
       error: scrubPII(error),
       correlationId,
       duration_ms: Date.now() - startTime
@@ -216,7 +234,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Internal server error',
+        error: ERROR_CODES.INTERNAL_ERROR,
         correlation_id: correlationId
       },
       { 

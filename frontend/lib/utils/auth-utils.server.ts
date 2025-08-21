@@ -17,12 +17,34 @@ const MERGE_COOKIE_HMAC_KEY_V2 = process.env.MERGE_COOKIE_HMAC_KEY_V2 || 'fallba
 
 // Feature support validation
 let featureSupportValidated = false;
+let featureSupportCache: boolean | null = null;
+
+/**
+ * Get cached feature support status
+ * Returns the cached result if available, otherwise null
+ */
+export function getCachedFeatureSupport(): boolean | null {
+  return featureSupportCache;
+}
+
+/**
+ * Set cached feature support status
+ */
+export function setCachedFeatureSupport(supported: boolean): void {
+  featureSupportCache = supported;
+  featureSupportValidated = true;
+}
 
 /**
  * Server-side Supabase feature validation
  * Validates that required Supabase features are available at boot time
  */
 export function validateSupabaseFeatureSupport(): boolean {
+  // Return cached result if available
+  if (featureSupportValidated && featureSupportCache !== null) {
+    return featureSupportCache;
+  }
+
   try {
     // Check if Supabase environment variables are configured
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,6 +52,7 @@ export function validateSupabaseFeatureSupport(): boolean {
     
     if (!supabaseUrl || !supabaseAnonKey) {
       console.error('[Feature Guard] Supabase environment variables not configured');
+      setCachedFeatureSupport(false);
       return false;
     }
 
@@ -38,22 +61,26 @@ export function validateSupabaseFeatureSupport(): boolean {
       new URL(supabaseUrl);
     } catch {
       console.error('[Feature Guard] Invalid Supabase URL format');
+      setCachedFeatureSupport(false);
       return false;
     }
 
     // Check if we're in a server environment where we can validate features
     if (typeof window !== 'undefined') {
       // Client-side - assume features are available (will be validated on first use)
+      setCachedFeatureSupport(true);
       return true;
     }
 
     // Server-side validation would require making a test request
     // For now, we'll validate the configuration is present
     console.log('[Feature Guard] Supabase configuration validated');
+    setCachedFeatureSupport(true);
     return true;
     
   } catch (error) {
     console.error('[Feature Guard] Feature validation failed:', error);
+    setCachedFeatureSupport(false);
     return false;
   }
 }
@@ -122,6 +149,13 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
   try {
     console.log(`[Feature Guard] Starting feature validation (${correlationId})`);
     
+    // Check cached result first
+    const cachedResult = getCachedFeatureSupport();
+    if (cachedResult !== null) {
+      console.log(`[Feature Guard] Using cached result: ${cachedResult} (${correlationId})`);
+      return cachedResult;
+    }
+    
     // Basic configuration validation
     if (!validateSupabaseFeatureSupport()) {
       console.error(`[Feature Guard] Basic validation failed (${correlationId})`);
@@ -135,6 +169,7 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
         });
       }
       
+      setCachedFeatureSupport(false);
       return false;
     }
 
@@ -153,10 +188,12 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
         });
       }
       
+      setCachedFeatureSupport(false);
       return false;
     }
 
     console.log(`[Feature Guard] All features validated successfully (${correlationId})`);
+    setCachedFeatureSupport(true);
     return true;
 
   } catch (error) {
@@ -170,6 +207,7 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
       });
     }
     
+    setCachedFeatureSupport(false);
     return false;
   }
 }
@@ -406,4 +444,60 @@ export async function completeIdentityLinking(userId: string, reauthProvider: st
   });
   
   return { success: false, error: 'Linking not implemented yet' };
+}
+
+/**
+ * Verify signed CSRF token using HMAC
+ * Server-side implementation for CSRF token validation
+ */
+export function verifySignedCSRFToken(token: string): boolean {
+  try {
+    const parts = token.split(':');
+    if (parts.length < 3) {
+      return false;
+    }
+
+    const version = parts[0];
+    const signature = parts[1];
+    const data = parts.slice(2).join(':');
+
+    if (version !== 'v1' && version !== 'v2') {
+      return false;
+    }
+
+    // Use the same HMAC keys as merge cookies for consistency
+    const currentKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
+    const previousKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY : MERGE_COOKIE_HMAC_KEY_V2;
+
+    const currentSignature = createHmac('sha256', currentKey).update(data).digest('hex');
+    const previousSignature = createHmac('sha256', previousKey).update(data).digest('hex');
+
+    if (signature === currentSignature || signature === previousSignature) {
+      const payload = JSON.parse(data);
+      
+      // Check expiration (5 minutes for CSRF tokens)
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        return false;
+      }
+
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Generate signed CSRF token for client-side use
+ * Used when Origin/Referer headers are not available
+ */
+export function generateSignedCSRFToken(): string {
+  const payload = {
+    exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes expiration
+    nonce: Math.random().toString(36).substring(2, 15)
+  };
+  
+  return signMergeCookieVersioned(payload, 'v2');
 }

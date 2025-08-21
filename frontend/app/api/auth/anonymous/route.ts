@@ -11,7 +11,7 @@ import {
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
-import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
+import { validateSupabaseFeatureSupport, getCachedFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders
@@ -56,8 +56,14 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Early feature support validation using server-safe function
-    if (!validateSupabaseFeatureSupport()) {
+    // Check cached feature support first, then fallback to validation
+    let featuresSupported = getCachedFeatureSupport();
+    if (featuresSupported === null) {
+      // No cached result, perform validation
+      featuresSupported = validateSupabaseFeatureSupport();
+    }
+    
+    if (!featuresSupported) {
       console.error(`Supabase feature support validation failed for correlation ID: ${correlationId}`);
       
       return NextResponse.json(
@@ -76,13 +82,14 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
-    // Comprehensive CSRF validation with token fallback
+    // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
         realIP,
-        correlationId
+        correlationId,
+        hasCSRFToken: !!csrfToken
       });
       
       return NextResponse.json(

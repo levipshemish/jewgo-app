@@ -14,6 +14,9 @@ export const config = {
  */
 export async function middleware(request: NextRequest) {
   try {
+    // Create NextResponse upfront to persist refreshed auth cookies
+    const response = NextResponse.next();
+    
     // Create Supabase client with Edge Runtime compatibility
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,10 +27,12 @@ export async function middleware(request: NextRequest) {
             return request.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
-            // Cookies are set by the response
+            // Set cookies on the response to persist refreshed tokens
+            response.cookies.set(name, value, options);
           },
           remove(name: string, options: any) {
-            // Cookies are removed by the response
+            // Remove cookies on the response
+            response.cookies.set(name, '', { ...options, maxAge: 0 });
           },
         },
       }
@@ -39,7 +44,7 @@ export async function middleware(request: NextRequest) {
     if (error) {
       console.error('Middleware auth error:', error);
       // Continue to allow the request to proceed (fail open for security)
-      return NextResponse.next();
+      return response;
     }
 
     // Check if user exists and is non-anonymous for private routes
@@ -62,8 +67,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
-    // Authenticated, non-anonymous user - allow access
-    return NextResponse.next();
+    // Authenticated, non-anonymous user - allow access and return response with persisted cookies
+    return response;
     
   } catch (error) {
     console.error('Middleware error:', error);

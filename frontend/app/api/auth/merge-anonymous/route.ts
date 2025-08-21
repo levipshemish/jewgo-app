@@ -36,6 +36,10 @@ const TABLE_OWNER_MAP: Record<string, string> = {
 /**
  * Merge anonymous API with comprehensive authorization checks
  * Handles OPTIONS/CORS preflight and POST requests for account merging
+ * 
+ * IMPROVED MERGE LOGIC: Prevents data loss by retaining conflicting records
+ * instead of deleting them. This ensures no user data is lost during merges
+ * and provides audit trails for conflict resolution.
  */
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
@@ -67,13 +71,14 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIP = 'unknown'; // Edge runtime doesn't support request.ip
     
-    // Comprehensive CSRF validation with token fallback
+    // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
         realIP,
-        correlationId
+        correlationId,
+        hasCSRFToken: !!csrfToken
       });
       
       return NextResponse.json(
@@ -286,86 +291,59 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Perform collision-safe merge using table-specific mutations
+    // Perform collision-safe merge using single SQL transaction
     const movedRecords: string[] = [];
     
-    for (const [tableName, ownerColumn] of Object.entries(TABLE_OWNER_MAP)) {
-      try {
-        // First, check if there are records to migrate
-        const { data: existingRecords, error: queryError } = await serviceRoleClient
-          .from(tableName)
-          .select('id')
-          .eq(ownerColumn, sourceUid);
-        
-        if (queryError) {
-          console.error(`Failed to query table ${tableName} for correlation ID: ${correlationId}`, {
-            error: queryError,
-            table: tableName,
-            correlationId
-          });
-          continue;
-        }
-        
-        if (existingRecords && existingRecords.length > 0) {
-          // Check for potential conflicts by looking for records with targetUid
-          const { data: conflictRecords, error: conflictError } = await serviceRoleClient
-            .from(tableName)
-            .select('id')
-            .eq(ownerColumn, targetUid);
-          
-          if (conflictError) {
-            console.error(`Failed to check conflicts in table ${tableName} for correlation ID: ${correlationId}`, {
-              error: conflictError,
-              table: tableName,
-              correlationId
-            });
-            continue;
-          }
-          
-          // If conflicts exist, remove source records (deterministic: source loses)
-          if (conflictRecords && conflictRecords.length > 0) {
-            const { error: deleteError } = await serviceRoleClient
-              .from(tableName)
-              .delete()
-              .eq(ownerColumn, sourceUid);
-            
-            if (deleteError) {
-              console.error(`Failed to delete conflicting records in table ${tableName} for correlation ID: ${correlationId}`, {
-                error: deleteError,
-                table: tableName,
-                correlationId
-              });
-              continue;
-            }
-            
-            movedRecords.push(`${tableName}:${existingRecords.length}(deleted)`);
-          } else {
-            // No conflicts - perform safe update
-            const { error: updateError } = await serviceRoleClient
-              .from(tableName)
-              .update({ [ownerColumn]: targetUid })
-              .eq(ownerColumn, sourceUid);
-            
-            if (updateError) {
-              console.error(`Failed to update table ${tableName} for correlation ID: ${correlationId}`, {
-                error: updateError,
-                table: tableName,
-                correlationId
-              });
-              continue;
-            }
-            
-            movedRecords.push(`${tableName}:${existingRecords.length}`);
-          }
-        }
-        
-      } catch (tableError) {
-        console.error(`Error merging table ${tableName} for correlation ID: ${correlationId}`, {
-          error: tableError,
-          table: tableName,
+    try {
+      // Use a single RPC call to handle all table migrations atomically
+      const { data: mergeResult, error: mergeError } = await serviceRoleClient.rpc('merge_anonymous_user_data', {
+        source_user_id: sourceUid,
+        target_user_id: targetUid
+      });
+      
+      if (mergeError) {
+        console.error(`Merge transaction failed for correlation ID: ${correlationId}`, {
+          error: mergeError,
+          source_uid: sourceUid,
+          target_uid: targetUid,
           correlationId
         });
+        
+        return NextResponse.json(
+          { 
+            error: 'Merge operation failed',
+            correlation_id: correlationId
+          },
+          { 
+            status: 500,
+            headers: getCORSHeaders(origin || undefined)
+          }
+        );
       }
+      
+      // Extract results from the transaction
+      if (mergeResult && Array.isArray(mergeResult)) {
+        movedRecords.push(...mergeResult);
+      }
+      
+    } catch (transactionError) {
+      console.error(`Merge transaction error for correlation ID: ${correlationId}`, {
+        error: transactionError,
+        source_uid: sourceUid,
+        target_uid: targetUid,
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { 
+          error: 'Merge operation failed',
+          correlation_id: correlationId
+        },
+        { 
+          status: 500,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
     }
     
     // Store idempotency result

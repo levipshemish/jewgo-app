@@ -176,32 +176,52 @@ export function useAuth() {
         return { error: 'No active session found' };
       }
 
-      // Attempt to update user with email
-      const { data, error } = await supabaseBrowser.auth.updateUser({ email });
-      
-      if (error) {
-        if (error.message.includes('EMAIL_IN_USE')) {
-          // Email conflict - prepare for merge
-          const mergeResponse = await fetch('/api/auth/prepare-merge', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
+      // Call server endpoint for email upgrade with normalized error codes
+      const response = await fetch('/api/auth/upgrade-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
 
-          if (mergeResponse.ok) {
-            return { 
-              needsMerge: true, 
-              message: 'This email is already registered. Please sign in to merge your accounts.' 
-            };
-          } else {
-            setError('Failed to prepare account merge');
-            return { error: 'Failed to prepare account merge' };
-          }
-        } else {
-          setError(error.message);
-          return { error: error.message };
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle normalized error codes
+        switch (result.error) {
+          case 'EMAIL_IN_USE':
+            // Email conflict - prepare for merge
+            const mergeResponse = await fetch('/api/auth/prepare-merge', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+            });
+
+            if (mergeResponse.ok) {
+              return { 
+                needsMerge: true, 
+                message: 'This email is already registered. Please sign in to merge your accounts.' 
+              };
+            } else {
+              setError('Failed to prepare account merge');
+              return { error: 'Failed to prepare account merge' };
+            }
+          case 'INVALID_EMAIL':
+            setError('Invalid email format');
+            return { error: 'Invalid email format' };
+          case 'AUTHENTICATION_ERROR':
+            setError('Authentication required');
+            return { error: 'Authentication required' };
+          case 'RATE_LIMITED':
+            setError('Too many attempts. Please try again later.');
+            return { error: 'Too many attempts. Please try again later.' };
+          default:
+            setError(result.details || 'Email upgrade failed');
+            return { error: result.details || 'Email upgrade failed' };
         }
       }
 
@@ -259,18 +279,13 @@ export function useAuth() {
         return { error: 'Authentication refresh required' };
       }
 
-      // Update user state
-      if (data.user) {
-        const transformedUser = transformSupabaseUser(data.user);
-        setUser(transformedUser);
-        setIsAnonymous(false);
-        return { user: transformedUser };
-      }
-
-      setError('Failed to upgrade account');
-      return { error: 'Failed to upgrade account' };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Account upgrade failed';
+      // Refresh user data after successful upgrade
+      await refreshUser();
+      
+      return { success: true };
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Email upgrade failed';
       setError(errorMessage);
       return { error: errorMessage };
     } finally {
