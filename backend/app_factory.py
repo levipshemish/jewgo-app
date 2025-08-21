@@ -2149,15 +2149,15 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                     # Check if currently open
                                     if open_time <= current_time <= close_time:
                                         is_open = True
-                                        status = "open"
+                                        status = "Open"
                                         message = f"Open now • Closes at {close_time_str}"
                                     elif current_time < open_time:
                                         is_open = False
-                                        status = "closed"
+                                        status = "Closed"
                                         message = f"Closed • Opens at {open_time_str}"
                                     else:  # current_time > close_time
                                         is_open = False
-                                        status = "closed"
+                                        status = "Closed"
                                         message = f"Closed • Opens at {open_time_str} tomorrow"
                                     
                                     today_hours = {
@@ -2168,7 +2168,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                 else:
                                     # Fallback if time parsing fails
                                     is_open = hours_entry['is_open']
-                                    status = "open" if is_open else "closed"
+                                    status = "Open" if is_open else "Closed"
                                     message = f"Open now • Hours available" if is_open else "Closed today"
                                     today_hours = {
                                         "open": hours_text,
@@ -2179,7 +2179,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 except Exception as e:
                     # Fallback if timezone handling fails
                     is_open = False
-                    status = "unknown"
+                    status = "Unknown"
                     message = "Hours information unavailable"
                     today_hours = {
                         "open": "",
