@@ -333,7 +333,7 @@ export default function EateryExplorePage() {
       imageTag: restaurant.kosher_category || restaurant.certifying_agency,
       imageTagLink: `/eatery?kosher=${restaurant.kosher_category}&agency=${restaurant.certifying_agency}`,
       title: restaurant.name,
-      badge: restaurant.rating ? restaurant.rating.toString() : undefined,
+      badge: restaurant.google_rating ? restaurant.google_rating.toString() : undefined,
       subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
       additionalText: distanceText || restaurant.city || restaurant.state,
       showHeart: true,
