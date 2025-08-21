@@ -23,11 +23,11 @@ import {
  * RUNTIME: Node.js is required for this endpoint due to dependencies:
  * - crypto module for HMAC operations in auth-utils.server.ts
  * - cookies from next/headers for Supabase SSR client
- * - @upstash/redis for rate limiting via REST API
+ * - ioredis for rate limiting (with in-memory fallback)
  * - Server-side Supabase client with cookie adapter
  * 
  * Edge runtime is not compatible with these Node.js-specific features.
- * Upstash Redis is accessed via REST API, so Edge performance benefits
+ * Redis client uses direct TCP connections, so Edge performance benefits
  * are not applicable here.
  */
 export const runtime = 'nodejs';

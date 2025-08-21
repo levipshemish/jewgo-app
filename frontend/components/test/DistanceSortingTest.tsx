@@ -182,7 +182,7 @@ export default function DistanceSortingTest() {
       <div style={{ marginBottom: '20px' }}>
         <h3>Restaurants {userLocation ? '(Sorted by Distance)' : '(Original Order)'}</h3>
         {sortedRestaurants.map((restaurant, index) => {
-          const distance = userLocation ? 
+          const distance = userLocation && restaurant.latitude && restaurant.longitude ? 
             Math.sqrt(
               Math.pow(restaurant.latitude - userLocation.latitude, 2) + 
               Math.pow(restaurant.longitude - userLocation.longitude, 2)

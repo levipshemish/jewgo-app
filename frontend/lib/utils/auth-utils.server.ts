@@ -114,19 +114,17 @@ export async function testSupabaseFeatures(): Promise<{
       }
     );
 
-    // Test signInAnonymously availability by checking if the method exists
-    const signInAnonymously = typeof supabase.auth.signInAnonymously === 'function';
+    // Assert signInAnonymously method exists and is callable
+    if (typeof supabase.auth.signInAnonymously !== 'function') {
+      throw new Error('signInAnonymously method not available on supabase.auth');
+    }
     
     // Test linkIdentity availability (this would be used in the merge flow)
     // Note: linkIdentity might not be directly available in the client, but we can check auth methods
     const linkIdentity = true; // Assume available for now, will be validated during actual use
 
-    if (!signInAnonymously) {
-      throw new Error('signInAnonymously method not available');
-    }
-
     return {
-      signInAnonymously,
+      signInAnonymously: true,
       linkIdentity
     };
 
@@ -142,12 +140,13 @@ export async function testSupabaseFeatures(): Promise<{
 
 /**
  * Comprehensive feature validation with Sentry logging
+ * Strengthened to assert signInAnonymously and report loudly at boot
  */
 export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
   const correlationId = `feature_guard_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   
   try {
-    console.log(`[Feature Guard] Starting feature validation (${correlationId})`);
+    console.log(`🚨 [Feature Guard] Starting critical feature validation (${correlationId})`);
     
     // Check cached result first
     const cachedResult = getCachedFeatureSupport();
@@ -158,12 +157,12 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
     
     // Basic configuration validation
     if (!validateSupabaseFeatureSupport()) {
-      console.error(`[Feature Guard] Basic validation failed (${correlationId})`);
+      console.error(`🚨 [Feature Guard] CRITICAL: Basic validation failed (${correlationId})`);
       
       // Log to Sentry if available
       if (typeof window !== 'undefined' && (window as any).Sentry) {
-        (window as any).Sentry.captureMessage('Supabase feature validation failed', {
-          level: 'error',
+        (window as any).Sentry.captureMessage('CRITICAL: Supabase feature validation failed', {
+          level: 'fatal',
           tags: { correlationId, component: 'feature_guard' },
           extra: { error: 'Basic configuration validation failed' }
         });
@@ -173,31 +172,49 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
       return false;
     }
 
-    // Test actual features
+    // Test actual features with explicit assertion
     const featureTest = await testSupabaseFeatures();
     
-    if (!featureTest.signInAnonymously || !featureTest.linkIdentity) {
-      console.error(`[Feature Guard] Feature test failed (${correlationId})`, featureTest);
+    // CRITICAL: Assert signInAnonymously is available
+    if (!featureTest.signInAnonymously) {
+      const errorMsg = `🚨 CRITICAL: signInAnonymously method not available (${correlationId})`;
+      console.error(errorMsg, featureTest);
+      
+      // Report loudly at boot
+      console.error('🚨 ANONYMOUS AUTH WILL FAIL - signInAnonymously method missing');
+      console.error('🚨 This will cause 500 errors on /api/auth/anonymous');
+      console.error('🚨 Check Supabase SDK version and configuration');
       
       // Log to Sentry if available
       if (typeof window !== 'undefined' && (window as any).Sentry) {
-        (window as any).Sentry.captureMessage('Supabase features not available', {
-          level: 'error',
+        (window as any).Sentry.captureMessage('CRITICAL: signInAnonymously not available', {
+          level: 'fatal',
           tags: { correlationId, component: 'feature_guard' },
-          extra: { featureTest }
+          extra: { featureTest, error: 'Anonymous auth will fail' }
         });
       }
       
       setCachedFeatureSupport(false);
       return false;
     }
+    
+    if (!featureTest.linkIdentity) {
+      console.warn(`[Feature Guard] linkIdentity not available (${correlationId})`, featureTest);
+      // Don't fail for linkIdentity as it's not critical for basic auth
+    }
 
-    console.log(`[Feature Guard] All features validated successfully (${correlationId})`);
+    console.log(`✅ [Feature Guard] Critical features validated successfully (${correlationId})`);
+    console.log(`✅ signInAnonymously: AVAILABLE`);
     setCachedFeatureSupport(true);
     return true;
 
   } catch (error) {
-    console.error(`[Feature Guard] Unexpected error during validation (${correlationId})`, error);
+    const errorMsg = `🚨 [Feature Guard] CRITICAL: Unexpected error during validation (${correlationId})`;
+    console.error(errorMsg, error);
+    
+    // Report loudly at boot
+    console.error('🚨 ANONYMOUS AUTH MAY FAIL - Feature validation error');
+    console.error('🚨 Check Supabase configuration and network connectivity');
     
     // Log to Sentry if available
     if (typeof window !== 'undefined' && (window as any).Sentry) {
