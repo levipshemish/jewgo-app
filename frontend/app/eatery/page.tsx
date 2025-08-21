@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef } from 'react';
+import React, { useState, useEffect, Fragment, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -221,8 +221,38 @@ export default function EateryExplorePage() {
     loadRestaurants();
   }, [searchQuery, activeFilters]);
 
-  // Use restaurants directly since filtering is now done on the backend
-  const filteredRestaurants = restaurants;
+  // Sort restaurants by distance when location is available
+  const sortedRestaurants = useMemo(() => {
+    if (!locationPermissionGranted || !userLocation) {
+      return restaurants;
+    }
+
+    return [...restaurants].sort((a, b) => {
+      // If either restaurant doesn't have coordinates, keep original order
+      if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) {
+        return 0;
+      }
+
+      const distanceA = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        a.latitude,
+        a.longitude
+      );
+
+      const distanceB = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        b.latitude,
+        b.longitude
+      );
+
+      return distanceA - distanceB;
+    });
+  }, [restaurants, locationPermissionGranted, userLocation]);
+
+  // Use sorted restaurants for display
+  const filteredRestaurants = sortedRestaurants;
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRestaurants.length / itemsPerPage);
@@ -542,6 +572,23 @@ export default function EateryExplorePage() {
         </div>
       )}
       
+      {/* Location-Based Sorting Indicator */}
+      {locationPermissionGranted && userLocation && (
+        <div className="px-4 sm:px-6 py-2 bg-green-50 border-b border-green-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-green-800 font-medium">
+                Restaurants sorted by distance from you
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Active Filters Indicator */}
       {hasActiveFilters && (
         <div className="px-4 sm:px-6 lg:px-8 py-2 bg-blue-50 border-b border-blue-100">
@@ -690,12 +737,18 @@ export default function EateryExplorePage() {
                   <>
                     Showing {displayedRestaurants.length} of {filteredRestaurants.length} items
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
+                    {locationPermissionGranted && userLocation && (
+                      <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
+                    )}
                     {isMobile && <span className="block text-xs text-blue-600 mt-1">Scroll to load more</span>}
                   </>
                 ) : (
                   <>
                     Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages})
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
+                    {locationPermissionGranted && userLocation && (
+                      <span className="block text-xs text-green-600 mt-1">📍 Sorted by distance</span>
+                    )}
                   </>
                 )}
               </div>
