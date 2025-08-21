@@ -2025,57 +2025,20 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 from utils.hours_formatter import HoursFormatter
 
                 try:
-                    # Get hours data from the restaurant
-                    hours_json_data = restaurant.get("hours_json", {})
-                    hours_of_operation_data = restaurant.get("hours_of_operation", "")
-                    
-                    # Initialize empty hours data
-                    formatted_hours_data = {}
-                    
-                    # Handle Google Places API format with weekday_text
-                    if isinstance(hours_json_data, dict) and hours_json_data:
-                        weekday_text = hours_json_data.get('weekday_text', [])
-                        
-                        for day_line in weekday_text:
-                            # Parse lines like "Monday: 11:00 AM – 11:00 PM"
-                            if ': ' in day_line:
-                                day_part, time_part = day_line.split(': ', 1)
-                                day_name = day_part.strip()
-                                time_range = time_part.strip()
-                                
-                                # Convert day name to abbreviation
-                                day_abbr = HoursFormatter._get_day_abbreviation(day_name.lower())
-                                
-                                # Parse time range - handle both en dash (–) and regular dash (-)
-                                if ' – ' in time_range or ' - ' in time_range:
-                                    separator = ' – ' if ' – ' in time_range else ' - '
-                                    open_time, close_time = time_range.split(separator, 1)
-                                    formatted_hours_data[day_abbr] = {
-                                        "open": open_time.strip(),
-                                        "close": close_time.strip(),
-                                        "is_open": True
-                                    }
-                    
-                    # If no hours data found, return empty response
-                    if not formatted_hours_data:
-                        return jsonify(HoursFormatter._get_empty_hours_response()), 200
-
-                    # Create the hours document in the expected format
-                    hours_doc = {
-                        "hours": formatted_hours_data,
-                        "timezone": restaurant.get("timezone", "America/New_York"),
-                        "last_updated": restaurant.get("hours_last_updated")
-                    }
-
-                    formatted_hours = HoursFormatter.for_display(hours_doc)
-                    return jsonify(formatted_hours), 200
+                    # For now, just return a simple test response
+                    return jsonify({
+                        "status": "success",
+                        "message": "Hours endpoint is working",
+                        "restaurant_id": restaurant_id,
+                        "hours_json": restaurant.get("hours_json"),
+                        "hours_of_operation": restaurant.get("hours_of_operation")
+                    }), 200
 
                 except Exception as e:
                     logger.warning(
-                        f"Error parsing hours for restaurant {restaurant_id}: {e}"
+                        f"Error in hours endpoint for restaurant {restaurant_id}: {e}"
                     )
-                    # Return empty hours response on parsing error
-                    return jsonify(HoursFormatter._get_empty_hours_response()), 200
+                    return jsonify({"error": str(e)}), 500
 
             except Exception as e:
                 logger.error(
