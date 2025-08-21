@@ -27,6 +27,8 @@ RUN npx prisma generate
 ENV NODE_ENV=production
 ENV CI=true
 ENV DOCKER=true
+# Disable Supabase realtime to prevent RealtimeClient errors
+ENV NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED=false
 
 # Run build-time environment validation
 RUN npm run validate-env-build

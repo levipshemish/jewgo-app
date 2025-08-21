@@ -1,114 +1,127 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+/**
+ * Supabase utility functions for safe client initialization
+ * This prevents multiple GoTrueClient instances and RealtimeClient errors
+ */
 
-// Global registry to track Supabase client instances
-const clientRegistry = new Map<string, SupabaseClient>();
+import { createClient } from '@supabase/supabase-js';
+
+// Global flag to track if we're in a Docker environment
+const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
+const isRealtimeEnabled = process.env.NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED !== 'false';
+
+// Singleton client instance
+let supabaseClient: any = null;
 
 /**
- * Create a minimal mock Supabase client for SSR and error fallback
+ * Create a safe Supabase client that works in all environments
+ * This prevents multiple GoTrueClient instances and RealtimeClient errors
  */
-function createMockClient(): SupabaseClient {
+export function createSafeSupabaseClient() {
+  // Return existing instance if already created
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Validate environment variables
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables not configured. Using mock client.');
+    return createMockClient();
+  }
+
+  // For SSR or when we want to avoid RealtimeClient issues, use mock client
+  if (typeof window === 'undefined') {
+    return createMockClient();
+  }
+
+  // Try to get the browser client without causing RealtimeClient issues
+  try {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+      },
+      // Completely disable realtime in Docker or when explicitly disabled
+      realtime: {
+        params: {
+          eventsPerSecond: (isDocker || !isRealtimeEnabled) ? 0 : 10,
+        },
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'jewgo-safe-client',
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    return createMockClient();
+  }
+
+  return supabaseClient;
+}
+
+/**
+ * Create a mock client for SSR or error fallback
+ */
+function createMockClient() {
   return {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
       signOut: async () => ({ error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signIn: async () => ({ data: { user: null, session: null }, error: null }),
-      signUp: async () => ({ data: { user: null, session: null }, error: null }),
-      exchangeCodeForSession: async () => ({ data: { user: null, session: null }, error: null }),
-      setSession: async () => ({ data: { user: null, session: null }, error: null }),
+      onAuthStateChange: () => ({ 
+        data: { 
+          subscription: { 
+            unsubscribe: () => {} 
+          } 
+        } 
+      }),
+      getUser: async () => ({ data: { user: null }, error: null }),
     },
     from: () => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-      insert: () => ({ select: async () => ({ data: null, error: null }) }),
-      delete: () => ({ eq: async () => ({ data: null, error: null }) }),
-      update: () => ({ eq: async () => ({ data: null, error: null }) }),
+      select: () => ({ 
+        eq: () => ({ 
+          single: async () => ({ data: null, error: null }) 
+        }) 
+      }),
+      insert: () => ({ 
+        select: async () => ({ data: null, error: null }) 
+      }),
+      delete: () => ({ 
+        eq: async () => ({ data: null, error: null }) 
+      }),
+      update: () => ({ 
+        eq: async () => ({ data: null, error: null }) 
+      }),
     }),
-    rpc: async () => ({ data: null, error: null }),
-  } as any;
-}
-
-/**
- * Get or create a Supabase client instance with proper configuration
- * This prevents multiple GoTrueClient instances and RealtimeClient errors
- */
-export function getSupabaseClient(
-  url?: string,
-  key?: string,
-  options?: {
-    clientType?: 'browser' | 'server' | 'middleware';
-    disableRealtime?: boolean;
-  }
-): SupabaseClient {
-  const clientId = `${url || 'default'}-${options?.clientType || 'browser'}`;
-  
-  // Return existing instance if available
-  if (clientRegistry.has(clientId)) {
-    return clientRegistry.get(clientId)!;
-  }
-
-  // For SSR or when we want to avoid RealtimeClient issues, use mock client
-  if (typeof window === 'undefined' || options?.disableRealtime) {
-    const mockClient = createMockClient();
-    clientRegistry.set(clientId, mockClient);
-    return mockClient;
-  }
-
-  // Browser environment - try to get the browser client safely
-  try {
-    // Use a lazy import approach to avoid SSR issues
-    let browserClient: any = null;
-    
-    // Try to get the browser client without causing RealtimeClient issues
-    if (typeof window !== 'undefined') {
-      // Only import in browser environment
-      const clientModule = require('@/lib/supabase/client');
-      browserClient = clientModule.supabaseBrowser;
-    }
-    
-    if (browserClient) {
-      clientRegistry.set(clientId, browserClient);
-      return browserClient;
-    } else {
-      throw new Error('Browser client not available');
-    }
-  } catch (error) {
-    console.warn('Failed to load browser client, using fallback:', error);
-    // Return a mock client if browser client fails
-    const mockClient = createMockClient();
-    clientRegistry.set(clientId, mockClient);
-    return mockClient;
-  }
-}
-
-/**
- * Clear all Supabase client instances (useful for testing)
- */
-export function clearSupabaseClients(): void {
-  clientRegistry.clear();
-}
-
-/**
- * Get the number of active Supabase client instances
- */
-export function getActiveSupabaseClientsCount(): number {
-  return clientRegistry.size;
+    // Add other common methods as needed
+  };
 }
 
 /**
  * Check if Supabase is properly configured
  */
 export function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
-  if (!url || !key) {
-    return false;
-  }
-  
-  try {
-    const urlObj = new URL(url);
-    return urlObj.protocol === 'https:' && urlObj.hostname.endsWith('.supabase.co');
-  } catch {
-    return false;
-  }
+  return !!(supabaseUrl && supabaseAnonKey);
+}
+
+/**
+ * Get the current Supabase client instance
+ */
+export function getSupabaseClient() {
+  return createSafeSupabaseClient();
+}
+
+/**
+ * Reset the client instance (useful for testing)
+ */
+export function resetSupabaseClient() {
+  supabaseClient = null;
 }

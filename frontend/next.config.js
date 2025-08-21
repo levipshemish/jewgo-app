@@ -26,7 +26,7 @@ const nextConfig = {
     // Fail builds in CI/production; allow relaxed checks locally
     ignoreDuringBuilds: !isCI,
   },
-  // Image optimization
+  // Image optimization - disable in Docker to prevent issues
   images: {
     domains: ['res.cloudinary.com', 'maps.googleapis.com'],
     formats: ['image/webp', 'image/avif'],
@@ -35,7 +35,8 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
-    unoptimized: false,
+    // Disable image optimization in Docker to prevent issues
+    unoptimized: isDocker,
   },
   // Configure experimental features for optimal performance
   experimental: {

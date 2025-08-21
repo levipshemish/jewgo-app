@@ -8,6 +8,9 @@ services:
     environment:
       - NODE_ENV=production
       - CI=true
+      - DOCKER=true
+      # Disable Supabase realtime to prevent RealtimeClient errors
+      - NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED=false
       # Point to your production backend URL
       - NEXT_PUBLIC_API_URL=https://jewgo-app-oyoh.onrender.com
       - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
