@@ -19,7 +19,7 @@ import {
   IS_PRODUCTION 
 } from '@/lib/config/environment';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // Normalized error codes
 const ERROR_CODES = {

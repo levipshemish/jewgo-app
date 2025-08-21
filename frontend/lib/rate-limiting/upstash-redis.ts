@@ -22,38 +22,60 @@ const RATE_LIMITS = {
 // Initialize Redis client with fallback for missing environment variables
 let redis: any = null;
 
-try {
-  // Use standard Redis configuration from environment variables
-  const redisUrl = process.env.REDIS_URL;
-  const redisHost = process.env.REDIS_HOST;
-  const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379;
-  const redisPassword = process.env.REDIS_PASSWORD;
-  const redisDb = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
+// Check if we're in Edge Runtime (which doesn't support Node.js modules)
+const isEdgeRuntime = typeof process === 'undefined' || process.env.NEXT_RUNTIME === 'edge';
 
-  if (redisUrl) {
-    // Use Redis URL if available
-    const Redis = require('redis');
-    redis = Redis.createClient({ url: redisUrl });
-    redis.connect();
-  } else if (redisHost) {
-    // Use individual Redis configuration
-    const Redis = require('redis');
-    redis = Redis.createClient({
-      socket: {
-        host: redisHost,
-        port: redisPort
-      },
-      password: redisPassword,
-      database: redisDb
-    });
-    redis.connect();
-  } else {
-    console.warn('Redis environment variables not configured. Rate limiting will be disabled.');
+// Initialize Redis client asynchronously
+async function initializeRedis() {
+  if (isEdgeRuntime) {
+    console.warn('Edge Runtime detected. Redis rate limiting will be disabled.');
+    return null;
   }
-} catch (error) {
+
+  try {
+    // Use standard Redis configuration from environment variables
+    const redisUrl = process.env.REDIS_URL;
+    const redisHost = process.env.REDIS_HOST;
+    const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379;
+    const redisPassword = process.env.REDIS_PASSWORD;
+    const redisDb = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
+
+    if (redisUrl) {
+      // Use Redis URL if available - import dynamically to avoid Edge Runtime issues
+      const Redis = await import('redis');
+      const client = Redis.createClient({ url: redisUrl });
+      client.connect();
+      return client;
+    } else if (redisHost) {
+      // Use individual Redis configuration - import dynamically to avoid Edge Runtime issues
+      const Redis = await import('redis');
+      const client = Redis.createClient({
+        socket: {
+          host: redisHost,
+          port: redisPort
+        },
+        password: redisPassword,
+        database: redisDb
+      });
+      client.connect();
+      return client;
+    } else {
+      console.warn('Redis environment variables not configured. Rate limiting will be disabled.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Failed to initialize Redis client:', error);
+    return null;
+  }
+}
+
+// Initialize Redis client
+initializeRedis().then(client => {
+  redis = client;
+}).catch(error => {
   console.error('Failed to initialize Redis client:', error);
   redis = null;
-}
+});
 
 /**
  * Enhanced rate limiting with improved UX responses
