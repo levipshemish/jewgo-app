@@ -8,12 +8,12 @@ import {
   storeIdempotencyResult
 } from '@/lib/rate-limiting/upstash-redis';
 import { 
-  validateCSRF, 
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
+import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
 import { verifyMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
@@ -69,14 +69,14 @@ export async function POST(request: NextRequest) {
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = 'unknown'; // Edge runtime doesn't support request.ip
+    const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip') || 'unknown';
     
     // Comprehensive CSRF validation with signed token fallback
-    if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
-        realIP,
+        reqIp,
         correlationId,
         hasCSRFToken: !!csrfToken
       });
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
+    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
     
     // Rate limiting for merge operations
     const rateLimitResult = await checkRateLimit(

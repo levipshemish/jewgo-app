@@ -347,6 +347,36 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       expect(result).toBe(true);
     });
 
+    it('should return true when either refresh_token OR jti changes (not requiring both)', () => {
+      const preUpgradeSession = {
+        refresh_token: 'old-refresh-token',
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJvbGQtanRpIiwiaWF0IjoxNjE2MjM5MDIyfQ.signature'
+      };
+      
+      const postUpgradeSession = {
+        refresh_token: 'new-refresh-token', // Only refresh_token changed
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJvbGQtanRpIiwiaWF0IjoxNjE2MjM5MDIyfQ.signature' // Same jti
+      };
+      
+      const result = verifyTokenRotation(preUpgradeSession, postUpgradeSession);
+      expect(result).toBe(true); // Should return true even though jti didn't change
+    });
+
+    it('should return false only when both refresh_token AND jti are unchanged', () => {
+      const preUpgradeSession = {
+        refresh_token: 'same-refresh-token',
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJzYW1lLWp0aSIsImlhdCI6MTYxNjIzOTAyMn0.signature'
+      };
+      
+      const postUpgradeSession = {
+        refresh_token: 'same-refresh-token', // Same refresh_token
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJzYW1lLWp0aSIsImlhdCI6MTYxNjIzOTAyMn0.signature' // Same jti
+      };
+      
+      const result = verifyTokenRotation(preUpgradeSession, postUpgradeSession);
+      expect(result).toBe(false); // Should return false only when both unchanged
+    });
+
     it('should test fallback re-auth when rotation fails', () => {
       const preUpgradeSession = { refresh_token: 'same-token' };
       const postUpgradeSession = { refresh_token: 'same-token' };
@@ -420,6 +450,23 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       const forwardedFor = '10.0.0.1, 173.245.48.1';
       const result = validateTrustedIP(untrustedIP, forwardedFor);
       expect(result).toBe(untrustedIP);
+    });
+
+    it('should use request IP when X-Forwarded-For is spoofed by untrusted source', () => {
+      // Simulate spoofed XFF from untrusted source
+      const untrustedIP = '192.168.1.100';
+      const spoofedXff = '8.8.8.8,1.1.1.1'; // Spoofed to look like trusted IPs
+      const result = validateTrustedIP(untrustedIP, spoofedXff);
+      
+      expect(result).toBe(untrustedIP); // Should ignore spoofed XFF
+    });
+
+    it('should fallback to request IP when X-Forwarded-For parsing fails', () => {
+      const trustedIP = '173.245.48.1';
+      const invalidXff = 'invalid-ip-format';
+      const result = validateTrustedIP(trustedIP, invalidXff);
+      
+      expect(result).toBe(trustedIP); // Should fallback to request IP
     });
   });
 
@@ -629,6 +676,178 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       
       // Check that cookie is set with proper options
       expect(response.cookies).toBeDefined();
+    });
+  });
+
+  describe('Upgrade Email API', () => {
+    it('should successfully upgrade email for authenticated user', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      // Mock successful user update
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: { id: 'test-user-id', email: 'old@example.com' } },
+        error: null
+      });
+      
+      mockSupabaseClient.auth.updateUser.mockResolvedValue({
+        data: { user: { id: 'test-user-id', email: 'new@example.com' } },
+        error: null
+      });
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/profile';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'new@example.com' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(200);
+      expect(result.ok).toBe(true);
+      expect(result.user.email).toBe('new@example.com');
+    });
+
+    it('should return EMAIL_IN_USE error when email is already registered', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      // Mock user exists
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: { id: 'test-user-id', email: 'old@example.com' } },
+        error: null
+      });
+      
+      // Mock email already in use error
+      mockSupabaseClient.auth.updateUser.mockResolvedValue({
+        data: null,
+        error: { message: 'User already registered' }
+      });
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/profile';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'existing@example.com' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(result.error).toBe('EMAIL_IN_USE');
+    });
+
+    it('should return INVALID_EMAIL error for malformed email', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/profile';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'invalid-email' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(result.error).toBe('INVALID_EMAIL');
+    });
+
+    it('should return AUTHENTICATION_ERROR for unauthenticated requests', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      // Mock no user found
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: null },
+        error: { message: 'Not authenticated' }
+      });
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/profile';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'new@example.com' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(401);
+      expect(result.error).toBe('AUTHENTICATION_ERROR');
+    });
+
+    it('should return RATE_LIMITED error when rate limit exceeded', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      // Mock rate limiting
+      jest.mocked(checkRateLimit).mockResolvedValue({
+        allowed: false,
+        remaining_attempts: 0,
+        reset_in_seconds: 60,
+        retry_after: 60
+      });
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/profile';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'new@example.com' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(429);
+      expect(result.error).toBe('RATE_LIMITED');
+    });
+
+    it('should return CSRF error for invalid CSRF token', async () => {
+      const { POST } = await import('@/app/api/auth/upgrade-email/route');
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://malicious-site.com';
+            return null;
+          })
+        },
+        json: jest.fn().mockResolvedValue({ email: 'new@example.com' })
+      } as any;
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(response.status).toBe(403);
+      expect(result.error).toBe('CSRF');
     });
   });
 });

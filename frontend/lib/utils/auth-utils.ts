@@ -70,24 +70,24 @@ export function extractJtiFromToken(token: string): string | null {
 /**
  * Verify token rotation after account upgrade
  * Checks refresh_token and JWT jti changes between pre/post upgrade states
+ * Returns true if either refresh_token OR jti changed (not requiring both)
  */
 export function verifyTokenRotation(
   preUpgradeSession: any,
   postUpgradeSession: any
 ): boolean {
   try {
-    // Check if refresh_token changed
-    if (preUpgradeSession.refresh_token === postUpgradeSession.refresh_token) {
-      console.warn('Token rotation failed: refresh_token unchanged');
-      return false;
-    }
+    // Compute refresh_token change
+    const refreshChanged = preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token;
     
-    // Extract and compare JWT jti (JWT ID)
+    // Compute JWT jti change
     const preJti = extractJtiFromToken(preUpgradeSession.access_token);
     const postJti = extractJtiFromToken(postUpgradeSession.access_token);
+    const jtiChanged = preJti !== postJti;
     
-    if (preJti === postJti) {
-      console.warn('Token rotation failed: JWT jti unchanged');
+    // Return true if either changed, false only if both unchanged
+    if (!refreshChanged && !jtiChanged) {
+      console.warn('Token rotation failed: both refresh_token and JWT jti unchanged');
       return false;
     }
     
@@ -243,6 +243,7 @@ function isValidIP(ip: string): boolean {
 /**
  * Comprehensive CSRF validation with strict Origin+Referer checks and signed token fallback
  * Accepts valid signed CSRF token when Origin/Referer are missing
+ * Client-side implementation - throws on server use
  */
 export function validateCSRF(
   origin: string | null,
@@ -250,6 +251,12 @@ export function validateCSRF(
   allowedOrigins: string[],
   csrfToken?: string | null
 ): boolean {
+  // Check if we're on the server side
+  if (typeof window === 'undefined') {
+    // Server-side - throw error to force use of server variant
+    throw new Error('validateCSRF should not be called on server side. Use validateCSRFServer from auth-utils.server.ts instead.');
+  }
+  
   // If both Origin and Referer are missing, require a valid signed CSRF token
   if (!origin && !referer) {
     if (!csrfToken) {
@@ -289,9 +296,15 @@ export function validateCSRF(
 
 /**
  * Verify signed CSRF token using HMAC
- * Client-side implementation - simplified version for client bundle
+ * Client-side implementation - throws on server use or delegates to server variant
  */
 function verifySignedCSRFToken(token: string): boolean {
+  // Check if we're on the server side
+  if (typeof window === 'undefined') {
+    // Server-side - throw error to force use of server variant
+    throw new Error('verifySignedCSRFToken should not be called on server side. Use verifySignedCSRFTokenServer from auth-utils.server.ts instead.');
+  }
+  
   try {
     // Client-side implementation - basic format validation only
     // Full HMAC verification should be done server-side
@@ -541,7 +554,6 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       '/profile',       // User profile management
       '/settings',      // User settings
       '/favorites',     // User favorites (added for UX consistency)
-      '/messages',      // Messaging system
       '/marketplace',   // Marketplace features
       '/live-map',      // Live map functionality
       '/mikva',         // Mikva-related features

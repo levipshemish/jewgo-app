@@ -4,7 +4,7 @@
  * to prevent client bundle inclusion of sensitive HMAC keys
  */
 
-import { createHmac } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -447,57 +447,109 @@ export async function completeIdentityLinking(userId: string, reauthProvider: st
 }
 
 /**
- * Verify signed CSRF token using HMAC
- * Server-side implementation for CSRF token validation
+ * Server-only HMAC constants
  */
-export function verifySignedCSRFToken(token: string): boolean {
+const CSRF_SECRET = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
+const CSRF_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+/**
+ * Verify signed CSRF token using HMAC
+ * Server-side implementation with full signature validation
+ */
+export function verifySignedCSRFTokenServer(token: string): boolean {
   try {
     const parts = token.split(':');
-    if (parts.length < 3) {
+    if (parts.length !== 4) {
       return false;
     }
 
-    const version = parts[0];
-    const signature = parts[1];
-    const data = parts.slice(2).join(':');
-
+    const [version, timestamp, nonce, signature] = parts;
+    
+    // Validate version
     if (version !== 'v1' && version !== 'v2') {
       return false;
     }
 
-    // Use the same HMAC keys as merge cookies for consistency
-    const currentKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
-    const previousKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY : MERGE_COOKIE_HMAC_KEY_V2;
-
-    const currentSignature = createHmac('sha256', currentKey).update(data).digest('hex');
-    const previousSignature = createHmac('sha256', previousKey).update(data).digest('hex');
-
-    if (signature === currentSignature || signature === previousSignature) {
-      const payload = JSON.parse(data);
-      
-      // Check expiration (5 minutes for CSRF tokens)
-      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-        return false;
-      }
-
-      return true;
+    // Check expiration
+    const tokenTime = parseInt(timestamp, 10);
+    const currentTime = Date.now();
+    if (currentTime - tokenTime > CSRF_TOKEN_EXPIRY) {
+      return false;
     }
 
-    return false;
+    // Verify HMAC signature
+    const payload = `${version}:${timestamp}:${nonce}`;
+    const expectedSignature = createHmac('sha256', CSRF_SECRET)
+      .update(payload)
+      .digest('hex');
+
+    return signature === expectedSignature;
   } catch (error) {
+    console.error('CSRF token verification failed:', error);
     return false;
   }
 }
 
 /**
- * Generate signed CSRF token for client-side use
- * Used when Origin/Referer headers are not available
+ * Generate signed CSRF token
+ * Server-side implementation for generating secure tokens
  */
 export function generateSignedCSRFToken(): string {
-  const payload = {
-    exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes expiration
-    nonce: Math.random().toString(36).substring(2, 15)
-  };
+  const version = 'v2';
+  const timestamp = Date.now().toString();
+  const nonce = randomBytes(16).toString('hex');
+  const payload = `${version}:${timestamp}:${nonce}`;
   
-  return signMergeCookieVersioned(payload, 'v2');
+  const signature = createHmac('sha256', CSRF_SECRET)
+    .update(payload)
+    .digest('hex');
+
+  return `${payload}:${signature}`;
+}
+
+/**
+ * Server-side CSRF validation with HMAC verification
+ * This is the server-only version that performs full signature validation
+ */
+export function validateCSRFServer(
+  origin: string | null,
+  referer: string | null,
+  allowedOrigins: string[],
+  csrfToken?: string | null
+): boolean {
+  // If both Origin and Referer are missing, require a valid signed CSRF token
+  if (!origin && !referer) {
+    if (!csrfToken) {
+      return false;
+    }
+    
+    // Verify signed CSRF token using HMAC
+    return verifySignedCSRFTokenServer(csrfToken);
+  }
+  
+  // If either Origin or Referer is present, require both to be valid
+  if (!origin || !referer) {
+    return false;
+  }
+  
+  // Check Origin against allowlist
+  const originValid = allowedOrigins.some(allowed => {
+    return origin === allowed || origin.endsWith(allowed);
+  });
+  
+  if (!originValid) {
+    return false;
+  }
+  
+  // Check Referer against allowlist
+  const refererValid = allowedOrigins.some(allowed => {
+    try {
+      const refererUrl = new URL(referer);
+      return refererUrl.origin === allowed || refererUrl.origin.endsWith(allowed);
+    } catch {
+      return false;
+    }
+  });
+  
+  return refererValid;
 }

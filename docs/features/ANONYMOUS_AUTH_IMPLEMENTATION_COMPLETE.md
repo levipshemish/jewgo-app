@@ -183,7 +183,7 @@ const permissions = await writeGates.getUserPermissions();
 - ✅ **Redirect sanitization** using `validateRedirectUrl()`
 - ✅ **Anonymous user detection** via `extractIsAnonymous()`
 - ✅ **Private route matching** (`/admin/:path*`, `/messages/:path*`, `/api/admin/:path*`)
-- ✅ **Edge runtime compatibility**
+- ✅ **Node.js runtime** for crypto operations and cookie management
 
 ## 🔧 Configuration Requirements
 
@@ -312,7 +312,7 @@ All operations include correlation IDs for:
 - ✅ **Batch processing** for cleanup operations
 - ✅ **Connection pooling** for database operations
 - ✅ **Caching strategies** for rate limiting
-- ✅ **Edge runtime** compatibility
+- ✅ **Node.js runtime** for crypto operations and cookie management
 
 ## 📈 Usage Examples
 

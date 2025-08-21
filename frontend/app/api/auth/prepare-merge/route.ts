@@ -5,12 +5,12 @@ import {
   checkRateLimit
 } from '@/lib/rate-limiting/upstash-redis';
 import { 
-  validateCSRF, 
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
+import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
 import { signMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Comprehensive CSRF validation with signed token fallback
-    if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,

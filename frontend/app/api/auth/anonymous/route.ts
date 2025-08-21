@@ -5,18 +5,29 @@ import {
   checkRateLimit
 } from '@/lib/rate-limiting/upstash-redis';
 import { 
-  validateCSRF, 
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
+import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
 import { validateSupabaseFeatureSupport, getCachedFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders
 } from '@/lib/config/environment';
 
+/**
+ * RUNTIME: Node.js is required for this endpoint due to dependencies:
+ * - crypto module for HMAC operations in auth-utils.server.ts
+ * - cookies from next/headers for Supabase SSR client
+ * - @upstash/redis for rate limiting via REST API
+ * - Server-side Supabase client with cookie adapter
+ * 
+ * Edge runtime is not compatible with these Node.js-specific features.
+ * Upstash Redis is accessed via REST API, so Edge performance benefits
+ * are not applicable here.
+ */
 export const runtime = 'nodejs';
 
 // Normalized error codes
@@ -80,14 +91,15 @@ export async function POST(request: NextRequest) {
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip');
+    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
     
     // Comprehensive CSRF validation with signed token fallback
-    if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
-        realIP,
+        validatedIP,
         correlationId,
         hasCSRFToken: !!csrfToken
       });
@@ -100,9 +112,6 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    
-    // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
     
     // Rate limiting with enhanced UX
     const rateLimitResult = await checkRateLimit(

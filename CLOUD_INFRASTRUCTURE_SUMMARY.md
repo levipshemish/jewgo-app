@@ -97,7 +97,7 @@ vercel --prod
 - ✅ **Touch Interactions**: Gesture support
 - ✅ **Real-time Updates**: WebSocket integration
 - ✅ **Performance Monitoring**: Battery and connection optimization
-- ✅ **Edge Functions**: Serverless API endpoints
+- ✅ **Node.js API Routes**: Serverless API endpoints with Node.js runtime for crypto operations
 
 ### **Database Optimizations (Neon)**
 - ✅ **Spatial Indexes**: GiST indexes for distance queries
