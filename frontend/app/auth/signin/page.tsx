@@ -7,6 +7,7 @@ import { FormEvent, useState, Suspense, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
+import { shouldRedirectToSetup } from "@/lib/utils/apple-oauth-config";
 
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
@@ -132,6 +133,13 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     setError(null);
     
     try {
+      // Check if Apple OAuth is properly configured
+      if (shouldRedirectToSetup()) {
+        // Redirect to setup page if not configured
+        router.push('/auth/apple-setup');
+        return;
+      }
+      
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       

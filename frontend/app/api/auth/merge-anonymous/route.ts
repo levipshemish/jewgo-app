@@ -6,7 +6,7 @@ import {
   generateIdempotencyKey,
   checkIdempotency,
   storeIdempotencyResult
-} from '@/lib/rate-limiting/upstash-redis';
+} from '@/lib/rate-limiting';
 import { 
   validateTrustedIP,
   generateCorrelationId,

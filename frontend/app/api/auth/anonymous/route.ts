@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { 
   checkRateLimit
-} from '@/lib/rate-limiting/upstash-redis';
+} from '@/lib/rate-limiting';
 import { 
   validateTrustedIP,
   generateCorrelationId,
