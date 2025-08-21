@@ -266,60 +266,71 @@ export default function MarketplacePage() {
 
 
       {/* Listings */}
-      <div className="px-4 py-6">
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-800">{error}</p>
-          </div>
-        )}
+      <div className="px-4 py-4">
+        <div className="max-w-7xl lg:max-w-none mx-auto">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
 
-        {loading && listings.length === 0 ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : listings.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">🛍️</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery || Object.values(filters).some(f => f) 
-                ? 'Try adjusting your search or filters'
-                : 'Be the first to add a listing!'
-              }
-            </p>
+          {loading && listings.length === 0 ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : listings.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">🛍️</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
+              <p className="text-gray-500 mb-6">
+                {searchQuery || Object.values(filters).some(f => f) 
+                  ? 'Try adjusting your search or filters'
+                  : 'Be the first to add a listing!'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+              {listings.map(listing => (
+                <div key={listing.id}>
+                  <UnifiedCard
+                    data={transformMarketplaceToCardData(listing)}
+                    variant="default"
+                    onCardClick={() => router.push(`/marketplace/${listing.id}`)}
+                    onLikeToggle={(id, isLiked) => {
+                      // Handle like toggle - you can add your like logic here
+                      console.log(`Marketplace listing ${id} ${isLiked ? 'liked' : 'unliked'}`);
+                    }}
+                    onTagClick={(tagLink, event) => {
+                      event.preventDefault();
+                      // Handle tag click - you can add navigation logic here
+                      console.log('Tag clicked:', tagLink);
+                    }}
+                    className="w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {listings.map(listing => (
-              <UnifiedCard
-                key={listing.id}
-                data={transformMarketplaceToCardData(listing)}
-                onLike={() => {}} // No like functionality for marketplace listings
-                onShare={() => {}} // No share functionality for marketplace listings
-                onViewDetails={() => router.push(`/marketplace/${listing.id}`)}
-              />
-            ))}
-          </div>
-        )}
+          {/* Load More */}
+          {hasMore && !loading && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={handleLoadMore}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Load More Listings
+              </button>
+            </div>
+          )}
 
-        {/* Load More */}
-        {hasMore && !loading && (
-          <div className="mt-8 text-center">
-            <button
-              onClick={handleLoadMore}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Load More Listings
-            </button>
-          </div>
-        )}
-
-        {loading && listings.length > 0 && (
-          <div className="mt-8 text-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-          </div>
-        )}
+          {loading && listings.length > 0 && (
+            <div className="mt-8 text-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Categories Dropdown */}
