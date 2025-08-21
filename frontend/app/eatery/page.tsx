@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import UnifiedRestaurantCard from '@/components/restaurant/UnifiedRestaurantCard';
+import UnifiedCard from '@/components/ui/UnifiedCard';
 import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -280,6 +280,29 @@ export default function EateryExplorePage() {
     router.push('/add-eatery');
   };
 
+  // Transform restaurant data to UnifiedCard format
+  const transformRestaurantToCardData = (restaurant: Restaurant) => {
+    return {
+      id: restaurant.id,
+      imageUrl: restaurant.image_url,
+      imageTag: restaurant.kosher_category || restaurant.certifying_agency,
+      imageTagLink: `/eatery?kosher=${restaurant.kosher_category}&agency=${restaurant.certifying_agency}`,
+      title: restaurant.name,
+      badge: restaurant.rating ? restaurant.rating.toString() : undefined,
+      subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
+      additionalText: restaurant.city || restaurant.state,
+      showHeart: true,
+      isLiked: false // This will be handled by the component internally
+    };
+  };
+
+  // Helper function to format price range
+  const formatPriceRange = (priceRange: string) => {
+    if (!priceRange) return undefined;
+    const count = (priceRange.match(/\$/g) || []).length;
+    return '$'.repeat(count);
+  };
+
   // Enhanced pagination handlers with scroll to top
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -492,9 +515,19 @@ export default function EateryExplorePage() {
               <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
                   <div key={restaurant.id} className="relative">
-                    <UnifiedRestaurantCard
-                      restaurant={restaurant}
-                      variant="eatery"
+                    <UnifiedCard
+                      data={transformRestaurantToCardData(restaurant)}
+                      variant="default"
+                      onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+                      onLikeToggle={(id, isLiked) => {
+                        // Handle like toggle - you can add your like logic here
+                        console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
+                      }}
+                      onTagClick={(tagLink, event) => {
+                        event.preventDefault();
+                        // Handle tag click - you can add navigation logic here
+                        console.log('Tag clicked:', tagLink);
+                      }}
                       className="w-full"
                     />
                   </div>
