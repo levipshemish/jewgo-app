@@ -14,7 +14,7 @@ import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
 // Transform marketplace listing data to UnifiedCard format
-const transformMarketplaceToCardData = (listing: MarketplaceListing) => {
+const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocation: { latitude: number; longitude: number } | null) => {
   // Format price from cents to dollars
   const formatPrice = (priceCents: number) => {
     return `$${(priceCents / 100).toFixed(0)}`;
@@ -31,14 +31,57 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing) => {
     }
   };
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1d';
+    if (diffDays < 7) return `${diffDays}d`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}m`;
+    return `${Math.floor(diffDays / 365)}y`;
+  };
+
+  // Calculate distance if location is available
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const formatDistance = (distance: number) => {
+    if (distance < 1) return `${(distance * 5280).toFixed(0)}ft`;
+    return `${distance.toFixed(1)}mi`;
+  };
+
+  let distanceText: string | undefined;
+
+  if (userLocation && listing.lat && listing.lng) {
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      listing.lat,
+      listing.lng
+    );
+    distanceText = formatDistance(distance);
+  }
+
   return {
     id: listing.id,
     imageUrl: listing.thumbnail || listing.images?.[0],
-    imageTag: listing.category_name || listing.kind,
+    imageTag: formatCondition(listing.condition),
     title: listing.title,
-    badge: listing.rating ? listing.rating.toString() : undefined,
+    badge: formatDate(listing.created_at),
     subtitle: formatPrice(listing.price_cents),
-    additionalText: formatCondition(listing.condition),
+    additionalText: distanceText, // Only show if location is enabled
     showHeart: true,
     isLiked: false // This will be handled by the component internally
   };
@@ -58,6 +101,12 @@ export default function MarketplacePage() {
   const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
   
+  // Location state
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  
   // Filter state
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: '',
@@ -76,6 +125,60 @@ export default function MarketplacePage() {
   // Load initial listings
   useEffect(() => {
     loadListings();
+  }, []);
+
+  // Get user location for distance calculation
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by this browser');
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationLoading(false);
+        setLocationPermissionGranted(true);
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      (error) => {
+        setLocationLoading(false);
+        setLocationPermissionGranted(false);
+        let errorMessage = 'Unable to get your location';
+        
+        if (error && typeof error === 'object' && 'code' in error) {
+          const errorCode = (error as GeolocationPositionError).code;
+          switch (errorCode) {
+            case (error as GeolocationPositionError).PERMISSION_DENIED:
+              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+              break;
+            case (error as GeolocationPositionError).POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable. Please try again.';
+              break;
+            case (error as GeolocationPositionError).TIMEOUT:
+              errorMessage = 'Location request timed out. Please try again.';
+              break;
+          }
+        }
+        
+        setLocationError(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000, // 5 minutes
+      }
+    );
+  };
+
+  // Request location permission on component mount
+  useEffect(() => {
+    getUserLocation();
   }, []);
 
   const loadListings = async (page = 1, append = false) => {
@@ -293,7 +396,7 @@ export default function MarketplacePage() {
               {listings.map(listing => (
                 <div key={listing.id}>
                   <UnifiedCard
-                    data={transformMarketplaceToCardData(listing)}
+                    data={transformMarketplaceToCardData(listing, userLocation)}
                     variant="default"
                     onCardClick={() => router.push(`/marketplace/${listing.id}`)}
                     onLikeToggle={(id, isLiked) => {
