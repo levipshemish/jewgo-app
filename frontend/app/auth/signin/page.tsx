@@ -97,6 +97,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({}), // Send empty object to avoid JSON parsing error
       });
 
       const result = await response.json();
@@ -193,18 +194,29 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         callbackParams.set('link_state', state);
       }
       
+      // Use the correct callback URL that matches Supabase configuration
+      const callbackUrl = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
+      
+      console.log('Starting Google OAuth with callback URL:', callbackUrl);
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}`,
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       });
 
       if (error) {
-        setError(error.message);
+        console.error('Google OAuth error:', error);
+        setError(`Google OAuth failed: ${error.message}`);
+      } else {
+        console.log('Google OAuth initiated successfully');
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Google sign in error:', err);
       setError('Google sign in failed');
     } finally {

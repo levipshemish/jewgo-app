@@ -111,6 +111,10 @@ WITH CHECK (
   AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
+CREATE POLICY "favorites_owner_read" ON favorites
+FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
 CREATE POLICY "favorites_owner_update" ON favorites
 FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)

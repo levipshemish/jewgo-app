@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
-import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
+import { validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
 import { getCORSHeaders, getCookieOptions } from '@/lib/config/environment';
@@ -38,22 +38,22 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
   });
 
   describe('Feature Support Validation', () => {
-    it('should validate signInAnonymously and linkIdentity method availability', () => {
+    it('should validate signInAnonymously and linkIdentity method availability', async () => {
       // Test successful validation
       mockSupabaseClient.auth.signInAnonymously.mockReturnValue(() => {});
       mockSupabaseClient.auth.linkIdentity.mockReturnValue(() => {});
       
-      const result = validateSupabaseFeatureSupport();
+      const result = await validateSupabaseFeaturesWithLogging();
       expect(result).toBe(true);
     });
 
-    it('should fail fast with loud error logging when signInAnonymously is missing', () => {
+    it('should fail fast with loud error logging when signInAnonymously is missing', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       
       mockSupabaseClient.auth.signInAnonymously = undefined;
       mockSupabaseClient.auth.linkIdentity.mockReturnValue(() => {});
       
-      const result = validateSupabaseFeatureSupport();
+      const result = await validateSupabaseFeaturesWithLogging();
       
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -63,13 +63,13 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       consoleSpy.mockRestore();
     });
 
-    it('should fail fast with loud error logging when linkIdentity is missing', () => {
+    it('should fail fast with loud error logging when linkIdentity is missing', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       
       mockSupabaseClient.auth.signInAnonymously.mockReturnValue(() => {});
       mockSupabaseClient.auth.linkIdentity = undefined;
       
-      const result = validateSupabaseFeatureSupport();
+      const result = await validateSupabaseFeaturesWithLogging();
       
       expect(result).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
