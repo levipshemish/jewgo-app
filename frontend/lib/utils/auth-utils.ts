@@ -37,47 +37,7 @@ export interface TransformedUser {
   updatedAt?: string;
 }
 
-// Feature support validation
-let featureSupportValidated = false;
 
-/**
- * Validate Supabase feature support at runtime with boot-time checks
- * Checks for signInAnonymously and linkIdentity method availability
- */
-export function validateSupabaseFeatureSupport(): boolean {
-  if (featureSupportValidated) {
-    return true;
-  }
-
-  try {
-    // Dynamic import to avoid SSR issues
-    const { createClient } = require('@supabase/supabase-js');
-    
-    // Create a test client to check method availability
-    const testClient = createClient('https://test.supabase.co', 'test-key');
-    
-    // Check for required methods
-    if (typeof testClient.auth.signInAnonymously !== 'function') {
-      console.error('🚨 CRITICAL: signInAnonymously method not available in Supabase SDK');
-      console.error('This will brick the entire guest flow. Check Supabase SDK version.');
-      return false;
-    }
-    
-    if (typeof testClient.auth.linkIdentity !== 'function') {
-      console.error('🚨 CRITICAL: linkIdentity method not available in Supabase SDK');
-      console.error('This will prevent account merging. Check Supabase SDK version.');
-      return false;
-    }
-    
-    featureSupportValidated = true;
-    console.log('✅ Supabase feature support validated successfully');
-    return true;
-  } catch (error) {
-    console.error('🚨 CRITICAL: Failed to validate Supabase feature support:', error);
-    console.error('Application startup failure - Supabase SDK may be corrupted');
-    return false;
-  }
-}
 
 /**
  * Extract JWT ID (jti) from access token

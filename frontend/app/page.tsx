@@ -1,195 +1,94 @@
-'use client';
+"use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import AuthStatus from "@/components/auth/AuthStatus";
-import { Header } from "@/components/layout";
-import ActionButtons from "@/components/layout/ActionButtons";
-import { CategoryTabs, BottomNavigation } from "@/components/navigation/ui";
+import { supabaseBrowser } from "@/lib/supabase/client";
+import SignInPage from "@/components/auth/SignInPage";
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-[#f4f4f4]">
-      {/* Search Header */}
-      <Header
-        onSearch={(_query) => {
-          // Handle search
-        }}
-        placeholder="Search restaurants..."
-        showFilters={true}
-        onShowFilters={() => {
-          // Handle show filters
-        }}
-      />
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [hasRequestedLocation, setHasRequestedLocation] = useState<boolean>(false);
+  const router = useRouter();
 
-      {/* Category Tabs */}
-      <CategoryTabs activeTab="eatery" onTabChange={(_tab) => {
-        // Handle tab change
-      }} />
-
-      {/* Action Buttons */}
-      <ActionButtons
-        onShowFilters={() => {
-          // Handle show filters
-        }}
-        onShowMap={() => {
-          // Handle show map
-        }}
-        onAddEatery={() => {
-          // Handle add eatery
-        }}
-      />
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Welcome to JewGo
-          </h1>
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        
+        if (session?.user) {
+          setIsAuthenticated(true);
           
-          {/* Authentication Status */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Authentication Status</h2>
-            <AuthStatus />
-          </div>
+          // Check if user has already been prompted for location
+          const locationRequested = localStorage.getItem('locationRequested');
+          if (!locationRequested) {
+            // First time authenticated - redirect to location access
+            router.push('/location-access');
+          } else {
+            // Already requested location - redirect to eatery
+            router.push('/eatery');
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      }
+    };
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Link
-              href="/eatery"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Browse Restaurants</h3>
-              <p className="text-gray-600">Discover kosher restaurants in your area</p>
-            </Link>
+    checkAuth();
 
-            <Link
-              href="/favorites"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">My Favorites</h3>
-              <p className="text-gray-600">View and manage your favorite restaurants</p>
-            </Link>
+    // Listen for auth changes
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      async (event: string, session: any) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setIsAuthenticated(true);
+          
+          // Check if user has already been prompted for location
+          const locationRequested = localStorage.getItem('locationRequested');
+          if (!locationRequested) {
+            // First time authenticated - redirect to location access
+            router.push('/location-access');
+          } else {
+            // Already requested location - redirect to eatery
+            router.push('/eatery');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          // Clear location request flag on sign out
+          localStorage.removeItem('locationRequested');
+        }
+      }
+    );
 
-            <Link
-              href="/add-eatery"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Add Restaurant</h3>
-              <p className="text-gray-600">Submit a new restaurant to our database</p>
-            </Link>
+    return () => subscription.unsubscribe();
+  }, [router]);
 
-            <Link
-              href="/live-map"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Map</h3>
-              <p className="text-gray-600">Explore restaurants on an interactive map</p>
-            </Link>
-
-            <Link
-              href="/shuls"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Synagogues</h3>
-              <p className="text-gray-600">Find synagogues and prayer services</p>
-            </Link>
-
-            <Link
-              href="/marketplace"
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Marketplace</h3>
-              <p className="text-gray-600">Browse kosher products and services</p>
-            </Link>
-          </div>
-
-          {/* Authentication System Info */}
-          <div className="bg-blue-50 rounded-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Authentication System</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Current Implementation</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>✅ Supabase Auth (Primary)</li>
-                  <li>✅ Supabase Auth (Primary)</li>
-                  <li>✅ Protected Routes</li>
-                  <li>✅ Admin Authentication</li>
-                  <li>✅ Google OAuth</li>
-                  <li>✅ Email/Password Auth</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Protected Routes</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>🔒 /favorites</li>
-                  <li>🔒 /add-eatery</li>
-                  <li>🔒 /admin/*</li>
-                  <li>🔒 /profile</li>
-                  <li>🔒 /reviews</li>
-                  <li>🔒 /account</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Testing Links */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Testing & Development</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Auth Testing</h3>
-                <div className="space-y-2">
-                  <Link
-                    href="/auth/signin"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Unified Sign In
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Unified Sign Up
-                  </Link>
-                  <Link
-                    href="/auth/supabase-signin"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Supabase Sign In
-                  </Link>
-                  <Link
-                    href="/test-auth"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Test Auth Status
-                  </Link>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Admin Access</h3>
-                <div className="space-y-2">
-                  <Link
-                    href="/admin/migration"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Migration Dashboard
-                  </Link>
-                  <Link
-                    href="/admin/migration-complete"
-                    className="block text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    → Migration Complete
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
+  // Show loading while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-neutral-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-jewgo-400 mx-auto mb-4"></div>
+          <p className="text-neutral-400">Loading...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Bottom Navigation */}
-      <BottomNavigation />
-    </div>
-  );
+  // If authenticated, show loading while redirecting
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-neutral-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-jewgo-400 mx-auto mb-4"></div>
+          <p className="text-neutral-400">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show sign-in page for unauthenticated users
+  return <SignInPage />;
 } 

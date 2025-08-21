@@ -207,9 +207,9 @@ export function useAuth() {
 
       // Email update successful - verify token rotation
       const tokenRotationVerified = await new Promise<boolean>((resolve) => {
-        const unsubscribe = supabaseBrowser.auth.onAuthStateChange(async (event: any, session: any) => {
+        const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async (event: any, session: any) => {
           if ((event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'SIGNED_IN') && session) {
-            unsubscribe();
+            subscription.unsubscribe();
             
             // Verify token rotation
             const rotationValid = verifyTokenRotation(preUpgradeSession, session);
@@ -228,7 +228,7 @@ export function useAuth() {
         
         // Timeout after 10 seconds - fetch session and compare manually
         setTimeout(async () => {
-          unsubscribe();
+          subscription.unsubscribe();
           
           try {
             const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();

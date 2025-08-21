@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = 'unknown'; // Edge runtime doesn't support request.ip
+    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Comprehensive CSRF validation with token fallback
     if (!validateCSRF(origin, referer, ALLOWED_ORIGINS, csrfToken)) {

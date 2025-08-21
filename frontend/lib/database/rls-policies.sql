@@ -188,7 +188,7 @@ CREATE POLICY "notifications_owner_insert" ON notifications
 FOR INSERT TO authenticated
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "notifications_owner_read" ON notifications
@@ -200,14 +200,14 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "notifications_owner_delete" ON notifications
 FOR DELETE TO authenticated
 USING (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Supabase Storage bucket policies
@@ -248,7 +248,7 @@ FOR INSERT TO authenticated
 WITH CHECK (
   bucket_id = 'user-avatars' 
   AND auth.uid()::text = (storage.foldername(name))[1]
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- User avatars update policy
@@ -261,7 +261,7 @@ USING (
 WITH CHECK (
   bucket_id = 'user-avatars' 
   AND auth.uid()::text = (storage.foldername(name))[1]
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- User avatars delete policy
@@ -270,7 +270,7 @@ FOR DELETE TO authenticated
 USING (
   bucket_id = 'user-avatars' 
   AND auth.uid()::text = (storage.foldername(name))[1]
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Collision-safe patterns and comprehensive comments
