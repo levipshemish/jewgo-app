@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/classNames';
@@ -438,7 +438,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           {cardData.badge && (
             <motion.div
               className={cn(
-                "inline-block bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
+                "inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
                 variantStyles.badgeClass
               )}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -446,6 +446,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               transition={{ delay: 0.2, duration: 0.2 }}
               aria-label={`Rating: ${cardData.badge}`}
             >
+              <Star size={12} className="fill-yellow-400 text-yellow-400" />
               {cardData.badge}
             </motion.div>
           )}
