@@ -462,12 +462,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-3 min-h-[16px]">
+        <div className="flex justify-end items-center gap-3 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-700"
+              className="text-xs text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
               style={{ 
-                maxWidth: '80px',
+                maxWidth: cardData.additionalText ? '80px' : '100px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
