@@ -365,7 +365,54 @@ export default function MarketplacePage() {
         onShowFilters={handleShowFilters}
       />
 
-
+      {/* Location Permission Banner */}
+      {!locationPermissionGranted && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-blue-800">
+                Enable location to see distance from you
+              </span>
+            </div>
+            <button
+              onClick={getUserLocation}
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
+            >
+              Enable
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Loading Indicator */}
+      {locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-blue-800">Getting your location...</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Error Banner */}
+      {locationError && !locationPermissionGranted && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="text-sm text-red-800">{locationError}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Listings */}
       <div className="px-4 py-4">
