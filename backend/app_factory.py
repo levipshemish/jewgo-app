@@ -1357,7 +1357,7 @@ def create_app(config_class=None):
             websocket_service.remove_connection(client_id)
             performance_monitor.record_metric('websocket_disconnection', 1)
             logger.info(f"Client disconnected: {client_id}")
-        except Exception as e:
+                            except Exception as e:
             logger.error(f"Error handling disconnection: {e}")
     
     @socketio.on('join_room')
@@ -1371,7 +1371,7 @@ def create_app(config_class=None):
                 websocket_service.add_to_room(client_id, room_id)
                 logger.info(f"Client {client_id} joined room: {room_id}")
                 emit('room_joined', {'room_id': room_id})
-        except Exception as e:
+            except Exception as e:
             logger.error(f"Error joining room: {e}")
             emit('error', {'message': 'Failed to join room'})
     
@@ -1386,7 +1386,7 @@ def create_app(config_class=None):
                 websocket_service.remove_from_room(client_id, room_id)
                 logger.info(f"Client {client_id} left room: {room_id}")
                 emit('room_left', {'room_id': room_id})
-        except Exception as e:
+            except Exception as e:
             logger.error(f"Error leaving room: {e}")
             emit('error', {'message': 'Failed to leave room'})
     
@@ -1470,7 +1470,7 @@ def create_app(config_class=None):
             
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
-            
+
             # Try to get from cache first
             cached_result = redis_cache.get(cache_key)
             if cached_result:
@@ -1639,12 +1639,12 @@ def create_app(config_class=None):
                         'success': True,
                         'data': restaurant_dict
                     }
-                    
-                    # Cache the result
+
+            # Cache the result
                     redis_cache.set(cache_key, response_data, ttl=600)  # 10 minutes
                     
                     return jsonify(response_data)
-                    
+
         except Exception as e:
             logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
             return jsonify({
@@ -1665,7 +1665,7 @@ def create_app(config_class=None):
                     )
                     restaurant = cursor.fetchone()
                     
-                    if not restaurant:
+            if not restaurant:
                         return jsonify({
                             'success': False,
                             'error': 'Restaurant not found'
@@ -1676,7 +1676,7 @@ def create_app(config_class=None):
                     timezone_str = restaurant[3] or 'America/New_York'
                     status = restaurant[4]
                     
-                    is_open = False
+                is_open = False
                     if hours_structured:
                         is_open = open_now_service.is_open_now(hours_structured, timezone_str)
                     
@@ -1722,19 +1722,19 @@ def create_app(config_class=None):
                 }
             }
             
-            return jsonify({
+                return jsonify({
                 'success': True,
                 'data': stats
             })
-            
-        except Exception as e:
+
+            except Exception as e:
             logger.error(f"Error fetching performance stats: {e}")
-            return jsonify({
+                return jsonify({
                 'success': False,
                 'error': 'Failed to fetch performance stats',
                 'details': str(e)
-            }), 500
-    
+                }), 500
+
     @app.route('/api/cache/clear', methods=['POST'])
     def clear_cache():
         """Clear all cache"""
@@ -1744,8 +1744,8 @@ def create_app(config_class=None):
                 'success': True,
                 'message': 'Cache cleared successfully'
             })
-            
-        except Exception as e:
+
+            except Exception as e:
             logger.error(f"Error clearing cache: {e}")
             return jsonify({
                 'success': False,

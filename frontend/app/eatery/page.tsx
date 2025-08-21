@@ -63,7 +63,7 @@ function EateryPageContent() {
     getFilterCount,
     updateFilters
   } = useAdvancedFilters();
-
+  
   // Location state
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -354,7 +354,7 @@ function EateryPageContent() {
         <Header />
         <div style={{ textAlign: 'center', padding: '20px' }}>
           <p>Error: {error}</p>
-          <button 
+          <button
             onClick={() => fetchRestaurantsData()}
             style={mobileStyles.touchButton}
           >
@@ -376,21 +376,21 @@ function EateryPageContent() {
       
       {/* Mobile-optimized filters */}
       <div style={mobileOptimizedStyles.filtersContainer}>
-        <AdvancedFilters
-          activeFilters={activeFilters}
-          onFilterChange={handleFilterChange}
-          onToggleFilter={handleToggleFilter}
-          onClearAll={handleClearAllFilters}
-          userLocation={userLocation}
-          locationLoading={locationLoading}
+              <AdvancedFilters
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                onToggleFilter={handleToggleFilter}
+                onClearAll={handleClearAllFilters}
+                userLocation={userLocation}
+                locationLoading={locationLoading}
           onRequestLocation={requestLocation}
         />
         
         {/* Mobile filter toggle button */}
         {isMobile && (
-          <button
+                <button
             onClick={() => setShowFilters(!showFilters)}
-            style={{
+                  style={{
               ...mobileStyles.touchButton,
               position: 'fixed',
               bottom: '80px',
@@ -403,9 +403,9 @@ function EateryPageContent() {
             }}
           >
             {showFilters ? '✕' : '⚙️'}
-          </button>
+                </button>
         )}
-      </div>
+              </div>
 
       {/* Restaurant grid with mobile optimization */}
       <div style={mobileOptimizedStyles.restaurantGrid}>
@@ -415,7 +415,7 @@ function EateryPageContent() {
             restaurant={restaurant}
           />
         ))}
-      </div>
+            </div>
 
       {/* Mobile-optimized loading states */}
       {loading && (
@@ -450,7 +450,7 @@ function EateryPageContent() {
 
       {/* Mobile bottom navigation */}
       {isMobile && (
-        <BottomNavigation />
+      <BottomNavigation />
       )}
     </div>
   );
