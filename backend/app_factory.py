@@ -2013,7 +2013,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                     return jsonify({"error": "Restaurant not found"}), 404
 
                 # Get hours data
-                hours_json = restaurant.get("hours_of_operation")
+                hours_json = restaurant.get("hours_json")
                 hours_of_operation = restaurant.get("hours_of_operation")
                 if not hours_json and not hours_of_operation:
                     # Return empty hours response
@@ -2030,8 +2030,8 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                         "status": "success",
                         "message": "Hours endpoint is working",
                         "restaurant_id": restaurant_id,
-                        "hours_json": restaurant.get("hours_json"),
-                        "hours_of_operation": restaurant.get("hours_of_operation")
+                        "hours_json": hours_json,
+                        "hours_of_operation": hours_of_operation
                     }), 200
 
                 except Exception as e:
