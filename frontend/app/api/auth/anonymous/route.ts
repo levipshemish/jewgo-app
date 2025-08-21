@@ -89,8 +89,6 @@ export async function POST(request: NextRequest) {
   
   try {
     // Test Supabase features before calling signInAnonymously
-    // Temporarily disabled for Docker build
-    /*
     const featureTest = await testSupabaseFeatures();
     
     if (!featureTest.signInAnonymously) {
@@ -107,7 +105,6 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    */
 
     // Get request details for security validation
     const origin = request.headers.get('origin');

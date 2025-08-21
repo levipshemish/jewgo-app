@@ -44,6 +44,7 @@ export interface TransformedUser {
 /**
  * Extract JWT ID (jti) from access token
  * Works in both browser and Node.js environments
+ * Converts base64url to base64 before decoding
  */
 export function extractJtiFromToken(token: string): string | null {
   try {
@@ -53,14 +54,24 @@ export function extractJtiFromToken(token: string): string | null {
     }
     
     const payloadSegment = segments[1];
+    
+    // Convert base64url to base64: replace -→+, _→/, add = padding
+    const base64Segment = payloadSegment
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    const padding = 4 - (base64Segment.length % 4);
+    const paddedSegment = padding !== 4 ? base64Segment + '='.repeat(padding) : base64Segment;
+    
     let payload: any;
     
     if (typeof window !== 'undefined') {
       // Browser environment - use atob
-      payload = JSON.parse(atob(payloadSegment));
+      payload = JSON.parse(atob(paddedSegment));
     } else {
       // Node.js environment - use Buffer
-      payload = JSON.parse(Buffer.from(payloadSegment, 'base64').toString('utf-8'));
+      payload = JSON.parse(Buffer.from(paddedSegment, 'base64').toString('utf-8'));
     }
     
     return payload.jti || null;
