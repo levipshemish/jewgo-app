@@ -108,6 +108,12 @@ export function validateEnvironment(): void {
   if (IS_PRODUCTION && !CLEANUP_CRON_SECRET) {
     throw new Error('CLEANUP_CRON_SECRET must be set in production');
   }
+  
+  // In development, provide a default value if not set
+  if (IS_DEVELOPMENT && !CLEANUP_CRON_SECRET) {
+    console.warn('CLEANUP_CRON_SECRET not set in development - using default value');
+    process.env.CLEANUP_CRON_SECRET = 'development-cleanup-secret';
+  }
 
   // Validate Redis configuration in production (simplified for Docker)
   if (IS_PRODUCTION) {
