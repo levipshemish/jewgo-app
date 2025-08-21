@@ -13,6 +13,8 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useFavorites } from '@/lib/utils/favorites';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
+import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
+import { Suspense } from 'react';
 
 // Dynamically import Supabase client to prevent SSR issues
 const getSupabaseClient = async () => {
@@ -23,26 +25,24 @@ const getSupabaseClient = async () => {
   return supabaseBrowser;
 };
 
-interface FilterState {
-  agency?: string;
-  dietary?: string;
-  openNow?: boolean;
-  category?: string;
-  nearMe?: boolean;
-  maxDistance?: number;
-}
-
-export default function FavoritesPage() {
+function FavoritesPageContent() {
   const { favorites } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('favorites');
   const [showFilters, setShowFilters] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<FilterState>({});
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientLoaded, setClientLoaded] = useState(false);
+
+  // Use the shared advanced filters hook
+  const {
+    activeFilters,
+    setFilter,
+    toggleFilter,
+    clearAllFilters
+  } = useAdvancedFilters();
 
   // Check authentication status using centralized approach
   useEffect(() => {
@@ -109,29 +109,20 @@ export default function FavoritesPage() {
     router.push('/add-eatery');
   };
 
-  const handleFilterChange = (filterType: 'agency' | 'dietary' | 'category', value: string) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
+  const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
+    setFilter(filterType, value);
   };
 
-  const handleToggleFilter = (filterType: 'openNow' | 'nearMe', value: boolean) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
+  const handleToggleFilter = (filterType: keyof typeof activeFilters) => {
+    toggleFilter(filterType);
   };
 
   const handleClearAllFilters = () => {
-    setActiveFilters({});
+    clearAllFilters();
   };
 
   const handleDistanceChange = (distance: number) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      maxDistance: distance
-    }));
+    setFilter('maxDistanceMi', distance);
   };
 
   const handleCloseFilters = () => {
@@ -142,10 +133,7 @@ export default function FavoritesPage() {
     setShowFilters(false);
   };
 
-  const handleResetFilters = () => {
-    setActiveFilters({});
-    setShowFilters(false);
-  };
+
 
   const handleCardClick = (restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
@@ -339,10 +327,7 @@ export default function FavoritesPage() {
                     activeFilters={activeFilters}
                     onFilterChange={handleFilterChange}
                     onToggleFilter={handleToggleFilter}
-                    onDistanceChange={handleDistanceChange}
                     onClearAll={handleClearAllFilters}
-                    onApplyFilters={handleApplyFilters}
-                    onCancelFilters={handleCloseFilters}
                     userLocation={null}
                     locationLoading={false}
                   />
@@ -361,5 +346,13 @@ export default function FavoritesPage() {
         </div>
       </div>
     </ErrorBoundary>
+  );
+}
+
+export default function FavoritesPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <FavoritesPageContent />
+    </Suspense>
   );
 } 

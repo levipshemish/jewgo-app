@@ -13,10 +13,11 @@ import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { toSearchParams, Filters } from '@/lib/filters/schema';
+import { Suspense } from 'react';
 
 import { Restaurant } from '@/lib/types/restaurant';
 
-export default function EateryExplorePage() {
+function EateryExplorePageContent() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const abortRef = useRef<AbortController | null>(null);
@@ -31,6 +32,7 @@ export default function EateryExplorePage() {
   const [infiniteScrollEnabled, setInfiniteScrollEnabled] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('eatery');
 
   // URL-backed filter state
   const {
@@ -271,16 +273,16 @@ export default function EateryExplorePage() {
     setShowFilters(true);
   };
 
-  const handleFilterChange = (filterType: 'agency' | 'dietary' | 'category', value: string) => {
+  const handleFilterChange = (filterType: keyof Filters, value: Filters[keyof Filters]) => {
     setFilter(filterType, value);
   };
 
-  const handleToggleFilter = (filterType: 'openNow' | 'nearMe', value: boolean) => {
-    setFilter(filterType, value);
+  const handleToggleFilter = (filterType: keyof Filters) => {
+    toggleFilter(filterType);
   };
 
   const handleDistanceChange = (distance: number) => {
-    setFilter('maxDistance', distance);
+    setFilter('maxDistanceMi', distance);
   };
 
   const handleClearAllFilters = () => {
@@ -590,7 +592,6 @@ export default function EateryExplorePage() {
                 activeFilters={activeFilters}
                 onFilterChange={handleFilterChange}
                 onToggleFilter={handleToggleFilter}
-                onDistanceChange={handleDistanceChange}
                 onClearAll={handleClearAllFilters}
                 userLocation={userLocation}
                 locationLoading={locationLoading}
@@ -829,3 +830,11 @@ const formatDistance = (distance: number): string => {
     return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
   }
 };
+
+export default function EateryExplorePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <EateryExplorePageContent />
+    </Suspense>
+  );
+}

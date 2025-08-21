@@ -54,7 +54,7 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
   const obj: Record<string, unknown> = {};
   
   // Convert URLSearchParams to object, handling boolean conversion
-  for (const [key, value] of searchParams.entries()) {
+  searchParams.forEach((value, key) => {
     if (value === "1") {
       obj[key] = true;
     } else if (value === "0") {
@@ -62,7 +62,7 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
     } else {
       obj[key] = value;
     }
-  }
+  });
   
   return FiltersSchema.parse(obj);
 };

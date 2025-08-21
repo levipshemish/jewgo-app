@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withRateLimit } from '@/lib/rate-limit';
-import { rateLimitConfigs } from '@/lib/rate-limit/config';
+import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 import { fromSearchParams, FiltersSchema } from '@/lib/filters/schema';
 
 // Force dynamic rendering for API routes

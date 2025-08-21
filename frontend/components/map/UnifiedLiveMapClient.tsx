@@ -13,19 +13,11 @@ import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
+import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
 // Types
-interface FilterState {
-  agency?: string;
-  dietary?: string;
-  openNow?: boolean;
-  category?: string;
-  nearMe?: boolean;
-  distanceRadius?: number;
-  maxDistance?: number;
-}
 
 interface MapState {
   isLoadingMarkers: boolean;
@@ -70,7 +62,14 @@ export default function UnifiedLiveMapClient() {
     setPermissionStatus
   } = useLocation();
   
-  const [activeFilters, setActiveFilters] = useState<FilterState>({});
+  // Use the shared advanced filters hook
+  const {
+    activeFilters,
+    setFilter,
+    toggleFilter,
+    clearAllFilters
+  } = useAdvancedFilters();
+  
   const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
   // Removed activeTab state since we're only showing map view
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
@@ -361,24 +360,18 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant(null);
   }, []);
 
-  const handleFilterChange = useCallback((filterType: 'agency' | 'dietary' | 'category', value: string) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
-  }, []);
+  const handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
+    setFilter(filterType, value);
+  }, [setFilter]);
 
-  const handleToggleFilter = useCallback((filterType: 'openNow' | 'nearMe', value: boolean) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
-  }, []);
+  const handleToggleFilter = useCallback((filterType: keyof typeof activeFilters) => {
+    toggleFilter(filterType);
+  }, [toggleFilter]);
 
   const handleClearAll = useCallback(() => {
     setSearchQuery('');
-    setActiveFilters({});
-  }, []);
+    clearAllFilters();
+  }, [clearAllFilters]);
 
   const handleShowFilters = useCallback(() => {
     setShowFilters(true);
@@ -690,9 +683,6 @@ export default function UnifiedLiveMapClient() {
                 activeFilters={activeFilters}
                 onFilterChange={handleFilterChange}
                 onToggleFilter={handleToggleFilter}
-                onDistanceChange={(distance: number) => {
-                  setActiveFilters(prev => ({ ...prev, maxDistance: distance }));
-                }}
                 onClearAll={handleClearAll}
                 userLocation={userLocation}
                 locationLoading={locationLoading}
