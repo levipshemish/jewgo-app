@@ -20,11 +20,22 @@ const RATE_LIMITS = {
   }
 };
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+// Initialize Redis client with fallback for missing environment variables
+let redis: Redis | null = null;
+
+try {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  } else {
+    console.warn('Upstash Redis environment variables not configured. Rate limiting will be disabled.');
+  }
+} catch (error) {
+  console.error('Failed to initialize Redis client:', error);
+  redis = null;
+}
 
 /**
  * Enhanced rate limiting with improved UX responses
@@ -41,6 +52,12 @@ export async function checkRateLimit(
   retry_after?: string;
   error?: string;
 }> {
+  // If Redis is not available, allow all requests (fail open for security)
+  if (!redis) {
+    console.warn('Redis not available, allowing request without rate limiting');
+    return { allowed: true };
+  }
+
   try {
     const config = RATE_LIMITS[limitType];
     const realIP = validateTrustedIP(requestIP, forwardedFor);
@@ -112,7 +129,7 @@ export async function checkRateLimit(
     
   } catch (error) {
     console.error('Rate limiting error:', error);
-    // Fail open for security - allow request to proceed
+    // Fail open for security - allow request to proceed when Redis is unavailable
     return { allowed: true };
   }
 }
@@ -131,6 +148,11 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
   exists: boolean;
   result?: any;
 }> {
+  if (!redis) {
+    console.warn('Redis not available, skipping idempotency check');
+    return { exists: false };
+  }
+
   try {
     const result = await redis.get(key);
     if (result) {
@@ -150,6 +172,11 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
  * Store idempotency result
  */
 export async function storeIdempotencyResult(key: string, result: any, ttl: number = 3600): Promise<void> {
+  if (!redis) {
+    console.warn('Redis not available, skipping idempotency result storage');
+    return;
+  }
+
   try {
     await redis.setex(key, ttl, JSON.stringify(result));
   } catch (error) {
@@ -161,6 +188,11 @@ export async function storeIdempotencyResult(key: string, result: any, ttl: numb
  * Clear rate limit for testing
  */
 export async function clearRateLimit(key: string): Promise<void> {
+  if (!redis) {
+    console.warn('Redis not available, skipping rate limit clear');
+    return;
+  }
+
   try {
     await redis.del(key);
   } catch (error) {
