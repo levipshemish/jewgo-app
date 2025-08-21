@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { NextRequest, NextResponse } from 'next/server';
 import { middleware } from '../middleware';
-import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
 // Mock Supabase client
 const mockSupabaseClient = {
@@ -15,33 +14,83 @@ jest.mock('@supabase/ssr', () => ({
 }));
 
 // Mock auth utilities
+const mockValidateRedirectUrl = jest.fn();
+const mockExtractIsAnonymous = jest.fn();
+
 jest.mock('@/lib/utils/auth-utils', () => ({
-  validateRedirectUrl: jest.fn(),
-  extractIsAnonymous: jest.fn(),
+  validateRedirectUrl: mockValidateRedirectUrl,
+  extractIsAnonymous: mockExtractIsAnonymous,
 }));
 
 describe('Middleware Route Protection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (validateRedirectUrl as jest.Mock).mockImplementation((url) => url);
-    (extractIsAnonymous as jest.Mock).mockReturnValue(false);
+    mockValidateRedirectUrl.mockImplementation((url) => url);
+    mockExtractIsAnonymous.mockReturnValue(false);
   });
 
   describe('Public Route Bypass', () => {
-    it('should allow public routes to pass through', async () => {
-      const publicRoutes = [
-        '/',
+    it('should allow root path (/) to pass through', async () => {
+      const request = new NextRequest(new URL('https://jewgo.app/'));
+      const response = await middleware(request);
+      
+      // Should not redirect (pass through)
+      expect(response.status).not.toBe(302);
+      expect(response.status).not.toBe(307);
+    });
+
+    it('should allow auth routes to pass through', async () => {
+      const authRoutes = [
         '/auth/signin',
-        '/eatery',
-        '/restaurant/123',
-        '/marketplace',
-        '/api/health',
-        '/api/restaurants/search',
-        '/_next/static/chunks/main.js',
-        '/favicon.ico',
+        '/auth/signup',
+        '/auth/forgot-password',
+        '/auth/callback',
+        '/api/auth/anonymous',
       ];
 
-      for (const route of publicRoutes) {
+      for (const route of authRoutes) {
+        const request = new NextRequest(new URL(`https://jewgo.app${route}`));
+        const response = await middleware(request);
+        
+        // Should not redirect (pass through)
+        expect(response.status).not.toBe(302);
+        expect(response.status).not.toBe(307);
+      }
+    });
+
+    it('should allow static assets to pass through', async () => {
+      const staticRoutes = [
+        '/_next/static/chunks/main.js',
+        '/favicon.ico',
+        '/icon.webp',
+        '/manifest.json',
+        '/robots.txt',
+        '/sitemap.xml',
+      ];
+
+      for (const route of staticRoutes) {
+        const request = new NextRequest(new URL(`https://jewgo.app${route}`));
+        const response = await middleware(request);
+        
+        // Should not redirect (pass through)
+        expect(response.status).not.toBe(302);
+        expect(response.status).not.toBe(307);
+      }
+    });
+
+    it('should allow health and test routes to pass through', async () => {
+      const healthRoutes = [
+        '/healthz',
+        '/api/health',
+        '/test-auth',
+        '/test-distance-sorting',
+        '/test-infinite-scroll',
+        '/test-profile',
+        '/test-redirect',
+        '/test-unified-card',
+      ];
+
+      for (const route of healthRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         const response = await middleware(request);
         
@@ -52,25 +101,36 @@ describe('Middleware Route Protection', () => {
     });
   });
 
-  describe('Private Route Protection', () => {
-    it('should redirect unauthenticated users to signin', async () => {
+  describe('Protected Route Protection', () => {
+    it('should redirect unauthenticated users to signin for protected routes', async () => {
       // Mock no session
       mockSupabaseClient.auth.getSession.mockResolvedValue({
         data: { session: null },
         error: null,
       });
 
-      const privateRoutes = [
+      const protectedRoutes = [
+        '/eatery',
+        '/restaurant/123',
+        '/marketplace',
         '/admin',
         '/profile',
         '/settings',
         '/messages',
         '/favorites',
-        '/api/auth/prepare-merge',
-        '/api/restaurants/123',
+        '/live-map',
+        '/location-access',
+        '/notifications',
+        '/add-eatery',
+        '/mikva',
+        '/shuls',
+        '/stores',
+        '/api/restaurants',
+        '/api/reviews',
+        '/api/feedback',
       ];
 
-      for (const route of privateRoutes) {
+      for (const route of protectedRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         const response = await middleware(request);
         
@@ -93,9 +153,9 @@ describe('Middleware Route Protection', () => {
         },
         error: null,
       });
-      (extractIsAnonymous as jest.Mock).mockReturnValue(true);
+      mockExtractIsAnonymous.mockReturnValue(true);
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery'));
       const response = await middleware(request);
       
       expect(response.status).toBe(302);
@@ -115,9 +175,9 @@ describe('Middleware Route Protection', () => {
         },
         error: null,
       });
-      (extractIsAnonymous as jest.Mock).mockReturnValue(false);
+      mockExtractIsAnonymous.mockReturnValue(false);
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery'));
       const response = await middleware(request);
       
       // Should pass through (not redirect)
@@ -133,10 +193,10 @@ describe('Middleware Route Protection', () => {
         error: null,
       });
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin?param=value'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery?param=value'));
       const response = await middleware(request);
       
-      expect(validateRedirectUrl).toHaveBeenCalledWith('/admin?param=value');
+      expect(mockValidateRedirectUrl).toHaveBeenCalledWith('/eatery?param=value');
       expect(response.headers.get('location')).toContain('redirectTo=');
     });
 
@@ -147,12 +207,12 @@ describe('Middleware Route Protection', () => {
       });
 
       // Mock validateRedirectUrl to return safe URL
-      (validateRedirectUrl as jest.Mock).mockReturnValue('/');
+      mockValidateRedirectUrl.mockReturnValue('/');
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin?redirect=//evil.com'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery?redirect=//evil.com'));
       const response = await middleware(request);
       
-      expect(validateRedirectUrl).toHaveBeenCalledWith('/admin?redirect=//evil.com');
+      expect(mockValidateRedirectUrl).toHaveBeenCalledWith('/eatery?redirect=//evil.com');
       expect(response.headers.get('location')).toContain('redirectTo=%2F');
     });
   });
@@ -164,7 +224,7 @@ describe('Middleware Route Protection', () => {
         error: null,
       });
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery'));
       const response = await middleware(request);
       
       expect(response.headers.get('Cache-Control')).toBe('no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -180,7 +240,7 @@ describe('Middleware Route Protection', () => {
         error: new Error('Supabase error'),
       });
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery'));
       const response = await middleware(request);
       
       // Should fail open (allow request to proceed)
@@ -191,7 +251,7 @@ describe('Middleware Route Protection', () => {
       // Mock middleware error
       mockSupabaseClient.auth.getSession.mockRejectedValue(new Error('Middleware error'));
 
-      const request = new NextRequest(new URL('https://jewgo.app/admin'));
+      const request = new NextRequest(new URL('https://jewgo.app/eatery'));
       const response = await middleware(request);
       
       // Should fail open (allow request to proceed)
@@ -200,8 +260,11 @@ describe('Middleware Route Protection', () => {
   });
 
   describe('Route Matching', () => {
-    it('should match private routes correctly', () => {
-      const privateRoutes = [
+    it('should match protected routes correctly', () => {
+      const protectedRoutes = [
+        '/eatery',
+        '/restaurant/123',
+        '/marketplace',
         '/admin',
         '/admin/dashboard',
         '/profile',
@@ -209,17 +272,23 @@ describe('Middleware Route Protection', () => {
         '/messages',
         '/messages/123',
         '/favorites',
-        '/marketplace/sell',
-        '/api/auth/prepare-merge',
-        '/api/restaurants/123',
-        '/api/reviews/456',
+        '/live-map',
+        '/location-access',
+        '/notifications',
+        '/add-eatery',
+        '/mikva',
+        '/shuls',
+        '/stores',
+        '/api/restaurants',
+        '/api/reviews',
+        '/api/feedback',
       ];
 
       // These should all trigger middleware protection
-      for (const route of privateRoutes) {
+      for (const route of protectedRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         // The middleware should process these routes
-        expect(request.nextUrl.pathname).toMatch(/admin|profile|messages|favorites|marketplace\/sell|api\/auth|api\/restaurants|api\/reviews/);
+        expect(request.nextUrl.pathname).not.toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-/);
       }
     });
 
@@ -227,19 +296,26 @@ describe('Middleware Route Protection', () => {
       const publicRoutes = [
         '/',
         '/auth/signin',
-        '/eatery',
-        '/restaurant/123',
-        '/marketplace',
-        '/api/health',
+        '/auth/signup',
+        '/auth/forgot-password',
+        '/auth/callback',
+        '/api/auth/anonymous',
         '/_next/static/chunks/main.js',
         '/favicon.ico',
+        '/icon.webp',
+        '/manifest.json',
+        '/robots.txt',
+        '/sitemap.xml',
+        '/healthz',
+        '/test-auth',
+        '/test-distance-sorting',
       ];
 
       // These should bypass middleware
       for (const route of publicRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         // The middleware should not process these routes
-        expect(request.nextUrl.pathname).not.toMatch(/admin|profile|messages|favorites|marketplace\/sell|api\/auth|api\/restaurants|api\/reviews/);
+        expect(request.nextUrl.pathname).toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-/);
       }
     });
   });

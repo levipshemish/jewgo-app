@@ -3,25 +3,26 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
-// Comprehensive private route protection
+// Comprehensive route protection - protect all routes except public ones
 export const config = {
   matcher: [
-    // Admin routes
-    '/admin/:path*',
-    '/api/admin/:path*',
-    
-    // User-specific routes
-    '/messages/:path*',
+    // Exclude public routes and static assets
+    '/((?!auth|api/auth|_next|favicon|icon|manifest|robots|sitemap|healthz|test-|$).*)',
   ]
 };
 
 /**
  * Comprehensive middleware with route protection and redirect sanitization
- * Handles authentication checks for private routes with security safeguards
- * Implements the complete authentication flow from the mermaid sequence diagram
+ * Handles authentication checks for all protected routes with security safeguards
+ * Redirects unauthenticated users to sign-in page
  */
 export async function middleware(request: NextRequest) {
   try {
+    // Skip authentication for the root path (/) as it's a sign-in page
+    if (request.nextUrl.pathname === '/') {
+      return NextResponse.next();
+    }
+
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
     
@@ -62,11 +63,11 @@ export async function middleware(request: NextRequest) {
     
     if (error) {
       console.error('Middleware auth error:', error);
-      // Redirect to signin for matched private paths when auth fails
+      // Redirect to signin when auth fails
       return redirectToSignin(request, response);
     }
 
-    // Check if user exists and is non-anonymous for private routes
+    // Check if user exists and is non-anonymous for protected routes
     const user = session?.user;
     if (!user) {
       // No session - redirect to signin with sanitized redirect URL
@@ -89,8 +90,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 }
-
-
 
 /**
  * Redirect to signin with sanitized redirect URL
