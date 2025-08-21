@@ -2089,28 +2089,103 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 # Determine current status and today's hours
                 from datetime import datetime
                 import pytz
+                import re
                 
                 try:
-                    # Get current day
+                    # Get current day and time
                     tz = pytz.timezone('America/New_York')
                     now = datetime.now(tz)
                     current_day = now.strftime('%A')
+                    current_time = now.time()
                     
                     # Find today's hours
                     for hours_entry in formatted_hours_data:
                         if hours_entry['day'] == current_day:
-                            today_hours = {
-                                "open": hours_entry['hours'] if hours_entry['is_open'] else "",
-                                "close": "",
-                                "is_open": hours_entry['is_open']
-                            }
-                            is_open = hours_entry['is_open']
-                            status = "open" if is_open else "closed"
-                            message = f"Open now" if is_open else "Closed today"
+                            hours_text = hours_entry['hours']
+                            
+                            # Parse opening and closing times
+                            if hours_text == "Closed":
+                                is_open = False
+                                status = "closed"
+                                message = "Closed today"
+                                today_hours = {
+                                    "open": "",
+                                    "close": "",
+                                    "is_open": False
+                                }
+                            else:
+                                # Extract times from format like "10:30 AM - 9:00 PM"
+                                time_match = re.search(r'(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))', hours_text)
+                                
+                                if time_match:
+                                    open_time_str = time_match.group(1)
+                                    close_time_str = time_match.group(2)
+                                    
+                                    # Convert to 24-hour format for comparison
+                                    def parse_time(time_str):
+                                        # Remove extra spaces and convert to 24-hour format
+                                        time_str = time_str.strip()
+                                        if 'PM' in time_str and not time_str.startswith('12'):
+                                            # Convert PM times (except 12 PM)
+                                            time_parts = time_str.replace(' PM', '').split(':')
+                                            hour = int(time_parts[0]) + 12
+                                            minute = int(time_parts[1])
+                                        elif 'AM' in time_str and time_str.startswith('12'):
+                                            # 12 AM = 00:00
+                                            time_parts = time_str.replace(' AM', '').split(':')
+                                            hour = 0
+                                            minute = int(time_parts[1])
+                                        else:
+                                            # AM times (except 12 AM)
+                                            time_parts = time_str.replace(' AM', '').split(':')
+                                            hour = int(time_parts[0])
+                                            minute = int(time_parts[1])
+                                        
+                                        return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+                                    
+                                    open_time = parse_time(open_time_str)
+                                    close_time = parse_time(close_time_str)
+                                    
+                                    # Check if currently open
+                                    if open_time <= current_time <= close_time:
+                                        is_open = True
+                                        status = "open"
+                                        message = f"Open now • Closes {close_time_str}"
+                                    elif current_time < open_time:
+                                        is_open = False
+                                        status = "closed"
+                                        message = f"Opens {open_time_str}"
+                                    else:  # current_time > close_time
+                                        is_open = False
+                                        status = "closed"
+                                        message = f"Closed • Opens {open_time_str} tomorrow"
+                                    
+                                    today_hours = {
+                                        "open": open_time_str,
+                                        "close": close_time_str,
+                                        "is_open": is_open
+                                    }
+                                else:
+                                    # Fallback if time parsing fails
+                                    is_open = hours_entry['is_open']
+                                    status = "open" if is_open else "closed"
+                                    message = f"Open now" if is_open else "Closed today"
+                                    today_hours = {
+                                        "open": hours_text,
+                                        "close": "",
+                                        "is_open": is_open
+                                    }
                             break
-                except Exception:
+                except Exception as e:
                     # Fallback if timezone handling fails
-                    pass
+                    is_open = False
+                    status = "unknown"
+                    message = "Hours information unavailable"
+                    today_hours = {
+                        "open": "",
+                        "close": "",
+                        "is_open": False
+                    }
                 
                 # Return formatted hours data
                 from datetime import datetime
