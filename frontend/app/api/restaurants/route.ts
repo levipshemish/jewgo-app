@@ -281,7 +281,7 @@ export async function GET(request: NextRequest) {
     baseParams.delete('offset');
 
     // Page until we meet targetLimit or no more results
-    for (let page = 0; page < 5; page++) { // Reduced from 10 to 5 pages max to prevent timeouts
+    for (let page = 0; page < 3; page++) { // Reduced to 3 pages max to prevent timeouts
       const pageParams = new URLSearchParams(baseParams.toString());
       pageParams.set('limit', String(perPage));
       pageParams.set('offset', String(currentOffset));
@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts and prevent 504 errors
+        signal: AbortSignal.timeout(15000), // 15 second timeout for better UX
       });
       if (!response.ok) {
         if (response.status === 504) {

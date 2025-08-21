@@ -112,7 +112,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=google`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

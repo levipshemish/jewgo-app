@@ -122,10 +122,7 @@ export function verifyTokenRotation(
   }
 }
 
-// Versioned HMAC utilities for merge cookie
-const MERGE_COOKIE_KEY_ID = process.env.MERGE_COOKIE_KEY_ID || 'v1';
-const MERGE_COOKIE_HMAC_KEY_CURRENT = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || 'default-key';
-const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS || 'default-key';
+// Note: Server-only HMAC constants moved to auth-utils.server.ts to prevent client bundle inclusion
 
 
 
@@ -450,7 +447,8 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     const decodedPath = urlObj.pathname;
     
     // Reject protocol-relative URLs, fragments, and dangerous patterns in pathname only
-    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('..') || decodedPath.includes('#')) {
+    // Block protocol-relative paths (starting with //) to prevent external redirects
+    if (decodedPath.includes('://') || decodedPath.startsWith('//') || decodedPath.includes('..') || decodedPath.includes('#')) {
       return '/';
     }
     

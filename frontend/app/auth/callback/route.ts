@@ -78,43 +78,7 @@ export async function GET(request: NextRequest) {
             isReauth: reauth
           });
           
-          if (reauth && detectedProvider) {
-            // This is a re-authentication flow - attempt to link identities
-            try {
-              // For re-authentication, we can attempt to link the identities
-              // This is safer because the user has just re-authenticated
-              oauthLogger.info('Re-authentication flow detected, attempting identity linking', { 
-                userId: user.id,
-                reauthProvider: detectedProvider
-              });
-              
-              // Complete the identity linking
-              const linkingResult = await completeIdentityLinking(user.id, detectedProvider);
-              
-              if (linkingResult.success) {
-                // Redirect to profile settings page with success message
-                const settingsUrl = new URL('/profile/settings', request.url);
-                settingsUrl.searchParams.set('linked', 'true');
-                return NextResponse.redirect(settingsUrl);
-              } else {
-                oauthLogger.error('Re-authentication linking failed', { 
-                  error: linkingResult.error,
-                  userId: user.id 
-                });
-                // Redirect to profile settings with collision flag for guarded UX
-                const settingsUrl = new URL('/profile/settings', request.url);
-                settingsUrl.searchParams.set('collision', 'true');
-                return NextResponse.redirect(settingsUrl);
-              }
-            } catch (linkError) {
-              oauthLogger.error('Re-authentication linking failed', { 
-                errorType: linkError instanceof Error ? linkError.constructor.name : 'Unknown',
-                userId: user.id 
-              });
-              // Fall through to normal collision handling
-            }
-          }
-          
+          // Redirect to guarded linking screen without attempting to link until official API is wired
           // Store collision info in URL params for the profile settings page
           const settingsUrl = new URL('/profile/settings', request.url);
           settingsUrl.searchParams.set('collision', 'true');

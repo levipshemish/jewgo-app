@@ -282,46 +282,26 @@ export async function attemptIdentityLinking(userId: string, targetProvider: str
 }
 
 /**
- * Complete identity linking after successful re-authentication
- * This should only be called after the user has re-authenticated
+ * TODO: Complete identity linking after successful re-authentication
+ * This function is gated behind ACCOUNT_LINKING_ENABLED and should only be called
+ * after the user has re-authenticated. Currently returns failure as the official
+ * Supabase Link API is not yet implemented.
  */
 export async function completeIdentityLinking(userId: string, reauthProvider: string): Promise<{
   success: boolean;
   error?: string;
 }> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    
-    // Get current user after re-authentication
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      return { success: false, error: 'User not found after re-authentication' };
-    }
-    
-    // Verify that the re-authentication was successful
-    const hasReauthProvider = user.identities?.some(id => id.provider === reauthProvider);
-    if (!hasReauthProvider) {
-      return { success: false, error: 'Re-authentication verification failed' };
-    }
-    
-    // Use Supabase's official link identity API
-    // Note: This is a placeholder for when Supabase's official API becomes available
-    // For now, we return failure since no real link API call is made
-    // TODO: Replace with actual Supabase link identity API call when available
-    authLogger.info('Identity linking attempted but not implemented yet', {
-      userId, 
-      reauthProvider,
-      totalIdentities: user.identities?.length || 0
-    });
-    
-    return { success: false, error: 'Linking not implemented yet' };
-    
-  } catch (error) {
-    authLogger.error('Identity linking completion failed', { 
-      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
-      userId 
-    });
-    return { success: false, error: 'Linking completion failed' };
+  // Gate behind feature flag
+  if (process.env.ACCOUNT_LINKING_ENABLED !== 'true') {
+    return { success: false, error: 'Account linking not enabled' };
   }
+
+  // TODO: Implement actual Supabase Link API integration
+  // For now, return failure as this is not yet implemented
+  authLogger.info('Identity linking attempted but not implemented yet', {
+    userId, 
+    reauthProvider
+  });
+  
+  return { success: false, error: 'Linking not implemented yet' };
 }

@@ -23,14 +23,17 @@ export class RestaurantsAPI {
   
   private static async checkNetworkConnectivity(): Promise<boolean> {
     try {
-      // Try to fetch a simple resource to check network connectivity
-      const response = await fetch('/api/health-check', {
+      // Simple connectivity check - try to fetch a small resource
+      // Use a simple endpoint that doesn't depend on the backend
+      const response = await fetch('/api/connectivity-test', {
         method: 'GET',
-        signal: AbortSignal.timeout(5000) // 5 second timeout
+        signal: AbortSignal.timeout(3000) // 3 second timeout
       });
       return response.ok;
     } catch (error) {
       console.warn('Network connectivity check failed:', error);
+      // If connectivity check fails, we'll still try the main API
+      // but with shorter timeouts and better fallback handling
       return false;
     }
   }
@@ -71,7 +74,7 @@ export class RestaurantsAPI {
     endpoint: string, 
     options: RequestInit = {},
     retries: number = 3,
-    timeout: number = process.env.NODE_ENV === 'production' ? 30000 : 12000 // Increased timeout for production
+    timeout: number = process.env.NODE_ENV === 'production' ? 15000 : 8000 // Reduced timeout for better UX
   ): Promise<T> {
     
     const defaultHeaders = {
@@ -168,16 +171,7 @@ export class RestaurantsAPI {
     this.pendingRequests.set(requestKey, requestPromise);
     
     try {
-      // Check network connectivity first
-      const isConnected = await this.checkNetworkConnectivity();
-      if (!isConnected) {
-        console.warn('Network connectivity issues detected, using fallback data');
-        return {
-          restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
-          total: this.getMockRestaurants().length,
-        };
-      }
-      
+      // Try to fetch real data first, regardless of connectivity check
       const result = await requestPromise;
       return result;
     } catch (error) {

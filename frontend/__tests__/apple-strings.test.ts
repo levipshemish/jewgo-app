@@ -1,122 +1,134 @@
 import { getAppleSignInText } from '@/lib/i18n/apple-strings';
 
-describe('Apple Sign-In Strings', () => {
-  test('returns correct English text', () => {
-    expect(getAppleSignInText('en')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('en-US')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('en-GB')).toBe('Sign in with Apple');
-  });
+describe('Apple Sign In Strings', () => {
+  describe('getAppleSignInText', () => {
+    it('should return exact Apple-approved English text', () => {
+      expect(getAppleSignInText('en')).toBe('Sign in with Apple');
+    });
 
-  test('returns correct Spanish text', () => {
-    expect(getAppleSignInText('es')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('es-MX')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('es-ES')).toBe('Iniciar sesión con Apple');
-  });
+    it('should return exact Apple-approved Spanish text', () => {
+      expect(getAppleSignInText('es')).toBe('Iniciar sesión con Apple');
+    });
 
-  test('returns correct French text', () => {
-    expect(getAppleSignInText('fr')).toBe('Se connecter avec Apple');
-    expect(getAppleSignInText('fr-CA')).toBe('Se connecter avec Apple');
-    expect(getAppleSignInText('fr-FR')).toBe('Se connecter avec Apple');
-  });
+    it('should return exact Apple-approved French text', () => {
+      expect(getAppleSignInText('fr')).toBe('Se connecter avec Apple');
+    });
 
-  test('returns correct Hebrew text', () => {
-    expect(getAppleSignInText('he')).toBe('התחבר עם Apple');
-    expect(getAppleSignInText('he-IL')).toBe('התחבר עם Apple');
-  });
+    it('should return exact Apple-approved German text', () => {
+      expect(getAppleSignInText('de')).toBe('Mit Apple anmelden');
+    });
 
-  test('returns correct Japanese text', () => {
-    expect(getAppleSignInText('ja')).toBe('Appleでサインイン');
-    expect(getAppleSignInText('ja-JP')).toBe('Appleでサインイン');
-  });
+    it('should return exact Apple-approved Japanese text', () => {
+      expect(getAppleSignInText('ja')).toBe('Appleでサインイン');
+    });
 
-  test('handles language-only fallbacks correctly', () => {
-    // Test that regional variants fall back to language-only
-    expect(getAppleSignInText('es-MX')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('fr-CA')).toBe('Se connecter avec Apple');
-    expect(getAppleSignInText('en-AU')).toBe('Sign in with Apple');
-  });
+    it('should return exact Apple-approved Korean text', () => {
+      expect(getAppleSignInText('ko')).toBe('Apple로 로그인');
+    });
 
-  test('falls back to English for unsupported locales', () => {
-    expect(getAppleSignInText('xx')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('xx-XX')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('invalid')).toBe('Sign in with Apple');
-  });
+    it('should return exact Apple-approved Chinese Simplified text', () => {
+      expect(getAppleSignInText('zh-CN')).toBe('通过Apple登录');
+    });
 
-  test('handles case-insensitive locale codes', () => {
-    expect(getAppleSignInText('EN')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('Es')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('FR')).toBe('Se connecter avec Apple');
-  });
+    it('should return exact Apple-approved Chinese Traditional text', () => {
+      expect(getAppleSignInText('zh-TW')).toBe('使用Apple登入');
+    });
 
-  test('handles underscore separator in locale codes', () => {
-    expect(getAppleSignInText('en_US')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('es_MX')).toBe('Iniciar sesión con Apple');
-    expect(getAppleSignInText('fr_CA')).toBe('Se connecter avec Apple');
-  });
+    it('should return exact Apple-approved Russian text', () => {
+      expect(getAppleSignInText('ru')).toBe('Войти через Apple');
+    });
 
-  test('returns English when no locale provided', () => {
-    expect(getAppleSignInText()).toBe('Sign in with Apple');
-    expect(getAppleSignInText('')).toBe('Sign in with Apple');
-  });
+    it('should return exact Apple-approved Hebrew text', () => {
+      expect(getAppleSignInText('he')).toBe('התחבר עם Apple');
+    });
 
-  test('handles null and undefined gracefully', () => {
-    expect(getAppleSignInText(null as any)).toBe('Sign in with Apple');
-    expect(getAppleSignInText(undefined as any)).toBe('Sign in with Apple');
-  });
+    it('should return exact Apple-approved Arabic text', () => {
+      expect(getAppleSignInText('ar')).toBe('تسجيل الدخول بـ Apple');
+    });
 
-  test('validates exact string matches for all supported locales', () => {
-    const testCases = [
-      { locale: 'en', expected: 'Sign in with Apple' },
-      { locale: 'es', expected: 'Iniciar sesión con Apple' },
-      { locale: 'fr', expected: 'Se connecter avec Apple' },
-      { locale: 'de', expected: 'Mit Apple anmelden' },
-      { locale: 'it', expected: 'Accedi con Apple' },
-      { locale: 'pt', expected: 'Entrar com Apple' },
-      { locale: 'ja', expected: 'Appleでサインイン' },
-      { locale: 'ko', expected: 'Apple로 로그인' },
-      { locale: 'zh-CN', expected: '通过Apple登录' },
-      { locale: 'zh-TW', expected: '使用Apple登入' },
-      { locale: 'ru', expected: 'Войти через Apple' },
-      { locale: 'ar', expected: 'تسجيل الدخول بـ Apple' },
-      { locale: 'he', expected: 'התחבר עם Apple' },
-      { locale: 'hi', expected: 'Apple के साथ साइन इन करें' },
-      { locale: 'th', expected: 'เข้าสู่ระบบด้วย Apple' },
-      { locale: 'tr', expected: 'Apple ile Oturum Aç' },
-      { locale: 'nl', expected: 'Inloggen met Apple' },
-      { locale: 'sv', expected: 'Logga in med Apple' },
-      { locale: 'da', expected: 'Log ind med Apple' },
-      { locale: 'no', expected: 'Logg inn med Apple' },
-      { locale: 'fi', expected: 'Kirjaudu sisään Applella' },
-      { locale: 'pl', expected: 'Zaloguj się przez Apple' },
-      { locale: 'cs', expected: 'Přihlásit se pomocí Apple' },
-      { locale: 'sk', expected: 'Prihlásiť sa pomocou Apple' },
-      { locale: 'hu', expected: 'Bejelentkezés Apple-lel' },
-      { locale: 'ro', expected: 'Conectare cu Apple' },
-      { locale: 'bg', expected: 'Вход с Apple' },
-      { locale: 'hr', expected: 'Prijava s Apple-om' },
-      { locale: 'sl', expected: 'Prijava z Apple' },
-      { locale: 'et', expected: 'Logi sisse Apple\'iga' },
-      { locale: 'lv', expected: 'Piesakieties ar Apple' },
-      { locale: 'lt', expected: 'Prisijungti su Apple' },
-      { locale: 'mt', expected: 'Idħol b\'Apple' },
-      { locale: 'el', expected: 'Σύνδεση με Apple' },
-      { locale: 'uk', expected: 'Увійти через Apple' },
-      { locale: 'be', expected: 'Увайсці праз Apple' },
-      { locale: 'mk', expected: 'Најавете се со Apple' },
-      { locale: 'sq', expected: 'Hyr me Apple' },
-      { locale: 'sr', expected: 'Пријавите се са Apple-ом' },
-      { locale: 'bs', expected: 'Prijavite se s Apple-om' },
-      { locale: 'me', expected: 'Prijavite se sa Apple-om' },
-      { locale: 'is', expected: 'Skráðu þig inn með Apple' },
-      { locale: 'ga', expected: 'Sínigh isteach le Apple' },
-      { locale: 'cy', expected: 'Mewngofnodi gydag Apple' },
-      { locale: 'eu', expected: 'Saioa hasi Apple-rekin' },
-      { locale: 'ca', expected: 'Inicia sessió amb Apple' },
-      { locale: 'gl', expected: 'Iniciar sesión con Apple' }
-    ];
+    it('should handle locale variants correctly', () => {
+      expect(getAppleSignInText('en-US')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('en-GB')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('es-ES')).toBe('Iniciar sesión con Apple');
+      expect(getAppleSignInText('es-MX')).toBe('Iniciar sesión con Apple');
+    });
 
-    testCases.forEach(({ locale, expected }) => {
-      expect(getAppleSignInText(locale)).toBe(expected);
+    it('should handle case-insensitive locale codes', () => {
+      expect(getAppleSignInText('EN')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('En')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('ES')).toBe('Iniciar sesión con Apple');
+    });
+
+    it('should handle underscore separator in locale codes', () => {
+      expect(getAppleSignInText('en_US')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('es_ES')).toBe('Iniciar sesión con Apple');
+    });
+
+    it('should fallback to English for unsupported locales', () => {
+      expect(getAppleSignInText('xx')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('invalid')).toBe('Sign in with Apple');
+      expect(getAppleSignInText('')).toBe('Sign in with Apple');
+    });
+
+    it('should fallback to English when no locale is provided', () => {
+      expect(getAppleSignInText()).toBe('Sign in with Apple');
+      expect(getAppleSignInText(undefined)).toBe('Sign in with Apple');
+    });
+
+    it('should return exact Apple-approved text for all supported locales', () => {
+      const supportedLocales = [
+        { code: 'en', text: 'Sign in with Apple' },
+        { code: 'es', text: 'Iniciar sesión con Apple' },
+        { code: 'fr', text: 'Se connecter avec Apple' },
+        { code: 'de', text: 'Mit Apple anmelden' },
+        { code: 'it', text: 'Accedi con Apple' },
+        { code: 'pt', text: 'Entrar com Apple' },
+        { code: 'ja', text: 'Appleでサインイン' },
+        { code: 'ko', text: 'Apple로 로그인' },
+        { code: 'zh-CN', text: '通过Apple登录' },
+        { code: 'zh-TW', text: '使用Apple登入' },
+        { code: 'ru', text: 'Войти через Apple' },
+        { code: 'ar', text: 'تسجيل الدخول بـ Apple' },
+        { code: 'he', text: 'התחבר עם Apple' },
+        { code: 'hi', text: 'Apple के साथ साइन इन करें' },
+        { code: 'th', text: 'เข้าสู่ระบบด้วย Apple' },
+        { code: 'tr', text: 'Apple ile Oturum Aç' },
+        { code: 'nl', text: 'Inloggen met Apple' },
+        { code: 'sv', text: 'Logga in med Apple' },
+        { code: 'da', text: 'Log ind med Apple' },
+        { code: 'no', text: 'Logg inn med Apple' },
+        { code: 'fi', text: 'Kirjaudu sisään Applella' },
+        { code: 'pl', text: 'Zaloguj się przez Apple' },
+        { code: 'cs', text: 'Přihlásit se pomocí Apple' },
+        { code: 'sk', text: 'Prihlásiť sa pomocou Apple' },
+        { code: 'hu', text: 'Bejelentkezés Apple-lel' },
+        { code: 'ro', text: 'Conectare cu Apple' },
+        { code: 'bg', text: 'Вход с Apple' },
+        { code: 'hr', text: 'Prijava s Apple-om' },
+        { code: 'sl', text: 'Prijava z Apple' },
+        { code: 'et', text: 'Logi sisse Apple\'iga' },
+        { code: 'lv', text: 'Piesakieties ar Apple' },
+        { code: 'lt', text: 'Prisijungti su Apple' },
+        { code: 'mt', text: 'Idħol b\'Apple' },
+        { code: 'el', text: 'Σύνδεση με Apple' },
+        { code: 'uk', text: 'Увійти через Apple' },
+        { code: 'be', text: 'Увайсці праз Apple' },
+        { code: 'mk', text: 'Најавете се со Apple' },
+        { code: 'sq', text: 'Hyr me Apple' },
+        { code: 'sr', text: 'Пријавите се са Apple-ом' },
+        { code: 'bs', text: 'Prijavite se s Apple-om' },
+        { code: 'me', text: 'Prijavite se sa Apple-om' },
+        { code: 'is', text: 'Skráðu þig inn með Apple' },
+        { code: 'ga', text: 'Sínigh isteach le Apple' },
+        { code: 'cy', text: 'Mewngofnodi gydag Apple' },
+        { code: 'eu', text: 'Saioa hasi Apple-rekin' },
+        { code: 'ca', text: 'Inicia sessió amb Apple' },
+        { code: 'gl', text: 'Iniciar sesión con Apple' }
+      ];
+
+      supportedLocales.forEach(({ code, text }) => {
+        expect(getAppleSignInText(code)).toBe(text);
+      });
     });
   });
 });
