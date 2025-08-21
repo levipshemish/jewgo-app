@@ -462,7 +462,21 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-end items-center gap-3 min-h-[16px]">
+        <div className="flex justify-between items-center gap-3 min-h-[16px]">
+          {cardData.additionalText && (
+            <p 
+              className="text-xs text-gray-500 m-0 text-left whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
+              style={{ 
+                width: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+              aria-label={`Additional info: ${cardData.additionalText}`}
+            >
+              {cardData.additionalText}
+            </p>
+          )}
           {cardData.subtitle && (
             <p 
               className="text-xs text-gray-600 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
@@ -475,20 +489,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               aria-label={`Price range: ${cardData.subtitle}`}
             >
               {cardData.subtitle}
-            </p>
-          )}
-          {cardData.additionalText && (
-            <p 
-              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
-              style={{ 
-                maxWidth: '50px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              aria-label={`Additional info: ${cardData.additionalText}`}
-            >
-              {cardData.additionalText}
             </p>
           )}
         </div>
