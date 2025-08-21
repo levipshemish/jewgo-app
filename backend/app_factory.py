@@ -2150,15 +2150,15 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                     if open_time <= current_time <= close_time:
                                         is_open = True
                                         status = "open"
-                                        message = f"Open now • Closes {close_time_str}"
+                                        message = f"Open now • Closes at {close_time_str}"
                                     elif current_time < open_time:
                                         is_open = False
                                         status = "closed"
-                                        message = f"Opens {open_time_str}"
+                                        message = f"Closed • Opens at {open_time_str}"
                                     else:  # current_time > close_time
                                         is_open = False
                                         status = "closed"
-                                        message = f"Closed • Opens {open_time_str} tomorrow"
+                                        message = f"Closed • Opens at {open_time_str} tomorrow"
                                     
                                     today_hours = {
                                         "open": open_time_str,
@@ -2169,7 +2169,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                     # Fallback if time parsing fails
                                     is_open = hours_entry['is_open']
                                     status = "open" if is_open else "closed"
-                                    message = f"Open now" if is_open else "Closed today"
+                                    message = f"Open now • Hours available" if is_open else "Closed today"
                                     today_hours = {
                                         "open": hours_text,
                                         "close": "",
