@@ -1,177 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { 
-  checkRateLimit,
-  checkIdempotency,
-  storeIdempotencyResult
-} from '@/lib/rate-limiting';
-import { 
-  validateTrustedIP,
-  generateCorrelationId,
-  scrubPII,
-  extractIsAnonymous
-} from '@/lib/utils/auth-utils';
-import { validateCSRFServer, testSupabaseFeatures, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
-import { 
-  ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  FEATURE_FLAGS
-} from '@/lib/config/environment';
 
 /**
- * RUNTIME: Node.js is required for this endpoint due to dependencies:
- * - crypto module for HMAC operations in auth-utils.server.ts
- * - cookies from next/headers for Supabase SSR client
- * - ioredis for rate limiting (with in-memory fallback)
- * - Server-side Supabase client with cookie adapter
- * 
- * Edge runtime is not compatible with these Node.js-specific features.
- * Redis client uses direct TCP connections, so Edge performance benefits
- * are not applicable here.
+ * Simplified anonymous authentication endpoint
+ * Node.js runtime required for cookies and Supabase SSR
  */
 export const runtime = 'nodejs';
 
-// Normalized error codes
-const ERROR_CODES = {
-  ANON_SIGNIN_UNSUPPORTED: 'ANON_SIGNIN_UNSUPPORTED',
-  ANON_SIGNIN_FAILED: 'ANON_SIGNIN_FAILED',
-  RATE_LIMITED: 'RATE_LIMITED',
-  CSRF: 'CSRF',
-  SESSION_ERROR: 'SESSION_ERROR',
-  USER_EXISTS: 'USER_EXISTS'
-} as const;
+// Simplified CORS headers
+function getSimpleCORSHeaders(origin?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer',
+    'Access-Control-Allow-Credentials': 'true',
+    'Cache-Control': 'no-store',
+  };
+  
+  // Allow common origins
+  const allowedOrigins = [
+    'https://jewgo.app',
+    'https://www.jewgo.app',
+    'http://localhost:3000'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+  
+  return headers;
+}
 
 /**
- * Anonymous authentication API with comprehensive security measures
- * Handles OPTIONS/CORS preflight and POST requests with rate limiting
+ * Handle CORS preflight requests
  */
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   
   return new Response(null, {
     status: 204,
-    headers: getCORSHeaders(origin || undefined)
+    headers: getSimpleCORSHeaders(origin || undefined)
   });
 }
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
-  const startTime = Date.now();
-  
-  // Validate origin against allowlist
-  const origin = request.headers.get('origin');
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
-    return NextResponse.json(
-      { error: 'FORBIDDEN' },
-      { 
-        status: 403,
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      }
-    );
-  }
-  
-  // Kill switch check for anonymous auth feature flag
-  if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
-    return NextResponse.json(
-      { error: 'SERVICE_UNAVAILABLE' },
-      { 
-        status: 503,
-        headers: {
-          ...getCORSHeaders(origin || undefined),
-          'Cache-Control': 'no-store'
-        }
-      }
-    );
-  }
-  
   try {
-    // Test Supabase features before calling signInAnonymously
-    const featureTest = await testSupabaseFeatures();
+    console.log('Anonymous auth POST request received');
     
-    if (!featureTest.signInAnonymously) {
-      console.error(`🚨 CRITICAL: signInAnonymously method not available for correlation ID: ${correlationId}`, {
-        error: featureTest.error,
-        correlationId
-      });
-      
+    // Get origin for CORS
+    const origin = request.headers.get('origin');
+    
+    // Basic environment validation
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('Supabase environment variables not configured');
       return NextResponse.json(
-        { error: ERROR_CODES.ANON_SIGNIN_UNSUPPORTED },
+        { error: 'CONFIGURATION_ERROR' },
         { 
           status: 500,
-          headers: getCORSHeaders(request.headers.get('origin') || undefined)
-        }
-      );
-    }
-
-    // Get request details for security validation
-    const origin = request.headers.get('origin');
-    const referer = request.headers.get('referer');
-    const csrfToken = request.headers.get('x-csrf-token');
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip');
-    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
-    const ipHash = hashIPForPrivacy(validatedIP);
-    
-    // Comprehensive CSRF validation with signed token fallback
-    // Temporarily disabled for testing
-    /*
-    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
-      console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
-        origin,
-        referer,
-        ipHash,
-        correlationId,
-        hasCSRFToken: !!csrfToken
-      });
-      
-      return NextResponse.json(
-        { error: ERROR_CODES.CSRF },
-        { 
-          status: 403,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    */
-    
-    // Rate limiting with enhanced UX
-    const rateLimitResult = await checkRateLimit(
-      `anonymous_auth:${ipHash}`,
-      'anonymous_auth',
-      validatedIP,
-      forwardedFor || undefined
-    );
-    
-    if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for IP hash: ${ipHash}`, {
-        correlationId,
-        remaining_attempts: rateLimitResult.remaining_attempts,
-        reset_in_seconds: rateLimitResult.reset_in_seconds
-      });
-      
-      return NextResponse.json(
-        {
-          error: ERROR_CODES.RATE_LIMITED,
-          remaining_attempts: rateLimitResult.remaining_attempts,
-          reset_in_seconds: rateLimitResult.reset_in_seconds,
-          retry_after: rateLimitResult.retry_after,
-          correlation_id: correlationId
-        },
-        { 
-          status: 429,
-          headers: getCORSHeaders(origin || undefined)
+          headers: getSimpleCORSHeaders(origin || undefined)
         }
       );
     }
     
-    // Create Supabase SSR client with cookie adapter
+    // Create Supabase SSR client
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           get(name: string) {
@@ -187,120 +82,48 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Server-side duplicate prevention using SSR client
-    const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+    console.log('Attempting anonymous signin...');
     
-    if (getUserError) {
-      console.error(`Failed to get user for correlation ID: ${correlationId}`, {
-        error: getUserError,
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: ERROR_CODES.SESSION_ERROR },
-        { 
-          status: 401,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Check if user already exists (non-anonymous)
-    if (user && !extractIsAnonymous(user)) {
-      console.warn(`Non-anonymous user already exists for correlation ID: ${correlationId}`, {
-        userId: user.id,
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: ERROR_CODES.USER_EXISTS },
-        { 
-          status: 409,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Check if anonymous user already exists - short-circuit with success
-    if (user && extractIsAnonymous(user)) {
-      console.log(`Anonymous user already exists for correlation ID: ${correlationId}`, {
-        userId: user.id,
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { ok: true, correlation_id: correlationId },
-        { 
-          status: 200,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Server-side idempotency check to prevent concurrent duplicate creations
-    const idempotencyKey = `anon_signin:${ipHash}`;
-    const idempotencyCheck = await checkIdempotency(idempotencyKey, 5); // 5 second TTL
-    
-    if (idempotencyCheck.exists) {
-      console.log(`Idempotency check found existing anonymous signin for correlation ID: ${correlationId}`, {
-        correlationId,
-        ipHash
-      });
-      
-      return NextResponse.json(
-        { ok: true, correlation_id: correlationId },
-        { 
-          status: 200,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Create anonymous user using signInAnonymously
-    const { error: signInError } = await supabase.auth.signInAnonymously();
+    // Create anonymous user
+    const { data, error: signInError } = await supabase.auth.signInAnonymously();
     
     if (signInError) {
-      console.error(`Anonymous signin failed for correlation ID: ${correlationId}`, {
-        error: signInError,
-        correlationId
-      });
-      
+      console.error('Anonymous signin failed:', signInError);
       return NextResponse.json(
-        { error: ERROR_CODES.ANON_SIGNIN_FAILED },
+        { error: 'SIGNIN_FAILED', details: signInError.message },
         { 
           status: 500,
-          headers: getCORSHeaders(origin || undefined)
+          headers: getSimpleCORSHeaders(origin || undefined)
         }
       );
     }
     
-    // Store idempotency result for successful signin
-    await storeIdempotencyResult(idempotencyKey, { success: true }, 5);
+    console.log('Anonymous signin successful:', data.user?.id);
     
     // Success response
     return NextResponse.json(
-      { ok: true, correlation_id: correlationId },
+      { 
+        ok: true, 
+        user_id: data.user?.id,
+        message: 'Anonymous signin successful'
+      },
       { 
         status: 200,
-        headers: getCORSHeaders(origin || undefined)
+        headers: getSimpleCORSHeaders(origin || undefined)
       }
     );
     
   } catch (error) {
-    console.error(`Unexpected error in anonymous auth for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    console.error('Unexpected error in anonymous auth:', error);
     
     return NextResponse.json(
       { 
-        error: ERROR_CODES.ANON_SIGNIN_FAILED,
-        correlation_id: correlationId
+        error: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error'
       },
       { 
         status: 500,
-        headers: getCORSHeaders(request.headers.get('origin') || undefined)
+        headers: getSimpleCORSHeaders(request.headers.get('origin') || undefined)
       }
     );
   }
