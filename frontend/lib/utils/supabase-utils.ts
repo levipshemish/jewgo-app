@@ -4,6 +4,30 @@ import { SupabaseClient } from '@supabase/supabase-js';
 const clientRegistry = new Map<string, SupabaseClient>();
 
 /**
+ * Create a minimal mock Supabase client for SSR and error fallback
+ */
+function createMockClient(): SupabaseClient {
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      signOut: async () => ({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signIn: async () => ({ data: { user: null, session: null }, error: null }),
+      signUp: async () => ({ data: { user: null, session: null }, error: null }),
+      exchangeCodeForSession: async () => ({ data: { user: null, session: null }, error: null }),
+      setSession: async () => ({ data: { user: null, session: null }, error: null }),
+    },
+    from: () => ({
+      select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+      insert: () => ({ select: async () => ({ data: null, error: null }) }),
+      delete: () => ({ eq: async () => ({ data: null, error: null }) }),
+      update: () => ({ eq: async () => ({ data: null, error: null }) }),
+    }),
+    rpc: async () => ({ data: null, error: null }),
+  } as any;
+}
+
+/**
  * Get or create a Supabase client instance with proper configuration
  * This prevents multiple GoTrueClient instances and RealtimeClient errors
  */
@@ -22,28 +46,35 @@ export function getSupabaseClient(
     return clientRegistry.get(clientId)!;
   }
 
-  // Import the appropriate client based on environment
-  if (typeof window !== 'undefined') {
-    // Browser environment
-    const { supabaseBrowser } = require('@/lib/supabase/client');
-    const client = supabaseBrowser;
-    clientRegistry.set(clientId, client);
-    return client;
-  } else {
-    // Server environment - create a mock client for SSR
-    const mockClient = {
-      auth: {
-        getSession: async () => ({ data: { session: null }, error: null }),
-        signOut: async () => ({ error: null }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      },
-      from: () => ({
-        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-        insert: () => ({ select: async () => ({ data: null, error: null }) }),
-        delete: () => ({ eq: async () => ({ data: null, error: null }) }),
-      }),
-    } as any;
+  // For SSR or when we want to avoid RealtimeClient issues, use mock client
+  if (typeof window === 'undefined' || options?.disableRealtime) {
+    const mockClient = createMockClient();
+    clientRegistry.set(clientId, mockClient);
+    return mockClient;
+  }
+
+  // Browser environment - try to get the browser client safely
+  try {
+    // Use a lazy import approach to avoid SSR issues
+    let browserClient: any = null;
     
+    // Try to get the browser client without causing RealtimeClient issues
+    if (typeof window !== 'undefined') {
+      // Only import in browser environment
+      const clientModule = require('@/lib/supabase/client');
+      browserClient = clientModule.supabaseBrowser;
+    }
+    
+    if (browserClient) {
+      clientRegistry.set(clientId, browserClient);
+      return browserClient;
+    } else {
+      throw new Error('Browser client not available');
+    }
+  } catch (error) {
+    console.warn('Failed to load browser client, using fallback:', error);
+    // Return a mock client if browser client fails
+    const mockClient = createMockClient();
     clientRegistry.set(clientId, mockClient);
     return mockClient;
   }

@@ -49,10 +49,10 @@ export async function createSupabaseServerClient() {
           cookieStore.set({ name, value: "", ...options, maxAge: 0 });
         },
       },
-      // Disable realtime on server side to prevent RealtimeClient errors
+      // Completely disable realtime on server side to prevent RealtimeClient errors
       realtime: {
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 0,
         },
       },
       global: {

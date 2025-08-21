@@ -30,10 +30,10 @@ const createFallbackClient = () => {
         persistSession: true,
         autoRefreshToken: true,
       },
-      // Configure realtime with minimal settings to prevent RealtimeClient constructor errors
+      // Completely disable realtime to prevent RealtimeClient constructor errors
       realtime: {
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 0,
         },
       },
       global: {
@@ -97,10 +97,10 @@ export const supabaseBrowser = (() => {
         detectSessionInUrl: false,
         flowType: 'pkce',
       },
-      // Configure realtime with minimal settings to prevent RealtimeClient constructor errors
+      // Completely disable realtime to prevent RealtimeClient constructor errors
       realtime: {
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 0,
         },
       },
       global: {
