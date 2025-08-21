@@ -9,7 +9,7 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
-// TypeScript Interfaces (keeping original)
+// TypeScript Interfaces
 interface CardData {
   id: string;
   imageUrl?: string;
@@ -23,34 +23,35 @@ interface CardData {
   isLiked?: boolean;
 }
 
-interface EnhancedProductCardProps {
+interface UnifiedCardProps {
   data: CardData;
   onLikeToggle?: (id: string, isLiked: boolean) => void;
   onCardClick?: (data: CardData) => void;
   onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
   priority?: boolean;
+  variant?: 'default' | 'minimal' | 'enhanced';
 }
-
-
 
 // Motion variants for animations
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
-    y: 0
+    y: 0,
+    transition: { duration: 0.3, ease: "easeOut" as const }
   }
 };
 
-// Main Enhanced Product Card Component
-const EnhancedProductCard = memo<EnhancedProductCardProps>(({
+// Main Unified Card Component
+const UnifiedCard = memo<UnifiedCardProps>(({
   data,
   onLikeToggle,
   onCardClick,
   onTagClick,
   className = '',
-  priority = false
+  priority = false,
+  variant = 'default'
 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
@@ -99,18 +100,11 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
 
   // Handlers
   const handleLikeToggle = useCallback(() => {
-    if (isAnimating) {
-      return;
-    }
-    
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 200);
-
     try {
+      setIsAnimating(true);
       const newIsLiked = !isLiked;
       
       if (newIsLiked) {
-        // Create a minimal restaurant object with required fields
         const minimalRestaurant = {
           id: data.id,
           name: data.title,
@@ -127,23 +121,22 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           category: 'restaurant' as any
         };
         addFavorite(minimalRestaurant);
+        setAnnouncement(`Added ${data.title} to favorites`);
       } else {
         removeFavorite(data.id);
+        setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
       setIsLiked(newIsLiked);
       onLikeToggle?.(data.id, newIsLiked);
       
-      // Announce to screen readers using persistent live region
-      const message = newIsLiked ? 'Added to favorites' : 'Removed from favorites';
-      setAnnouncement(message);
-      // Clear the announcement after screen readers have processed it
-      setTimeout(() => setAnnouncement(''), 1000);
+      // Reset animation state
+      setTimeout(() => setIsAnimating(false), 200);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.warn('Card error:', error);
+      setIsAnimating(false);
     }
-  }, [isLiked, isAnimating, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
+  }, [isLiked, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {
@@ -184,10 +177,39 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     }
   }, [handleTagClick]);
 
+  // Variant-specific styling
+  const getVariantStyles = () => {
+    switch (variant) {
+      case 'minimal':
+        return {
+          cardClass: "w-[160px] rounded-xl overflow-hidden p-2",
+          imageClass: "h-[100px]",
+          titleClass: "text-xs font-medium",
+          badgeClass: "text-xs px-1.5 py-0.5"
+        };
+      case 'enhanced':
+        return {
+          cardClass: "w-[200px] rounded-3xl overflow-hidden p-4",
+          imageClass: "h-[140px]",
+          titleClass: "text-base font-semibold",
+          badgeClass: "text-sm px-3 py-1"
+        };
+      default:
+        return {
+          cardClass: "w-[180px] rounded-2xl overflow-hidden p-3",
+          imageClass: "h-[126px]",
+          titleClass: "text-sm font-semibold",
+          badgeClass: "text-xs px-2 py-0.5"
+        };
+    }
+  };
+
+  const variantStyles = getVariantStyles();
+
   return (
     <motion.div
         className={cn(
-          "w-[180px] rounded-2xl overflow-hidden p-3",
+          variantStyles.cardClass,
           "transition-all duration-300 ease-out",
           "mx-auto",
           "bg-transparent",
@@ -228,9 +250,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {announcement}
       </span>
+      
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[126px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300 group-hover:scale-105">
+        <div className={cn(
+          "w-full rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300 group-hover:scale-105",
+          variantStyles.imageClass
+        )}>
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
@@ -412,14 +438,20 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       >
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
-            className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
+            className={cn(
+              variantStyles.titleClass,
+              "text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
+            )}
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
           {cardData.badge && (
             <motion.div
-              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm"
+              className={cn(
+                "inline-block bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
+                variantStyles.badgeClass
+              )}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
@@ -465,6 +497,6 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
   );
 });
 
-EnhancedProductCard.displayName = 'EnhancedProductCard';
+UnifiedCard.displayName = 'UnifiedCard';
 
-export default EnhancedProductCard;
+export default UnifiedCard;

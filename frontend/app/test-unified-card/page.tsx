@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import EnhancedProductCard from "@/components/ui/UnifiedCard"
-import UnifiedCardConsistent from "@/components/ui/UnifiedCardConsistent"
+import UnifiedCard from "@/components/ui/UnifiedCard"
 
 // Mock data for testing various scenarios
 const mockRestaurantData = {
@@ -130,42 +129,57 @@ export default function TestUnifiedCardPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            UnifiedCard Component Test Suite
+            UnifiedCard Component - Final Version
           </h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Comprehensive testing of the UnifiedCard component with various scenarios including 
-            edge cases, special characters, RTL support, and error handling.
+            The unified card component that works across all versions of your website with multiple variants and comprehensive features.
           </p>
         </div>
 
-        {/* Comparison Section */}
+        {/* Variant Comparison Section */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
-            Original vs Consistent Version Comparison
+            Variant Comparison
           </h2>
-          <div className="grid grid-cols-2 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div>
               <h3 className="text-lg font-semibold text-gray-700 text-center mb-4">
-                Original EnhancedProductCard
+                Minimal Variant
               </h3>
               <div className="flex justify-center">
-                <EnhancedProductCard
-                  data={{...mockRestaurantData, isLiked: likedCards.has(mockRestaurantData.id)}}
+                <UnifiedCard
+                  variant="minimal"
+                  data={{...mockRestaurantData, isLiked: likedCards.has('minimal-1')}}
                   onCardClick={handleCardClick}
-                  onLikeToggle={handleLikeToggle}
+                  onLikeToggle={(id, liked) => handleLikeToggle('minimal-1', liked)}
                   onTagClick={handleTagClick}
                 />
               </div>
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-700 text-center mb-4">
-                Consistent Version (No Hover States)
+                Default Variant
               </h3>
               <div className="flex justify-center">
-                <UnifiedCardConsistent
-                  data={{...mockRestaurantData, isLiked: likedCards.has('consistent-1')}}
+                <UnifiedCard
+                  variant="default"
+                  data={{...mockRestaurantData, isLiked: likedCards.has('default-1')}}
                   onCardClick={handleCardClick}
-                  onLikeToggle={(id, liked) => handleLikeToggle('consistent-1', liked)}
+                  onLikeToggle={(id, liked) => handleLikeToggle('default-1', liked)}
+                  onTagClick={handleTagClick}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 text-center mb-4">
+                Enhanced Variant
+              </h3>
+              <div className="flex justify-center">
+                <UnifiedCard
+                  variant="enhanced"
+                  data={{...mockRestaurantData, isLiked: likedCards.has('enhanced-1')}}
+                  onCardClick={handleCardClick}
+                  onLikeToggle={(id, liked) => handleLikeToggle('enhanced-1', liked)}
                   onTagClick={handleTagClick}
                 />
               </div>
@@ -176,7 +190,7 @@ export default function TestUnifiedCardPage() {
         {/* Basic Examples Section */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
-            Basic Examples
+            Basic Examples (Default Variant)
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
             {/* Restaurant Card */}
@@ -184,7 +198,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Restaurant
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...mockRestaurantData, isLiked: likedCards.has(mockRestaurantData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -197,7 +211,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Marketplace
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...mockMarketplaceData, isLiked: likedCards.has(mockMarketplaceData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -210,7 +224,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Minimal
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={minimalData}
                 onCardClick={handleCardClick}
               />
@@ -221,7 +235,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 No Image
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...noImageData, isLiked: likedCards.has(noImageData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -241,7 +255,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Long Text
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...longTextData, isLiked: likedCards.has(longTextData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -254,7 +268,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Special Chars
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...specialCharsData, isLiked: likedCards.has(specialCharsData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -267,7 +281,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 RTL Text
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...rtlData, isLiked: likedCards.has(rtlData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -280,7 +294,7 @@ export default function TestUnifiedCardPage() {
               <h3 className="text-lg font-semibold text-gray-700 text-center">
                 Error Image
               </h3>
-              <EnhancedProductCard
+              <UnifiedCard
                 data={{...errorImageData, isLiked: likedCards.has(errorImageData.id)}}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
@@ -324,12 +338,14 @@ export default function TestUnifiedCardPage() {
                 ✨ Visual Features
               </h3>
               <ul className="space-y-2 text-gray-600">
+                <li>• Three variants: minimal, default, enhanced</li>
                 <li>• Smooth loading animations with skeleton placeholders</li>
                 <li>• Graceful image error handling with fallbacks</li>
                 <li>• Text truncation for long content</li>
                 <li>• Responsive design across all screen sizes</li>
                 <li>• Hover effects and micro-interactions</li>
                 <li>• Support for RTL languages and special characters</li>
+                <li>• Transparent background for seamless integration</li>
               </ul>
             </div>
 
@@ -344,7 +360,62 @@ export default function TestUnifiedCardPage() {
                 <li>• Screen reader announcements</li>
                 <li>• Event propagation control</li>
                 <li>• Performance optimizations</li>
+                <li>• Heart button with red hover state</li>
+                <li>• Unified API across all variants</li>
               </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Usage Examples */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            Usage Examples
+          </h2>
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Code Examples
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">Basic Usage:</h4>
+                <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+{`<UnifiedCard
+  data={restaurantData}
+  onCardClick={handleClick}
+  onLikeToggle={handleLike}
+/>`}
+                </pre>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">With Variants:</h4>
+                <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+{`<UnifiedCard
+  variant="minimal"
+  data={restaurantData}
+  onCardClick={handleClick}
+/>
+
+<UnifiedCard
+  variant="enhanced"
+  data={restaurantData}
+  onCardClick={handleClick}
+/>`}
+                </pre>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-700 mb-2">With All Handlers:</h4>
+                <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+{`<UnifiedCard
+  data={restaurantData}
+  onCardClick={handleCardClick}
+  onLikeToggle={handleLikeToggle}
+  onTagClick={handleTagClick}
+  className="custom-class"
+  priority={true}
+/>`}
+                </pre>
+              </div>
             </div>
           </div>
         </section>
@@ -360,10 +431,11 @@ export default function TestUnifiedCardPage() {
                 <h4 className="font-semibold text-blue-700 mb-3">Interactive Testing</h4>
                 <ul className="text-blue-600 space-y-2">
                   <li>• Click cards to test navigation callbacks</li>
-                  <li>• Toggle heart buttons to test favorites</li>
+                  <li>• Toggle heart buttons to test favorites (red on hover)</li>
                   <li>• Click tags to test tag navigation</li>
                   <li>• Resize browser to test responsive behavior</li>
                   <li>• Use keyboard navigation (Tab, Enter, Space)</li>
+                  <li>• Test different variants (minimal, default, enhanced)</li>
                 </ul>
               </div>
               <div>
@@ -374,6 +446,7 @@ export default function TestUnifiedCardPage() {
                   <li>• Test RTL text alignment</li>
                   <li>• Confirm error image fallback</li>
                   <li>• Monitor console for errors</li>
+                  <li>• Test transparent background integration</li>
                 </ul>
               </div>
             </div>
