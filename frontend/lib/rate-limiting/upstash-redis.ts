@@ -1,4 +1,3 @@
-import { Redis } from '@upstash/redis';
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
 
 // Re-export validateTrustedIP for convenience
@@ -21,16 +20,35 @@ const RATE_LIMITS = {
 };
 
 // Initialize Redis client with fallback for missing environment variables
-let redis: Redis | null = null;
+let redis: any = null;
 
 try {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  // Use standard Redis configuration from environment variables
+  const redisUrl = process.env.REDIS_URL;
+  const redisHost = process.env.REDIS_HOST;
+  const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379;
+  const redisPassword = process.env.REDIS_PASSWORD;
+  const redisDb = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
+
+  if (redisUrl) {
+    // Use Redis URL if available
+    const Redis = require('redis');
+    redis = Redis.createClient({ url: redisUrl });
+    redis.connect();
+  } else if (redisHost) {
+    // Use individual Redis configuration
+    const Redis = require('redis');
+    redis = Redis.createClient({
+      socket: {
+        host: redisHost,
+        port: redisPort
+      },
+      password: redisPassword,
+      database: redisDb
     });
+    redis.connect();
   } else {
-    console.warn('Upstash Redis environment variables not configured. Rate limiting will be disabled.');
+    console.warn('Redis environment variables not configured. Rate limiting will be disabled.');
   }
 } catch (error) {
   console.error('Failed to initialize Redis client:', error);
@@ -68,11 +86,11 @@ export async function checkRateLimit(
     const dailyKey = `rate_limit:${limitType}:${realIP}:daily`;
     
     // Check window limit
-    const windowCount = await redis.get<number>(windowKey) || 0;
+    const windowCount = await redis.get(windowKey) || 0;
     const windowExpiry = await redis.ttl(windowKey);
     
     // Check daily limit
-    const dailyCount = await redis.get<number>(dailyKey) || 0;
+    const dailyCount = await redis.get(dailyKey) || 0;
     const dailyExpiry = await redis.ttl(dailyKey);
     
     // Check if limits exceeded
@@ -99,23 +117,23 @@ export async function checkRateLimit(
     }
     
     // Increment counters
-    const pipeline = redis.pipeline();
+    const multi = redis.multi();
     
     // Window counter
     if (windowCount === 0) {
-      pipeline.setex(windowKey, config.window, 1);
+      multi.setEx(windowKey, config.window, '1');
     } else {
-      pipeline.incr(windowKey);
+      multi.incr(windowKey);
     }
     
     // Daily counter
     if (dailyCount === 0) {
-      pipeline.setex(dailyKey, config.window_daily, 1);
+      multi.setEx(dailyKey, config.window_daily, '1');
     } else {
-      pipeline.incr(dailyKey);
+      multi.incr(dailyKey);
     }
     
-    await pipeline.exec();
+    await multi.exec();
     
     // Get updated counts
     const newWindowCount = (windowCount || 0) + 1;
@@ -178,7 +196,7 @@ export async function storeIdempotencyResult(key: string, result: any, ttl: numb
   }
 
   try {
-    await redis.setex(key, ttl, JSON.stringify(result));
+    await redis.setEx(key, ttl, JSON.stringify(result));
   } catch (error) {
     console.error('Store idempotency result error:', error);
   }

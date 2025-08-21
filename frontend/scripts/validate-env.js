@@ -17,8 +17,11 @@ const optionalEnvVars = [
   'NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
+  'REDIS_URL',
+  'REDIS_HOST',
+  'REDIS_PORT',
+  'REDIS_PASSWORD',
+  'REDIS_DB',
 ];
 
 // Load .env.local if present to assist local checks (non-fatal if missing)

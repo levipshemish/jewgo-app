@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { validateRedirectUrl, mapAppleOAuthError, sanitizeRedirectUrl } from "@/lib/utils/auth-utils";
+import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
 // Disable static generation for this page
@@ -107,7 +107,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       // Get session and redirect
       const { data: { session } } = await supabaseBrowser.auth.getSession();
       if (session) {
-        const safeNext = sanitizeRedirectUrl(redirectTo);
+        const safeNext = validateRedirectUrl(redirectTo);
         router.push(safeNext || '/');
       } else {
         setError('Guest session creation failed. Please try again.');

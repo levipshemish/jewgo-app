@@ -10,7 +10,6 @@ import {
   validateSupabaseFeatureSupport,
   verifyTokenRotation,
   extractIsAnonymous,
-  sanitizeRedirectUrl,
   type TransformedUser 
 } from '@/lib/utils/auth-utils';
 

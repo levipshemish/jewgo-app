@@ -238,20 +238,30 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
     });
 
     it('should preserve internal paths with query parameters', () => {
-      expect(sanitizeRedirectUrl('/admin?tab=settings')).toBe('/admin?tab=settings');
+      expect(sanitizeRedirectUrl('/profile?tab=settings')).toBe('/profile?tab=settings');
       expect(sanitizeRedirectUrl('/profile?utm_source=email')).toBe('/profile?utm_source=email');
     });
 
     it('should reject dangerous patterns', () => {
-      expect(sanitizeRedirectUrl('/admin/../etc/passwd')).toBe('/');
-      expect(sanitizeRedirectUrl('/admin#javascript:alert(1)')).toBe('/');
-      expect(sanitizeRedirectUrl('/admin?redirect=//evil.com')).toBe('/admin');
+      expect(sanitizeRedirectUrl('/profile/../etc/passwd')).toBe('/');
+      expect(sanitizeRedirectUrl('/profile#javascript:alert(1)')).toBe('/');
+      expect(sanitizeRedirectUrl('/profile?redirect=//evil.com')).toBe('/');
     });
 
-    it('should allow guest-allowed routes', () => {
-      expect(sanitizeRedirectUrl('/favorites')).toBe('/favorites');
-      expect(sanitizeRedirectUrl('/marketplace')).toBe('/marketplace');
-      expect(sanitizeRedirectUrl('/favorites/123')).toBe('/favorites/123');
+    it('should allow only specific allowed paths', () => {
+      expect(sanitizeRedirectUrl('/app')).toBe('/app');
+      expect(sanitizeRedirectUrl('/dashboard')).toBe('/dashboard');
+      expect(sanitizeRedirectUrl('/profile')).toBe('/profile');
+      expect(sanitizeRedirectUrl('/settings')).toBe('/settings');
+      expect(sanitizeRedirectUrl('/app/123')).toBe('/app/123');
+      expect(sanitizeRedirectUrl('/profile/settings')).toBe('/profile/settings');
+    });
+
+    it('should reject previously allowed but now restricted paths', () => {
+      expect(sanitizeRedirectUrl('/admin')).toBe('/');
+      expect(sanitizeRedirectUrl('/favorites')).toBe('/');
+      expect(sanitizeRedirectUrl('/marketplace')).toBe('/');
+      expect(sanitizeRedirectUrl('/messages')).toBe('/');
     });
   });
 

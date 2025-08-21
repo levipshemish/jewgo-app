@@ -51,8 +51,11 @@ export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Redis configuration
-export const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
-export const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+export const REDIS_URL = process.env.REDIS_URL;
+export const REDIS_HOST = process.env.REDIS_HOST;
+export const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379;
+export const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
+export const REDIS_DB = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
 
 // Sentry configuration
 export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
@@ -73,8 +76,6 @@ export function validateEnvironment(): void {
     { name: 'NEXT_PUBLIC_SUPABASE_URL', value: SUPABASE_URL },
     { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: SUPABASE_ANON_KEY },
     { name: 'SUPABASE_SERVICE_ROLE_KEY', value: SUPABASE_SERVICE_ROLE_KEY },
-    { name: 'UPSTASH_REDIS_REST_URL', value: UPSTASH_REDIS_REST_URL },
-    { name: 'UPSTASH_REDIS_REST_TOKEN', value: UPSTASH_REDIS_REST_TOKEN },
   ];
 
   const missingVars = requiredVars.filter(({ value }) => !value);

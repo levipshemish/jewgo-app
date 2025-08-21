@@ -131,7 +131,7 @@ const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOU
 
 /**
  * Sanitize redirect URL with strict path-only enforcement
- * Rejects external domains unless explicitly allowlisted
+ * Aligned with validateRedirectUrl for consistency
  */
 export function sanitizeRedirectUrl(url: string | null | undefined): string {
   if (!url) {
@@ -139,58 +139,66 @@ export function sanitizeRedirectUrl(url: string | null | undefined): string {
   }
   
   try {
-    // Early guard: must start with /
+    // Early guard: short-circuit non-relative inputs by checking startsWith('/') early
     if (!url.startsWith('/')) {
       return '/';
     }
     
-    // Reject protocol-relative URLs and dangerous patterns
+    // Reject protocol-relative URLs, fragments, and dangerous patterns
     if (url.includes('://') || url.includes('//') || url.includes('..') || url.includes('#')) {
       return '/';
     }
-    
-    // Check for encoded attacks
+
+    // Check for encoded attacks in the original URL
     const decodedUrl = decodeURIComponent(url);
     if (decodedUrl.includes('://') || decodedUrl.includes('//') || decodedUrl.includes('#')) {
       return '/';
     }
-    
+
     // Enforce max length
     if (url.length > 2048) {
       return '/';
     }
-    
-    // Parse URL safely
+
+    // Use the already decoded URL for parsing
     const urlObj = new URL(decodedUrl, 'http://localhost');
-    const path = urlObj.pathname;
+    const decodedPath = urlObj.pathname;
     
-    // Additional path validation
-    if (path.includes('://') || path.includes('//') || path.includes('#')) {
+    // Check for encoded attacks in the pathname
+    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('#')) {
       return '/';
     }
     
-    // Allow only safe paths (expanded to include guest-allowed routes)
-    const safePaths = ['/', '/app', '/dashboard', '/profile', '/settings', '/admin', '/messages', '/favorites', '/marketplace'];
-    const hasSafePath = safePaths.some(safePath => 
-      path === safePath || path.startsWith(`${safePath}/`)
+    // Treat "/" as exact root only
+    if (decodedPath === '/') {
+      return '/';
+    }
+    
+    // Allow prefixes only for specific paths
+    const allowedPrefixes = ['/app', '/dashboard', '/profile', '/settings'];
+    const hasAllowedPrefix = allowedPrefixes.some(prefix => 
+      decodedPath.startsWith(`${prefix}/`) || decodedPath === prefix
     );
     
-    if (!hasSafePath) {
+    if (!hasAllowedPrefix) {
       return '/';
     }
-    
-    // Filter query parameters
+
+    // Filter query parameters to safe ones only
     const safeParams = new URLSearchParams();
-    const allowedParams = ['utm_source', 'utm_medium', 'utm_campaign', 'tab', 'ref'];
+    const allowedParamPrefixes = ['utm_'];
+    const allowedExactParams = ['tab', 'ref'];
     
+    // Use Array.from to avoid iteration issues
     Array.from(urlObj.searchParams.entries()).forEach(([key, value]) => {
-      if (allowedParams.includes(key)) {
+      if (allowedExactParams.includes(key) || 
+          allowedParamPrefixes.some(prefix => key.startsWith(prefix))) {
         safeParams.set(key, value);
       }
     });
-    
-    // Reconstruct safe URL
-    const safeUrl = path + (safeParams.toString() ? `?${safeParams.toString()}` : '');
+
+    // Reconstruct safe URL without fragments
+    const safeUrl = decodedPath + (safeParams.toString() ? `?${safeParams.toString()}` : '');
     return safeUrl;
     
   } catch {
