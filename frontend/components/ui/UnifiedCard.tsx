@@ -26,9 +26,11 @@ interface UnifiedCardProps {
   data: CardData;
   onLikeToggle?: (id: string, isLiked: boolean) => void;
   onCardClick?: (data: CardData) => void;
+  onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
   priority?: boolean;
   variant?: 'default' | 'minimal' | 'enhanced';
+  showStarInBadge?: boolean; // New prop to control star icon in badge
 }
 
 // Motion variants for animations
@@ -46,9 +48,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   data,
   onLikeToggle,
   onCardClick,
+  onTagClick,
   className = '',
   priority = false,
-  variant = 'default'
+  variant = 'default',
+  showStarInBadge = false // Default to false for timestamps
 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
@@ -420,7 +424,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               transition={{ delay: 0.2, duration: 0.2 }}
               aria-label={`Rating: ${cardData.badge}`}
             >
-              <Star size={12} className="fill-yellow-400 text-yellow-400" />
+              {showStarInBadge && (
+                <Star size={12} className="fill-yellow-400 text-yellow-400" />
+              )}
               {cardData.badge}
             </motion.div>
           )}

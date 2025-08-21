@@ -674,8 +674,13 @@ export default function EateryExplorePage() {
                         // Handle like toggle - you can add your like logic here
                         console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
                       }}
-
+                      onTagClick={(tagLink, event) => {
+                        event.preventDefault();
+                        // Handle tag click - you can add navigation logic here
+                        console.log('Tag clicked:', tagLink);
+                      }}
                       className="w-full"
+                      showStarInBadge={true}
                     />
                   </div>
                 ))}
