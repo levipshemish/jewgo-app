@@ -59,6 +59,16 @@ export function getSafeImageUrl(imageUrl?: string): string {
     return normalizedUrl;
   }
 
+  // For Google Places URLs, return as-is (they're already optimized)
+  if (imageUrl.includes('googleusercontent.com')) {
+    return imageUrl;
+  }
+
+  // For Unsplash URLs, return as-is (they're already optimized)
+  if (imageUrl.includes('unsplash.com')) {
+    return imageUrl;
+  }
+
   return imageUrl;
 }
 

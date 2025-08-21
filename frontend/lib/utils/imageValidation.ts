@@ -112,13 +112,22 @@ export function filterValidImageUrls(urls: string[]): string[] {
       return false;
     }
     
-    // Only allow Cloudinary URLs across the site
-    if (!url.includes('cloudinary.com')) {
+    // Allow multiple trusted image sources
+    const isCloudinary = url.includes('cloudinary.com');
+    const isGooglePlaces = url.includes('googleusercontent.com');
+    const isUnsplash = url.includes('unsplash.com');
+    
+    if (!isCloudinary && !isGooglePlaces && !isUnsplash) {
       return false;
     }
 
-    // Apply Cloudinary-specific validation
-    return isLikelyAccessibleCloudinaryUrl(url) && !isProblematicCloudinaryUrl(url);
+    // Apply source-specific validation
+    if (isCloudinary) {
+      return isLikelyAccessibleCloudinaryUrl(url) && !isProblematicCloudinaryUrl(url);
+    }
+    
+    // Google Places and Unsplash URLs are generally reliable
+    return true;
   });
 }
 
@@ -128,13 +137,28 @@ export function filterValidImageUrls(urls: string[]): string[] {
  */
 export function processRestaurantImages(
   images: string[] = [], _category: string = 'restaurant', maxImages: number = 12): string[] {
-  // Strict policy: only allow Cloudinary URLs
+  // Allow multiple trusted image sources
   const validImages = images.filter(url => {
     if (!url || typeof url !== 'string') { return false; }
     if (url.trim() === '') { return false; }
-    if (!url.includes('cloudinary.com')) { return false; }
-    // Reject obviously broken / problematic Cloudinary URLs
-    return !url.includes('undefined') && !url.includes('null') && !isProblematicCloudinaryUrl(url);
+    
+    // Allow multiple trusted sources
+    const isCloudinary = url.includes('cloudinary.com');
+    const isGooglePlaces = url.includes('googleusercontent.com');
+    const isUnsplash = url.includes('unsplash.com');
+    
+    if (!isCloudinary && !isGooglePlaces && !isUnsplash) { return false; }
+    
+    // Reject obviously broken URLs
+    if (url.includes('undefined') || url.includes('null')) { return false; }
+    
+    // Apply Cloudinary-specific validation only for Cloudinary URLs
+    if (isCloudinary) {
+      return !isProblematicCloudinaryUrl(url);
+    }
+    
+    // Google Places and Unsplash URLs are generally reliable
+    return true;
   });
 
   // If we have at least one real image, return all valid images up to maxImages
