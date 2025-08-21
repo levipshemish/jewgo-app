@@ -193,6 +193,8 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
       console.error('🚨 ANONYMOUS AUTH WILL FAIL - signInAnonymously method missing');
       console.error('🚨 This will cause 500 errors on /api/auth/anonymous');
       console.error('🚨 Check Supabase SDK version and configuration');
+      console.error('🚨 Verify NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set');
+      console.error('🚨 Ensure Supabase project has anonymous auth enabled');
       
       // Log to Sentry if available
       if (typeof window !== 'undefined' && (window as any).Sentry) {

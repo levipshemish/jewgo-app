@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     const featureTest = await testSupabaseFeatures();
     
     if (!featureTest.signInAnonymously) {
-      console.error(`signInAnonymously method not available for correlation ID: ${correlationId}`, {
+      console.error(`🚨 CRITICAL: signInAnonymously method not available for correlation ID: ${correlationId}`, {
         error: featureTest.error,
         correlationId
       });

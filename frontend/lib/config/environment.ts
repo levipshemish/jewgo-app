@@ -210,34 +210,8 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   try {
     validateEnvironment();
     
-    // Boot-time feature support validation - only on server side
-    if (process.env.NEXT_PHASE !== 'phase-production-build' && typeof window === 'undefined') {
-      // Import and run feature validation asynchronously
-      import('@/lib/utils/auth-utils.server').then(async ({ validateSupabaseFeaturesWithLogging }) => {
-        try {
-          const featuresSupported = await validateSupabaseFeaturesWithLogging();
-          if (!featuresSupported) {
-            console.error('🚨 CRITICAL: Supabase features not available at boot time');
-            if (IS_PRODUCTION) {
-              // In production, this is a critical error that should fail fast
-              process.exit(1);
-            }
-          } else {
-            console.log('✅ Supabase features validated successfully at boot time');
-          }
-        } catch (error) {
-          console.error('🚨 CRITICAL: Feature validation failed at boot time:', error);
-          if (IS_PRODUCTION) {
-            process.exit(1);
-          }
-        }
-      }).catch((error) => {
-        console.error('🚨 CRITICAL: Failed to import feature validation module:', error);
-        if (IS_PRODUCTION) {
-          process.exit(1);
-        }
-      });
-    }
+    // Note: Feature validation moved to individual API routes to avoid build issues
+    console.log('✅ Environment validation completed');
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime
