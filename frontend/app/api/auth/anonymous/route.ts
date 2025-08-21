@@ -14,7 +14,8 @@ import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
 import { validateSupabaseFeatureSupport, getCachedFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
-  getCORSHeaders
+  getCORSHeaders,
+  FEATURE_FLAGS
 } from '@/lib/config/environment';
 
 /**
@@ -65,6 +66,20 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
+  
+  // Kill switch check for anonymous auth feature flag
+  if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
+    return NextResponse.json(
+      { error: 'SERVICE_UNAVAILABLE' },
+      { 
+        status: 503,
+        headers: {
+          ...getCORSHeaders(request.headers.get('origin') || undefined),
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
   
   try {
     // Check cached feature support first, then fallback to validation

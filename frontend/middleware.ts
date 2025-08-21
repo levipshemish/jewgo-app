@@ -70,7 +70,7 @@ export async function middleware(request: NextRequest) {
     
     if (error) {
       console.error('Middleware auth error:', error);
-      // Redirect to signin for matched private routes when auth fails
+      // Redirect to signin for matched private paths when auth fails
       return redirectToSignin(request, pathname, response);
     }
 

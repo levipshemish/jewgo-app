@@ -159,13 +159,8 @@ export async function clearRateLimit(
     return;
   }
   
-  // For production, try to use Upstash Redis
-  try {
-    const { clearRateLimit: upstashClearRateLimit } = await import('./upstash-redis');
-    return await upstashClearRateLimit(key);
-  } catch (error) {
-    console.warn('Upstash Redis not available for clearing rate limits:', error);
-  }
+  // In Docker environment, always use in-memory rate limiting
+  console.warn('Upstash Redis not available in Docker environment for clearing rate limits');
 }
 
 /**

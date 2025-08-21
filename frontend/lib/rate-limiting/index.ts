@@ -7,7 +7,7 @@
 const isDockerEnvironment = process.env.DOCKER === 'true' || process.env.NODE_ENV === 'development';
 
 // Export all functions with dynamic loading
-export async function checkRateLimit(key: string, limitType: string, requestIP: string, forwardedFor?: string) {
+export async function checkRateLimit(key: string, limitType: "anonymous_auth" | "merge_operations" | "email_upgrade", requestIP: string, forwardedFor?: string) {
   if (isDockerEnvironment) {
     const { checkRateLimit } = await import('./docker-redis');
     return checkRateLimit(key, limitType, requestIP, forwardedFor);
