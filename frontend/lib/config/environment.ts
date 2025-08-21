@@ -98,6 +98,12 @@ export function validateEnvironment(): void {
     if (!MERGE_COOKIE_HMAC_KEY_PREVIOUS || MERGE_COOKIE_HMAC_KEY_PREVIOUS === 'default-key') {
       throw new Error('MERGE_COOKIE_HMAC_KEY_PREVIOUS must be set in production');
     }
+    
+    // Additional boot-time assertion that neither key equals a default value
+    if (MERGE_COOKIE_HMAC_KEY_CURRENT === 'fallback-key-change-in-production' || 
+        MERGE_COOKIE_HMAC_KEY_PREVIOUS === 'fallback-key-change-in-production') {
+      throw new Error('HMAC keys must not use default fallback values in production');
+    }
   }
 
   // Validate cleanup secret in production

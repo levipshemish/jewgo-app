@@ -21,8 +21,9 @@ if (typeof window === 'undefined') {
 }
 
 // HMAC keys for cookie signing - server-only
-const MERGE_COOKIE_HMAC_KEY = process.env.MERGE_COOKIE_HMAC_KEY || 'fallback-key-change-in-production';
-const MERGE_COOKIE_HMAC_KEY_V2 = process.env.MERGE_COOKIE_HMAC_KEY_V2 || 'fallback-key-v2-change-in-production';
+// Use the standardized environment variable names from environment.ts
+const MERGE_COOKIE_HMAC_KEY = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || process.env.MERGE_COOKIE_HMAC_KEY || 'fallback-key-change-in-production';
+const MERGE_COOKIE_HMAC_KEY_V2 = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS || process.env.MERGE_COOKIE_HMAC_KEY_V2 || 'fallback-key-v2-change-in-production';
 
 // Feature support validation
 let featureSupportValidated = false;

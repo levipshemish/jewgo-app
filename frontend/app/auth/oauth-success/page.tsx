@@ -18,8 +18,8 @@ function OAuthSuccessContent() {
         if (session) {
           setStatus("Already authenticated! Syncing user data...");
           await syncUserData(session.user);
-          // Remove setTimeout delay - redirect immediately
-          router.push('/eatery');
+          // Redirect to location access first, then to eatery
+          router.push('/location-access');
           return;
         }
 
@@ -83,7 +83,7 @@ function OAuthSuccessContent() {
           await syncUserData(data.session.user);
           
           // Get the next parameter for redirect
-          const next = searchParams.get('next') || '/eatery';
+          const next = searchParams.get('next') || '/location-access';
           router.push(next);
         } else {
           setStatus("No session created from code exchange");
@@ -127,8 +127,8 @@ function OAuthSuccessContent() {
       if (data.session) {
         setStatus("Authentication successful! Syncing user data...");
         await syncUserData(data.session.user);
-        // Remove setTimeout delay - redirect immediately
-        router.push('/eatery');
+        // Redirect to location access first, then to eatery
+        router.push('/location-access');
       } else {
         setStatus("No session created");
         // Remove setTimeout delay - redirect immediately

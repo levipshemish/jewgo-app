@@ -56,15 +56,29 @@ USING (
   AND NOT is_flagged
 );
 
--- User profiles public read policy (limited information, no status column)
--- Only show basic profile information for active users
+-- Create public user profiles view with limited information
+CREATE OR REPLACE VIEW public_user_profiles AS
+SELECT 
+  user_id,
+  display_name,
+  avatar_url,
+  bio,
+  created_at,
+  updated_at
+FROM user_profiles
+WHERE true; -- All profiles are publicly readable through this view
+
+-- User profiles public read policy - use the view instead of direct table access
 CREATE POLICY "user_profiles_public_read" ON user_profiles
 FOR SELECT TO anon, authenticated
 USING (
-  -- Only show limited columns for public read
-  -- Full profile access requires authentication
-  true
+  -- Only allow reading through the public view
+  -- This prevents direct access to sensitive columns
+  false -- Disable direct table access for public read
 );
+
+-- Grant access to the public view
+GRANT SELECT ON public_user_profiles TO anon, authenticated;
 
 -- Complete CRUD policies with ownership and non-anonymous checks
 
@@ -219,6 +233,7 @@ USING (
 -- Note: Uses built-in Supabase storage.foldername() function for path parsing
 
 -- Public images bucket policy with moderation filters
+-- Uses storage.foldername() to map object keys to restaurant records
 CREATE POLICY "public_images_read" ON storage.objects
 FOR SELECT TO anon, authenticated
 USING (
@@ -231,18 +246,23 @@ USING (
       AND is_approved = true 
       AND NOT is_flagged
   )
+  -- Additional validation to ensure folder structure matches expected pattern
+  AND (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 );
 
 -- User avatars bucket policy (no moderation needed for user avatars)
+-- Uses storage.foldername() to map object keys to user records
 CREATE POLICY "user_avatars_read" ON storage.objects
 FOR SELECT TO anon, authenticated
 USING (
   bucket_id = 'user-avatars' 
   AND (storage.foldername(name))[1] IN (
-    SELECT id::text 
+    SELECT user_id::text 
     FROM user_profiles 
     WHERE true -- Allow all user avatars to be readable
   )
+  -- Additional validation to ensure folder structure matches expected pattern
+  AND (storage.foldername(name))[1] ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
 );
 
 -- User avatars upload policy

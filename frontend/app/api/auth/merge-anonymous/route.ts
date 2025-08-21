@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN' },
+      { error: 'CSRF' },
       { 
         status: 403,
         headers: {
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
     
     if (getUserError || !user) {
       return NextResponse.json(
-        { error: 'No authenticated user' },
+        { error: 'AUTHENTICATION_ERROR' },
         { 
           status: 401,
           headers: getCORSHeaders(origin || undefined)
@@ -226,16 +226,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verify user is anonymous and matches token
-    if (!extractIsAnonymous(user) || user.id !== anon_uid) {
-      console.error(`Invalid user for merge anonymous correlation ID: ${correlationId}`, {
+    // Verify user is NON-anonymous (current user must be authenticated)
+    if (extractIsAnonymous(user)) {
+      console.error(`Anonymous user attempted merge for correlation ID: ${correlationId}`, {
         user_id: user.id,
-        anon_uid,
         correlationId
       });
       
       return NextResponse.json(
-        { error: 'Invalid user for merge' },
+        { error: 'Current user cannot be anonymous' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -243,23 +242,143 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // TODO: Implement actual user merging logic
-    // For now, return success but log that merging is not implemented
-    console.log(`Merge anonymous requested for correlation ID: ${correlationId}`, {
-      user_id: user.id,
-      email,
-      correlationId
+    // Verify the anonymous user ID from token matches the expected anon_uid
+    if (user.id === anon_uid) {
+      console.error(`Current user ID matches anon_uid for correlation ID: ${correlationId}`, {
+        user_id: user.id,
+        anon_uid,
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { error: 'Invalid merge request' },
+        { 
+          status: 400,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
+    // Create service role client for database operations
+    const supabaseService = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
+    
+    // Check for existing merge job to ensure idempotency
+    const { data: existingJob } = await supabaseService
+      .from('merge_jobs')
+      .select('*')
+      .eq('correlation_id', correlationId)
+      .single();
+    
+    if (existingJob) {
+      console.log(`Merge job already exists for correlation ID: ${correlationId}`, {
+        job_id: existingJob.id,
+        correlationId
+      });
+      
+      const response = NextResponse.json(
+        { 
+          ok: true,
+          moved: existingJob.moved_data || {},
+          correlation_id: correlationId,
+          message: 'Merge already completed'
+        },
+        { 
+          status: 202,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+      
+      // Clear merge token
+      response.cookies.set('merge_token', '', {
+        maxAge: 0,
+        path: '/'
+      });
+      
+      return response;
+    }
+    
+    // Perform the merge operation in a transaction
+    const { data: movedData, error: mergeError } = await supabaseService.rpc('merge_anonymous_user_data', {
+      p_anon_uid: anon_uid,
+      p_auth_uid: user.id,
+      p_correlation_id: correlationId
     });
     
-    // Clear merge token
+    if (mergeError) {
+      console.error(`Merge operation failed for correlation ID: ${correlationId}`, {
+        error: mergeError,
+        anon_uid,
+        auth_uid: user.id,
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { 
+          error: 'MERGE_FAILED',
+          details: mergeError.message,
+          correlation_id: correlationId
+        },
+        { 
+          status: 500,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
+    // Record the merge job for idempotency
+    const { error: jobError } = await supabaseService
+      .from('merge_jobs')
+      .insert({
+        correlation_id: correlationId,
+        anon_uid: anon_uid,
+        auth_uid: user.id,
+        moved_data: movedData,
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      });
+    
+    if (jobError) {
+      console.error(`Failed to record merge job for correlation ID: ${correlationId}`, {
+        error: jobError,
+        correlationId
+      });
+      // Don't fail the request, just log the error
+    }
+    
+    console.log(`Merge operation successful for correlation ID: ${correlationId}`, {
+      anon_uid,
+      auth_uid: user.id,
+      moved_data: movedData,
+      correlationId,
+      duration_ms: Date.now() - startTime
+    });
+    
+    // Clear merge token and return success
     const response = NextResponse.json(
       { 
         ok: true,
-        message: 'Merge request received (not yet implemented)',
-        correlation_id: correlationId
+        moved: movedData,
+        correlation_id: correlationId,
+        message: 'Merge completed successfully'
       },
       { 
-        status: 200,
+        status: 202,
         headers: getCORSHeaders(origin || undefined)
       }
     );

@@ -70,6 +70,25 @@ const findLastEnabledItem = (itemCount: number, itemRefs: React.MutableRefObject
   return -1;
 };
 
+// Helper to pick initial index when selectedId is absent
+const pickInitialIndex = (itemRefs: React.MutableRefObject<(HTMLElement | null)[]>, itemCount: number, selectedId?: string) => {
+  // If selectedId is provided, find its index
+  if (selectedId) {
+    for (let i = 0; i < itemRefs.current.length; i++) {
+      const item = itemRefs.current[i];
+      if (item) {
+        const itemId = item.closest('[data-item-id]')?.getAttribute('data-item-id');
+        if (itemId === selectedId && !item.getAttribute('data-disabled')) {
+          return i;
+        }
+      }
+    }
+  }
+  
+  // Otherwise, return the first enabled item
+  return findFirstEnabledItem(itemCount, itemRefs);
+};
+
 export function useRovingFocus({
   itemCount,
   selectedId,
@@ -92,20 +111,18 @@ export function useRovingFocus({
     let handled = false;
     let nextIndex = focusedIndex;
 
-    // If no item is focused, focus the first enabled item
-    if (focusedIndex === -1) {
-      const firstEnabledIndex = findFirstEnabledItem(itemCount, itemRefs);
-      if (firstEnabledIndex !== -1) {
-        setFocusedIndex(firstEnabledIndex);
-        nextIndex = firstEnabledIndex;
-        handled = true;
-      }
-    }
-
     switch (key) {
       case 'ArrowLeft':
       case 'ArrowRight':
-        if (focusedIndex !== -1) {
+        // If no item is focused, focus the first enabled item
+        if (focusedIndex === -1) {
+          const firstEnabledIndex = findFirstEnabledItem(itemCount, itemRefs);
+          if (firstEnabledIndex !== -1) {
+            setFocusedIndex(firstEnabledIndex);
+            nextIndex = firstEnabledIndex;
+            handled = true;
+          }
+        } else {
           const delta = mapArrowToDelta(key, direction);
           nextIndex = findNextEnabledItem(focusedIndex, delta, itemCount, itemRefs);
           if (nextIndex !== focusedIndex) {
@@ -116,20 +133,40 @@ export function useRovingFocus({
         break;
 
       case 'Home':
-        const firstIndex = findFirstEnabledItem(itemCount, itemRefs);
-        if (firstIndex !== -1 && firstIndex !== focusedIndex) {
-          setFocusedIndex(firstIndex);
-          nextIndex = firstIndex;
-          handled = true;
+        // If no item is focused, focus the first enabled item
+        if (focusedIndex === -1) {
+          const firstEnabledIndex = findFirstEnabledItem(itemCount, itemRefs);
+          if (firstEnabledIndex !== -1) {
+            setFocusedIndex(firstEnabledIndex);
+            nextIndex = firstEnabledIndex;
+            handled = true;
+          }
+        } else {
+          const firstIndex = findFirstEnabledItem(itemCount, itemRefs);
+          if (firstIndex !== -1 && firstIndex !== focusedIndex) {
+            setFocusedIndex(firstIndex);
+            nextIndex = firstIndex;
+            handled = true;
+          }
         }
         break;
 
       case 'End':
-        const lastIndex = findLastEnabledItem(itemCount, itemRefs);
-        if (lastIndex !== -1 && lastIndex !== focusedIndex) {
-          setFocusedIndex(lastIndex);
-          nextIndex = lastIndex;
-          handled = true;
+        // If no item is focused, focus the first enabled item
+        if (focusedIndex === -1) {
+          const firstEnabledIndex = findFirstEnabledItem(itemCount, itemRefs);
+          if (firstEnabledIndex !== -1) {
+            setFocusedIndex(firstEnabledIndex);
+            nextIndex = firstEnabledIndex;
+            handled = true;
+          }
+        } else {
+          const lastIndex = findLastEnabledItem(itemCount, itemRefs);
+          if (lastIndex !== -1 && lastIndex !== focusedIndex) {
+            setFocusedIndex(lastIndex);
+            nextIndex = lastIndex;
+            handled = true;
+          }
         }
         break;
 
@@ -150,7 +187,7 @@ export function useRovingFocus({
         break;
 
       case 'Enter':
-        // Enter for both buttons and links
+        // Enter for both buttons and links - only handle if already focused
         if (focusedIndex >= 0) {
           const focusedItem = itemRefs.current[focusedIndex];
           if (focusedItem && !focusedItem.getAttribute('data-disabled')) {
@@ -226,23 +263,16 @@ export function useRovingFocus({
     }
   }, [selectedId, focusedIndex, itemRefs]);
 
-  // Robust first focus logic
+  // Pick initial index when no focused item and itemRefs or selectedId changes
   useEffect(() => {
-    // If no item is focused but we have a selected item, focus it
-    if (focusedIndex === -1 && selectedId) {
-      for (let i = 0; i < itemRefs.current.length; i++) {
-        const item = itemRefs.current[i];
-        if (item) {
-          const itemId = item.closest('[data-item-id]')?.getAttribute('data-item-id');
-          if (itemId === selectedId) {
-            setFocusedIndex(i);
-            lastFocusedIndexRef.current = i;
-            break;
-          }
-        }
+    if (focusedIndex === -1 && itemRefs.current.length > 0) {
+      const initialIndex = pickInitialIndex(itemRefs, itemCount, selectedId);
+      if (initialIndex !== -1) {
+        setFocusedIndex(initialIndex);
+        lastFocusedIndexRef.current = initialIndex;
       }
     }
-  }, [selectedId, focusedIndex, itemRefs]);
+  }, [itemRefs.current.length, selectedId, focusedIndex, itemCount]);
 
   return {
     focusedIndex,

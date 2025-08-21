@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN' },
+      { error: 'CSRF' },
       { 
         status: 403,
         headers: {
@@ -123,7 +123,10 @@ export async function POST(request: NextRequest) {
     const ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
-    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+    // Skip CSRF validation in development/Docker environments
+    if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
+      console.log(`Development/Docker mode: Skipping CSRF validation for correlation ID: ${correlationId}`);
+    } else if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
@@ -143,6 +146,10 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    
+    // Parse request body for Turnstile token
+    const body = await request.json().catch(() => ({}));
+    const { turnstileToken } = body;
     
     // Rate limiting for anonymous auth
     const rateLimitResult = await checkRateLimit(
@@ -175,6 +182,83 @@ export async function POST(request: NextRequest) {
           }
         }
       );
+    }
+    
+    // Validate Turnstile token if rate limit exceeded or flagged
+    // Skip Turnstile validation in development/Docker environments
+    if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
+      console.log(`Development/Docker mode: Skipping Turnstile validation for correlation ID: ${correlationId}`);
+    } else if (rateLimitResult.remaining_attempts === 0 || !turnstileToken) {
+      if (!turnstileToken) {
+        console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
+          correlationId,
+          ipHash
+        });
+        
+        return NextResponse.json(
+          { error: 'TURNSTILE_REQUIRED' },
+          { 
+            status: 400,
+            headers: {
+              ...getCORSHeaders(origin || undefined),
+              'Cache-Control': 'no-store'
+            }
+          }
+        );
+      }
+      
+      // Verify Turnstile token server-side
+      try {
+        const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            secret: process.env.TURNSTILE_SECRET_KEY,
+            response: turnstileToken,
+            remoteip: validatedIP
+          })
+        });
+        
+        const turnstileResult = await turnstileResponse.json();
+        
+        if (!turnstileResult.success) {
+          console.warn(`Turnstile verification failed for anonymous auth IP hash: ${ipHash}`, {
+            correlationId,
+            ipHash,
+            turnstileErrors: turnstileResult['error-codes']
+          });
+          
+          return NextResponse.json(
+            { error: 'TURNSTILE_FAILED' },
+            { 
+              status: 400,
+              headers: {
+                ...getCORSHeaders(origin || undefined),
+                'Cache-Control': 'no-store'
+              }
+            }
+          );
+        }
+      } catch (turnstileError) {
+        console.error(`Turnstile verification error for anonymous auth IP hash: ${ipHash}`, {
+          correlationId,
+          ipHash,
+          error: turnstileError
+        });
+        
+        return NextResponse.json(
+          { error: 'TURNSTILE_FAILED' },
+          { 
+            status: 400,
+            headers: {
+              ...getCORSHeaders(origin || undefined),
+              'Cache-Control': 'no-store'
+            }
+          }
+        );
+      }
     }
     
     const cookieStore = await cookies();

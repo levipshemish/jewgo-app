@@ -22,14 +22,6 @@ const scrollItemIntoViewX = (container: HTMLElement, item: HTMLElement) => {
   }
 };
 
-// Helper to map arrow keys to direction based on RTL
-const mapArrowToDelta = (key: string, dir: 'ltr' | 'rtl') => {
-  if (dir === 'rtl') {
-    return key === 'ArrowLeft' ? 1 : key === 'ArrowRight' ? -1 : 0;
-  }
-  return key === 'ArrowLeft' ? -1 : key === 'ArrowRight' ? 1 : 0;
-};
-
 // Helper to normalize icon with accessibility attributes
 const normalizeIcon = (icon: React.ReactNode): React.ReactNode => {
   if (React.isValidElement(icon) && icon.type === 'svg') {
@@ -55,6 +47,8 @@ export function CategoryNav({
   ...props
 }: CategoryNavProps) {
   const scrollerRef = useRef<HTMLUListElement>(null);
+  const prevRef = useRef<HTMLButtonElement | null>(null);
+  const nextRef = useRef<HTMLButtonElement | null>(null);
   const [overflowState, setOverflowState] = useState<'start' | 'end' | 'both' | 'none'>('none');
   const [isInitialized, setIsInitialized] = useState(false);
   const [direction, setDirection] = useState<'ltr' | 'rtl'>('ltr');
@@ -122,15 +116,29 @@ export function CategoryNav({
     // Initial overflow check
     checkOverflow();
 
-    // Set up ResizeObserver
-    const resizeObserver = new ResizeObserver(throttledCheckOverflow);
-    resizeObserver.observe(scroller);
+    // Set up ResizeObserver with fallback for older browsers
+    let resizeObserver: ResizeObserver | null = null;
+    let resizeListener: (() => void) | null = null;
+
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(throttledCheckOverflow);
+      resizeObserver.observe(scroller);
+    } else {
+      // Fallback to window resize listener
+      resizeListener = throttledCheckOverflow;
+      window.addEventListener('resize', resizeListener);
+    }
 
     // Set up scroll listener
     scroller.addEventListener('scroll', throttledCheckOverflow);
 
     return () => {
-      resizeObserver.disconnect();
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      if (resizeListener) {
+        window.removeEventListener('resize', resizeListener);
+      }
       scroller.removeEventListener('scroll', throttledCheckOverflow);
     };
   }, [checkOverflow, throttledCheckOverflow]);
@@ -140,7 +148,7 @@ export function CategoryNav({
     if (!showPrevControl && prevShowPrevControl) {
       // Prev control was hidden
       const activeElement = document.activeElement;
-      if (activeElement?.getAttribute('aria-label') === 'Scroll to previous categories') {
+      if (activeElement === prevRef.current) {
         // Focus was on prev button, move to current roving item
         const currentRovingItem = itemRefs.current.find(ref => ref?.getAttribute('tabIndex') === '0');
         currentRovingItem?.focus();
@@ -149,7 +157,7 @@ export function CategoryNav({
     if (!showNextControl && prevShowNextControl) {
       // Next control was hidden
       const activeElement = document.activeElement;
-      if (activeElement?.getAttribute('aria-label') === 'Scroll to next categories') {
+      if (activeElement === nextRef.current) {
         // Focus was on next button, move to current roving item
         const currentRovingItem = itemRefs.current.find(ref => ref?.getAttribute('tabIndex') === '0');
         currentRovingItem?.focus();
@@ -252,10 +260,11 @@ export function CategoryNav({
       {showPrevControl && (
         <button
           {...buttonProps()}
+          ref={prevRef}
           className={styles.prevButton}
           onClick={() => scrollTo('left')}
           aria-label="Scroll to previous categories"
-          tabIndex={-1}
+          tabIndex={0}
         >
           {normalizeIcon(<ChevronLeftIcon className={styles.icon} />)}
         </button>
@@ -275,10 +284,23 @@ export function CategoryNav({
           
           // Handle external links
           const isExternal = item.href?.startsWith('http');
-          const linkProps = isExternal ? {
-            target: '_blank',
-            rel: 'noopener noreferrer',
-          } : {};
+          const linkProps: Record<string, string> = {};
+
+          // Honor item.target and item.rel if defined
+          if (item.target) {
+            linkProps.target = item.target;
+            if (item.target === '_blank' && !item.rel) {
+              linkProps.rel = 'noopener noreferrer';
+            }
+          } else if (isExternal) {
+            // Default external link behavior
+            linkProps.target = '_blank';
+            linkProps.rel = 'noopener noreferrer';
+          }
+          
+          if (item.rel) {
+            linkProps.rel = item.rel;
+          }
 
           return (
             <li
@@ -303,7 +325,7 @@ export function CategoryNav({
                   <Link
                     href={item.href}
                     className={styles.link}
-                    prefetch={undefined}
+                    prefetch={false}
                     {...linkProps}
                     {...(isSelected ? { 'aria-current': 'page' } : {})}
                     onFocus={() => handleItemFocus(index)}
@@ -353,10 +375,11 @@ export function CategoryNav({
       {showNextControl && (
         <button
           {...buttonProps()}
+          ref={nextRef}
           className={styles.nextButton}
           onClick={() => scrollTo('right')}
           aria-label="Scroll to next categories"
-          tabIndex={-1}
+          tabIndex={0}
         >
           {normalizeIcon(<ChevronRightIcon className={styles.icon} />)}
         </button>

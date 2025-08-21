@@ -5,7 +5,7 @@ services:
     env: python
     plan: starter
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && python app_factory.py
+    startCommand: cd backend && python app.py
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -19,7 +19,7 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: INFO
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true
 
   # Redis Service

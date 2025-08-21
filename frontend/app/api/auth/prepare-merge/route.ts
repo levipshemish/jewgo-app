@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN' },
+      { error: 'CSRF' },
       { 
         status: 403,
         headers: {

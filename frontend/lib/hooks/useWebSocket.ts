@@ -24,14 +24,18 @@ export interface UseWebSocketReturn {
 }
 
 const DEFAULT_CONFIG: WebSocketConfig = {
-  url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/ws',
+  url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://jewgo-app-oyoh.onrender.com/ws',
   reconnectInterval: 3000,
-  maxReconnectAttempts: 5,
+  maxReconnectAttempts: 3, // Reduced for production
   heartbeatInterval: 30000,
 };
 
 export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocketReturn {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
+  
+  // Disable WebSocket in production if not explicitly enabled
+  const isProduction = process.env.NODE_ENV === 'production';
+  const shouldUseWebSocket = !isProduction || process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
   
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -73,6 +77,11 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
 
   // Handle WebSocket connection
   const connect = useCallback(() => {
+    if (!shouldUseWebSocket) {
+      console.log('WebSocket disabled in production');
+      return;
+    }
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       return; // Already connected
     }
@@ -149,6 +158,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
           }, finalConfig.reconnectInterval);
         } else if (reconnectAttemptsRef.current >= finalConfig.maxReconnectAttempts!) {
           setError('Failed to reconnect after maximum attempts');
+          console.warn('WebSocket reconnection failed, continuing without real-time updates');
         }
       };
 
@@ -162,7 +172,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
       setError('Failed to create WebSocket connection');
       setIsConnecting(false);
     }
-  }, [finalConfig.url, finalConfig.reconnectInterval, finalConfig.maxReconnectAttempts, startHeartbeat, stopHeartbeat]);
+  }, [finalConfig.url, finalConfig.reconnectInterval, finalConfig.maxReconnectAttempts, startHeartbeat, stopHeartbeat, shouldUseWebSocket]);
 
   // Disconnect WebSocket
   const disconnect = useCallback(() => {
@@ -201,12 +211,14 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
 
   // Auto-connect on mount
   useEffect(() => {
-    connect();
+    if (shouldUseWebSocket) {
+      connect();
+    }
     
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [connect, disconnect, shouldUseWebSocket]);
 
   // Cleanup on unmount
   useEffect(() => {

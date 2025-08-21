@@ -7,33 +7,21 @@ import {
 import { 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII,
-  extractIsAnonymous
+  scrubPII
 } from '@/lib/utils/auth-utils';
-import { validateCSRFServer, hashIPForPrivacy, validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
+import { 
+  validateCSRFServer, 
+  hashIPForPrivacy
+} from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders,
   FEATURE_FLAGS
 } from '@/lib/config/environment';
+import { initializeServer } from '@/lib/server-init';
 
 export const runtime = 'nodejs';
 
-// Normalized error codes
-const ERROR_CODES = {
-  EMAIL_IN_USE: 'EMAIL_IN_USE',
-  INVALID_EMAIL: 'INVALID_EMAIL',
-  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
-  RATE_LIMITED: 'RATE_LIMITED',
-  CSRF: 'CSRF',
-  SESSION_ERROR: 'SESSION_ERROR',
-  ANONYMOUS_USER: 'ANONYMOUS_USER'
-} as const;
-
-/**
- * Email upgrade API for anonymous users
- * Handles OPTIONS/CORS preflight and POST requests with rate limiting
- */
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   
@@ -47,11 +35,29 @@ export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
   
+  // Initialize server-side functionality
+  const serverInitialized = await initializeServer();
+  if (!serverInitialized) {
+    console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
+      correlationId
+    });
+    
+    return NextResponse.json(
+      { error: 'SERVICE_UNAVAILABLE' },
+      { 
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+  
   // Validate origin against allowlist
   const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
-      { error: 'FORBIDDEN' },
+      { error: 'CSRF' },
       { 
         status: 403,
         headers: {
@@ -77,25 +83,13 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const origin = request.headers.get('origin');
-    
-    // Feature support validation
-    const featuresSupported = validateSupabaseFeatureSupport();
-    if (!featuresSupported) {
-      console.error('Email upgrade not supported - feature validation failed');
-      return NextResponse.json(
-        { error: 'SERVICE_UNAVAILABLE' },
-        { 
-          status: 503,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip');
-    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
+    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    
+    // Trusted IP validation with left-most X-Forwarded-For parsing
+    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
     const ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
@@ -109,10 +103,13 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: ERROR_CODES.CSRF },
+        { error: 'CSRF' },
         { 
           status: 403,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -134,7 +131,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(
         {
-          error: ERROR_CODES.RATE_LIMITED,
+          error: 'RATE_LIMITED',
           remaining_attempts: rateLimitResult.remaining_attempts,
           reset_in_seconds: rateLimitResult.reset_in_seconds,
           retry_after: rateLimitResult.retry_after,
@@ -142,34 +139,28 @@ export async function POST(request: NextRequest) {
         },
         { 
           status: 429,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
     // Parse request body
-    let requestBody;
-    try {
-      requestBody = await request.json();
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid JSON' },
-        { 
-          status: 400,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    const { email } = requestBody;
+    const body = await request.json().catch(() => ({}));
+    const { email } = body;
     
     // Validate email format
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
-        { error: ERROR_CODES.INVALID_EMAIL },
+        { error: 'INVALID_EMAIL' },
         { 
           status: 400,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
@@ -178,16 +169,19 @@ export async function POST(request: NextRequest) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: ERROR_CODES.INVALID_EMAIL },
+        { error: 'INVALID_EMAIL' },
         { 
           status: 400,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
-    // Create Supabase SSR client with cookie adapter
     const cookieStore = await cookies();
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -209,108 +203,98 @@ export async function POST(request: NextRequest) {
     // Get current user session
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
     
-    if (getUserError) {
-      console.error(`Failed to get user for email upgrade correlation ID: ${correlationId}`, {
+    if (getUserError || !user) {
+      console.error(`No authenticated user for email upgrade correlation ID: ${correlationId}`, {
         error: getUserError,
         correlationId
       });
       
       return NextResponse.json(
-        { error: ERROR_CODES.AUTHENTICATION_ERROR },
+        { error: 'AUTHENTICATION_ERROR' },
         { 
           status: 401,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
-    if (!user) {
-      console.error(`No user found for email upgrade correlation ID: ${correlationId}`, {
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: ERROR_CODES.AUTHENTICATION_ERROR },
-        { 
-          status: 401,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Verify user is anonymous
-    if (!extractIsAnonymous(user)) {
-      console.error(`Non-anonymous user attempted email upgrade for correlation ID: ${correlationId}`, {
-        user_id: user.id,
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: ERROR_CODES.ANONYMOUS_USER },
-        { 
-          status: 400,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
-    
-    // Attempt to update user email
-    const { error: updateError } = await supabase.auth.updateUser({ email });
+    // Update user email
+    const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+      email: email
+    });
     
     if (updateError) {
       console.error(`Email upgrade failed for correlation ID: ${correlationId}`, {
         error: updateError,
+        user_id: user.id,
         correlationId
       });
       
-      // Handle specific Supabase error codes
+      // Handle specific error cases
       if (updateError.message.includes('already registered') || updateError.message.includes('already exists')) {
         return NextResponse.json(
-          { error: ERROR_CODES.EMAIL_IN_USE },
-          { 
-            status: 409,
-            headers: getCORSHeaders(origin || undefined)
-          }
-        );
-      }
-      
-      if (updateError.message.includes('invalid email') || updateError.message.includes('email format')) {
-        return NextResponse.json(
-          { error: ERROR_CODES.INVALID_EMAIL },
+          { error: 'EMAIL_IN_USE' },
           { 
             status: 400,
-            headers: getCORSHeaders(origin || undefined)
+            headers: {
+              ...getCORSHeaders(origin || undefined),
+              'Cache-Control': 'no-store'
+            }
           }
         );
       }
       
-      // Default error response
+      if (updateError.message.includes('requires re-authentication')) {
+        return NextResponse.json(
+          { error: 'REQUIRES_REAUTH' },
+          { 
+            status: 401,
+            headers: {
+              ...getCORSHeaders(origin || undefined),
+              'Cache-Control': 'no-store'
+            }
+          }
+        );
+      }
+      
       return NextResponse.json(
-        { error: ERROR_CODES.AUTHENTICATION_ERROR },
+        { 
+          error: 'EMAIL_UPGRADE_FAILED',
+          details: updateError.message,
+          correlation_id: correlationId
+        },
         { 
           status: 500,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
-    // Success response
     console.log(`Email upgrade successful for correlation ID: ${correlationId}`, {
       user_id: user.id,
-      email,
+      new_email: email,
       correlationId,
       duration_ms: Date.now() - startTime
     });
     
     return NextResponse.json(
       { 
-        ok: true, 
-        message: 'Email upgrade initiated. Please check your email for verification.',
-        correlation_id: correlationId
+        ok: true,
+        user: updateData.user,
+        message: 'Email upgrade successful'
       },
       { 
         status: 200,
-        headers: getCORSHeaders(origin || undefined)
+        headers: {
+          ...getCORSHeaders(origin || undefined),
+          'Cache-Control': 'no-store'
+        }
       }
     );
     
@@ -323,12 +307,16 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: ERROR_CODES.AUTHENTICATION_ERROR,
+        error: 'EMAIL_UPGRADE_FAILED',
+        message: error instanceof Error ? error.message : 'Unknown error',
         correlation_id: correlationId
       },
       { 
         status: 500,
-        headers: getCORSHeaders(request.headers.get('origin') || undefined)
+        headers: {
+          ...getCORSHeaders(origin || undefined),
+          'Cache-Control': 'no-store'
+        }
       }
     );
   }

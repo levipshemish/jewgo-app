@@ -443,6 +443,11 @@ function EateryPageContent() {
     >
       <Header />
       
+      {/* Navigation Tabs - Always visible */}
+      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+        <CategoryTabs activeTab="eatery" />
+      </div>
+      
       {/* Mobile-optimized filters */}
       <div style={mobileOptimizedStyles.filtersContainer}>
         <AdvancedFilters

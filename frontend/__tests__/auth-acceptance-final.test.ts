@@ -22,6 +22,15 @@ jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => mockSupabaseClient)
 }));
 
+// Mock rate limiting module
+jest.mock('@/lib/rate-limiting', () => ({
+  checkRateLimit: jest.fn().mockResolvedValue({
+    allowed: true,
+    remaining_attempts: 4,
+    reset_in_seconds: 300
+  })
+}));
+
 // Mock crypto module
 const mockCrypto = {
   createHmac: jest.fn(() => ({
@@ -146,6 +155,35 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       const result = await response.json();
       
       expect(result.error).toBe('ANON_SIGNIN_UNSUPPORTED');
+    });
+
+    it('should return TURNSTILE_REQUIRED when token is missing', async () => {
+      const { POST } = await import('@/app/api/auth/anonymous/route');
+      
+      const mockRequest = {
+        method: 'POST',
+        headers: {
+          get: jest.fn((name) => {
+            if (name === 'origin') return 'https://jewgo.app';
+            if (name === 'referer') return 'https://jewgo.app/auth/signin';
+            return null;
+          })
+        },
+        ip: '127.0.0.1',
+        json: jest.fn().mockResolvedValue({}) // No turnstileToken
+      } as any;
+
+      // Mock rate limiting to require turnstile
+      jest.spyOn(require('@/lib/rate-limiting'), 'checkRateLimit').mockResolvedValue({
+        allowed: true,
+        remaining_attempts: 0, // This triggers turnstile requirement
+        reset_in_seconds: 300
+      });
+
+      const response = await POST(mockRequest);
+      const result = await response.json();
+      
+      expect(result.error).toBe('TURNSTILE_REQUIRED');
     });
 
     it('should return ANON_SIGNIN_FAILED when signin fails', async () => {
