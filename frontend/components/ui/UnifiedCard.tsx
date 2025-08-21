@@ -332,13 +332,13 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           </>
         )}
         
-        {/* Heart Button - White outline with grey fill, pink on hover */}
+        {/* Heart Button - White outline with grey fill, red on hover */}
         {cardData.showHeart && (
           <>
             <style jsx>{`
               .unified-card-heart {
                 position: absolute !important;
-                top: 6px !important;
+                top: 4px !important;
                 right: 8px !important;
                 width: 28px !important;
                 max-width: 28px !important;
@@ -364,7 +364,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 transform: scale(1.1) !important;
               }
               .unified-card-heart:hover svg {
-                fill: #ec4899 !important;
+                fill: #ef4444 !important;
                 stroke: #ffffff !important;
                 transform: scale(1.1) !important;
               }

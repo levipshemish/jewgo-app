@@ -341,13 +341,13 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
           </>
         )}
         
-        {/* Heart Button - White outline with grey fill, pink on hover */}
+        {/* Heart Button - White outline with grey fill, red on hover */}
         {cardData.showHeart && (
           <>
             <style jsx>{`
               .unified-card-heart {
                 position: absolute !important;
-                top: 6px !important;
+                top: 4px !important;
                 right: 8px !important;
                 width: 28px !important;
                 max-width: 28px !important;
