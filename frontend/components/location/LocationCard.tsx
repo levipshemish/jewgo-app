@@ -118,7 +118,7 @@ export default function LocationCard({ location, type, onClick }: LocationCardPr
         {/* Kosher Category */}
         {location.kosher_category && (
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getKosherCategoryBadgeClasses(location.kosher_category, 'light')}`}>
+            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getKosherCategoryBadgeClasses(location.kosher_category.toLowerCase() as 'meat' | 'dairy' | 'pareve', 'light')}`}>
               {titleCase(location.kosher_category)}
             </span>
           </div>
