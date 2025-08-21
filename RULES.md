@@ -82,6 +82,12 @@ rg -n --glob '!node_modules' 'interface <Name>|type <Name>'
 5. Cache + perf policies respected
 6. Security checks applied
 7. Tests added/updated
+8. **Docker testing completed**:
+   - Development environment tested: `docker-compose -f docker-compose.frontend.dev.yml up --build`
+   - Production environment tested: `docker-compose -f docker-compose.frontend.prod.yml up --build`
+   - All affected pages/features verified in Docker
+   - Environment variables validated
+   - Build process successful
 
 Blockers must be logged with `// TODO: BLOCKED`.
 
@@ -95,6 +101,13 @@ Blockers must be logged with `// TODO: BLOCKED`.
 
   * **Frontend**: `npm run typecheck && npm run lint && npm run build && npm test`
   * **Backend**: `python -m pytest && ruff check . && black --check .`
+* **Docker Testing (Mandatory)**: Test changes in Docker before pushing
+  * **Development Testing**: `docker-compose -f docker-compose.frontend.dev.yml up --build`
+  * **Production Testing**: `docker-compose -f docker-compose.frontend.prod.yml up --build`
+  * **Full Stack Testing**: `docker-compose -f docker-compose.frontend.local.yml up --build`
+  * Test all affected pages/features in Docker environment
+  * Verify environment variables and build process
+  * Document any Docker-specific issues found
 * Update CI configs if build tools/deps change.
 * **Emergencies**: prefix commit + PR with `HOTFIX:`.
 
@@ -318,3 +331,10 @@ Blockers must be logged with `// TODO: BLOCKED`.
 - [ ] Performance budgets verified
 - [ ] Documentation updated
 - [ ] Tech debt items created for future work
+- [ ] **Docker testing completed**:
+  - [ ] Development environment tested and working
+  - [ ] Production environment tested and working
+  - [ ] All affected pages/features verified
+  - [ ] Environment variables validated
+  - [ ] Build process successful
+  - [ ] Any Docker-specific issues documented
