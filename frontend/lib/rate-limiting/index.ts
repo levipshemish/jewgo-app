@@ -5,7 +5,8 @@
  */
 
 import Redis from 'ioredis';
-import { IS_PRODUCTION } from '@/lib/config/environment';
+// Check if we're in production environment
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Redis client with connection pooling and error handling
 let redisClient: Redis | null = null;
@@ -126,7 +127,16 @@ export async function checkRateLimit(
         throw new Error('Redis multi-exec failed');
       }
       
-      const currentAttempts = results[1] as number;
+      // Redis multi.exec() returns [error, result] tuples
+      // We need to check for errors and extract the results
+      for (const [error, result] of results) {
+        if (error) {
+          throw error;
+        }
+      }
+      
+      // Extract the zcard result (number of current attempts)
+      const currentAttempts = results[1][1] as number;
       const remainingAttempts = Math.max(0, config.max_attempts - currentAttempts);
       const allowed = currentAttempts < config.max_attempts;
       
@@ -281,7 +291,8 @@ export async function storeIdempotencyResult(
       // Clean up expired entries periodically
       if (inMemoryStore.size > 1000) {
         const now = Date.now();
-        for (const [k, v] of inMemoryStore.entries()) {
+        const entries = Array.from(inMemoryStore.entries());
+        for (const [k, v] of entries) {
           if (v.expires < now) {
             inMemoryStore.delete(k);
           }
