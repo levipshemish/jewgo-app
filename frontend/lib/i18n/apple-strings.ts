@@ -1,5 +1,5 @@
-// Apple-approved localized strings for "Sign in with Apple"
-// These are Apple's official strings and must not be modified
+// Apple-approved localized strings for "Apple" (simplified button text)
+// These are simplified versions for cleaner UI
 // 
 // Source: Apple Human Interface Guidelines - Sign in with Apple
 // https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple
@@ -59,58 +59,58 @@ interface SupportedLocale {
 }
 
 const APPLE_SIGN_IN_STRINGS: SupportedLocale[] = [
-  { code: 'en', text: 'Sign in with Apple' },
-  { code: 'es', text: 'Iniciar sesión con Apple' },
-  { code: 'fr', text: 'Se connecter avec Apple' },
-  { code: 'de', text: 'Mit Apple anmelden' },
-  { code: 'it', text: 'Accedi con Apple' },
-  { code: 'pt', text: 'Entrar com Apple' },
-  { code: 'ja', text: 'Appleでサインイン' },
-  { code: 'ko', text: 'Apple로 로그인' },
-  { code: 'zh-CN', text: '通过Apple登录' },
-  { code: 'zh-TW', text: '使用Apple登入' },
-  { code: 'ru', text: 'Войти через Apple' },
-  { code: 'ar', text: 'تسجيل الدخول بـ Apple' },
-  { code: 'he', text: 'התחבר עם Apple' },
-  { code: 'hi', text: 'Apple के साथ साइन इन करें' },
-  { code: 'th', text: 'เข้าสู่ระบบด้วย Apple' },
-  { code: 'tr', text: 'Apple ile Oturum Aç' },
-  { code: 'nl', text: 'Inloggen met Apple' },
-  { code: 'sv', text: 'Logga in med Apple' },
-  { code: 'da', text: 'Log ind med Apple' },
-  { code: 'no', text: 'Logg inn med Apple' },
-  { code: 'fi', text: 'Kirjaudu sisään Applella' },
-  { code: 'pl', text: 'Zaloguj się przez Apple' },
-  { code: 'cs', text: 'Přihlásit se pomocí Apple' },
-  { code: 'sk', text: 'Prihlásiť sa pomocou Apple' },
-  { code: 'hu', text: 'Bejelentkezés Apple-lel' },
-  { code: 'ro', text: 'Conectare cu Apple' },
-  { code: 'bg', text: 'Вход с Apple' },
-  { code: 'hr', text: 'Prijava s Apple-om' },
-  { code: 'sl', text: 'Prijava z Apple' },
-  { code: 'et', text: 'Logi sisse Apple\'iga' },
-  { code: 'lv', text: 'Piesakieties ar Apple' },
-  { code: 'lt', text: 'Prisijungti su Apple' },
-  { code: 'mt', text: 'Idħol b\'Apple' },
-  { code: 'el', text: 'Σύνδεση με Apple' },
-  { code: 'uk', text: 'Увійти через Apple' },
-  { code: 'be', text: 'Увайсці праз Apple' },
-  { code: 'mk', text: 'Најавете се со Apple' },
-  { code: 'sq', text: 'Hyr me Apple' },
-  { code: 'sr', text: 'Пријавите се са Apple-ом' },
-  { code: 'bs', text: 'Prijavite se s Apple-om' },
-  { code: 'me', text: 'Prijavite se sa Apple-om' },
-  { code: 'is', text: 'Skráðu þig inn með Apple' },
-  { code: 'ga', text: 'Sínigh isteach le Apple' },
-  { code: 'cy', text: 'Mewngofnodi gydag Apple' },
-  { code: 'eu', text: 'Saioa hasi Apple-rekin' },
-  { code: 'ca', text: 'Inicia sessió amb Apple' },
-  { code: 'gl', text: 'Iniciar sesión con Apple' }
+  { code: 'en', text: 'Apple' },
+  { code: 'es', text: 'Apple' },
+  { code: 'fr', text: 'Apple' },
+  { code: 'de', text: 'Apple' },
+  { code: 'it', text: 'Apple' },
+  { code: 'pt', text: 'Apple' },
+  { code: 'ja', text: 'Apple' },
+  { code: 'ko', text: 'Apple' },
+  { code: 'zh-CN', text: 'Apple' },
+  { code: 'zh-TW', text: 'Apple' },
+  { code: 'ru', text: 'Apple' },
+  { code: 'ar', text: 'Apple' },
+  { code: 'he', text: 'Apple' },
+  { code: 'hi', text: 'Apple' },
+  { code: 'th', text: 'Apple' },
+  { code: 'tr', text: 'Apple' },
+  { code: 'nl', text: 'Apple' },
+  { code: 'sv', text: 'Apple' },
+  { code: 'da', text: 'Apple' },
+  { code: 'no', text: 'Apple' },
+  { code: 'fi', text: 'Apple' },
+  { code: 'pl', text: 'Apple' },
+  { code: 'cs', text: 'Apple' },
+  { code: 'sk', text: 'Apple' },
+  { code: 'hu', text: 'Apple' },
+  { code: 'ro', text: 'Apple' },
+  { code: 'bg', text: 'Apple' },
+  { code: 'hr', text: 'Apple' },
+  { code: 'sl', text: 'Apple' },
+  { code: 'et', text: 'Apple' },
+  { code: 'lv', text: 'Apple' },
+  { code: 'lt', text: 'Apple' },
+  { code: 'mt', text: 'Apple' },
+  { code: 'el', text: 'Apple' },
+  { code: 'uk', text: 'Apple' },
+  { code: 'be', text: 'Apple' },
+  { code: 'mk', text: 'Apple' },
+  { code: 'sq', text: 'Apple' },
+  { code: 'sr', text: 'Apple' },
+  { code: 'bs', text: 'Apple' },
+  { code: 'me', text: 'Apple' },
+  { code: 'is', text: 'Apple' },
+  { code: 'ga', text: 'Apple' },
+  { code: 'cy', text: 'Apple' },
+  { code: 'eu', text: 'Apple' },
+  { code: 'ca', text: 'Apple' },
+  { code: 'gl', text: 'Apple' }
 ];
 
 /**
- * Get Apple-approved "Sign in with Apple" text for the current locale
- * Falls back to English if locale is not supported
+ * Get Apple button text for the current locale
+ * Falls back to "Apple" if locale is not supported
  */
 export function getAppleSignInText(locale?: string): string {
   if (!locale) {
@@ -144,6 +144,6 @@ export function getAppleSignInText(locale?: string): string {
     return languageMatch;
   }
 
-  // Fallback to English
-  return 'Sign in with Apple';
+  // Fallback to "Apple"
+  return 'Apple';
 }

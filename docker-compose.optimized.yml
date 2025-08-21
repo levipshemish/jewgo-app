@@ -43,8 +43,9 @@ services:
       dockerfile: Dockerfile.optimized
       args:
         - BUILDKIT_INLINE_CACHE=1
+    env_file:
+      - ./.env
     environment:
-      - FLASK_ENV=production
       - DATABASE_URL=postgresql://jewgo_user:jewgo_password@postgres:5432/jewgo
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app
@@ -73,7 +74,7 @@ services:
       args:
         - BUILDKIT_INLINE_CACHE=1
     env_file:
-      - ./config/environment/frontend.docker.env
+      - ./.env
     ports:
       - "3001:3000"
     depends_on:

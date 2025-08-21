@@ -5,9 +5,9 @@ import { AppleSignInButton } from '@/components/ui/AppleSignInButton';
 // Mock the i18n function only for UI component tests
 jest.mock('@/lib/i18n/apple-strings', () => ({
   getAppleSignInText: jest.fn((locale) => {
-    if (locale === 'es-MX') return 'Iniciar sesión con Apple';
-    if (locale === 'fr-CA') return 'Se connecter avec Apple';
-    return 'Sign in with Apple';
+    if (locale === 'es-MX') return 'Apple';
+    if (locale === 'fr-CA') return 'Apple';
+    return 'Apple';
   })
 }));
 
@@ -30,7 +30,7 @@ describe('AppleSignInButton', () => {
     render(<AppleSignInButton onClick={mockOnClick} />);
     
     const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-label', 'Sign in with Apple');
+    expect(button).toHaveAttribute('aria-label', 'Apple');
     expect(button).toHaveAttribute('type', 'button');
   });
 
@@ -63,32 +63,32 @@ describe('AppleSignInButton', () => {
   test('displays Apple-approved text', () => {
     render(<AppleSignInButton onClick={mockOnClick} />);
     
-    expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
+    expect(screen.getByText('Apple')).toBeInTheDocument();
   });
 
   test('displays localized Apple-approved text for Spanish', () => {
     render(<AppleSignInButton onClick={mockOnClick} locale="es-MX" />);
     
-    expect(screen.getByText('Iniciar sesión con Apple')).toBeInTheDocument();
+    expect(screen.getByText('Apple')).toBeInTheDocument();
   });
 
   test('displays localized Apple-approved text for French', () => {
     render(<AppleSignInButton onClick={mockOnClick} locale="fr-CA" />);
     
-    expect(screen.getByText('Se connecter avec Apple')).toBeInTheDocument();
+    expect(screen.getByText('Apple')).toBeInTheDocument();
   });
 
   test('falls back to English for unsupported locale', () => {
     render(<AppleSignInButton onClick={mockOnClick} locale="xx-XX" />);
     
-    expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
+    expect(screen.getByText('Apple')).toBeInTheDocument();
   });
 
   test('uses browser locale when no locale prop provided', () => {
     render(<AppleSignInButton onClick={mockOnClick} />);
     
     // Should fall back to English when no locale is provided
-    expect(screen.getByText('Sign in with Apple')).toBeInTheDocument();
+    expect(screen.getByText('Apple')).toBeInTheDocument();
   });
 
   test('handles click events', () => {
@@ -255,7 +255,7 @@ describe('AppleSignInButton', () => {
     );
     
     const buttons = screen.getAllByRole('button');
-    expect(buttons[0]).toHaveTextContent('Sign in with Apple');
+    expect(buttons[0]).toHaveTextContent('Apple');
     expect(buttons[1]).toHaveTextContent('Google Sign In');
   });
 });

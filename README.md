@@ -46,26 +46,57 @@ jewgo-app/
 ### Prerequisites
 - Node.js 22.x
 - Python 3.11+
-- PostgreSQL
-- Redis (optional)
+- Docker & Docker Compose
+- PostgreSQL (or use Docker)
+- Redis (or use Docker)
 
-### Backend Setup
+### Environment Setup
+All environment variables are now centralized in a single `.env` file in the root directory.
+
+```bash
+# Set up environment configuration
+./scripts/setup-env.sh
+
+# Edit .env file with your actual values
+# Important variables to configure:
+# - NEXT_PUBLIC_SUPABASE_URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - SUPABASE_SERVICE_ROLE_KEY
+# - DATABASE_URL
+# - GOOGLE_MAPS_API_KEY
+# - JWT_SECRET_KEY
+# - SECRET_KEY
+```
+
+### Docker Setup (Recommended)
+```bash
+# Start all services with Docker
+docker-compose -f docker-compose.optimized.yml up -d
+
+# Check service status
+docker-compose -f docker-compose.optimized.yml ps
+
+# View logs
+docker-compose -f docker-compose.optimized.yml logs -f
+```
+
+### Manual Setup (Alternative)
+
+#### Backend Setup
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp config/environment/backend.env.example .env
-# Edit .env with your configuration
+# Environment variables are loaded from root .env file
 python -m uvicorn app:app --reload
 ```
 
-### Frontend Setup
+#### Frontend Setup
 ```bash
 cd frontend
 npm install
-cp config/environment/frontend.env.example .env.local
-# Edit .env.local with your configuration
+# Environment variables are loaded from root .env file
 npm run dev
 ```
 
