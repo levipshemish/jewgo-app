@@ -210,10 +210,10 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
           className
         )}
       style={{
-        // Transparent background with enhanced shadow
+        // Completely transparent background
         backgroundColor: 'transparent !important',
         background: 'transparent !important',
-        boxShadow: '0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 8px -1px rgba(0, 0, 0, 0.04)',
+        boxShadow: 'none',
         WebkitTapHighlightColor: 'transparent',
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
@@ -341,7 +341,7 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
           </>
         )}
         
-        {/* Heart Button - Enhanced styling */}
+        {/* Heart Button - White outline with grey fill, pink on hover */}
         {cardData.showHeart && (
           <>
             <style jsx>{`
@@ -355,7 +355,7 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
                 height: 28px !important;
                 max-height: 28px !important;
                 min-height: 28px !important;
-                background-color: rgba(255, 255, 255, 0.9) !important;
+                background-color: transparent !important;
                 border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
@@ -368,8 +368,6 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
                 z-index: 10 !important;
                 transition: all 0.2s ease-out !important;
                 transform: ${isAnimating ? 'scale(0.9)' : 'scale(1)'} !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                backdrop-filter: blur(8px) !important;
               }
               .unified-card-heart:active {
                 transform: scale(0.95) !important;
@@ -394,8 +392,8 @@ const UnifiedCardConsistent = memo<UnifiedCardConsistentProps>(({
               <Heart
                 size={18}
                 style={{
-                  fill: isLiked ? '#ef4444' : 'transparent',
-                  stroke: isLiked ? '#ef4444' : '#6b7280',
+                  fill: isLiked ? '#ef4444' : '#9ca3af',
+                  stroke: '#ffffff',
                   strokeWidth: 2,
                   transition: 'all 0.2s ease-out',
                   filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
