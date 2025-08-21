@@ -210,9 +210,8 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   try {
     validateEnvironment();
     
-    // Boot-time feature support validation - temporarily disabled for Docker build
-    /*
-    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    // Boot-time feature support validation - only on server side
+    if (process.env.NEXT_PHASE !== 'phase-production-build' && typeof window === 'undefined') {
       // Import and run feature validation asynchronously
       import('@/lib/utils/auth-utils.server').then(async ({ validateSupabaseFeaturesWithLogging }) => {
         try {
@@ -239,7 +238,6 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
         }
       });
     }
-    */
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime

@@ -6,10 +6,19 @@
 
 import { createHmac, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { authLogger } from '@/lib/utils/logger';
 import { createServerClient } from '@supabase/ssr';
+
+// Server-only imports - only import when running on server
+let cookies: any;
+if (typeof window === 'undefined') {
+  try {
+    cookies = require('next/headers').cookies;
+  } catch (error) {
+    // Ignore import errors in client context
+  }
+}
 
 // HMAC keys for cookie signing - server-only
 const MERGE_COOKIE_HMAC_KEY = process.env.MERGE_COOKIE_HMAC_KEY || 'fallback-key-change-in-production';
