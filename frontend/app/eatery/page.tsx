@@ -79,9 +79,29 @@ export default function EateryExplorePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
-  // Simple items per page calculation for 2-column grid
+  // Calculate items per page based on responsive grid columns
   const getItemsPerPage = () => {
-    return 20; // Fixed number that works well with 2-column layout
+    const screenWidth = window.innerWidth;
+    
+    // Determine columns based on screen size
+    let columns = 2; // Default for mobile
+    
+    if (screenWidth >= 1536) { // 2xl breakpoint
+      columns = 8;
+    } else if (screenWidth >= 1280) { // xl breakpoint
+      columns = 6;
+    } else if (screenWidth >= 1024) { // lg breakpoint
+      columns = 5;
+    } else if (screenWidth >= 768) { // md breakpoint
+      columns = 4;
+    } else if (screenWidth >= 640) { // sm breakpoint
+      columns = 3;
+    }
+    // Mobile: 2 columns (default)
+    
+    // Show 4 rows of cards per page
+    const rows = 4;
+    return columns * rows;
   };
 
   // Update items per page when window resizes
@@ -644,7 +664,7 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
                   <div key={restaurant.id}>
                     <UnifiedCard
