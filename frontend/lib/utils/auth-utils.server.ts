@@ -8,7 +8,9 @@ import crypto from 'crypto';
  * Only called when Apple actually sends name data
  */
 export async function persistAppleUserName(userId: string, name: string | null, provider: string = 'apple', providerUserId?: string) {
-  if (!name || !name.trim()) return;
+  if (!name || !name.trim()) {
+    return;
+  }
   
   try {
     const supabaseServer = await createSupabaseServerClient();

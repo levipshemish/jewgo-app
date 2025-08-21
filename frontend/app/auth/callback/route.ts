@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     // Handle OAuth errors
     if (error) {
       oauthLogger.error('OAuth error', { error });
-      const friendly = provider === 'apple' ? mapAppleOAuthError(error) : 'Sign in failed';
       const errorUrl = new URL('/auth/signin', request.url);
       errorUrl.searchParams.set('error', error);
       return NextResponse.redirect(errorUrl);

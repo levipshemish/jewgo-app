@@ -30,14 +30,18 @@ export function AppleSignInButton({
   }, [loading, disabled]);
 
   const handleClick = () => {
-    if (disabled || loading || isClicked) return;
+    if (disabled || loading || isClicked) {
+      return;
+    }
     
     // One-shot guard to prevent double submits
     setIsClicked(true);
     onClick();
   };
 
-  if (!enabled) return null;
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <button

@@ -133,12 +133,16 @@ export function getAppleSignInText(locale?: string): string {
   
   // Try exact match first (case-insensitive)
   const exactMatch = localeMap.get(normalizedLocale);
-  if (exactMatch) return exactMatch;
+  if (exactMatch) {
+    return exactMatch;
+  }
 
   // Try language-only match (e.g., 'en-US' -> 'en')
   const languageOnly = normalizedLocale.split('-')[0];
   const languageMatch = localeMap.get(languageOnly);
-  if (languageMatch) return languageMatch;
+  if (languageMatch) {
+    return languageMatch;
+  }
 
   // Fallback to English
   return 'Sign in with Apple';
