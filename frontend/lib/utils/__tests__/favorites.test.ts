@@ -22,7 +22,7 @@ const mockRestaurant: Restaurant = {
   state: 'TS',
   zip_code: '12345',
   phone_number: '555-1234',
-  kosher_category: 'meat',
+  kosher_category: 'Meat',
   certifying_agency: 'Test Agency',
   listing_type: 'restaurant',
   status: 'open',

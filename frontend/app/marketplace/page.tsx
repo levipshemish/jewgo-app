@@ -445,7 +445,7 @@ export default function MarketplacePage() {
                   <UnifiedCard
                     data={transformMarketplaceToCardData(listing, userLocation)}
                     variant="default"
-                    onCardClick={() => router.push(`/marketplace/${listing.id}`)}
+                    onCardClick={(data) => router.push(`/marketplace/${listing.id}`)}
                     onLikeToggle={(id, isLiked) => {
                       // Handle like toggle - you can add your like logic here
                       console.log(`Marketplace listing ${id} ${isLiked ? 'liked' : 'unliked'}`);
