@@ -2,6 +2,9 @@
 -- This migration creates the profiles table with RLS policies and RPC function
 -- for race-safe name persistence during Apple OAuth flows
 
+-- Ensure pgcrypto extension is available for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -39,9 +42,7 @@ CREATE POLICY "Users can delete own profile" ON public.profiles
 -- Create RPC function for race-safe name persistence
 CREATE OR REPLACE FUNCTION public.upsert_profile_with_name(
   p_user_id UUID,
-  p_name TEXT,
-  p_provider TEXT DEFAULT 'apple',
-  p_provider_user_id TEXT DEFAULT NULL
+  p_name TEXT
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -57,7 +58,7 @@ END;
 $$;
 
 -- Grant execute permission on the RPC function
-GRANT EXECUTE ON FUNCTION public.upsert_profile_with_name(UUID, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.upsert_profile_with_name(UUID, TEXT) TO authenticated;
 
 -- Create trigger to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

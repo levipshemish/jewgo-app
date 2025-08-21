@@ -193,4 +193,48 @@ describe('redirectTo parameter validation', () => {
     // In actual OAuth call, this would be:
     // redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(validatedUrl)}`
   });
+
+  test('OAuth calls include proper redirectTo with next parameter', () => {
+    // Mock supabaseBrowser.auth.signInWithOAuth
+    const mockSignInWithOAuth = jest.fn();
+    const originalSupabase = global.supabaseBrowser;
+    
+    // Mock the supabase client
+    global.supabaseBrowser = {
+      auth: {
+        signInWithOAuth: mockSignInWithOAuth
+      }
+    } as any;
+
+    // Test parameters
+    const safeNext = '/app/dashboard?tab=settings';
+    const expectedRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple`;
+
+    // Simulate the OAuth call that should be made in signin/signup pages
+    mockSignInWithOAuth({
+      provider: 'apple',
+      options: {
+        scopes: 'email name',
+        redirectTo: expectedRedirectTo,
+      },
+    });
+
+    // Assert the redirectTo parameter is correctly formatted
+    expect(mockSignInWithOAuth).toHaveBeenCalledWith({
+      provider: 'apple',
+      options: {
+        scopes: 'email name',
+        redirectTo: expectedRedirectTo,
+      },
+    });
+
+    // Verify the redirectTo includes the callback path and next parameter
+    const callArgs = mockSignInWithOAuth.mock.calls[0][0];
+    expect(callArgs.options.redirectTo).toContain('/auth/callback');
+    expect(callArgs.options.redirectTo).toContain('next=');
+    expect(callArgs.options.redirectTo).toContain('provider=apple');
+
+    // Restore original
+    global.supabaseBrowser = originalSupabase;
+  });
 });

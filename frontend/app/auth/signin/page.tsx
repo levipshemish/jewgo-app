@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
+import { validateRedirectUrl, mapAppleOAuthError, sanitizeRedirectUrl } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
 // Disable static generation for this page
@@ -24,6 +24,7 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const [guestPending, setGuestPending] = useState(false);
   const [error, setError] = useState<string | null>(initialError ? mapAppleOAuthError(initialError) : null);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const router = useRouter();
@@ -71,6 +72,51 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       setError('Sign in failed');
     } finally {
       setPending(false);
+    }
+  };
+
+  const onGuestSignIn = async () => {
+    setGuestPending(true);
+    setError(null);
+    
+    try {
+      // Single-flight protection
+      if (guestPending) return;
+      
+      const response = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.error === 'RATE_LIMITED') {
+          setError(`Too many attempts. Please try again later.`);
+        } else if (result.error === 'ANON_SIGNIN_UNSUPPORTED') {
+          setError('Guest access is currently unavailable.');
+        } else {
+          setError('Failed to continue as guest. Please try again.');
+        }
+        return;
+      }
+
+      // Get session and redirect
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      if (session) {
+        const safeNext = sanitizeRedirectUrl(redirectTo);
+        router.push(safeNext || '/');
+      } else {
+        setError('Guest session creation failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Guest sign in error:', err);
+      setError('Failed to continue as guest. Please try again.');
+    } finally {
+      setGuestPending(false);
     }
   };
 
@@ -219,6 +265,19 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
             </div>
 
             <div className="mt-6 space-y-3">
+              {/* Continue as Guest Button */}
+              <button
+                type="button"
+                onClick={onGuestSignIn}
+                disabled={guestPending || pending}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
+              </button>
+
               {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
               <AppleSignInButton
                 onClick={onAppleSignIn}

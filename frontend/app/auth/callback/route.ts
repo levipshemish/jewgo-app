@@ -28,6 +28,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
     }
 
+    // Early Apple feature flag check before code exchange
+    const provider = searchParams.get('provider');
+    if (provider === 'apple' && !isAppleOAuthEnabled()) {
+      oauthLogger.warn('Apple OAuth disabled, redirecting to safe path', { provider });
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
     // Perform server-side code exchange
     const supabase = await createSupabaseServerClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -52,16 +59,13 @@ export async function GET(request: NextRequest) {
       try {
         // Check if user has multiple identities (potential collision)
         if (user.identities && user.identities.length > 1) {
-          oauthLogger.info('Multiple identities detected, redirecting to guarded link route', { 
+          oauthLogger.info('Multiple identities detected, fallback to safeNext', { 
             userId: user.id, 
             identityCount: user.identities.length 
           });
           
-          // Redirect to guarded route that requires re-auth with primary method
-          const linkUrl = new URL('/account/link', request.url);
-          linkUrl.searchParams.set('provider', provider);
-          linkUrl.searchParams.set('next', safeNext);
-          return NextResponse.redirect(linkUrl);
+          // Fallback to safeNext instead of unimplemented /account/link route
+          // TODO: Reintroduce this redirect when /account/link flow is implemented
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 
