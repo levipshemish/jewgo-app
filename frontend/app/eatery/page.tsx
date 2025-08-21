@@ -651,7 +651,7 @@ export default function EateryExplorePage() {
 
       {/* Restaurant Grid */}
       <div className="px-4 py-4">
-        <div className="max-w-7xl lg:max-w-none xl:px-8 2xl:px-12 mx-auto">
+        <div className="max-w-7xl lg:max-w-none mx-auto">
           {filteredRestaurants.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-gray-400 text-6xl mb-4">🍽️</div>
