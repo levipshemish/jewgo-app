@@ -437,7 +437,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           <div className="flex-1 min-w-0">
             {cardData.subtitle && (
               <p 
-                className="text-xs font-semibold text-gray-600 m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-700"
+                className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
                 style={{ 
                   maxWidth: '100%',
                   overflow: 'hidden',
