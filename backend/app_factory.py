@@ -2100,10 +2100,10 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 }), 200
 
             except Exception as e:
-                logger.error(f"Error in hours endpoint for restaurant {restaurant_id}: {e}")
+                # Don't use logger to avoid scope issues
                 return jsonify({
                     "status": "error",
-                    "message": "Failed to parse hours data",
+                    "message": f"Failed to parse hours data: {str(e)}",
                     "restaurant_id": restaurant_id
                 }), 500
 
