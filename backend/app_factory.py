@@ -2026,34 +2026,61 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                 from utils.hours_parser import parse_hours_blob
 
                 try:
-                    # Get hours data - prefer hours_json if available, otherwise use hours_of_operation
-                    hours_data = hours_json if hours_json else hours_of_operation
+                    # Get hours data - check both hours_json and hours_of_operation fields
+                    hours_json_data = restaurant.get("hours_json")
+                    hours_of_operation_data = restaurant.get("hours_of_operation")
+                    
+                    # Prefer hours_json if it has data, otherwise use hours_of_operation
+                    hours_data = None
+                    if hours_json_data and isinstance(hours_json_data, dict) and hours_json_data:
+                        hours_data = hours_json_data
+                    elif hours_of_operation_data:
+                        hours_data = hours_of_operation_data
                     
                     if not hours_data:
                         return jsonify(HoursFormatter._get_empty_hours_response()), 200
 
-                    # If hours_json is a string, try to parse it
-                    if isinstance(hours_data, str):
+                    # Handle different data formats
+                    formatted_hours_data = {}
+                    
+                    if isinstance(hours_data, dict) and 'weekday_text' in hours_data:
+                        # Google Places API format with weekday_text
+                        weekday_text = hours_data.get('weekday_text', [])
+                        
+                        for day_line in weekday_text:
+                            # Parse lines like "Monday: 11:00 AM – 11:00 PM"
+                            if ': ' in day_line:
+                                day_part, time_part = day_line.split(': ', 1)
+                                day_name = day_part.strip()
+                                time_range = time_part.strip()
+                                
+                                # Convert day name to abbreviation
+                                day_abbr = HoursFormatter._get_day_abbreviation(day_name.lower())
+                                
+                                # Parse time range - handle both en dash (–) and regular dash (-)
+                                if ' – ' in time_range or ' - ' in time_range:
+                                    separator = ' – ' if ' – ' in time_range else ' - '
+                                    open_time, close_time = time_range.split(separator, 1)
+                                    formatted_hours_data[day_abbr] = {
+                                        "open": open_time.strip(),
+                                        "close": close_time.strip(),
+                                        "is_open": True
+                                    }
+                    
+                    elif isinstance(hours_data, str):
+                        # String format - try to parse as JSON first, then as text
                         try:
-                            # Try to parse as JSON first
                             import json
                             parsed_json = json.loads(hours_data)
                             if isinstance(parsed_json, dict) and 'weekday_text' in parsed_json:
-                                # Use weekday_text from Google Places API format
+                                # Handle JSON format with weekday_text
                                 weekday_text = parsed_json.get('weekday_text', [])
-                                formatted_hours_data = {}
-                                
                                 for day_line in weekday_text:
-                                    # Parse lines like "Monday: 11:00 AM – 11:00 PM"
                                     if ': ' in day_line:
                                         day_part, time_part = day_line.split(': ', 1)
                                         day_name = day_part.strip()
                                         time_range = time_part.strip()
-                                        
-                                        # Convert day name to abbreviation
                                         day_abbr = HoursFormatter._get_day_abbreviation(day_name.lower())
-                                        
-                                        # Parse time range
                                         if ' – ' in time_range or ' - ' in time_range:
                                             separator = ' – ' if ' – ' in time_range else ' - '
                                             open_time, close_time = time_range.split(separator, 1)
@@ -2063,9 +2090,8 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                                 "is_open": True
                                             }
                             else:
-                                # Fall back to parse_hours_blob
+                                # Fall back to parse_hours_blob for other formats
                                 parsed_hours = parse_hours_blob(hours_data)
-                                formatted_hours_data = {}
                                 for day_name, time_ranges in parsed_hours.items():
                                     if time_ranges:
                                         time_range = time_ranges[0]
@@ -2081,7 +2107,6 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                             logger.warning(f"Error parsing hours JSON: {e}")
                             # Fall back to parse_hours_blob
                             parsed_hours = parse_hours_blob(hours_data)
-                            formatted_hours_data = {}
                             for day_name, time_ranges in parsed_hours.items():
                                 if time_ranges:
                                     time_range = time_ranges[0]
@@ -2093,9 +2118,9 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
                                             "close": close_time.strip(),
                                             "is_open": True
                                         }
+                    
                     else:
-                        # hours_data is already a dict
-                        formatted_hours_data = {}
+                        # hours_data is already a dict but not in expected format
                         for day_name, time_ranges in hours_data.items():
                             if time_ranges:
                                 time_range = time_ranges[0]
