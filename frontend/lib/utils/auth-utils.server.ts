@@ -1,131 +1,116 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { isPrivateRelayEmail } from '@/lib/utils/auth-utils';
-import { authLogger } from '@/lib/utils/logger';
-import crypto from 'crypto';
+/**
+ * Server-only authentication utilities
+ * These functions should only be used in server-side code (API routes, SSR)
+ * to prevent client bundle inclusion of sensitive HMAC keys
+ */
 
-// Versioned HMAC utilities for merge cookie
-const MERGE_COOKIE_KEY_ID = process.env.MERGE_COOKIE_KEY_ID || 'v1';
-const MERGE_COOKIE_HMAC_KEY_CURRENT = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || 'default-key';
-const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS || 'default-key';
+import { createHmac } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { authLogger } from '@/lib/utils/logger';
+
+// HMAC keys for cookie signing - server-only
+const MERGE_COOKIE_HMAC_KEY = process.env.MERGE_COOKIE_HMAC_KEY || 'fallback-key-change-in-production';
+const MERGE_COOKIE_HMAC_KEY_V2 = process.env.MERGE_COOKIE_HMAC_KEY_V2 || 'fallback-key-v2-change-in-production';
+
+// Feature support validation
+let featureSupportValidated = false;
 
 /**
- * Server-safe Supabase feature support validation
- * Checks for signInAnonymously method availability without client-side dependencies
+ * Validate Supabase feature support at runtime with boot-time checks
+ * Checks for signInAnonymously and linkIdentity method availability
  */
 export function validateSupabaseFeatureSupport(): boolean {
+  if (featureSupportValidated) {
+    return true;
+  }
+
   try {
-    // Check if Supabase environment variables are configured
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Dynamic import to avoid SSR issues
+    const { createClient } = require('@supabase/supabase-js');
     
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('🚨 CRITICAL: Supabase environment variables not configured');
+    // Create a test client to check method availability
+    const testClient = createClient('https://test.supabase.co', 'test-key');
+    
+    // Check for required methods
+    if (typeof testClient.auth.signInAnonymously !== 'function') {
+      console.error('🚨 CRITICAL: signInAnonymously method not available in Supabase SDK');
+      console.error('This will brick the entire guest flow. Check Supabase SDK version.');
       return false;
     }
     
-    // Check if we're in a server environment where we can validate
-    if (typeof window !== 'undefined') {
-      console.error('🚨 CRITICAL: validateSupabaseFeatureSupport called in client environment');
+    if (typeof testClient.auth.linkIdentity !== 'function') {
+      console.error('🚨 CRITICAL: linkIdentity method not available in Supabase SDK');
+      console.error('This will prevent account merging. Check Supabase SDK version.');
       return false;
     }
     
-    // For server-side validation, we assume the SDK is available
-    // The actual method availability will be checked at runtime
-    console.log('✅ Server-side Supabase feature support validated');
+    featureSupportValidated = true;
+    console.log('✅ Supabase feature support validated successfully');
     return true;
   } catch (error) {
     console.error('🚨 CRITICAL: Failed to validate Supabase feature support:', error);
+    console.error('Application startup failure - Supabase SDK may be corrupted');
     return false;
   }
 }
 
 /**
- * Sign merge cookie with versioned HMAC support
- * Uses current key for new signatures, supports key rotation
+ * Sign merge cookie with versioned HMAC
+ * Uses current key by default, supports key rotation
  */
-export function signMergeCookieVersioned(payload: any): string {
-  const currentKey = MERGE_COOKIE_HMAC_KEY_CURRENT;
-  const keyId = MERGE_COOKIE_KEY_ID;
-  
-  if (!currentKey || currentKey === 'default-key') {
-    throw new Error('MERGE_COOKIE_HMAC_KEY_CURRENT must be set');
-  }
-  
-  // Create payload with version info
-  const versionedPayload = {
-    ...payload,
-    kid: keyId,
-    iat: Math.floor(Date.now() / 1000)
-  };
-  
-  // Sign with current key
-  const hmac = crypto.createHmac('sha256', currentKey);
-  hmac.update(JSON.stringify(versionedPayload));
-  const signature = hmac.digest('hex');
-  
-  // Return signed token
-  return `${keyId}.${Buffer.from(JSON.stringify(versionedPayload)).toString('base64')}.${signature}`;
+export function signMergeCookieVersioned(payload: any, version: 'v1' | 'v2' = 'v2'): string {
+  const key = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
+  const data = JSON.stringify(payload);
+  const signature = createHmac('sha256', key).update(data).digest('hex');
+  return `${version}:${signature}:${data}`;
 }
 
 /**
  * Verify merge cookie with versioned HMAC support
- * Supports both current and previous keys for smooth rotation
+ * Supports both current and previous keys for seamless rotation
  */
-export function verifyMergeCookieVersioned(token: string): {
+export function verifyMergeCookieVersioned(signedCookie: string): {
   valid: boolean;
   payload?: any;
   error?: string;
 } {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return { valid: false, error: 'Invalid token format' };
+    const parts = signedCookie.split(':');
+    if (parts.length < 3) {
+      return { valid: false, error: 'Invalid cookie format' };
     }
-    
-    const [keyId, payloadB64, signature] = parts;
-    
-    // Decode payload
-    const payloadStr = Buffer.from(payloadB64, 'base64').toString('utf8');
-    const payload = JSON.parse(payloadStr);
-    
-    // Verify key ID matches
-    if (payload.kid !== keyId) {
-      return { valid: false, error: 'Key ID mismatch' };
+
+    const version = parts[0];
+    const signature = parts[1];
+    const data = parts.slice(2).join(':');
+
+    if (version !== 'v1' && version !== 'v2') {
+      return { valid: false, error: 'Unsupported cookie version' };
     }
-    
-    // Check expiration
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return { valid: false, error: 'Token expired' };
-    }
-    
-    // Try current key first
-    const currentKey = MERGE_COOKIE_HMAC_KEY_CURRENT;
-    if (currentKey && currentKey !== 'default-key') {
-      const hmac = crypto.createHmac('sha256', currentKey);
-      hmac.update(payloadStr);
-      const expectedSignature = hmac.digest('hex');
+
+    // Try current key first, then fallback to previous key
+    const currentKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
+    const previousKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY : MERGE_COOKIE_HMAC_KEY_V2;
+
+    const currentSignature = createHmac('sha256', currentKey).update(data).digest('hex');
+    const previousSignature = createHmac('sha256', previousKey).update(data).digest('hex');
+
+    if (signature === currentSignature || signature === previousSignature) {
+      const payload = JSON.parse(data);
       
-      if (signature === expectedSignature) {
-        return { valid: true, payload };
+      // Check expiration
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        return { valid: false, error: 'Cookie expired' };
       }
+
+      return { valid: true, payload };
     }
-    
-    // Try previous key for rotation support
-    const previousKey = MERGE_COOKIE_HMAC_KEY_PREVIOUS;
-    if (previousKey && previousKey !== 'default-key') {
-      const hmac = crypto.createHmac('sha256', previousKey);
-      hmac.update(payloadStr);
-      const expectedSignature = hmac.digest('hex');
-      
-      if (signature === expectedSignature) {
-        return { valid: true, payload };
-      }
-    }
-    
+
     return { valid: false, error: 'Invalid signature' };
-    
   } catch (error) {
-    return { valid: false, error: 'Token verification failed' };
+    return { valid: false, error: 'Cookie verification failed' };
   }
 }
 
@@ -176,8 +161,7 @@ export function createAnalyticsKey(userId: string): string {
   }
   
   const finalSecret = secret || 'default-secret';
-  return crypto
-    .createHmac('sha256', finalSecret)
+  return createHmac('sha256', finalSecret)
     .update(userId)
     .digest('hex')
     .substring(0, 16);

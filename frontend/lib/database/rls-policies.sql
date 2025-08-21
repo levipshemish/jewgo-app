@@ -73,7 +73,7 @@ CREATE POLICY "restaurants_owner_insert" ON restaurants
 FOR INSERT TO authenticated
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "restaurants_owner_update" ON restaurants
@@ -81,14 +81,14 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "restaurants_owner_delete" ON restaurants
 FOR DELETE TO authenticated
 USING (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Reviews CRUD policies
@@ -96,7 +96,7 @@ CREATE POLICY "reviews_owner_insert" ON reviews
 FOR INSERT TO authenticated
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "reviews_owner_update" ON reviews
@@ -104,14 +104,14 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "reviews_owner_delete" ON reviews
 FOR DELETE TO authenticated
 USING (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Favorites CRUD policies
@@ -119,7 +119,7 @@ CREATE POLICY "favorites_owner_insert" ON favorites
 FOR INSERT TO authenticated
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "favorites_owner_update" ON favorites
@@ -127,37 +127,37 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "favorites_owner_delete" ON favorites
 FOR DELETE TO authenticated
 USING (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Marketplace items CRUD policies
 CREATE POLICY "marketplace_items_owner_insert" ON marketplace_items
 FOR INSERT TO authenticated
 WITH CHECK (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  auth.uid() = seller_id 
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "marketplace_items_owner_update" ON marketplace_items
 FOR UPDATE TO authenticated
-USING (auth.uid() = user_id)
+USING (auth.uid() = seller_id)
 WITH CHECK (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  auth.uid() = seller_id 
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "marketplace_items_owner_delete" ON marketplace_items
 FOR DELETE TO authenticated
 USING (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  auth.uid() = seller_id 
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- User profiles CRUD policies
@@ -165,7 +165,7 @@ CREATE POLICY "user_profiles_owner_insert" ON user_profiles
 FOR INSERT TO authenticated
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "user_profiles_owner_update" ON user_profiles
@@ -173,14 +173,14 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)
 WITH CHECK (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 CREATE POLICY "user_profiles_owner_delete" ON user_profiles
 FOR DELETE TO authenticated
 USING (
   auth.uid() = user_id 
-  AND coalesce((auth.jwt() -> 'user_metadata' ->> 'is_anonymous')::boolean, false) = false
+  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
 -- Notifications CRUD policies

@@ -82,11 +82,11 @@ export async function checkRateLimit(
     const dailyKey = `rate_limit:${limitType}:${realIP}:daily`;
     
     // Check window limit
-    const windowCount = await redis.get(windowKey) || 0;
+    const windowCount = parseInt(await redis.get(windowKey) || '0', 10);
     const windowExpiry = await redis.ttl(windowKey);
     
     // Check daily limit
-    const dailyCount = await redis.get(dailyKey) || 0;
+    const dailyCount = parseInt(await redis.get(dailyKey) || '0', 10);
     const dailyExpiry = await redis.ttl(dailyKey);
     
     // Check if limits exceeded
@@ -132,8 +132,8 @@ export async function checkRateLimit(
     await multi.exec();
     
     // Get updated counts
-    const newWindowCount = (windowCount || 0) + 1;
-    const newDailyCount = (dailyCount || 0) + 1;
+    const newWindowCount = windowCount + 1;
+    const newDailyCount = dailyCount + 1;
     
     return {
       allowed: true,
@@ -151,8 +151,8 @@ export async function checkRateLimit(
 /**
  * Generate idempotency key for merge operations
  */
-export function generateIdempotencyKey(operation: string, userId: string): string {
-  return `idempotency:${operation}:${userId}:${Date.now()}`;
+export function generateIdempotencyKey(operation: string, userKey: string): string {
+  return `idempotency:${operation}:${userKey}`;
 }
 
 /**
@@ -169,7 +169,8 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
   try {
     const result = await redis.get(key);
     if (result) {
-      return { exists: true, result };
+      // Parse the stored JSON value before returning
+      return { exists: true, result: JSON.parse(result) };
     }
     
     // Set placeholder to prevent race conditions

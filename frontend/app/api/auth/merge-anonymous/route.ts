@@ -286,48 +286,77 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Perform collision-safe merge with explicit SQL calls
+    // Perform collision-safe merge using table-specific mutations
     const movedRecords: string[] = [];
     
     for (const [tableName, ownerColumn] of Object.entries(TABLE_OWNER_MAP)) {
       try {
-        // Use INSERT-SELECT + ON CONFLICT DO NOTHING for safe migration
-        const { data, error } = await serviceRoleClient
+        // First, check if there are records to migrate
+        const { data: existingRecords, error: queryError } = await serviceRoleClient
           .from(tableName)
           .select('id')
           .eq(ownerColumn, sourceUid);
         
-        if (error) {
+        if (queryError) {
           console.error(`Failed to query table ${tableName} for correlation ID: ${correlationId}`, {
-            error,
+            error: queryError,
             table: tableName,
             correlationId
           });
           continue;
         }
         
-        if (data && data.length > 0) {
-          // Perform the merge using raw SQL for better control
-          const { error: mergeError } = await serviceRoleClient.rpc('exec_sql', {
-            sql_query: `
-              INSERT INTO ${tableName} (${ownerColumn}, created_at, updated_at)
-              SELECT '${targetUid}'::uuid, created_at, updated_at
-              FROM ${tableName}
-              WHERE ${ownerColumn} = '${sourceUid}'::uuid
-              ON CONFLICT DO NOTHING;
-            `
-          });
+        if (existingRecords && existingRecords.length > 0) {
+          // Check for potential conflicts by looking for records with targetUid
+          const { data: conflictRecords, error: conflictError } = await serviceRoleClient
+            .from(tableName)
+            .select('id')
+            .eq(ownerColumn, targetUid);
           
-          if (mergeError) {
-            console.error(`Failed to merge table ${tableName} for correlation ID: ${correlationId}`, {
-              error: mergeError,
+          if (conflictError) {
+            console.error(`Failed to check conflicts in table ${tableName} for correlation ID: ${correlationId}`, {
+              error: conflictError,
               table: tableName,
               correlationId
             });
             continue;
           }
           
-          movedRecords.push(`${tableName}:${data.length}`);
+          // If conflicts exist, remove source records (deterministic: source loses)
+          if (conflictRecords && conflictRecords.length > 0) {
+            const { error: deleteError } = await serviceRoleClient
+              .from(tableName)
+              .delete()
+              .eq(ownerColumn, sourceUid);
+            
+            if (deleteError) {
+              console.error(`Failed to delete conflicting records in table ${tableName} for correlation ID: ${correlationId}`, {
+                error: deleteError,
+                table: tableName,
+                correlationId
+              });
+              continue;
+            }
+            
+            movedRecords.push(`${tableName}:${existingRecords.length}(deleted)`);
+          } else {
+            // No conflicts - perform safe update
+            const { error: updateError } = await serviceRoleClient
+              .from(tableName)
+              .update({ [ownerColumn]: targetUid })
+              .eq(ownerColumn, sourceUid);
+            
+            if (updateError) {
+              console.error(`Failed to update table ${tableName} for correlation ID: ${correlationId}`, {
+                error: updateError,
+                table: tableName,
+                correlationId
+              });
+              continue;
+            }
+            
+            movedRecords.push(`${tableName}:${existingRecords.length}`);
+          }
         }
         
       } catch (tableError) {
