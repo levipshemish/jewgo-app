@@ -14,7 +14,6 @@ interface CardData {
   id: string;
   imageUrl?: string;
   imageTag?: string;
-  imageTagLink?: string;
   title: string;
   badge?: string;
   subtitle?: string;
@@ -27,7 +26,6 @@ interface UnifiedCardProps {
   data: CardData;
   onLikeToggle?: (id: string, isLiked: boolean) => void;
   onCardClick?: (data: CardData) => void;
-  onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
   priority?: boolean;
   variant?: 'default' | 'minimal' | 'enhanced';
@@ -48,7 +46,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   data,
   onLikeToggle,
   onCardClick,
-  onTagClick,
   className = '',
   priority = false,
   variant = 'default'
@@ -72,7 +69,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const cardData = useMemo(() => ({
     ...data,
     imageTag: data.imageTag || '',
-    imageTagLink: data.imageTagLink || '',
     badge: data.badge || '',
     subtitle: data.subtitle || '',
     additionalText: data.additionalText || '',
@@ -144,18 +140,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     }
   });
 
-  const handleTagClick = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    if (cardData.imageTagLink && onTagClick) {
-      onTagClick(cardData.imageTagLink, event);
-    } else if (cardData.imageTagLink && typeof window !== 'undefined') {
-      // Default behavior - open link in new tab
-      window.open(cardData.imageTagLink, '_blank', 'noopener,noreferrer');
-    }
-  }, [cardData.imageTagLink, onTagClick]);
-
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
@@ -169,13 +153,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       handleLikeToggle();
     }
   }, [handleLikeToggle]);
-
-  const handleTagKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleTagClick(event as any);
-    }
-  }, [handleTagClick]);
 
   // Variant-specific styling
   const getVariantStyles = () => {
@@ -327,9 +304,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             <div
               className="unified-card-tag"
               aria-label={`Tag: ${cardData.imageTag}`}
-              onClick={handleTagClick}
-              onKeyDown={handleTagKeyDown}
-              tabIndex={0}
             >
               <span 
                 style={{
