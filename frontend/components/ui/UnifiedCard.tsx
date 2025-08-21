@@ -182,21 +182,21 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     switch (variant) {
       case 'minimal':
         return {
-          cardClass: "w-[160px] rounded-xl overflow-hidden p-2",
+          cardClass: "w-[160px] rounded-xl overflow-hidden p-1",
           imageClass: "h-[100px]",
           titleClass: "text-xs font-medium",
           badgeClass: "text-xs px-1.5 py-0.5"
         };
       case 'enhanced':
         return {
-          cardClass: "w-[200px] rounded-3xl overflow-hidden p-4",
+          cardClass: "w-[200px] rounded-3xl overflow-hidden p-3",
           imageClass: "h-[140px]",
           titleClass: "text-base font-semibold",
           badgeClass: "text-sm px-3 py-1"
         };
       default:
         return {
-          cardClass: "w-[200px] rounded-2xl overflow-hidden p-3",
+          cardClass: "w-[200px] rounded-2xl overflow-hidden p-2",
           imageClass: "h-[126px]",
           titleClass: "text-sm font-semibold",
           badgeClass: "text-xs px-2 py-0.5"
@@ -220,10 +220,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         transition: { duration: 0.1 }
       }}
       className={cn(
-        'relative bg-transparent rounded-xl overflow-hidden cursor-pointer group',
+        'relative bg-transparent rounded-xl cursor-pointer group',
         'border border-transparent hover:border-gray-200/30',
         'transition-all duration-200 ease-out',
         'flex flex-col', // Remove h-full to allow responsive stretching
+        'p-1', // Add padding to prevent border from covering content
         className
       )}
       onClick={handleCardClick}
@@ -419,7 +420,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <motion.div 
-        className="pt-3 flex flex-col"
+        className="pt-2 flex flex-col"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
@@ -450,35 +451,45 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-3 min-h-[16px]">
-          {cardData.subtitle && (
-            <p 
-              className="text-xs text-gray-600 m-0 text-left whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
-              style={{ 
-                maxWidth: cardData.additionalText ? '80px' : '100px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              aria-label={`Price range: ${cardData.subtitle}`}
-            >
-              {cardData.subtitle}
-            </p>
-          )}
-          {cardData.additionalText && (
-            <p 
-              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
-              style={{ 
-                width: '60px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-              aria-label={`Additional info: ${cardData.additionalText}`}
-            >
-              {cardData.additionalText}
-            </p>
-          )}
+        <div className="flex justify-between items-center min-h-[16px] relative">
+          {/* Subtitle - Locked to left */}
+          <div className="flex-1 min-w-0">
+            {cardData.subtitle && (
+              <p 
+                className="text-xs text-gray-600 m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-700"
+                style={{ 
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+                aria-label={`Price range: ${cardData.subtitle}`}
+              >
+                {cardData.subtitle}
+              </p>
+            )}
+          </div>
+          
+          {/* Spacer to ensure proper separation */}
+          <div className="flex-shrink-0 w-3" />
+          
+          {/* Additional Text - Locked to right */}
+          <div className="flex-shrink-0">
+            {cardData.additionalText && (
+              <p 
+                className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
+                style={{ 
+                  width: '60px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+                aria-label={`Additional info: ${cardData.additionalText}`}
+              >
+                {cardData.additionalText}
+              </p>
+            )}
+          </div>
         </div>
       </motion.div>
     </motion.div>

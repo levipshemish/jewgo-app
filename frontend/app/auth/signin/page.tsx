@@ -8,16 +8,15 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
-// Disable static generation for this page
-export const dynamic = 'force-dynamic';
+
 
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/profile/settings";
+  const next = searchParams.get('next') || searchParams.get('redirectTo') || '/profile/settings';
   const errorParam = searchParams.get("error");
   
-  return <SignInForm redirectTo={redirectTo} initialError={errorParam} />;
+  return <SignInForm redirectTo={next} initialError={errorParam} />;
 }
 
 function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialError?: string | null }) {
@@ -81,7 +80,9 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
     
     try {
       // Single-flight protection
-      if (guestPending) return;
+      if (guestPending) {
+        return;
+      }
       
       const response = await fetch('/api/auth/anonymous', {
         method: 'POST',

@@ -265,7 +265,7 @@ export function generateCorrelationId(): string {
  * Scrub PII from logs for Sentry
  */
 export function scrubPII(data: any): any {
-  if (!data) return data;
+  if (!data) {return data;}
   
   const scrubbed = { ...data };
   const piiFields = ['email', 'phone', 'password', 'token', 'refresh_token', 'access_token'];
@@ -283,7 +283,7 @@ export function scrubPII(data: any): any {
  * Extract is_anonymous flag from user metadata - defensive version
  */
 export function extractIsAnonymous(u?: any): boolean {
-  if (!u) return false;
+  if (!u) {return false;}
   return Boolean(u.is_anonymous ?? u.isAnonymous ?? u.app_metadata?.is_anonymous ?? u.user_metadata?.is_anonymous ?? u['is_anonymous']);
 }
 

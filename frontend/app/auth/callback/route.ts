@@ -13,18 +13,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
-    const safeNext = validateRedirectUrl(searchParams.get('next'));
+    const next = searchParams.get('next') || searchParams.get('redirectTo');
+    const safeNext = validateRedirectUrl(next);
 
     // Handle OAuth errors
     if (error) {
-      oauthLogger.error('OAuth error', { error });
+      // Log sanitized error code only, not raw error payload
+      oauthLogger.error('OAuth error received', { errorCode: error });
       const errorUrl = new URL('/auth/signin', request.url);
       errorUrl.searchParams.set('error', error);
       return NextResponse.redirect(errorUrl);
     }
 
     if (!code) {
-      oauthLogger.error('No authorization code received');
+      oauthLogger.error('OAuth callback missing authorization code');
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
     }
 
@@ -36,7 +38,11 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     
     if (exchangeError) {
-      oauthLogger.error('Code exchange error', { error: exchangeError.message });
+      // Log sanitized error information only
+      oauthLogger.error('OAuth code exchange failed', { 
+        errorType: exchangeError.name || 'Unknown',
+        errorCode: exchangeError.status || 'unknown'
+      });
       return NextResponse.redirect(new URL('/auth/signin?error=invalid_grant', request.url));
     }
 
@@ -65,7 +71,7 @@ export async function GET(request: NextRequest) {
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 
-          error: linkError instanceof Error ? linkError.message : 'Unknown error',
+          errorType: linkError instanceof Error ? linkError.constructor.name : 'Unknown',
           userId: user.id 
         });
         // Continue with normal flow - don't block user authentication
@@ -85,7 +91,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(safeNext, request.url));
 
   } catch (error) {
-    oauthLogger.error('Callback error', { error });
+    oauthLogger.error('OAuth callback processing failed', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown'
+    });
     return NextResponse.redirect(new URL('/auth/signin?error=callback_failed', request.url));
   }
 }

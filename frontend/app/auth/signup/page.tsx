@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState, Suspense, useEffect } from "react";
+import { FormEvent, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -9,15 +9,14 @@ import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
-// Disable static generation for this page
-export const dynamic = 'force-dynamic';
+
 
 // Separate component to handle search params with proper Suspense boundary
 function SignUpFormWithParams() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/profile/settings";
+  const next = searchParams.get('next') || searchParams.get('redirectTo') || '/profile/settings';
   
-  return <SignUpForm redirectTo={redirectTo} />;
+  return <SignUpForm redirectTo={next} />;
 }
 
 function SignUpForm({ redirectTo }: { redirectTo: string }) {

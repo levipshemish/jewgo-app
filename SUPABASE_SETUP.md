@@ -67,6 +67,10 @@ NEXT_PUBLIC_APPLE_OAUTH_ENABLED=true
 # Server-side flag for route handler enforcement
 APPLE_OAUTH_ENABLED=true
 
+# Account Linking Feature Flag
+# Controls identity collision resolution flow
+ACCOUNT_LINKING_ENABLED=true
+
 # Analytics HMAC Secret for PII-safe logging
 ANALYTICS_HMAC_SECRET=your_analytics_hmac_secret_here
 
@@ -177,6 +181,8 @@ Run the migration to add Apple OAuth support:
 
 ```sql
 -- See: supabase/migrations/20240101000000_apple_oauth_profiles.sql
+-- This migration creates the profiles table with RLS policies and RPC function
+-- for race-safe name persistence during Apple OAuth flows
 ```
 
 The migration creates:
