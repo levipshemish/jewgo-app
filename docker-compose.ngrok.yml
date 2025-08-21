@@ -60,6 +60,8 @@ services:
     image: ngrok/ngrok:latest
     ports:
       - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=31adOo1S7qte2XRrfyp06yW8VvE_5eqRwUNG8gUCxGgM6copE
     command: http frontend:3000 --log=stdout
     depends_on:
       - frontend
@@ -71,6 +73,8 @@ services:
     image: ngrok/ngrok:latest
     ports:
       - "4041:4040"
+    environment:
+      - NGROK_AUTHTOKEN=31adOo1S7qte2XRrfyp06yW8VvE_5eqRwUNG8gUCxGgM6copE
     command: http backend:8082 --log=stdout
     depends_on:
       - backend

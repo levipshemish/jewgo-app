@@ -720,28 +720,40 @@ export default function EateryExplorePage() {
               {/* Smart Pagination Controls - Hidden on mobile when infinite scroll is enabled */}
               {(!infiniteScrollEnabled || !isMobile) && (
                 <div className="flex justify-center items-center mt-8 mb-8">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     {/* Previous Button */}
                     <button
                       onClick={handlePreviousPage}
                       disabled={currentPage === 1}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-all duration-200 font-medium shadow-soft"
+                      style={{
+                        minHeight: '44px',
+                        minWidth: '44px',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent'
+                      }}
                     >
                       Previous
                     </button>
                   
                     {/* Page Numbers */}
                     {totalPages > 1 && (
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-2">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                           <button
                             key={page}
                             onClick={() => handlePageChange(page)}
-                            className={`px-3 py-2 rounded-lg ${
+                            className={`px-4 py-3 rounded-2xl font-medium transition-all duration-200 shadow-soft ${
                               currentPage === page
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                ? 'bg-[#4ade80] text-white hover:bg-[#22c55e] shadow-medium'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
+                            style={{
+                              minHeight: '44px',
+                              minWidth: '44px',
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'transparent'
+                            }}
                           >
                             {page}
                           </button>
@@ -753,7 +765,13 @@ export default function EateryExplorePage() {
                     <button
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-3 bg-gray-100 text-gray-700 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-all duration-200 font-medium shadow-soft"
+                      style={{
+                        minHeight: '44px',
+                        minWidth: '44px',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent'
+                      }}
                     >
                       Next
                     </button>
@@ -775,8 +793,14 @@ export default function EateryExplorePage() {
               scrollToTop('smooth');
             }
           }}
-          className="fixed bottom-24 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          className="fixed bottom-24 right-4 z-50 bg-[#4ade80] text-white p-3 rounded-2xl shadow-medium hover:bg-[#22c55e] transition-all duration-200"
           aria-label="Back to top"
+          style={{
+            minHeight: '44px',
+            minWidth: '44px',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent'
+          }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
