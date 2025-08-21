@@ -2002,49 +2002,19 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
         """Handle restaurant hours - GET for display, PUT for admin updates."""
         if request.method == "GET":
             try:
-                # Get database manager
-                db_manager = deps.get("get_db_manager")()
-                if not db_manager:
-                    return jsonify({"error": "Database not available"}), 503
-
-                # Get restaurant data
-                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
-                if not restaurant:
-                    return jsonify({"error": "Restaurant not found"}), 404
-
-                # Get hours data
-                hours_json = restaurant.get("hours_json")
-                hours_of_operation = restaurant.get("hours_of_operation")
-                if not hours_json and not hours_of_operation:
-                    # Return empty hours response
-                    from utils.hours_formatter import HoursFormatter
-
-                    return jsonify(HoursFormatter._get_empty_hours_response()), 200
-
-                # Parse and format hours
-                from utils.hours_formatter import HoursFormatter
-
-                try:
-                    # For now, just return a simple test response
-                    return jsonify({
-                        "status": "success",
-                        "message": "Hours endpoint is working",
-                        "restaurant_id": restaurant_id,
-                        "hours_json": hours_json,
-                        "hours_of_operation": hours_of_operation
-                    }), 200
-
-                except Exception as e:
-                    logger.warning(
-                        f"Error in hours endpoint for restaurant {restaurant_id}: {e}"
-                    )
-                    return jsonify({"error": str(e)}), 500
+                # Simple test response without database
+                return jsonify({
+                    "status": "success",
+                    "message": "Hours endpoint is working",
+                    "restaurant_id": restaurant_id,
+                    "test": "This is a test response"
+                }), 200
 
             except Exception as e:
-                logger.error(
-                    f"Error fetching hours for restaurant {restaurant_id}: {e}"
+                logger.warning(
+                    f"Error in hours endpoint for restaurant {restaurant_id}: {e}"
                 )
-                return jsonify({"error": "Failed to fetch hours"}), 500
+                return jsonify({"error": str(e)}), 500
 
         elif request.method == "PUT":
             try:
