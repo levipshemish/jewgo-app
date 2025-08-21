@@ -442,10 +442,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   will-change: opacity;
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
+/* Smooth scrolling - moved to data attribute in layout.tsx */
 
 /* Optimized focus states */
 .focus-visible:focus {

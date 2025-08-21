@@ -83,7 +83,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${roboto.variable} h-full`}>
+    <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
         {/* Google Analytics */}
         {process.env['NEXT_PUBLIC_GA_MEASUREMENT_ID'] && (

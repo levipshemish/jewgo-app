@@ -15,11 +15,20 @@ function SignInFormWithParams() {
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || searchParams.get('redirectTo') || '/profile/settings';
   const errorParam = searchParams.get("error");
+  const reauth = searchParams.get("reauth") === 'true';
+  const provider = searchParams.get("provider");
+  const state = searchParams.get("state");
   
-  return <SignInForm redirectTo={next} initialError={errorParam} />;
+  return <SignInForm redirectTo={next} initialError={errorParam} reauth={reauth} provider={provider} state={state} />;
 }
 
-function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialError?: string | null }) {
+function SignInForm({ redirectTo, initialError, reauth, provider, state }: { 
+  redirectTo: string; 
+  initialError?: string | null;
+  reauth?: boolean;
+  provider?: string | null;
+  state?: string | null;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -129,11 +138,22 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
+      // Add re-authentication parameters if this is a re-auth flow
+      const callbackParams = new URLSearchParams({
+        next: safeNext,
+        provider: 'apple'
+      });
+      
+      if (reauth && state) {
+        callbackParams.set('reauth', 'true');
+        callbackParams.set('state', state);
+      }
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'apple',
         options: {
           scopes: 'email name',
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple`,
+          redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}`,
         },
       });
 
@@ -156,10 +176,21 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
+      // Add re-authentication parameters if this is a re-auth flow
+      const callbackParams = new URLSearchParams({
+        next: safeNext,
+        provider: 'google'
+      });
+      
+      if (reauth && state) {
+        callbackParams.set('reauth', 'true');
+        callbackParams.set('state', state);
+      }
+      
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`,
+          redirectTo: `${window.location.origin}/auth/callback?${callbackParams.toString()}`,
         },
       });
 
@@ -179,11 +210,22 @@ function SignInForm({ redirectTo, initialError }: { redirectTo: string; initialE
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to JewGo
+            {reauth ? 'Re-authenticate to Link Accounts' : 'Sign in to JewGo'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Access your account to manage favorites and more
+            {reauth 
+              ? `Please sign in with your ${provider} account to link your accounts securely.`
+              : 'Access your account to manage favorites and more'
+            }
           </p>
+          {reauth && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+              <p className="text-sm text-blue-800">
+                🔗 <strong>Account Linking Required:</strong> We found multiple accounts with the same email address. 
+                Please re-authenticate to securely link them together.
+              </p>
+            </div>
+          )}
         </div>
         
         {/* Debug info - remove in production */}

@@ -1,155 +1,233 @@
-# JewGo Scripts Directory
+# JewGo Ngrok Deployment Scripts
 
-This directory contains all utility scripts for the JewGo application, organized by functionality.
+This directory contains scripts for creating one-time production deployments of the JewGo system using ngrok for external access.
 
-## 📁 Directory Structure
+## Quick Start
 
-### 🔧 **enhancement/**
-Scripts for enhancing and improving data quality:
-- `enhance_business_types_and_reviews.py` - Add business types and review snippets
-- `enhance_restaurant_photos.py` - Enhance restaurant photo data
-- `enhance_restaurant_descriptions.py` - Add restaurant descriptions
-- `enhance_google_listing_urls_and_prices.py` - Add Google listing URLs and prices
-- `enhance_google_ratings.py` - Enhance Google ratings data
-- `expand_google_places_integration.py` - Expand Google Places integration
-- `fetch_google_reviews.py` - Fetch Google reviews
-- `enrich_google_reviews.py` - Enrich Google review data
-- `scrape_more_restaurant_images.py` - Scrape additional restaurant images
-- `discover_restaurant_images.py` - Discover restaurant images
-- `hours_backfill.py` - Backfill hours data
-- `upload_fallback_images.py` - Upload fallback images
-
-### 🧹 **cleanup/**
-Scripts for cleaning and fixing data issues:
-- `cleanup_additional_images.py` - Clean up additional images
-- `cleanup_main_images.py` - Clean up main images
-- `cleanup_broken_images.py` - Clean up broken images
-- `fix_problematic_image_urls.py` - Fix problematic image URLs
-- `check_problematic_image_urls.py` - Check for problematic image URLs
-- `fix_missing_coordinates.py` - Fix missing coordinates
-- `remove_duplicates.py` - Remove duplicate entries
-- `delete_invalid_categories.py` - Delete invalid categories
-
-### 🗄️ **database/**
-Scripts for database operations and migrations:
-- `add_business_types_and_review_snippets_columns.py` - Add new database columns
-- `add_user_email_column.py` - Add user email column
-- `add_user_email_to_reviews.py` - Add user emails to reviews
-- `apply_database_indexes.py` - Apply database indexes
-- `deploy_reviews_migration.py` - Deploy reviews migration
-- `check_database_images.py` - Check database images
-- `check_duplicates.py` - Check for duplicates
-- `check_cloudinary_images.py` - Check Cloudinary images
-- `check_reviews_table.py` - Check reviews table
-- `show_database_categories.py` - Show database categories
-- `comprehensive_database_cleanup.py` - Comprehensive database cleanup
-
-### 🛠️ **utils/**
-Utility scripts and tools:
-- `generate_admin_token.py` - Generate admin tokens
-- `import_kosher_miami.py` - Import Kosher Miami data
-- `jewgo-cli.py` - JewGo command-line interface
-
-### 🔄 **maintenance/**
-Ongoing maintenance scripts:
-- Various maintenance scripts for regular upkeep
-
-### 📊 **monitoring/**
-Monitoring and health check scripts:
-- `monitor_render_fixes.py` - Monitor Render fixes
-- `monitor_render_deployment.py` - Monitor Render deployment
-- `monitor_redis.py` - Monitor Redis
-
-### 🚀 **deployment/**
-Deployment and setup scripts:
-- `test-and-commit.sh` - Test and commit script
-- `deploy-to-production.sh` - Deploy to production
-- `setup_redis.sh` - Setup Redis
-- `apply_indexes.sh` - Apply database indexes
-- `setup_keep_alive.sh` - Setup keep alive
-- `health-check.sh` - Health check script
-- `cleanup.sh` - Cleanup script
-
-## 🚀 Quick Start
-
-### Enhancement Scripts
+### 1. Deploy the System
 ```bash
-# Enhance business types and reviews
-python scripts/enhancement/enhance_business_types_and_reviews.py
-
-# Enhance restaurant photos
-python scripts/enhancement/enhance_restaurant_photos.py
+./scripts/quick-ngrok-deploy.sh
 ```
 
-### Cleanup Scripts
+### 2. Test the Deployment
 ```bash
-# Clean up broken images
-python scripts/cleanup/cleanup_broken_images.py
-
-# Fix missing coordinates
-python scripts/cleanup/fix_missing_coordinates.py
+./scripts/test-ngrok-deployment.sh
 ```
 
-### Database Scripts
+### 3. Stop the Deployment
 ```bash
-# Apply database indexes
-python scripts/database/apply_database_indexes.py
-
-# Check database images
-python scripts/database/check_database_images.py
+./scripts/stop-ngrok-deploy.sh
 ```
 
-### Utility Scripts
-```bash
-# Generate admin token
-python scripts/utils/generate_admin_token.py
+## Scripts Overview
 
-# Run JewGo CLI
-python scripts/utils/jewgo-cli.py
+### `quick-ngrok-deploy.sh`
+**Purpose**: Quick deployment of the entire JewGo system with ngrok tunnels
+
+**Features**:
+- Checks prerequisites (Docker, ngrok, etc.)
+- Sets up production environment files
+- Builds and starts all services
+- Creates ngrok tunnels for external access
+- Provides URLs for access
+
+**Usage**:
+```bash
+./scripts/quick-ngrok-deploy.sh
 ```
 
-## 📋 Usage Guidelines
+### `production-ngrok-deploy.sh`
+**Purpose**: Comprehensive deployment with advanced features
 
-### Before Running Scripts
-1. **Activate virtual environment**: `source backend/venv_py311/bin/activate`
-2. **Set environment variables**: Ensure all required environment variables are set
-3. **Backup database**: Always backup before running database scripts
-4. **Test in staging**: Test scripts in staging environment first
+**Features**:
+- All features from quick deploy
+- Detailed health checks
+- Better error handling
+- Comprehensive logging
+- Automatic cleanup on exit
 
-### Script Categories
-- **Enhancement**: Add new data or improve existing data
-- **Cleanup**: Fix data issues and remove problematic entries
-- **Database**: Database operations, migrations, and maintenance
-- **Utils**: General utility tools and helpers
-- **Maintenance**: Ongoing maintenance tasks
-- **Monitoring**: Health checks and monitoring
-- **Deployment**: Deployment and setup automation
+**Usage**:
+```bash
+./scripts/production-ngrok-deploy.sh
+```
 
-### Safety Measures
-- All scripts include error handling and logging
-- Database scripts include rollback capabilities
-- Enhancement scripts include rate limiting for external APIs
-- Cleanup scripts include verification steps
+### `test-ngrok-deployment.sh`
+**Purpose**: Test and verify the deployment is working correctly
 
-## 🔧 Development
+**Features**:
+- Container status checks
+- Health endpoint verification
+- Network connectivity tests
+- Ngrok tunnel validation
+- Application functionality tests
 
-### Adding New Scripts
-1. Place scripts in appropriate subdirectory
-2. Include proper error handling and logging
-3. Add documentation in this README
-4. Test thoroughly before deployment
+**Usage**:
+```bash
+./scripts/test-ngrok-deployment.sh
+```
 
-### Script Standards
-- Use consistent naming conventions
-- Include proper docstrings and comments
-- Implement logging for debugging
-- Handle errors gracefully
-- Include progress indicators for long-running scripts
+### `stop-ngrok-deploy.sh`
+**Purpose**: Stop the deployment and clean up resources
 
-## 📞 Support
+**Features**:
+- Stops all services
+- Removes containers and volumes
+- Cleans up environment files
+- Option to remove unused Docker images
 
-For issues with scripts:
-1. Check the script's error output
-2. Review the logs for detailed information
-3. Verify environment variables are set correctly
-4. Test with a small dataset first
+**Usage**:
+```bash
+./scripts/stop-ngrok-deploy.sh
+```
+
+## Prerequisites
+
+### Required Software
+- **Docker**: Container platform
+- **Docker Compose**: Multi-container orchestration
+- **ngrok**: Tunnel service for external access
+- **curl**: HTTP client for health checks
+- **jq**: JSON processor for parsing ngrok responses
+
+### ngrok Setup
+1. Sign up at https://ngrok.com
+2. Get your authtoken from https://dashboard.ngrok.com/get-started/your-authtoken
+3. Install ngrok:
+   ```bash
+   # macOS
+   brew install ngrok/ngrok/ngrok
+   
+   # Linux
+   curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+   echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+   sudo apt update && sudo apt install ngrok
+   ```
+4. Authenticate:
+   ```bash
+   ngrok authtoken YOUR_TOKEN_HERE
+   ```
+
+## Deployment Architecture
+
+The deployment creates a complete production environment with:
+
+- **Frontend**: Next.js application (Port 3000)
+- **Backend**: Flask API with Gunicorn (Port 8081)
+- **Database**: PostgreSQL (Port 5432)
+- **Cache**: Redis (Port 6379)
+- **Ngrok Tunnels**: External access (Ports 4040, 4041)
+
+## Environment Variables
+
+The scripts automatically generate production environment files:
+
+### Backend Environment
+- Production Flask configuration
+- Auto-generated secrets
+- Database and Redis connections
+- CORS settings for ngrok domains
+
+### Frontend Environment
+- Production Next.js configuration
+- API endpoint configuration
+- NextAuth settings
+- Database connection
+
+## Monitoring
+
+### View Logs
+```bash
+# All services
+docker-compose -f docker-compose.ngrok.yml logs -f
+
+# Specific service
+docker-compose -f docker-compose.ngrok.yml logs -f backend
+docker-compose -f docker-compose.ngrok.yml logs -f frontend
+```
+
+### Health Checks
+```bash
+# Backend health
+curl http://localhost:8081/health
+
+# Frontend health
+curl http://localhost:3000
+
+# Database health
+docker-compose -f docker-compose.ngrok.yml exec postgres pg_isready -U jewgo_user -d jewgo
+
+# Redis health
+docker-compose -f docker-compose.ngrok.yml exec redis redis-cli ping
+```
+
+### Ngrok Monitoring
+- **Frontend Tunnel**: http://localhost:4040
+- **Backend Tunnel**: http://localhost:4041
+
+## Troubleshooting
+
+### Common Issues
+
+#### Port Conflicts
+```bash
+# Check what's using the ports
+lsof -i :3000
+lsof -i :8081
+lsof -i :5432
+lsof -i :6379
+```
+
+#### ngrok Authentication
+```bash
+# Check ngrok config
+ngrok config check
+
+# Re-authenticate
+ngrok authtoken YOUR_TOKEN
+```
+
+#### Service Issues
+```bash
+# Check service logs
+docker-compose -f docker-compose.ngrok.yml logs backend
+docker-compose -f docker-compose.ngrok.yml logs frontend
+
+# Restart services
+docker-compose -f docker-compose.ngrok.yml restart backend
+```
+
+### Debug Mode
+For debugging, use the development configuration:
+```bash
+docker-compose -f docker-compose.full.yml up -d
+docker-compose -f docker-compose.full.yml logs -f
+```
+
+## Security Notes
+
+⚠️ **Important Security Considerations**:
+
+- This is a **production deployment** with real data
+- ngrok tunnels are **publicly accessible**
+- Keep ngrok URLs secure and don't share publicly
+- Monitor logs for security issues
+- Use strong passwords in real production
+
+## Cleanup
+
+The deployment creates temporary files that are automatically cleaned up when stopped:
+
+- `docker-compose.ngrok.yml` - Docker Compose configuration
+- `config/environment/backend.production.env` - Backend environment
+- `config/environment/frontend.production.env` - Frontend environment
+
+These files are removed when you run the stop script.
+
+## Support
+
+For issues:
+1. Check the troubleshooting section
+2. Review service logs
+3. Verify prerequisites are met
+4. Ensure ngrok is properly configured
+5. Check the main documentation at `docs/deployment/NGROK_PRODUCTION_DEPLOYMENT.md`

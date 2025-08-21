@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { validateRedirectUrl } from '@/lib/utils/auth-utils';
-import { detectProvider, isAppleUser, persistAppleUserName, logOAuthEvent, isAppleOAuthEnabled } from '@/lib/utils/auth-utils.server';
+import { detectProvider, isAppleUser, persistAppleUserName, logOAuthEvent, isAppleOAuthEnabled, completeIdentityLinking } from '@/lib/utils/auth-utils.server';
 import { oauthLogger } from '@/lib/utils/logger';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     const next = searchParams.get('next') || searchParams.get('redirectTo');
+    const reauth = searchParams.get('reauth') === 'true';
+    const state = searchParams.get('state');
+    const provider = searchParams.get('provider');
     const safeNext = validateRedirectUrl(next);
 
     // Handle OAuth errors
@@ -65,11 +68,52 @@ export async function GET(request: NextRequest) {
         if (user.identities && user.identities.length > 1) {
           oauthLogger.info('Multiple identities detected, redirecting to linking flow', { 
             userId: user.id, 
-            identityCount: user.identities.length 
+            identityCount: user.identities.length,
+            providers: user.identities.map(id => id.provider),
+            isReauth: reauth
           });
           
+          if (reauth && provider) {
+            // This is a re-authentication flow - attempt to link identities
+            try {
+              // For re-authentication, we can attempt to link the identities
+              // This is safer because the user has just re-authenticated
+              oauthLogger.info('Re-authentication flow detected, attempting identity linking', { 
+                userId: user.id,
+                reauthProvider: provider
+              });
+              
+              // Complete the identity linking
+              const linkingResult = await completeIdentityLinking(user.id, provider);
+              
+              if (linkingResult.success) {
+                // Redirect to account page with success message
+                const accountUrl = new URL('/account', request.url);
+                accountUrl.searchParams.set('linked', 'true');
+                return NextResponse.redirect(accountUrl);
+              } else {
+                oauthLogger.error('Re-authentication linking failed', { 
+                  error: linkingResult.error,
+                  userId: user.id 
+                });
+                // Fall through to normal collision handling
+              }
+            } catch (linkError) {
+              oauthLogger.error('Re-authentication linking failed', { 
+                errorType: linkError instanceof Error ? linkError.constructor.name : 'Unknown',
+                userId: user.id 
+              });
+              // Fall through to normal collision handling
+            }
+          }
+          
+          // Store collision info in URL params for the linking page
+          const linkUrl = new URL('/account/link', request.url);
+          linkUrl.searchParams.set('collision', 'true');
+          linkUrl.searchParams.set('providers', user.identities.map(id => id.provider).join(','));
+          
           // Redirect to guarded linking flow when collision is inferred
-          return NextResponse.redirect(new URL('/account/link', request.url));
+          return NextResponse.redirect(linkUrl);
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 

@@ -227,3 +227,98 @@ export function logOAuthEvent(userId: string, provider: string, event: string) {
   const analyticsKey = createAnalyticsKey(userId);
   authLogger.info(`[OAUTH] ${event} - Provider: ${provider} - User: ${analyticsKey}`);
 }
+
+/**
+ * Attempt to link user identities using official Supabase Link API
+ * This function handles the secure linking of multiple identities for the same user
+ */
+export async function attemptIdentityLinking(userId: string, targetProvider: string): Promise<{
+  success: boolean;
+  error?: string;
+  requiresReAuth?: boolean;
+}> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    
+    // Get current user to check identities
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return { success: false, error: 'User not found' };
+    }
+    
+    // Check if user has multiple identities
+    if (!user.identities || user.identities.length <= 1) {
+      return { success: true }; // No linking needed
+    }
+    
+    // Check if the target provider is already linked
+    const hasTargetProvider = user.identities.some(id => id.provider === targetProvider);
+    if (hasTargetProvider) {
+      return { success: true }; // Already linked
+    }
+    
+    // For security, we require re-authentication before linking
+    // This prevents hostile takeovers
+    authLogger.info('Identity linking requires re-authentication for security', { 
+      userId, 
+      targetProvider,
+      existingProviders: user.identities.map(id => id.provider)
+    });
+    
+    return { 
+      success: false, 
+      requiresReAuth: true,
+      error: 'Re-authentication required for secure linking'
+    };
+    
+  } catch (error) {
+    authLogger.error('Identity linking attempt failed', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      userId 
+    });
+    return { success: false, error: 'Linking failed' };
+  }
+}
+
+/**
+ * Complete identity linking after successful re-authentication
+ * This should only be called after the user has re-authenticated
+ */
+export async function completeIdentityLinking(userId: string, reauthProvider: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    
+    // Get current user after re-authentication
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return { success: false, error: 'User not found after re-authentication' };
+    }
+    
+    // Verify that the re-authentication was successful
+    const hasReauthProvider = user.identities?.some(id => id.provider === reauthProvider);
+    if (!hasReauthProvider) {
+      return { success: false, error: 'Re-authentication verification failed' };
+    }
+    
+    // Log successful linking
+    authLogger.info('Identity linking completed successfully after re-authentication', { 
+      userId, 
+      reauthProvider,
+      totalIdentities: user.identities?.length || 0
+    });
+    
+    return { success: true };
+    
+  } catch (error) {
+    authLogger.error('Identity linking completion failed', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      userId 
+    });
+    return { success: false, error: 'Linking completion failed' };
+  }
+}

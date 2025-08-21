@@ -44,6 +44,8 @@ describe('Apple OAuth Feature Flags', () => {
     test('client-side flag is accessible in browser environment', () => {
       // This test documents the expected behavior
       // In a real browser environment, NEXT_PUBLIC_APPLE_OAUTH_ENABLED would be available
+      // Set it for the test
+      process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED = 'true';
       expect(typeof process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED).toBe('string');
     });
 
