@@ -87,11 +87,11 @@ export default function EateryExplorePage() {
     let columns = 2; // Default for mobile
     
     if (screenWidth >= 1536) { // 2xl breakpoint
-      columns = 6;
+      columns = 10;
     } else if (screenWidth >= 1280) { // xl breakpoint
-      columns = 5;
+      columns = 7;
     } else if (screenWidth >= 1024) { // lg breakpoint
-      columns = 4;
+      columns = 5;
     } else if (screenWidth >= 640) { // sm breakpoint
       columns = 3;
     }
@@ -650,7 +650,7 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-10 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid">
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
                   <div key={restaurant.id} className="relative">
                     <UnifiedCard
