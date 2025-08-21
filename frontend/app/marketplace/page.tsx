@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { Header } from '@/components/layout';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
@@ -12,6 +12,29 @@ import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceC
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+
+// Calculate distance between two coordinates using Haversine formula
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+// Utility function to format distance for display
+const formatDistance = (distance: number) => {
+  if (distance < 0.1) {
+    return `${Math.round(distance * 5280)}ft`; // Convert to feet
+  } else if (distance < 1) {
+    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
+  } else {
+    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
+  }
+};
 
 // Transform marketplace listing data to UnifiedCard format
 const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocation: { latitude: number; longitude: number } | null) => {
@@ -45,23 +68,6 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocatio
     return `${Math.floor(diffDays / 365)}y`;
   };
 
-  // Calculate distance if location is available
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 3959; // Earth's radius in miles
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  };
-
-  const formatDistance = (distance: number) => {
-    if (distance < 1) return `${(distance * 5280).toFixed(0)}ft`;
-    return `${distance.toFixed(1)}mi`;
-  };
-
   let distanceText: string | undefined;
 
   if (userLocation && listing.lat && listing.lng) {
@@ -72,6 +78,11 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocatio
       listing.lng
     );
     distanceText = formatDistance(distance);
+    
+    // Debug logging for distance display
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Marketplace listing ${listing.title}: ${distance.toFixed(3)}mi -> ${distanceText}`);
+    }
   }
 
   return {
@@ -121,6 +132,41 @@ export default function MarketplacePage() {
   
   // Selected category state
   const [selectedCategory, setSelectedCategory] = useState<MarketplaceCategory | undefined>();
+
+  // Sort listings by distance when location is available
+  const sortedListings = useMemo(() => {
+    if (!locationPermissionGranted || !userLocation) {
+      return listings;
+    }
+
+    return [...listings].sort((a, b) => {
+      // If either listing doesn't have coordinates, keep original order
+      if (!a.lat || !a.lng || !b.lat || !b.lng) {
+        return 0;
+      }
+
+      const distanceA = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        a.lat,
+        a.lng
+      );
+
+      const distanceB = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        b.lat,
+        b.lng
+      );
+
+      // Debug logging for distance calculations
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Marketplace distance comparison: ${a.title} (${distanceA.toFixed(2)}mi) vs ${b.title} (${distanceB.toFixed(2)}mi)`);
+      }
+
+      return distanceA - distanceB;
+    });
+  }, [listings, locationPermissionGranted, userLocation]);
 
   // Load initial listings
   useEffect(() => {
@@ -412,6 +458,23 @@ export default function MarketplacePage() {
         </div>
       )}
 
+      {/* Location-Based Sorting Indicator */}
+      {locationPermissionGranted && userLocation && (
+        <div className="px-4 sm:px-6 py-2 bg-green-50 border-b border-green-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-green-800 font-medium">
+                Listings sorted by distance from you
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Listings */}
       <div className="px-4 py-4">
         <div className="max-w-7xl lg:max-w-none mx-auto">
@@ -421,11 +484,11 @@ export default function MarketplacePage() {
             </div>
           )}
 
-          {loading && listings.length === 0 ? (
+          {loading && sortedListings.length === 0 ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : listings.length === 0 ? (
+          ) : sortedListings.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 text-6xl mb-4">🛍️</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
@@ -438,7 +501,7 @@ export default function MarketplacePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-              {listings.map(listing => (
+              {sortedListings.map(listing => (
                 <div key={listing.id}>
                   <UnifiedCard
                     data={transformMarketplaceToCardData(listing, userLocation)}
@@ -468,7 +531,7 @@ export default function MarketplacePage() {
             </div>
           )}
 
-          {loading && listings.length > 0 && (
+          {loading && sortedListings.length > 0 && (
             <div className="mt-8 text-center">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
             </div>

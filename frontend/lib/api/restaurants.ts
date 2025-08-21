@@ -21,6 +21,20 @@ interface ApiError {
 export class RestaurantsAPI {
   private static pendingRequests = new Map<string, Promise<any>>();
   
+  private static async checkNetworkConnectivity(): Promise<boolean> {
+    try {
+      // Try to fetch a simple resource to check network connectivity
+      const response = await fetch('/api/health-check', {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      return response.ok;
+    } catch (error) {
+      console.warn('Network connectivity check failed:', error);
+      return false;
+    }
+  }
+  
   private static async wakeUpBackend(): Promise<boolean> {
     try {
       // Use a longer timeout for wake-up attempts on production
@@ -100,49 +114,32 @@ export class RestaurantsAPI {
             status: response.status,
             retryable: response.status >= 500 || response.status === 429
           };
+          throw error;
+        }
+        
+        const data = await response.json();
+        return data;
+        
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        // Handle network errors more gracefully
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.warn(`Network error on attempt ${attempt}/${retries}:`, error.message);
           
-          // For 404 errors, don't retry
-          if (response.status === 404) {
-            throw error;
-          }
-          
-          // For 429 errors, implement exponential backoff with longer delays
-          if (response.status === 429) {
-            if (attempt < retries) {
-              // Longer delay for rate limiting: 2^attempt seconds + random jitter
-              const delay = Math.min(2000 * Math.pow(2, attempt - 1) + Math.random() * 2000, 10000);
-              await new Promise(resolve => setTimeout(resolve, delay));
-              continue;
-            }
-          }
-          
-          if (error.retryable && attempt < retries) {
-            // Exponential backoff with jitter for other retryable errors
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
+          // If this is a network connectivity issue, wait before retrying
+          if (attempt < retries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
-          
-          throw error;
-        }
-
-        // Check if response has content
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          return data;
         }
         
-        // Handle non-JSON responses
-        const text = await response.text();
-        return text as T;
-        
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        if (error.name === 'AbortError') {
+        // Handle AbortError (timeout)
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.warn(`Request timeout on attempt ${attempt}/${retries}`);
           if (attempt < retries) {
-            const delay = Math.min(1000 * Math.pow(2, attempt - 1) + Math.random() * 1000, 5000);
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
@@ -171,8 +168,25 @@ export class RestaurantsAPI {
     this.pendingRequests.set(requestKey, requestPromise);
     
     try {
+      // Check network connectivity first
+      const isConnected = await this.checkNetworkConnectivity();
+      if (!isConnected) {
+        console.warn('Network connectivity issues detected, using fallback data');
+        return {
+          restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
+          total: this.getMockRestaurants().length,
+        };
+      }
+      
       const result = await requestPromise;
       return result;
+    } catch (error) {
+      console.error('Error in fetchRestaurants:', error);
+      // Return mock data on any error for better UX
+      return {
+        restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
+        total: this.getMockRestaurants().length,
+      };
     } finally {
       this.pendingRequests.delete(requestKey);
     }
@@ -196,64 +210,75 @@ export class RestaurantsAPI {
       }
       
       const url = `/api/restaurants?${urlParams.toString()}`;
-      const data = await this.makeRequest<any>(url);
       
-      // Handle different response formats
-      let restaurants: Restaurant[] = [];
-      let total: number = 0;
-      
-      if (data && typeof data === 'object') {
-        // Handle Next.js API route wrapper shape: { success, data: Restaurant[], total }
-        if ((data as any).success === true && Array.isArray((data as any).data)) {
-          restaurants = (data as any).data;
-          total = (data as any).total ?? (data as any).data.length;
-        } else 
-        if (Array.isArray(data)) {
-          // Direct array response
-          restaurants = data;
-          total = data.length;
-        } else if ((data as any).restaurants && Array.isArray((data as any).restaurants)) {
-          // Wrapped response
-          restaurants = (data as any).restaurants;
-          total = (data as any).total || (data as any).restaurants.length;
-        } else {
-          restaurants = [];
-          total = 0;
+      // Try the main endpoint first
+      try {
+        const data = await this.makeRequest<any>(url);
+        
+        // Handle different response formats
+        let restaurants: Restaurant[] = [];
+        let total: number = 0;
+        
+        if (data && typeof data === 'object') {
+          // Handle Next.js API route wrapper shape: { success, data: Restaurant[], total }
+          if ((data as any).success === true && Array.isArray((data as any).data)) {
+            restaurants = (data as any).data;
+            total = (data as any).total ?? (data as any).data.length;
+          } else 
+          if (Array.isArray(data)) {
+            // Direct array response
+            restaurants = data;
+            total = data.length;
+          } else if ((data as any).restaurants && Array.isArray((data as any).restaurants)) {
+            // Wrapped response
+            restaurants = (data as any).restaurants;
+            total = (data as any).total || (data as any).restaurants.length;
+          } else {
+            restaurants = [];
+            total = 0;
+          }
         }
+        
+        // If we got valid data, return it
+        if (Array.isArray(restaurants) && restaurants.length > 0) {
+          return {
+            restaurants: sanitizeRestaurantData(restaurants),
+            total,
+          };
+        }
+      } catch (error) {
+        console.warn('Primary API endpoint failed, trying fallback:', error);
       }
       
       // Graceful degradation: if backend returns no restaurants, try images-only endpoint, then mock
-      if (!Array.isArray(restaurants) || restaurants.length === 0) {
-        try {
-          const withImages = await this.makeRequest<any>(`/api/restaurants-with-images?limit=${Math.min(limit, 200)}`);
-          const withImagesData = Array.isArray(withImages?.data)
-            ? withImages.data
-            : Array.isArray(withImages)
-              ? withImages
-              : Array.isArray(withImages?.restaurants)
-                ? withImages.restaurants
-                : [];
-          if (withImagesData.length > 0) {
-            return {
-              restaurants: sanitizeRestaurantData(withImagesData),
-              total: withImagesData.length,
-            };
-          }
-        } catch {
-          // ignore and fallback to mocks
+      try {
+        const withImages = await this.makeRequest<any>(`/api/restaurants-with-images?limit=${Math.min(limit, 200)}`);
+        const withImagesData = Array.isArray(withImages?.data)
+          ? withImages.data
+          : Array.isArray(withImages)
+            ? withImages
+            : Array.isArray(withImages?.restaurants)
+              ? withImages.restaurants
+              : [];
+        if (withImagesData.length > 0) {
+          return {
+            restaurants: sanitizeRestaurantData(withImagesData),
+            total: withImagesData.length,
+          };
         }
-        return {
-          restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
-          total: this.getMockRestaurants().length,
-        };
+      } catch (error) {
+        console.warn('Images-only endpoint also failed:', error);
       }
-
+      
+      // Final fallback to mock data
+      console.warn('All API endpoints failed, using mock data');
       return {
-        restaurants: sanitizeRestaurantData(restaurants),
-        total,
+        restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
+        total: this.getMockRestaurants().length,
       };
-    } catch {
-      // // console.error('Failed to fetch restaurants:', error);
+      
+    } catch (error) {
+      console.error('Failed to fetch restaurants:', error);
       
       // Return mock data on error for better UX
       return {
