@@ -188,18 +188,18 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
     <motion.div
         className={cn(
           "w-[180px] rounded-2xl overflow-hidden p-3",
-          "transition-all duration-300",
+          "transition-all duration-300 ease-out",
           "mx-auto",
-          "hover:-translate-y-1 hover:shadow-xl",
           "bg-transparent",
+          "group", // Add group for hover effects
           onCardClick ? "cursor-pointer" : "",
           className
         )}
       style={{
-        // Transparent background with subtle shadow
+        // Transparent background with enhanced shadow
         backgroundColor: 'transparent !important',
         background: 'transparent !important',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        boxShadow: '0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 8px -1px rgba(0, 0, 0, 0.04)',
         WebkitTapHighlightColor: 'transparent',
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
@@ -209,6 +209,15 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
+      whileHover={{
+        y: -8,
+        scale: 1.02,
+        transition: { duration: 0.2, ease: "easeOut" }
+      }}
+      whileTap={{
+        scale: 0.98,
+        transition: { duration: 0.1 }
+      }}
       role={onCardClick ? "button" : "article"}
       aria-label={`Product card for ${cardData.title}`}
       tabIndex={onCardClick ? 0 : -1}
@@ -221,7 +230,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       </span>
       {/* Image Container */}
       <div className="relative w-full">
-        <div className="w-full h-[126px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
+        <div className="w-full h-[126px] rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300 group-hover:scale-105">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
@@ -236,8 +245,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               alt={cardData.title || 'Product image'}
               fill
               className={cn(
-                "object-cover transition-opacity duration-300 rounded-[20px]",
-                imageLoading ? 'opacity-0' : 'opacity-100'
+                "object-cover transition-all duration-300 rounded-[20px]",
+                imageLoading ? 'opacity-0' : 'opacity-100',
+                "group-hover:scale-110"
               )}
               onLoad={() => setImageLoading(false)}
               onError={() => {
@@ -249,11 +259,9 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               priority={priority}
             />
           )}
-
-
         </div>
         
-        {/* Image Tag - Unified styling for consistency */}
+        {/* Image Tag - Enhanced hover effects */}
         {cardData.imageTag && (
           <>
             <style jsx>{`
@@ -275,7 +283,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 background-color: rgba(255, 255, 255, 0.95) !important;
                 color: #111827 !important;
                 border-radius: 9999px !important;
-                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -284,20 +292,29 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 text-rendering: optimizeLegibility !important;
                 -webkit-text-size-adjust: 100% !important;
                 text-size-adjust: 100% !important;
-                transition: none !important;
+                transition: all 0.2s ease-out !important;
                 transform: none !important;
+                backdrop-filter: blur(8px) !important;
+              }
+              .unified-card-tag:hover {
+                background-color: rgba(255, 255, 255, 1) !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+                transform: translateY(-1px) !important;
               }
               .unified-card-tag {
-                cursor: default !important;
+                cursor: pointer !important;
               }
               .unified-card-tag:active {
-                transform: none !important;
+                transform: translateY(0px) !important;
                 opacity: 1 !important;
               }
             `}</style>
             <div
               className="unified-card-tag"
               aria-label={`Tag: ${cardData.imageTag}`}
+              onClick={handleTagClick}
+              onKeyDown={handleTagKeyDown}
+              tabIndex={0}
             >
               <span 
                 style={{
@@ -315,7 +332,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           </>
         )}
         
-        {/* Heart Button - No background, similar sizing to tag */}
+        {/* Heart Button - Enhanced hover effects */}
         {cardData.showHeart && (
           <>
             <style jsx>{`
@@ -323,14 +340,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 position: absolute !important;
                 top: 6px !important;
                 right: 8px !important;
-                width: 24px !important;
-                max-width: 24px !important;
-                min-width: 24px !important;
-                height: 24px !important;
-                max-height: 24px !important;
-                min-height: 24px !important;
-                background-color: transparent !important;
-                border-radius: 4px !important;
+                width: 28px !important;
+                max-width: 28px !important;
+                min-width: 28px !important;
+                height: 28px !important;
+                max-height: 28px !important;
+                min-height: 28px !important;
+                background-color: rgba(255, 255, 255, 0.9) !important;
+                border-radius: 50% !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -340,20 +357,29 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
                 -webkit-tap-highlight-color: transparent !important;
                 touch-action: manipulation !important;
                 z-index: 10 !important;
-                transition: transform 200ms !important;
+                transition: all 0.2s ease-out !important;
                 transform: ${isAnimating ? 'scale(0.9)' : 'scale(1)'} !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+                backdrop-filter: blur(8px) !important;
+              }
+              .unified-card-heart:hover {
+                background-color: rgba(255, 255, 255, 1) !important;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+                transform: scale(1.1) !important;
               }
               .unified-card-heart:hover svg {
                 fill: #ef4444 !important;
                 stroke: #ef4444 !important;
+                transform: scale(1.1) !important;
               }
               .unified-card-heart:active {
-                transform: scale(0.9) !important;
+                transform: scale(0.95) !important;
                 opacity: 1 !important;
               }
               .unified-card-heart svg {
-                width: 20px !important;
-                height: 20px !important;
+                width: 18px !important;
+                height: 18px !important;
+                transition: all 0.2s ease-out !important;
               }
             `}</style>
             <button
@@ -367,12 +393,12 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
               aria-pressed={isLiked}
             >
               <Heart
-                size={20}
+                size={18}
                 style={{
-                  fill: isLiked ? '#ef4444' : '#e5e7eb',
-                  stroke: '#ffffff',
+                  fill: isLiked ? '#ef4444' : 'transparent',
+                  stroke: isLiked ? '#ef4444' : '#6b7280',
                   strokeWidth: 2,
-                  transition: 'all 200ms',
+                  transition: 'all 0.2s ease-out',
                   filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
                 }}
               />
@@ -381,7 +407,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         )}
       </div>
       
-      {/* Content */}
+      {/* Content - Enhanced hover effects */}
       <motion.div 
         className="pt-3"
         initial={{ opacity: 0, y: 10 }}
@@ -390,14 +416,14 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
       >
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
-            className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0"
+            className="text-sm font-semibold text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
           {cardData.badge && (
             <motion.div
-              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0"
+              className="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
@@ -411,7 +437,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
         <div className="flex justify-between items-center gap-3 min-h-[16px]">
           {cardData.subtitle && (
             <p 
-              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0"
+              className="text-xs text-gray-600 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-700"
               style={{ 
                 maxWidth: '80px',
                 overflow: 'hidden',
@@ -425,7 +451,7 @@ const EnhancedProductCard = memo<EnhancedProductCardProps>(({
           )}
           {cardData.additionalText && (
             <p 
-              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate"
+              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-600"
               style={{ 
                 maxWidth: '50px',
                 overflow: 'hidden',
