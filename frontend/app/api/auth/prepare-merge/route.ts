@@ -9,8 +9,7 @@ import {
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous,
-  isSupabaseConfigured
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { signMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
 import { 
@@ -36,7 +35,8 @@ export async function OPTIONS(request: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer',
+      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
+      'Access-Control-Allow-Credentials': 'true',
       'Cache-Control': 'no-store'
     }
   });

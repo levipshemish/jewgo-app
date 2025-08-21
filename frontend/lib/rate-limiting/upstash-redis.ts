@@ -19,53 +19,28 @@ const RATE_LIMITS = {
   }
 };
 
-// Initialize Redis client with fallback for missing environment variables
+// Initialize Upstash Redis client
 let redis: any = null;
 
-// Check if we're in Edge Runtime (which doesn't support Node.js modules)
-const isEdgeRuntime = typeof process === 'undefined' || process.env.NEXT_RUNTIME === 'edge';
-
-// Initialize Redis client asynchronously
+// Initialize Upstash Redis client asynchronously
 async function initializeRedis() {
-  if (isEdgeRuntime) {
-    console.warn('Edge Runtime detected. Redis rate limiting will be disabled.');
-    return null;
-  }
-
   try {
-    // Use standard Redis configuration from environment variables
-    const redisUrl = process.env.REDIS_URL;
-    const redisHost = process.env.REDIS_HOST;
-    const redisPort = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379;
-    const redisPassword = process.env.REDIS_PASSWORD;
-    const redisDb = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
+    const upstashRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const upstashRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    if (redisUrl) {
-      // Use Redis URL if available - import dynamically to avoid Edge Runtime issues
-      const Redis = await import('redis');
-      const client = Redis.createClient({ url: redisUrl });
-      client.connect();
-      return client;
-    } else if (redisHost) {
-      // Use individual Redis configuration - import dynamically to avoid Edge Runtime issues
-      const Redis = await import('redis');
-      const client = Redis.createClient({
-        socket: {
-          host: redisHost,
-          port: redisPort
-        },
-        password: redisPassword,
-        database: redisDb
-      });
-      client.connect();
-      return client;
-    } else {
-      console.warn('Redis environment variables not configured. Rate limiting will be disabled.');
-      return null;
+    if (!upstashRedisUrl || !upstashRedisToken) {
+      throw new Error('UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set');
     }
+
+    // Import Upstash Redis client
+    const { Redis } = await import('@upstash/redis');
+    return new Redis({
+      url: upstashRedisUrl,
+      token: upstashRedisToken,
+    });
   } catch (error) {
-    console.error('Failed to initialize Redis client:', error);
-    return null;
+    console.error('Failed to initialize Upstash Redis client:', error);
+    throw error; // Fail fast - don't allow requests without rate limiting
   }
 }
 
@@ -73,8 +48,8 @@ async function initializeRedis() {
 initializeRedis().then(client => {
   redis = client;
 }).catch(error => {
-  console.error('Failed to initialize Redis client:', error);
-  redis = null;
+  console.error('Failed to initialize Upstash Redis client:', error);
+  // Don't set redis to null - let the error propagate
 });
 
 /**
@@ -92,10 +67,9 @@ export async function checkRateLimit(
   retry_after?: string;
   error?: string;
 }> {
-  // If Redis is not available, allow all requests (fail open for security)
+  // If Redis is not available, throw error (fail closed for security)
   if (!redis) {
-    console.warn('Redis not available, allowing request without rate limiting');
-    return { allowed: true };
+    throw new Error('Upstash Redis not available - rate limiting required');
   }
 
   try {
@@ -138,19 +112,19 @@ export async function checkRateLimit(
       };
     }
     
-    // Increment counters
-    const multi = redis.multi();
+    // Increment counters using Upstash Redis commands
+    const multi = redis.pipeline();
     
     // Window counter
     if (windowCount === 0) {
-      multi.setEx(windowKey, config.window, '1');
+      multi.setex(windowKey, config.window, '1');
     } else {
       multi.incr(windowKey);
     }
     
     // Daily counter
     if (dailyCount === 0) {
-      multi.setEx(dailyKey, config.window_daily, '1');
+      multi.setex(dailyKey, config.window_daily, '1');
     } else {
       multi.incr(dailyKey);
     }
@@ -167,12 +141,12 @@ export async function checkRateLimit(
       reset_in_seconds: windowExpiry > 0 ? windowExpiry : config.window
     };
     
-      } catch (error) {
-      console.error('Rate limiting error:', error);
-      // Fail open for security - allow request to proceed when Redis is unavailable
-      return { allowed: true };
-    }
+  } catch (error) {
+    console.error('Rate limiting error:', error);
+    // Fail closed for security - reject request when Redis is unavailable
+    throw error;
   }
+}
 
 /**
  * Generate idempotency key for merge operations
@@ -189,8 +163,7 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
   result?: any;
 }> {
   if (!redis) {
-    console.warn('Redis not available, skipping idempotency check');
-    return { exists: false };
+    throw new Error('Upstash Redis not available - idempotency check required');
   }
 
   try {
@@ -204,7 +177,7 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
     return { exists: false };
   } catch (error) {
     console.error('Idempotency check error:', error);
-    return { exists: false };
+    throw error;
   }
 }
 
@@ -213,14 +186,14 @@ export async function checkIdempotency(key: string, ttl: number = 3600): Promise
  */
 export async function storeIdempotencyResult(key: string, result: any, ttl: number = 3600): Promise<void> {
   if (!redis) {
-    console.warn('Redis not available, skipping idempotency result storage');
-    return;
+    throw new Error('Upstash Redis not available - idempotency result storage required');
   }
 
   try {
-    await redis.setEx(key, ttl, JSON.stringify(result));
+    await redis.setex(key, ttl, JSON.stringify(result));
   } catch (error) {
     console.error('Store idempotency result error:', error);
+    throw error;
   }
 }
 
@@ -229,13 +202,13 @@ export async function storeIdempotencyResult(key: string, result: any, ttl: numb
  */
 export async function clearRateLimit(key: string): Promise<void> {
   if (!redis) {
-    console.warn('Redis not available, skipping rate limit clear');
-    return;
+    throw new Error('Upstash Redis not available - rate limit clear required');
   }
 
   try {
     await redis.del(key);
   } catch (error) {
     console.error('Clear rate limit error:', error);
+    throw error;
   }
 }

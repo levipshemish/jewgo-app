@@ -47,8 +47,14 @@ CREATE OR REPLACE FUNCTION public.upsert_profile_with_name(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
+  -- Security guard: ensure user can only update their own profile
+  IF auth.uid() != p_user_id THEN
+    RAISE EXCEPTION 'Access denied: users can only update their own profile';
+  END IF;
+  
   INSERT INTO public.profiles (user_id, name, updated_at)
   VALUES (p_user_id, p_name, NOW())
   ON CONFLICT (user_id) DO UPDATE SET

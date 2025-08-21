@@ -8,8 +8,7 @@ import {
 import { 
   CLEANUP_CRON_SECRET,
   CLEANUP_DRY_RUN_MODE,
-  CLEANUP_SAFETY_CHECKS_ENABLED,
-  IS_PRODUCTION 
+  CLEANUP_SAFETY_CHECKS_ENABLED
 } from '@/lib/config/environment';
 
 export const runtime = 'nodejs';
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Create service role client for database operations
+    // Create service role client for Admin API operations
     const cookieStore = await cookies();
     const serviceRoleClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,27 +102,54 @@ export async function POST(request: NextRequest) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - maxAgeDays);
     
-    // Find anonymous users to clean up
-    const { data: anonymousUsers, error: findError } = await serviceRoleClient
-      .from('auth.users')
-      .select('id, created_at, user_metadata')
-      .eq('user_metadata->is_anonymous', true)
-      .lt('created_at', cutoffDate.toISOString())
-      .limit(batchSize);
+    // Find anonymous users using Admin API
+    let allAnonymousUsers: any[] = [];
+    let page = 0;
+    const perPage = 1000; // Admin API default
     
-    if (findError) {
-      console.error(`Failed to find anonymous users for correlation ID: ${correlationId}`, {
-        error: findError,
-        correlationId
+    while (allAnonymousUsers.length < batchSize) {
+      const { data: users, error: listError } = await serviceRoleClient.auth.admin.listUsers({
+        page,
+        perPage
       });
       
-      return NextResponse.json(
-        { error: 'Database query failed' },
-        { status: 500 }
-      );
+      if (listError) {
+        console.error(`Failed to list users for correlation ID: ${correlationId}`, {
+          error: listError,
+          correlationId
+        });
+        
+        return NextResponse.json(
+          { error: 'Failed to list users' },
+          { status: 500 }
+        );
+      }
+      
+      if (!users || users.length === 0) {
+        break; // No more users
+      }
+      
+      // Filter anonymous users by metadata and age
+      const anonymousUsers = users.filter((user: any) => {
+        const isAnonymous = user.user_metadata?.is_anonymous === true;
+        const createdAt = new Date(user.created_at);
+        const isOldEnough = createdAt < cutoffDate;
+        return isAnonymous && isOldEnough;
+      });
+      
+      allAnonymousUsers.push(...anonymousUsers);
+      page++;
+      
+      // Stop if we have enough users or no more users
+      if (users.length < perPage) {
+        break;
+      }
     }
     
-    if (!anonymousUsers || anonymousUsers.length === 0) {
+    // Limit to batch size
+    allAnonymousUsers = allAnonymousUsers.slice(0, batchSize);
+    
+    if (allAnonymousUsers.length === 0) {
       console.log(`No anonymous users to clean up for correlation ID: ${correlationId}`, {
         correlationId,
         cutoff_date: cutoffDate.toISOString()
@@ -144,11 +170,11 @@ export async function POST(request: NextRequest) {
     
     let deletedCount = 0;
     let archivedCount = 0;
-    const processedUsers = anonymousUsers.map(user => user.id);
+    const processedUsers = allAnonymousUsers.map(user => user.id);
     
     if (dryRun) {
       // Dry run mode - log what would be deleted without actual operations
-      console.log(`DRY RUN: Would clean up ${anonymousUsers.length} anonymous users for correlation ID: ${correlationId}`, {
+      console.log(`DRY RUN: Would clean up ${allAnonymousUsers.length} anonymous users for correlation ID: ${correlationId}`, {
         user_ids: processedUsers,
         correlationId,
         cutoff_date: cutoffDate.toISOString()
@@ -169,9 +195,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Production mode - perform actual cleanup
-    for (const user of anonymousUsers) {
+    for (const user of allAnonymousUsers) {
       try {
-        // Check if user has any data before deletion
+        // Check if user has any data before deletion using Admin API
         const { data: userData, error: dataError } = await serviceRoleClient
           .from('user_profiles')
           .select('id')
@@ -188,17 +214,17 @@ export async function POST(request: NextRequest) {
         }
         
         if (userData && userData.length > 0) {
-          // User has data - archive instead of delete
-          const { error: archiveError } = await serviceRoleClient
-            .from('auth.users')
-            .update({ 
+          // User has data - archive instead of delete using Admin API
+          const { error: archiveError } = await serviceRoleClient.auth.admin.updateUserById(
+            user.id,
+            { 
               user_metadata: { 
                 ...user.user_metadata, 
                 archived_at: new Date().toISOString(),
                 archived_reason: 'cleanup_anonymous'
               }
-            })
-            .eq('id', user.id);
+            }
+          );
           
           if (archiveError) {
             console.error(`Failed to archive user for correlation ID: ${correlationId}`, {
@@ -210,7 +236,7 @@ export async function POST(request: NextRequest) {
             archivedCount++;
           }
         } else {
-          // No data - safe to delete
+          // No data - safe to delete using Admin API
           const { error: deleteError } = await serviceRoleClient.auth.admin.deleteUser(user.id);
           
           if (deleteError) {

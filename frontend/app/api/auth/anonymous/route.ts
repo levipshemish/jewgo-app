@@ -9,14 +9,12 @@ import {
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous,
-  isSupabaseConfigured,
-  generateSecurePassword
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
+import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  IS_PRODUCTION 
+  getCORSHeaders
 } from '@/lib/config/environment';
 
 export const runtime = 'nodejs';
@@ -28,9 +26,7 @@ const ERROR_CODES = {
   RATE_LIMITED: 'RATE_LIMITED',
   CSRF: 'CSRF',
   SESSION_ERROR: 'SESSION_ERROR',
-  USER_EXISTS: 'USER_EXISTS',
-  ANON_EXISTS: 'ANON_EXISTS',
-  SIGNUP_FAILED: 'SIGNUP_FAILED'
+  USER_EXISTS: 'USER_EXISTS'
 } as const;
 
 /**
@@ -48,7 +44,8 @@ export async function OPTIONS(request: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer',
+      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
+      'Access-Control-Allow-Credentials': 'true',
       'Cache-Control': 'no-store'
     }
   });
@@ -59,8 +56,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Early feature support validation
-    if (!isSupabaseConfigured()) {
+    // Early feature support validation using server-safe function
+    if (!validateSupabaseFeatureSupport()) {
       console.error(`Supabase feature support validation failed for correlation ID: ${correlationId}`);
       
       return NextResponse.json(
@@ -184,42 +181,33 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check if anonymous user already exists
+    // Check if anonymous user already exists - short-circuit with success
     if (user && extractIsAnonymous(user)) {
-      console.warn(`Anonymous user already exists for correlation ID: ${correlationId}`, {
+      console.log(`Anonymous user already exists for correlation ID: ${correlationId}`, {
         userId: user.id,
         correlationId
       });
       
       return NextResponse.json(
-        { error: ERROR_CODES.ANON_EXISTS },
+        { ok: true, correlation_id: correlationId },
         { 
-          status: 409,
+          status: 200,
           headers: getCORSHeaders(origin || undefined)
         }
       );
     }
     
-    // Create anonymous user
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}@anonymous.local`,
-      password: generateSecurePassword(),
-      options: {
-        data: {
-          is_anonymous: true,
-          correlation_id: correlationId
-        }
-      }
-    });
+    // Create anonymous user using signInAnonymously
+    const { error: signInError } = await supabase.auth.signInAnonymously();
     
-    if (signUpError) {
-      console.error(`Anonymous signup failed for correlation ID: ${correlationId}`, {
-        error: signUpError,
+    if (signInError) {
+      console.error(`Anonymous signin failed for correlation ID: ${correlationId}`, {
+        error: signInError,
         correlationId
       });
       
       return NextResponse.json(
-        { error: ERROR_CODES.SIGNUP_FAILED },
+        { error: ERROR_CODES.ANON_SIGNIN_FAILED },
         { 
           status: 500,
           headers: getCORSHeaders(origin || undefined)
@@ -229,11 +217,7 @@ export async function POST(request: NextRequest) {
     
     // Success response
     return NextResponse.json(
-      {
-        success: true,
-        user: signUpData.user,
-        correlation_id: correlationId
-      },
+      { ok: true, correlation_id: correlationId },
       { 
         status: 200,
         headers: getCORSHeaders(origin || undefined)
@@ -254,7 +238,7 @@ export async function POST(request: NextRequest) {
       },
       { 
         status: 500,
-                  headers: getCORSHeaders(request.headers.get('origin') || undefined)
+        headers: getCORSHeaders(request.headers.get('origin') || undefined)
       }
     );
   }

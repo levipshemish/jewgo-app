@@ -140,7 +140,7 @@ export function getCORSHeaders(origin?: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer',
+    'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
     'Access-Control-Allow-Credentials': CORS_CREDENTIALS_ENABLED ? 'true' : 'false',
     'Cache-Control': 'no-store',
   };
@@ -177,12 +177,6 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   // Only validate on server side and not during build/test
   try {
     validateEnvironment();
-    
-    // Also validate Supabase feature support
-    const { validateSupabaseFeatureSupport } = require('../utils/auth-utils');
-    if (!validateSupabaseFeatureSupport()) {
-      throw new Error('Supabase feature support validation failed');
-    }
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime

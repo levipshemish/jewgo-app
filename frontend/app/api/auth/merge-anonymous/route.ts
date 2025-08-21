@@ -4,15 +4,15 @@ import { cookies } from 'next/headers';
 import { 
   checkRateLimit,
   generateIdempotencyKey,
-  checkIdempotency
+  checkIdempotency,
+  storeIdempotencyResult
 } from '@/lib/rate-limiting/upstash-redis';
 import { 
   validateCSRF, 
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous,
-  isSupabaseConfigured
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { verifyMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
 import { 
@@ -48,7 +48,8 @@ export async function OPTIONS(request: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer',
+      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
+      'Access-Control-Allow-Credentials': 'true',
       'Cache-Control': 'no-store'
     }
   });
@@ -241,6 +242,31 @@ export async function POST(request: NextRequest) {
     const sourceUid = cookiePayload.anon_uid;
     const targetUid = currentAuthUid;
     
+    // Check idempotency to prevent duplicate merges
+    const idempotencyKey = generateIdempotencyKey('merge_anonymous', `${sourceUid}_${targetUid}`);
+    const idempotencyCheck = await checkIdempotency(idempotencyKey, 3600); // 1 hour TTL
+    
+    if (idempotencyCheck.exists) {
+      console.log(`Idempotent merge operation for correlation ID: ${correlationId}`, {
+        source_uid: sourceUid,
+        target_uid: targetUid,
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { 
+          ok: true, 
+          moved: idempotencyCheck.result?.moved || [],
+          correlation_id: correlationId,
+          idempotent: true
+        },
+        { 
+          status: 202,
+          headers: getCORSHeaders(origin || undefined)
+        }
+      );
+    }
+    
     // Create service role client for database operations
     const serviceRoleClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -260,21 +286,19 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Perform collision-safe merge with table→ownerColumn map
+    // Perform collision-safe merge with explicit SQL calls
     const movedRecords: string[] = [];
     
     for (const [tableName, ownerColumn] of Object.entries(TABLE_OWNER_MAP)) {
       try {
         // Use INSERT-SELECT + ON CONFLICT DO NOTHING for safe migration
-        const { data, error } = await serviceRoleClient.rpc('merge_user_data', {
-          table_name: tableName,
-          owner_column: ownerColumn,
-          source_uid: sourceUid,
-          target_uid: targetUid
-        });
+        const { data, error } = await serviceRoleClient
+          .from(tableName)
+          .select('id')
+          .eq(ownerColumn, sourceUid);
         
         if (error) {
-          console.error(`Failed to merge table ${tableName} for correlation ID: ${correlationId}`, {
+          console.error(`Failed to query table ${tableName} for correlation ID: ${correlationId}`, {
             error,
             table: tableName,
             correlationId
@@ -282,8 +306,28 @@ export async function POST(request: NextRequest) {
           continue;
         }
         
-        if (data && data.moved_count > 0) {
-          movedRecords.push(`${tableName}:${data.moved_count}`);
+        if (data && data.length > 0) {
+          // Perform the merge using raw SQL for better control
+          const { error: mergeError } = await serviceRoleClient.rpc('exec_sql', {
+            sql_query: `
+              INSERT INTO ${tableName} (${ownerColumn}, created_at, updated_at)
+              SELECT '${targetUid}'::uuid, created_at, updated_at
+              FROM ${tableName}
+              WHERE ${ownerColumn} = '${sourceUid}'::uuid
+              ON CONFLICT DO NOTHING;
+            `
+          });
+          
+          if (mergeError) {
+            console.error(`Failed to merge table ${tableName} for correlation ID: ${correlationId}`, {
+              error: mergeError,
+              table: tableName,
+              correlationId
+            });
+            continue;
+          }
+          
+          movedRecords.push(`${tableName}:${data.length}`);
         }
         
       } catch (tableError) {
@@ -294,6 +338,9 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    
+    // Store idempotency result
+    await storeIdempotencyResult(idempotencyKey, { moved: movedRecords }, 3600);
     
     // Clear merge token cookie
     const cookieOptions = getCookieOptions();

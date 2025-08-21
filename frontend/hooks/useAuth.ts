@@ -7,10 +7,10 @@ import {
   isSupabaseConfigured, 
   handleUserLoadError, 
   createMockUser,
-  validateSupabaseFeatureSupport,
   verifyTokenRotation,
   extractIsAnonymous,
-  type TransformedUser 
+  type TransformedUser,
+  extractJtiFromToken
 } from '@/lib/utils/auth-utils';
 
 /**
@@ -28,14 +28,6 @@ export function useAuth() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // Boot-time feature support validation
-        if (!validateSupabaseFeatureSupport()) {
-          console.error('Supabase feature support validation failed');
-          setError('Application configuration error');
-          setIsLoading(false);
-          return;
-        }
-
         // Check if Supabase is configured
         if (!isSupabaseConfigured()) {
           console.warn('Supabase not configured, using mock user for development');
@@ -113,15 +105,48 @@ export function useAuth() {
       setIsLoading(true);
       setError(null);
 
-      const { data, error } = await supabaseBrowser.auth.signInAnonymously();
-      
-      if (error) {
-        setError(error.message);
-        return { error: error.message };
+      // Call the server endpoint instead of SDK directly
+      const response = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle normalized error codes
+        switch (result.error) {
+          case 'ANON_SIGNIN_UNSUPPORTED':
+            setError('Anonymous sign-in is not supported');
+            return { error: 'Anonymous sign-in is not supported' };
+          case 'RATE_LIMITED':
+            setError('Too many attempts. Please try again later.');
+            return { error: 'Too many attempts. Please try again later.' };
+          case 'CSRF':
+            setError('Security validation failed');
+            return { error: 'Security validation failed' };
+          case 'USER_EXISTS':
+            setError('User already exists');
+            return { error: 'User already exists' };
+          default:
+            setError('Anonymous sign-in failed');
+            return { error: 'Anonymous sign-in failed' };
+        }
       }
 
-      if (data.user) {
-        const transformedUser = transformSupabaseUser(data.user);
+      // Success - refresh session and user state
+      const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
+      
+      if (sessionError) {
+        setError('Failed to refresh session');
+        return { error: 'Failed to refresh session' };
+      }
+
+      if (session?.user) {
+        const transformedUser = transformSupabaseUser(session.user);
         setUser(transformedUser);
         setIsAnonymous(true);
         return { user: transformedUser };
@@ -183,7 +208,7 @@ export function useAuth() {
       // Email update successful - verify token rotation
       const tokenRotationVerified = await new Promise<boolean>((resolve) => {
         const unsubscribe = supabaseBrowser.auth.onAuthStateChange(async (event: any, session: any) => {
-          if (event === 'TOKEN_REFRESHED' && session) {
+          if ((event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' || event === 'SIGNED_IN') && session) {
             unsubscribe();
             
             // Verify token rotation
@@ -201,10 +226,31 @@ export function useAuth() {
           }
         });
         
-        // Timeout after 10 seconds
-        setTimeout(() => {
+        // Timeout after 10 seconds - fetch session and compare manually
+        setTimeout(async () => {
           unsubscribe();
-          resolve(false);
+          
+          try {
+            const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+            
+            if (currentSession) {
+              // Compare refresh_token and JWT jti to detect rotation
+              const refreshTokenChanged = preUpgradeSession.refresh_token !== currentSession.refresh_token;
+              const jtiChanged = extractJtiFromToken(preUpgradeSession.access_token) !== extractJtiFromToken(currentSession.access_token);
+              
+              if (refreshTokenChanged || jtiChanged) {
+                resolve(true); // Token rotation detected
+              } else {
+                console.warn('No token rotation detected within timeout');
+                resolve(false);
+              }
+            } else {
+              resolve(false);
+            }
+          } catch (error) {
+            console.error('Error checking token rotation during timeout:', error);
+            resolve(false);
+          }
         }, 10000);
       });
 

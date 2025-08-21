@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { validateSupabaseFeatureSupport, verifyTokenRotation, sanitizeRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { validateSupabaseFeatureSupport, verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { checkRateLimit, validateTrustedIP } from '@/lib/rate-limiting/upstash-redis';
 import { getCORSHeaders, getCookieOptions } from '@/lib/config/environment';
 
@@ -232,36 +232,36 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
 
   describe('Middleware Redirect Sanitization', () => {
     it('should reject external redirectTo URLs', () => {
-      expect(sanitizeRedirectUrl('https://evil.com')).toBe('/');
-      expect(sanitizeRedirectUrl('//evil.com')).toBe('/');
-      expect(sanitizeRedirectUrl('http://malicious.com')).toBe('/');
+      expect(validateRedirectUrl('https://evil.com')).toBe('/');
+      expect(validateRedirectUrl('//evil.com')).toBe('/');
+      expect(validateRedirectUrl('http://malicious.com')).toBe('/');
     });
 
     it('should preserve internal paths with query parameters', () => {
-      expect(sanitizeRedirectUrl('/profile?tab=settings')).toBe('/profile?tab=settings');
-      expect(sanitizeRedirectUrl('/profile?utm_source=email')).toBe('/profile?utm_source=email');
+      expect(validateRedirectUrl('/profile?tab=settings')).toBe('/profile?tab=settings');
+      expect(validateRedirectUrl('/profile?utm_source=email')).toBe('/profile?utm_source=email');
     });
 
     it('should reject dangerous patterns', () => {
-      expect(sanitizeRedirectUrl('/profile/../etc/passwd')).toBe('/');
-      expect(sanitizeRedirectUrl('/profile#javascript:alert(1)')).toBe('/');
-      expect(sanitizeRedirectUrl('/profile?redirect=//evil.com')).toBe('/');
+      expect(validateRedirectUrl('/profile/../etc/passwd')).toBe('/');
+      expect(validateRedirectUrl('/profile#javascript:alert(1)')).toBe('/');
+      expect(validateRedirectUrl('/profile?redirect=//evil.com')).toBe('/');
     });
 
     it('should allow only specific allowed paths', () => {
-      expect(sanitizeRedirectUrl('/app')).toBe('/app');
-      expect(sanitizeRedirectUrl('/dashboard')).toBe('/dashboard');
-      expect(sanitizeRedirectUrl('/profile')).toBe('/profile');
-      expect(sanitizeRedirectUrl('/settings')).toBe('/settings');
-      expect(sanitizeRedirectUrl('/app/123')).toBe('/app/123');
-      expect(sanitizeRedirectUrl('/profile/settings')).toBe('/profile/settings');
+      expect(validateRedirectUrl('/app')).toBe('/app');
+      expect(validateRedirectUrl('/dashboard')).toBe('/dashboard');
+      expect(validateRedirectUrl('/profile')).toBe('/profile');
+      expect(validateRedirectUrl('/settings')).toBe('/settings');
+      expect(validateRedirectUrl('/app/123')).toBe('/app/123');
+      expect(validateRedirectUrl('/profile/settings')).toBe('/profile/settings');
     });
 
     it('should reject previously allowed but now restricted paths', () => {
-      expect(sanitizeRedirectUrl('/admin')).toBe('/');
-      expect(sanitizeRedirectUrl('/favorites')).toBe('/');
-      expect(sanitizeRedirectUrl('/marketplace')).toBe('/');
-      expect(sanitizeRedirectUrl('/messages')).toBe('/');
+      expect(validateRedirectUrl('/admin')).toBe('/');
+      expect(validateRedirectUrl('/favorites')).toBe('/');
+      expect(validateRedirectUrl('/marketplace')).toBe('/');
+      expect(validateRedirectUrl('/messages')).toBe('/');
     });
   });
 
@@ -509,7 +509,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
 
     it('should handle malformed requests', () => {
       const malformedUrl = 'javascript:alert(1)';
-      const result = sanitizeRedirectUrl(malformedUrl);
+      const result = validateRedirectUrl(malformedUrl);
       
       expect(result).toBe('/');
     });
@@ -536,7 +536,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
 
     it('should prevent SQL injection in redirect URLs', () => {
       const sqlInjectionUrl = '/admin\'; DROP TABLE users; --';
-      const result = sanitizeRedirectUrl(sqlInjectionUrl);
+      const result = validateRedirectUrl(sqlInjectionUrl);
       
       expect(result).toBe('/');
     });

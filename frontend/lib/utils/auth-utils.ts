@@ -80,6 +80,18 @@ export function validateSupabaseFeatureSupport(): boolean {
 }
 
 /**
+ * Extract JWT ID (jti) from access token
+ */
+export function extractJtiFromToken(token: string): string | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.jti || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Verify token rotation after account upgrade
  * Checks refresh_token and JWT jti changes between pre/post upgrade states
  */
@@ -110,18 +122,6 @@ export function verifyTokenRotation(
   }
 }
 
-/**
- * Extract JWT ID (jti) from access token
- */
-function extractJtiFromToken(token: string): string | null {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.jti || null;
-  } catch {
-    return null;
-  }
-}
-
 // Versioned HMAC utilities for merge cookie
 const MERGE_COOKIE_KEY_ID = process.env.MERGE_COOKIE_KEY_ID || 'v1';
 const MERGE_COOKIE_HMAC_KEY_CURRENT = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || 'default-key';
@@ -130,80 +130,16 @@ const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOU
 
 
 /**
- * Sanitize redirect URL with strict path-only enforcement
- * Aligned with validateRedirectUrl for consistency
+ * DEPRECATED: Use validateRedirectUrl instead
+ * This function was removed due to security concerns - it was too permissive
+ * and could allow accidental misuse. All call sites should use validateRedirectUrl
+ * which has stricter validation and better security.
+ * 
+ * WARNING: Do not introduce alternative sanitizers. Use validateRedirectUrl only.
  */
 export function sanitizeRedirectUrl(url: string | null | undefined): string {
-  if (!url) {
-    return '/';
-  }
-  
-  try {
-    // Early guard: short-circuit non-relative inputs by checking startsWith('/') early
-    if (!url.startsWith('/')) {
-      return '/';
-    }
-    
-    // Reject protocol-relative URLs, fragments, and dangerous patterns
-    if (url.includes('://') || url.includes('//') || url.includes('..') || url.includes('#')) {
-      return '/';
-    }
-
-    // Check for encoded attacks in the original URL
-    const decodedUrl = decodeURIComponent(url);
-    if (decodedUrl.includes('://') || decodedUrl.includes('//') || decodedUrl.includes('#')) {
-      return '/';
-    }
-
-    // Enforce max length
-    if (url.length > 2048) {
-      return '/';
-    }
-
-    // Use the already decoded URL for parsing
-    const urlObj = new URL(decodedUrl, 'http://localhost');
-    const decodedPath = urlObj.pathname;
-    
-    // Check for encoded attacks in the pathname
-    if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('#')) {
-      return '/';
-    }
-    
-    // Treat "/" as exact root only
-    if (decodedPath === '/') {
-      return '/';
-    }
-    
-    // Allow prefixes only for specific paths
-    const allowedPrefixes = ['/app', '/dashboard', '/profile', '/settings'];
-    const hasAllowedPrefix = allowedPrefixes.some(prefix => 
-      decodedPath.startsWith(`${prefix}/`) || decodedPath === prefix
-    );
-    
-    if (!hasAllowedPrefix) {
-      return '/';
-    }
-
-    // Filter query parameters to safe ones only
-    const safeParams = new URLSearchParams();
-    const allowedParamPrefixes = ['utm_'];
-    const allowedExactParams = ['tab', 'ref'];
-    
-    // Use Array.from to avoid iteration issues
-    Array.from(urlObj.searchParams.entries()).forEach(([key, value]) => {
-      if (allowedExactParams.includes(key) || 
-          allowedParamPrefixes.some(prefix => key.startsWith(prefix))) {
-        safeParams.set(key, value);
-      }
-    });
-
-    // Reconstruct safe URL without fragments
-    const safeUrl = decodedPath + (safeParams.toString() ? `?${safeParams.toString()}` : '');
-    return safeUrl;
-    
-  } catch {
-    return '/';
-  }
+  console.warn('DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead.');
+  return validateRedirectUrl(url);
 }
 
 // Trusted IP configuration
@@ -282,7 +218,8 @@ function isValidIP(ip: string): boolean {
 }
 
 /**
- * Comprehensive CSRF validation with OPTIONS support and token fallback
+ * Comprehensive CSRF validation with strict Origin+Referer checks
+ * Disabled fallback until proper signed token validation is implemented
  */
 export function validateCSRF(
   origin: string | null,
@@ -290,13 +227,6 @@ export function validateCSRF(
   allowedOrigins: string[],
   csrfToken?: string | null
 ): boolean {
-  // Check for CSRF token fallback when Origin/Referer are missing
-  if ((!origin || !referer) && csrfToken) {
-    // Verify CSRF token server-side (this would integrate with your CSRF validation)
-    // For now, we'll accept any non-empty token as valid
-    return csrfToken.length > 0;
-  }
-  
   // Both Origin and Referer must be present and valid
   if (!origin || !referer) {
     return false;
@@ -358,14 +288,27 @@ export function extractIsAnonymous(u?: any): boolean {
 }
 
 /**
- * Generate a secure random password for anonymous users
+ * Generate a secure random password for anonymous users using crypto
  */
 export function generateSecurePassword(): string {
+  // Use crypto.getRandomValues for secure random generation
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  const array = new Uint8Array(32);
+  
+  if (typeof window !== 'undefined') {
+    // Browser environment
+    crypto.getRandomValues(array);
+  } else {
+    // Node.js environment
+    const crypto = require('crypto');
+    crypto.randomFillSync(array);
+  }
+  
   let password = '';
   for (let i = 0; i < 32; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+    password += chars.charAt(array[i] % chars.length);
   }
+  
   return password;
 }
 

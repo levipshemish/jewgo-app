@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { sanitizeRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
 // Limit processing scope to private routes only
 export const config = {
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     const user = session?.user;
     if (!user) {
       // No session - redirect to signin with sanitized redirect URL
-      const sanitizedRedirect = sanitizeRedirectUrl(request.nextUrl.pathname + request.nextUrl.search);
+      const sanitizedRedirect = validateRedirectUrl(request.nextUrl.pathname + request.nextUrl.search);
       const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
       
       return NextResponse.redirect(new URL(redirectUrl, request.url));
@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
     const isAnonymous = extractIsAnonymous(user);
     if (isAnonymous) {
       // Anonymous user - redirect to signin with sanitized redirect URL
-      const sanitizedRedirect = sanitizeRedirectUrl(request.nextUrl.pathname + request.nextUrl.search);
+      const sanitizedRedirect = validateRedirectUrl(request.nextUrl.pathname + request.nextUrl.search);
       const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
       
       return NextResponse.redirect(new URL(redirectUrl, request.url));

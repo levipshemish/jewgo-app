@@ -196,7 +196,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         };
       default:
         return {
-          cardClass: "w-[180px] rounded-2xl overflow-hidden p-3",
+          cardClass: "w-[200px] rounded-2xl overflow-hidden p-3",
           imageClass: "h-[126px]",
           titleClass: "text-sm font-semibold",
           badgeClass: "text-xs px-2 py-0.5"
