@@ -115,21 +115,13 @@ export function validateEnvironment(): void {
     process.env.CLEANUP_CRON_SECRET = 'development-cleanup-secret';
   }
 
-  // Validate Redis configuration in production - hard dependency
+  // Validate Redis configuration in production (simplified for Docker)
   if (IS_PRODUCTION) {
     const hasStandardRedis = !!(REDIS_URL || (REDIS_HOST && REDIS_PASSWORD));
     
     if (!hasStandardRedis) {
-      const errorMessage = 'Redis configuration is required in production for rate limiting and idempotency. Set REDIS_URL or REDIS_HOST+REDIS_PASSWORD.';
-      console.error('🚨 CRITICAL:', errorMessage);
-      console.error('🚨 Required environment variables:');
-      console.error('🚨   - REDIS_URL (preferred)');
-      console.error('🚨   - OR REDIS_HOST + REDIS_PASSWORD');
-      console.error('🚨   - Optional: REDIS_PORT, REDIS_DB');
-      throw new Error(errorMessage);
+      console.warn('Redis configuration not found in production - using in-memory rate limiting');
     }
-    
-    console.log('✅ Redis configuration validated for production');
   }
 }
 
