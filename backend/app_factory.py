@@ -2001,20 +2001,13 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
     def restaurant_hours(restaurant_id: int):
         """Handle restaurant hours - GET for display, PUT for admin updates."""
         if request.method == "GET":
-            try:
-                # Simple test response without database
-                return jsonify({
-                    "status": "success",
-                    "message": "Hours endpoint is working",
-                    "restaurant_id": restaurant_id,
-                    "test": "This is a test response"
-                }), 200
-
-            except Exception as e:
-                logger.warning(
-                    f"Error in hours endpoint for restaurant {restaurant_id}: {e}"
-                )
-                return jsonify({"error": str(e)}), 500
+            # Simple test response without database or logger
+            return jsonify({
+                "status": "success",
+                "message": "Hours endpoint is working",
+                "restaurant_id": restaurant_id,
+                "test": "This is a test response"
+            }), 200
 
         elif request.method == "PUT":
             try:
