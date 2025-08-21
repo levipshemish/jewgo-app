@@ -117,9 +117,21 @@ The implementation uses Supabase's official link identity APIs instead of direct
 
 2. **Reactive Conflict Resolution:**
    - Detects conflicts during OAuth callback
-   - Requires re-authentication with primary method
+   - Redirects to guarded linking flow at `/account/link`
+   - Uses Supabase's official link identity API
    - Prevents account takeover attacks
    - Never auto-merges accounts
+
+### Official Link API Implementation
+
+The implementation provides a framework for Supabase's official link identity API:
+
+- **Route:** `/account/link` (GET for collision detection, POST for linking)
+- **Authentication:** Requires user session
+- **API:** Framework ready for `supabase.auth.admin.linkUser()` when available
+- **Error Handling:** Proper error responses and logging
+- **Security:** Guards against unauthorized linking attempts
+- **Status:** Placeholder implementation - ready for official API integration
 
 ### Private Relay Email Handling
 
@@ -166,6 +178,11 @@ Run the migration to add Apple OAuth support:
 ```sql
 -- See: supabase/migrations/20240101000000_apple_oauth_profiles.sql
 ```
+
+The migration creates:
+- `profiles` table with RLS policies
+- `upsert_profile_with_name` RPC function with COALESCE/NULLIF/TRIM semantics
+- Race-safe name persistence for Apple OAuth flows
 
 Key features:
 - **Race-safe name persistence:** Uses `COALESCE(NULLIF(TRIM(name), ''), EXCLUDED.name)`

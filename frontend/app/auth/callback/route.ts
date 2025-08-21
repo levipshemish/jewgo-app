@@ -55,13 +55,13 @@ export async function GET(request: NextRequest) {
       try {
         // Check if user has multiple identities (potential collision)
         if (user.identities && user.identities.length > 1) {
-          oauthLogger.info('Multiple identities detected, fallback to safeNext', { 
+          oauthLogger.info('Multiple identities detected, redirecting to linking flow', { 
             userId: user.id, 
             identityCount: user.identities.length 
           });
           
-          // Fallback to safeNext instead of unimplemented /account/link route
-          // TODO: Reintroduce this redirect when /account/link flow is implemented
+          // Redirect to guarded linking flow when collision is inferred
+          return NextResponse.redirect(new URL('/account/link', request.url));
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 
