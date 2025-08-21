@@ -17,7 +17,15 @@
     "mcp:schema-check": "./scripts/mcp-schema-check.sh",
     "mcp:update": "pnpm -C tools/ts-next-strict-mcp update --no-frozen-lockfile && pnpm -C tools/ci-guard-mcp update --no-frozen-lockfile && pipx upgrade schema-drift-mcp",
     "mcp:cleanup": "rm -rf tools/*/node_modules tools/*/dist",
-    "mcp:reset": "pnpm mcp:cleanup && pnpm mcp:setup"
+    "mcp:reset": "pnpm mcp:cleanup && pnpm mcp:setup",
+    "// Docker development scripts": "",
+    "docker:dev": "./scripts/auto-docker-dev.sh start",
+    "docker:watch": "./scripts/auto-docker-dev.sh watch",
+    "docker:rebuild": "./scripts/auto-docker-dev.sh rebuild",
+    "docker:logs": "./scripts/auto-docker-dev.sh logs",
+    "docker:status": "./scripts/auto-docker-dev.sh status",
+    "docker:stop": "./scripts/auto-docker-dev.sh stop",
+    "docker:cleanup": "./scripts/auto-docker-dev.sh cleanup"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"

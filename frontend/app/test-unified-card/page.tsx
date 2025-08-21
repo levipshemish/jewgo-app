@@ -67,7 +67,7 @@ export default function TestUnifiedCardPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          UnifiedCard Layout Test
+          UnifiedCard Layout Test - Auto-Rebuild Working! 🚀
         </h1>
         
         <div className="mb-8">

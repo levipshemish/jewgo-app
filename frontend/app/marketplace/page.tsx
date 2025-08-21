@@ -5,13 +5,45 @@ import React, { useState, useEffect } from 'react';
 
 import { Header } from '@/components/layout';
 import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
+import { UnifiedCard } from '@/components/ui/UnifiedCard';
 
 import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
-import { EnhancedMarketplaceCard, EnhancedMarketplaceGrid } from '@/components/marketplace';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+
+// Transform marketplace listing data to UnifiedCard format
+const transformMarketplaceToCardData = (listing: MarketplaceListing) => {
+  // Format price from cents to dollars
+  const formatPrice = (priceCents: number) => {
+    return `$${(priceCents / 100).toFixed(0)}`;
+  };
+
+  // Format condition for display
+  const formatCondition = (condition: string) => {
+    switch (condition) {
+      case 'new': return 'New';
+      case 'used_like_new': return 'Like New';
+      case 'used_good': return 'Good';
+      case 'used_fair': return 'Fair';
+      default: return condition;
+    }
+  };
+
+  return {
+    id: listing.id,
+    imageUrl: listing.thumbnail || listing.images?.[0],
+    imageTag: listing.category_name || listing.kind,
+    imageTagLink: `/marketplace?category=${listing.category_id}`,
+    title: listing.title,
+    badge: listing.rating ? listing.rating.toString() : undefined,
+    subtitle: formatPrice(listing.price_cents),
+    additionalText: formatCondition(listing.condition),
+    showHeart: true,
+    isLiked: false // This will be handled by the component internally
+  };
+};
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -258,11 +290,17 @@ export default function MarketplacePage() {
 
           </div>
         ) : (
-          <EnhancedMarketplaceGrid
-            listings={listings}
-            loading={false}
-            className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {listings.map(listing => (
+              <UnifiedCard
+                key={listing.id}
+                data={transformMarketplaceToCardData(listing)}
+                onLike={() => {}} // No like functionality for marketplace listings
+                onShare={() => {}} // No share functionality for marketplace listings
+                onViewDetails={() => router.push(`/marketplace/${listing.id}`)}
+              />
+            ))}
+          </div>
         )}
 
         {/* Load More */}
