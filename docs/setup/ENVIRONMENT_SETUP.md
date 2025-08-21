@@ -102,7 +102,7 @@ SENTRY_DSN=your-sentry-dsn
 LOG_LEVEL=INFO
 
 # Rate Limiting
-RATELIMIT_DEFAULT=200 per day;50 per hour;10 per minute
+RATELIMIT_DEFAULT=10000 per day;1000 per hour;100 per minute
 RATELIMIT_STORAGE_URL=memory://
 
 # Server Configuration
@@ -113,10 +113,10 @@ ADMIN_TOKEN=your-admin-token-here
 SCRAPER_TOKEN=your-scraper-token-here
 
 # Rate Limiting Configuration
-SCRAPER_RATE_LIMIT_HOUR=100
-ADMIN_RATE_LIMIT_HOUR=50
-IP_RATE_LIMIT_HOUR=1000
-TOKEN_RATE_LIMIT_HOUR=500
+SCRAPER_RATE_LIMIT_HOUR=1000
+ADMIN_RATE_LIMIT_HOUR=500
+IP_RATE_LIMIT_HOUR=5000
+TOKEN_RATE_LIMIT_HOUR=2000
 
 # Allowed IPs (comma-separated)
 ALLOWED_IPS=127.0.0.1,::1

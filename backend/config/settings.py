@@ -40,8 +40,8 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 
 # Rate Limiting
-RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "100 per minute")
-RATE_LIMIT_STRICT = os.getenv("RATE_LIMIT_STRICT", "10 per minute")
+RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "1000 per minute")
+RATE_LIMIT_STRICT = os.getenv("RATE_LIMIT_STRICT", "100 per minute")
 
 # Cron Job Schedules
 CRON_SCHEDULES = {

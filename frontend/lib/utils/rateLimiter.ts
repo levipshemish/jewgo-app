@@ -93,19 +93,19 @@ export const rateLimitConfigs = {
   // Strict limit for registration/login
   auth: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 5,
+    maxRequests: 20, // Increased from 5 to 20
     message: 'Too many authentication attempts. Please try again later.'
   },
-  // More lenient for API calls
+  // Much more lenient for API calls
   api: {
     windowMs: 1 * 60 * 1000, // 1 minute
-    maxRequests: 200, // Increased from 60 to 200
+    maxRequests: 1000, // Increased from 200 to 1000
     message: 'Too many requests. Please slow down.'
   },
   // Very strict for password reset
   passwordReset: {
     windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 3,
+    maxRequests: 10, // Increased from 3 to 10
     message: 'Too many password reset attempts. Please try again later.'
   }
 };

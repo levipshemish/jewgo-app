@@ -1437,7 +1437,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
     # Database connection test endpoint
     @app.route("/api/db-test", methods=["GET"])
-    @limiter.limit("10 per minute")
+    @limiter.limit("100 per minute")
     def db_test():
         """Test database connection and return detailed status."""
         try:
@@ -1505,7 +1505,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
     # Health check endpoint
     @app.route("/health", methods=["GET"])
-    @limiter.limit("60 per minute")
+    @limiter.limit("500 per minute")
     def health_check():
         """Health check endpoint for monitoring."""
         try:
@@ -1641,7 +1641,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
     # Restaurants endpoints
     @app.route("/api/restaurants", methods=["GET"])
-    @limiter.limit("100 per minute")
+    @limiter.limit("1000 per minute")
     def get_restaurants():
         """Get restaurants with optional filtering and pagination."""
         try:
@@ -1738,7 +1738,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
 
     # Search endpoint (used by tests), gated by advanced_search feature flag
     @app.route("/api/restaurants/search", methods=["GET"])
-    @limiter.limit("60 per minute")
+    @limiter.limit("500 per minute")
     @require_feature_flag("advanced_search", default=True)
     def search_restaurants():
         """Search restaurants by query parameter 'q' using unified search system."""
@@ -1817,7 +1817,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return jsonify({"error": "Failed to fetch kosher types"}), 500
 
     @app.route("/api/restaurants/business-types", methods=["GET"])
-    @limiter.limit("60 per minute")
+    @limiter.limit("500 per minute")
     def get_business_types():
         """Get unique business types from restaurants table"""
         try:
@@ -1906,7 +1906,7 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return error_response("Failed to fetch statistics", 500)
 
     @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
-    @limiter.limit("500 per minute")  # High limit for testing
+    @limiter.limit("1000 per minute")  # High limit for production
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID."""
         try:
