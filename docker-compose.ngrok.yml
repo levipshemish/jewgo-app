@@ -33,7 +33,7 @@ services:
     volumes:
       - ./backend:/app
     ports:
-      - "8081:8081"
+      - "8082:8082"
     depends_on:
       - postgres
       - redis
@@ -71,7 +71,7 @@ services:
     image: ngrok/ngrok:latest
     ports:
       - "4041:4040"
-    command: http backend:8081 --log=stdout
+    command: http backend:8082 --log=stdout
     depends_on:
       - backend
     networks:

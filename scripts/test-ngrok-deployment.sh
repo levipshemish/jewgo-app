@@ -100,7 +100,7 @@ run_test "Redis health check" \
     "Redis should respond with PONG"
 
 run_test "Backend health endpoint" \
-    "curl -f http://localhost:8081/health" \
+    "curl -f http://localhost:8082/health" \
     "Backend health endpoint should respond"
 
 run_test "Frontend accessibility" \
@@ -114,7 +114,7 @@ echo "🌐 Network Connectivity Tests"
 echo "----------------------------"
 
 run_test "Backend API accessible" \
-    "curl -f http://localhost:8081/api/v4/restaurants" \
+    "curl -f http://localhost:8082/api/v4/restaurants" \
     "Backend API should be accessible"
 
 run_test "Frontend serves content" \
@@ -172,11 +172,11 @@ echo "⚙️  Application Functionality Tests"
 echo "----------------------------------"
 
 run_test "Backend API returns JSON" \
-    "curl -s http://localhost:8081/api/v4/restaurants | jq . >/dev/null" \
+    "curl -s http://localhost:8082/api/v4/restaurants | jq . >/dev/null" \
     "Backend API should return valid JSON"
 
 run_test "Backend has restaurants data" \
-    "curl -s http://localhost:8081/api/v4/restaurants | jq '.restaurants | length' | grep -q '[0-9]'" \
+    "curl -s http://localhost:8082/api/v4/restaurants | jq '.restaurants | length' | grep -q '[0-9]'" \
     "Backend should have restaurants data"
 
 run_test "Frontend loads without errors" \
@@ -208,7 +208,7 @@ if [[ $TESTS_FAILED -eq 0 ]]; then
     echo ""
     echo "🌐 Local URLs:"
     echo "   Frontend: http://localhost:3000"
-    echo "   Backend:  http://localhost:8081"
+    echo "   Backend:  http://localhost:8082"
     echo ""
 else
     error "❌ Some tests failed. Please check the deployment."

@@ -169,10 +169,8 @@ export default function EateryExplorePage() {
     );
   };
 
-  // Request location permission on component mount
-  useEffect(() => {
-    getUserLocation();
-  }, []);
+  // NOTE: Location is only requested when user explicitly clicks the "Enable" button
+  // This prevents browser security violations for geolocation requests without user gestures
 
   // Detect mobile device and enable infinite scroll
   useEffect(() => {

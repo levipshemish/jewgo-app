@@ -69,15 +69,15 @@ REDIS_URL=redis://redis:6379
 CORS_ORIGINS=https://*.ngrok.io,https://*.ngrok-free.app,http://localhost:3000
 JWT_SECRET_KEY=jewgo-jwt-$(openssl rand -hex 16)
 LOG_LEVEL=INFO
-PORT=8081
+PORT=8082
 ENVIRONMENT=production
 EOF
 
 # Frontend environment
 cat > "$PROJECT_ROOT/config/environment/frontend.production.env" << EOF
 NODE_ENV=production
-NEXT_PUBLIC_API_URL=http://backend:8081
-NEXT_PUBLIC_BACKEND_URL=http://backend:8081
+NEXT_PUBLIC_API_URL=http://backend:8082
+NEXT_PUBLIC_BACKEND_URL=http://backend:8082
 NEXT_PUBLIC_URL=http://localhost:3000
 DATABASE_URL=postgresql://jewgo_user:jewgo_password@postgres:5432/jewgo
 NEXTAUTH_SECRET=jewgo-nextauth-$(openssl rand -hex 16)
@@ -123,7 +123,7 @@ services:
     volumes:
       - ./backend:/app
     ports:
-      - "8081:8081"
+      - "8082:8082"
     depends_on:
       - postgres
       - redis
@@ -161,7 +161,7 @@ services:
     image: ngrok/ngrok:latest
     ports:
       - "4041:4040"
-    command: http backend:8081 --log=stdout
+    command: http backend:8082 --log=stdout
     depends_on:
       - backend
     networks:
@@ -194,7 +194,7 @@ sleep 45
 log "Checking service health..."
 
 # Check backend
-if curl -f http://localhost:8081/health >/dev/null 2>&1; then
+if curl -f http://localhost:8082/health >/dev/null 2>&1; then
     log "✓ Backend is healthy"
 else
     warn "Backend health check failed, but continuing..."
@@ -223,7 +223,7 @@ echo "🔧 Backend API URL: $BACKEND_URL"
 echo ""
 echo "🌐 Local URLs:"
 echo "   Frontend: http://localhost:3000"
-echo "   Backend:  http://localhost:8081"
+echo "   Backend:  http://localhost:8082"
 echo "   Database: localhost:5432"
 echo "   Redis:    localhost:6379"
 echo ""

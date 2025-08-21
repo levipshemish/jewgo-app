@@ -176,10 +176,8 @@ export default function MarketplacePage() {
     );
   };
 
-  // Request location permission on component mount
-  useEffect(() => {
-    getUserLocation();
-  }, []);
+  // NOTE: Location is only requested when user explicitly clicks the "Enable" button
+  // This prevents browser security violations for geolocation requests without user gestures
 
   const loadListings = async (page = 1, append = false) => {
     try {
