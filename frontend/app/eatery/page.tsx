@@ -54,7 +54,6 @@ export default function EateryExplorePage() {
   const [activeTab, setActiveTab] = useState('eatery');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(4); // Default to 4 rows
   const [itemsPerPage, setItemsPerPage] = useState(8); // Default fallback
   
   // Infinite scroll state
@@ -80,21 +79,35 @@ export default function EateryExplorePage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
-  // Calculate items per page based on 2-column grid layout and responsive rows
+  // Calculate items per page based on screen size and responsive grid
   const getItemsPerPage = () => {
-    // Always use 2 columns as per project requirements
-    // Use 4 rows on larger screens, 3 rows on medium screens, 2 rows on small screens
     const screenWidth = window.innerWidth;
+    
+    // Determine columns based on screen size
+    let columns = 2; // Default for mobile
+    
+    if (screenWidth >= 1536) { // 2xl breakpoint
+      columns = 6;
+    } else if (screenWidth >= 1280) { // xl breakpoint
+      columns = 5;
+    } else if (screenWidth >= 1024) { // lg breakpoint
+      columns = 4;
+    } else if (screenWidth >= 640) { // sm breakpoint
+      columns = 3;
+    }
+    // Mobile: 2 columns (default)
+    
+    // Calculate rows based on screen size
     let rows = 4; // Default for large screens
     
     if (screenWidth < 640) { // sm breakpoint
-      rows = 2;
+      rows = 2; // Mobile: 2 rows
     } else if (screenWidth < 1024) { // lg breakpoint
-      rows = 3;
+      rows = 3; // Tablet: 3 rows
     }
+    // Desktop: 4 rows (default)
     
-    setRowsPerPage(rows);
-    return 2 * rows; // 2 columns * rows
+    return columns * rows;
   };
 
   // Update items per page when window resizes
@@ -637,9 +650,9 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 restaurant-grid" style={{ gridTemplateRows: `repeat(${rowsPerPage}, minmax(0, 1fr))` }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 restaurant-grid">
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <div key={restaurant.id} className="relative">
+                  <div key={restaurant.id} className="relative flex justify-center">
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
                       variant="default"
@@ -653,7 +666,7 @@ export default function EateryExplorePage() {
                         // Handle tag click - you can add navigation logic here
                         console.log('Tag clicked:', tagLink);
                       }}
-                      className="w-full"
+                      className="w-[200px] flex-shrink-0"
                     />
                   </div>
                 ))}
@@ -669,7 +682,7 @@ export default function EateryExplorePage() {
                   </>
                 ) : (
                   <>
-                    Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages}) - {rowsPerPage} rows per page
+                    Showing {paginatedRestaurants.length} items (Page {currentPage} of {totalPages}) - {getItemsPerPage()} cards per page
                     {hasActiveFilters && ` - ${getFilterCount()} active filter(s)`}
                   </>
                 )}
