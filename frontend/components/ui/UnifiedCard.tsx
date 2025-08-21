@@ -223,7 +223,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         'relative bg-transparent rounded-xl overflow-hidden cursor-pointer group',
         'border border-gray-200/50 hover:border-gray-300/70',
         'transition-all duration-200 ease-out',
-        'flex flex-col h-full', // Ensure consistent height
+        'flex flex-col', // Remove h-full to allow responsive stretching
         className
       )}
       onClick={handleCardClick}
@@ -419,7 +419,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <motion.div 
-        className="pt-3 flex-1 flex flex-col justify-between"
+        className="pt-3 flex flex-col"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
@@ -450,7 +450,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center gap-3 min-h-[16px] mt-auto">
+        <div className="flex justify-between items-center gap-3 min-h-[16px]">
           {cardData.subtitle && (
             <p 
               className="text-xs text-gray-600 m-0 text-left whitespace-nowrap flex-shrink-0 truncate transition-colors duration-200 group-hover:text-gray-700"
