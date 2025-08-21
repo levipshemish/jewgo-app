@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition } from 'react';
+import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -17,7 +17,17 @@ import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters } from '@/lib/filters/schema';
 
-export default function EateryPage() {
+// Loading component for Suspense fallback
+function EateryPageLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    </div>
+  );
+}
+
+// Main component that uses useSearchParams
+function EateryPageContent() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -443,5 +453,13 @@ export default function EateryPage() {
         <BottomNavigation />
       )}
     </div>
+  );
+}
+
+export default function EateryPage() {
+  return (
+    <Suspense fallback={<EateryPageLoading />}>
+      <EateryPageContent />
+    </Suspense>
   );
 }
