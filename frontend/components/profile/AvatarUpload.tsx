@@ -152,6 +152,10 @@ export default function AvatarUpload({
                 height={128}
                 className="w-full h-full object-cover"
                 priority
+                onError={() => {
+                  // Fallback to default avatar if image fails to load
+                  setPreviewUrl(null);
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">

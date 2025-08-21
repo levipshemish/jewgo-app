@@ -175,7 +175,7 @@ export default function ReviewsSection({
 
   // Handle review update
   const handleUpdateReview = async (reviewData: ReviewData) => {
-    if (!editingReview) return;
+    if (!editingReview) {return;}
 
     try {
       const response = await fetch(`/api/reviews/${editingReview.id}`, {

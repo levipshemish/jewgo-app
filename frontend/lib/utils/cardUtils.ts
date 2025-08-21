@@ -247,7 +247,7 @@ export const imageStates = {
  * Get image state classes
  */
 export const getImageStateClasses = (loading: boolean, error: boolean): string => {
-  if (loading) return imageStates.loading;
-  if (error) return imageStates.error;
+  if (loading) {return imageStates.loading;}
+  if (error) {return imageStates.error;}
   return imageStates.success;
 };

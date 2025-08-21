@@ -244,7 +244,7 @@ export default function UnifiedRestaurantCard({
             onLoad={handleImageLoad}
             onError={handleImageError}
             sizes="200px"
-            unoptimized={heroSrc.includes('cloudinary.com')}
+            unoptimized={heroSrc.includes('cloudinary.com') || heroSrc.includes('googleusercontent.com') || heroSrc.includes('unsplash.com')}
             priority={false}
           />
         ) : (

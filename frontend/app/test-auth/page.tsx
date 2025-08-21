@@ -24,7 +24,7 @@ export default function TestAuthPage() {
         
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-          setDebugInfo(prev => prev + '\nUsing placeholder Supabase configuration');
+          setDebugInfo(prev => `${prev  }\nUsing placeholder Supabase configuration`);
           setIsLoading(false);
           return;
         }
@@ -33,23 +33,23 @@ export default function TestAuthPage() {
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         
         if (error) {
-          setDebugInfo(prev => prev + `\nAuth error: ${error.message}`);
+          setDebugInfo(prev => `${prev  }\nAuth error: ${error.message}`);
           handleUserLoadError(error);
         } else if (user) {
           // Use centralized user transformation
           const userData = transformSupabaseUser(user);
           setUser(userData);
-          setDebugInfo(prev => prev + `\nUser authenticated: ${user.email}`);
+          setDebugInfo(prev => `${prev  }\nUser authenticated: ${user.email}`);
         } else {
-          setDebugInfo(prev => prev + '\nNo user found');
+          setDebugInfo(prev => `${prev  }\nNo user found`);
         }
         
         // Get session info
         const { data: { session } } = await supabaseBrowser.auth.getSession();
-        setDebugInfo(prev => prev + `\nSession: ${session ? 'active' : 'none'}`);
+        setDebugInfo(prev => `${prev  }\nSession: ${session ? 'active' : 'none'}`);
         
       } catch (error) {
-        setDebugInfo(prev => prev + `\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setDebugInfo(prev => `${prev  }\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
         handleUserLoadError(error);
       } finally {
         setIsLoading(false);
@@ -63,9 +63,9 @@ export default function TestAuthPage() {
     try {
       await supabaseBrowser.auth.signOut();
       setUser(null);
-      setDebugInfo(prev => prev + '\nSigned out successfully');
+      setDebugInfo(prev => `${prev  }\nSigned out successfully`);
     } catch (error) {
-      setDebugInfo(prev => prev + `\nSign out error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setDebugInfo(prev => `${prev  }\nSign out error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

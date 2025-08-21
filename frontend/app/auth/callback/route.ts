@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { validateRedirectUrl, mapAppleOAuthError } from '@/lib/utils/auth-utils';
+import { validateRedirectUrl } from '@/lib/utils/auth-utils';
 import { detectProvider, isAppleUser, persistAppleUserName, logOAuthEvent, isAppleOAuthEnabled } from '@/lib/utils/auth-utils.server';
 import { oauthLogger } from '@/lib/utils/logger';
 
@@ -13,13 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     const error = searchParams.get('error');
-    const provider = searchParams.get('provider');
     const safeNext = validateRedirectUrl(searchParams.get('next'));
-
-    // Early feature flag gating for Apple OAuth
-    if (provider === 'apple' && !isAppleOAuthEnabled()) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
 
     // Handle OAuth errors
     if (error) {
@@ -54,22 +48,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
       
-      // Attempt reactive identity collision handling using official Supabase APIs
+      // Handle reactive identity collision using official Supabase APIs
       try {
         // Check if user has multiple identities (potential collision)
         if (user.identities && user.identities.length > 1) {
-          oauthLogger.info('Multiple identities detected, attempting safe link', { 
+          oauthLogger.info('Multiple identities detected, redirecting to guarded link route', { 
             userId: user.id, 
             identityCount: user.identities.length 
           });
           
-          // For now, log the collision and continue with normal flow
-          // In a full implementation, this would attempt to link identities
-          // and redirect to a guarded re-auth + link UX route on conflicts
-          oauthLogger.warn('Identity collision detected - implement full linking logic', {
-            userId: user.id,
-            identities: user.identities.map(id => ({ provider: id.provider, id: id.id }))
-          });
+          // Redirect to guarded route that requires re-auth with primary method
+          const linkUrl = new URL('/account/link', request.url);
+          linkUrl.searchParams.set('provider', provider);
+          linkUrl.searchParams.set('next', safeNext);
+          return NextResponse.redirect(linkUrl);
         }
       } catch (linkError) {
         oauthLogger.error('Identity linking attempt failed', { 

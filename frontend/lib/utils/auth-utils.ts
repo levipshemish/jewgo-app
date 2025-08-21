@@ -51,32 +51,35 @@ export function isSupabaseConfigured(): boolean {
  * Transform Supabase user data with provider detection and Apple OAuth support
  */
 export function transformSupabaseUser(user: User | null): TransformedUser | null {
-  if (!user) return null;
+  if (!user) {return null;}
 
   const provider = user.app_metadata?.provider ?? 'unknown';
   
   // Handle known providers with proper typing
   const providerInfo = (() => {
     switch (provider) {
-      case 'apple':
+      case 'apple': {
         return {
           name: 'Apple',
           icon: '🍎',
           color: '#000000'
         };
-      case 'google':
+      }
+      case 'google': {
         return {
           name: 'Google',
           icon: '🔍',
           color: '#4285F4'
         };
-      default:
+      }
+      default: {
         // Unknown provider - use generic fallback
         return {
           name: 'Account',
           icon: '👤',
           color: '#6B7280'
         };
+      }
     }
   })();
 
@@ -149,9 +152,16 @@ export function isValidUser(user: any): user is TransformedUser {
  * Treats "/" as exact root only, allows prefixes for specific paths
  */
 export function validateRedirectUrl(url: string | null | undefined): string {
-  if (!url) return '/';
+  if (!url) {
+    return '/';
+  }
   
   try {
+    // Early guard: short-circuit non-relative inputs by checking startsWith('/') early
+    if (!url.startsWith('/')) {
+      return '/';
+    }
+    
     // Reject protocol-relative URLs, fragments, and dangerous patterns
     if (url.includes('://') || url.includes('//') || url.includes('..') || url.includes('#')) {
       return '/';
@@ -185,7 +195,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     // Allow prefixes only for specific paths
     const allowedPrefixes = ['/app', '/dashboard', '/profile', '/settings'];
     const hasAllowedPrefix = allowedPrefixes.some(prefix => 
-      decodedPath.startsWith(prefix + '/') || decodedPath === prefix
+      decodedPath.startsWith(`${prefix  }/`) || decodedPath === prefix
     );
     
     if (!hasAllowedPrefix) {

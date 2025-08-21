@@ -741,6 +741,16 @@ def create_app(config_class=None):
     except Exception as e:
         logger.error(f"Error registering API v4 routes blueprint: {e}")
 
+    # Register mock API routes for development
+    try:
+        from mock_api import mock_bp
+        app.register_blueprint(mock_bp)
+        logger.info("Mock API routes blueprint registered successfully")
+    except ImportError as e:
+        logger.warning(f"Could not register mock API routes blueprint: {e}")
+    except Exception as e:
+        logger.error(f"Error registering mock API routes blueprint: {e}")
+
     # Search blueprint removed - using direct PostgreSQL search
 
     # Register error handlers
