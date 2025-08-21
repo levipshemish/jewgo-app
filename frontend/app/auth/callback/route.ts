@@ -14,11 +14,6 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const safeNext = validateRedirectUrl(searchParams.get('next'));
 
-    // Enforce Apple OAuth feature flag
-    if (!isAppleOAuthEnabled()) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-
     // Handle OAuth errors
     if (error) {
       console.error('[OAUTH] OAuth error:', error);
@@ -34,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // Perform server-side code exchange
     const supabase = await createSupabaseServerClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession({ code });
     
     if (exchangeError) {
       console.error('[OAUTH] Code exchange error:', exchangeError);
@@ -47,10 +42,34 @@ export async function GET(request: NextRequest) {
       const provider = detectProvider(user);
       logOAuthEvent(user.id, provider, 'callback_success');
       
+      // Enforce Apple OAuth feature flag only for Apple users
+      if (provider === 'apple' && !isAppleOAuthEnabled()) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      
+      // Handle reactive identity collision detection
+      try {
+        // Check for existing identities to detect potential collisions
+        const { data: identities } = await supabase.auth.admin.listIdentities(user.id);
+        if (identities && identities.length > 1) {
+          // Multiple identities detected - this could indicate a collision
+          console.warn('[OAUTH] Multiple identities detected for user:', user.id);
+          
+          // For now, log the collision but continue with normal flow
+          // In a full implementation, this would trigger a re-auth flow
+          logOAuthEvent(user.id, provider, 'identity_collision_detected');
+        }
+      } catch (identityError) {
+        // Identity check failed - continue with normal flow
+        console.warn('[OAUTH] Identity check failed:', identityError);
+      }
+      
       // Handle Apple-specific name persistence
       if (isAppleUser(user)) {
         const name = user.user_metadata?.full_name || user.user_metadata?.name || null;
-        await persistAppleUserName(user.id, name);
+        // Pass provider and provider_user_id if available from identities
+        const providerUserId = user.identities?.[0]?.identity_data?.sub || null;
+        await persistAppleUserName(user.id, name, provider, providerUserId);
       }
     }
 

@@ -140,7 +140,7 @@ export function createMockUser(): TransformedUser {
 export function isValidUser(user: any): user is TransformedUser {
   return user && 
          typeof user.id === 'string' && 
-         typeof user.email === 'string' &&
+         (user.email === undefined || typeof user.email === 'string') &&
          typeof user.provider === 'string';
 }
 
@@ -168,8 +168,9 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       return '/';
     }
 
-    const urlObj = new URL(url, 'http://localhost');
-    const decodedPath = decodeURIComponent(urlObj.pathname);
+    // Use the already decoded URL for parsing
+    const urlObj = new URL(decodedUrl, 'http://localhost');
+    const decodedPath = urlObj.pathname;
     
     // Check for encoded attacks in the pathname
     if (decodedPath.includes('://') || decodedPath.includes('//') || decodedPath.includes('#')) {

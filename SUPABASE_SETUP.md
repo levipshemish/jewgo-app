@@ -164,7 +164,7 @@ The implementation includes corrected redirect validation:
 Run the migration to add Apple OAuth support:
 
 ```sql
--- See: frontend/lib/migrations/20240101000000_apple_oauth_profiles.sql
+-- See: supabase/migrations/20240101000000_apple_oauth_profiles.sql
 ```
 
 Key features:

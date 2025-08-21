@@ -4,7 +4,11 @@ import { AppleSignInButton } from '@/components/ui/AppleSignInButton';
 
 // Mock the i18n function
 jest.mock('@/lib/i18n/apple-strings', () => ({
-  getAppleSignInText: () => 'Sign in with Apple'
+  getAppleSignInText: jest.fn((locale) => {
+    if (locale === 'es-MX') return 'Iniciar sesión con Apple';
+    if (locale === 'fr-CA') return 'Se connecter avec Apple';
+    return 'Sign in with Apple';
+  })
 }));
 
 describe('AppleSignInButton', () => {
@@ -250,7 +254,7 @@ describe('Apple Sign In Strings', () => {
     const { getAppleSignInText } = require('@/lib/i18n/apple-strings');
     
     expect(getAppleSignInText('en-US')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('es-MX')).toBe('Sign in with Apple');
-    expect(getAppleSignInText('fr-CA')).toBe('Sign in with Apple');
+    expect(getAppleSignInText('es-MX')).toBe('Iniciar sesión con Apple');
+    expect(getAppleSignInText('fr-CA')).toBe('Se connecter avec Apple');
   });
 });

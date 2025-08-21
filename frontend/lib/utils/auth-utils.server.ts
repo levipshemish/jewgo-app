@@ -34,9 +34,20 @@ export async function persistAppleUserName(userId: string, name: string | null, 
  * Create HMAC-based analytics key for PII-safe logging
  */
 export function createAnalyticsKey(userId: string): string {
-  const secret = process.env.ANALYTICS_HMAC_SECRET || 'default-secret';
+  const secret = process.env.ANALYTICS_HMAC_SECRET;
+  
+  // Harden the function to throw in production if secret is missing
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ANALYTICS_HMAC_SECRET is required in production environment');
+    }
+    // Use a weak default only in development
+    console.warn('[ANALYTICS] Using weak default secret in development');
+  }
+  
+  const finalSecret = secret || 'default-secret';
   return crypto
-    .createHmac('sha256', secret)
+    .createHmac('sha256', finalSecret)
     .update(userId)
     .digest('hex')
     .substring(0, 16);

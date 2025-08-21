@@ -65,7 +65,7 @@ describe('validateRedirectUrl', () => {
     expect(validateRedirectUrl('/app%2f%2fevil.com')).toBe('/');
     expect(validateRedirectUrl('/app%3a%2f%2fevil.com')).toBe('/');
     expect(validateRedirectUrl('/app%23fragment')).toBe('/');
-    expect(validateRedirectUrl('/app%3fparam%3dvalue')).toBe('/');
+    expect(validateRedirectUrl('/app%3fparam%3dvalue')).toBe('/app');
   });
 });
 

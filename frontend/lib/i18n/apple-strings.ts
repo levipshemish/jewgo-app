@@ -122,21 +122,23 @@ export function getAppleSignInText(locale?: string): string {
     }
   }
 
-  // Normalize locale code
+  // Create a Map for case-insensitive lookup
+  const localeMap = new Map<string, string>();
+  APPLE_SIGN_IN_STRINGS.forEach(item => {
+    localeMap.set(item.code.toLowerCase(), item.text);
+  });
+
+  // Normalize locale code to lowercase
   const normalizedLocale = locale.toLowerCase().replace('_', '-');
   
-  // Try exact match first
-  const exactMatch = APPLE_SIGN_IN_STRINGS.find(
-    item => item.code === normalizedLocale
-  );
-  if (exactMatch) return exactMatch.text;
+  // Try exact match first (case-insensitive)
+  const exactMatch = localeMap.get(normalizedLocale);
+  if (exactMatch) return exactMatch;
 
   // Try language-only match (e.g., 'en-US' -> 'en')
   const languageOnly = normalizedLocale.split('-')[0];
-  const languageMatch = APPLE_SIGN_IN_STRINGS.find(
-    item => item.code === languageOnly
-  );
-  if (languageMatch) return languageMatch.text;
+  const languageMatch = localeMap.get(languageOnly);
+  if (languageMatch) return languageMatch;
 
   // Fallback to English
   return 'Sign in with Apple';
