@@ -326,7 +326,6 @@ describe('EnhancedProductCard Edge Cases', () => {
     test('should handle simultaneous clicks on different elements', async () => {
       const mockOnCardClick = jest.fn();
       const mockOnLikeToggle = jest.fn();
-      const mockOnTagClick = jest.fn();
 
       render(
         <EnhancedProductCard
@@ -334,27 +333,22 @@ describe('EnhancedProductCard Edge Cases', () => {
             id: '1',
             title: 'Test',
             imageTag: 'Tag',
-            imageTagLink: '/tag',
             showHeart: true,
           }}
           onCardClick={mockOnCardClick}
           onLikeToggle={mockOnLikeToggle}
-          onTagClick={mockOnTagClick}
         />
       );
 
       const card = screen.getByRole('button', { name: /product card/i });
       const heartButton = screen.getByRole('button', { name: /add to favorites/i });
-      const tagButton = screen.getByRole('button', { name: /tag/i });
 
       // Simulate rapid concurrent clicks
       fireEvent.click(heartButton);
-      fireEvent.click(tagButton);
       fireEvent.click(card);
 
       await waitFor(() => {
         expect(mockOnLikeToggle).toHaveBeenCalled();
-        expect(mockOnTagClick).toHaveBeenCalled();
         // Card click should not fire due to stopPropagation
         expect(mockOnCardClick).not.toHaveBeenCalled();
       });

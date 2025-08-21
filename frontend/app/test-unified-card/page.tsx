@@ -59,9 +59,7 @@ export default function TestUnifiedCardPage() {
     console.log('Like toggled:', id, isLiked);
   };
 
-  const handleTagClick = (tagLink: string, event: React.MouseEvent) => {
-    console.log('Tag clicked:', tagLink);
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -87,7 +85,7 @@ export default function TestUnifiedCardPage() {
                 data={card}
                 onCardClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
-                onTagClick={handleTagClick}
+
                 priority={false}
               />
               <div className="mt-2 text-xs text-gray-500 text-center">

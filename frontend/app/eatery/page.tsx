@@ -369,7 +369,6 @@ export default function EateryExplorePage() {
       id: restaurant.id,
       imageUrl: restaurant.image_url,
       imageTag: restaurant.kosher_category || restaurant.certifying_agency,
-      imageTagLink: `/eatery?kosher=${restaurant.kosher_category}&agency=${restaurant.certifying_agency}`,
       title: restaurant.name,
       badge: ratingBadge,
       subtitle: restaurant.price_range ? formatPriceRange(restaurant.price_range) : undefined,
@@ -675,11 +674,7 @@ export default function EateryExplorePage() {
                         // Handle like toggle - you can add your like logic here
                         console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
                       }}
-                      onTagClick={(tagLink, event) => {
-                        event.preventDefault();
-                        // Handle tag click - you can add navigation logic here
-                        console.log('Tag clicked:', tagLink);
-                      }}
+
                       className="w-full"
                     />
                   </div>

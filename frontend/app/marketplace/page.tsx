@@ -35,7 +35,6 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing) => {
     id: listing.id,
     imageUrl: listing.thumbnail || listing.images?.[0],
     imageTag: listing.category_name || listing.kind,
-    imageTagLink: `/marketplace?category=${listing.category_id}`,
     title: listing.title,
     badge: listing.rating ? listing.rating.toString() : undefined,
     subtitle: formatPrice(listing.price_cents),
@@ -301,11 +300,7 @@ export default function MarketplacePage() {
                       // Handle like toggle - you can add your like logic here
                       console.log(`Marketplace listing ${id} ${isLiked ? 'liked' : 'unliked'}`);
                     }}
-                    onTagClick={(tagLink, event) => {
-                      event.preventDefault();
-                      // Handle tag click - you can add navigation logic here
-                      console.log('Tag clicked:', tagLink);
-                    }}
+
                     className="w-full"
                   />
                 </div>

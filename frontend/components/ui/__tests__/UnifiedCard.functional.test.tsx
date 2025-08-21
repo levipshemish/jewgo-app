@@ -205,33 +205,17 @@ describe('EnhancedProductCard Functional Tests', () => {
       });
     });
 
-    test('should handle tag click with custom handler', () => {
-      const mockOnTagClick = jest.fn();
 
-      render(
-        <EnhancedProductCard
-          data={mockCardData}
-          onTagClick={mockOnTagClick}
-        />
-      );
 
-      const tagButton = screen.getByRole('button', { name: /popular tag/i });
-      fireEvent.click(tagButton);
-
-      expect(mockOnTagClick).toHaveBeenCalledWith('/popular', expect.any(Object));
-    });
-
-    test('should prevent event propagation on heart and tag clicks', () => {
+    test('should prevent event propagation on heart clicks', () => {
       const mockOnCardClick = jest.fn();
       const mockOnLikeToggle = jest.fn();
-      const mockOnTagClick = jest.fn();
 
       render(
         <EnhancedProductCard
           data={mockCardData}
           onCardClick={mockOnCardClick}
           onLikeToggle={mockOnLikeToggle}
-          onTagClick={mockOnTagClick}
         />
       );
 
@@ -240,13 +224,6 @@ describe('EnhancedProductCard Functional Tests', () => {
       fireEvent.click(heartButton);
 
       expect(mockOnLikeToggle).toHaveBeenCalled();
-      expect(mockOnCardClick).not.toHaveBeenCalled();
-
-      // Click tag
-      const tagButton = screen.getByRole('button', { name: /popular tag/i });
-      fireEvent.click(tagButton);
-
-      expect(mockOnTagClick).toHaveBeenCalled();
       expect(mockOnCardClick).not.toHaveBeenCalled();
     });
   });

@@ -18,9 +18,11 @@ Version: 1.0
 class KosherCategory(str, Enum):
     """Kosher category enumeration."""
 
-    MEAT = "meat"
-    DAIRY = "dairy"
-    PAREVE = "pareve"
+    MEAT = "Meat"
+    DAIRY = "Dairy"
+    PAREVE = "Pareve"
+    FISH = "Fish"
+    UNKNOWN = "Unknown"
 
 
 class RestaurantStatus(str, Enum):

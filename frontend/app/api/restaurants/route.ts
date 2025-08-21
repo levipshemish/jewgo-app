@@ -14,7 +14,7 @@ const RestaurantSubmissionSchema = z.object({
   short_description: z.string().max(80, "Short description must be 80 characters or less"),
   description: z.string().optional(),
   certifying_agency: z.string().min(1, "Certifying agency is required"),
-  kosher_category: z.enum(['meat', 'dairy', 'pareve']),
+  kosher_category: z.enum(['Meat', 'Dairy', 'Pareve', 'Fish', 'Unknown']),
   
   // Kosher Info
   is_cholov_yisroel: z.boolean().optional(),
@@ -46,14 +46,14 @@ const RestaurantSubmissionSchema = z.object({
   }).optional()
 }).refine((data) => {
   // Conditional validation for kosher subcategories
-  if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === undefined) {
+  if (data.kosher_category === 'Dairy' && data.is_cholov_yisroel === undefined) {
     return false;
   }
-  if (['meat', 'pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
+  if (['Meat', 'Pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
     return false;
   }
   // Ensure milk supervision is mutually exclusive
-  if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === true && data.cholov_stam === true) {
+  if (data.kosher_category === 'Dairy' && data.is_cholov_yisroel === true && data.cholov_stam === true) {
     return false;
   }
   return true;
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
       description: validatedData.description || null,
       certifying_agency: validatedData.certifying_agency,
       kosher_category: validatedData.kosher_category,
-      is_cholov_yisroel: validatedData.kosher_category === 'dairy' ? validatedData.is_cholov_yisroel : null,
-      cholov_stam: validatedData.kosher_category === 'dairy' ? (validatedData.is_cholov_yisroel ? false : validatedData.cholov_stam) : null,
-      is_pas_yisroel: ['meat', 'pareve'].includes(validatedData.kosher_category) ? validatedData.is_pas_yisroel : null,
+      is_cholov_yisroel: validatedData.kosher_category === 'Dairy' ? validatedData.is_cholov_yisroel : null,
+      cholov_stam: validatedData.kosher_category === 'Dairy' ? (validatedData.is_cholov_yisroel ? false : validatedData.cholov_stam) : null,
+      is_pas_yisroel: ['Meat', 'Pareve'].includes(validatedData.kosher_category) ? validatedData.is_pas_yisroel : null,
       kosher_cert_link: validatedData.kosher_cert_link || null,
       phone: validatedData.phone,
       email: validatedData.email || null,
