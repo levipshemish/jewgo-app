@@ -92,16 +92,19 @@ export async function GET(request: NextRequest) {
               const linkingResult = await completeIdentityLinking(user.id, detectedProvider);
               
               if (linkingResult.success) {
-                // Redirect to account link page with success message
-                const linkUrl = new URL('/account/link', request.url);
-                linkUrl.searchParams.set('linked', 'true');
-                return NextResponse.redirect(linkUrl);
+                // Redirect to profile settings page with success message
+                const settingsUrl = new URL('/profile/settings', request.url);
+                settingsUrl.searchParams.set('linked', 'true');
+                return NextResponse.redirect(settingsUrl);
               } else {
                 oauthLogger.error('Re-authentication linking failed', { 
                   error: linkingResult.error,
                   userId: user.id 
                 });
-                // Fall through to normal collision handling
+                // Redirect to profile settings with collision flag for guarded UX
+                const settingsUrl = new URL('/profile/settings', request.url);
+                settingsUrl.searchParams.set('collision', 'true');
+                return NextResponse.redirect(settingsUrl);
               }
             } catch (linkError) {
               oauthLogger.error('Re-authentication linking failed', { 

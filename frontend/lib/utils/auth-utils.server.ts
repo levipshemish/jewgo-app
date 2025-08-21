@@ -2,11 +2,11 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { isPrivateRelayEmail } from '@/lib/utils/auth-utils';
 import { authLogger } from '@/lib/utils/logger';
 import crypto from 'crypto';
-import { 
-  MERGE_COOKIE_HMAC_KEY_CURRENT, 
-  MERGE_COOKIE_HMAC_KEY_PREVIOUS, 
-  MERGE_COOKIE_KEY_ID 
-} from '@/lib/config/environment';
+
+// Versioned HMAC utilities for merge cookie
+const MERGE_COOKIE_KEY_ID = process.env.MERGE_COOKIE_KEY_ID || 'v1';
+const MERGE_COOKIE_HMAC_KEY_CURRENT = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || 'default-key';
+const MERGE_COOKIE_HMAC_KEY_PREVIOUS = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS || 'default-key';
 
 /**
  * Server-safe Supabase feature support validation
@@ -307,15 +307,15 @@ export async function completeIdentityLinking(userId: string, reauthProvider: st
     
     // Use Supabase's official link identity API
     // Note: This is a placeholder for when Supabase's official API becomes available
-    // For now, we log the linking attempt and return success
+    // For now, we return failure since no real link API call is made
     // TODO: Replace with actual Supabase link identity API call when available
-    authLogger.info('Identity linking completed successfully after re-authentication', {
+    authLogger.info('Identity linking attempted but not implemented yet', {
       userId, 
       reauthProvider,
       totalIdentities: user.identities?.length || 0
     });
     
-    return { success: true };
+    return { success: false, error: 'Linking not implemented yet' };
     
   } catch (error) {
     authLogger.error('Identity linking completion failed', { 
