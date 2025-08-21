@@ -650,9 +650,9 @@ export default function EateryExplorePage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 restaurant-grid">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 restaurant-grid justify-items-center">
                 {(infiniteScrollEnabled ? displayedRestaurants : paginatedRestaurants).map((restaurant) => (
-                  <div key={restaurant.id} className="relative flex justify-center">
+                  <div key={restaurant.id} className="relative">
                     <UnifiedCard
                       data={transformRestaurantToCardData(restaurant)}
                       variant="default"
