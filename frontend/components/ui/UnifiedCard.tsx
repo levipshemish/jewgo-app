@@ -221,7 +221,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       }}
       className={cn(
         'relative bg-transparent rounded-xl overflow-hidden cursor-pointer group',
-        'border border-gray-200/50 hover:border-gray-300/70',
+        'border border-transparent hover:border-gray-200/30',
         'transition-all duration-200 ease-out',
         'flex flex-col', // Remove h-full to allow responsive stretching
         className
