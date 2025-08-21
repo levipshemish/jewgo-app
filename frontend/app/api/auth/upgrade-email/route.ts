@@ -7,9 +7,11 @@ import {
 import { 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII
+  scrubPII,
+  verifyTokenRotation,
+  extractJtiFromToken
 } from '@/lib/utils/auth-utils';
-import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders
@@ -24,7 +26,8 @@ const ERROR_CODES = {
   AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
   RATE_LIMITED: 'RATE_LIMITED',
   CSRF: 'CSRF',
-  INTERNAL_ERROR: 'INTERNAL_ERROR'
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  REQUIRES_REAUTH: 'REQUIRES_REAUTH'
 };
 
 /**
@@ -34,18 +37,9 @@ const ERROR_CODES = {
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   
-  // Validate origin against allowlist
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': allowedOrigin,
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
-      'Access-Control-Allow-Credentials': 'true',
-      'Cache-Control': 'no-store'
-    }
+    headers: getCORSHeaders(origin || undefined)
   });
 }
 
@@ -75,12 +69,16 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
+    // Trusted IP validation with left-most X-Forwarded-For parsing
+    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
+    const ipHash = hashIPForPrivacy(validatedIP);
+    
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
-        realIP,
+        ipHash,
         correlationId,
         hasCSRFToken: !!csrfToken
       });
@@ -94,19 +92,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
-    
     // Rate limiting for email upgrade operations
     const rateLimitResult = await checkRateLimit(
-      `email_upgrade:${validatedIP}`,
+      `email_upgrade:${ipHash}`,
       'email_upgrade',
       validatedIP,
       forwardedFor || undefined
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for email upgrade IP: ${validatedIP}`, {
+      console.warn(`Rate limit exceeded for email upgrade IP hash: ${ipHash}`, {
         correlationId,
         remaining_attempts: rateLimitResult.remaining_attempts,
         reset_in_seconds: rateLimitResult.reset_in_seconds
@@ -173,7 +168,7 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Get current user session
+    // Get current user session and store pre-upgrade state for token rotation verification
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
     
     if (getUserError || !user) {
@@ -190,6 +185,9 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    
+    // Store pre-upgrade session for token rotation verification
+    const { data: { session: preUpgradeSession } } = await supabase.auth.getSession();
     
     // Attempt to update user with email
     const { data, error } = await supabase.auth.updateUser({ email });
@@ -224,6 +222,36 @@ export async function POST(request: NextRequest) {
           headers: getCORSHeaders(origin || undefined)
         }
       );
+    }
+    
+    // Verify token rotation after successful email update
+    if (preUpgradeSession) {
+      const { data: { session: postUpgradeSession } } = await supabase.auth.getSession();
+      
+      if (postUpgradeSession) {
+        const rotationValid = verifyTokenRotation(preUpgradeSession, postUpgradeSession);
+        
+        if (!rotationValid) {
+          console.warn(`Token rotation failed for email upgrade correlation ID: ${correlationId}`, {
+            correlationId,
+            preUpgradeJti: extractJtiFromToken(preUpgradeSession.access_token),
+            postUpgradeJti: extractJtiFromToken(postUpgradeSession.access_token),
+            refreshTokenChanged: preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token
+          });
+          
+          return NextResponse.json(
+            { 
+              error: ERROR_CODES.REQUIRES_REAUTH,
+              requires_reauth: true,
+              correlation_id: correlationId
+            },
+            { 
+              status: 401,
+              headers: getCORSHeaders(origin || undefined)
+            }
+          );
+        }
+      }
     }
     
     // Success response

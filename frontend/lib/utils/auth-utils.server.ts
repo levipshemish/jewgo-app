@@ -453,6 +453,16 @@ const CSRF_SECRET = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-pr
 const CSRF_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
+ * Hash IP address for privacy using salted SHA-256
+ * Prevents raw IP logging while maintaining correlation capabilities
+ */
+export function hashIPForPrivacy(ip: string): string {
+  const salt = process.env.IP_HASH_SALT || 'default-ip-salt-change-in-production';
+  const data = `${ip}:${salt}`;
+  return createHmac('sha256', salt).update(data).digest('hex').substring(0, 16);
+}
+
+/**
  * Verify signed CSRF token using HMAC
  * Server-side implementation with full signature validation
  */

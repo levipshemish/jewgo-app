@@ -117,20 +117,8 @@ export function sanitizeRedirectUrl(url: string | null | undefined): string {
   return validateRedirectUrl(url);
 }
 
-// Trusted IP configuration - IPv4 and IPv6 ranges
-const TRUSTED_CDN_IPS = [
-  // Cloudflare IPv4
-  '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
-  '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
-  '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
-  '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
-  // Cloudflare IPv6
-  '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
-  '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
-  // EdgeCast IPv4
-  '103.245.222.0/23', '103.245.224.0/24', '103.245.225.0/24', '103.245.226.0/23',
-  // Add other CDNs as needed
-];
+// Import trusted CDN IPs from centralized configuration
+import { TRUSTED_CDN_IPS } from '@/lib/config/environment';
 
 /**
  * Validate trusted IP with left-most X-Forwarded-For parsing
@@ -649,17 +637,9 @@ export function mapAppleOAuthError(error: string): string {
 
 /**
  * Feature support guard stub for client-side usage
- * Re-exports from auth-utils.server when running server-side and returns true (with a console.warn) on the client
+ * Always returns true with a console.warn - server-side code should use auth-utils.server
  */
 export function validateSupabaseFeatureSupport(): boolean {
-  // Check if we're in a server environment
-  if (typeof window === 'undefined') {
-      // Server-side validation not available in client context
-  console.warn('validateSupabaseFeatureSupport called on server-side but auth-utils.server not available');
-  return true; // Fallback to true
-  } else {
-    // Client-side - return true with a console.warn
-    console.warn('validateSupabaseFeatureSupport called on client-side - assuming features are available');
-    return true;
-  }
+  console.warn('validateSupabaseFeatureSupport called on client-side - assuming features are available. Use auth-utils.server for server-side validation.');
+  return true;
 }

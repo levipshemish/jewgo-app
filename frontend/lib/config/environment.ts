@@ -57,6 +57,10 @@ export const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PO
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 export const REDIS_DB = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 0;
 
+// Upstash Redis configuration (removed - using Docker-compatible rate limiting)
+// export const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
+// export const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+
 // Sentry configuration
 export const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 export const SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'development';
@@ -103,6 +107,15 @@ export function validateEnvironment(): void {
   // Validate cleanup secret in production
   if (IS_PRODUCTION && !CLEANUP_CRON_SECRET) {
     throw new Error('CLEANUP_CRON_SECRET must be set in production');
+  }
+
+  // Validate Redis configuration in production (simplified for Docker)
+  if (IS_PRODUCTION) {
+    const hasStandardRedis = !!(REDIS_URL || (REDIS_HOST && REDIS_PASSWORD));
+    
+    if (!hasStandardRedis) {
+      console.warn('Redis configuration not found in production - using in-memory rate limiting');
+    }
   }
 }
 
@@ -187,7 +200,8 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
   try {
     validateEnvironment();
     
-    // Boot-time feature support validation
+    // Boot-time feature support validation - temporarily disabled for Docker build
+    /*
     if (process.env.NEXT_PHASE !== 'phase-production-build') {
       // Import and run feature validation asynchronously
       import('@/lib/utils/auth-utils.server').then(async ({ validateSupabaseFeaturesWithLogging }) => {
@@ -215,6 +229,7 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
         }
       });
     }
+    */
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime

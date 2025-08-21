@@ -13,8 +13,7 @@ import {
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
-import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
-import { verifyMergeCookieVersioned } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, verifyMergeCookieVersioned, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders,
@@ -45,18 +44,9 @@ const TABLE_OWNER_MAP: Record<string, string> = {
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   
-  // Validate origin against allowlist
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': allowedOrigin,
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
-      'Access-Control-Allow-Credentials': 'true',
-      'Cache-Control': 'no-store'
-    }
+    headers: getCORSHeaders(origin || undefined)
   });
 }
 
@@ -100,12 +90,16 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip') || 'unknown';
     
+    // Trusted IP validation with left-most X-Forwarded-For parsing
+    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
+    const ipHash = hashIPForPrivacy(validatedIP);
+    
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
-        reqIp,
+        ipHash,
         correlationId,
         hasCSRFToken: !!csrfToken
       });
@@ -119,19 +113,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
-    
     // Rate limiting for merge operations
     const rateLimitResult = await checkRateLimit(
-      `merge_anonymous:${validatedIP}`,
+      `merge_anonymous:${ipHash}`,
       'merge_operations',
       validatedIP,
       forwardedFor || undefined
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for merge anonymous IP: ${validatedIP}`, {
+      console.warn(`Rate limit exceeded for merge anonymous IP hash: ${ipHash}`, {
         correlationId,
         remaining_attempts: rateLimitResult.remaining_attempts,
         reset_in_seconds: rateLimitResult.reset_in_seconds

@@ -35,9 +35,11 @@ export function useInfiniteScroll(
   // Load more function with loading state management
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore || disabled) {
+      console.log('Infinite scroll: Skipping load more', { isLoadingMore, hasMore, disabled });
       return;
     }
 
+    console.log('Infinite scroll: Loading more content');
     setIsLoadingMore(true);
     
     try {
@@ -52,13 +54,26 @@ export function useInfiniteScroll(
   // Set up intersection observer
   useEffect(() => {
     if (disabled || !hasMore) {
+      console.log('Infinite scroll: Disabled or no more content', { disabled, hasMore });
       return;
+    }
+
+    // Clean up existing observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && !isLoadingMore) {
+        console.log('Infinite scroll: Intersection observed', { 
+          isIntersecting: entry.isIntersecting, 
+          isLoadingMore,
+          hasMore 
+        });
+        
+        if (entry.isIntersecting && !isLoadingMore && hasMore) {
           loadMore();
         }
       },
@@ -72,11 +87,15 @@ export function useInfiniteScroll(
     observerRef.current = observer;
 
     if (loadingRef.current) {
+      console.log('Infinite scroll: Observing loading ref');
       observer.observe(loadingRef.current);
+    } else {
+      console.log('Infinite scroll: Loading ref not available');
     }
 
     return () => {
       if (observerRef.current) {
+        console.log('Infinite scroll: Cleaning up observer');
         observerRef.current.disconnect();
       }
     };
@@ -85,6 +104,7 @@ export function useInfiniteScroll(
   // Re-observe when loading ref changes
   useEffect(() => {
     if (observerRef.current && loadingRef.current && !disabled && hasMore) {
+      console.log('Infinite scroll: Re-observing loading ref');
       observerRef.current.observe(loadingRef.current);
     }
   }, [disabled, hasMore]);

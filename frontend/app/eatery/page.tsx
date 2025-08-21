@@ -11,6 +11,7 @@ import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
+import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 
@@ -69,23 +70,27 @@ function EateryPageContent() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Infinite scroll
-  const { loadMore, hasMore, isLoadingMore } = useInfiniteScroll(
-    () => fetchMoreRestaurants(),
-    { threshold: isMobile ? 0.2 : 0.3, rootMargin: isMobile ? '100px' : '200px' }
-  );
-
-  // Mobile-optimized state
-  const [showFilters, setShowFilters] = useState(!isMobile); // Auto-hide filters on mobile
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
   // Performance optimization for mobile
   const mobileOptimizedItemsPerPage = useMemo(() => {
     if (isLowPowerMode) return 4; // Reduce items in low power mode
     if (isSlowConnection) return 6; // Reduce items on slow connection
     return isMobile ? 6 : 8; // Default mobile optimization
   }, [isMobile, isLowPowerMode, isSlowConnection]);
+
+  // Infinite scroll with proper mobile detection
+  const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    () => fetchMoreRestaurants(),
+    { 
+      threshold: isMobile ? 0.2 : 0.3, 
+      rootMargin: isMobile ? '100px' : '200px',
+      disabled: !isMobile // Only enable infinite scroll on mobile
+    }
+  );
+
+  // Mobile-optimized state
+  const [showFilters, setShowFilters] = useState(!isMobile); // Auto-hide filters on mobile
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Handle filter changes with mobile optimization
   const handleFilterChange = (filterType: keyof Filters, value: Filters[keyof Filters]) => {
@@ -182,7 +187,7 @@ function EateryPageContent() {
     };
   }, []);
 
-  // Fetch restaurants with mobile optimization
+  // Fetch restaurants with mobile optimization and distance sorting
   const fetchRestaurantsData = async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
@@ -212,7 +217,17 @@ function EateryPageContent() {
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
       
-      setRestaurants(response.restaurants);
+      // Apply distance sorting if location is enabled
+      let sortedRestaurants = response.restaurants;
+      if (userLocation && filters.nearMe) {
+        sortedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+      }
+      
+      setRestaurants(sortedRestaurants);
+      setCurrentPage(1);
+      
+      // Update hasMore state for infinite scroll
+      setHasMore(response.restaurants.length >= mobileOptimizedItemsPerPage);
     } catch (err) {
       console.error('Error fetching restaurants:', err);
       setError('An error occurred while fetching restaurants');
@@ -241,8 +256,17 @@ function EateryPageContent() {
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
       
-      setRestaurants(prev => [...prev, ...response.restaurants]);
+      // Apply distance sorting to new restaurants if location is enabled
+      let sortedNewRestaurants = response.restaurants;
+      if (userLocation && activeFilters.nearMe) {
+        sortedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+      }
+      
+      setRestaurants(prev => [...prev, ...sortedNewRestaurants]);
       setCurrentPage(nextPage);
+      
+      // Update hasMore state
+      setHasMore(response.restaurants.length >= mobileOptimizedItemsPerPage);
     } catch (err) {
       console.error('Error fetching more restaurants:', err);
     }
@@ -376,21 +400,21 @@ function EateryPageContent() {
       
       {/* Mobile-optimized filters */}
       <div style={mobileOptimizedStyles.filtersContainer}>
-              <AdvancedFilters
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onToggleFilter={handleToggleFilter}
-                onClearAll={handleClearAllFilters}
-                userLocation={userLocation}
-                locationLoading={locationLoading}
+        <AdvancedFilters
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+          onToggleFilter={handleToggleFilter}
+          onClearAll={handleClearAllFilters}
+          userLocation={userLocation}
+          locationLoading={locationLoading}
           onRequestLocation={requestLocation}
         />
         
         {/* Mobile filter toggle button */}
         {isMobile && (
-                <button
+          <button
             onClick={() => setShowFilters(!showFilters)}
-                  style={{
+            style={{
               ...mobileStyles.touchButton,
               position: 'fixed',
               bottom: '80px',
@@ -403,9 +427,9 @@ function EateryPageContent() {
             }}
           >
             {showFilters ? '✕' : '⚙️'}
-                </button>
+          </button>
         )}
-              </div>
+      </div>
 
       {/* Restaurant grid with mobile optimization */}
       <div style={mobileOptimizedStyles.restaurantGrid}>
@@ -415,7 +439,7 @@ function EateryPageContent() {
             restaurant={restaurant}
           />
         ))}
-            </div>
+      </div>
 
       {/* Mobile-optimized loading states */}
       {loading && (
@@ -424,14 +448,27 @@ function EateryPageContent() {
         </div>
       )}
 
-      {isLoadingMore && (
+      {/* Infinite scroll loading indicator - only show on mobile */}
+      {isMobile && isLoadingMore && (
         <div style={{ textAlign: 'center', padding: '20px' }}>
           <p>Loading more...</p>
         </div>
       )}
 
-      {/* Mobile-optimized load more button */}
-      {hasMore && !loading && (
+      {/* Infinite scroll trigger element - only on mobile */}
+      {isMobile && hasMore && (
+        <div 
+          ref={loadingRef}
+          style={{ 
+            height: '20px', 
+            width: '100%',
+            margin: '20px 0'
+          }}
+        />
+      )}
+
+      {/* Desktop pagination - only show on desktop */}
+      {!isMobile && hasMore && !loading && (
         <button
           onClick={loadMore}
           disabled={isLoadingMore}
@@ -450,7 +487,7 @@ function EateryPageContent() {
 
       {/* Mobile bottom navigation */}
       {isMobile && (
-      <BottomNavigation />
+        <BottomNavigation />
       )}
     </div>
   );

@@ -216,6 +216,9 @@ export function useAuth() {
           case 'AUTHENTICATION_ERROR':
             setError('Authentication required');
             return { error: 'Authentication required' };
+          case 'REQUIRES_REAUTH':
+            setError('Authentication refresh required');
+            return { error: 'Authentication refresh required', requires_reauth: true };
           case 'RATE_LIMITED':
             setError('Too many attempts. Please try again later.');
             return { error: 'Too many attempts. Please try again later.' };

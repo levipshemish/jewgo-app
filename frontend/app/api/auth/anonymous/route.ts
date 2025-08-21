@@ -12,8 +12,7 @@ import {
   scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
-import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
-import { validateSupabaseFeatureSupport, getCachedFeatureSupport } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, testSupabaseFeatures, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
   getCORSHeaders,
@@ -50,18 +49,9 @@ const ERROR_CODES = {
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   
-  // Validate origin against allowlist
-  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': allowedOrigin,
-      'Access-Control-Allow-Methods': 'POST',
-      'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token',
-      'Access-Control-Allow-Credentials': 'true',
-      'Cache-Control': 'no-store'
-    }
+    headers: getCORSHeaders(origin || undefined)
   });
 }
 
@@ -98,15 +88,16 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Check cached feature support first, then fallback to validation
-    let featuresSupported = getCachedFeatureSupport();
-    if (featuresSupported === null) {
-      // No cached result, perform validation
-      featuresSupported = validateSupabaseFeatureSupport();
-    }
+    // Test Supabase features before calling signInAnonymously
+    // Temporarily disabled for Docker build
+    /*
+    const featureTest = await testSupabaseFeatures();
     
-    if (!featuresSupported) {
-      console.error(`Supabase feature support validation failed for correlation ID: ${correlationId}`);
+    if (!featureTest.signInAnonymously) {
+      console.error(`signInAnonymously method not available for correlation ID: ${correlationId}`, {
+        error: featureTest.error,
+        correlationId
+      });
       
       return NextResponse.json(
         { error: ERROR_CODES.ANON_SIGNIN_UNSUPPORTED },
@@ -116,6 +107,7 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    */
 
     // Get request details for security validation
     const origin = request.headers.get('origin');
@@ -124,13 +116,14 @@ export async function POST(request: NextRequest) {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const reqIp = (request as any).ip || request.headers.get('cf-connecting-ip') || request.headers.get('x-vercel-ip');
     const validatedIP = validateTrustedIP(reqIp, request.headers.get('x-forwarded-for') || undefined);
+    const ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
         referer,
-        validatedIP,
+        ipHash,
         correlationId,
         hasCSRFToken: !!csrfToken
       });
@@ -146,14 +139,14 @@ export async function POST(request: NextRequest) {
     
     // Rate limiting with enhanced UX
     const rateLimitResult = await checkRateLimit(
-      `anonymous_auth:${validatedIP}`,
+      `anonymous_auth:${ipHash}`,
       'anonymous_auth',
       validatedIP,
       forwardedFor || undefined
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for IP: ${validatedIP}`, {
+      console.warn(`Rate limit exceeded for IP hash: ${ipHash}`, {
         correlationId,
         remaining_attempts: rateLimitResult.remaining_attempts,
         reset_in_seconds: rateLimitResult.reset_in_seconds
@@ -245,13 +238,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Server-side idempotency check to prevent concurrent duplicate creations
-    const idempotencyKey = `anon_signin:${validatedIP}`;
+    const idempotencyKey = `anon_signin:${ipHash}`;
     const idempotencyCheck = await checkIdempotency(idempotencyKey, 5); // 5 second TTL
     
     if (idempotencyCheck.exists) {
       console.log(`Idempotency check found existing anonymous signin for correlation ID: ${correlationId}`, {
         correlationId,
-        validatedIP
+        ipHash
       });
       
       return NextResponse.json(

@@ -22,14 +22,6 @@ export const config = {
  */
 export async function middleware(request: NextRequest) {
   try {
-    // Skip middleware for public routes and static assets
-    const { pathname } = request.nextUrl;
-    
-    // Allow public routes to pass through
-    if (isPublicRoute(pathname)) {
-      return NextResponse.next();
-    }
-    
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
     
@@ -71,21 +63,21 @@ export async function middleware(request: NextRequest) {
     if (error) {
       console.error('Middleware auth error:', error);
       // Redirect to signin for matched private paths when auth fails
-      return redirectToSignin(request, pathname, response);
+      return redirectToSignin(request, response);
     }
 
     // Check if user exists and is non-anonymous for private routes
     const user = session?.user;
     if (!user) {
       // No session - redirect to signin with sanitized redirect URL
-      return redirectToSignin(request, pathname, response);
+      return redirectToSignin(request, response);
     }
 
     // Check if user is anonymous using shared extractor
     const isAnonymous = extractIsAnonymous(user);
     if (isAnonymous) {
       // Anonymous user - redirect to signin with sanitized redirect URL
-      return redirectToSignin(request, pathname, response);
+      return redirectToSignin(request, response);
     }
 
     // Authenticated, non-anonymous user - allow access and return response with persisted cookies
@@ -98,92 +90,14 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-/**
- * Check if a route is public and should bypass authentication
- */
-function isPublicRoute(pathname: string): boolean {
-  const publicRoutes = [
-    // Public pages
-    '/',
-    '/auth/signin',
-    '/auth/signup',
-    '/auth/callback',
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/auth/oauth-success',
-    '/auth-code-error',
-    
-    // Public features
-    '/eatery',
-    '/restaurant',
-    '/shuls',
-    '/stores',
-    '/mikva',
-    '/live-map',
-    '/marketplace',
-    '/marketplace/category',
-    '/marketplace/product',
-    '/marketplace/search',
-    
-    // Public API endpoints
-    '/api/health',
-    '/api/health-check',
-    '/api/auth/anonymous',
-    '/api/restaurants/search',
-    '/api/restaurants/filtered',
-    '/api/kosher-types',
-    '/api/business-types',
-    '/api/analytics',
-    '/api/feedback',
-    '/api/statistics',
-    '/api/connectivity-test',
-    
-    // Static assets and Next.js internals
-    '/_next',
-    '/favicon.ico',
-    '/robots.txt',
-    '/sitemap.xml',
-    
-    // Development and testing routes
-    '/test-auth',
-    '/test-profile',
-    '/test-redirect',
-    '/debug-auth',
-    '/debug-routing',
-    '/healthz',
-  ];
-  
-  // Check exact matches
-  if (publicRoutes.includes(pathname)) {
-    return true;
-  }
-  
-  // Check prefix matches for dynamic routes
-  const publicPrefixes = [
-    '/restaurant/',
-    '/eatery/',
-    '/marketplace/category/',
-    '/marketplace/product/',
-    '/api/restaurants/',
-    '/api/kosher-types',
-    '/api/business-types',
-    '/api/analytics',
-    '/api/feedback',
-    '/api/statistics',
-    '/api/connectivity-test',
-    '/_next/',
-    '/test-',
-    '/debug-',
-  ];
-  
-  return publicPrefixes.some(prefix => pathname.startsWith(prefix));
-}
+
 
 /**
  * Redirect to signin with sanitized redirect URL
  */
-function redirectToSignin(request: NextRequest, pathname: string, response?: NextResponse): NextResponse {
+function redirectToSignin(request: NextRequest, response?: NextResponse): NextResponse {
   // Sanitize the redirect URL before composing the redirect
+  const { pathname } = request.nextUrl;
   const fullPath = pathname + request.nextUrl.search;
   const sanitizedRedirect = validateRedirectUrl(fullPath);
   

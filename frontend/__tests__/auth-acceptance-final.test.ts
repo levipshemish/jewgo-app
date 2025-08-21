@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { verifyTokenRotation, validateRedirectUrl, extractIsAnonymous, validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils';
+import { verifyTokenRotation, validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { validateSupabaseFeatureSupport } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
 import { getCORSHeaders, getCookieOptions } from '@/lib/config/environment';
@@ -139,7 +140,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       } as any;
 
       // Mock feature support validation to fail
-      jest.spyOn(require('@/lib/utils/auth-utils'), 'validateSupabaseFeatureSupport').mockReturnValue(false);
+      jest.spyOn(require('@/lib/utils/auth-utils.server'), 'validateSupabaseFeatureSupport').mockReturnValue(false);
 
       const response = await POST(mockRequest);
       const result = await response.json();
