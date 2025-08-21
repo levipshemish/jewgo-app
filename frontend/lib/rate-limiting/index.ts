@@ -32,7 +32,6 @@ function getRedisClient(): Redis | null {
         port: redisPort,
         password: redisPassword,
         db: redisDb,
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: 3,
       });
     } else {
