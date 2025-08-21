@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
       
       // Enforce Apple OAuth feature flag only for Apple users
       if (provider === 'apple' && !isAppleOAuthEnabled()) {
+        // Sign out to avoid leaving an Apple session established when the feature is disabled
+        await supabase.auth.signOut();
         return NextResponse.redirect(new URL('/', request.url));
       }
       
