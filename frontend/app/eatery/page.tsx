@@ -343,13 +343,13 @@ export default function EateryExplorePage() {
       distanceText = formatDistance(distance);
     }
 
-    // Debug rating data
-    console.log(`Restaurant ${restaurant.name}:`, {
-      google_rating: restaurant.google_rating,
-      rating: restaurant.rating,
-      star_rating: restaurant.star_rating,
-      quality_rating: restaurant.quality_rating
-    });
+    // Debug rating data - removed for production
+    // console.log(`Restaurant ${restaurant.name}:`, {
+    //   google_rating: restaurant.google_rating,
+    //   rating: restaurant.rating,
+    //   star_rating: restaurant.star_rating,
+    //   quality_rating: restaurant.quality_rating
+    // });
 
     // Try multiple rating sources
     let ratingBadge: string | undefined;
@@ -647,10 +647,10 @@ export default function EateryExplorePage() {
       )}
 
       {/* Restaurant Grid */}
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 pb-24">
         <div className="max-w-7xl lg:max-w-none mx-auto">
           {filteredRestaurants.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="text-center py-16 pb-24">
               <div className="text-gray-400 text-6xl mb-4">🍽️</div>
               <div className="text-gray-500 text-lg mb-3 font-medium">
                 {searchQuery ? 'No restaurants found' : 'No restaurants available'}
@@ -670,12 +670,12 @@ export default function EateryExplorePage() {
                       onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
                       onLikeToggle={(id, isLiked) => {
                         // Handle like toggle - you can add your like logic here
-                        console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
+                        // console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
                       }}
                       onTagClick={(tagLink, event) => {
                         event.preventDefault();
                         // Handle tag click - you can add navigation logic here
-                        console.log('Tag clicked:', tagLink);
+                        // console.log('Tag clicked:', tagLink);
                       }}
                       className="w-full"
                       showStarInBadge={true}
@@ -685,7 +685,7 @@ export default function EateryExplorePage() {
               </div>
               
               {/* Debug info and status */}
-              <div className="text-sm text-gray-500 mt-6 text-center">
+              <div className="text-sm text-gray-500 mt-6 text-center pb-4">
                 {infiniteScrollEnabled ? (
                   <>
                     Showing {displayedRestaurants.length} of {filteredRestaurants.length} items
@@ -702,7 +702,7 @@ export default function EateryExplorePage() {
 
               {/* Infinite Scroll Loading Indicator */}
               {infiniteScrollEnabled && (
-                <div ref={loadingRef} className="flex justify-center items-center py-8">
+                <div ref={loadingRef} className="flex justify-center items-center py-8 pb-24">
                   {infiniteScrollLoading && (
                     <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -719,7 +719,7 @@ export default function EateryExplorePage() {
               
               {/* Smart Pagination Controls - Hidden on mobile when infinite scroll is enabled */}
               {(!infiniteScrollEnabled || !isMobile) && (
-                <div className="flex justify-center items-center mt-8">
+                <div className="flex justify-center items-center mt-8 mb-8">
                   <div className="flex items-center space-x-2">
                     {/* Previous Button */}
                     <button
@@ -775,7 +775,7 @@ export default function EateryExplorePage() {
               scrollToTop('smooth');
             }
           }}
-          className="fixed bottom-20 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          className="fixed bottom-24 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
           aria-label="Back to top"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
