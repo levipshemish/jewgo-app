@@ -261,6 +261,7 @@ export const writeGates = new WriteGates();
 
 /**
  * React hook for write permissions
+ * Note: This should only be used in React components
  */
 export function useWritePermissions() {
   const [permissions, setPermissions] = React.useState<UserPermissions | null>(null);
@@ -289,6 +290,7 @@ export function useWritePermissions() {
 
 /**
  * Higher-order component for protecting write operations
+ * Note: This should only be used in React components
  */
 export function withWritePermission<P extends object>(
   WrappedComponent: React.ComponentType<P>,
@@ -298,29 +300,29 @@ export function withWritePermission<P extends object>(
     const { permissions, loading, error } = useWritePermissions();
 
     if (loading) {
-      return <div>Loading permissions...</div>;
+      return React.createElement('div', null, 'Loading permissions...');
     }
 
     if (error) {
-      return <div>Error loading permissions: {error}</div>;
+      return React.createElement('div', null, `Error loading permissions: ${error}`);
     }
 
     if (!permissions || !permissions[permission]) {
-      return (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-yellow-800">
-            You need to upgrade your account to perform this action.
-          </p>
-          <button 
-            onClick={() => window.location.href = '/auth/signin'}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Sign In
-          </button>
-        </div>
+      return React.createElement(
+        'div',
+        { className: 'p-4 bg-yellow-50 border border-yellow-200 rounded-md' },
+        React.createElement('p', { className: 'text-yellow-800' }, 'You need to upgrade your account to perform this action.'),
+        React.createElement(
+          'button',
+          {
+            onClick: () => window.location.href = '/auth/signin',
+            className: 'mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+          },
+          'Sign In'
+        )
       );
     }
 
-    return <WrappedComponent {...props} />;
+    return React.createElement(WrappedComponent, props);
   };
 }
