@@ -38,7 +38,7 @@ const formatDistance = (distance: number): string => {
   if (distance < 0.1) {
     return `${Math.round(distance * 5280)}ft`; // Convert to feet
   } else if (distance < 1) {
-    return `${(distance * 10).toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
+    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
   } else {
     return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
   }
@@ -247,6 +247,11 @@ export default function EateryExplorePage() {
         b.longitude
       );
 
+      // Debug logging for distance calculations
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Distance comparison: ${a.name} (${distanceA.toFixed(2)}mi) vs ${b.name} (${distanceB.toFixed(2)}mi)`);
+      }
+
       return distanceA - distanceB;
     });
   }, [restaurants, locationPermissionGranted, userLocation]);
@@ -371,6 +376,11 @@ export default function EateryExplorePage() {
         restaurant.longitude
       );
       distanceText = formatDistance(distance);
+      
+      // Debug logging for distance display
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`${restaurant.name}: ${distance.toFixed(3)}mi -> ${distanceText}`);
+      }
     }
 
     // Debug rating data - removed for production
