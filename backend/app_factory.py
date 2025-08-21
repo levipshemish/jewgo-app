@@ -2001,13 +2001,111 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
     def restaurant_hours(restaurant_id: int):
         """Handle restaurant hours - GET for display, PUT for admin updates."""
         if request.method == "GET":
-            # Simple test response without database or logger
-            return jsonify({
-                "status": "success",
-                "message": "Hours endpoint is working",
-                "restaurant_id": restaurant_id,
-                "test": "This is a test response"
-            }), 200
+            try:
+                # Get database manager
+                db_manager = deps.get("get_db_manager")()
+                if not db_manager:
+                    return jsonify({"error": "Database not available"}), 503
+
+                # Get restaurant data
+                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+                if not restaurant:
+                    return jsonify({"error": "Restaurant not found"}), 404
+
+                # Get hours data
+                hours_json_data = restaurant.get("hours_json", {})
+                hours_of_operation_data = restaurant.get("hours_of_operation", "")
+                
+                # Initialize empty hours data
+                formatted_hours_data = {}
+                
+                # Handle Google Places API format with weekday_text
+                if isinstance(hours_json_data, dict) and hours_json_data:
+                    weekday_text = hours_json_data.get('weekday_text', [])
+                    
+                    for day_line in weekday_text:
+                        if isinstance(day_line, str):
+                            # Normalize Unicode characters
+                            day_line = day_line.replace('\u202f', ' ')  # narrow no-break space
+                            day_line = day_line.replace('\u2013', '-')  # en dash
+                            day_line = day_line.replace('\u2009', ' ')  # thin space
+                            
+                            # Parse day and time
+                            if ':' in day_line:
+                                parts = day_line.split(':', 1)
+                                if len(parts) == 2:
+                                    day_name = parts[0].strip()
+                                    time_range = parts[1].strip()
+                                    
+                                    # Convert day name to abbreviation
+                                    day_abbrev = day_name.lower()[:3]
+                                    
+                                    # Parse time range
+                                    if ' - ' in time_range:
+                                        open_time, close_time = time_range.split(' - ', 1)
+                                        formatted_hours_data[day_abbrev] = {
+                                            "open": open_time.strip(),
+                                            "close": close_time.strip(),
+                                            "is_open": True
+                                        }
+                                    elif 'Closed' in time_range:
+                                        formatted_hours_data[day_abbrev] = {
+                                            "open": None,
+                                            "close": None,
+                                            "is_open": False
+                                        }
+                
+                # If no structured data, try to parse hours_of_operation
+                if not formatted_hours_data and hours_of_operation_data:
+                    # Normalize Unicode characters
+                    hours_text = hours_of_operation_data.replace('\u202f', ' ')
+                    hours_text = hours_text.replace('\u2013', '-')
+                    hours_text = hours_text.replace('\u2009', ' ')
+                    
+                    # Split by newlines
+                    day_lines = hours_text.split('\n')
+                    
+                    for day_line in day_lines:
+                        if ':' in day_line:
+                            parts = day_line.split(':', 1)
+                            if len(parts) == 2:
+                                day_name = parts[0].strip()
+                                time_range = parts[1].strip()
+                                
+                                # Convert day name to abbreviation
+                                day_abbrev = day_name.lower()[:3]
+                                
+                                # Parse time range
+                                if ' - ' in time_range:
+                                    open_time, close_time = time_range.split(' - ', 1)
+                                    formatted_hours_data[day_abbrev] = {
+                                        "open": open_time.strip(),
+                                        "close": close_time.strip(),
+                                        "is_open": True
+                                    }
+                                elif 'Closed' in time_range:
+                                    formatted_hours_data[day_abbrev] = {
+                                        "open": None,
+                                        "close": None,
+                                        "is_open": False
+                                    }
+                
+                # Return formatted hours data
+                return jsonify({
+                    "status": "success",
+                    "restaurant_id": restaurant_id,
+                    "hours": formatted_hours_data,
+                    "raw_hours_json": hours_json_data,
+                    "raw_hours_of_operation": hours_of_operation_data
+                }), 200
+
+            except Exception as e:
+                logger.error(f"Error in hours endpoint for restaurant {restaurant_id}: {e}")
+                return jsonify({
+                    "status": "error",
+                    "message": "Failed to parse hours data",
+                    "restaurant_id": restaurant_id
+                }), 500
 
         elif request.method == "PUT":
             try:
