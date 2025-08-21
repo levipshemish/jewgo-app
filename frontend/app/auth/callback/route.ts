@@ -28,12 +28,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin?error=no_code', request.url));
     }
 
-    // Early Apple feature flag check before code exchange
-    const provider = searchParams.get('provider');
-    if (provider === 'apple' && !isAppleOAuthEnabled()) {
-      oauthLogger.warn('Apple OAuth disabled, redirecting to safe path', { provider });
-      return NextResponse.redirect(new URL('/', request.url));
-    }
+    // Note: Removed early provider gating to prevent spoofing attacks
+    // Provider validation now happens after successful code exchange
 
     // Perform server-side code exchange
     const supabase = await createSupabaseServerClient();
