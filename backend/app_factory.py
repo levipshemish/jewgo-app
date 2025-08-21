@@ -1997,18 +1997,144 @@ def _register_all_routes(app, limiter, deps, logger) -> None:
             return jsonify({"error": "Failed to fetch website"}), 500
 
     # Restaurant hours endpoint - GET for public access, PUT for admin updates
-    # Force restart 2025-01-21
     @app.route("/api/restaurants/<int:restaurant_id>/hours", methods=["GET", "PUT"])
     def restaurant_hours(restaurant_id: int):
         """Handle restaurant hours - GET for display, PUT for admin updates."""
         if request.method == "GET":
-            # Simple test response without any complex logic
-            return jsonify({
-                "status": "success",
-                "message": "Hours endpoint is working",
-                "restaurant_id": restaurant_id,
-                "test": "This is a simple test response"
-            }), 200
+            try:
+                # Get database manager
+                db_manager = deps.get("get_db_manager")()
+                if not db_manager:
+                    return jsonify({"error": "Database not available"}), 503
+
+                # Get restaurant data
+                restaurant = db_manager.get_restaurant_by_id(restaurant_id)
+                if not restaurant:
+                    return jsonify({"error": "Restaurant not found"}), 404
+
+                # Get hours data
+                hours_json_data = restaurant.get("hours_json", {})
+                hours_of_operation_data = restaurant.get("hours_of_operation", "")
+                
+                # Initialize empty hours data
+                formatted_hours_data = []
+                today_hours = {}
+                status = "unknown"
+                message = "Hours information unavailable"
+                is_open = False
+                
+                # Handle Google Places API format with weekday_text
+                if isinstance(hours_json_data, dict) and hours_json_data:
+                    weekday_text = hours_json_data.get('weekday_text', [])
+                    
+                    for day_line in weekday_text:
+                        if isinstance(day_line, str):
+                            # Normalize Unicode characters
+                            day_line = day_line.replace('\u202f', ' ')  # narrow no-break space
+                            day_line = day_line.replace('\u2013', '-')  # en dash
+                            day_line = day_line.replace('\u2009', ' ')  # thin space
+                            
+                            # Parse day and time
+                            if ':' in day_line:
+                                parts = day_line.split(':', 1)
+                                if len(parts) == 2:
+                                    day_name = parts[0].strip()
+                                    time_range = parts[1].strip()
+                                    
+                                    # Format for frontend
+                                    if 'Closed' in time_range:
+                                        formatted_hours_data.append({
+                                            "day": day_name,
+                                            "hours": "Closed",
+                                            "is_open": False
+                                        })
+                                    else:
+                                        formatted_hours_data.append({
+                                            "day": day_name,
+                                            "hours": time_range,
+                                            "is_open": True
+                                        })
+                
+                # If no structured data, try to parse hours_of_operation
+                if not formatted_hours_data and hours_of_operation_data:
+                    # Normalize Unicode characters
+                    hours_text = hours_of_operation_data.replace('\u202f', ' ')
+                    hours_text = hours_text.replace('\u2013', '-')
+                    hours_text = hours_text.replace('\u2009', ' ')
+                    
+                    # Split by newlines
+                    day_lines = hours_text.split('\n')
+                    
+                    for day_line in day_lines:
+                        if ':' in day_line:
+                            parts = day_line.split(':', 1)
+                            if len(parts) == 2:
+                                day_name = parts[0].strip()
+                                time_range = parts[1].strip()
+                                
+                                # Format for frontend
+                                if 'Closed' in time_range:
+                                    formatted_hours_data.append({
+                                        "day": day_name,
+                                        "hours": "Closed",
+                                        "is_open": False
+                                    })
+                                else:
+                                    formatted_hours_data.append({
+                                        "day": day_name,
+                                        "hours": time_range,
+                                        "is_open": True
+                                    })
+
+                # Determine current status and today's hours
+                from datetime import datetime
+                import pytz
+                
+                try:
+                    # Get current day
+                    tz = pytz.timezone('America/New_York')
+                    now = datetime.now(tz)
+                    current_day = now.strftime('%A')
+                    
+                    # Find today's hours
+                    for hours_entry in formatted_hours_data:
+                        if hours_entry['day'] == current_day:
+                            today_hours = {
+                                "open": hours_entry['hours'] if hours_entry['is_open'] else "",
+                                "close": "",
+                                "is_open": hours_entry['is_open']
+                            }
+                            is_open = hours_entry['is_open']
+                            status = "open" if is_open else "closed"
+                            message = f"Open now" if is_open else "Closed today"
+                            break
+                except Exception:
+                    # Fallback if timezone handling fails
+                    pass
+                
+                # Return formatted hours data
+                from datetime import datetime
+                return jsonify({
+                    "status": status,
+                    "message": message,
+                    "is_open": is_open,
+                    "today_hours": today_hours,
+                    "formatted_hours": formatted_hours_data,
+                    "timezone": "America/New_York",
+                    "last_updated": restaurant.get("hours_last_updated") or datetime.now().isoformat()
+                }), 200
+
+            except Exception as e:
+                from datetime import datetime
+                return jsonify({
+                    "status": "error",
+                    "message": f"Failed to parse hours data: {str(e)}",
+                    "is_open": False,
+                    "today_hours": {},
+                    "formatted_hours": [],
+                    "timezone": "America/New_York",
+                    "last_updated": datetime.now().isoformat()
+                }), 500
 
         elif request.method == "PUT":
             try:
