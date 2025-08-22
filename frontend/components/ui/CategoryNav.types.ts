@@ -23,17 +23,19 @@ export interface CategoryNavItem {
 /**
  * Props for the CategoryNav component
  */
-export interface CategoryNavProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onValueChange'> {
+export interface CategoryNavProps extends Omit<React.ComponentPropsWithoutRef<'nav'>, 'onSelect' | 'onValueChange'> {
   /** Array of category items to display */
   items: CategoryNavItem[];
-  /** Currently selected item ID */
-  selectedId?: string;
-  /** Callback when an item is selected */
-  onSelect?: (id: string) => void;
-  /** Controlled value (alias for selectedId) */
+  /** Default value for uncontrolled component */
+  defaultValue?: string;
+  /** Controlled value (preferred over selectedId) */
   value?: string;
-  /** Controlled value change handler (alias for onSelect) */
+  /** Controlled value change handler (preferred over onSelect) */
   onValueChange?: (id: string) => void;
+  /** Currently selected item ID (deprecated - use value instead) */
+  selectedId?: string;
+  /** Callback when an item is selected (deprecated - use onValueChange instead) */
+  onSelect?: (id: string) => void;
   /** Optional CSS class name */
   className?: string;
   /** Accessibility label for the navigation */

@@ -250,7 +250,7 @@ describe('CategoryNav', () => {
 
   describe('P1 Hardening Items', () => {
     describe('Icon accessibility', () => {
-      it('normalizes icons with aria-hidden and focusable attributes', () => {
+      it('normalizes icons with aria-hidden attributes', () => {
         render(<CategoryNav items={mockItemsWithIcons} />);
         
         // Check that icons are wrapped with proper accessibility attributes
@@ -258,7 +258,6 @@ describe('CategoryNav', () => {
         iconWrappers.forEach(icon => {
           const wrapper = icon.closest('[aria-hidden="true"]');
           expect(wrapper).toBeInTheDocument();
-          expect(wrapper).toHaveAttribute('focusable', 'false');
         });
       });
     });
@@ -610,6 +609,81 @@ describe('CategoryNav', () => {
       
       // Component should render without errors
       expect(screen.getByText('Item 1')).toBeInTheDocument();
+    });
+  });
+
+  describe('Controlled vs Uncontrolled', () => {
+    it('value prop controls selection', () => {
+      const { rerender } = render(<CategoryNav items={mockItems} value="item1" />);
+      
+      expect(screen.getByText('Item 1').closest('[data-selected="true"]')).toBeInTheDocument();
+      
+      rerender(<CategoryNav items={mockItems} value="item2" />);
+      
+      expect(screen.getByText('Item 2').closest('[data-selected="true"]')).toBeInTheDocument();
+      expect(screen.getByText('Item 1').closest('[data-selected="true"]')).not.toBeInTheDocument();
+    });
+
+    it('defaultValue works for uncontrolled component', () => {
+      render(<CategoryNav items={mockItems} defaultValue="item2" />);
+      
+      expect(screen.getByText('Item 2').closest('[data-selected="true"]')).toBeInTheDocument();
+    });
+
+    it('onValueChange is called when controlled', () => {
+      const handleValueChange = jest.fn();
+      render(<CategoryNav items={mockItems} value="item1" onValueChange={handleValueChange} />);
+      
+      const item2 = screen.getByText('Item 2');
+      fireEvent.click(item2);
+      
+      expect(handleValueChange).toHaveBeenCalledWith('item2');
+    });
+
+    it('onSelect is called when using deprecated API', () => {
+      const handleSelect = jest.fn();
+      render(<CategoryNav items={mockItems} selectedId="item1" onSelect={handleSelect} />);
+      
+      const item2 = screen.getByText('Item 2');
+      fireEvent.click(item2);
+      
+      expect(handleSelect).toHaveBeenCalledWith('item2');
+    });
+
+    it('value takes precedence over selectedId', () => {
+      render(<CategoryNav items={mockItems} selectedId="item1" value="item2" />);
+      
+      expect(screen.getByText('Item 2').closest('[data-selected="true"]')).toBeInTheDocument();
+      expect(screen.getByText('Item 1').closest('[data-selected="true"]')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Data Attributes', () => {
+    it('sets data-state attribute correctly', () => {
+      render(<CategoryNav items={mockItemsWithDisabled} selectedId="enabled" />);
+      
+      const selectedItem = screen.getByText('Enabled Item').closest('li');
+      expect(selectedItem).toHaveAttribute('data-state', 'selected');
+      
+      const disabledItem = screen.getByText('Disabled Item').closest('li');
+      expect(disabledItem).toHaveAttribute('data-state', 'disabled');
+      
+      const defaultItem = screen.getByText('Enabled Item 2').closest('li');
+      expect(defaultItem).toHaveAttribute('data-state', 'default');
+    });
+
+    it('sets data-focus-visible attribute', async () => {
+      render(<CategoryNav items={mockItems} />);
+      
+      const firstItem = screen.getByText('Item 1').closest('button');
+      if (firstItem) {
+        await act(async () => {
+          firstItem.focus();
+        });
+        
+        const listItem = firstItem.closest('li');
+        expect(listItem).toHaveAttribute('data-focus-visible', 'true');
+      }
     });
   });
 

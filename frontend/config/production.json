@@ -3,7 +3,7 @@
   "urls": {
     "frontend": "https://jewgo-app.netlify.app",
     "frontend_vercel": "https://jewgo-app.vercel.app",
-    "backend": "https://jewgo-app-oyoh.onrender.com"
+    "backend": "https://jewgo.onrender.com"
   },
   "monitoring": {
     "enabled": true,

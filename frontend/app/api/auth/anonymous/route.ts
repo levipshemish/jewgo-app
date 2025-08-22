@@ -95,22 +95,29 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-  
 
-  
-  // Validate origin against allowlist
-  const origin = request.headers.get('origin');
-  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+  // Feature support validation
+  const featuresSupported = await validateSupabaseFeaturesWithLogging();
+  if (!featuresSupported) {
+    console.error(`CRITICAL: Supabase features not supported for correlation ID: ${correlationId}`, {
+      correlationId
+    });
+    
     return NextResponse.json(
-      { error: 'CSRF' },
+      { error: 'ANON_SIGNIN_UNSUPPORTED' },
       { 
-        status: 403,
+        status: 503,
         headers: {
+          ...getCORSHeaders(origin || undefined),
           'Cache-Control': 'no-store'
         }
       }
     );
   }
+  
+
+  
+
   
   // Kill switch check for anonymous auth feature flag
   if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {

@@ -3,7 +3,7 @@
 const BACKEND_URL = (
   process.env["NEXT_PUBLIC_BACKEND_URL"] &&
   /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
-) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo-app-oyoh.onrender.com';
+) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo.onrender.com';
 
 // Improved environment detection
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';

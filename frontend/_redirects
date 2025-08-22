@@ -4,16 +4,16 @@
 /*    /index.html   200
 
 # Handle API routes - proxy to backend
-/api/specials/*  https://jewgo-app-oyoh.onrender.com/api/specials/:splat  200
-/api/health/*  https://jewgo-app-oyoh.onrender.com/api/health/:splat  200
-/api/admin/*  https://jewgo-app-oyoh.onrender.com/api/admin/:splat  200
-/api/feedback/*  https://jewgo-app-oyoh.onrender.com/api/feedback/:splat  200
-/api/statistics/*  https://jewgo-app-oyoh.onrender.com/api/statistics/:splat  200
-/api/kosher-types/*  https://jewgo-app-oyoh.onrender.com/api/kosher-types/:splat  200
-/api/migrate/*  https://jewgo-app-oyoh.onrender.com/api/migrate/:splat  200
-/api/remove-duplicates/*  https://jewgo-app-oyoh.onrender.com/api/remove-duplicates/:splat  200
-/api/update-database/*  https://jewgo-app-oyoh.onrender.com/api/update-database/:splat  200
-/api/test/*  https://jewgo-app-oyoh.onrender.com/api/test/:splat  200
+/api/specials/*  https://jewgo.onrender.com/api/specials/:splat  200
+/api/health/*  https://jewgo.onrender.com/api/health/:splat  200
+/api/admin/*  https://jewgo.onrender.com/api/admin/:splat  200
+/api/feedback/*  https://jewgo.onrender.com/api/feedback/:splat  200
+/api/statistics/*  https://jewgo.onrender.com/api/statistics/:splat  200
+/api/kosher-types/*  https://jewgo.onrender.com/api/kosher-types/:splat  200
+/api/migrate/*  https://jewgo.onrender.com/api/migrate/:splat  200
+/api/remove-duplicates/*  https://jewgo.onrender.com/api/remove-duplicates/:splat  200
+/api/update-database/*  https://jewgo.onrender.com/api/update-database/:splat  200
+/api/test/*  https://jewgo.onrender.com/api/test/:splat  200
 
 # Handle Next.js static assets
 /_next/static/* /_next/static/:splat 200

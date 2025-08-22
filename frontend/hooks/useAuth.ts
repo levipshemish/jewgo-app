@@ -287,6 +287,10 @@ export function useAuth() {
               // Force signOut -> signIn cycle
               await supabaseBrowser.auth.signOut();
               
+              // Programmatically navigate to signin with redirectTo
+              const currentPath = window.location.pathname + window.location.search;
+              router.push(`/auth/signin?redirectTo=${encodeURIComponent(currentPath)}`);
+              
               // Add small backoff before suggesting re-authentication
               setTimeout(() => {
                 // Surface toast suggesting user sign in again
@@ -333,6 +337,10 @@ export function useAuth() {
                 
                 // Force signOut and suggest re-authentication
                 await supabaseBrowser.auth.signOut();
+                
+                // Programmatically navigate to signin with redirectTo
+                const currentPath = window.location.pathname + window.location.search;
+                router.push(`/auth/signin?redirectTo=${encodeURIComponent(currentPath)}`);
                 
                 // Add small backoff before suggesting re-authentication
                 setTimeout(() => {

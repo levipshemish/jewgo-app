@@ -79,22 +79,36 @@
 }
 
 /* Selected state */
+.selected {
+  /* Exported class for selected state */
+}
+
 .item.selected .link:not([data-disabled="true"]),
-.item.selected .button:not([data-disabled="true"]):not(:disabled) {
+.item.selected .button:not([data-disabled="true"]):not(:disabled),
+.item[data-state="selected"] .link:not([data-disabled="true"]),
+.item[data-state="selected"] .button:not([data-disabled="true"]):not(:disabled) {
   background-color: #3b82f6;
   color: white;
   border-color: #3b82f6;
 }
 
 .item.selected .link:hover:not([data-disabled="true"]),
-.item.selected .button:hover:not([data-disabled="true"]):not(:disabled) {
+.item.selected .button:hover:not([data-disabled="true"]):not(:disabled),
+.item[data-state="selected"] .link:hover:not([data-disabled="true"]),
+.item[data-state="selected"] .button:hover:not([data-disabled="true"]):not(:disabled) {
   background-color: #2563eb;
   border-color: #2563eb;
 }
 
 /* Focused state (keyboard navigation) */
+.focused {
+  /* Exported class for focused state */
+}
+
 .item.focused:not(.selected) .link:not([data-disabled="true"]),
-.item.focused:not(.selected) .button:not([data-disabled="true"]):not(:disabled) {
+.item.focused:not(.selected) .button:not([data-disabled="true"]):not(:disabled),
+.item[data-focus-visible="true"]:not([data-state="selected"]) .link:not([data-disabled="true"]),
+.item[data-focus-visible="true"]:not([data-state="selected"]) .button:not([data-disabled="true"]):not(:disabled) {
   background-color: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
 }

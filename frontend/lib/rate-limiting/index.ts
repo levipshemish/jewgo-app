@@ -1,6 +1,6 @@
 /**
- * Rate limiting module index
- * Re-exports all rate limiting functions from the upstash-redis backend
+ * Rate limiting barrel exports
+ * Re-exports all rate limiting functions from the main implementation
  */
 
 export {

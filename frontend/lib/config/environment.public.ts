@@ -63,6 +63,7 @@ export function getCORSHeaders(origin?: string): Record<string, string> {
     'Access-Control-Allow-Headers': 'Content-Type, Origin, Referer, x-csrf-token, Accept, Authorization, X-Requested-With',
     'Access-Control-Allow-Credentials': CORS_CREDENTIALS_ENABLED ? 'true' : 'false',
     'Cache-Control': 'no-store',
+    'Vary': 'Origin',
   };
   
   // Only set Access-Control-Allow-Origin if origin is allowed

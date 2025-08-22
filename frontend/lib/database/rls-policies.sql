@@ -28,14 +28,18 @@ ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
 -- Only active, approved, and non-flagged content is publicly readable
 
 -- Restaurants public read policy with moderation filters
-CREATE POLICY "restaurants_public_read" ON restaurants
-FOR SELECT TO anon, authenticated
-USING (
-  status = 'active' 
-  AND is_published = true 
-  AND is_approved = true 
-  AND NOT is_flagged
-);
+DO $$ BEGIN
+  CREATE POLICY "restaurants_public_read" ON restaurants
+  FOR SELECT TO anon, authenticated
+  USING (
+    status = 'active' 
+    AND is_published = true 
+    AND is_approved = true 
+    AND NOT is_flagged
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Reviews public read policy with moderation filters
 CREATE POLICY "reviews_public_read" ON reviews

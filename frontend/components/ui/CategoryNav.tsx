@@ -24,42 +24,9 @@ const scrollItemIntoViewX = (container: HTMLElement, item: HTMLElement) => {
 
 // Helper to normalize icon with accessibility attributes
 const normalizeIcon = (icon: React.ReactNode): React.ReactNode => {
-  if (React.isValidElement(icon)) {
-    if (icon.type === 'svg') {
-      return React.cloneElement(icon, {
-        'aria-hidden': true,
-        focusable: false,
-      });
-    }
-    
-    // Check if the element has an inner svg
-    const children = React.Children.toArray(icon.props.children);
-    const hasInnerSvg = children.some(child => 
-      React.isValidElement(child) && child.type === 'svg'
-    );
-    
-    if (hasInnerSvg) {
-      // Clone the element and apply accessibility attributes to inner svg
-      const clonedChildren = React.Children.map(icon.props.children, child => {
-        if (React.isValidElement(child) && child.type === 'svg') {
-          return React.cloneElement(child, {
-            'aria-hidden': 'true',
-            focusable: false,
-          } as any);
-        }
-        return child;
-      });
-      
-      return React.cloneElement(icon, {
-        ...icon.props,
-        children: clonedChildren,
-      });
-    }
-  }
-  
-  // Fallback: wrap in span with tabIndex=-1 as extra guard
+  // Always wrap in span with aria-hidden="true" for consistent accessibility
   return (
-    <span aria-hidden="true" tabIndex={-1}>
+    <span aria-hidden="true">
       {icon}
     </span>
   );
@@ -71,14 +38,31 @@ export function CategoryNav({
   onSelect,
   value,
   onValueChange,
+  defaultValue,
   className,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   ...props
 }: CategoryNavProps) {
-  // Support both controlled and uncontrolled APIs
+  // Single source of truth: value takes precedence over selectedId
   const finalSelectedId = value ?? selectedId;
   const finalOnSelect = onValueChange ?? onSelect;
+  
+  // Internal state for uncontrolled component
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  
+  // Compute the actual selected ID (controlled takes precedence over internal state)
+  const actualSelectedId = finalSelectedId ?? internalValue;
+  
+  // Handle selection changes
+  const handleSelection = useCallback((id: string) => {
+    if (finalOnSelect) {
+      finalOnSelect(id);
+    } else if (!finalSelectedId) {
+      // Only update internal state if not controlled
+      setInternalValue(id);
+    }
+  }, [finalOnSelect, finalSelectedId]);
   const scrollerRef = useRef<HTMLUListElement>(null);
   const prevRef = useRef<HTMLButtonElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
@@ -89,6 +73,7 @@ export function CategoryNav({
   const [showNextControl, setShowNextControl] = useState(false);
   const [prevShowPrevControl, setPrevShowPrevControl] = useState(false);
   const [prevShowNextControl, setPrevShowNextControl] = useState(false);
+  const [focusVisibleIndex, setFocusVisibleIndex] = useState(-1);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
 
   // Memoize items to prevent unnecessary re-renders
@@ -208,20 +193,31 @@ export function CategoryNav({
     focusedIndex,
     setFocusedIndex,
     handleKeyDown,
-    handleItemFocus,
-    handleItemBlur,
+    handleItemFocus: rovingHandleItemFocus,
+    handleItemBlur: rovingHandleItemBlur,
   } = useRovingFocus({
     itemCount: memoizedItems.length,
-    selectedId: finalSelectedId,
-    onSelect: finalOnSelect,
+    selectedId: actualSelectedId,
+    onSelect: handleSelection,
     direction,
     itemRefs,
   });
 
+  // Custom focus handlers to track focus-visible state
+  const handleItemFocus = useCallback((index: number) => {
+    rovingHandleItemFocus(index);
+    setFocusVisibleIndex(index);
+  }, [rovingHandleItemFocus]);
+
+  const handleItemBlur = useCallback(() => {
+    rovingHandleItemBlur();
+    setFocusVisibleIndex(-1);
+  }, [rovingHandleItemBlur]);
+
   // Robust first focus - scroll selected item into view on first focus
   useEffect(() => {
-    if (!isInitialized && finalSelectedId && scrollerRef.current) {
-      const selectedIndex = memoizedItems.findIndex(item => item.id === finalSelectedId);
+    if (!isInitialized && actualSelectedId && scrollerRef.current) {
+      const selectedIndex = memoizedItems.findIndex(item => item.id === actualSelectedId);
       if (selectedIndex !== -1) {
         const selectedElement = itemRefs.current[selectedIndex];
         if (selectedElement) {
@@ -253,7 +249,41 @@ export function CategoryNav({
       }
       setIsInitialized(true);
     }
-  }, [finalSelectedId, memoizedItems, isInitialized]);
+  }, [actualSelectedId, memoizedItems, isInitialized]);
+
+  // Robust first focus - handle offscreen first-enabled item too
+  useEffect(() => {
+    if (!isInitialized && !actualSelectedId && focusedIndex >= 0 && scrollerRef.current) {
+      const focusedElement = itemRefs.current[focusedIndex];
+      if (focusedElement) {
+        // Check if element is offscreen
+        const rect = focusedElement.getBoundingClientRect();
+        const scrollerRect = scrollerRef.current.getBoundingClientRect();
+        
+        if (rect.left < scrollerRect.left || rect.right > scrollerRect.right) {
+          // Respect reduced motion
+          const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          
+          try {
+            if (prefersReducedMotion) {
+              // Use manual scroll fallback
+              scrollItemIntoViewX(scrollerRef.current, focusedElement);
+            } else {
+              focusedElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest',
+              });
+            }
+          } catch (error) {
+            // Fallback to manual scroll
+            scrollItemIntoViewX(scrollerRef.current, focusedElement);
+          }
+        }
+      }
+      setIsInitialized(true);
+    }
+  }, [actualSelectedId, focusedIndex, memoizedItems, isInitialized]);
 
   // Manual scroll handlers with fallback
   const scrollTo = useCallback((direction: 'left' | 'right') => {
@@ -313,7 +343,7 @@ export function CategoryNav({
         onKeyDown={handleKeyDown}
       >
         {memoizedItems.map((item, index) => {
-          const isSelected = item.id === finalSelectedId;
+          const isSelected = item.id === actualSelectedId;
           const isFocused = index === focusedIndex;
           const isDisabled = item.disabled || allDisabled;
           
@@ -346,6 +376,8 @@ export function CategoryNav({
               data-selected={isSelected}
               data-focused={isFocused}
               data-disabled={isDisabled}
+              data-state={isDisabled ? 'disabled' : isSelected ? 'selected' : 'default'}
+              data-focus-visible={index === focusVisibleIndex}
             >
               {item.href ? (
                 isDisabled ? (
@@ -365,7 +397,7 @@ export function CategoryNav({
                     {...(isSelected ? { 'aria-current': 'page' } : {})}
                     onFocus={() => handleItemFocus(index)}
                     onBlur={handleItemBlur}
-                    onClick={() => finalOnSelect?.(item.id)}
+                    onClick={() => handleSelection(item.id)}
                     tabIndex={isFocused && !allDisabled ? 0 : -1}
                     ref={setItemRef(index)}
                   >
@@ -391,7 +423,7 @@ export function CategoryNav({
                     className={styles.button}
                     onFocus={() => handleItemFocus(index)}
                     onBlur={handleItemBlur}
-                    onClick={() => finalOnSelect?.(item.id)}
+                    onClick={() => handleSelection(item.id)}
                     aria-pressed={isSelected}
                     tabIndex={isFocused && !allDisabled ? 0 : -1}
                     ref={setItemRef(index)}

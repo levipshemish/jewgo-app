@@ -518,7 +518,10 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       '/add-eatery',    // Add eatery functionality
       '/restaurant',    // Restaurant pages
       '/eatery',        // Eatery pages
-      '/shuls'          // Shuls pages
+      '/shuls',         // Shuls pages
+      '/admin',         // Admin pages
+      '/messages',      // Messages pages
+      '/api/admin'      // Admin API routes
     ];
     const hasAllowedPrefix = allowedPrefixes.some(prefix => 
       decodedPath.startsWith(`${prefix}/`) || decodedPath === prefix

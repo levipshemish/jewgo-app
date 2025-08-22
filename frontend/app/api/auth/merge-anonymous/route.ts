@@ -147,19 +147,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Parse request body
+    // Parse request body (email/password not required for merge)
     const body = await request.json().catch(() => ({}));
-    const { email, password } = body;
-    
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Missing email or password' },
-        { 
-          status: 400,
-          headers: getCORSHeaders(origin || undefined)
-        }
-      );
-    }
     
     // Get merge token from cookies
     const cookieStore = await cookies();

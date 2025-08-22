@@ -39,7 +39,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       setLoading(true);
       setError(null);
 
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
       const response = await fetch(`${backendUrl}/api/feature-flags`);
 
       if (!response.ok) {
