@@ -1,5 +1,20 @@
 from app_factory import create_app
-from utils.config_manager import ConfigManager
+
+# Import ConfigManager with fallback
+try:
+    from utils.config_manager import ConfigManager
+except ImportError:
+    # Fallback ConfigManager if the module is not available
+    class ConfigManager:
+        @staticmethod
+        def get_port():
+            import os
+            return int(os.getenv("PORT", 5000))
+
+        @staticmethod
+        def is_production():
+            import os
+            return os.getenv("ENVIRONMENT", "development") == "production"
 
 """
 WSGI Entry Point for JewGo Backend
