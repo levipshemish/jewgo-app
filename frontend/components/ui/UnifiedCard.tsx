@@ -110,6 +110,47 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return () => clearTimeout(timeout);
   }, [data.id]);
 
+  // Debug all child elements to find white background source
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const cardElements = document.querySelectorAll('.unified-card');
+      cardElements.forEach((card, index) => {
+        if (index === 0) { // Only debug first card to avoid spam
+          console.log('🔍 UnifiedCard Debug - Analyzing card structure for white background:', card);
+          
+          // Check all child elements recursively
+          const checkElementBackground = (element: Element, depth: number = 0) => {
+            const indent = '  '.repeat(depth);
+            const computedStyle = window.getComputedStyle(element);
+            const backgroundColor = computedStyle.backgroundColor;
+            const background = computedStyle.background;
+            
+            // Check if this element has a white or solid background
+            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)' && backgroundColor !== 'transparent') {
+              console.log(`${indent}🔍 Found element with background:`, {
+                element: element,
+                tagName: element.tagName,
+                className: element.className,
+                backgroundColor: backgroundColor,
+                background: background,
+                depth: depth
+              });
+            }
+            
+            // Recursively check children
+            Array.from(element.children).forEach(child => {
+              checkElementBackground(child, depth + 1);
+            });
+          };
+          
+          checkElementBackground(card);
+        }
+      });
+    }, 2000); // 2 second timeout to ensure everything is rendered
+
+    return () => clearTimeout(timeout);
+  }, [data.id]);
+
   // Sync with favorites manager
   useEffect(() => {
     setIsLiked(isFavorite(data.id));
@@ -283,12 +324,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       {/* Image Container */}
       <div className="relative w-full">
         <div className={cn(
-          "w-full rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300 group-hover:scale-105",
+          "w-full rounded-[20px] overflow-hidden bg-transparent transition-transform duration-300 group-hover:scale-105",
           variantStyles.imageClass
         )}>
           {/* Loading Placeholder */}
           {imageLoading && (
-            <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
+            <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center rounded-[20px]">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
             </div>
           )}
@@ -491,7 +532,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           {cardData.badge && (
             <motion.div
               className={cn(
-                "inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
+                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
                 variantStyles.badgeClass
               )}
               initial={{ opacity: 0, scale: 0.9 }}
