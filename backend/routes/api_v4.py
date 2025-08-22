@@ -894,6 +894,7 @@ def get_marketplace_listings():
         radius = min(request.args.get("radius", 10, type=float), 1000)  # miles
 
         # Use marketplace service
+        logger.info("Creating marketplace service...")
         service = create_marketplace_service()
         if not service:
             # Return empty marketplace response instead of error
@@ -907,6 +908,8 @@ def get_marketplace_listings():
                     "hasMore": False,
                 }
             })
+        
+        logger.info("Marketplace service created successfully, calling get_listings...")
 
         result = service.get_listings(
             limit=limit,
@@ -925,6 +928,8 @@ def get_marketplace_listings():
             lng=lng,
             radius=radius,
         )
+        
+        logger.info(f"Service result: {result}")
 
         if result["success"]:
             return success_response(result["data"])
