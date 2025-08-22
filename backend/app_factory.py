@@ -55,17 +55,62 @@ def create_app():
     app = Flask(__name__)
     
     # Configure CORS
-    CORS(app, origins=[
-        "http://localhost:3000",
-        "http://localhost:3001", 
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "https://jewgo.com",
-        "https://www.jewgo.com",
-        "https://app.jewgo.com",
-        "https://jewgo.app",
-        "https://jewgo-app-oyoh.onrender.com"
-    ])
+    # Get CORS origins from environment or use defaults
+    cors_origins_env = os.environ.get("CORS_ORIGINS", "")
+    if cors_origins_env:
+        # Split by comma and strip whitespace from each origin
+        cors_origins = [
+            origin.strip() for origin in cors_origins_env.split(",") if origin.strip()
+        ]
+        logger.info("CORS origins from environment", cors_origins=cors_origins)
+    else:
+        cors_origins = []
+        logger.info("No CORS_ORIGINS environment variable found, using defaults")
+
+    # Add default origins if not specified in environment
+    if not cors_origins:
+        cors_origins = [
+            "https://jewgo.app",
+            "https://jewgo-app.vercel.app",  # Production frontend
+            "https://jewgo.com",
+            "https://www.jewgo.com",
+            "https://app.jewgo.com",
+            "https://jewgo-app-oyoh.onrender.com",
+            "http://localhost:3000",
+            "http://localhost:3001", 
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001"
+        ]
+        logger.info("Using default CORS origins", cors_origins=cors_origins)
+
+    logger.info("Final CORS origins configuration", cors_origins=cors_origins)
+
+    # Configure CORS with more robust settings
+    CORS(
+        app,
+        origins=cors_origins,
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+            "X-Forwarded-For",
+            "X-Real-IP",
+            "Cache-Control",
+            "Pragma",
+        ],
+        expose_headers=[
+            "Content-Type",
+            "Content-Length",
+            "Cache-Control",
+            "Pragma",
+        ],
+        supports_credentials=True,
+        max_age=86400,  # Cache preflight for 24 hours
+        send_wildcard=False,  # Don't send wildcard, send specific origin
+    )
     
     # Initialize database manager
     db_manager = None

@@ -19,6 +19,8 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: INFO
+      - key: CORS_ORIGINS
+        value: https://jewgo.app,https://jewgo-app.vercel.app,https://jewgo.com,https://www.jewgo.com,https://app.jewgo.com
     healthCheckPath: /health
     autoDeploy: true
 
