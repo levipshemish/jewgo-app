@@ -3,7 +3,7 @@
  * Uses in-memory storage for development and testing
  */
 
-import { validateTrustedIP } from './utils';
+import { validateTrustedIP } from '@/lib/utils/auth-utils';
 
 // Rate limit configurations
 const RATE_LIMITS = {
