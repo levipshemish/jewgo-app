@@ -64,7 +64,7 @@ class MarketplaceServiceV4(BaseService):
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
                     # Test if marketplace table exists
-                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'Marketplace_listings\''))
+                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'marketplace\''))
                     if not result.fetchone():
                         logger.warning("Marketplace tables do not exist, returning empty response")
                         return self._get_empty_listings_response(limit, offset)
@@ -72,12 +72,12 @@ class MarketplaceServiceV4(BaseService):
                 logger.warning(f"Could not check marketplace tables: {e}")
                 return self._get_empty_listings_response(limit, offset)
             
-            # Build query for Marketplace_listings table with correct column names
+            # Build query for marketplace table with correct column names
             query = """
-                SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
-                       m.lat, m.lng, m.seller_user_id, m.type, m.condition,
-                       m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
-                FROM Marketplace_listings m
+                SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip, 
+                       m.latitude as lat, m.longitude as lng, m.vendor_id as seller_user_id, m.category as type, m.status as condition,
+                       m.category, m.subcategory, m.status, m.created_at, m.updated_at
+                FROM marketplace m
                 WHERE m.status = :status
             """
             params = {"status": status}
@@ -155,22 +155,26 @@ class MarketplaceServiceV4(BaseService):
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
 
+                logger.info(f"Executing marketplace query with params: {params}")
+                
                 # Execute main query
                 result = session.execute(text(query), params)
                 listings = result.fetchall()
+                logger.info(f"Found {len(listings)} listings from query")
 
-                                # Get total count for pagination
+                # Get total count for pagination
                 count_query = """
-                    SELECT COUNT(*) as total FROM "Marketplace listings" m
+                    SELECT COUNT(*) as total FROM marketplace m
                     WHERE m.status = :status
                 """
                 count_result = session.execute(text(count_query), {"status": status})
                 total = count_result.scalar()
+                logger.info(f"Total count: {total}")
 
-            # Format response for "Marketplace listings" table
+            # Format response for marketplace table
             formatted_listings = []
             for listing in listings:
-                # Convert "Marketplace listings" table structure to expected format
+                # Convert marketplace table structure to expected format
                 # Use dictionary access since SQLAlchemy returns Row objects
                 formatted_listing = {
                     "id": str(listing[0]),  # id
@@ -178,23 +182,23 @@ class MarketplaceServiceV4(BaseService):
                     "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
                     "title": listing[1],  # title
                     "description": listing[2],  # description
-                    "price_cents": int(listing[3]) if listing[3] else 0,  # price_cents
+                    "price_cents": int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
                     "currency": listing[4] or "USD",  # currency
                     "condition": listing[12] or "new",  # condition
-                    "category_id": listing[13],  # category_id
-                    "subcategory_id": listing[14],  # subcategory_id
+                    "category_id": listing[13],  # category
+                    "subcategory_id": listing[14],  # subcategory
                     "city": listing[5],  # city
-                    "region": listing[6],  # region
-                    "zip": listing[7],  # zip
+                    "region": listing[6],  # region (state)
+                    "zip": listing[7],  # zip (zip_code)
                     "country": "US",  # Default country
-                    "lat": float(listing[8]) if listing[8] else None,  # lat
-                    "lng": float(listing[9]) if listing[9] else None,  # lng
-                    "seller_user_id": listing[10],  # seller_user_id
+                    "lat": float(listing[8]) if listing[8] else None,  # lat (latitude)
+                    "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
+                    "seller_user_id": listing[10],  # seller_user_id (vendor_id)
                     "attributes": {
-                        "type": listing[11],  # type
-                        "condition": listing[12],  # condition
-                        "category_id": listing[13],  # category_id
-                        "subcategory_id": listing[14],  # subcategory_id
+                        "type": listing[11],  # type (category)
+                        "condition": listing[12],  # condition (status)
+                        "category_id": listing[13],  # category
+                        "subcategory_id": listing[14],  # subcategory
                     },
                     "endorse_up": 0,  # Default values
                     "endorse_down": 0,  # Default values
@@ -205,8 +209,8 @@ class MarketplaceServiceV4(BaseService):
                     "updated_at": listing[17].isoformat()
                     if listing[17]
                     else None,  # updated_at
-                    "category_name": None,  # Will be populated by join if needed
-                    "subcategory_name": None,  # Will be populated by join if needed
+                    "category_name": listing[13],  # category name
+                    "subcategory_name": listing[14],  # subcategory name
                     "seller_name": listing[10],  # seller_user_id as seller_name
                 }
                 formatted_listings.append(formatted_listing)
@@ -222,7 +226,8 @@ class MarketplaceServiceV4(BaseService):
             }
 
         except Exception as e:
-            logger.exception("Error fetching marketplace listings")
+            logger.exception(f"Error fetching marketplace listings: {str(e)}")
+            logger.error(f"Exception details: {type(e).__name__}: {str(e)}")
             return self._get_empty_listings_response(limit, offset)
 
     def _get_empty_listings_response(self, limit: int, offset: int) -> Dict[str, Any]:
