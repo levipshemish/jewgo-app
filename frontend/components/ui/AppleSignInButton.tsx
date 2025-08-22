@@ -39,17 +39,14 @@ export function AppleSignInButton({
     onClick();
   };
 
-  if (!enabled) {
-    return null;
-  }
-
   return (
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled || loading || isClicked}
+      disabled={disabled || loading || isClicked || !enabled}
       aria-label={getAppleSignInText(locale)}
       aria-busy={loading}
+      aria-hidden={!enabled}
       className={`
         inline-flex items-center justify-center
         w-full h-11 min-h-[44px] px-4
@@ -63,7 +60,8 @@ export function AppleSignInButton({
         ${className}
       `}
       style={{
-        borderRadius: '6px'
+        borderRadius: '6px',
+        visibility: !enabled ? 'hidden' : 'visible'
       }}
     >
       {/* Apple Logo SVG */}

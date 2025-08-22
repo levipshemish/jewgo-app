@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState, Suspense } from "react";
+import { FormEvent, useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
+import { getClientConfig } from "@/lib/config/client-config";
 
 // Separate component to handle search params with proper Suspense boundary
 function SignUpFormWithParams() {
@@ -24,6 +25,20 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Initialize with the correct value to avoid flash
+  const [appleOAuthEnabled, setAppleOAuthEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const config = getClientConfig();
+      return config.appleOAuthEnabled;
+    }
+    return false;
+  });
+
+  // Check Apple OAuth configuration on component mount
+  useEffect(() => {
+    const config = getClientConfig();
+    setAppleOAuthEnabled(config.appleOAuthEnabled);
+  }, []);
 
   const onEmailSignUp = async (e: FormEvent) => {
     e.preventDefault();
@@ -228,7 +243,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
                 onClick={onAppleSignUp}
                 disabled={pending}
                 loading={pending}
-                enabled={process.env.NEXT_PUBLIC_APPLE_OAUTH_ENABLED === 'true'}
+                enabled={appleOAuthEnabled}
               />
               
               <button
