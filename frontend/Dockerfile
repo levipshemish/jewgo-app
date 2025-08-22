@@ -20,6 +20,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Copy environment file if provided
+ARG ENV_FILE
+COPY ${ENV_FILE:-.env} .env
+
 # Generate Prisma client
 RUN npx prisma generate
 

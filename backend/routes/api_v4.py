@@ -873,7 +873,17 @@ def get_marketplace_listings():
         # Use marketplace service
         service = create_marketplace_service()
         if not service:
-            return error_response("Marketplace service unavailable", 503)
+            # Return empty marketplace response instead of error
+            logger.warning("Marketplace service not available, returning empty response")
+            return success_response({
+                "listings": [],
+                "pagination": {
+                    "total": 0,
+                    "limit": limit,
+                    "offset": offset,
+                    "hasMore": False,
+                }
+            })
 
         result = service.get_listings(
             limit=limit,
@@ -910,92 +920,17 @@ def get_marketplace_listings():
 def get_marketplace_listing(listing_id):
     """Get a specific marketplace listing by ID."""
     try:
-        # TEMPORARY: Check if marketplace tables exist
-        try:
-            # Test if listings table exists
-            with get_service_dependencies()[0] as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT 1 FROM listings LIMIT 1")
-        except Exception as table_error:
-            logger.warning(f"Marketplace tables not found: {table_error}")
-            # Return not found when tables don't exist
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            logger.warning("Marketplace service not available")
             return not_found_response(f"Listing with ID {listing_id}", "listing")
 
-        with get_service_dependencies()[
-            0
-        ] as conn:  # Assuming get_service_dependencies()[0] is db_manager
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    """
-                    SELECT l.*, 
-                           c.name as category_name,
-                           sc.name as subcategory_name,
-                           u.display_name as seller_name,
-                           u.username as seller_username,
-                           g.name as gemach_name,
-                           g.phone as gemach_phone,
-                           g.email as gemach_email
-                    FROM listings l
-                    LEFT JOIN categories c ON l.category_id = c.id
-                    LEFT JOIN subcategories sc ON l.subcategory_id = sc.id
-                    LEFT JOIN users u ON l.seller_user_id = u.id
-                    LEFT JOIN gemachs g ON l.seller_gemach_id = g.id
-                    WHERE l.id = %s
-                """,
-                    [listing_id],
-                )
-
-                listing = cursor.fetchone()
-
-                if not listing:
-                    return not_found_response(
-                        f"Listing with ID {listing_id}", "listing"
-                    )
-
-                # Format response
-                formatted_listing = {
-                    "id": str(listing["id"]),
-                    "title": listing["title"],
-                    "description": listing["description"],
-                    "type": listing["type"],
-                    "category": listing["category_name"],
-                    "subcategory": listing["subcategory_name"],
-                    "price_cents": listing["price_cents"],
-                    "currency": listing["currency"],
-                    "condition": listing["condition"],
-                    "city": listing["city"],
-                    "region": listing["region"],
-                    "zip": listing["zip"],
-                    "country": listing["country"],
-                    "lat": listing["lat"],
-                    "lng": listing["lng"],
-                    "seller_name": listing["seller_name"] or listing["gemach_name"],
-                    "seller_username": listing["seller_username"],
-                    "seller_type": "user" if listing["seller_name"] else "gemach",
-                    "seller_contact": {
-                        "phone": listing["gemach_phone"]
-                        if listing["gemach_name"]
-                        else None,
-                        "email": listing["gemach_email"]
-                        if listing["gemach_name"]
-                        else None,
-                    },
-                    "available_from": listing["available_from"].isoformat()
-                    if listing["available_from"]
-                    else None,
-                    "available_to": listing["available_to"].isoformat()
-                    if listing["available_to"]
-                    else None,
-                    "loan_terms": listing["loan_terms"],
-                    "attributes": listing["attributes"],
-                    "endorse_up": listing["endorse_up"],
-                    "endorse_down": listing["endorse_down"],
-                    "status": listing["status"],
-                    "created_at": listing["created_at"].isoformat(),
-                    "updated_at": listing["updated_at"].isoformat(),
-                }
-
-                return success_response({"success": True, "data": formatted_listing})
+        result = service.get_listing_by_id(listing_id)
+        if result["success"]:
+            return success_response(result["data"])
+        else:
+            return not_found_response(f"Listing with ID {listing_id}", "listing")
 
     except Exception as e:
         logger.exception("Error fetching marketplace listing")
@@ -1039,7 +974,12 @@ def get_marketplace_categories():
     try:
         service = create_marketplace_service()
         if not service:
-            return error_response("Marketplace service unavailable", 503)
+            # Return empty categories response instead of error
+            logger.warning("Marketplace service not available, returning empty categories")
+            return success_response({
+                "categories": [],
+                "subcategories": []
+            })
 
         result = service.get_categories()
 

@@ -121,6 +121,90 @@ def create_app():
         except Exception as e:
             logger.error(f"Failed to initialize database manager: {e}")
     
+    # Initialize dependencies for API v4 routes
+    deps = {}
+    
+    # Import v4 dependencies
+    try:
+        from database.database_manager_v4 import DatabaseManager
+        deps["DatabaseManagerV4"] = DatabaseManager
+        logger.info("DatabaseManagerV4 imported successfully")
+    except ImportError as e:
+        logger.warning(f"Could not import DatabaseManagerV4: {e}")
+        deps["DatabaseManagerV4"] = None
+    
+    try:
+        from utils.cache_manager_v4 import CacheManagerV4
+        deps["CacheManagerV4"] = CacheManagerV4
+        logger.info("CacheManagerV4 imported successfully")
+    except ImportError as e:
+        logger.warning(f"Could not import CacheManagerV4: {e}")
+        deps["CacheManagerV4"] = None
+    
+    try:
+        from utils.config_manager import ConfigManager
+        deps["ConfigManager"] = ConfigManager
+        logger.info("ConfigManager imported successfully")
+    except ImportError as e:
+        logger.warning(f"Could not import ConfigManager: {e}")
+        deps["ConfigManager"] = None
+    
+    # Initialize v4 database manager as singleton
+    db_manager_v4_instance = None
+    cache_manager_v4_instance = None
+
+    def get_db_manager_v4():
+        """Get or create database manager v4 instance."""
+        nonlocal db_manager_v4_instance
+        if db_manager_v4_instance is None:
+            try:
+                if "DatabaseManagerV4" in deps and deps["DatabaseManagerV4"]:
+                    logger.info("Creating new database manager v4 instance")
+                    db_manager_v4_instance = deps["DatabaseManagerV4"]()
+                    if db_manager_v4_instance.connect():
+                        logger.info("Database v4 connection established")
+                    else:
+                        logger.error("Failed to establish database v4 connection")
+                        db_manager_v4_instance = None
+                else:
+                    logger.error("DatabaseManagerV4 not available in dependencies")
+            except Exception as e:
+                logger.exception("Database v4 initialization failed", error=str(e))
+                db_manager_v4_instance = None
+        return db_manager_v4_instance
+
+    def get_cache_manager_v4():
+        """Get or create cache manager v4 instance."""
+        nonlocal cache_manager_v4_instance
+        if cache_manager_v4_instance is None:
+            try:
+                if "CacheManagerV4" in deps and deps["CacheManagerV4"]:
+                    logger.info("Creating new cache manager v4 instance")
+                    # Get Redis URL from environment
+                    redis_url = os.environ.get("REDIS_URL") or os.environ.get("CACHE_REDIS_URL")
+                    if not redis_url or redis_url == "memory://":
+                        logger.info("No Redis URL configured - CacheManagerV4 will use memory fallback")
+                        cache_manager_v4_instance = deps["CacheManagerV4"](enable_cache=False)
+                    else:
+                        logger.info(f"Initializing CacheManagerV4 with Redis: {redis_url[:50]}...")
+                        cache_manager_v4_instance = deps["CacheManagerV4"](redis_url=redis_url)
+                    logger.info("Cache manager v4 initialized")
+                else:
+                    logger.warning("CacheManagerV4 not available in dependencies")
+                    cache_manager_v4_instance = None
+            except Exception as e:
+                logger.exception("Cache manager v4 initialization failed", error=str(e))
+                cache_manager_v4_instance = None
+        return cache_manager_v4_instance
+
+    # Add v4 getters to dependencies
+    deps["get_db_manager_v4"] = get_db_manager_v4
+    deps["cache_manager_v4"] = get_cache_manager_v4()
+    deps["config_manager"] = deps.get("ConfigManager", None)
+
+    # Make dependencies available to routes
+    app.config["dependencies"] = deps
+    
     # Health check endpoint
     @app.route('/health', methods=['GET'])
     def health_check():

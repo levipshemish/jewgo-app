@@ -20,11 +20,15 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers (skip dependencies for now)
-RUN playwright install chromium
+# Install Playwright browsers (if playwright is in requirements)
+RUN if command -v playwright >/dev/null 2>&1; then playwright install chromium; fi
 
 # Copy source code
 COPY . .
+
+# Copy environment file if provided
+ARG ENV_FILE
+COPY ${ENV_FILE:-.env} .env
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

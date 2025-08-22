@@ -32,7 +32,14 @@
     "docker:deploy": "./scripts/docker-hub-workflow.sh build-and-push",
     "docker:list": "./scripts/docker-hub-workflow.sh list",
     "docker:clean": "./scripts/docker-hub-workflow.sh clean",
-    "docker:hub-status": "./scripts/docker-hub-workflow.sh status"
+    "docker:hub-status": "./scripts/docker-hub-workflow.sh status",
+    "// Docker Hub deployment with .env support": "",
+    "docker:deploy-env": "./scripts/docker-hub-deploy-with-env.sh deploy",
+    "docker:build-env": "./scripts/docker-hub-deploy-with-env.sh build",
+    "docker:push-env": "./scripts/docker-hub-deploy-with-env.sh push",
+    "docker:validate-env": "./scripts/docker-hub-deploy-with-env.sh validate-env",
+    "docker:list-env": "./scripts/docker-hub-deploy-with-env.sh list-env",
+    "docker:env-status": "./scripts/docker-hub-deploy-with-env.sh status"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"
