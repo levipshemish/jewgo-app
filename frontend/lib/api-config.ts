@@ -6,7 +6,7 @@
 const getApiBaseUrl = (): string => {
   // In production, use the environment variable or default Render URL
   if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com'
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com'
   }
   
   // In development, use local backend

@@ -4,10 +4,12 @@
  */
 
 import { initializeFeatureGuard } from './feature-guard';
-import { validateEnvironment } from './config/environment';
+import { validateEnvironment } from './config/environment.public';
+import { validateSupabaseFeaturesWithLogging } from './utils/auth-utils.server';
 
 let initialized = false;
 let initializationPromise: Promise<boolean> | null = null;
+let anonymousAuthSupported = false;
 
 /**
  * Initialize server-side functionality
@@ -43,6 +45,18 @@ async function performInitialization(): Promise<boolean> {
     }
     console.log('✅ Feature guard initialization completed');
 
+    // Validate anonymous auth features once at boot with loud logging
+    console.log('🚨 [Server Init] Starting critical anonymous auth feature validation...');
+    const anonymousFeaturesValid = await validateSupabaseFeaturesWithLogging();
+    if (!anonymousFeaturesValid) {
+      console.error('🚨 CRITICAL: Anonymous auth features not supported at boot time');
+      console.error('🚨 ANONYMOUS AUTH WILL FAIL - Application startup failure');
+      anonymousAuthSupported = false;
+    } else {
+      console.log('✅ Anonymous auth features validated successfully at boot time');
+      anonymousAuthSupported = true;
+    }
+
     initialized = true;
     console.log('✅ Server initialization completed successfully');
     return true;
@@ -60,6 +74,13 @@ async function performInitialization(): Promise<boolean> {
  */
 export function isServerInitialized(): boolean {
   return initialized;
+}
+
+/**
+ * Check if anonymous auth is supported
+ */
+export function isAnonymousAuthSupported(): boolean {
+  return anonymousAuthSupported;
 }
 
 /**

@@ -130,7 +130,7 @@ export function sanitizeRedirectUrl(url: string | null | undefined): string {
 }
 
 // Import trusted CDN IPs from centralized configuration
-import { TRUSTED_CDN_IPS } from '@/lib/config/environment';
+import { TRUSTED_CDN_IPS } from '@/lib/config/environment.public';
 
 /**
  * Validate trusted IP with left-most X-Forwarded-For parsing

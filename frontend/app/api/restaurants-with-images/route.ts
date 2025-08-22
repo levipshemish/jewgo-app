@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Call the backend API with our local database
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
 

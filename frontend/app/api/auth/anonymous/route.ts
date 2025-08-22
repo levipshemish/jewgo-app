@@ -20,8 +20,8 @@ import {
   ALLOWED_ORIGINS, 
   getCORSHeaders,
   FEATURE_FLAGS
-} from '@/lib/config/environment';
-import { initializeServer } from '@/lib/server-init';
+} from '@/lib/config/environment.public';
+import { initializeServer, isAnonymousAuthSupported } from '@/lib/server-init';
 
 /**
  * Runtime choice documentation:
@@ -78,11 +78,10 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-  
-  // Boot-time feature support validation with loud logging
-  const featuresSupported = validateSupabaseFeatureSupport();
-  if (!featuresSupported) {
-    console.error(`🚨 CRITICAL: Supabase features not supported at boot time for correlation ID: ${correlationId}`, {
+
+  // Check cached anonymous auth support
+  if (!isAnonymousAuthSupported()) {
+    console.error(`Anonymous auth not supported for correlation ID: ${correlationId}`, {
       correlationId
     });
     
@@ -96,6 +95,8 @@ export async function POST(request: NextRequest) {
       }
     );
   }
+  
+
   
   // Validate origin against allowlist
   const origin = request.headers.get('origin');
@@ -126,30 +127,15 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Feature support validation
-    const featuresSupported = await validateSupabaseFeaturesWithLogging();
-    if (!featuresSupported) {
-      console.error(`CRITICAL: Supabase features not supported for correlation ID: ${correlationId}`, {
-        correlationId
-      });
-      
-      return NextResponse.json(
-        { error: 'ANON_SIGNIN_UNSUPPORTED' },
-        { 
-          status: 500,
-          headers: {
-            ...getCORSHeaders(origin || undefined),
-            'Cache-Control': 'no-store'
-          }
-        }
-      );
-    }
+
     
     // Get request details for security validation
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const platformIP = (request as any).ip || (request as any).cf?.connectingIP;
+    const realIPHeader = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    const realIP = platformIP || realIPHeader || 'unknown';
     
     // Trusted IP validation with left-most X-Forwarded-For parsing
     const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
@@ -218,11 +204,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate Turnstile token if rate limit exceeded or flagged
+    // Validate Turnstile token if rate limit exceeded
     // Skip Turnstile validation in development/Docker environments
     if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
       console.log(`Development/Docker mode: Skipping Turnstile validation for correlation ID: ${correlationId}`);
-    } else if (rateLimitResult.remaining_attempts === 0 || !turnstileToken) {
+    } else if (rateLimitResult.remaining_attempts === 0) {
       if (!turnstileToken) {
         console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
           correlationId,

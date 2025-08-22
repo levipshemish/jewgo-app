@@ -186,6 +186,10 @@ WITH CHECK (
   AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
 );
 
+CREATE POLICY "user_profiles_owner_read" ON user_profiles
+FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
 CREATE POLICY "user_profiles_owner_update" ON user_profiles
 FOR UPDATE TO authenticated
 USING (auth.uid() = user_id)

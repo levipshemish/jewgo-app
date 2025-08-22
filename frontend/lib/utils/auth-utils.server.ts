@@ -21,9 +21,17 @@ if (typeof window === 'undefined') {
 }
 
 // HMAC keys for cookie signing - server-only
-// Use the standardized environment variable names from environment.ts
-const MERGE_COOKIE_HMAC_KEY = process.env.MERGE_COOKIE_HMAC_KEY_CURRENT || process.env.MERGE_COOKIE_HMAC_KEY || 'fallback-key-change-in-production';
-const MERGE_COOKIE_HMAC_KEY_V2 = process.env.MERGE_COOKIE_HMAC_KEY_PREVIOUS || process.env.MERGE_COOKIE_HMAC_KEY_V2 || 'fallback-key-v2-change-in-production';
+// Use the standardized environment variable names from environment.server.ts
+import { 
+  MERGE_COOKIE_HMAC_KEY_CURRENT,
+  MERGE_COOKIE_HMAC_KEY_PREVIOUS,
+  CSRF_SECRET,
+  IP_HASH_SALT,
+  ANALYTICS_HMAC_SECRET
+} from '@/lib/config/environment.server';
+
+const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT || 'fallback-key-change-in-production';
+const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS || 'fallback-key-v2-change-in-production';
 
 // Feature support validation
 let featureSupportValidated = false;
@@ -334,7 +342,7 @@ export async function persistAppleUserName(userId: string, name: string | null, 
  * Create HMAC-based analytics key for PII-safe logging
  */
 export function createAnalyticsKey(userId: string): string {
-  const secret = process.env.ANALYTICS_HMAC_SECRET;
+  const secret = ANALYTICS_HMAC_SECRET;
   
   // Harden the function to throw in production if secret is missing
   if (!secret) {
@@ -478,7 +486,6 @@ export async function completeIdentityLinking(userId: string, reauthProvider: st
 /**
  * Server-only HMAC constants
  */
-const CSRF_SECRET = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
 const CSRF_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
@@ -486,7 +493,7 @@ const CSRF_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
  * Prevents raw IP logging while maintaining correlation capabilities
  */
 export function hashIPForPrivacy(ip: string): string {
-  const salt = process.env.IP_HASH_SALT || 'default-ip-salt-change-in-production';
+  const salt = IP_HASH_SALT || 'default-ip-salt-change-in-production';
   const data = `${ip}:${salt}`;
   return createHmac('sha256', salt).update(data).digest('hex').substring(0, 16);
 }

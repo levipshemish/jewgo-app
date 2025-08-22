@@ -4,7 +4,7 @@
  */
 
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
-import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment';
+import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment.server';
 
 // Rate limit configurations
 const RATE_LIMITS = {
@@ -96,8 +96,9 @@ export async function checkRateLimit(
     const redis = await getRedisClient();
     
     // Create rate limit keys
-    const windowKey = `rate_limit:${limitType}:${realIP}:window`;
-    const dailyKey = `rate_limit:${limitType}:${realIP}:daily`;
+    const base = key ? `${limitType}:${key}` : `${limitType}:${realIP}`;
+    const windowKey = `rate_limit:${base}:window`;
+    const dailyKey = `rate_limit:${base}:daily`;
     
     // Use Redis pipeline for atomic operations
     const pipeline = redis.pipeline();
@@ -195,8 +196,9 @@ export async function clearRateLimit(
     const realIP = validateTrustedIP(requestIP, forwardedFor);
     const redis = await getRedisClient();
     
-    const windowKey = `rate_limit:${limitType}:${realIP}:window`;
-    const dailyKey = `rate_limit:${limitType}:${realIP}:daily`;
+    const base = key ? `${limitType}:${key}` : `${limitType}:${realIP}`;
+    const windowKey = `rate_limit:${base}:window`;
+    const dailyKey = `rate_limit:${base}:daily`;
     
     await redis.del(windowKey, dailyKey);
   } catch (error) {
