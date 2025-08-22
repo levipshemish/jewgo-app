@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { 
-  validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous,
-  validateSupabaseFeatureSupport
+  extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { 
   ALLOWED_ORIGINS, 
@@ -14,10 +13,10 @@ import {
 } from '@/lib/config/environment';
 
 /**
- * Edge runtime version - optimized for Vercel Edge Functions
- * This version removes Node.js-specific dependencies for better compatibility
+ * Node.js runtime version - more reliable for complex operations
+ * This version uses Node.js runtime for better compatibility
  */
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
@@ -51,38 +50,24 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Basic validation
-    if (!validateSupabaseFeatureSupport()) {
-      return NextResponse.json(
-        { error: 'ANON_SIGNIN_UNSUPPORTED' },
-        { 
-          status: 503,
-          headers: {
-            ...getCORSHeaders(origin || undefined),
-            'Cache-Control': 'no-store'
-          }
-        }
-      );
-    }
-
     // Parse request body
     const body = await request.json().catch(() => ({}));
     
-    // Create Supabase client
+    // Create Supabase client with cookies
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            return request.cookies.get(name)?.value;
+            return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
-            // Edge runtime doesn't support setting cookies directly
-            // They need to be set in the response headers
+            cookieStore.set(name, value, options);
           },
           remove(name: string, options: any) {
-            // Edge runtime doesn't support removing cookies directly
+            cookieStore.set(name, '', { ...options, maxAge: 0 });
           },
         },
       }
@@ -151,7 +136,7 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    // Set auth cookies manually for edge runtime
+    // Set auth cookies
     if (session) {
       const cookieOptions = {
         httpOnly: true,
