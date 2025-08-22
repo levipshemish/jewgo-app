@@ -314,10 +314,22 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           </div>
         )}
 
+        {/* Image Tag */}
+        {cardData.imageTag && (
+          <div className={cn(
+            "absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm",
+            variantStyles.badgeClass
+          )}>
+            <span className="font-medium text-gray-700">
+              {titleCase(cardData.imageTag)}
+            </span>
+          </div>
+        )}
+
         {/* Badge */}
         {cardData.badge && (
           <div className={cn(
-            "absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm",
+            "absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm",
             variantStyles.badgeClass
           )}>
             <div className="flex items-center gap-1">

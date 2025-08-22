@@ -136,7 +136,7 @@ function EateryPageContent() {
       title: restaurant.name,
       badge: restaurant.rating ? `${restaurant.rating}` : undefined,
       subtitle: restaurant.price_range,
-      additionalText: restaurant.distance || restaurant.city || '',
+      additionalText: restaurant.distance || '',
       showHeart: true,
       kosherCategory: restaurant.kosher_category,
       priceRange: restaurant.price_range,
@@ -563,7 +563,7 @@ function EateryPageContent() {
               showStarInBadge={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
               onLikeToggle={(id, isLiked) => {
-
+                console.log(`Restaurant ${id} liked: ${isLiked}`);
               }}
             />
           ))}
