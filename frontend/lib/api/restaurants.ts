@@ -356,9 +356,4 @@ export const fetchRestaurants = (limit?: number, queryParams?: string) => Restau
 export const searchRestaurants = (query: string, limit?: number) => RestaurantsAPI.searchRestaurants(query, limit);
 export const getRestaurant = (id: number) => RestaurantsAPI.getRestaurant(id);
 export const fetchRestaurantsByIds = (ids: number[]) => RestaurantsAPI.fetchRestaurantsByIds(ids);
-<<<<<<< Current (Your changes)
 export const getStatistics = () => RestaurantsAPI.getStatistics();
-export const getMockRestaurants = () => RestaurantsAPI.getMockRestaurants(); 
-=======
-export const getStatistics = () => RestaurantsAPI.getStatistics(); 
->>>>>>> Incoming (Background Agent changes)
