@@ -71,7 +71,6 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
 export const DEFAULT_FILTERS: Filters = {
   page: 1,
   limit: 50,
-  maxDistanceMi: 25,
 };
 
 // Validation helpers

@@ -200,6 +200,7 @@ function EateryPageContent() {
       setFilter('lat', latitude);
       setFilter('lng', longitude);
       setFilter('nearMe', true);
+      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
       
       // Send location update via WebSocket
       if (isConnected) {
@@ -239,6 +240,17 @@ function EateryPageContent() {
       }
     };
   }, []);
+
+  // Clear distance filters when no user location
+  useEffect(() => {
+    if (!userLocation) {
+      // Clear distance-related filters when no location is available
+      clearFilter('lat');
+      clearFilter('lng');
+      clearFilter('nearMe');
+      clearFilter('maxDistanceMi');
+    }
+  }, [userLocation, clearFilter]);
 
   // Fetch restaurants with mobile optimization and distance sorting
   const fetchRestaurantsData = async (filters: Filters = activeFilters) => {

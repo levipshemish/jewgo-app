@@ -104,22 +104,6 @@ export async function GET(request: NextRequest) {
       queryParams.append('limit', filters.limit.toString());
     }
     
-    // Search query
-    if (filters.q) {
-      queryParams.append('search', filters.q);
-    }
-    
-    // Kosher filters
-    if (filters.agency) {
-      queryParams.append('certifying_agency', filters.agency);
-    }
-    if (filters.dietary) {
-      queryParams.append('kosher_category', filters.dietary);
-    }
-    if (filters.category) {
-      queryParams.append('listing_type', filters.category);
-    }
-    
     // Location-based filtering (CRITICAL: Server-side distance filtering)
     if (filters.nearMe && filters.lat && filters.lng && filters.maxDistanceMi) {
       queryParams.append('lat', filters.lat.toString());
@@ -141,6 +125,20 @@ export async function GET(request: NextRequest) {
     }
     if (filters.priceMax) {
       queryParams.append('price_max', filters.priceMax.toString());
+    }
+    
+    // Additional filters that might be missing
+    if (filters.agency) {
+      queryParams.append('certifying_agency', filters.agency);
+    }
+    if (filters.dietary) {
+      queryParams.append('kosher_category', filters.dietary);
+    }
+    if (filters.category) {
+      queryParams.append('listing_type', filters.category);
+    }
+    if (filters.q) {
+      queryParams.append('search', filters.q);
     }
     
     // Forward the request to the backend
