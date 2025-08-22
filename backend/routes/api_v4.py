@@ -997,45 +997,46 @@ def get_marketplace_categories():
         )
 
 
-# Error handlers
-@api_v4.errorhandler(ValidationError)
-def handle_validation_error(error):
-    """Handle validation errors."""
-    return error_response(str(error), 400, {"validation_errors": error.details})
+# Error handlers - only register if api_v4 blueprint is available
+if api_v4 is not None:
+    @api_v4.errorhandler(ValidationError)
+    def handle_validation_error(error):
+        """Handle validation errors."""
+        return error_response(str(error), 400, {"validation_errors": error.details})
 
 
-@api_v4.errorhandler(NotFoundError)
-def handle_not_found_error(error):
-    """Handle not found errors."""
-    return not_found_response(str(error))
+    @api_v4.errorhandler(NotFoundError)
+    def handle_not_found_error(error):
+        """Handle not found errors."""
+        return not_found_response(str(error))
 
 
-@api_v4.errorhandler(DatabaseError)
-def handle_database_error(error):
-    """Handle database errors."""
-    return error_response(str(error), 503)
+    @api_v4.errorhandler(DatabaseError)
+    def handle_database_error(error):
+        """Handle database errors."""
+        return error_response(str(error), 503)
 
 
-@api_v4.errorhandler(ExternalServiceError)
-def handle_external_service_error(error):
-    """Handle external service errors."""
-    return error_response(str(error), 502)
+    @api_v4.errorhandler(ExternalServiceError)
+    def handle_external_service_error(error):
+        """Handle external service errors."""
+        return error_response(str(error), 502)
 
 
-@api_v4.errorhandler(HTTPException)
-def handle_http_error(error):
-    """Handle HTTP exceptions."""
-    return error_response(error.description, error.code)
+    @api_v4.errorhandler(HTTPException)
+    def handle_http_error(error):
+        """Handle HTTP exceptions."""
+        return error_response(error.description, error.code)
 
 
-@api_v4.errorhandler(Exception)
-def handle_generic_error(error):
-    """Handle generic exceptions."""
-    logger.exception("Unhandled exception in API v4", error=str(error))
-    return error_response("Internal server error", 500)
+    @api_v4.errorhandler(Exception)
+    def handle_generic_error(error):
+        """Handle generic exceptions."""
+        logger.exception("Unhandled exception in API v4", error=str(error))
+        return error_response("Internal server error", 500)
 
 
-@app.route("/api/v4/admin/run-marketplace-migration", methods=["POST"])
+@safe_route("/admin/run-marketplace-migration", methods=["POST"])
 def run_marketplace_migration():
     """Temporary admin endpoint to run marketplace migration."""
     try:
