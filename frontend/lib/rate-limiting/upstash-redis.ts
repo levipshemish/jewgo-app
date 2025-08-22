@@ -9,9 +9,9 @@ import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/l
 // Rate limit configurations
 const RATE_LIMITS = {
   anonymous_auth: {
-    max_requests: 5,
-    window: 300, // 5 minutes
-    max_requests_daily: 50,
+    max_requests: process.env.NODE_ENV === 'development' ? 100 : 5,
+    window: process.env.NODE_ENV === 'development' ? 60 : 300, // 1 minute in dev, 5 minutes in prod
+    max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 50,
     window_daily: 86400, // 24 hours
   },
   merge_operations: {

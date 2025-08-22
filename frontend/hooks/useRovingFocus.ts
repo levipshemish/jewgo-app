@@ -188,18 +188,15 @@ export function useRovingFocus({
         break;
 
       case 'Enter':
-        // Enter for both buttons and links - only handle if already focused
+        // Enter only for buttons, not links - only handle if already focused
         if (focusedIndex >= 0) {
           const focusedItem = itemRefs.current[focusedIndex];
-          if (focusedItem && !focusedItem.getAttribute('data-disabled')) {
+          if (focusedItem && focusedItem.tagName === 'BUTTON' && !focusedItem.getAttribute('data-disabled')) {
             if (onSelect) {
               const itemId = focusedItem.closest('[data-item-id]')?.getAttribute('data-item-id');
               if (itemId) {
                 onSelect(itemId);
-                // Only prevent default for buttons, let links handle their own navigation
-                if (focusedItem.tagName === 'BUTTON') {
-                  handled = true;
-                }
+                handled = true;
               }
             }
           }

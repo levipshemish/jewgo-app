@@ -60,6 +60,7 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   const startTime = Date.now();
+  const origin = request.headers.get('origin');
   
   // Initialize server-side functionality
   const serverInitialized = await initializeServer();
