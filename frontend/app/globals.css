@@ -171,6 +171,19 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   @apply scale-[1.02];
 }
 
+/* UnifiedCard specific overrides to prevent conflicts */
+.unified-card {
+  background-color: white !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease-out !important;
+}
+
+.unified-card:hover {
+  border-color: rgb(209 213 219) !important;
+  transform: translateY(-4px) !important;
+}
+
 /* Search Bar Styles - Updated with new color system */
 .search-bar {
   @apply w-full px-4 py-3 rounded-xl bg-white border border-neutral-300 focus:border-jewgo-400 focus:ring-jewgo-400/20 focus:outline-none transition-all duration-200 shadow-soft;
