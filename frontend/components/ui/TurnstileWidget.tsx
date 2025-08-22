@@ -96,7 +96,17 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       }
     };
 
-    window.turnstile.ready(renderWidget);
+    // Add a small delay to ensure the script is fully initialized
+    const timer = setTimeout(() => {
+      if (window.turnstile && window.turnstile.ready) {
+        window.turnstile.ready(renderWidget);
+      } else {
+        // Fallback: try to render directly
+        renderWidget();
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size]);
 
   // Expose methods via ref
