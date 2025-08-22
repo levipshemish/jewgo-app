@@ -24,7 +24,7 @@ const CLEANUP_CONFIG = {
  * Cron schedule: 0 2 * * 0 (Every Sunday at 2 AM)
  * 
  * Environment variables:
- * - CRON_SECRET: Secret to protect the endpoint
+ * - CLEANUP_CRON_SECRET: Secret to protect the endpoint
  * - CLEANUP_DRY_RUN: Set to 'true' for dry-run mode
  */
 export async function GET(request: NextRequest) {
@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
   try {
     // Verify cron secret for security
     const authHeader = request.headers.get('authorization');
-    const expectedSecret = process.env.CRON_SECRET;
+    const expectedSecret = process.env.CLEANUP_CRON_SECRET;
     
     if (!expectedSecret) {
-      console.error(`[Cleanup Cron] CRON_SECRET not configured (${correlationId})`);
+      console.error(`[Cleanup Cron] CLEANUP_CRON_SECRET not configured (${correlationId})`);
       return NextResponse.json(
         { error: 'Cron secret not configured' },
         { status: 500 }

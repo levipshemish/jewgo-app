@@ -77,10 +77,33 @@ function EateryPageContent() {
 
   // Performance optimization for mobile
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    if (isLowPowerMode) return 4; // Reduce items in low power mode
-    if (isSlowConnection) return 6; // Reduce items on slow connection
-    return isMobile ? 6 : 8; // Default mobile optimization
-  }, [isMobile, isLowPowerMode, isSlowConnection]);
+    if (isLowPowerMode) {
+      return 4; // Reduce items in low power mode
+    }
+    if (isSlowConnection) {
+      return 6; // Reduce items on slow connection
+    }
+    
+    // Calculate items per page to ensure exactly 4 rows on every screen size
+    if (isMobile) {
+      return 8; // 4 rows × 2 columns = 8 items
+    } else {
+      // For desktop, calculate based on viewport width to ensure 4 rows
+      let columnsPerRow = 3; // Default fallback
+      
+      if (viewportWidth >= 1441) {
+        columnsPerRow = 6; // Large desktop: 6 columns × 4 rows = 24 items
+      } else if (viewportWidth >= 1025) {
+        columnsPerRow = 5; // Desktop: 5 columns × 4 rows = 20 items
+      } else if (viewportWidth >= 769) {
+        columnsPerRow = 4; // Tablet: 4 columns × 4 rows = 16 items
+      } else if (viewportWidth >= 641) {
+        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
+      }
+      
+      return columnsPerRow * 4; // Always 4 rows
+    }
+  }, [isMobile, isLowPowerMode, isSlowConnection, viewportWidth]);
 
   // Infinite scroll with proper mobile detection
   const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
@@ -129,20 +152,31 @@ function EateryPageContent() {
 
   // Transform restaurant data to UnifiedCard format
   const transformRestaurantToCardData = (restaurant: Restaurant) => {
+    // Enhanced rating logic with better fallbacks
+    const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
+    const ratingText = rating ? `${rating.toFixed(1)}★` : undefined;
+    
+    // Enhanced distance logic - ensure we have a valid distance string
+    const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
+    
+    // Enhanced price range logic - ensure we have a valid price range
+    const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
+    
     return {
       id: restaurant.id,
       imageUrl: restaurant.image_url,
       imageTag: restaurant.kosher_category,
       title: restaurant.name,
-      badge: restaurant.rating ? `${restaurant.rating}` : undefined,
-      subtitle: restaurant.price_range,
-      additionalText: restaurant.distance || '',
+      badge: ratingText, // Use the enhanced rating text
+      subtitle: priceRange,
+      additionalText: distanceText,
       showHeart: true,
+      isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: restaurant.kosher_category,
       priceRange: restaurant.price_range,
       minAvgMealCost: restaurant.min_avg_meal_cost,
       maxAvgMealCost: restaurant.max_avg_meal_cost,
-      rating: restaurant.rating || restaurant.star_rating || restaurant.google_rating,
+      rating,
       reviewCount: restaurant.review_count,
       city: restaurant.city,
       distance: restaurant.distance,
@@ -424,16 +458,33 @@ function EateryPageContent() {
     },
     restaurantGrid: {
       display: 'grid',
-      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(300px, 1fr))',
+      // Mobile: 2 columns (4 rows = 8 items)
+      // Desktop: Calculate columns to ensure exactly 4 rows
+      gridTemplateColumns: isMobile 
+        ? 'repeat(2, 1fr)' 
+        : viewportWidth >= 1441
+          ? 'repeat(6, 1fr)' // Large desktop: 6 columns
+          : viewportWidth >= 1025
+            ? 'repeat(5, 1fr)' // Desktop: 5 columns
+            : viewportWidth >= 769
+              ? 'repeat(4, 1fr)' // Tablet: 4 columns
+              : viewportWidth >= 641
+                ? 'repeat(3, 1fr)' // Small tablet: 3 columns
+                : 'repeat(3, 1fr)', // Fallback: 3 columns
       gap: isMobile ? '12px' : '16px',
       padding: isMobile ? '8px' : '16px',
+      // Ensure exactly 4 rows on all screen sizes
+      gridTemplateRows: 'repeat(4, 1fr)',
+      maxHeight: isMobile 
+        ? 'calc(4 * (200px + 12px))' // 4 rows with mobile gap
+        : 'calc(4 * (280px + 16px))', // 4 rows with desktop gap
     },
     loadMoreButton: {
       ...mobileStyles.touchButton,
       width: isMobile ? '100%' : 'auto',
       margin: isMobile ? '16px 8px' : '16px',
     }
-  }), [isMobile, viewportHeight, showFilters]);
+  }), [isMobile, viewportHeight, showFilters, viewportWidth]);
 
   if (error) {
     return (
@@ -554,7 +605,7 @@ function EateryPageContent() {
           </p>
         </div>
       ) : (
-        <div className="restaurant-grid">
+        <div className="restaurant-grid" style={mobileOptimizedStyles.restaurantGrid}>
           {restaurants.map((restaurant, index) => (
             <UnifiedCard
               key={restaurant.id}
@@ -563,8 +614,10 @@ function EateryPageContent() {
               showStarInBadge={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
               onLikeToggle={(id, isLiked) => {
-                console.log(`Restaurant ${id} liked: ${isLiked}`);
+                // Handle favorite toggle - this will be managed by the UnifiedCard component
+                // The component will automatically sync with the favorites manager
               }}
+              className="hover:shadow-lg transition-shadow duration-200"
             />
           ))}
         </div>

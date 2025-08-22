@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
+import { validateRedirectUrl, mapAppleOAuthError, extractIsAnonymous } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 import { shouldRedirectToSetup } from "@/lib/utils/apple-oauth-config";
 import { getClientConfig } from "@/lib/config/client-config";
@@ -103,32 +103,26 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       if (guestPending) {
         return;
       }
+
+      // Check for existing anonymous session first
+      const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
       
-      const response = await fetch('/api/auth/anonymous', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({}), // Send empty object to avoid JSON parsing error
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (result.error === 'RATE_LIMITED') {
-          setError(`Too many attempts. Please try again later.`);
-        } else if (result.error === 'ANON_SIGNIN_UNSUPPORTED') {
-          setError('Guest access is currently unavailable.');
-        } else {
-          setError('Failed to continue as guest. Please try again.');
-        }
+      if (!getUserError && user && extractIsAnonymous(user)) {
+        // User already has anonymous session, redirect
+        router.push('/location-access');
         return;
       }
 
-      // Get session and redirect
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
-      if (session) {
+      // Call Supabase directly instead of the server endpoint
+      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
+
+      if (signInError) {
+        setError('Failed to continue as guest. Please try again.');
+        return;
+      }
+
+      // Success - redirect
+      if (data.user) {
         router.push('/location-access');
       } else {
         setError('Guest session creation failed. Please try again.');

@@ -133,7 +133,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       // Reset animation state
       setTimeout(() => setIsAnimating(false), 200);
     } catch (error) {
-      console.warn('Card error:', error);
+      // console.warn('Card error:', error);
       setIsAnimating(false);
     }
   }, [isLiked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
@@ -357,7 +357,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 transform: scale(1.1) !important;
               }
               .unified-card-heart:hover svg {
-                fill: #ef4444 !important;
+                fill:rgb(255, 124, 124) !important;
                 stroke: #ffffff !important;
                 transform: scale(1.1) !important;
               }
@@ -384,11 +384,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               <Heart
                 size={18}
                 style={{
-                  fill: isLiked ? '#ef4444' : '#9ca3af',
+                  fill: isLiked ? 'rgb(255, 124, 124)' : 'rgb(156, 163, 175)',
                   stroke: '#ffffff',
                   strokeWidth: 2,
                   transition: 'all 0.2s ease-out',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
+                  filter: 'drop-shadow(0 1px 2px rgba(255, 157, 157, 0.1))'
                 }}
               />
             </button>

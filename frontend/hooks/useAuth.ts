@@ -109,88 +109,37 @@ export function useAuth() {
   };
 
   const signInAnonymously = async (turnstileToken?: string) => {
-    // Prevent concurrent calls
+    // Prevent multiple simultaneous calls
     if (isStartingAnonRef.current) {
       return { error: 'Sign-in already in progress' };
     }
     
-    try {
-      isStartingAnonRef.current = true;
-      setIsLoading(true);
-      setError(null);
+    isStartingAnonRef.current = true;
+    setIsLoading(true);
+    setError(null);
 
+    try {
       // Check for existing anonymous session before calling API
       const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
       
       if (!getUserError && user && extractIsAnonymous(user)) {
-
         const transformedUser = transformSupabaseUser(user);
         setUser(transformedUser);
         setIsAnonymous(true);
         return { user: transformedUser };
       }
 
-      // Call the server endpoint instead of SDK directly
-      const response = await fetch('/api/auth/anonymous', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ turnstileToken })
-      });
+      // Call Supabase directly instead of the server endpoint
+      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Handle normalized error codes
-        // Clear any previous rate limit info
-        setRateLimitInfo(null);
-        
-        switch (result.error) {
-          case 'ANON_SIGNIN_UNSUPPORTED':
-            setError('Anonymous sign-in is not supported');
-            return { error: 'Anonymous sign-in is not supported' };
-          case 'TURNSTILE_REQUIRED':
-            setError('Security verification required');
-            return { error: 'Security verification required', requiresTurnstile: true };
-          case 'TURNSTILE_FAILED':
-            setError('Security verification failed');
-            return { error: 'Security verification failed' };
-          case 'RATE_LIMITED':
-            const rateLimitData = {
-              remaining_attempts: result.remaining_attempts,
-              reset_in_seconds: result.reset_in_seconds,
-              retry_after: result.retry_after
-            };
-            setRateLimitInfo(rateLimitData);
-            setError('Too many attempts. Please try again later.');
-            return { 
-              error: 'Too many attempts. Please try again later.',
-              ...rateLimitData
-            };
-          case 'CSRF':
-            setError('Security validation failed');
-            return { error: 'Security validation failed' };
-          case 'USER_EXISTS':
-            setError('User already exists');
-            return { error: 'User already exists' };
-          default:
-            setError('Anonymous sign-in failed');
-            return { error: 'Anonymous sign-in failed' };
-        }
+      if (signInError) {
+        setError('Anonymous sign-in failed');
+        return { error: 'Anonymous sign-in failed' };
       }
 
-      // Success - refresh session and user state
-      const { data: { session }, error: sessionError } = await supabaseBrowser.auth.getSession();
-      
-      if (sessionError) {
-        setError('Failed to refresh session');
-        return { error: 'Failed to refresh session' };
-      }
-
-      if (session?.user) {
-        const transformedUser = transformSupabaseUser(session.user);
+      // Success - get the user and update state
+      if (data.user) {
+        const transformedUser = transformSupabaseUser(data.user);
         setUser(transformedUser);
         setIsAnonymous(true);
         return { user: transformedUser };
