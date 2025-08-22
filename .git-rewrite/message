@@ -1,1 +1,0 @@
-fix: resolve psycopg2 dependency issue by using postgresql+psycopg:// dialect

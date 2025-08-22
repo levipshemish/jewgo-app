@@ -55,7 +55,18 @@
     "quick-update": "./scripts/update.sh",
     "quick-update:dev": "./scripts/update.sh dev",
     "quick-update:staging": "./scripts/update.sh staging",
-    "quick-update:prod": "./scripts/update.sh prod"
+    "quick-update:prod": "./scripts/update.sh prod",
+    "// Sandbox Commands": "",
+    "sandbox:start": "./scripts/sandbox.sh start",
+    "sandbox:stop": "./scripts/sandbox.sh stop",
+    "sandbox:restart": "./scripts/sandbox.sh restart",
+    "sandbox:logs": "./scripts/sandbox.sh logs",
+    "sandbox:rebuild": "./scripts/sandbox.sh rebuild",
+    "sandbox:test": "./scripts/sandbox.sh test",
+    "sandbox:visual-test": "./scripts/sandbox.sh visual-test",
+    "sandbox:install": "./scripts/sandbox.sh install",
+    "sandbox:cleanup": "./scripts/sandbox.sh cleanup",
+    "sandbox:status": "./scripts/sandbox.sh status"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"

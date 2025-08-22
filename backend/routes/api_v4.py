@@ -1028,6 +1028,48 @@ def get_marketplace_categories():
         )
 
 
+@safe_route("/marketplace/migrate", methods=["POST"])
+def migrate_marketplace_tables():
+    """Run marketplace migration to create necessary tables."""
+    try:
+        # Import the migration function
+        from database.migrations.create_marketplace_schema import run_migration
+        
+        logger.info("Starting marketplace migration via API v4")
+        
+        # Run the migration
+        success = run_migration()
+        
+        if success:
+            logger.info("Marketplace migration completed successfully")
+            return jsonify({
+                "success": True,
+                "message": "Marketplace migration completed successfully",
+                "tables_created": [
+                    "categories",
+                    "subcategories", 
+                    "Marketplace listings",
+                    "gemachs",
+                    "listing_images",
+                    "listing_transactions",
+                    "listing_endorsements",
+                    "usernames"
+                ]
+            }), 200
+        else:
+            logger.error("Marketplace migration failed")
+            return jsonify({
+                "success": False,
+                "message": "Marketplace migration failed"
+            }), 500
+            
+    except Exception as e:
+        logger.exception("Error during marketplace migration")
+        return jsonify({
+            "success": False,
+            "message": f"Error during migration: {str(e)}"
+        }), 500
+
 # Error handlers - only register if api_v4 blueprint is available
 if api_v4 is not None:
     @api_v4.errorhandler(ValidationError)

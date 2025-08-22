@@ -64,7 +64,7 @@ class MarketplaceServiceV4(BaseService):
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
                     # Test if marketplace table exists
-                    result = session.execute(text("SELECT 1 FROM information_schema.tables WHERE table_name = 'marketplace_items'"))
+                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'Marketplace listings\''))
                     if not result.fetchone():
                         logger.warning("Marketplace tables do not exist, returning empty response")
                         return self._get_empty_listings_response(limit, offset)
@@ -72,12 +72,12 @@ class MarketplaceServiceV4(BaseService):
                 logger.warning(f"Could not check marketplace tables: {e}")
                 return self._get_empty_listings_response(limit, offset)
             
-            # Build query for marketplace_items table with correct column names
+            # Build query for "Marketplace listings" table with correct column names
             query = """
                 SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
                        m.lat, m.lng, m.seller_user_id, m.type, m.condition,
                        m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
-                FROM marketplace_items m
+                FROM "Marketplace listings" m
                 WHERE m.status = :status
             """
             params = {"status": status}
@@ -159,9 +159,9 @@ class MarketplaceServiceV4(BaseService):
                 result = session.execute(text(query), params)
                 listings = result.fetchall()
 
-                # Get total count for pagination
+                                # Get total count for pagination
                 count_query = """
-                    SELECT COUNT(*) as total FROM marketplace_items m 
+                    SELECT COUNT(*) as total FROM "Marketplace listings" m
                     WHERE m.status = :status
                 """
                 count_result = session.execute(text(count_query), {"status": status})
@@ -250,7 +250,7 @@ class MarketplaceServiceV4(BaseService):
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
                     # Test if marketplace table exists
-                    result = session.execute(text("SELECT 1 FROM information_schema.tables WHERE table_name = 'marketplace_items'"))
+                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'Marketplace listings\''))
                     if not result.fetchone():
                         logger.warning("Marketplace tables do not exist")
                         return {"success": False, "error": "Listing not found"}
@@ -275,7 +275,7 @@ class MarketplaceServiceV4(BaseService):
                     SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
                            m.lat, m.lng, m.seller_user_id, m.type, m.condition,
                            m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
-                    FROM marketplace_items m
+                    FROM "Marketplace listings" m
                     WHERE m.id = :listing_id
                 """
 
@@ -285,7 +285,7 @@ class MarketplaceServiceV4(BaseService):
                 if not listing:
                     return {"success": False, "error": "Listing not found"}
 
-                # Format response for marketplace_items table with correct column structure
+                # Format response for "Marketplace listings" table with correct column structure
                 formatted_listing = {
                     "id": str(listing[0]),  # id
                     "kind": "regular",  # Default to regular for marketplace items
