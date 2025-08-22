@@ -59,7 +59,7 @@ export default function TestRestaurantsPage() {
         }
 
       } catch (error) {
-        tests.error = error.message;
+        tests.error = error instanceof Error ? error.message : String(error);
       }
 
       setResults(tests);
