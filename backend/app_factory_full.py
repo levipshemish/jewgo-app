@@ -1666,18 +1666,18 @@ def create_app(config_class=None):
                     restaurant = cursor.fetchone()
                     
             if not restaurant:
-                        return jsonify({
-                            'success': False,
-                            'error': 'Restaurant not found'
-                        }), 404
-                    
-                    # Check open now status
+                return jsonify({
+                    'success': False,
+                    'error': 'Restaurant not found'
+                }), 404
+            
+            # Check open now status
                     hours_structured = restaurant[2]
                     timezone_str = restaurant[3] or 'America/New_York'
                     status = restaurant[4]
                     
                     is_open = False
-                if hours_structured:
+                    if hours_structured:
                         is_open = open_now_service.is_open_now(hours_structured, timezone_str)
                     
                     response_data = {
@@ -1728,11 +1728,11 @@ def create_app(config_class=None):
             })
         except Exception as e:
             logger.error(f"Error fetching performance stats: {e}")
-                return jsonify({
+            return jsonify({
                 'success': False,
                 'error': 'Failed to fetch performance stats',
                 'details': str(e)
-                }), 500
+            }), 500
 
     @app.route('/api/cache/clear', methods=['POST'])
     def clear_cache():

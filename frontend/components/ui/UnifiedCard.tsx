@@ -2,19 +2,12 @@
 
 import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import { Heart, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/classNames';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { 
-  getSafeImageUrl,
-  formatPriceDollarSigns,
-  titleCase,
-  cardStyles,
-  getImageStateClasses
-} from '@/lib/utils/cardUtils';
-import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
+import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
 // TypeScript Interfaces
 interface CardData {
@@ -27,30 +20,16 @@ interface CardData {
   additionalText?: string;
   showHeart?: boolean;
   isLiked?: boolean;
-  kosherCategory?: string;
-  priceRange?: string;
-  minAvgMealCost?: number;
-  maxAvgMealCost?: number;
-  rating?: number;
-  reviewCount?: number;
-  city?: string;
-  distance?: string;
-  isCholovYisroel?: boolean;
-  isPasYisroel?: boolean;
 }
 
 interface UnifiedCardProps {
   data: CardData;
   onLikeToggle?: (id: string, isLiked: boolean) => void;
   onCardClick?: (data: CardData) => void;
-  onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
   priority?: boolean;
-  variant?: 'default' | 'minimal' | 'enhanced' | 'eatery' | 'compact' | 'detailed';
-  showStarInBadge?: boolean;
-  showDetails?: boolean;
-  showReviewCount?: boolean;
-  showKosherDetails?: boolean;
+  variant?: 'default' | 'minimal' | 'enhanced';
+  showStarInBadge?: boolean; // New prop to control star icon in badge
 }
 
 // Motion variants for animations
@@ -68,14 +47,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   data,
   onLikeToggle,
   onCardClick,
-  onTagClick,
   className = '',
   priority = false,
   variant = 'default',
-  showStarInBadge = false,
-  showDetails = false,
-  showReviewCount = false,
-  showKosherDetails = false
+  showStarInBadge = false // Default to false for timestamps
 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
@@ -111,7 +86,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   // Memoized computations
   const cardData = useMemo(() => ({
     ...data,
-    imageTag: data.imageTag || data.kosherCategory || '',
+    imageTag: data.imageTag || '',
     badge: data.badge || '',
     subtitle: data.subtitle || formatPriceDollarSigns(data.priceRange, data.minAvgMealCost, data.maxAvgMealCost),
     additionalText: data.additionalText || data.distance || data.city || '',

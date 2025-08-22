@@ -44,11 +44,26 @@ export const getDevicePixelRatio = (): number => {
 
 // Mobile performance optimizations
 export const useMobileOptimization = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTouch, setIsTouch] = useState(false);
-  const [pixelRatio, setPixelRatio] = useState(1);
-  const [viewportHeight, setViewportHeight] = useState(0);
-  const [viewportWidth, setViewportWidth] = useState(0);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return isMobileDevice();
+  });
+  const [isTouch, setIsTouch] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return isTouchDevice();
+  });
+  const [pixelRatio, setPixelRatio] = useState(() => {
+    if (typeof window === 'undefined') return 1;
+    return getDevicePixelRatio();
+  });
+  const [viewportHeight, setViewportHeight] = useState(() => {
+    if (typeof window === 'undefined') return 0;
+    return window.innerHeight;
+  });
+  const [viewportWidth, setViewportWidth] = useState(() => {
+    if (typeof window === 'undefined') return 0;
+    return window.innerWidth;
+  });
 
   useEffect(() => {
     const updateMobileState = () => {
@@ -59,14 +74,17 @@ export const useMobileOptimization = () => {
       setViewportWidth(window.innerWidth);
     };
 
-    updateMobileState();
-    window.addEventListener('resize', updateMobileState);
-    window.addEventListener('orientationchange', updateMobileState);
+    // Only update if we're in the browser and haven't set initial values
+    if (typeof window !== 'undefined') {
+      updateMobileState();
+      window.addEventListener('resize', updateMobileState);
+      window.addEventListener('orientationchange', updateMobileState);
 
-    return () => {
-      window.removeEventListener('resize', updateMobileState);
-      window.removeEventListener('orientationchange', updateMobileState);
-    };
+      return () => {
+        window.removeEventListener('resize', updateMobileState);
+        window.removeEventListener('orientationchange', updateMobileState);
+      };
+    }
   }, []);
 
   return {

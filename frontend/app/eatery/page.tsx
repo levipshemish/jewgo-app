@@ -578,15 +578,12 @@ function EateryPageContent() {
         </div>
       ) : (
         <div className="restaurant-grid">
-          {restaurants.map((restaurant) => (
+          {restaurants.map((restaurant, index) => (
             <UnifiedCard
               key={restaurant.id}
               data={transformRestaurantToCardData(restaurant)}
-              variant="eatery"
+              variant="default"
               showStarInBadge={true}
-              showDetails={true}
-              showReviewCount={true}
-              showKosherDetails={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
               onLikeToggle={(id, isLiked) => {
                 console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);

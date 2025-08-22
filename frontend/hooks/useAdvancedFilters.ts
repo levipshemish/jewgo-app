@@ -30,14 +30,25 @@ export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAd
     return { ...DEFAULT_FILTERS, ...initialFilters };
   });
 
-  // Update URL when filters change
+  // Track pending URL updates to avoid calling router during render
+  const [pendingURLUpdate, setPendingURLUpdate] = useState<Filters | null>(null);
+
+  // Update URL when filters change - deferred to useEffect
   const updateURL = useCallback((filters: Filters) => {
-    const params = toSearchParams(filters);
-    const newURL = params.toString() ? `?${params.toString()}` : '';
-    
-    // Use replace to avoid adding to browser history for filter changes
-    router.replace(newURL, { scroll: false });
-  }, [router]);
+    setPendingURLUpdate(filters);
+  }, []);
+
+  // Apply pending URL updates in useEffect to avoid render-time router calls
+  useEffect(() => {
+    if (pendingURLUpdate) {
+      const params = toSearchParams(pendingURLUpdate);
+      const newURL = params.toString() ? `?${params.toString()}` : '';
+      
+      // Use replace to avoid adding to browser history for filter changes
+      router.replace(newURL, { scroll: false });
+      setPendingURLUpdate(null);
+    }
+  }, [pendingURLUpdate, router]);
 
   // Sync URL with filter state
   useEffect(() => {
