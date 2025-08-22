@@ -122,8 +122,8 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         // Configure for invisible mode - only show challenge when needed
         const renderParams = {
           ...config,
-          // Invisible mode configuration
-          'appearance': 'invisible',
+          // Invisible mode configuration - use 'interaction-only' for invisible behavior
+          'appearance': 'interaction-only',
           'execution': 'execute',
           // Standard parameters
           'refresh-expired': 'auto',
