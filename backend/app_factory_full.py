@@ -1672,32 +1672,32 @@ def create_app(config_class=None):
                 }), 404
             
             # Check open now status
-                    hours_structured = restaurant[2]
-                    timezone_str = restaurant[3] or 'America/New_York'
-                    status = restaurant[4]
-                    
-                    is_open = False
-                    if hours_structured:
-                        is_open = open_now_service.is_open_now(hours_structured, timezone_str)
-                    
-                    response_data = {
-                        'success': True,
-                        'data': {
-                            'restaurant_id': restaurant_id,
-                            'name': restaurant[1],
-                            'is_open': is_open,
-                            'status': status,
-                            'last_updated': datetime.now(timezone.utc).isoformat()
-                        }
-                    }
-                    
-                    # Send real-time update
-                    websocket_service.broadcast_to_room(f'restaurant_{restaurant_id}', {
-                        'type': 'restaurant_status_update',
-                        'data': response_data['data']
-                    })
-                    
-                    return jsonify(response_data)
+            hours_structured = restaurant[2]
+            timezone_str = restaurant[3] or 'America/New_York'
+            status = restaurant[4]
+            
+            is_open = False
+            if hours_structured:
+                is_open = open_now_service.is_open_now(hours_structured, timezone_str)
+            
+            response_data = {
+                'success': True,
+                'data': {
+                    'restaurant_id': restaurant_id,
+                    'name': restaurant[1],
+                    'is_open': is_open,
+                    'status': status,
+                    'last_updated': datetime.now(timezone.utc).isoformat()
+                }
+            }
+            
+            # Send real-time update
+            websocket_service.broadcast_to_room(f'restaurant_{restaurant_id}', {
+                'type': 'restaurant_status_update',
+                'data': response_data['data']
+            })
+            
+            return jsonify(response_data)
                     
         except Exception as e:
             logger.error(f"Error fetching restaurant status {restaurant_id}: {e}")
