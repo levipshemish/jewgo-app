@@ -52,8 +52,14 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       const script = document.createElement('script');
       // Load Turnstile script without cache busting (Cloudflare handles caching)
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.onload = () => setIsLoaded(true);
-      script.onerror = () => onError?.('Failed to load Turnstile');
+      script.onload = () => {
+        console.log('Turnstile script loaded successfully');
+        setIsLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Turnstile script');
+        onError?.('Failed to load Turnstile');
+      };
       document.head.appendChild(script);
       scriptRef.current = script;
     } else if (typeof window !== 'undefined' && window.turnstile) {
@@ -67,6 +73,12 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     }
 
     const renderWidget = () => {
+      console.log('Attempting to render Turnstile widget:', {
+        turnstileExists: !!window.turnstile,
+        containerExists: !!containerRef.current,
+        siteKey: turnstileSiteKey
+      });
+      
       if (!window.turnstile || !containerRef.current) return;
 
       try {
@@ -136,9 +148,13 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   }), [widgetId, currentToken]);
 
   if (!turnstileSiteKey) {
+    console.error('Turnstile site key not found. Environment variables:', {
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+      siteKey: siteKey
+    });
     return (
       <div className={`text-red-500 text-sm ${className}`}>
-        Turnstile site key not configured
+        Turnstile site key not configured. Please check environment variables.
       </div>
     );
   }
