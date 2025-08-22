@@ -50,7 +50,12 @@
     "status": "./scripts/build-and-deploy.sh status",
     "logs": "./scripts/build-and-deploy.sh logs",
     "clean": "./scripts/build-and-deploy.sh clean",
-    "validate": "./scripts/build-and-deploy.sh validate-env"
+    "validate": "./scripts/build-and-deploy.sh validate-env",
+    "// Quick Update Commands": "",
+    "quick-update": "./scripts/update.sh",
+    "quick-update:dev": "./scripts/update.sh dev",
+    "quick-update:staging": "./scripts/update.sh staging",
+    "quick-update:prod": "./scripts/update.sh prod"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"

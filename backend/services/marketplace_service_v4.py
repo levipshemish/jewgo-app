@@ -32,7 +32,7 @@ class MarketplaceServiceV4(BaseService):
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
 
-        logger.info("MarketplaceServiceV4 (Streamlined) initialized successfully")
+        logger.info("MarketplaceServiceV4 (Streamlined) initialized successfully - v2.0 with get_listing_by_id")
 
     def get_listings(
         self,
@@ -238,7 +238,7 @@ class MarketplaceServiceV4(BaseService):
         }
 
     def get_listing_by_id(self, listing_id: str) -> Dict[str, Any]:
-        """Get a specific marketplace listing by ID."""
+        """Get a specific marketplace listing by ID - v2.0."""
         try:
             # Check if marketplace tables exist
             if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
