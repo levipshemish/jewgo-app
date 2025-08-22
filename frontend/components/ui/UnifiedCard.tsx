@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import { Heart, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { useFavorites } from '@/lib/utils/favorites';
@@ -31,7 +31,7 @@ interface UnifiedCardProps {
   className?: string;
   priority?: boolean;
   variant?: 'default' | 'minimal' | 'enhanced';
-  showStarInBadge?: boolean; // New prop to control star icon in badge
+  showStarInBadge?: boolean;
 }
 
 // Motion variants for animations
@@ -52,7 +52,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   className = '',
   priority = false,
   variant = 'default',
-  showStarInBadge = false // Default to false for timestamps
+  showStarInBadge = false
 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
@@ -62,7 +62,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
 
   // Sync with favorites manager
   useEffect(() => {
@@ -79,18 +78,15 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     showHeart: data.showHeart !== false
   }), [data]);
 
-  // Get safe image URL using existing utility
+  // Get safe image URL
   const heroImageUrl = useMemo(() => {
     if (!cardData.imageUrl) {
       return null;
     }
     
     let safeUrl = getSafeImageUrl(cardData.imageUrl);
-    
-    // Normalize known broken Cloudinary URLs
     safeUrl = safeUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
     
-    // If we get back the default image or there's an error, use placeholder
     if (safeUrl === '/images/default-restaurant.webp' || imageError) {
       return '/images/default-restaurant.webp';
     }
@@ -121,19 +117,15 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           category: 'restaurant' as any
         };
         addFavorite(minimalRestaurant);
-        setAnnouncement(`Added ${data.title} to favorites`);
       } else {
         removeFavorite(data.id);
-        setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
       setIsLiked(newIsLiked);
       onLikeToggle?.(data.id, newIsLiked);
       
-      // Reset animation state
       setTimeout(() => setIsAnimating(false), 200);
     } catch (error) {
-      // console.warn('Card error:', error);
       setIsAnimating(false);
     }
   }, [isLiked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
@@ -204,8 +196,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         'relative bg-white rounded-xl cursor-pointer group',
         'border border-gray-200 hover:border-gray-300',
         'transition-all duration-200 ease-out',
-        'flex flex-col', // Remove h-full to prevent over-extension
-        'p-1', // Add padding to prevent border from covering content
+        'flex flex-col',
+        'p-1',
         className
       )}
       onClick={handleCardClick}
@@ -213,14 +205,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       tabIndex={0}
       role="button"
       aria-label={`View details for ${cardData.title}`}
-      aria-live="polite"
-      aria-describedby={`card-${cardData.id}`}
     >
-      {/* Persistent live region for announcements */}
-      <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </span>
-      
       {/* Image Container */}
       <div className="relative w-full">
         <div className={cn(
@@ -257,166 +242,57 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        {/* Image Tag - Enhanced hover effects */}
+        {/* Image Tag */}
         {cardData.imageTag && (
-          <>
-            <style jsx>{`
-              .unified-card-tag {
-                position: absolute !important;
-                top: 8px !important;
-                left: 8px !important;
-                width: 80px !important;
-                max-width: 80px !important;
-                min-width: 80px !important;
-                height: 24px !important;
-                max-height: 24px !important;
-                min-height: 24px !important;
-                overflow: hidden !important;
-                padding: 0 8px !important;
-                font-size: 12px !important;
-                line-height: 1 !important;
-                font-weight: 500 !important;
-                background-color: rgba(255, 255, 255, 0.95) !important;
-                color: #111827 !important;
-                border-radius: 9999px !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                -webkit-font-smoothing: antialiased !important;
-                -moz-osx-font-smoothing: grayscale !important;
-                text-rendering: optimizeLegibility !important;
-                -webkit-text-size-adjust: 100% !important;
-                text-size-adjust: 100% !important;
-                transition: all 0.2s ease-out !important;
-                transform: none !important;
-                backdrop-filter: blur(8px) !important;
-              }
-              .unified-card-tag:hover {
-                background-color: rgba(255, 255, 255, 1) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-                transform: translateY(-1px) !important;
-              }
-              .unified-card-tag {
-                cursor: pointer !important;
-              }
-              .unified-card-tag:active {
-                transform: translateY(0px) !important;
-                opacity: 1 !important;
-              }
-            `}</style>
-            <div
-              className="unified-card-tag"
-              aria-label={`Tag: ${cardData.imageTag}`}
-            >
-              <span 
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  fontWeight: 'inherit'
-                }}
-              >
-                {cardData.imageTag}
-              </span>
-            </div>
-          </>
+          <div className="absolute top-2 left-2 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-medium text-gray-900 shadow-sm">
+            {cardData.imageTag}
+          </div>
         )}
         
-        {/* Heart Button - White outline with grey fill, red on hover */}
+        {/* Heart Button */}
         {cardData.showHeart && (
-          <>
-            <style jsx>{`
-              .unified-card-heart {
-                position: absolute !important;
-                top: 4px !important;
-                right: 8px !important;
-                width: 28px !important;
-                max-width: 28px !important;
-                min-width: 28px !important;
-                height: 28px !important;
-                max-height: 28px !important;
-                min-height: 28px !important;
-                background-color: transparent !important;
-                border-radius: 50% !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                border: none !important;
-                padding: 0 !important;
-                cursor: pointer !important;
-                -webkit-tap-highlight-color: transparent !important;
-                touch-action: manipulation !important;
-                z-index: 10 !important;
-                transition: all 0.2s ease-out !important;
-                transform: ${isAnimating ? 'scale(0.9)' : 'scale(1)'} !important;
-              }
-              .unified-card-heart:hover {
-                transform: scale(1.1) !important;
-              }
-              .unified-card-heart:hover svg {
-                fill: rgb(239, 68, 68) !important;
-                stroke: #ffffff !important;
-                transform: scale(1.1) !important;
-              }
-              .unified-card-heart:active {
-                transform: scale(0.95) !important;
-                opacity: 1 !important;
-              }
-              .unified-card-heart svg {
-                width: 18px !important;
-                height: 18px !important;
-                transition: all 0.2s ease-out !important;
-              }
-              .unified-card-heart.liked svg {
-                fill: rgb(239, 68, 68) !important;
-                stroke: #ffffff !important;
-              }
-              .unified-card-heart:not(.liked) svg {
-                fill: rgb(156, 163, 175) !important;
-                stroke: #ffffff !important;
-              }
-            `}</style>
-            <button
-              className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLikeToggle();
-              }}
-              onKeyDown={handleHeartKeyDown}
-              aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-              aria-pressed={isLiked}
-            >
-              <Heart
-                size={18}
-                style={{
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                  transition: 'all 0.2s ease-out',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
-                }}
-              />
-            </button>
-          </>
+          <button
+            className={cn(
+              "absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm",
+              "flex items-center justify-center border-0 p-0 cursor-pointer",
+              "transition-all duration-200 ease-out",
+              "hover:scale-110 active:scale-95",
+              isAnimating && "scale-90"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeToggle();
+            }}
+            onKeyDown={handleHeartKeyDown}
+            aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={isLiked}
+          >
+            <Heart
+              size={16}
+              className={cn(
+                "transition-all duration-200",
+                isLiked 
+                  ? "fill-red-500 text-red-500" 
+                  : "fill-gray-400 text-gray-400 hover:fill-red-400 hover:text-red-400"
+              )}
+            />
+          </button>
         )}
       </div>
       
-      {/* Content - Enhanced hover effects */}
+      {/* Content */}
       <motion.div 
-        className="pt-2 flex flex-col" // Remove flex-1 to prevent over-extension
+        className="pt-2 flex flex-col"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
+        <div className="flex justify-between items-start gap-2 mb-1">
           <h3 
             className={cn(
               variantStyles.titleClass,
               "text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
             )}
-            aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
           </h3>
@@ -429,7 +305,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.2 }}
-              aria-label={`Rating: ${cardData.badge}`}
             >
               {showStarInBadge && (
                 <Star size={12} className="fill-yellow-400 text-yellow-400" />
@@ -439,41 +314,23 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center min-h-[16px] relative">
-          {/* Subtitle - Locked to left */}
+        <div className="flex justify-between items-center">
+          {/* Subtitle */}
           <div className="flex-1 min-w-0">
             {cardData.subtitle && (
-              <p 
-                className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
-                style={{ 
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                aria-label={`Price range: ${cardData.subtitle}`}
-              >
+              <p className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900">
                 {cardData.subtitle}
               </p>
             )}
           </div>
           
-          {/* Spacer to ensure proper separation */}
+          {/* Spacer */}
           <div className="flex-shrink-0 w-3" />
           
-          {/* Additional Text - Locked to right */}
+          {/* Additional Text */}
           <div className="flex-shrink-0">
             {cardData.additionalText && (
-              <p 
-                className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
-                style={{ 
-                  width: '60px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                aria-label={`Additional info: ${cardData.additionalText}`}
-              >
+              <p className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600 w-[60px]">
                 {cardData.additionalText}
               </p>
             )}
