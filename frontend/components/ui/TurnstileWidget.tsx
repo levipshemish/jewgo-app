@@ -114,8 +114,6 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     <>
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        async
-        defer
         onLoad={() => setIsLoaded(true)}
         onError={() => onError?.('Failed to load Turnstile')}
       />
