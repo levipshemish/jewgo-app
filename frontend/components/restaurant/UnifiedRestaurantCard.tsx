@@ -13,7 +13,8 @@ import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { cn } from '@/lib/utils/cn';
 import { commonTypography, commonSpacing } from '@/lib/utils/commonStyles';
 import { 
-  formatPriceRange, 
+  formatPriceRange,
+  formatPriceDollarSigns, 
   titleCase, 
   getSafeImageUrl,
   cardStyles,
@@ -368,15 +369,21 @@ export default function UnifiedRestaurantCard({
               </h3>
             </div>
             
-            {/* Price Range and Rating - Fixed height meta row with consistent alignment */}
-            <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-3">
-              <span className="text-gray-500 font-normal truncate flex-1 min-w-0 text-left price-text text-sm" title={formatPriceRange(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}>
-                {formatPriceRange(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}
+            {/* Price Range, Distance and Rating - Fixed height meta row with consistent alignment */}
+            <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-2">
+              <span className="text-gray-700 font-medium flex-shrink-0 text-sm">
+                {formatPriceDollarSigns(restaurant.price_range, restaurant.min_avg_meal_cost, restaurant.max_avg_meal_cost)}
               </span>
               
-              <div className="flex items-center gap-1 flex-shrink-0 rating-container" style={{ minWidth: 'fit-content' }}>
-                <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 star-icon w-3.5 h-3.5" />
-                <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 rating-text text-sm">
+              {restaurant.distance && (
+                <span className="text-gray-500 text-sm flex-1 text-right mr-2">
+                  {restaurant.distance}
+                </span>
+              )}
+              
+              <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
+                <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 w-3.5 h-3.5" />
+                <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
                   {getRating().toFixed(1)}
                 </span>
               </div>

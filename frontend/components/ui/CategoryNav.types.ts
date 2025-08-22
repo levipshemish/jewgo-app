@@ -23,13 +23,17 @@ export interface CategoryNavItem {
 /**
  * Props for the CategoryNav component
  */
-export interface CategoryNavProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface CategoryNavProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onSelect' | 'onValueChange'> {
   /** Array of category items to display */
   items: CategoryNavItem[];
   /** Currently selected item ID */
   selectedId?: string;
   /** Callback when an item is selected */
   onSelect?: (id: string) => void;
+  /** Controlled value (alias for selectedId) */
+  value?: string;
+  /** Controlled value change handler (alias for onSelect) */
+  onValueChange?: (id: string) => void;
   /** Optional CSS class name */
   className?: string;
   /** Accessibility label for the navigation */

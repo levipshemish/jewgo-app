@@ -54,7 +54,11 @@ export function sortRestaurantsByDistance(
     .filter((item): item is RestaurantWithDistance => item !== null)
     .sort((a, b) => a.distance - b.distance);
 
-  return restaurantsWithDistance.map(item => item.restaurant);
+  // Add formatted distance to each restaurant
+  return restaurantsWithDistance.map(item => ({
+    ...item.restaurant,
+    distance: formatDistance(item.distance)
+  }));
 }
 
 // Format distance for display (in miles for US market)

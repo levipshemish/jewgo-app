@@ -1,6 +1,5 @@
 import { Restaurant } from '@/lib/types/restaurant';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
-import { mockRestaurants } from './mockData';
 
 // Use relative URLs to go through frontend proxy in production
 const API_BASE_URL = process.env.NODE_ENV === 'production'
@@ -176,11 +175,8 @@ export class RestaurantsAPI {
       return result;
     } catch (error) {
       console.error('Error in fetchRestaurants:', error);
-      // Return mock data on any error for better UX
-      return {
-        restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
-        total: this.getMockRestaurants().length,
-      };
+      // Re-throw the error to be handled by the UI
+      throw error;
     } finally {
       this.pendingRequests.delete(requestKey);
     }
@@ -264,21 +260,17 @@ export class RestaurantsAPI {
         console.warn('Images-only endpoint also failed:', error);
       }
       
-      // Final fallback to mock data
-      console.warn('All API endpoints failed, using mock data');
-      return {
-        restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
-        total: this.getMockRestaurants().length,
-      };
+      // All endpoints failed
+      throw new Error('Unable to connect to restaurant service. Please try again later.');
       
     } catch (error) {
       console.error('Failed to fetch restaurants:', error);
       
-      // Return mock data on error for better UX
-      return {
-        restaurants: sanitizeRestaurantData(this.getMockRestaurants()),
-        total: this.getMockRestaurants().length
-      };
+      // Re-throw with a user-friendly message
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to load restaurants. Please check your connection and try again.');
     }
   }
 
@@ -320,18 +312,9 @@ export class RestaurantsAPI {
       }
       
       return null;
-    } catch {
-      // // console.error('Error fetching restaurant:', error);
-      
-      // Fallback to mock data for better UX when API is unavailable
-      const mockRestaurants = this.getMockRestaurants();
-      const mockRestaurant = mockRestaurants.find(r => parseInt(r.id.toString()) === id);
-      
-      if (mockRestaurant) {
-        return mockRestaurant;
-      }
-      
-      return null;
+    } catch (error) {
+      console.error('Error fetching restaurant:', error);
+      throw new Error('Unable to load restaurant details. Please try again later.');
     }
   }
 
@@ -366,10 +349,6 @@ export class RestaurantsAPI {
     }
   }
 
-  // Fallback mock data for when API is completely unavailable
-  static getMockRestaurants(): Restaurant[] {
-    return mockRestaurants;
-  }
 }
 
 // Export convenience functions
@@ -377,5 +356,9 @@ export const fetchRestaurants = (limit?: number, queryParams?: string) => Restau
 export const searchRestaurants = (query: string, limit?: number) => RestaurantsAPI.searchRestaurants(query, limit);
 export const getRestaurant = (id: number) => RestaurantsAPI.getRestaurant(id);
 export const fetchRestaurantsByIds = (ids: number[]) => RestaurantsAPI.fetchRestaurantsByIds(ids);
+<<<<<<< Current (Your changes)
 export const getStatistics = () => RestaurantsAPI.getStatistics();
 export const getMockRestaurants = () => RestaurantsAPI.getMockRestaurants(); 
+=======
+export const getStatistics = () => RestaurantsAPI.getStatistics(); 
+>>>>>>> Incoming (Background Agent changes)

@@ -88,11 +88,10 @@ export async function GET(request: NextRequest) {
     }
     
     // Call the backend API with our local database
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
-    if (process.env.NODE_ENV === 'development') {
-      }
+
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -127,11 +126,12 @@ export async function GET(request: NextRequest) {
       message: 'Restaurants with images only'
     });
 
-  } catch {
-    // // console.error('Error fetching restaurants with images:', error);
+  } catch (error) {
+    console.error('Error fetching restaurants with images:', error);
     return NextResponse.json({
       success: false,
-      message: 'Failed to fetch restaurants with images'
+      message: 'Failed to fetch restaurants with images',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

@@ -87,8 +87,8 @@ export async function middleware(request: NextRequest) {
     
   } catch (error) {
     console.error('Middleware error:', error);
-    // Fail open for security - allow request to proceed
-    return NextResponse.next();
+    // Fail closed for security - redirect to signin on unexpected errors
+    return redirectToSignin(request);
   }
 }
 

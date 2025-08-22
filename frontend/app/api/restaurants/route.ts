@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     
     // Forward the request to the backend
     const backendResponse = await fetch(`${backendUrl}/api/restaurants`, {
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     
     // Build query parameters for backend API
     const queryParams = new URLSearchParams();

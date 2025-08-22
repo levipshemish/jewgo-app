@@ -1,4 +1,5 @@
 import ipaddr from 'ipaddr.js';
+import { createClient } from '@supabase/supabase-js';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -624,10 +625,53 @@ export function mapAppleOAuthError(error: string): string {
 }
 
 /**
- * Feature support guard stub for client-side usage
- * Always returns true with a console.warn - server-side code should use auth-utils.server
+ * Feature support guard for client-side usage
+ * Checks for presence of required Supabase features via lightweight test client
  */
 export function validateSupabaseFeatureSupport(): boolean {
-  console.warn('validateSupabaseFeatureSupport called on client-side - assuming features are available. Use auth-utils.server for server-side validation.');
-  return true;
+  try {
+    // Check if Supabase environment variables are configured
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('[Feature Guard] Supabase environment variables not configured');
+      return false;
+    }
+
+    // Validate URL format
+    try {
+      new URL(supabaseUrl);
+    } catch {
+      console.error('[Feature Guard] Invalid Supabase URL format');
+      return false;
+    }
+
+    // Create a lightweight test client to check feature availability
+    const testClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    // Check if signInAnonymously method exists
+    if (typeof testClient.auth.signInAnonymously !== 'function') {
+      console.error('[Feature Guard] signInAnonymously method not available');
+      return false;
+    }
+
+    // Check if linkIdentity method exists (for merge flow)
+    if (typeof testClient.auth.linkIdentity !== 'function') {
+      console.warn('[Feature Guard] linkIdentity method not available - merge flow may not work');
+      // Don't fail for linkIdentity as it's not critical for basic auth
+    }
+
+    console.log('[Feature Guard] Supabase features validated successfully');
+    return true;
+    
+  } catch (error) {
+    console.error('[Feature Guard] Feature validation failed:', error);
+    return false;
+  }
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useIsomorphicLayoutEffect } from './useIsomorphicLayoutEffect';
 
 export interface UseRovingFocusOptions {
   itemCount: number;
@@ -263,8 +264,29 @@ export function useRovingFocus({
     }
   }, [selectedId, focusedIndex, itemRefs]);
 
-  // Pick initial index when no focused item and itemRefs or selectedId changes
+  // Programmatic focus restore when focused item becomes disabled
   useEffect(() => {
+    if (focusedIndex >= 0) {
+      const focusedItem = itemRefs.current[focusedIndex];
+      if (focusedItem && focusedItem.getAttribute('data-disabled')) {
+        // Current focused item is disabled, find next enabled item
+        const nextEnabledIndex = findNextEnabledItem(focusedIndex, 1, itemCount, itemRefs);
+        if (nextEnabledIndex !== focusedIndex) {
+          setFocusedIndex(nextEnabledIndex);
+          lastFocusedIndexRef.current = nextEnabledIndex;
+          
+          // Move focus to the new item
+          const nextItem = itemRefs.current[nextEnabledIndex];
+          if (nextItem) {
+            nextItem.focus();
+          }
+        }
+      }
+    }
+  }, [focusedIndex, itemCount, itemRefs]);
+
+  // Pick initial index when no focused item and itemRefs or selectedId changes
+  useIsomorphicLayoutEffect(() => {
     if (focusedIndex === -1 && itemRefs.current.length > 0) {
       const initialIndex = pickInitialIndex(itemRefs, itemCount, selectedId);
       if (initialIndex !== -1) {

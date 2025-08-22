@@ -49,6 +49,32 @@ export const formatPriceRange = (priceRange?: string, minCost?: number, maxCost?
 };
 
 /**
+ * Convert price range to dollar signs ($ to $$$$)
+ */
+export const formatPriceDollarSigns = (priceRange?: string, minCost?: number, maxCost?: number): string => {
+  // Extract numeric values from price range
+  let avgPrice = 0;
+  
+  if (priceRange && priceRange.trim() !== '') {
+    const matches = priceRange.match(/\$?(\d+)(?:-\$?(\d+))?/);
+    if (matches) {
+      const min = parseInt(matches[1], 10);
+      const max = matches[2] ? parseInt(matches[2], 10) : min;
+      avgPrice = (min + max) / 2;
+    }
+  } else if (minCost && maxCost) {
+    avgPrice = (minCost + maxCost) / 2;
+  }
+  
+  // Convert to dollar signs based on average price
+  if (avgPrice === 0) return '$$';
+  if (avgPrice < 15) return '$';
+  if (avgPrice < 30) return '$$';
+  if (avgPrice < 50) return '$$$';
+  return '$$$$';
+};
+
+/**
  * Format time ago from date string
  */
 export const formatTimeAgo = (dateString: string): string => {

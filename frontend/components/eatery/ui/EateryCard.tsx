@@ -306,7 +306,7 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
         
         {/* Price Range and Rating - Fixed height meta row with consistent alignment */}
         <div className={`flex items-center justify-between min-w-0 w-full flex-shrink-0 ${isMobileDevice ? 'h-5 gap-2' : 'h-6 gap-3'}`}>
-          <span className={`text-gray-500 font-normal truncate flex-1 min-w-0 text-left price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`} title={formatPriceRange()}>
+          <span className={`text-gray-700 font-medium flex-shrink-0 price-text ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
             {formatPriceRange()}
           </span>
           

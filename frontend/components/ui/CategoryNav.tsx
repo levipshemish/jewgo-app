@@ -24,14 +24,42 @@ const scrollItemIntoViewX = (container: HTMLElement, item: HTMLElement) => {
 
 // Helper to normalize icon with accessibility attributes
 const normalizeIcon = (icon: React.ReactNode): React.ReactNode => {
-  if (React.isValidElement(icon) && icon.type === 'svg') {
-    return React.cloneElement(icon, {
-      'aria-hidden': true,
-      focusable: false,
-    });
+  if (React.isValidElement(icon)) {
+    if (icon.type === 'svg') {
+      return React.cloneElement(icon, {
+        'aria-hidden': true,
+        focusable: false,
+      });
+    }
+    
+    // Check if the element has an inner svg
+    const children = React.Children.toArray(icon.props.children);
+    const hasInnerSvg = children.some(child => 
+      React.isValidElement(child) && child.type === 'svg'
+    );
+    
+    if (hasInnerSvg) {
+      // Clone the element and apply accessibility attributes to inner svg
+      const clonedChildren = React.Children.map(icon.props.children, child => {
+        if (React.isValidElement(child) && child.type === 'svg') {
+          return React.cloneElement(child, {
+            'aria-hidden': true,
+            focusable: false,
+          });
+        }
+        return child;
+      });
+      
+      return React.cloneElement(icon, {
+        ...icon.props,
+        children: clonedChildren,
+      });
+    }
   }
+  
+  // Fallback: wrap in span with tabIndex=-1 as extra guard
   return (
-    <span aria-hidden="true">
+    <span aria-hidden="true" tabIndex={-1}>
       {icon}
     </span>
   );
@@ -41,11 +69,16 @@ export function CategoryNav({
   items,
   selectedId,
   onSelect,
+  value,
+  onValueChange,
   className,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   ...props
 }: CategoryNavProps) {
+  // Support both controlled and uncontrolled APIs
+  const finalSelectedId = value ?? selectedId;
+  const finalOnSelect = onValueChange ?? onSelect;
   const scrollerRef = useRef<HTMLUListElement>(null);
   const prevRef = useRef<HTMLButtonElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
@@ -60,6 +93,9 @@ export function CategoryNav({
 
   // Memoize items to prevent unnecessary re-renders
   const memoizedItems = useMemo(() => items, [items]);
+
+  // Check if all items are disabled
+  const allDisabled = useMemo(() => memoizedItems.every(item => item.disabled), [memoizedItems]);
 
   // Helper for button props to prevent form submission
   const buttonProps = useCallback(() => ({
@@ -91,8 +127,8 @@ export function CategoryNav({
       newState = 'none';
     }
 
-    const newShowPrevControl = newState === 'start' || newState === 'both';
-    const newShowNextControl = newState === 'end' || newState === 'both';
+    const newShowPrevControl = (newState === 'start' || newState === 'both') && !allDisabled;
+    const newShowNextControl = (newState === 'end' || newState === 'both') && !allDisabled;
 
     setOverflowState(newState);
     setShowPrevControl(newShowPrevControl);
@@ -176,16 +212,16 @@ export function CategoryNav({
     handleItemBlur,
   } = useRovingFocus({
     itemCount: memoizedItems.length,
-    selectedId,
-    onSelect,
+    selectedId: finalSelectedId,
+    onSelect: finalOnSelect,
     direction,
     itemRefs,
   });
 
   // Robust first focus - scroll selected item into view on first focus
   useEffect(() => {
-    if (!isInitialized && selectedId && scrollerRef.current) {
-      const selectedIndex = memoizedItems.findIndex(item => item.id === selectedId);
+    if (!isInitialized && finalSelectedId && scrollerRef.current) {
+      const selectedIndex = memoizedItems.findIndex(item => item.id === finalSelectedId);
       if (selectedIndex !== -1) {
         const selectedElement = itemRefs.current[selectedIndex];
         if (selectedElement) {
@@ -217,7 +253,7 @@ export function CategoryNav({
       }
       setIsInitialized(true);
     }
-  }, [selectedId, memoizedItems, isInitialized]);
+  }, [finalSelectedId, memoizedItems, isInitialized]);
 
   // Manual scroll handlers with fallback
   const scrollTo = useCallback((direction: 'left' | 'right') => {
@@ -257,18 +293,17 @@ export function CategoryNav({
       {...props}
     >
       {/* Previous button */}
-      {showPrevControl && (
-        <button
-          {...buttonProps()}
-          ref={prevRef}
-          className={styles.prevButton}
-          onClick={() => scrollTo('left')}
-          aria-label="Scroll to previous categories"
-          tabIndex={0}
-        >
-          {normalizeIcon(<ChevronLeftIcon className={styles.icon} />)}
-        </button>
-      )}
+      <button
+        {...buttonProps()}
+        ref={prevRef}
+        className={styles.prevButton}
+        onClick={() => scrollTo('left')}
+        aria-label="Scroll to previous categories"
+        hidden={!showPrevControl}
+        tabIndex={showPrevControl ? 0 : -1}
+      >
+        {normalizeIcon(<ChevronLeftIcon className={styles.icon} />)}
+      </button>
 
       {/* Scroller container */}
       <ul
@@ -278,9 +313,9 @@ export function CategoryNav({
         onKeyDown={handleKeyDown}
       >
         {memoizedItems.map((item, index) => {
-          const isSelected = item.id === selectedId;
+          const isSelected = item.id === finalSelectedId;
           const isFocused = index === focusedIndex;
-          const isDisabled = item.disabled;
+          const isDisabled = item.disabled || allDisabled;
           
           // Handle external links
           const isExternal = item.href?.startsWith('http');
@@ -330,8 +365,8 @@ export function CategoryNav({
                     {...(isSelected ? { 'aria-current': 'page' } : {})}
                     onFocus={() => handleItemFocus(index)}
                     onBlur={handleItemBlur}
-                    onClick={() => onSelect?.(item.id)}
-                    tabIndex={isFocused ? 0 : -1}
+                    onClick={() => finalOnSelect?.(item.id)}
+                    tabIndex={isFocused && !allDisabled ? 0 : -1}
                     ref={setItemRef(index)}
                   >
                     {item.icon && normalizeIcon(item.icon)}
@@ -356,9 +391,9 @@ export function CategoryNav({
                     className={styles.button}
                     onFocus={() => handleItemFocus(index)}
                     onBlur={handleItemBlur}
-                    onClick={() => onSelect?.(item.id)}
+                    onClick={() => finalOnSelect?.(item.id)}
                     aria-pressed={isSelected}
-                    tabIndex={isFocused ? 0 : -1}
+                    tabIndex={isFocused && !allDisabled ? 0 : -1}
                     ref={setItemRef(index)}
                   >
                     {item.icon && normalizeIcon(item.icon)}
@@ -372,18 +407,17 @@ export function CategoryNav({
       </ul>
 
       {/* Next button */}
-      {showNextControl && (
-        <button
-          {...buttonProps()}
-          ref={nextRef}
-          className={styles.nextButton}
-          onClick={() => scrollTo('right')}
-          aria-label="Scroll to next categories"
-          tabIndex={0}
-        >
-          {normalizeIcon(<ChevronRightIcon className={styles.icon} />)}
-        </button>
-      )}
+      <button
+        {...buttonProps()}
+        ref={nextRef}
+        className={styles.nextButton}
+        onClick={() => scrollTo('right')}
+        aria-label="Scroll to next categories"
+        hidden={!showNextControl}
+        tabIndex={showNextControl ? 0 : -1}
+      >
+        {normalizeIcon(<ChevronRightIcon className={styles.icon} />)}
+      </button>
     </nav>
   );
 }

@@ -3,7 +3,7 @@
  * Uses standard Redis or Upstash KV for persistent rate limiting
  */
 
-import { validateTrustedIP } from './utils';
+import { validateTrustedIP } from '@/lib/utils/auth-utils';
 import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment';
 
 // Rate limit configurations

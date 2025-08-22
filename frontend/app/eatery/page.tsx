@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
-import UnifiedRestaurantCard from '@/components/restaurant/UnifiedRestaurantCard';
+import UnifiedCard from '@/components/ui/UnifiedCard';
 import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -111,7 +111,7 @@ function EateryPageContent() {
   }, [isMobile, hasMore, isLoadingMore]);
 
   // Mobile-optimized state
-  const [showFilters, setShowFilters] = useState(!isMobile); // Auto-hide filters on mobile
+  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -138,6 +138,36 @@ function EateryPageContent() {
 
   const handleDistanceChange = (distance: number) => {
     setFilter('maxDistanceMi', distance);
+  };
+
+  // Transform restaurant data to UnifiedCard format
+  const transformRestaurantToCardData = (restaurant: Restaurant) => {
+    // Format price as dollar signs
+    const formatPriceAsDollarSigns = (priceRange?: string) => {
+      if (!priceRange) return '$$';
+      const matches = priceRange.match(/\$?(\d+)(?:-\$?(\d+))?/);
+      if (matches) {
+        const min = parseInt(matches[1], 10);
+        const max = matches[2] ? parseInt(matches[2], 10) : min;
+        const avg = (min + max) / 2;
+        if (avg < 15) return '$';
+        if (avg < 30) return '$$';
+        if (avg < 50) return '$$$';
+        return '$$$$';
+      }
+      return '$$';
+    };
+
+    return {
+      id: restaurant.id,
+      imageUrl: restaurant.image_url,
+      imageTag: restaurant.kosher_category,
+      title: restaurant.name,
+      badge: restaurant.rating ? `${restaurant.rating}` : undefined,
+      subtitle: formatPriceAsDollarSigns(restaurant.price_range),
+      additionalText: restaurant.distance || restaurant.city || '',
+      showHeart: true,
+    };
   };
 
   const handleClearAllFilters = () => {
@@ -246,17 +276,17 @@ function EateryPageContent() {
       
       console.log('Received restaurants:', response.restaurants.length);
       
-      // Apply distance sorting if location is enabled
-      let sortedRestaurants = response.restaurants;
-      if (userLocation && filters.nearMe) {
-        console.log('Applying distance sorting');
-        sortedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
-        console.log('Sorted restaurants:', sortedRestaurants.length);
+      // Apply distance calculation and sorting if location is available
+      let processedRestaurants = response.restaurants;
+      if (userLocation) {
+        console.log('Calculating distances for restaurants');
+        processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+        console.log('Processed restaurants with distance:', processedRestaurants.length);
       } else {
-        console.log('Skipping distance sorting - no location or nearMe filter');
+        console.log('No user location available for distance calculation');
       }
       
-      setRestaurants(sortedRestaurants);
+      setRestaurants(processedRestaurants);
       setCurrentPage(1);
       
       // Update hasMore state for infinite scroll
@@ -265,7 +295,12 @@ function EateryPageContent() {
       setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching restaurants:', err);
-      setError('An error occurred while fetching restaurants');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unable to load restaurants. Please try again later.');
+      }
+      setRestaurants([]); // Clear any existing restaurants
     } finally {
       setLoading(false);
     }
@@ -298,14 +333,14 @@ function EateryPageContent() {
       
       console.log('Received more restaurants:', response.restaurants.length);
       
-      // Apply distance sorting to new restaurants if location is enabled
-      let sortedNewRestaurants = response.restaurants;
-      if (userLocation && activeFilters.nearMe) {
-        console.log('Applying distance sorting to new restaurants');
-        sortedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+      // Apply distance calculation to new restaurants if location is available
+      let processedNewRestaurants = response.restaurants;
+      if (userLocation) {
+        console.log('Calculating distances for new restaurants');
+        processedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
       }
       
-      setRestaurants(prev => [...prev, ...sortedNewRestaurants]);
+      setRestaurants(prev => [...prev, ...processedNewRestaurants]);
       setCurrentPage(nextPage);
       
       // Update hasMore state
@@ -406,7 +441,7 @@ function EateryPageContent() {
     },
     restaurantGrid: {
       display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(300px, 1fr))',
       gap: isMobile ? '12px' : '16px',
       padding: isMobile ? '8px' : '16px',
     },
@@ -421,13 +456,28 @@ function EateryPageContent() {
     return (
       <div style={mobileOptimizedStyles.container}>
         <Header />
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <p>Error: {error}</p>
+        
+        {/* Navigation Tabs - Always visible */}
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+          <CategoryTabs activeTab="eatery" />
+        </div>
+        
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
+          <div className="text-red-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
           <button
-            onClick={() => fetchRestaurantsData()}
-            style={mobileStyles.touchButton}
+            onClick={() => {
+              setError(null);
+              fetchRestaurantsData();
+            }}
+            className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
           >
-            Retry
+            Try Again
           </button>
         </div>
       </div>
@@ -448,48 +498,94 @@ function EateryPageContent() {
         <CategoryTabs activeTab="eatery" />
       </div>
       
-      {/* Mobile-optimized filters */}
-      <div style={mobileOptimizedStyles.filtersContainer}>
-        <AdvancedFilters
-          activeFilters={activeFilters}
-          onFilterChange={handleFilterChange}
-          onToggleFilter={handleToggleFilter}
-          onClearAll={handleClearAllFilters}
-          userLocation={userLocation}
-          locationLoading={locationLoading}
-          onRequestLocation={requestLocation}
-        />
-        
-        {/* Mobile filter toggle button */}
-        {isMobile && (
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            style={{
-              ...mobileStyles.touchButton,
-              position: 'fixed',
-              bottom: '80px',
-              right: '16px',
-              borderRadius: '50%',
-              width: '56px',
-              height: '56px',
-              zIndex: 1001,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            }}
-          >
-            {showFilters ? '✕' : '⚙️'}
-          </button>
-        )}
-      </div>
+      {/* Action buttons */}
+      <ActionButtons 
+        onShowFilters={() => setShowFilters(!showFilters)}
+        onShowMap={() => router.push('/live-map')}
+        onAddEatery={() => router.push('/add-eatery')}
+      />
+      
+      {/* Filters Modal/Overlay */}
+      {showFilters && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setShowFilters(false)}
+          />
+          
+          {/* Filters Panel */}
+          <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-xl z-50 max-h-[80vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Filters</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Filters */}
+              <AdvancedFilters
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                onToggleFilter={handleToggleFilter}
+                onClearAll={handleClearAllFilters}
+                userLocation={userLocation}
+                locationLoading={locationLoading}
+                onRequestLocation={requestLocation}
+              />
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-6 py-2 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Restaurant grid with mobile optimization */}
-      <div style={mobileOptimizedStyles.restaurantGrid}>
-        {restaurants.map((restaurant) => (
-          <UnifiedRestaurantCard
-            key={restaurant.id}
-            restaurant={restaurant}
-          />
-        ))}
-      </div>
+      {restaurants.length === 0 && !loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🍽️</div>
+          <p style={{ fontSize: '18px', color: '#666' }}>No restaurants found</p>
+          <p style={{ fontSize: '14px', color: '#999', marginTop: '8px' }}>
+            Try adjusting your filters or check back later
+          </p>
+        </div>
+      ) : (
+        <div className="restaurant-grid">
+          {restaurants.map((restaurant) => (
+            <UnifiedCard
+              key={restaurant.id}
+              data={transformRestaurantToCardData(restaurant)}
+              variant="default"
+              showStarInBadge={true}
+              onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+              onLikeToggle={(id, isLiked) => {
+                console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Mobile-optimized loading states */}
       {loading && (
@@ -527,13 +623,6 @@ function EateryPageContent() {
           {isLoadingMore ? 'Loading...' : 'Load More'}
         </button>
       )}
-
-      {/* Mobile-optimized action buttons */}
-      <ActionButtons 
-        onShowFilters={() => setShowFilters(!showFilters)}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-eatery')}
-      />
 
       {/* Mobile bottom navigation */}
       {isMobile && (

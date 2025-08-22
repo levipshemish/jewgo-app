@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition
 
 import InteractiveRestaurantMap from '@/components/map/InteractiveRestaurantMap';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
-import { fetchRestaurants, getMockRestaurants } from '@/lib/api/restaurants';
+import { fetchRestaurants } from '@/lib/api/restaurants';
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
 import { Restaurant } from '@/lib/types/restaurant';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
@@ -255,16 +255,13 @@ export default function UnifiedLiveMapClient() {
           cacheHitRate: 0
         }));
       } else {
-        // Fallback to mock data
-        setLoadingStage('loading-fallback');
-        setLoadingProgress(80);
-        
-        const mockRestaurants = getMockRestaurants();
-        restaurantsRef.current = mockRestaurants;
-        setAllRestaurants(mockRestaurants);
-        setDisplayedRestaurants(mockRestaurants);
-        setError('Using fallback data - API temporarily unavailable');
+        // Handle API error
+        setLoadingStage('loading-error');
         setLoadingProgress(100);
+        setError('Unable to connect to restaurant service. Please try again later.');
+        restaurantsRef.current = [];
+        setAllRestaurants([]);
+        setDisplayedRestaurants([]);
         setLoadingStage('complete');
       }
     } catch (error) {
@@ -294,11 +291,10 @@ export default function UnifiedLiveMapClient() {
         }
       }
       
-      const mockRestaurants = getMockRestaurants();
-      restaurantsRef.current = mockRestaurants;
-      setAllRestaurants(mockRestaurants);
-      setDisplayedRestaurants(mockRestaurants);
-      setError('Using fallback data - API temporarily unavailable');
+      setError('Failed to load restaurants. Please check your connection and try again.');
+      restaurantsRef.current = [];
+      setAllRestaurants([]);
+      setDisplayedRestaurants([]);
       setLoadingProgress(100);
       setLoadingStage('error');
     } finally {
@@ -649,17 +645,7 @@ export default function UnifiedLiveMapClient() {
           <div>Cache: {Math.round(performanceMetrics.cacheHitRate * 100)}%</div>
           <div>Restaurants: {allRestaurants.length}</div>
           <div>Displayed: {displayedRestaurants.length}</div>
-          <button 
-            onClick={() => {
-              const mockData = getMockRestaurants();
-              setAllRestaurants(mockData);
-              setDisplayedRestaurants(mockData);
-              setError('Using test mock data');
-            }}
-            className="mt-2 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-          >
-            Load Test Data
-          </button>
+
         </div>
       )}
 

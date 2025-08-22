@@ -183,6 +183,9 @@ export interface Restaurant {
   
   // Additional fields that may be present in data
   dietary_restrictions?: string[];
+  
+  // Computed fields (not from database)
+  distance?: string;
 }
 
 // Utility function to compute restaurant status

@@ -8,7 +8,8 @@ import {
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous
+  extractIsAnonymous,
+  validateSupabaseFeatureSupport
 } from '@/lib/utils/auth-utils';
 import { 
   validateCSRFServer, 
@@ -22,12 +23,26 @@ import {
 } from '@/lib/config/environment';
 import { initializeServer } from '@/lib/server-init';
 
-// Using nodejs runtime for server-side features:
-// - HMAC-based CSRF validation requires Node.js crypto
-// - Server initialization and feature guard
-// - Complex rate limiting with Redis operations
-// - Comprehensive logging and error handling
-// If using Redis REST API only, could switch to 'edge' runtime
+/**
+ * Runtime choice documentation:
+ * 
+ * Using 'nodejs' runtime for server-side features:
+ * - HMAC-based CSRF validation requires Node.js crypto
+ * - Server initialization and feature guard
+ * - Complex rate limiting with Redis operations (ioredis/standard Redis)
+ * - Comprehensive logging and error handling
+ * 
+ * Alternative: 'edge' runtime could be used when:
+ * - Using Upstash Redis REST API exclusively
+ * - No Node.js-specific crypto operations needed
+ * - Simplified rate limiting with Upstash REST calls
+ * 
+ * Performance considerations:
+ * - Edge runtime: Lower latency, better cold start performance
+ * - Node.js runtime: Full Node.js ecosystem, better for complex operations
+ * 
+ * Current choice: Node.js for production reliability and feature completeness
+ */
 export const runtime = 'nodejs';
 
 export async function OPTIONS(request: NextRequest) {
@@ -50,6 +65,24 @@ export async function POST(request: NextRequest) {
   const serverInitialized = await initializeServer();
   if (!serverInitialized) {
     console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
+      correlationId
+    });
+    
+    return NextResponse.json(
+      { error: 'ANON_SIGNIN_UNSUPPORTED' },
+      { 
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    );
+  }
+  
+  // Boot-time feature support validation with loud logging
+  const featuresSupported = validateSupabaseFeatureSupport();
+  if (!featuresSupported) {
+    console.error(`🚨 CRITICAL: Supabase features not supported at boot time for correlation ID: ${correlationId}`, {
       correlationId
     });
     
@@ -311,7 +344,7 @@ export async function POST(request: NextRequest) {
     // In development/Docker mode, don't pass captcha token to Supabase
     const signInOptions = process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true' 
       ? {}
-      : { options: { captchaToken } };
+      : { options: { captchaToken: turnstileToken } };
     
     const { data, error: signInError } = await supabase.auth.signInAnonymously(signInOptions);
     

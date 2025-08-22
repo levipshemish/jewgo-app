@@ -286,7 +286,27 @@ export function useAuth() {
               console.warn('Token rotation failed, forcing re-authentication');
               // Force signOut -> signIn cycle
               await supabaseBrowser.auth.signOut();
-              // User will need to sign in again
+              
+              // Add small backoff before suggesting re-authentication
+              setTimeout(() => {
+                // Surface toast suggesting user sign in again
+                if (typeof window !== 'undefined' && (window as any).toast) {
+                  (window as any).toast({
+                    title: 'Authentication Required',
+                    description: 'Please sign in again to continue.',
+                    status: 'warning',
+                    duration: 5000,
+                    isClosable: true,
+                  });
+                }
+                
+                // Log correlation ID via observability helper
+                console.log('Token rotation verification failed - user needs to re-authenticate', {
+                  correlationId: `token_rotation_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+                  timestamp: new Date().toISOString()
+                });
+              }, 500); // 500ms backoff
+              
               resolve(false);
             } else {
               resolve(true);
@@ -309,7 +329,31 @@ export function useAuth() {
               if (refreshTokenChanged || jtiChanged) {
                 resolve(true); // Token rotation detected
               } else {
-                console.warn('No token rotation detected within timeout');
+                console.warn('No token rotation detected within timeout - forcing re-authentication');
+                
+                // Force signOut and suggest re-authentication
+                await supabaseBrowser.auth.signOut();
+                
+                // Add small backoff before suggesting re-authentication
+                setTimeout(() => {
+                  // Surface toast suggesting user sign in again
+                  if (typeof window !== 'undefined' && (window as any).toast) {
+                    (window as any).toast({
+                      title: 'Authentication Required',
+                      description: 'Please sign in again to continue.',
+                      status: 'warning',
+                      duration: 5000,
+                      isClosable: true,
+                    });
+                  }
+                  
+                  // Log correlation ID via observability helper
+                  console.log('Token rotation timeout - user needs to re-authenticate', {
+                    correlationId: `token_rotation_timeout_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+                    timestamp: new Date().toISOString()
+                  });
+                }, 500); // 500ms backoff
+                
                 resolve(false);
               }
             } else {
