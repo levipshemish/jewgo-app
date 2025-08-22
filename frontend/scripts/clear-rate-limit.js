@@ -5,7 +5,7 @@
  * Clears rate limit data for anonymous auth testing
  */
 
-const { clearRateLimit } = require('../lib/rate-limiting/upstash-redis');
+const { clearRateLimit } = require('../lib/rate-limiting/redis');
 
 async function clearAnonymousAuthRateLimit() {
   try {

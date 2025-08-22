@@ -1,6 +1,6 @@
 /**
- * Upstash/Redis rate limiting backend for production
- * Uses standard Redis or Upstash KV for persistent rate limiting
+ * Redis rate limiting backend for production
+ * Supports both standard Redis (ioredis) and Upstash Redis REST API
  */
 
 import { validateTrustedIP } from '@/lib/utils/auth-utils';

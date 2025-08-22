@@ -42,7 +42,7 @@ export default function TestTurnstilePage() {
       const data = await response.json();
       setResult({ status: response.status, data });
     } catch (error) {
-      setResult({ error: error.message });
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
     } finally {
       setIsLoading(false);
     }

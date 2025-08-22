@@ -9,13 +9,13 @@ export {
   checkIdempotency,
   storeIdempotencyResult,
   generateIdempotencyKey
-} from './upstash-redis';
+} from './redis';
 
 
 
 // Export backend information for debugging
 export const rateLimitBackend = {
-  type: 'upstash-redis',
+  type: 'redis-cloud',
   isProduction: true,
   standardRedisConfigured: true
 };

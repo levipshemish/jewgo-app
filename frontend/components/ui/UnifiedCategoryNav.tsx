@@ -172,8 +172,8 @@ type ScrollBehavior = 'auto' | 'smooth' | 'instant';
 interface CategoryItem {
   id: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  desktopIcon?: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<any>;
+  desktopIcon?: React.ComponentType<any>;
   href?: string;
   target?: '_blank' | '_self' | '_parent' | '_top';
   rel?: string;
