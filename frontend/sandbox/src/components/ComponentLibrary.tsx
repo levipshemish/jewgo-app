@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
-import { MagnifyingGlassIcon, FunnelIcon, ViewColumnsIcon, ViewListIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon, ViewColumnsIcon, ListBulletIcon } from '@heroicons/react/24/outline'
 import { componentExamples } from '../data/componentExamples'
 
 interface ComponentLibraryProps {
@@ -78,7 +78,7 @@ const ComponentLibrary: React.FC<ComponentLibraryProps> = ({ onComponentSelect }
                 viewMode === 'list' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <ViewListIcon className="h-4 w-4" />
+              <ListBulletIcon className="h-4 w-4" />
             </button>
           </div>
         </div>
