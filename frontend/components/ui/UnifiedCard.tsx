@@ -357,7 +357,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 transform: scale(1.1) !important;
               }
               .unified-card-heart:hover svg {
-                fill:rgb(255, 124, 124) !important;
+                fill: rgb(239, 68, 68) !important;
                 stroke: #ffffff !important;
                 transform: scale(1.1) !important;
               }
@@ -370,9 +370,17 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 height: 18px !important;
                 transition: all 0.2s ease-out !important;
               }
+              .unified-card-heart.liked svg {
+                fill: rgb(239, 68, 68) !important;
+                stroke: #ffffff !important;
+              }
+              .unified-card-heart:not(.liked) svg {
+                fill: rgb(156, 163, 175) !important;
+                stroke: #ffffff !important;
+              }
             `}</style>
             <button
-              className="unified-card-heart"
+              className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleLikeToggle();
@@ -384,11 +392,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               <Heart
                 size={18}
                 style={{
-                  fill: isLiked ? 'rgb(255, 124, 124)' : 'rgb(156, 163, 175)',
                   stroke: '#ffffff',
                   strokeWidth: 2,
                   transition: 'all 0.2s ease-out',
-                  filter: 'drop-shadow(0 1px 2px rgba(255, 157, 157, 0.1))'
+                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
                 }}
               />
             </button>
