@@ -476,6 +476,16 @@ def create_app():
         logger.error(f"Error registering original API v4 routes: {e}")
         logger.error(traceback.format_exc())
     
+    # Add a simple test endpoint directly in app_factory to verify routing works
+    @app.route('/api/v4/direct-test', methods=['GET'])
+    def api_v4_direct_test():
+        """Direct test endpoint to verify API v4 routing works"""
+        return jsonify({
+            'success': True,
+            'message': 'API v4 direct test endpoint is working',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+    
     logger.info("JewGo Backend application created successfully")
     return app
 
