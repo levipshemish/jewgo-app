@@ -13,7 +13,7 @@ The anonymous authentication and user management system has been fully implement
 | Merge Anonymous API | ✅ Complete | Account merging with collision handling |
 | Prepare Merge API | ✅ Complete | HMAC cookie generation |
 | Middleware | ✅ Complete | Route protection with redirect sanitization |
-| Rate Limiting | ✅ Complete | Upstash Redis integration |
+| Rate Limiting | ✅ Complete | Redis Cloud integration |
 | Database RLS | ✅ Complete | Row-level security policies |
 | Cleanup Cron | ✅ Complete | Vercel cron job for weekly cleanup |
 | Email Upgrade Flow | ✅ Complete | Full upgrade flow with conflict handling |
@@ -48,7 +48,7 @@ await initializeFeatureGuard();
 **Features**:
 - ✅ **OPTIONS handler** with CORS validation
 - ✅ **CSRF protection** with Origin/Referer validation
-- ✅ **Rate limiting** (3/hour, 10/day) via Upstash Redis
+- ✅ **Rate limiting** (3/hour, 10/day) via Redis Cloud
 - ✅ **Duplicate session prevention** using SSR client
 - ✅ **Supabase `signInAnonymously()`** integration
 - ✅ **Cookie adapter** with environment-specific settings
@@ -160,10 +160,10 @@ const permissions = await writeGates.getUserPermissions();
 
 ### 9. Rate Limiting System
 
-**Location**: `frontend/lib/rate-limiting/upstash-redis.ts`
+**Location**: `frontend/lib/rate-limiting/redis.ts`
 
 **Features**:
-- ✅ **Upstash Redis integration** for distributed rate limiting
+- ✅ **Redis Cloud integration** for distributed rate limiting
 - ✅ **Multi-tier limits** (hourly + daily)
 - ✅ **Trusted IP validation** with left-most X-Forwarded-For parsing
 - ✅ **Enhanced UX responses** with retry timing
@@ -197,8 +197,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
 # Rate Limiting
-UPSTASH_REDIS_REST_URL=your-upstash-redis-url
-UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-token
+REDIS_URL=redis://default:your-password@your-redis-host:port
+REDIS_HOST=your-redis-host
+REDIS_PORT=your-redis-port
+REDIS_PASSWORD=your-redis-password
+REDIS_DB=0
 
 # Cron Job
 CRON_SECRET=your-secure-cron-secret
@@ -247,7 +250,7 @@ curl -X POST /api/auth/anonymous \
 
 ### Rate Limiting Testing
 ```typescript
-import { checkRateLimit } from '@/lib/rate-limiting/upstash-redis';
+import { checkRateLimit } from '@/lib/rate-limiting/redis';
 
 const result = await checkRateLimit('test:user123', 'anonymous_auth', '127.0.0.1');
 ```

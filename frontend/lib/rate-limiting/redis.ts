@@ -1,6 +1,6 @@
 /**
  * Redis rate limiting backend for production
- * Supports both standard Redis (ioredis) and Upstash Redis REST API
+ * Uses standard Redis (ioredis) for persistent rate limiting
  */
 
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
@@ -40,27 +40,17 @@ async function getRedisClient() {
   }
 
   try {
-    // Try to use Upstash Redis REST API first
-    if (REDIS_URL && REDIS_URL.includes('upstash.com')) {
-      const { Redis } = await import('@upstash/redis');
-      redisClient = new Redis({
-        url: REDIS_URL,
-        token: REDIS_PASSWORD || '',
-      });
-      console.log('✅ Using Upstash Redis REST API');
-    } else {
-      // Use standard Redis client
-      const Redis = await import('ioredis');
-      redisClient = new Redis.default({
-        host: REDIS_HOST,
-        port: REDIS_PORT,
-        password: REDIS_PASSWORD,
-        db: REDIS_DB,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-      });
-      console.log('✅ Using standard Redis client');
-    }
+    // Use standard Redis client
+    const Redis = await import('ioredis');
+    redisClient = new Redis.default({
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      password: REDIS_PASSWORD,
+      db: REDIS_DB,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+    console.log('✅ Using standard Redis client');
 
     // Test connection
     await redisClient.ping();

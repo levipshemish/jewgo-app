@@ -27,7 +27,7 @@ This document outlines the comprehensive implementation of middleware route prot
 
 #### 4. **Security Features**
 - **CSRF Protection**: Integration with existing CSRF validation system
-- **Rate Limiting**: Support for Upstash Redis rate limiting
+- **Rate Limiting**: Support for Redis Cloud rate limiting
 - **CORS Headers**: Proper CORS handling for cross-origin requests
 - **Cache Control**: Security headers to prevent sensitive data caching
 

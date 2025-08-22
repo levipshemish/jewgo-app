@@ -15,7 +15,7 @@ Ensure your staging environment has these configurations:
 NODE_ENV=staging
 CLEANUP_DRY_RUN=true
 ANONYMOUS_USER_AGE_DAYS=1  # Shorter for testing
-UPSTASH_REDIS_REST_URL=your-staging-redis-url
+REDIS_URL=redis://default:your-password@your-staging-redis-host:port
 CRON_SECRET=your-staging-cron-secret
 ```
 
@@ -387,7 +387,7 @@ curl -X POST https://staging.yourdomain.com/api/cron/cleanup-anonymous \
 ### 3. Rate Limiting Issues
 
 **Issue**: Rate limiting not working
-**Solution**: Check Upstash Redis configuration
+**Solution**: Check Redis Cloud configuration
 
 ### 4. RLS Policy Issues
 

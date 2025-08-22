@@ -18,9 +18,12 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# Rate Limiting (Upstash Redis)
-UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-token
+# Rate Limiting (Redis Cloud)
+REDIS_URL=redis://default:your-password@your-redis-host:port
+REDIS_HOST=your-redis-host
+REDIS_PORT=your-redis-port
+REDIS_PASSWORD=your-redis-password
+REDIS_DB=0
 
 # Cron Job Security
 CRON_SECRET=your-secure-cron-secret-here
@@ -116,8 +119,9 @@ const requiredVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'UPSTASH_REDIS_REST_URL',
-  'UPSTASH_REDIS_REST_TOKEN',
+  'REDIS_URL',
+'REDIS_HOST',
+'REDIS_PASSWORD',
   'CRON_SECRET',
   'MERGE_COOKIE_HMAC_KEY_CURRENT'
 ];
@@ -165,7 +169,7 @@ if __name__ == "__main__":
 
 - [ ] Generate all security keys and tokens
 - [ ] Set up Supabase project with proper configuration
-- [ ] Configure Upstash Redis for rate limiting
+- [ ] Configure Redis Cloud for rate limiting
 - [ ] Set up Sentry project for monitoring
 - [ ] Configure Google APIs (Places, Maps)
 
@@ -264,8 +268,8 @@ curl -X POST https://your-domain.vercel.app/api/cron/cleanup-anonymous \
    - Test connection from backend
 
 3. **Rate Limiting Not Working**
-   - Verify Upstash Redis configuration
-   - Check UPSTASH_REDIS_REST_URL format
+   - Verify Redis Cloud configuration
+- Check REDIS_URL format
    - Test Redis connection
 
 4. **Cron Job Not Running**
@@ -287,7 +291,7 @@ curl -X GET https://your-project.supabase.co/rest/v1/ \
   -H "apikey: YOUR_ANON_KEY"
 
 # Test Redis connection
-curl -X GET "https://your-redis-url.upstash.io/get/test" \
+curl -X GET "redis://your-redis-host:port/get/test" \
   -H "Authorization: Bearer YOUR_REDIS_TOKEN"
 ```
 
@@ -308,7 +312,7 @@ If you encounter issues during setup:
 
 1. Check the troubleshooting section above
 2. Review Vercel and Render documentation
-3. Check Supabase and Upstash documentation
+3. Check Supabase and Redis Cloud documentation
 4. Contact support if needed
 
 ---

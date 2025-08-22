@@ -33,9 +33,9 @@ import { initializeServer, isAnonymousAuthSupported } from '@/lib/server-init';
  * - Comprehensive logging and error handling
  * 
  * Alternative: 'edge' runtime could be used when:
- * - Using Upstash Redis REST API exclusively
+ * - Using Redis REST API exclusively
  * - No Node.js-specific crypto operations needed
- * - Simplified rate limiting with Upstash REST calls
+ * - Simplified rate limiting with Redis REST calls
  * 
  * Performance considerations:
  * - Edge runtime: Lower latency, better cold start performance
