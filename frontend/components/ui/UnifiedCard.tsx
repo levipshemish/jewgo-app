@@ -376,7 +376,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 font-size: 12px !important;
                 line-height: 1 !important;
                 font-weight: 500 !important;
-                background-color: rgba(255, 255, 255, 0.95) !important;
+                background-color: transparent !important;
                 color: #111827 !important;
                 border-radius: 9999px !important;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -393,7 +393,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 backdrop-filter: blur(8px) !important;
               }
               .unified-card-tag:hover {
-                background-color: rgba(255, 255, 255, 1) !important;
+                background-color: transparent !important;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
                 transform: translateY(-1px) !important;
               }
