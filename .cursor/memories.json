@@ -49,7 +49,7 @@
       "scope": ["**/*"],
       "priority": 85,
       "content": [
-        "API bases: BE https://jewgo.onrender.com, FE https://jewgo-app.vercel.app; dev 5000/3000.",
+        "API bases: BE https://jewgo-app-oyoh.onrender.com, FE https://jewgo-app.vercel.app; dev 5000/3000.",
         "Auth levels: Public, User(Supabase), Admin(ADMIN_TOKEN), Scraper(SCRAPER_TOKEN).",
         "Key endpoints: /api/restaurants(+/search, /{id}, /{id}/hours, /{id}/specials), /api/reviews(+/{id}), /api/admin/{users,restaurants,reviews}, /api/admin/cache/{clear,stats}, feature-flags.",
         "API error format: {error: string, code: string, details?: object, timestamp: ISO}"

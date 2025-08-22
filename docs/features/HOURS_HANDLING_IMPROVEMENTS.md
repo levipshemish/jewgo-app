@@ -327,15 +327,15 @@ import EnhancedHoursDisplay from '@/components/restaurant/EnhancedHoursDisplay';
 ### **API Usage**
 ```bash
 # Get restaurant hours
-curl "https://jewgo.onrender.com/api/restaurants/123/hours"
+curl "https://jewgo-app-oyoh.onrender.com/api/restaurants/123/hours"
 
 # Update restaurant hours
-curl -X PUT "https://jewgo.onrender.com/api/restaurants/123/hours" \
+curl -X PUT "https://jewgo-app-oyoh.onrender.com/api/restaurants/123/hours" \
   -H "Content-Type: application/json" \
   -d '{"hours_data": "Mon-Fri: 11AM-9PM", "source": "orb"}'
 
 # Normalize existing hours
-curl -X POST "https://jewgo.onrender.com/api/restaurants/123/hours/normalize" \
+curl -X POST "https://jewgo-app-oyoh.onrender.com/api/restaurants/123/hours/normalize" \
   -H "Content-Type: application/json" \
   -d '{"source": "google_places"}'
 ```

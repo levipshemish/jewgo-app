@@ -19,7 +19,7 @@ Set these environment variables in your Vercel frontend service:
 
 ```
 ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25
-ADMIN_API_URL=https://jewgo.onrender.com
+ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com
 ```
 
 ## Admin Functionality Implemented
@@ -67,7 +67,7 @@ ADMIN_API_URL=https://jewgo.onrender.com
    - Find your frontend project
    - Add environment variables:
      - `ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25`
-     - `ADMIN_API_URL=https://jewgo.onrender.com`
+     - `ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com`
    - Redeploy the project
 
 3. **Test Admin Flow:**

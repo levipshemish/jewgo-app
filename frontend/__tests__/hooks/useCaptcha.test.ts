@@ -10,7 +10,7 @@ describe('useCaptcha', () => {
     const { result } = renderHook(() => useCaptcha());
 
     expect(result.current.state).toEqual({
-      isRequired: true, // CAPTCHA is always required now
+      isRequired: true, // Turnstile is always required now
       isVerified: false,
       token: null,
       error: null,

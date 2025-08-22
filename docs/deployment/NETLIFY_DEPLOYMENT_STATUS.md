@@ -94,7 +94,7 @@ The JewGo app has been successfully configured for Netlify deployment. All neces
 ### Required Environment Variables
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
 DATABASE_URL=your_postgresql_database_url
 NEXTAUTH_URL=https://your-app-name.netlify.app
 NEXTAUTH_SECRET=your_nextauth_secret_here

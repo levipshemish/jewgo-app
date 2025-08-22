@@ -21,16 +21,19 @@ npm --version
 pg_isready
 
 # Check if ports are in use
-lsof -i :3000  # Frontend port
-lsof -i :5000  # Backend port
+lsof -i :3000  # Frontend (standard)
+lsof -i :3001  # Frontend (optimized compose)
+lsof -i :5000  # Backend (container/internal or non-optimized)
+lsof -i :5001  # Backend (optimized compose)
 lsof -i :5432  # Database port
 ```
 
 ### Check Application Health
 ```bash
-# Backend health check
-curl http://localhost:5000/health
-curl https://jewgo.onrender.com/health
+# Backend health check (try whichever applies)
+curl http://localhost:5001/health   # optimized compose
+curl http://localhost:5000/health   # non-optimized/full compose or direct run
+curl https://jewgo-app-oyoh.onrender.com/health
 
 # Frontend health check
 curl http://localhost:3000/api/health

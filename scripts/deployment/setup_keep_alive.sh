@@ -46,13 +46,13 @@ echo "   - Pingdom: https://pingdom.com"
 echo ""
 
 echo "🔗 Health Check URLs:"
-echo "   - https://jewgo.onrender.com/health"
-echo "   - https://jewgo.onrender.com/api/restaurants?limit=1"
+echo "   - https://jewgo-app-oyoh.onrender.com/health"
+echo "   - https://jewgo-app-oyoh.onrender.com/api/restaurants?limit=1"
 echo ""
 
 echo "📊 Test the endpoints now:"
-echo "   curl https://jewgo.onrender.com/health"
-echo "   curl https://jewgo.onrender.com/api/restaurants?limit=1"
+echo "   curl https://jewgo-app-oyoh.onrender.com/health"
+echo "   curl https://jewgo-app-oyoh.onrender.com/api/restaurants?limit=1"
 echo ""
 
 echo "✅ Setup complete! Choose an option above to start monitoring."

@@ -78,13 +78,13 @@ docker-compose -f docker-compose.frontend.local.yml logs -f
 
 ```bash
 # Build and run production container
-docker-compose -f docker-compose.frontend.yml up --build
+docker-compose -f docker-compose.frontend.prod.yml up --build
 
 # Run in background
-docker-compose -f docker-compose.frontend.yml up -d
+docker-compose -f docker-compose.frontend.prod.yml up -d
 
 # View logs
-docker-compose -f docker-compose.frontend.yml logs -f
+docker-compose -f docker-compose.frontend.prod.yml logs -f
 ```
 
 ## 📁 File Structure

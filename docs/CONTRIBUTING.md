@@ -287,7 +287,7 @@ schema_diff {
 premerge_guard {
   "cwd": "frontend",
   "feHealthUrl": "https://jewgo-app.vercel.app/health",
-  "beHealthUrl": "https://jewgo.onrender.com/health",
+  "beHealthUrl": "https://jewgo-app-oyoh.onrender.com/health",
   "budgets": {
     "mainKB": 500,
     "initialTotalMB": 2

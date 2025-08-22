@@ -59,7 +59,7 @@ def main():
     print(f"   ADMIN_TOKEN={token_info['token']}")
     
     print("\n4. Test the token:")
-    print(f"   curl -X GET 'https://jewgo.onrender.com/api/admin/restaurants?limit=1' \\")
+    print(f"   curl -X GET 'https://jewgo-app-oyoh.onrender.com/api/admin/restaurants?limit=1' \\")
     print(f"     -H 'Authorization: Bearer {token_info['token']}' \\")
     print(f"     -H 'Content-Type: application/json'")
     

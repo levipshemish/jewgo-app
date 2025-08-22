@@ -15,7 +15,7 @@
 - ✅ Monitoring Integration (Sentry)
 
 #### 🚀 **Deployment & Infrastructure**
-- ✅ Backend: Render (https://jewgo.onrender.com)
+- ✅ Backend: Render (https://jewgo-app-oyoh.onrender.com)
 - ✅ Frontend: Vercel (https://jewgo-app.vercel.app)
 - ✅ Database: Neon PostgreSQL
 - ✅ CDN: Cloudinary
@@ -57,8 +57,8 @@
 - **Documentation**: 71 Markdown files
 - **Live URLs**: 
   - Frontend: https://jewgo-app.vercel.app
-  - Backend: https://jewgo.onrender.com
-  - Health Check: https://jewgo.onrender.com/health
+  - Backend: https://jewgo-app-oyoh.onrender.com
+- Health Check: https://jewgo-app-oyoh.onrender.com/health
 
 ---
 

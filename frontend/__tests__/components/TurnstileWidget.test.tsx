@@ -34,7 +34,7 @@ describe('TurnstileWidget', () => {
     });
 
     // Set a mock site key for testing
-    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key';
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-turnstile-site-key';
   });
 
   it('renders without crashing', () => {

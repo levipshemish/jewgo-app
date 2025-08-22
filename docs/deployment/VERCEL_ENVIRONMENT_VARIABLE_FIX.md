@@ -22,7 +22,7 @@ The Vercel configuration was referencing a secret called `jewgo-api-url` that do
   "installCommand": "cd frontend && npm install",
   "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://jewgo.onrender.com"
+    "NEXT_PUBLIC_API_URL": "https://jewgo-app-oyoh.onrender.com"
   },
   "functions": {
     "frontend/app/**/*.ts": {
@@ -54,7 +54,7 @@ The Vercel configuration was referencing a secret called `jewgo-api-url` that do
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://jewgo.onrender.com"
+    "NEXT_PUBLIC_API_URL": "https://jewgo-app-oyoh.onrender.com"
   },
   "functions": {
     "app/**/*.ts": {
@@ -131,7 +131,7 @@ curl https://jewgo-app.vercel.app/api/restaurants
 ## 🔗 **Environment Variables Summary**
 
 ### **Required for Vercel**:
-- `NEXT_PUBLIC_API_URL` = `https://jewgo.onrender.com` ✅ **SET**
+- `NEXT_PUBLIC_API_URL` = `https://jewgo-app-oyoh.onrender.com` ✅ **SET**
 
 ### **Optional (for full functionality)**:
 - `NEXTAUTH_URL` = Your Vercel frontend URL

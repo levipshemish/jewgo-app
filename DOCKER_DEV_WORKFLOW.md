@@ -17,12 +17,14 @@ This guide shows you how to automatically rebuild Docker containers when you mak
 This automatically rebuilds containers when you save files:
 
 ```bash
-# Start development environment with auto-rebuild
+# Start development environment with auto-rebuild (frontend-only compose on :3000)
 npm run docker:watch
 
 # Or use the script directly
 ./scripts/auto-docker-dev.sh watch
 ```
+
+Note: The watcher script targets a frontend-only compose and serves on port 3000 by default.
 
 **What this does:**
 - Starts Docker containers in development mode
@@ -35,7 +37,7 @@ npm run docker:watch
 For when you want control over when rebuilds happen:
 
 ```bash
-# Start development environment
+# Start development environment (frontend-only compose on :3000)
 npm run docker:dev
 
 # Manually rebuild when needed
@@ -49,6 +51,18 @@ For testing production builds:
 ```bash
 # Build and run production-like environment
 docker-compose -f docker-compose.production.yml up --build
+```
+
+### Option 4: Full-Stack Optimized Dev (Docker)
+
+For the full stack in Docker with health checks and local DB/Redis, use the optimized compose:
+
+```bash
+# Start all services (maps FE to 3001, BE to 5001)
+docker-compose -f docker-compose.optimized.yml up -d --build
+
+# Check status
+docker-compose -f docker-compose.optimized.yml ps
 ```
 
 ## 🛠️ Available Commands
@@ -81,14 +95,16 @@ The system uses file watchers to detect changes:
 1. File change detected in `frontend/` directory
 2. Container rebuilds with new code
 3. Service restarts automatically
-4. Changes are immediately available at `http://localhost:3000`
+4. Changes are immediately available at `http://localhost:3000` (frontend-only compose)
+   - For the full optimized stack, browse `http://localhost:3001`
 
 ## 📁 File Structure
 
 ```
 jewgo app/
-├── docker-compose.dev.yml          # Development Docker Compose
-├── docker-compose.production.yml   # Production Docker Compose
+├── docker-compose.frontend.dev.yml # Frontend Dev Docker Compose (port 3000)
+├── docker-compose.optimized.yml    # Full stack Dev Docker Compose (FE 3001/BE 5001)
+├── docker-compose.production.yml   # Production-like Docker Compose
 ├── frontend/
 │   ├── Dockerfile.dev              # Development Dockerfile
 │   └── Dockerfile.optimized        # Production Dockerfile
@@ -112,7 +128,8 @@ npm run docker:dev
 - Edit files in `frontend/` directory
 - Save your changes
 - Containers automatically rebuild (if using watch mode)
-- View changes at `http://localhost:3000`
+- View changes at `http://localhost:3000` (frontend-only compose)
+- Or at `http://localhost:3001` (optimized full stack)
 
 ### 3. Monitor Status
 ```bash
@@ -158,8 +175,9 @@ npm run docker:rebuild
 
 ### Port Conflicts
 ```bash
-# Check what's using port 3000
-lsof -i :3000
+# Check what's using ports
+lsof -i :3000   # frontend-only compose
+lsof -i :3001   # optimized full stack
 
 # Stop conflicting services
 npm run docker:stop

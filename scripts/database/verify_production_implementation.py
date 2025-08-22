@@ -34,7 +34,7 @@ class ProductionVerificationManager:
         """Initialize verification manager."""
         self.database_url = os.getenv('DATABASE_URL')
         self.redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
-        self.api_url = os.getenv('API_URL', 'https://jewgo.onrender.com')
+        self.api_url = os.getenv('API_URL', 'https://jewgo-app-oyoh.onrender.com')
         self.admin_token = os.getenv('ADMIN_TOKEN')
         self.scraper_token = os.getenv('SCRAPER_TOKEN')
         

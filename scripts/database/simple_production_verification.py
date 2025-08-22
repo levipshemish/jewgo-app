@@ -174,7 +174,7 @@ def test_api_endpoints():
     try:
         import requests
         
-        api_url = os.getenv('API_URL', 'https://jewgo.onrender.com')
+        api_url = os.getenv('API_URL', 'https://jewgo-app-oyoh.onrender.com')
         admin_token = os.getenv('ADMIN_TOKEN')
         
         print("🔗 Testing API endpoints...")
@@ -279,7 +279,7 @@ def measure_performance():
         print(f"✅ Database query time: {db_query_time:.3f}s")
         
         # API response time
-        api_url = os.getenv('API_URL', 'https://jewgo.onrender.com')
+        api_url = os.getenv('API_URL', 'https://jewgo-app-oyoh.onrender.com')
         start_time = time.time()
         try:
             response = requests.get(f"{api_url}/api/health", timeout=10)

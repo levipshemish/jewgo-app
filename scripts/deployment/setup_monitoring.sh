@@ -27,7 +27,7 @@ chmod +x health_checks/keep_alive.js
 # Create environment file for monitoring
 cat > .env.monitoring << EOF
 # JewGo API Monitoring Configuration
-API_URL=https://jewgo.onrender.com
+API_URL=https://jewgo-app-oyoh.onrender.com
 KEEP_ALIVE_INTERVAL=600000
 KEEP_ALIVE_TIMEOUT=30000
 EOF
@@ -40,8 +40,8 @@ echo "2. Configure UptimeRobot or similar service for external monitoring"
 echo "3. Test the health endpoints manually"
 echo ""
 echo "🔗 Health check URLs:"
-echo "   - https://jewgo.onrender.com/health"
-echo "   - https://jewgo.onrender.com/api/restaurants?limit=1"
+echo "   - https://jewgo-app-oyoh.onrender.com/health"
+echo "   - https://jewgo-app-oyoh.onrender.com/api/restaurants?limit=1"
 echo ""
 echo "🚀 To test monitoring locally:"
 echo "   cd monitoring && npm run once"

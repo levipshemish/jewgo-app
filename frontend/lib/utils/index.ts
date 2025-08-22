@@ -8,7 +8,7 @@ export * from './apiRouteUtils';
 export * from './componentUtils';
 export * from './distance';
 export * from './rateLimiter';
-export * from './recaptcha';
+export * from './turnstile';
 export * from './classNames';
 export * from './stringUtils';
 export * from './imageUrlValidator';

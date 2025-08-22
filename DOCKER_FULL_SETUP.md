@@ -2,6 +2,8 @@
 
 Run the entire JewGo application stack in Docker containers!
 
+Note: Most developers should use the optimized workflow with `docker-compose.optimized.yml` and `./scripts/setup-docker.sh`, which maps ports Frontend 3001 and Backend 5001 on the host. This guide documents the full setup which commonly uses 3000/5000 mappings.
+
 ## 🚀 Quick Start
 
 ### 1. Start Docker Desktop
@@ -17,8 +19,8 @@ Make sure Docker Desktop is running on your Mac.
 ```
 
 ### 3. Access the Application
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
+- **Frontend**: http://localhost:3000 (or http://localhost:3001 with optimized compose)
+- **Backend API**: http://localhost:5000 (or http://localhost:5001 with optimized compose)
 - **Database**: localhost:5432
 - **Redis**: localhost:6379
 

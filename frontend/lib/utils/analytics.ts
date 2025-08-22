@@ -15,7 +15,7 @@ interface RegistrationMetrics {
   failedRegistrations: number;
   validationErrors: number;
   rateLimitHits: number;
-  recaptchaFailures: number;
+  turnstileFailures: number;
 }
 
 class Analytics {
@@ -26,7 +26,7 @@ class Analytics {
     failedRegistrations: 0,
     validationErrors: 0,
     rateLimitHits: 0,
-    recaptchaFailures: 0,
+    turnstileFailures: 0,
   };
 
   // Track a generic event
@@ -77,8 +77,8 @@ class Analytics {
       this.metrics.validationErrors++;
     } else if (reason === 'rate_limit') {
       this.metrics.rateLimitHits++;
-    } else if (reason === 'recaptcha_failed') {
-      this.metrics.recaptchaFailures++;
+    } else if (reason === 'turnstile_failed') {
+      this.metrics.turnstileFailures++;
     }
 
     this.track('registration_failure', {
@@ -214,6 +214,11 @@ class Analytics {
     // For now, silently process the event
     // TODO: Integrate with actual analytics service (Google Analytics, Mixpanel, etc.)
 // This will be implemented when analytics requirements are finalized
+    
+    // Skip network calls in development
+    if (process.env.NODE_ENV !== 'production') {
+      return;
+    }
     
     // Check if Google Analytics is properly configured
     const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;

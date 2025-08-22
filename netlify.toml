@@ -33,15 +33,15 @@
 # Environment variables (these will be overridden by Netlify UI or CLI)
 [context.production.environment]
   NODE_ENV = "production"
-  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo-app-oyoh.onrender.com"
 
 [context.deploy-preview.environment]
   NODE_ENV = "production"
-  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo-app-oyoh.onrender.com"
 
 [context.branch-deploy.environment]
   NODE_ENV = "production"
-  NEXT_PUBLIC_BACKEND_URL = "https://jewgo.onrender.com"
+  NEXT_PUBLIC_BACKEND_URL = "https://jewgo-app-oyoh.onrender.com"
 
 # Functions configuration (if you need serverless functions)
 [functions]

@@ -68,7 +68,7 @@ NEXTAUTH_URL=https://jewgo-app.vercel.app
 NEXTAUTH_SECRET=your-nextauth-secret
 
 # API Configuration
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 
 # Environment

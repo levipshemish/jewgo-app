@@ -1,207 +1,91 @@
-# 🕍 JewGo - Kosher Restaurant Discovery Platform
+# 🕍 JewGo — Kosher Restaurant Discovery Platform
 
-**AI Model**: Claude Sonnet 4  
-**Agent**: Cursor AI Assistant
+A platform for discovering and reviewing kosher restaurants, synagogues, and Jewish establishments.
 
-A comprehensive platform for discovering and reviewing kosher restaurants, synagogues, and Jewish establishments.
-
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 jewgo-app/
-├── 📁 backend/                 # Python FastAPI backend
-│   ├── 📁 ai/                  # AI/ML components
-│   ├── 📁 config/              # Configuration files
-│   │   ├── 📁 linting/         # Linting and testing configs
-│   │   └── config.py           # Main configuration
-│   ├── 📁 database/            # Database layer (v4 architecture)
-│   │   ├── 📁 migrations/      # Database migrations
-│   │   ├── 📁 repositories/    # Repository pattern implementation
-│   │   └── database_manager_v4.py
-│   ├── 📁 routes/              # API routes
-│   ├── 📁 search/              # Search functionality
-│   ├── 📁 services/            # Business logic services
-│   ├── 📁 tests/               # Backend tests
-│   └── 📁 utils/               # Utility functions
-├── 📁 frontend/                # Next.js frontend
-│   ├── 📁 app/                 # Next.js 13+ app directory
-│   ├── 📁 components/          # React components
-│   ├── 📁 lib/                 # Utility libraries
-│   ├── 📁 public/              # Static assets
-│   └── 📁 scripts/             # Frontend scripts
-├── 📁 docs/                    # Documentation
-│   ├── 📁 cleanup-reports/     # Code cleanup documentation
-│   ├── 📁 status-reports/      # System status reports
-│   └── 📁 implementation-reports/ # Implementation guides
-├── 📁 config/                  # Global configuration
-│   └── 📁 environment/         # Environment templates
-├── 📁 deployment/              # Deployment configuration
-├── 📁 monitoring/              # Monitoring and health checks
-├── 📁 scripts/                 # Global scripts
-└── 📁 data/                    # Data files and exports
+├── backend/   # Flask API (routes/, services/, utils/, tests/). Entry: app.py, wsgi.py
+├── frontend/  # Next.js + TypeScript (app/, components/, __tests__/, public/)
+├── scripts/   # Orchestration (Docker, sandbox, build/deploy wrappers)
+└── docs/      # Developer & deployment docs (+ supabase/, config/, tools/)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Node.js 22.x
+- Node.js 18+ (recommended)
 - Python 3.11+
 - Docker & Docker Compose
-- PostgreSQL (or use Docker)
-- Redis (or use Docker)
 
 ### Environment Setup
-Environment variables are centralized in the root `.env` file — this is the single source of truth. Example files are for reference only and must not contain real secrets.
+- Root `.env` is the single source of truth. Example files must use placeholders only.
 
 ```bash
-# Create or update your root .env, then validate
-./scripts/setup-env.sh   # optional helper
-npm run env:check        # validates keys across env files
-
-# Edit .env with your actual values (examples must use placeholders)
-# Common keys:
-# - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-# - SUPABASE_SERVICE_ROLE_KEY
-# - DATABASE_URL
-# - GOOGLE_MAPS_API_KEY
-# - SECRET_KEY / FLASK_SECRET_KEY
+# Create/update root .env, then validate
+npm run env:check        # strict mode: npm run env:check:strict
 ```
 
-### Docker Setup (Recommended)
+### Run with Docker (recommended)
 ```bash
-# Start all services with Docker
-docker-compose -f docker-compose.optimized.yml up -d
+# Easiest path (auto build + start)
+./scripts/setup-docker.sh
 
-# Check service status
-docker-compose -f docker-compose.optimized.yml ps
-
-# View logs
-docker-compose -f docker-compose.optimized.yml logs -f
+# Or use package scripts
+npm run docker:dev       # start/watch via scripts/auto-docker-dev.sh
+npm run docker:status    # status
+npm run docker:logs      # logs
 ```
 
-### Manual Setup (Alternative)
-
-#### Backend Setup
+### Manual Dev (alternative)
+Backend (Flask):
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-# Environment variables are loaded from root .env (source of truth)
-python -m uvicorn app:app --reload
+python app.py  # default binds 0.0.0.0:8082 (see ConfigManager)
 ```
 
-#### Frontend Setup
+Frontend (Next.js):
 ```bash
 cd frontend
 npm install
-# Environment variables are loaded from root .env (source of truth)
-
-### Environment Policy
-- Root `.env` is the authoritative set of keys/values used locally.
-- Example files (e.g., `env.template`, `frontend/env.example`) must not contain real values; use placeholders like `CHANGEME` or `<VALUE>`.
-- CI enforces this via `npm run env:check` (runs automatically in workflows).
-npm run dev
+npm run dev     # http://localhost:3000 or 3001 depending on config
 ```
 
-## 🧹 Recent Cleanup & Organization
+## Scripts & Workflows
 
-### ✅ Completed
-- **Documentation Consolidation**: Moved scattered docs to organized structure
-- **Configuration Centralization**: Consolidated environment and linting configs
-- **Duplicate Removal**: Removed redundant package.json and vercel.json files
-- **File Organization**: Cleaned up root directory structure
-- **DS_Store Cleanup**: Removed all macOS system files
+- Build/Deploy system (Docker Hub):
+  - `npm run build`, `npm run deploy`, `npm run update`, `npm run status`, `npm run logs`
+  - See `BUILD_AND_DEPLOY_QUICK_REFERENCE.md` for full switch matrix (env files, tags, dry-run, etc.).
+- Docker dev loop: `npm run docker:dev`, `docker-compose -f docker-compose.optimized.yml ...`, or `./scripts/setup-docker.sh`.
+- Env guardrails: `npm run env:check` to enforce placeholder-only examples and key consistency.
 
-### 📋 Organization Structure
-- **docs/cleanup-reports/**: Code cleanup plans and summaries
-- **docs/status-reports/**: System status and audit reports  
-- **docs/implementation-reports/**: Implementation guides and fixes
-- **config/environment/**: Centralized environment templates
-- **backend/config/linting/**: Consolidated linting configurations
-
-## 🛠️ Development Workflow
-
-### Code Quality Standards
-- **Backend**: Python with type hints, linting via ruff, testing via pytest
-- **Frontend**: TypeScript, ESLint, Prettier, Jest for testing
-- **Database**: Repository pattern with v4 architecture
-- **API**: RESTful design with consistent error handling
-
-### Testing
+## Testing
 ```bash
-# Backend tests
-cd backend
-pytest
+# Backend (pytest)
+cd backend && pytest
 
-# Frontend tests  
-cd frontend
-npm test
+# Frontend (Jest)
+cd frontend && npm test
 ```
 
-### Deployment
-```bash
-# Production build
-cd frontend && npm run build
-cd backend && python -m uvicorn app:app --host 0.0.0.0 --port 8000
-```
+## Health & Ports
+- Docker (default compose):
+  - Frontend: http://localhost:3001
+  - Backend:  http://localhost:5001 (health: `/health`)
+- Manual backend dev: http://localhost:8082 (health: `/health`)
+- Additional health: `/api/health/basic` and `/api/health/full` when blueprints are loaded.
 
-## 📊 Architecture Highlights
+## Contributing
+- Follow code style: Python (Black 88/Flake8/isort/mypy), TypeScript (ESLint/Prettier 2-space).
+- Keep changes focused; write tests for new functionality; update docs when behavior changes.
+- Conventional Commits required (commitlint).
 
-### Database Layer (v4)
-- **Repository Pattern**: Clean separation of concerns
-- **Connection Management**: Optimized database connections
-- **Migration System**: Automated schema updates
-- **Performance**: Indexed queries and caching
+## License
+Proprietary — All rights reserved.
 
-### Search System
-- **PostgreSQL Full-Text**: Native text search capabilities
-- **Semantic Search**: AI-powered relevance scoring
-- **Hybrid Search**: Combined text and semantic results
-- **Caching**: Redis-based result caching
+—
 
-### Frontend Architecture
-- **Next.js 13+**: App router with server components
-- **TypeScript**: Full type safety
-- **Component Library**: Reusable UI components
-- **Performance**: Optimized images and bundles
-
-## 🔧 Configuration
-
-### Environment Variables
-- **Backend**: Copy `config/environment/backend.env.example` to `backend/.env`
-- **Frontend**: Copy `config/environment/frontend.env.example` to `frontend/.env.local`
-- **Production**: Use `config/environment/backend.production.env.example`
-
-### Linting Configuration
-All linting configs are centralized in `backend/config/linting/`:
-- `ruff.toml` - Python linting and formatting
-- `mypy.ini` - Type checking
-- `pytest.ini` - Testing configuration
-- `.flake8` - Additional linting rules
-- `.coveragerc` - Test coverage settings
-
-## 📈 Monitoring & Health Checks
-
-- **Health Endpoints**: `/healthz` for system status
-- **Performance Monitoring**: Response time tracking
-- **Error Tracking**: Sentry integration
-- **Logging**: Structured logging with context
-
-## 🤝 Contributing
-
-1. Follow the established code organization
-2. Use the centralized configuration files
-3. Write tests for new functionality
-4. Update documentation for significant changes
-5. Follow the linting and formatting standards
-
-## 📝 License
-
-This project is proprietary software. All rights reserved.
-
----
-
-**Last Updated**: 2024  
-**Status**: Production Ready  
-**Version**: v4.0 # Force deployment update
+Last Updated: 2025-08-22

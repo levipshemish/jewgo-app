@@ -17,7 +17,7 @@ Set these environment variables in your Netlify dashboard:
 ```
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=5060e374c6d88aacf8fea324
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
 NEXT_PUBLIC_APP_VERSION=1.0.0
 ```
 
@@ -165,8 +165,8 @@ Located in `frontend/_redirects`, handles routing and API proxying:
 /*    /index.html   200
 
 # Handle API routes - proxy to backend
-/api/specials/*  https://jewgo.onrender.com/api/specials/:splat  200
-/api/health/*  https://jewgo.onrender.com/api/health/:splat  200
+/api/specials/*  https://jewgo-app-oyoh.onrender.com/api/specials/:splat  200
+/api/health/*  https://jewgo-app-oyoh.onrender.com/api/health/:splat  200
 # ... other API routes
 
 # Handle Next.js static assets

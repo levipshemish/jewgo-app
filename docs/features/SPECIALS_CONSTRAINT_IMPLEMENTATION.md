@@ -367,7 +367,7 @@ import requests
 
 # Add a special to a restaurant
 response = requests.post(
-    'https://jewgo.onrender.com/api/restaurants/123/specials',
+    'https://jewgo-app-oyoh.onrender.com/api/restaurants/123/specials',
     headers={'Authorization': 'Bearer your_admin_token'},
     json={
         'title': 'Lunch Special',

@@ -1,17 +1,14 @@
 # 🚀 JewGo Quick Start Guide
 
-**AI Model**: Claude Sonnet 4  
-**Agent**: Cursor AI Assistant
-
 ## 🎯 Get Started in 3 Steps
 
 ### 1. Prerequisites
 - Docker and Docker Compose installed
 - Git (to clone the repository)
 
-### 2. Start the Application
+### 2. Start the Application (Docker recommended)
 ```bash
-# Run the automated setup script
+# Run the automated setup script (build + start + health checks)
 ./scripts/setup-docker.sh
 ```
 
@@ -146,14 +143,13 @@ docker-compose -f docker-compose.optimized.yml logs -f redis
 
 ## 📱 Development Workflow
 
-### Local Development
+### Local Development (non-Docker)
 ```bash
-# Backend development
+# Backend development (Flask)
 cd backend
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn app:app --reload
+python app.py   # serves on http://localhost:8082 (health: /health)
 
 # Frontend development
 cd frontend
@@ -162,9 +158,15 @@ npm run dev
 ```
 
 ### Production Deployment
-- **Backend**: Deployed on Render
-- **Frontend**: Deployed on Vercel
-- **Database**: Supabase production instance
+- Use the build/deploy wrapper scripts:
+  ```bash
+  # Full update: build, push, deploy
+  npm run update all --env prod
+
+  # Status and logs
+  npm run status
+  npm run logs all
+  ```
 
 ## 🔒 Security Notes
 
@@ -176,9 +178,9 @@ npm run dev
 ## 📞 Support
 
 ### Documentation
-- **Project Status**: `PROJECT_STATUS_REPORT.md`
-- **Docker Setup**: `DOCKER_SETUP.md`
-- **API Documentation**: Available at http://localhost:5001/docs
+- Build/Deploy quick ref: `BUILD_AND_DEPLOY_QUICK_REFERENCE.md`
+- Docker setup: `DOCKER_SETUP.md`
+- Supabase setup: `SUPABASE_SETUP.md`
 
 ### Getting Help
 1. Check the troubleshooting section above
@@ -190,4 +192,4 @@ npm run dev
 
 **Next Steps**: After successful setup, explore the application at http://localhost:3001
 
-*Last Updated: January 2025*
+Last Updated: 2025-08-22

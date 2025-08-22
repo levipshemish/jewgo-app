@@ -9,7 +9,7 @@
 - **Admin Token**: ✅ Added
 
 ### **Backend (Render)**: ✅ **WORKING**
-- **URL**: https://jewgo.onrender.com
+- **URL**: https://jewgo-app-oyoh.onrender.com
 - **Health**: ✅ Healthy
 - **Database**: ✅ Connected
 - **Redis**: ✅ Connected

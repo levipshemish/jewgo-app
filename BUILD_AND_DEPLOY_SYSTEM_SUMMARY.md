@@ -346,10 +346,10 @@ npm run build all --force
    npm run logs all
    ```
 
-5. **Test Application**
+5. **Test Application** (optimized compose defaults shown)
    ```bash
-   curl http://localhost:3000
-   curl http://localhost:5000/health
+   curl http://localhost:3001
+   curl http://localhost:5001/health
    ```
 
 ## 🎉 **Summary**

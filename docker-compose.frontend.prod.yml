@@ -14,7 +14,7 @@ services:
       # Required environment variables for production build (matching CI workflow)
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-https://jewgo.onrender.com}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-https://jewgo-app-oyoh.onrender.com}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-https://jewgo-app.vercel.app}
       - DATABASE_URL=${DATABASE_URL}
       

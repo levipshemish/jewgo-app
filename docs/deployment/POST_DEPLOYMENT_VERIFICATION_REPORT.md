@@ -11,7 +11,7 @@
 ### Environment Variables ✅
 - ✅ **DATABASE_URL**: Neon PostgreSQL (configured and working)
 - ✅ **GOOGLE_PLACES_API_KEY**: Configured and functional
-- ✅ **NEXT_PUBLIC_BACKEND_URL**: https://jewgo.onrender.com
+- ✅ **NEXT_PUBLIC_BACKEND_URL**: https://jewgo-app-oyoh.onrender.com
 - ✅ **NEXT_PUBLIC_GOOGLE_MAPS_API_KEY**: Configured and functional
 - ✅ **CLOUDINARY**: All credentials configured
 - ✅ **REDIS**: Redis Cloud configured and working
@@ -34,7 +34,7 @@
 ## 🚀 Production Deployment Verification
 
 ### Backend (Render) ✅
-- ✅ **URL**: https://jewgo.onrender.com
+- ✅ **URL**: https://jewgo-app-oyoh.onrender.com
 - ✅ **Health Endpoint**: Responding with status "healthy"
 - ✅ **Database Connection**: Connected
 - ✅ **Redis Connection**: Connected
@@ -188,7 +188,7 @@
 
 **All critical systems are operational:**
 
-- ✅ **Backend**: https://jewgo.onrender.com (Healthy)
+- ✅ **Backend**: https://jewgo-app-oyoh.onrender.com (Healthy)
 - ✅ **Frontend**: https://jewgo-app.vercel.app (Live)
 - ✅ **Database**: Neon PostgreSQL (Optimized)
 - ✅ **API**: All endpoints responding

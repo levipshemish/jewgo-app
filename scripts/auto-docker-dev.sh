@@ -42,13 +42,13 @@ build_dev_environment() {
     print_status "Building development environment..."
     
     # Stop existing containers
-    docker-compose -f docker-compose.dev.yml down --remove-orphans
+    docker-compose -f docker-compose.frontend.dev.yml down --remove-orphans
     
     # Build with no cache for fresh start
-    docker-compose -f docker-compose.dev.yml build --no-cache
+    docker-compose -f docker-compose.frontend.dev.yml build --no-cache
     
     # Start services
-    docker-compose -f docker-compose.dev.yml up -d
+    docker-compose -f docker-compose.frontend.dev.yml up -d
     
     print_success "Development environment started!"
     print_status "Frontend available at: http://localhost:3000"
@@ -59,8 +59,8 @@ rebuild_service() {
     local service=$1
     print_status "Rebuilding $service..."
     
-    docker-compose -f docker-compose.dev.yml build --no-cache $service
-    docker-compose -f docker-compose.dev.yml up -d $service
+    docker-compose -f docker-compose.frontend.dev.yml build --no-cache $service
+    docker-compose -f docker-compose.frontend.dev.yml up -d $service
     
     print_success "$service rebuilt and restarted!"
 }
@@ -95,22 +95,22 @@ watch_and_rebuild() {
 # Function to show logs
 show_logs() {
     print_status "Showing logs (Press Ctrl+C to stop)..."
-    docker-compose -f docker-compose.dev.yml logs -f
+    docker-compose -f docker-compose.frontend.dev.yml logs -f
 }
 
 # Function to show status
 show_status() {
     print_status "Docker containers status:"
-    docker-compose -f docker-compose.dev.yml ps
+    docker-compose -f docker-compose.frontend.dev.yml ps
     
     print_status "Container health:"
-    docker-compose -f docker-compose.dev.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+    docker-compose -f docker-compose.frontend.dev.yml ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 }
 
 # Function to clean up
 cleanup() {
     print_status "Cleaning up development environment..."
-    docker-compose -f docker-compose.dev.yml down --remove-orphans
+    docker-compose -f docker-compose.frontend.dev.yml down --remove-orphans
     docker system prune -f
     print_success "Cleanup complete!"
 }
@@ -156,7 +156,7 @@ case "${1:-help}" in
         show_status
         ;;
     stop)
-        docker-compose -f docker-compose.dev.yml down
+        docker-compose -f docker-compose.frontend.dev.yml down
         print_success "Containers stopped"
         ;;
     cleanup)

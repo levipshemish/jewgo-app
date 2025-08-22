@@ -1,5 +1,5 @@
 // Cloudflare Turnstile utilities
-const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || process.env.RECAPTCHA_SECRET_KEY || '';
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || '';
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 export async function verifyTurnstile(
@@ -9,14 +9,11 @@ export async function verifyTurnstile(
 ): Promise<{ success: boolean; score?: number; action?: string; errors?: unknown }> {
   try {
     if (!TURNSTILE_SECRET_KEY) {
-      console.warn('Turnstile secret key not configured');
-      return { success: true, score: 1 };
+      console.error('Turnstile secret key not configured');
+      return { success: false, errors: 'missing_secret_key' };
     }
 
-    // Development mode bypass
-    if (process.env.NODE_ENV === 'development' && token === 'test-token') {
-      return { success: true, score: 1, action: expectedAction };
-    }
+    // Always verify with Cloudflare - no bypasses
 
     if (!token) {
       return { success: false, errors: 'missing_token' };
@@ -61,7 +58,7 @@ export function useTurnstile() {
           return '';
         }
 
-        const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
+        const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
         const turnstile = (window as any).turnstile;
 
         if (!siteKey || !turnstile || typeof turnstile.render !== 'function') {

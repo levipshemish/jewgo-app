@@ -43,7 +43,7 @@ jobs:
       - name: Run pre-merge guard
         env:
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ci-build-api-key-for-testing-only
-          NEXT_PUBLIC_BACKEND_URL: https://jewgo.onrender.com
+          NEXT_PUBLIC_BACKEND_URL: https://jewgo-app-oyoh.onrender.com
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_jewgo
           NODE_ENV: production
         run: |

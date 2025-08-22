@@ -164,7 +164,7 @@ def test_reviews_api():
         import requests
 
         response = requests.get(
-            "https://jewgo.onrender.com/api/reviews/?restaurantId=1566&status=approved&limit=1"
+            "https://jewgo-app-oyoh.onrender.com/api/reviews/?restaurantId=1566&status=approved&limit=1"
         )
 
         if response.status_code == 200:

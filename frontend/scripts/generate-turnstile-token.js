@@ -8,7 +8,7 @@
 const https = require('https');
 
 // Your Turnstile configuration
-const TURNSTILE_SECRET_KEY = '0x4AAAAAABuBu0_6cvhcyJkqf-2isoUC8ts';
+const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || '';
 const SITE_URL = 'http://localhost:3001'; // Your local development URL
 
 /**
@@ -17,6 +17,12 @@ const SITE_URL = 'http://localhost:3001'; // Your local development URL
  */
 async function generateTestToken() {
   console.log('🔄 Generating test Turnstile token...');
+  
+  if (!TURNSTILE_SECRET_KEY) {
+    console.error('❌ TURNSTILE_SECRET_KEY environment variable not set');
+    console.log('Please set TURNSTILE_SECRET_KEY in your environment');
+    return null;
+  }
   
   // For development purposes, we'll create a simple token
   // In production, you would get this from the actual Turnstile widget
@@ -84,6 +90,10 @@ async function verifyToken(token) {
 async function main() {
   try {
     const token = await generateTestToken();
+    
+    if (!token) {
+      return;
+    }
     
     console.log('🔄 Verifying token with Cloudflare...');
     const verificationResult = await verifyToken(token);

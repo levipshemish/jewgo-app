@@ -21,7 +21,7 @@ All required environment variables are configured and verified:
 - ✅ `FLASK_SECRET_KEY`: Configured
 
 #### Frontend Configuration
-- ✅ `NEXT_PUBLIC_BACKEND_URL`: https://jewgo.onrender.com
+- ✅ `NEXT_PUBLIC_BACKEND_URL`: https://jewgo-app-oyoh.onrender.com
 - ✅ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`: your-google-maps-api-key
 - ✅ `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`: 5060e374c6d88aacf8fea324
 - ✅ `NEXTAUTH_URL`: https://jewgo-app.vercel.app
@@ -65,7 +65,7 @@ All required environment variables are configured and verified:
 
 #### Current Configuration
 - **Service Name**: `jewgo-backend`
-- **Backend URL**: https://jewgo.onrender.com
+- **Backend URL**: https://jewgo-app-oyoh.onrender.com
 - **Database**: Neon PostgreSQL (configured)
 - **Environment**: Python 3
 

@@ -33,7 +33,7 @@ export * from './utils/apiRouteUtils';
 export * from './utils/componentUtils';
 export * from './utils/distance';
 export * from './utils/rateLimiter';
-export * from './utils/recaptcha';
+export * from './utils/turnstile';
 
 // Validator exports
 export * from './validators/review';

@@ -47,7 +47,7 @@ GET /health
 #### Automated Health Monitoring
 ```bash
 # Test all health endpoints
-curl https://jewgo.onrender.com/health
+curl https://jewgo-app-oyoh.onrender.com/health
 curl https://jewgo-app.vercel.app/health
 
 # Run comprehensive health check
@@ -94,13 +94,13 @@ python monitoring/health_checks/health-check.js
 ### Monitoring Endpoints
 ```bash
 # Health check
-curl https://jewgo.onrender.com/health
+curl https://jewgo-app-oyoh.onrender.com/health
 
 # Ping endpoint
-curl https://jewgo.onrender.com/ping
+curl https://jewgo-app-oyoh.onrender.com/ping
 
 # API test
-curl https://jewgo.onrender.com/api/restaurants?limit=1
+curl https://jewgo-app-oyoh.onrender.com/api/restaurants?limit=1
 ```
 
 ## 🔧 Setup Instructions
@@ -108,13 +108,13 @@ curl https://jewgo.onrender.com/api/restaurants?limit=1
 ### 1. Test Your Endpoints
 ```bash
 # Test health check
-curl https://jewgo.onrender.com/health
+curl https://jewgo-app-oyoh.onrender.com/health
 
 # Test ping
-curl https://jewgo.onrender.com/ping
+curl https://jewgo-app-oyoh.onrender.com/ping
 
 # Test restaurants endpoint
-curl https://jewgo.onrender.com/api/restaurants?limit=1
+curl https://jewgo-app-oyoh.onrender.com/api/restaurants?limit=1
 ```
 
 ### 2. Automated Setup

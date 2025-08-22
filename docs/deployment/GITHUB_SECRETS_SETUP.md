@@ -29,7 +29,7 @@ Add the following secrets with their actual values:
 |-------------|-------------|---------------|
 | `NEXTAUTH_SECRET` | Secret key for NextAuth.js authentication | `your-32-character-secret-key-here` |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API key for map functionality | `AIzaSyC...` |
-| `NEXT_PUBLIC_BACKEND_URL` | URL of your backend API | `https://jewgo.onrender.com` |
+| `NEXT_PUBLIC_BACKEND_URL` | URL of your backend API | `https://jewgo-app-oyoh.onrender.com` |
 | `NEXTAUTH_URL` | Your application's public URL | `https://jewgo-app.vercel.app` |
 
 #### **Optional Secrets (for deployment)**
@@ -73,7 +73,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 #### **NEXT_PUBLIC_BACKEND_URL**
 Use your actual backend URL:
-- Production: `https://jewgo.onrender.com`
+- Production: `https://jewgo-app-oyoh.onrender.com`
 - Staging: `https://your-staging-backend.onrender.com`
 
 #### **NEXTAUTH_URL**

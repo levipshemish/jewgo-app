@@ -133,9 +133,9 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         return;
       }
 
-      // Check if CAPTCHA is required and verified
+      // Check if Turnstile is required and verified
       if (captchaState.isRequired && !captchaState.isVerified) {
-        setError('Please complete the CAPTCHA to continue.');
+        setError('Please complete the security check to continue.');
         setGuestPending(false);
         return;
       }
@@ -143,11 +143,10 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       // Increment attempts for rate limiting
       incrementAttempts();
 
-      // Prepare request body with CAPTCHA token if available
-      const requestBody: any = {};
-      if (captchaState.token) {
-        requestBody.turnstileToken = captchaState.token;
-      }
+      // Prepare request body with Turnstile token - always required
+      const requestBody: any = {
+        turnstileToken: captchaState.token
+      };
 
       // Call the anonymous auth API endpoint instead of Supabase directly
       const response = await fetch('/api/auth/anonymous', {
@@ -162,12 +161,12 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
 
       if (!response.ok) {
         if (result.error === 'TURNSTILE_REQUIRED') {
-          setError('CAPTCHA verification required. Please complete the challenge below.');
-          // Reset CAPTCHA to show it
+          setError('Security verification required. Please complete the challenge below.');
+          // Reset Turnstile to show it
           resetCaptcha();
         } else if (result.error === 'TURNSTILE_FAILED') {
-          setError('CAPTCHA verification failed. Please try again.');
-          // Reset CAPTCHA for retry
+          setError('Security verification failed. Please try again.');
+          // Reset Turnstile for retry
           if (turnstileRef.current) {
             turnstileRef.current.reset();
           }
@@ -405,7 +404,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
               {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
             </button>
 
-            {/* CAPTCHA Widget - always shown for guest sign-in */}
+            {/* Turnstile Widget - always shown for guest sign-in */}
             <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
               <div className="text-center mb-3">
                 <p className="text-sm text-neutral-300 mb-2">

@@ -267,69 +267,52 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   touch-action: manipulation !important;
 }
 
+/* Heart hover: keep transform and effects only; fill handled by .heart-fill layer */
 .unified-card-heart:hover svg {
-  fill: rgb(239, 68, 68) !important;
-  stroke: #ffffff !important;
-  stroke-width: 2 !important;
   transform: scale(1.1) !important;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
   transition: all 0.2s ease-out !important;
   transition-duration: 0.2s !important;
-  /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
-  /* Force heart fill with maximum specificity */
-  fill: rgb(239, 68, 68) !important;
-  fill: rgb(239, 68, 68) !important;
-  fill: rgb(239, 68, 68) !important;
 }
 
 .unified-card-heart.liked svg {
-  fill: rgb(239, 68, 68) !important;
   stroke: #ffffff !important;
   stroke-width: 2 !important;
   transition: all 0.2s ease-out !important;
   transition-duration: 0.2s !important;
-  /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
-  /* Force heart fill with maximum specificity */
-  fill: rgb(239, 68, 68) !important;
-  fill: rgb(239, 68, 68) !important;
-  fill: rgb(239, 68, 68) !important;
 }
 
 .unified-card-heart:not(.liked) svg {
-  fill: rgb(156, 163, 175) !important;
   stroke: #ffffff !important;
   stroke-width: 2 !important;
   transition: all 0.2s ease-out !important;
   transition-duration: 0.2s !important;
-  /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
-  /* Force heart fill with maximum specificity */
-  fill: rgb(156, 163, 175) !important;
-  fill: rgb(156, 163, 175) !important;
-  fill: rgb(156, 163, 175) !important;
 }
 
 /* Mobile touch optimization */
 @media (hover: none) and (pointer: coarse) {
   .unified-card-heart:active svg {
-    fill: rgb(239, 68, 68) !important;
     stroke: #ffffff !important;
     stroke-width: 2 !important;
     transition: all 0.2s ease-out !important;
     transition-duration: 0.2s !important;
-    /* Override any inherited styles */
     pointer-events: auto !important;
     touch-action: manipulation !important;
-    /* Force heart fill with maximum specificity */
-    fill: rgb(239, 68, 68) !important;
-    fill: rgb(239, 68, 68) !important;
-    fill: rgb(239, 68, 68) !important;
   }
+}
+
+/* Use the filled layer to control heart color consistently */
+.unified-card-heart .heart-fill { color: rgb(156, 163, 175) !important; }
+.unified-card-heart:hover .heart-fill { color: rgb(239, 68, 68) !important; }
+.unified-card-heart.liked .heart-fill { color: rgb(239, 68, 68) !important; }
+@media (hover: none) and (pointer: coarse) {
+  .unified-card-heart:active .heart-fill { color: rgb(239, 68, 68) !important; }
 }
 
 /* Marketplace page specific overrides to prevent conflicts */
@@ -2991,6 +2974,5 @@ Last updated: Added debugging logs to track styling conflicts
 */
 
 /* Reset and base styles */
-
 
 

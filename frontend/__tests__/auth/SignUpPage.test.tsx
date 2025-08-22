@@ -13,9 +13,9 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock reCAPTCHA
-jest.mock('@/lib/utils/recaptcha', () => ({
-  useRecaptcha: () => ({
+// Mock Turnstile
+jest.mock('@/lib/utils/turnstile', () => ({
+  useTurnstile: () => ({
     execute: jest.fn().mockResolvedValue('test-token' as any),
     siteKey: 'test-site-key',
   }),

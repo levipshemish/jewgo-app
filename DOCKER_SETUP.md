@@ -13,7 +13,7 @@ The current Docker setup uses **placeholder values** and **local services** to g
 2. **Backend URL**: Points to local Docker backend instead of Render production backend
 3. **Database**: Uses local PostgreSQL instead of Supabase production database
 4. **Authentication**: Uses placeholder tokens instead of real production tokens
-5. **External Services**: Missing real Google Maps, reCAPTCHA, and other production services
+5. **External Services**: Missing real Google Maps, Turnstile, and other production services
 
 ### 🟡 When to Use Each Setup
 
@@ -115,7 +115,7 @@ docker-compose -f docker-compose.production.yml up -d --build
 - **Real Production Database**: Supabase (`https://lgsfyrxkqpipaumngvfi.supabase.co`)
 - **Real Production Environment**: All production environment variables
 - **Real Production Authentication**: Supabase Auth with real credentials
-- **Real Production Services**: Google Maps, reCAPTCHA, etc.
+- **Real Production Services**: Google Maps, Turnstile, etc.
 
 ### 🔧 Environment Variables
 The production environment file (`config/environment/frontend.production.env`) contains:

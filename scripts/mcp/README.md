@@ -153,7 +153,7 @@ pnpm mcp:pre-merge
 **Environment Variables**:
 ```bash
 export FE_HEALTH_URL="https://jewgo-app.vercel.app/health"
-export BE_HEALTH_URL="https://jewgo.onrender.com/health"
+export BE_HEALTH_URL="https://jewgo-app-oyoh.onrender.com/health"
 export DATABASE_URL="postgresql+psycopg://user:pass@host:5432/db"
 ```
 

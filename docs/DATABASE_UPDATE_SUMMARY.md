@@ -84,17 +84,17 @@ if '/category/restaurants/' in category_url:
 
 ### Trigger Database Update
 ```bash
-curl -X POST https://jewgo.onrender.com/api/update-database
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/update-database
 ```
 
 ### Check Current Status
 ```bash
-curl https://jewgo.onrender.com/api/kosher-types
+curl https://jewgo-app-oyoh.onrender.com/api/kosher-types
 ```
 
 ### Check Health
 ```bash
-curl https://jewgo.onrender.com/health
+curl https://jewgo-app-oyoh.onrender.com/health
 ```
 
 ## Files Modified

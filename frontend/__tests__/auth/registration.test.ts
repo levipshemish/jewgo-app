@@ -161,13 +161,13 @@ describe('Registration Flow', () => {
       
       analytics.trackRegistrationFailure(email, 'validation_error');
       analytics.trackRegistrationFailure(email, 'rate_limit');
-      analytics.trackRegistrationFailure(email, 'recaptcha_failed');
+      analytics.trackRegistrationFailure(email, 'turnstile_failed');
       
       const metrics = analytics.getMetrics();
       expect(metrics.failedRegistrations).toBe(3);
       expect(metrics.validationErrors).toBe(1);
       expect(metrics.rateLimitHits).toBe(1);
-      expect(metrics.recaptchaFailures).toBe(1);
+      expect(metrics.turnstileFailures).toBe(1);
     });
   });
 

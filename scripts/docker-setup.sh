@@ -150,7 +150,7 @@ if [ "$SETUP_TYPE" = "frontend-only" ]; then
     echo ""
     echo "Services available at:"
     echo "  Frontend: http://localhost:3001"
-    echo "  Backend:  https://jewgo.onrender.com (Render)"
+    echo "  Backend:  https://jewgo-app-oyoh.onrender.com (Render)"
     echo ""
     echo "Useful commands:"
     echo "  View logs:     docker-compose -f $COMPOSE_FILE logs -f"
@@ -200,7 +200,7 @@ if [ "$SETUP_TYPE" = "frontend-only" ]; then
     echo "🌐 Open http://localhost:3001 in your browser"
     echo ""
     echo "Note: This setup uses your existing Render backend at:"
-    echo "     https://jewgo.onrender.com"
+    echo "     https://jewgo-app-oyoh.onrender.com"
 else
     echo ""
     echo "Note: Ports were changed to avoid conflicts:"

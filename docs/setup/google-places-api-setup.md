@@ -175,7 +175,7 @@ The application will automatically:
 Admins can manually update hours via the API:
 
 ```bash
-curl -X POST https://jewgo.onrender.com/api/admin/update-hours \
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/admin/update-hours \
   -H "Content-Type: application/json" \
   -d '{
     "id": 833,

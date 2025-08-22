@@ -35,7 +35,7 @@
 
 ### Test Backend Health
 ```bash
-curl https://jewgo.onrender.com/health
+curl https://jewgo-app-oyoh.onrender.com/health
 ```
 
 ### Test Frontend API

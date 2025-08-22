@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 
-interface CaptchaState {
+interface TurnstileState {
   isRequired: boolean;
   isVerified: boolean;
   token: string | null;
@@ -8,16 +8,16 @@ interface CaptchaState {
   attempts: number;
 }
 
-interface UseCaptchaOptions {
+interface UseTurnstileOptions {
   maxAttempts?: number;
   onRateLimitExceeded?: () => void;
 }
 
-export function useCaptcha(options: UseCaptchaOptions = {}) {
+export function useCaptcha(options: UseTurnstileOptions = {}) {
   const { maxAttempts = 3, onRateLimitExceeded } = options;
   
-  const [state, setState] = useState<CaptchaState>({
-    isRequired: true, // Always require CAPTCHA for guest sign-in
+  const [state, setState] = useState<TurnstileState>({
+    isRequired: true, // Always require Turnstile for guest sign-in
     isVerified: false,
     token: null,
     error: null,
@@ -30,7 +30,7 @@ export function useCaptcha(options: UseCaptchaOptions = {}) {
     setState(prev => {
       const newAttempts = prev.attempts + 1;
       
-      // Since CAPTCHA is always required, only trigger callback at rate limit threshold
+      // Since Turnstile is always required, only trigger callback at rate limit threshold
       if (newAttempts >= maxAttempts) {
         onRateLimitExceeded?.();
       }
@@ -72,7 +72,7 @@ export function useCaptcha(options: UseCaptchaOptions = {}) {
 
   const resetCaptcha = useCallback(() => {
     setState({
-      isRequired: true, // Always require CAPTCHA for guest sign-in
+      isRequired: true, // Always require Turnstile for guest sign-in
       isVerified: false,
       token: null,
       error: null,

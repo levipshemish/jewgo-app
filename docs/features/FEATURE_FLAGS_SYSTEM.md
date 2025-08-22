@@ -702,7 +702,7 @@ def get_reviews():
 #### **1. Create Feature Flag First**
 ```bash
 # Create flag via API
-curl -X POST https://jewgo.onrender.com/api/feature-flags \
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/feature-flags \
   -H 'Authorization: Bearer your_admin_token' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -736,7 +736,7 @@ def new_feature():
 #### **1. Flag Not Working**
 ```bash
 # Check flag configuration
-curl https://jewgo.onrender.com/api/feature-flags/your_flag_name
+curl https://jewgo-app-oyoh.onrender.com/api/feature-flags/your_flag_name
 
 # Check environment
 echo $ENVIRONMENT
@@ -748,7 +748,7 @@ echo $ENVIRONMENT
 #### **2. API Errors**
 ```bash
 # Check authentication
-curl -H 'Authorization: Bearer your_token' https://jewgo.onrender.com/api/feature-flags
+curl -H 'Authorization: Bearer your_token' https://jewgo-app-oyoh.onrender.com/api/feature-flags
 
 # Check IP restrictions
 # Verify your IP is in ALLOWED_IPS
@@ -771,7 +771,7 @@ if (error) console.error('Flag error:', error);
 python scripts/setup_feature_flags.py --test
 
 # Check specific flag
-curl https://jewgo.onrender.com/api/feature-flags/your_flag_name
+curl https://jewgo-app-oyoh.onrender.com/api/feature-flags/your_flag_name
 ```
 
 #### **2. Environment Validation**

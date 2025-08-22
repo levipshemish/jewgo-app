@@ -192,8 +192,7 @@ export async function POST(request: NextRequest) {
     
     // Parse request body for captcha token
     const body = await request.json().catch(() => ({}));
-    const { turnstileToken, recaptchaToken } = body;
-    const captchaToken = turnstileToken || recaptchaToken;
+    const { turnstileToken } = body;
     
     // Rate limiting for anonymous auth
     const rateLimitResult = await checkRateLimit(
@@ -228,68 +227,46 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate Turnstile token if rate limit exceeded
-    // Skip Turnstile validation in development/Docker environments
-    if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
-
-    } else if (rateLimitResult.remaining_attempts === 0) {
-      if (!turnstileToken) {
-        console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
-          correlationId,
-          ipHash
-        });
-        
-        return NextResponse.json(
-          { error: 'TURNSTILE_REQUIRED' },
-          { 
-            status: 400,
-            headers: {
-              ...getCORSHeaders(origin || undefined),
-              'Cache-Control': 'no-store'
-            }
-          }
-        );
-      }
+    // Validate Turnstile token - always required for guest sign-in
+    if (!turnstileToken) {
+      console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
+        correlationId,
+        ipHash
+      });
       
-      // Verify Turnstile token server-side
-      try {
-        const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
+      return NextResponse.json(
+        { error: 'TURNSTILE_REQUIRED' },
+        { 
+          status: 400,
           headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            secret: process.env.TURNSTILE_SECRET_KEY,
-            response: turnstileToken,
-            remoteip: validatedIP
-          })
-        });
-        
-        const turnstileResult = await turnstileResponse.json();
-        
-        if (!turnstileResult.success) {
-          console.warn(`Turnstile verification failed for anonymous auth IP hash: ${ipHash}`, {
-            correlationId,
-            ipHash,
-            turnstileErrors: turnstileResult['error-codes']
-          });
-          
-          return NextResponse.json(
-            { error: 'TURNSTILE_FAILED' },
-            { 
-              status: 400,
-              headers: {
-                ...getCORSHeaders(origin || undefined),
-                'Cache-Control': 'no-store'
-              }
-            }
-          );
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
-      } catch (turnstileError) {
-        console.error(`Turnstile verification error for anonymous auth IP hash: ${ipHash}`, {
+      );
+    }
+    
+    // Verify Turnstile token server-side
+    try {
+      const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          secret: process.env.TURNSTILE_SECRET_KEY,
+          response: turnstileToken,
+          remoteip: validatedIP
+        })
+      });
+      
+      const turnstileResult = await turnstileResponse.json();
+      
+      if (!turnstileResult.success) {
+        console.warn(`Turnstile verification failed for anonymous auth IP hash: ${ipHash}`, {
           correlationId,
           ipHash,
-          error: turnstileError
+          turnstileErrors: turnstileResult['error-codes']
         });
         
         return NextResponse.json(
@@ -303,6 +280,23 @@ export async function POST(request: NextRequest) {
           }
         );
       }
+    } catch (turnstileError) {
+      console.error(`Turnstile verification error for anonymous auth IP hash: ${ipHash}`, {
+        correlationId,
+        ipHash,
+        error: turnstileError
+      });
+      
+      return NextResponse.json(
+        { error: 'TURNSTILE_FAILED' },
+        { 
+          status: 400,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
     }
     
     const cookieStore = await cookies();
@@ -347,10 +341,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Create anonymous user
-    // In development/Docker mode, don't pass captcha token to Supabase
-    const signInOptions = process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true' 
-      ? {}
-      : { options: { captchaToken: turnstileToken } };
+            // Pass Turnstile token to Supabase for verification
+        const signInOptions = { options: { captchaToken: turnstileToken } };
     
     const { data, error: signInError } = await supabase.auth.signInAnonymously(signInOptions);
     

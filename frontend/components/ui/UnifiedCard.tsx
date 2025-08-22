@@ -274,6 +274,18 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
   const variantStyles = getVariantStyles();
 
+  // Remove any surface classes that could reintroduce a panel look
+  const sanitizedClassName = useMemo(() => {
+    if (!className) return '';
+    const tokens = className.split(/\s+/).filter(Boolean);
+    const filtered = tokens.filter((t) =>
+      !/^bg-/.test(t) && // backgrounds
+      !/^shadow/.test(t) && // shadows
+      !/^border(?!-r|!-)/.test(t) // borders (keep border-right etc. if needed)
+    );
+    return filtered.join(' ');
+  }, [className]);
+
   return (
     <motion.div
       variants={cardVariants}
@@ -295,8 +307,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         'p-1', // Add padding to prevent border from covering content
         'border-0', // Ensure no border
         'shadow-none', // Ensure no shadow
-        className
+        sanitizedClassName
       )}
+      style={{ background: 'transparent', boxShadow: 'none', border: 0 }}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -317,15 +330,111 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         }
       }}
     >
-      {/* Force transparent surface and no visual panel regardless of globals */}
-      <style jsx>{`
-        :global(.unified-card) {
+      {/* Global styles for transparent surface, tag pill, and heart icon */}
+      <style jsx global>{`
+        .unified-card {
           background: transparent !important;
           box-shadow: none !important;
           border: 0 !important;
         }
-        :global(.unified-card *), :global(.unified-card > div) {
+        .unified-card *, .unified-card > div {
           background: transparent !important;
+        }
+
+        /* Tag pill (theme-aware glass) */
+        .unified-card-tag {
+          position: absolute !important;
+          top: 8px !important;
+          left: 8px !important;
+          width: 80px !important;
+          max-width: 80px !important;
+          min-width: 80px !important;
+          height: 24px !important;
+          max-height: 24px !important;
+          min-height: 24px !important;
+          overflow: hidden !important;
+          padding: 0 8px !important;
+          font-size: 12px !important;
+          line-height: 1 !important;
+          font-weight: 500 !important;
+          background-color: rgba(17, 24, 39, 0.70) !important; /* slate-900 at 70% */
+          color: #ffffff !important;
+          border-radius: 9999px !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
+          transition: all 0.2s ease-out !important;
+          transform: none !important;
+          backdrop-filter: blur(8px) !important;
+        }
+        .unified-card-tag:hover {
+          background-color: rgba(17, 24, 39, 0.85) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+          transform: translateY(-1px) !important;
+        }
+        .unified-card-tag { cursor: pointer !important; }
+        .unified-card-tag:active { transform: translateY(0px) !important; opacity: 1 !important; }
+        @media (prefers-color-scheme: dark) {
+          .unified-card-tag {
+            background-color: rgba(255, 255, 255, 0.14) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            backdrop-filter: blur(8px) !important;
+          }
+          .unified-card-tag:hover {
+            background-color: rgba(255, 255, 255, 0.22) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          }
+        }
+
+        /* Heart button and Lucide icon path fill */
+        .unified-card-heart {
+          position: absolute !important;
+          top: 4px !important;
+          right: 8px !important;
+          width: 28px !important;
+          max-width: 28px !important;
+          min-width: 28px !important;
+          height: 28px !important;
+          max-height: 28px !important;
+          min-height: 28px !important;
+          background-color: transparent !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          border: none !important;
+          min-height: 28px !important;
+          min-width: 28px !important;
+          padding: 0 !important;
+          cursor: pointer !important;
+          -webkit-tap-highlight-color: transparent !important;
+          touch-action: manipulation !important;
+          z-index: 10 !important;
+          transition: all 0.2s ease-out !important;
+        }
+        .unified-card-heart:hover { transform: scale(1.1) !important; }
+        .unified-card-heart:active { transform: scale(0.95) !important; opacity: 1 !important; }
+        .unified-card-heart svg {
+          width: 18px !important;
+          height: 18px !important;
+          transition: all 0.2s ease-out !important;
+          color: #ffffff !important; /* keep white stroke via currentColor */
+          stroke: currentColor !important;
+          stroke-width: 2 !important;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+        }
+        /* Filled heart layer color control */
+        .unified-card-heart .heart-fill { color: rgb(156, 163, 175) !important; }
+        .unified-card-heart:hover .heart-fill, .unified-card-heart.liked .heart-fill { color: rgb(239, 68, 68) !important; }
+        @media (hover: none) and (pointer: coarse) {
+          .unified-card-heart:active .heart-fill { color: rgb(239, 68, 68) !important; }
         }
       `}</style>
       {/* Persistent live region for announcements */}
@@ -336,7 +445,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       {/* Image Container */}
       <div className="relative w-full">
         <div className={cn(
-          "w-full rounded-[20px] overflow-hidden bg-transparent transition-transform duration-300 group-hover:scale-105",
+          "relative w-full rounded-[20px] overflow-hidden bg-transparent transition-transform duration-300 group-hover:scale-105",
           "border-0 shadow-none", // Ensure no border or shadow
           variantStyles.imageClass
         )}>
@@ -368,47 +477,60 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               priority={priority}
             />
           )}
+
+          {/* Image Tag - now positioned relative to image wrapper */}
+          {cardData.imageTag && (
+            <div
+              className="unified-card-tag"
+              aria-label={`Tag: ${cardData.imageTag}`}
+              style={{ zIndex: 10 }}
+            >
+              <span 
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: 'inherit',
+                  lineHeight: 'inherit',
+                  fontWeight: 'inherit'
+                }}
+              >
+                {cardData.imageTag}
+              </span>
+            </div>
+          )}
+
+          {/* Heart Button - positioned relative to image wrapper */}
+          {cardData.showHeart && (
+            <button
+              className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLikeToggle();
+              }}
+              onKeyDown={handleHeartKeyDown}
+              aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+              aria-pressed={isLiked}
+              style={{ transform: isAnimating ? 'scale(0.9)' : 'scale(1)' }}
+            >
+              <span className="relative block w-[18px] h-[18px]">
+                {/* Filled heart layer for hover/liked color */}
+                <svg 
+                  viewBox="0 0 24 24" 
+                  className="absolute inset-0 w-[18px] h-[18px] heart-fill"
+                  aria-hidden
+                  style={{ color: isLiked ? 'rgb(239, 68, 68)' : 'rgb(156, 163, 175)' }}
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" />
+                </svg>
+                {/* Outline heart on top */}
+                <Heart size={18} />
+              </span>
+            </button>
+          )}
         </div>
         
-        {/* Image Tag - Enhanced hover effects */}
-        {cardData.imageTag && (
-          <div
-            className="unified-card-tag"
-            aria-label={`Tag: ${cardData.imageTag}`}
-            style={{ zIndex: 10 }} // Ensure it's above the image
-          >
-            <span 
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'center',
-                fontSize: 'inherit',
-                lineHeight: 'inherit',
-                fontWeight: 'inherit'
-              }}
-            >
-              {cardData.imageTag}
-            </span>
-          </div>
-        )}
         
-        {/* Heart Button - White outline with grey fill, red on hover */}
-        {cardData.showHeart && (
-          <button
-            className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleLikeToggle();
-            }}
-            onKeyDown={handleHeartKeyDown}
-            aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-            aria-pressed={isLiked}
-          >
-            <Heart
-              size={18}
-            />
-          </button>
-        )}
       </div>
       
       {/* Content - Enhanced hover effects */}

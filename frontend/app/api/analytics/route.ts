@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Ensure Node.js runtime and no caching for this lightweight endpoint
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
-    // Parse the request body
-    const event = await request.json();
+    // Safely parse the request body (handle non-JSON and empty bodies)
+    const reqClone = request.clone();
+    let event: unknown = {};
+    try {
+      event = await request.json();
+    } catch {
+      try {
+        const text = await reqClone.text();
+        event = text ? JSON.parse(text) : {};
+      } catch {
+        event = {};
+      }
+    }
     
     // Validate the event structure
     if (!event || typeof event !== 'object') {
@@ -36,10 +51,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Analytics API Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process analytics event' },
-      { status: 500 }
-    );
+    // Don't fail the page due to analytics; return success=false but 200
+    return NextResponse.json({ success: false, error: 'Failed to process analytics event' });
   }
 }
 

@@ -30,7 +30,7 @@ console.log('   → Add the API key to GitHub Secrets as NEXT_PUBLIC_GOOGLE_MAPS
 
 // Backend URL
 console.log('3. NEXT_PUBLIC_BACKEND_URL:');
-console.log('   https://jewgo.onrender.com');
+console.log('   https://jewgo-app-oyoh.onrender.com');
 console.log('   → Add this to GitHub Secrets as NEXT_PUBLIC_BACKEND_URL\n');
 
 // Frontend URL

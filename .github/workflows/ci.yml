@@ -81,7 +81,7 @@ jobs:
         # Required environment variables for production build
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
-        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com' }}
+        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
         NODE_ENV: production
@@ -462,7 +462,7 @@ jobs:
         # Required environment variables for production build
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
-        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com' }}
+        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         NODE_ENV: production
       run: |
@@ -528,7 +528,7 @@ jobs:
         # Required environment variables for production build
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
-        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com' }}
+        NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         NODE_ENV: production
       run: |

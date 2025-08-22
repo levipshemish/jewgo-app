@@ -206,7 +206,7 @@ python scripts/setup_security.py --test-endpoints
 #### **Scraper Endpoint Example**
 ```bash
 # Fetch missing websites
-curl -X POST https://jewgo.onrender.com/api/restaurants/fetch-missing-websites \
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/restaurants/fetch-missing-websites \
   -H 'Authorization: Bearer your_scraper_token_here' \
   -H 'Content-Type: application/json' \
   -d '{"limit": 5, "dry_run": true}'
@@ -215,7 +215,7 @@ curl -X POST https://jewgo.onrender.com/api/restaurants/fetch-missing-websites \
 #### **Admin Endpoint Example**
 ```bash
 # Update certifying agencies
-curl -X POST https://jewgo.onrender.com/api/admin/update-certifying-agencies \
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/admin/update-certifying-agencies \
   -H 'Authorization: Bearer your_admin_token_here' \
   -H 'Content-Type: application/json' \
   -d '{"dry_run": true}'
@@ -232,7 +232,7 @@ headers = {
 }
 
 response = requests.post(
-    'https://jewgo.onrender.com/api/restaurants/fetch-missing-websites',
+    'https://jewgo-app-oyoh.onrender.com/api/restaurants/fetch-missing-websites',
     headers=headers,
     json={'limit': 5, 'dry_run': True}
 )
@@ -244,7 +244,7 @@ admin_headers = {
 }
 
 response = requests.post(
-    'https://jewgo.onrender.com/api/admin/update-certifying-agencies',
+    'https://jewgo-app-oyoh.onrender.com/api/admin/update-certifying-agencies',
     headers=admin_headers,
     json={'dry_run': True}
 )
@@ -264,7 +264,7 @@ python scripts/setup_security.py --generate-tokens scraper --token-count 2
 #### **Generate Token via API**
 ```bash
 # Generate new scraper token via API
-curl -X POST https://jewgo.onrender.com/api/admin/generate-token \
+curl -X POST https://jewgo-app-oyoh.onrender.com/api/admin/generate-token \
   -H 'Authorization: Bearer your_admin_token_here' \
   -H 'Content-Type: application/json' \
   -d '{"token_type": "scraper"}'

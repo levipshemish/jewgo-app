@@ -41,7 +41,7 @@ The following environment variables need to be set in Netlify's dashboard:
 ### Required for Frontend
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Your actual Google Maps API key
 - `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` - Your Google Maps Map ID
-- `NEXT_PUBLIC_BACKEND_URL` - Backend API URL (https://jewgo.onrender.com)
+- `NEXT_PUBLIC_BACKEND_URL` - Backend API URL (https://jewgo-app-oyoh.onrender.com)
 - `NEXT_PUBLIC_APP_VERSION` - App version (1.0.0)
 
 ### Required for Authentication

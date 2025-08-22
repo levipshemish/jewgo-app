@@ -255,11 +255,13 @@ SECRET_KEY=your-secret-key
 ### Health Checks
 
 ```bash
-# Check backend health
-curl http://localhost:5000/health
+# Check backend health (choose the port that matches your compose)
+curl http://localhost:5001/health   # optimized compose
+curl http://localhost:5000/health   # simple/full compose
 
-# Check frontend
-curl http://localhost:3000
+# Check frontend (choose the port that matches your compose)
+curl http://localhost:3001           # optimized compose
+curl http://localhost:3000           # simple/full compose
 
 # Check database
 docker-compose -f docker-compose.simple.yml exec postgres psql -U jewgo_user -d jewgo -c "SELECT 1;"

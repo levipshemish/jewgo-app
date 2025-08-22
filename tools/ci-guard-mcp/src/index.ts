@@ -58,7 +58,7 @@ server.registerTool(
     inputSchema: {
       cwd: z.string().default("frontend"),
       feHealthUrl: z.string().optional().describe("e.g. https://jewgo.app/health"),
-      beHealthUrl: z.string().optional().describe("e.g. https://jewgo.onrender.com/health"),
+      beHealthUrl: z.string().optional().describe("e.g. https://jewgo-app-oyoh.onrender.com/health"),
       budgets: z.object({
         mainKB: z.number().default(500),
         initialTotalMB: z.number().default(2)

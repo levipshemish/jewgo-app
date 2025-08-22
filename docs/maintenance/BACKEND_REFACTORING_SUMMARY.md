@@ -177,8 +177,8 @@ class CacheManager:
 ## Monitoring and Observability
 
 ### New Health Endpoints:
-- `/healthz`: Overall application health
-- `/api/health`: Detailed health information
+- `/health`: Overall application health (Docker health check uses this)
+- `/api/health`: Detailed health information (when loaded)
 - `/api/redis`: Cache health status
 
 ### Enhanced Logging:

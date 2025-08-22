@@ -156,7 +156,7 @@ chmod +x scripts/docker-frontend.sh
 ### Production Build
 For production testing, use the production Dockerfile:
 ```bash
-docker-compose -f docker-compose.frontend.yml up -d
+docker-compose -f docker-compose.frontend.prod.yml up -d
 ```
 
 ### Local Development

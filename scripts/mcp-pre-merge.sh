@@ -40,7 +40,7 @@ OVERALL_PASSED=true
 
 # Configuration
 FE_HEALTH_URL="${FE_HEALTH_URL:-https://jewgo-app.vercel.app/health}"
-BE_HEALTH_URL="${BE_HEALTH_URL:-https://jewgo.onrender.com/health}"
+BE_HEALTH_URL="${BE_HEALTH_URL:-https://jewgo-app-oyoh.onrender.com/health}"
 DATABASE_URL="${DATABASE_URL:-}"
 
 # Run TypeScript strict check

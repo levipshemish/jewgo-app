@@ -15,7 +15,7 @@ fi
 
 echo "📋 Current Production Environment Setup:"
 echo "----------------------------------------"
-echo "✅ Backend URL: https://jewgo.onrender.com"
+echo "✅ Backend URL: https://jewgo-app-oyoh.onrender.com"
 echo "✅ Supabase URL: https://lgsfyrxkqpipaumngvfi.supabase.co"
 echo "✅ Supabase Anon Key: sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n"
 echo ""
@@ -55,7 +55,7 @@ else
 fi
 
 echo "🧪 Testing backend connection..."
-if curl -f https://jewgo.onrender.com/health > /dev/null 2>&1; then
+if curl -f https://jewgo-app-oyoh.onrender.com/health > /dev/null 2>&1; then
     echo "✅ Production backend is accessible"
 else
     echo "❌ Production backend is not responding"
@@ -65,7 +65,7 @@ echo ""
 echo "🎉 Production-like Docker setup complete!"
 echo "=========================================="
 echo "🌐 Frontend: http://localhost:3000"
-echo "🔗 Backend: https://jewgo.onrender.com"
+echo "🔗 Backend: https://jewgo-app-oyoh.onrender.com"
 echo "🗄️  Database: Supabase (production)"
 echo ""
 echo "📝 Next steps:"
