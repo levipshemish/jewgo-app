@@ -176,11 +176,44 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   border: 1px solid rgb(229 231 235) !important;
   border-radius: 0.75rem !important;
   transition: all 0.2s ease-out !important;
+  /* Override restaurant-card conflicts */
+  padding: 0.25rem !important; /* Override restaurant-card .p-1 rule */
+  transform: none !important; /* Override any global transform rules */
 }
 
 .unified-card:hover {
   border-color: rgb(209 213 219) !important;
   transform: translateY(-4px) !important;
+  /* Override restaurant-card hover conflicts */
+  scale: none !important; /* Override restaurant-card scale-[1.02] */
+}
+
+/* Override restaurant-card rules that might affect UnifiedCard */
+.unified-card .p-1 {
+  padding: 0.25rem !important; /* Override restaurant-card .p-1 rule */
+}
+
+.unified-card .mb-0\.5 {
+  margin-bottom: 0.125rem !important; /* Override restaurant-card .mb-0.5 rule */
+}
+
+.unified-card .flex.items-center {
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.unified-card .w-full {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.unified-card .flex.items-center.justify-between {
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left !important;
+  gap: 0.5rem !important;
+  min-width: 0 !important;
 }
 
 /* Heart button specific overrides to prevent global button styles from interfering */
