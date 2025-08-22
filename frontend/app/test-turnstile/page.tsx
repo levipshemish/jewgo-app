@@ -118,6 +118,10 @@ export default function TestTurnstilePage() {
                 className="cf-turnstile"
                 data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || 'your_site_key_here'}
                 data-callback="handleTurnstileCallback"
+                data-appearance="interaction-only"
+                data-execution="execute"
+                data-refresh-expired="auto"
+                data-response-field-name="cf-turnstile-response"
               />
             </div>
 

@@ -86,7 +86,13 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           },
           theme,
           size,
-          tabindex: 0
+          tabindex: 0,
+          // Force standard challenge mode instead of Private Access Token
+          appearance: 'interaction-only',
+          execution: 'execute',
+          // Additional parameters to ensure standard mode
+          'refresh-expired': 'auto',
+          'response-field-name': 'cf-turnstile-response'
         });
         
         setWidgetId(id);
