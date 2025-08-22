@@ -96,13 +96,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           },
           theme,
           size,
-          tabindex: 0,
-          // Force standard challenge mode instead of Private Access Token
-          appearance: 'interaction-only',
-          execution: 'execute',
-          // Additional parameters to ensure standard mode
-          'refresh-expired': 'auto',
-          'response-field-name': 'cf-turnstile-response'
+          tabindex: 0
         };
         
         console.log('Turnstile render config:', config);
@@ -119,6 +113,20 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
             containerChildren: containerRef.current?.children,
             containerHTML: containerRef.current?.innerHTML
           });
+          
+          // Test: Try to render a simple widget to verify site key
+          if (!iframeElement && window.turnstile) {
+            console.log('Testing simple widget render...');
+            try {
+              const testId = window.turnstile.render('#turnstile-test', {
+                sitekey: turnstileSiteKey,
+                theme: 'dark'
+              });
+              console.log('Test widget rendered with ID:', testId);
+            } catch (error) {
+              console.error('Test widget render failed:', error);
+            }
+          }
         }, 1000);
         
         setWidgetId(id);
@@ -129,25 +137,17 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       }
     };
 
-    // Try to render immediately, then retry with increasing delays if needed
-    let attempts = 0;
-    const maxAttempts = 5;
-    
-    const tryRender = () => {
-      attempts++;
-      
-      if (window.turnstile && typeof window.turnstile.render === 'function') {
+    // Use turnstile.ready() for more reliable rendering
+    if (window.turnstile && typeof window.turnstile.ready === 'function') {
+      window.turnstile.ready(() => {
+        console.log('Turnstile ready, rendering widget...');
         renderWidget();
-      } else if (attempts < maxAttempts) {
-        // Retry with exponential backoff
-        setTimeout(tryRender, Math.pow(2, attempts) * 100);
-      } else {
-        console.error('Failed to render Turnstile widget after multiple attempts');
-        onError?.('Failed to render Turnstile widget');
-      }
-    };
-
-    tryRender();
+      });
+    } else {
+      // Fallback to direct rendering
+      console.log('Turnstile ready not available, trying direct render...');
+      renderWidget();
+    }
   }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size]);
 
   // Expose methods via ref
@@ -181,6 +181,12 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           zIndex: 1000,
           overflow: 'visible'
         }}
+      />
+      {/* Test container for debugging */}
+      <div 
+        id="turnstile-test"
+        className="mt-2 p-2 border border-blue-500 bg-blue-100 min-h-[50px]"
+        style={{ display: 'none' }}
       />
       {!isRendered && isLoaded && (
         <div className="text-center text-sm text-gray-400 mt-2">
