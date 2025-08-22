@@ -1830,6 +1830,41 @@ def create_app(config_class=None):
                 "success": False,
                 "error": str(e)
             }), 500
+
+    @app.route('/api/migrate-marketplace', methods=['POST'])
+    def migrate_marketplace():
+        """Simple migration endpoint that runs the marketplace migration script."""
+        try:
+            # Import and run the migration script
+            import subprocess
+            import sys
+            
+            # Run the migration script
+            result = subprocess.run([
+                sys.executable, 
+                'run_marketplace_migration.py'
+            ], capture_output=True, text=True, cwd='.')
+            
+            if result.returncode == 0:
+                return jsonify({
+                    "success": True,
+                    "message": "Marketplace migration completed successfully",
+                    "output": result.stdout
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Migration failed",
+                    "output": result.stdout,
+                    "error_output": result.stderr
+                }), 500
+                
+        except Exception as e:
+            logger.exception("Error running marketplace migration script")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
     
     # Error handlers
     @app.errorhandler(404)
