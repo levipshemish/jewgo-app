@@ -4,7 +4,7 @@
  */
 
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
-import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment.server';
+import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment';
 
 // Rate limit configurations
 const RATE_LIMITS = {

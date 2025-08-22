@@ -20,8 +20,8 @@ import {
   ALLOWED_ORIGINS, 
   getCORSHeaders,
   FEATURE_FLAGS
-} from '@/lib/config/environment.public';
-import { initializeServer, isAnonymousAuthSupported } from '@/lib/server-init';
+} from '@/lib/config/environment';
+import { initializeServer, isAnonymousAuthSupported, getFeatureValidationCache } from '@/lib/server-init';
 
 /**
  * Runtime choice documentation:
@@ -97,10 +97,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Feature support validation
-  const featuresSupported = await validateSupabaseFeaturesWithLogging();
-  if (!featuresSupported) {
-    console.error(`CRITICAL: Supabase features not supported for correlation ID: ${correlationId}`, {
+  // Feature support validation - check cache first
+  const cachedValidation = getFeatureValidationCache();
+  if (cachedValidation === false) {
+    console.error(`CRITICAL: Supabase features not supported (cached) for correlation ID: ${correlationId}`, {
       correlationId
     });
     
@@ -114,6 +114,27 @@ export async function POST(request: NextRequest) {
         }
       }
     );
+  }
+  
+  // If cache is null (not initialized) or true, run validation
+  if (cachedValidation === null) {
+    const featuresSupported = await validateSupabaseFeaturesWithLogging();
+    if (!featuresSupported) {
+      console.error(`CRITICAL: Supabase features not supported for correlation ID: ${correlationId}`, {
+        correlationId
+      });
+      
+      return NextResponse.json(
+        { error: 'ANON_SIGNIN_UNSUPPORTED' },
+        { 
+          status: 503,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
+    }
   }
   
 

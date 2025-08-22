@@ -23,8 +23,8 @@ const nextConfig = {
     ignoreDuringBuilds: !isCI,
   },
   typescript: {
-    // Fail builds in CI/production; allow relaxed checks locally
-    ignoreDuringBuilds: !isCI,
+    // TypeScript checking is handled by the build process
+    // No ignoreDuringBuilds option needed here
   },
   // Image optimization - disable in Docker to prevent issues
   images: {

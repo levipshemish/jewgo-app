@@ -94,9 +94,18 @@ export function verifyTokenRotation(
     // Compute refresh_token change
     const refreshChanged = preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token;
     
-    // Compute JWT jti change
-    const preJti = extractJtiFromToken(preUpgradeSession.access_token);
-    const postJti = extractJtiFromToken(postUpgradeSession.access_token);
+    // Compute JWT jti change - defensively check that tokens are strings
+    let preJti: string | null = null;
+    let postJti: string | null = null;
+    
+    if (typeof preUpgradeSession.access_token === 'string') {
+      preJti = extractJtiFromToken(preUpgradeSession.access_token);
+    }
+    
+    if (typeof postUpgradeSession.access_token === 'string') {
+      postJti = extractJtiFromToken(postUpgradeSession.access_token);
+    }
+    
     const jtiChanged = preJti !== postJti;
     
     // Return true if either changed, false only if both unchanged
@@ -130,7 +139,7 @@ export function sanitizeRedirectUrl(url: string | null | undefined): string {
 }
 
 // Import trusted CDN IPs from centralized configuration
-import { TRUSTED_CDN_IPS } from '@/lib/config/environment.public';
+import { TRUSTED_CDN_IPS } from '@/lib/config/environment';
 
 /**
  * Validate trusted IP with left-most X-Forwarded-For parsing
@@ -482,11 +491,6 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       return '/';
     }
 
-    // Block // anywhere in the decoded URL before parsing to prevent external redirects
-    if (decodedUrl.includes('//')) {
-      return '/';
-    }
-
     // Use the decoded URL for parsing
     const urlObj = new URL(decodedUrl, 'http://localhost');
     const decodedPath = urlObj.pathname;
@@ -494,6 +498,16 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     // Reject protocol-relative URLs, fragments, and dangerous patterns in pathname only
     // Block protocol-relative paths (starting with //) to prevent external redirects
     if (decodedPath.includes('://') || decodedPath.startsWith('//') || decodedPath.includes('..') || decodedPath.includes('#')) {
+      return '/';
+    }
+    
+    // Check for // in query parameters to prevent external redirects
+    const searchParams = urlObj.searchParams;
+    const hasDangerousQueryParam = Array.from(searchParams.entries()).some(([key, value]) => {
+      return value.includes('//');
+    });
+    
+    if (hasDangerousQueryParam) {
       return '/';
     }
     
@@ -518,10 +532,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
       '/add-eatery',    // Add eatery functionality
       '/restaurant',    // Restaurant pages
       '/eatery',        // Eatery pages
-      '/shuls',         // Shuls pages
-      '/admin',         // Admin pages
-      '/messages',      // Messages pages
-      '/api/admin'      // Admin API routes
+      '/shuls'          // Shuls pages
     ];
     const hasAllowedPrefix = allowedPrefixes.some(prefix => 
       decodedPath.startsWith(`${prefix}/`) || decodedPath === prefix

@@ -122,7 +122,7 @@ The middleware implements intelligent public route detection with:
 - Maintains security standards across all protected routes
 
 ### 3. **Rate Limiting**
-- Compatible with Upstash Redis rate limiting
+- Compatible with Redis Cloud rate limiting
 - Supports trusted CDN IP detection
 - Maintains rate limit enforcement for anonymous auth
 
