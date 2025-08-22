@@ -50,13 +50,22 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     // Load Turnstile script manually to avoid async/defer issues
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
       const script = document.createElement('script');
-      // Load Turnstile script without cache busting (Cloudflare handles caching)
+      // Load Turnstile script without async/defer to ensure proper initialization
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      script.onload = () => setIsLoaded(true);
-      script.onerror = () => onError?.('Failed to load Turnstile');
+      script.async = false;
+      script.defer = false;
+      script.onload = () => {
+        console.log('Turnstile script loaded successfully');
+        setIsLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Turnstile script');
+        onError?.('Failed to load Turnstile');
+      };
       document.head.appendChild(script);
       scriptRef.current = script;
     } else if (typeof window !== 'undefined' && window.turnstile) {
+      console.log('Turnstile already loaded');
       setIsLoaded(true);
     }
   }, [onError]);
@@ -137,17 +146,12 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       }
     };
 
-    // Use turnstile.ready() for more reliable rendering
-    if (window.turnstile && typeof window.turnstile.ready === 'function') {
-      window.turnstile.ready(() => {
-        console.log('Turnstile ready, rendering widget...');
-        renderWidget();
-      });
-    } else {
-      // Fallback to direct rendering
-      console.log('Turnstile ready not available, trying direct render...');
+    // Render widget directly - turnstile.ready() conflicts with async script loading
+    console.log('Rendering Turnstile widget directly...');
+    // Small delay to ensure script is fully initialized
+    setTimeout(() => {
       renderWidget();
-    }
+    }, 100);
   }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size]);
 
   // Expose methods via ref

@@ -128,13 +128,21 @@ python scripts/add_mock_marketplace_data.py
 Make sure your production environment variables are set:
 
 ```bash
-# Frontend (.env.local)
+# Frontend (.env.local) — do not commit real secrets in example files
 NEXT_PUBLIC_API_URL=http://localhost:5000
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 
-# Backend (.env)
+# Backend (.env) — root .env is the source of truth for dev
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
+
+Environment policy:
+- Root `.env` is the master set of keys/values for local development.
+- Example files must use placeholders only.
+- Validate before production testing:
+  ```bash
+  npm run env:check
+  ```
 ```
 
 ## 🚨 **Common Production Issues to Test**

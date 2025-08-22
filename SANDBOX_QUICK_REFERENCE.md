@@ -78,6 +78,14 @@ docker-compose -f docker-compose.sandbox.yml down
 docker-compose -f docker-compose.sandbox.yml build --no-cache
 ```
 
+## 🔒 Environment Policy
+- Root `.env` is the single source of truth for local development.
+- Example env files must not contain real secrets; use placeholders only.
+- Validate consistency anytime:
+  ```bash
+  npm run env:check
+  ```
+
 ## 🧪 Testing Commands
 
 ```bash

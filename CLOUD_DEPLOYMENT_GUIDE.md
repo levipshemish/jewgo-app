@@ -202,6 +202,15 @@ python scripts/run_cloud_migration.py
 
 ## 🔧 **Step 6: Environment Configuration**
 
+Environment policy:
+- Root `.env` is the single source of truth for local development and validation.
+- Example files (e.g., `env.template`, `frontend/env.example`) must not contain real values; use placeholders.
+- Validate consistency before cloud deployment:
+  ```bash
+  npm run env:check        # basic check
+  npm run env:check:strict # also flags extra keys
+  ```
+
 ### **6.1 Production Environment File**
 ```bash
 # backend/.env.production

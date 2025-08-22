@@ -4,7 +4,7 @@
 
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
 2. Get your project URL and anon key from the API settings
-3. Add them to your environment variables:
+3. Add them to your environment variables (root `.env` is the source of truth):
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
@@ -343,3 +343,10 @@ Check Supabase logs for OAuth events and errors.
    - Monitor identity linking conflicts
    - Track Apple Sign-In adoption rates
    - Monitor performance metrics
+> Note: Example files (e.g., `env.template`, `frontend/env.example`) must use placeholders only and must not contain real secrets.
+
+Validate consistency anytime:
+```bash
+npm run env:check        # basic check
+npm run env:check:strict # also flags extra keys
+```
