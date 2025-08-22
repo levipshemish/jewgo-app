@@ -39,7 +39,18 @@
     "docker:push-env": "./scripts/docker-hub-deploy-with-env.sh push",
     "docker:validate-env": "./scripts/docker-hub-deploy-with-env.sh validate-env",
     "docker:list-env": "./scripts/docker-hub-deploy-with-env.sh list-env",
-    "docker:env-status": "./scripts/docker-hub-deploy-with-env.sh status"
+    "docker:env-status": "./scripts/docker-hub-deploy-with-env.sh status",
+    "// Build and Deploy System": "",
+    "build": "./scripts/build-and-deploy.sh build",
+    "deploy": "./scripts/build-and-deploy.sh deploy",
+    "update": "./scripts/build-and-deploy.sh update",
+    "run": "./scripts/build-and-deploy.sh run",
+    "stop": "./scripts/build-and-deploy.sh stop",
+    "restart": "./scripts/build-and-deploy.sh restart",
+    "status": "./scripts/build-and-deploy.sh status",
+    "logs": "./scripts/build-and-deploy.sh logs",
+    "clean": "./scripts/build-and-deploy.sh clean",
+    "validate": "./scripts/build-and-deploy.sh validate-env"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"

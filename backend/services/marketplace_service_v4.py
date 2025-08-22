@@ -275,7 +275,7 @@ class MarketplaceServiceV4(BaseService):
                     SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
                            m.lat, m.lng, m.seller_user_id, m.type, m.condition,
                            m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
-                    FROM "Marketplace listings" m
+                    FROM marketplace_items m
                     WHERE m.id = :listing_id
                 """
 
@@ -285,55 +285,43 @@ class MarketplaceServiceV4(BaseService):
                 if not listing:
                     return {"success": False, "error": "Listing not found"}
 
-                # Format response for marketplace table with specific column order
+                # Format response for marketplace_items table with correct column structure
                 formatted_listing = {
                     "id": str(listing[0]),  # id
                     "kind": "regular",  # Default to regular for marketplace items
-                    "txn_type": "sale",  # Default to sale
+                    "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
                     "title": listing[1],  # title
                     "description": listing[2],  # description
-                    "price_cents": int(float(listing[3]) * 100)
-                    if listing[3]
-                    else 0,  # price (convert to cents)
+                    "price_cents": int(listing[3]) if listing[3] else 0,  # price_cents
                     "currency": listing[4] or "USD",  # currency
-                    "condition": "new",  # Default condition for marketplace items
-                    "category_id": None,  # Not used in marketplace table
-                    "subcategory_id": None,  # Not used in marketplace table
+                    "condition": listing[12] or "new",  # condition
+                    "category_id": listing[13],  # category_id
+                    "subcategory_id": listing[14],  # subcategory_id
                     "city": listing[5],  # city
-                    "region": listing[6],  # state (map to region)
-                    "zip": listing[7],  # zip_code
+                    "region": listing[6],  # region
+                    "zip": listing[7],  # zip
                     "country": "US",  # Default country
-                    "lat": float(listing[8]) if listing[8] else None,  # latitude
-                    "lng": float(listing[9]) if listing[9] else None,  # longitude
-                    "seller_user_id": None,  # vendor_id doesn't exist in marketplace table
+                    "lat": float(listing[8]) if listing[8] else None,  # lat
+                    "lng": float(listing[9]) if listing[9] else None,  # lng
+                    "seller_user_id": listing[10],  # seller_user_id
                     "attributes": {
-                        "vendor_name": listing[10],  # vendor_name
-                        "vendor_phone": listing[11],  # vendor_phone
-                        "vendor_email": listing[12],  # vendor_email
-                        "kosher_agency": listing[13],  # kosher_agency
-                        "kosher_level": listing[14],  # kosher_level
-                        "is_available": listing[15],  # is_available
-                        "is_featured": listing[16],  # is_featured
-                        "is_on_sale": listing[17],  # is_on_sale
-                        "discount_percentage": listing[18],  # discount_percentage
-                        "stock": listing[19],  # stock
-                        "rating": float(listing[20]) if listing[20] else None,  # rating
-                        "review_count": listing[21] or 0,  # review_count
+                        "type": listing[11],  # type
+                        "condition": listing[12],  # condition
+                        "category_id": listing[13],  # category_id
+                        "subcategory_id": listing[14],  # subcategory_id
                     },
                     "endorse_up": 0,  # Default values
                     "endorse_down": 0,  # Default values
-                    "status": listing[22],  # status
-                    "created_at": listing[23].isoformat()
-                    if listing[23]
+                    "status": listing[15],  # status
+                    "created_at": listing[16].isoformat()
+                    if listing[16]
                     else None,  # created_at
-                    "updated_at": listing[24].isoformat()
-                    if listing[24]
+                    "updated_at": listing[17].isoformat()
+                    if listing[17]
                     else None,  # updated_at
-                    "category_name": listing[25],  # category_name
-                    "subcategory_name": listing[26],  # subcategory_name
-                    "seller_name": listing[
-                        27
-                    ],  # seller_name (vendor_name as seller_name)
+                    "category_name": None,  # Will be populated by join if needed
+                    "subcategory_name": None,  # Will be populated by join if needed
+                    "seller_name": listing[10],  # seller_user_id as seller_name
                 }
 
             return {"success": True, "data": formatted_listing}
