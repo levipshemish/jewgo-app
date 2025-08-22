@@ -2,6 +2,7 @@
   "name": "jewgo-sandbox",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "React Live sandbox for visual testing before production deployment",
   "scripts": {
     "dev": "vite",
@@ -59,6 +60,7 @@
     "chromatic": "^12.0.0",
     "@storybook/test": "^7.6.7",
     "@storybook/test-runner": "^0.18.0",
-    "playwright": "^1.48.0"
+    "playwright": "^1.48.0",
+    "jsdom": "^24.0.0"
   }
 }

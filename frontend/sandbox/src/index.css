@@ -58,7 +58,7 @@
   }
   
   .tablet-frame {
-    @apply w-96 mx-auto border-6 border-gray-800 rounded-2xl overflow-hidden;
+    @apply w-96 mx-auto border-4 border-gray-800 rounded-2xl overflow-hidden;
   }
   
   .desktop-frame {
