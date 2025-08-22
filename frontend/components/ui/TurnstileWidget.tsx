@@ -109,6 +109,18 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         const id = window.turnstile.render(containerRef.current, config);
         console.log('Turnstile widget rendered with ID:', id);
         
+        // Debug: Check if the widget is actually in the DOM
+        setTimeout(() => {
+          const widgetElement = document.querySelector(`[data-widget-id="${id}"]`);
+          const iframeElement = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
+          console.log('Widget debugging:', {
+            widgetElement: widgetElement,
+            iframeElement: iframeElement,
+            containerChildren: containerRef.current?.children,
+            containerHTML: containerRef.current?.innerHTML
+          });
+        }, 1000);
+        
         setWidgetId(id);
         setIsRendered(true);
       } catch (error) {
@@ -161,13 +173,23 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     <div className={`${className}`}>
       <div 
         ref={containerRef} 
-        className="flex justify-center min-h-[78px] w-full"
+        className="flex justify-center min-h-[78px] w-full border border-red-500 bg-yellow-100"
         data-testid="turnstile-widget"
-        style={{ minHeight: '78px' }}
+        style={{ 
+          minHeight: '78px',
+          position: 'relative',
+          zIndex: 1000,
+          overflow: 'visible'
+        }}
       />
       {!isRendered && isLoaded && (
         <div className="text-center text-sm text-gray-400 mt-2">
           Loading security check...
+        </div>
+      )}
+      {isRendered && (
+        <div className="text-center text-sm text-green-400 mt-2">
+          Widget rendered with ID: {widgetId}
         </div>
       )}
     </div>
