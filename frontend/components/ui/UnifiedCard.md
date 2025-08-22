@@ -18,7 +18,7 @@ The UnifiedCard component is a versatile, accessible, and performant card compon
 - **Accessibility**: Full ARIA support and keyboard navigation
 - **Performance**: Optimized image loading with Next.js Image component
 - **Touch Support**: Enhanced mobile interactions
-- **Event Handling**: Click handlers for cards, tags, and favorites
+- **Event Handling**: Click handlers for cards and favorites
 - **State Management**: Integrated with favorites system
 
 ## Usage
@@ -26,20 +26,19 @@ The UnifiedCard component is a versatile, accessible, and performant card compon
 ### Basic Example
 
 ```tsx
-import EnhancedProductCard from '@/components/ui/UnifiedCard';
+import UnifiedCard from '@/components/ui/UnifiedCard';
 
 function MyComponent() {
-  const cardData = {
-    id: '1',
-    imageUrl: 'https://example.com/image.jpg',
-    imageTag: 'Popular',
-    imageTagLink: '/popular',
-    title: 'Restaurant Name',
-    badge: '4.5',
-    subtitle: '$$',
-    additionalText: 'Italian',
-    showHeart: true
-  };
+   const cardData = {
+   id: '1',
+   imageUrl: 'https://example.com/image.jpg',
+   imageTag: 'Popular',
+   title: 'Restaurant Name',
+   badge: '4.5',
+   subtitle: '$$',
+   additionalText: 'Italian',
+   showHeart: true
+ };
 
   const handleCardClick = (data) => {
     console.log('Card clicked:', data);
@@ -50,7 +49,7 @@ function MyComponent() {
   };
 
   return (
-    <EnhancedProductCard
+    <UnifiedCard
       data={cardData}
       onCardClick={handleCardClick}
       onLikeToggle={handleLikeToggle}
@@ -66,7 +65,6 @@ function MyComponent() {
 | `data` | `CardData` | Yes | - | Card data object |
 | `onCardClick` | `(data: CardData) => void` | No | - | Callback when card is clicked |
 | `onLikeToggle` | `(id: string, isLiked: boolean) => void` | No | - | Callback when favorite is toggled |
-| `onTagClick` | `(tagLink: string, event: MouseEvent) => void` | No | - | Callback when tag is clicked |
 | `className` | `string` | No | `''` | Additional CSS classes |
 | `priority` | `boolean` | No | `false` | Priority loading for images |
 
@@ -74,16 +72,15 @@ function MyComponent() {
 
 ```typescript
 interface CardData {
-  id: string;                // Unique identifier
-  imageUrl?: string;         // Image URL
-  imageTag?: string;         // Tag text (e.g., "Kosher", "Electronics")
-  imageTagLink?: string;     // Tag click destination
-  title: string;             // Main title
-  badge?: string;            // Badge text (e.g., rating, "New")
-  subtitle?: string;         // Secondary text (e.g., price range)
-  additionalText?: string;   // Additional info (e.g., cuisine type)
-  showHeart?: boolean;       // Show favorite button
-  isLiked?: boolean;         // Initial liked state
+ id: string;                // Unique identifier
+ imageUrl?: string;         // Image URL
+ imageTag?: string;         // Tag text (e.g., "Kosher type", "category")
+ title: string;             // Main title
+ badge?: string;            // Badge text (e.g., rating, "timestamp")
+ subtitle?: string;         // Secondary text (e.g., price, price range)
+ additionalText?: string;   // Additional info (e.g., distance, location)
+ showHeart?: boolean;       // Show favorite button
+ isLiked?: boolean;         // Initial liked state
 }
 ```
 
@@ -162,26 +159,13 @@ npm test -- components/ui/__tests__/UnifiedCard.edge-cases.test.tsx
 ### Styling
 ```tsx
 // Custom styling via className
-<EnhancedProductCard
+<UnifiedCard
   data={cardData}
   className="custom-shadow custom-border"
 />
 ```
 
-### Custom Event Handlers
-```tsx
-// Custom tag click behavior
-const handleTagClick = (tagLink, event) => {
-  event.preventDefault();
-  // Custom navigation logic
-  router.push(tagLink);
-};
 
-<EnhancedProductCard
-  data={cardData}
-  onTagClick={handleTagClick}
-/>
-```
 
 ## Migration Guide
 
@@ -201,7 +185,7 @@ const handleTagClick = (tagLink, event) => {
 />
 
 // After
-<EnhancedProductCard
+<UnifiedCard
   data={{
     id: restaurant.id,
     title: restaurant.name,

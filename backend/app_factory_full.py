@@ -1754,6 +1754,61 @@ def create_app(config_class=None):
     @app.route('/api/health', methods=['GET'])
     def health_check():
         """Health check endpoint"""
+        
+        # Check if migration is requested
+        migrate = request.args.get('migrate')
+        if migrate == 'subcategories':
+            try:
+                with db_manager.get_connection() as conn:
+                    with conn.cursor() as cursor:
+                        # Check if subcategories table exists
+                        cursor.execute("""
+                            SELECT EXISTS (
+                                SELECT FROM information_schema.tables 
+                                WHERE table_name = 'subcategories'
+                            );
+                        """)
+                        table_exists = cursor.fetchone()[0]
+                        
+                        if not table_exists:
+                            # Create the subcategories table
+                            cursor.execute("""
+                                CREATE TABLE subcategories (
+                                    id SERIAL PRIMARY KEY,
+                                    category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
+                                    name VARCHAR(100) NOT NULL,
+                                    description TEXT,
+                                    icon VARCHAR(50),
+                                    slug VARCHAR(100) UNIQUE NOT NULL,
+                                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                );
+                                
+                                CREATE INDEX idx_subcategories_category_id ON subcategories(category_id);
+                                CREATE INDEX idx_subcategories_slug ON subcategories(slug);
+                            """)
+                            conn.commit()
+                            
+                            return jsonify({
+                                'status': 'healthy',
+                                'migration': 'subcategories table created successfully',
+                                'timestamp': datetime.now(timezone.utc).isoformat()
+                            })
+                        else:
+                            return jsonify({
+                                'status': 'healthy',
+                                'migration': 'subcategories table already exists',
+                                'timestamp': datetime.now(timezone.utc).isoformat()
+                            })
+                            
+            except Exception as e:
+                logger.error(f"Migration failed: {e}")
+                return jsonify({
+                    'status': 'unhealthy',
+                    'migration': f'failed: {str(e)}',
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }), 500
+        
         try:
             # Check database connection
             with db_manager.get_connection() as conn:
