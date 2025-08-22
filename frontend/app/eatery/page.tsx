@@ -456,35 +456,13 @@ function EateryPageContent() {
       transform: isMobile ? (showFilters ? 'translateY(0)' : 'translateY(-100%)') : 'none',
       transition: isMobile ? 'transform 0.3s ease' : 'none',
     },
-    restaurantGrid: {
-      display: 'grid',
-      // Mobile: 2 columns (4 rows = 8 items)
-      // Desktop: Calculate columns to ensure exactly 4 rows
-      gridTemplateColumns: isMobile 
-        ? 'repeat(2, 1fr)' 
-        : viewportWidth >= 1441
-          ? 'repeat(6, 1fr)' // Large desktop: 6 columns
-          : viewportWidth >= 1025
-            ? 'repeat(5, 1fr)' // Desktop: 5 columns
-            : viewportWidth >= 769
-              ? 'repeat(4, 1fr)' // Tablet: 4 columns
-              : viewportWidth >= 641
-                ? 'repeat(3, 1fr)' // Small tablet: 3 columns
-                : 'repeat(3, 1fr)', // Fallback: 3 columns
-      gap: isMobile ? '12px' : '16px',
-      padding: isMobile ? '8px' : '16px',
-      // Ensure exactly 4 rows on all screen sizes
-      gridTemplateRows: 'repeat(4, 1fr)',
-      maxHeight: isMobile 
-        ? 'calc(4 * (200px + 12px))' // 4 rows with mobile gap
-        : 'calc(4 * (280px + 16px))', // 4 rows with desktop gap
-    },
+    // Remove conflicting grid styles - let CSS handle the responsive grid
     loadMoreButton: {
       ...mobileStyles.touchButton,
       width: isMobile ? '100%' : 'auto',
       margin: isMobile ? '16px 8px' : '16px',
     }
-  }), [isMobile, viewportHeight, showFilters, viewportWidth]);
+  }), [isMobile, viewportHeight, showFilters]);
 
   if (error) {
     return (
@@ -605,7 +583,7 @@ function EateryPageContent() {
           </p>
         </div>
       ) : (
-        <div className="restaurant-grid" style={mobileOptimizedStyles.restaurantGrid}>
+        <div className="restaurant-grid">
           {restaurants.map((restaurant, index) => (
             <UnifiedCard
               key={restaurant.id}
