@@ -62,6 +62,12 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const origin = request.headers.get('origin');
   
+  console.log(`Anonymous auth request received for correlation ID: ${correlationId}`, {
+    method: request.method,
+    origin,
+    correlationId
+  });
+  
   // Initialize server-side functionality
   const serverInitialized = await initializeServer();
   if (!serverInitialized) {

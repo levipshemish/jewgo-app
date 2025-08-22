@@ -317,6 +317,17 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         }
       }}
     >
+      {/* Force transparent surface and no visual panel regardless of globals */}
+      <style jsx>{`
+        :global(.unified-card) {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: 0 !important;
+        }
+        :global(.unified-card *), :global(.unified-card > div) {
+          background: transparent !important;
+        }
+      `}</style>
       {/* Persistent live region for announcements */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {announcement}
@@ -361,160 +372,42 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         
         {/* Image Tag - Enhanced hover effects */}
         {cardData.imageTag && (
-          <>
-            <style jsx>{`
-              .unified-card-tag {
-                position: absolute !important;
-                top: 8px !important;
-                left: 8px !important;
-                width: 80px !important;
-                max-width: 80px !important;
-                min-width: 80px !important;
-                height: 24px !important;
-                max-height: 24px !important;
-                min-height: 24px !important;
-                overflow: hidden !important;
-                padding: 0 8px !important;
-                font-size: 12px !important;
-                line-height: 1 !important;
-                font-weight: 500 !important;
-                background-color: rgba(255, 255, 255, 0.95) !important;
-                color: #111827 !important;
-                border-radius: 9999px !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                -webkit-font-smoothing: antialiased !important;
-                -moz-osx-font-smoothing: grayscale !important;
-                text-rendering: optimizeLegibility !important;
-                -webkit-text-size-adjust: 100% !important;
-                text-size-adjust: 100% !important;
-                transition: all 0.2s ease-out !important;
-                transform: none !important;
-                backdrop-filter: blur(8px) !important;
-              }
-              .unified-card-tag:hover {
-                background-color: rgba(255, 255, 255, 1) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-                transform: translateY(-1px) !important;
-              }
-              .unified-card-tag {
-                cursor: pointer !important;
-              }
-              .unified-card-tag:active {
-                transform: translateY(0px) !important;
-                opacity: 1 !important;
-              }
-            `}</style>
-            <div
-              className="unified-card-tag"
-              aria-label={`Tag: ${cardData.imageTag}`}
-              style={{ zIndex: 10 }} // Ensure it's above the image
+          <div
+            className="unified-card-tag"
+            aria-label={`Tag: ${cardData.imageTag}`}
+            style={{ zIndex: 10 }} // Ensure it's above the image
+          >
+            <span 
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
+                fontSize: 'inherit',
+                lineHeight: 'inherit',
+                fontWeight: 'inherit'
+              }}
             >
-              <span 
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  fontWeight: 'inherit'
-                }}
-              >
-                {cardData.imageTag}
-              </span>
-            </div>
-          </>
+              {cardData.imageTag}
+            </span>
+          </div>
         )}
         
         {/* Heart Button - White outline with grey fill, red on hover */}
         {cardData.showHeart && (
-          <>
-            <style jsx>{`
-              .unified-card-heart {
-                position: absolute !important;
-                top: 4px !important;
-                right: 8px !important;
-                width: 28px !important;
-                max-width: 28px !important;
-                min-width: 28px !important;
-                height: 28px !important;
-                max-height: 28px !important;
-                min-height: 28px !important;
-                background-color: transparent !important;
-                border-radius: 50% !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                border: none !important;
-                /* Override global button min-size rules */
-                min-height: 28px !important;
-                min-width: 28px !important;
-                padding: 0 !important;
-                cursor: pointer !important;
-                -webkit-tap-highlight-color: transparent !important;
-                touch-action: manipulation !important;
-                z-index: 10 !important;
-                transition: all 0.2s ease-out !important;
-                transform: ${isAnimating ? 'scale(0.9)' : 'scale(1)'} !important;
-              }
-              .unified-card-heart:hover {
-                transform: scale(1.1) !important;
-              }
-              .unified-card-heart:hover svg {
-                fill: rgb(239, 68, 68) !important;
-                stroke: #ffffff !important;
-                stroke-width: 2 !important;
-                transform: scale(1.1) !important;
-                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
-              }
-              .unified-card-heart:active {
-                transform: scale(0.95) !important;
-                opacity: 1 !important;
-              }
-              .unified-card-heart svg {
-                width: 18px !important;
-                height: 18px !important;
-                transition: all 0.2s ease-out !important;
-                stroke: #ffffff !important;
-                stroke-width: 2 !important;
-                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
-              }
-              .unified-card-heart.liked svg {
-                fill: rgb(239, 68, 68) !important;
-                stroke: #ffffff !important;
-                stroke-width: 2 !important;
-              }
-              .unified-card-heart:not(.liked) svg {
-                fill: rgb(156, 163, 175) !important;
-                stroke: #ffffff !important;
-                stroke-width: 2 !important;
-              }
-              /* Mobile touch optimization */
-              @media (hover: none) and (pointer: coarse) {
-                .unified-card-heart:active svg {
-                  fill: rgb(239, 68, 68) !important;
-                  stroke: #ffffff !important;
-                  stroke-width: 2 !important;
-                }
-              }
-            `}</style>
-            <button
-              className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLikeToggle();
-              }}
-              onKeyDown={handleHeartKeyDown}
-              aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-              aria-pressed={isLiked}
-            >
-              <Heart
-                size={18}
-              />
-            </button>
-          </>
+          <button
+            className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeToggle();
+            }}
+            onKeyDown={handleHeartKeyDown}
+            aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={isLiked}
+          >
+            <Heart
+              size={18}
+            />
+          </button>
         )}
       </div>
       

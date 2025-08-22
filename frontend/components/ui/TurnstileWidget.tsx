@@ -105,7 +105,10 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           },
           theme,
           size,
-          tabindex: 0
+          tabindex: 0,
+          // Disable Cloudflare Zone requirement for non-Cloudflare domains
+          'appearance': 'interaction-only',
+          'execution': 'execute'
         };
         
         console.log('Turnstile render config:', config);
