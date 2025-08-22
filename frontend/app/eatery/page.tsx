@@ -159,6 +159,11 @@ function EateryPageContent() {
     // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
     
+    // Debug logging for distance
+    if (userLocation && restaurant.distance) {
+      console.log(`Restaurant: ${restaurant.name}, Distance: "${restaurant.distance}", DistanceText: "${distanceText}"`);
+    }
+    
     // Enhanced price range logic - ensure we have a valid price range
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
     
@@ -300,11 +305,16 @@ function EateryPageContent() {
       // Apply distance calculation and sorting if location is available
       let processedRestaurants = response.restaurants;
       if (userLocation) {
-
+        console.log('User location available, calculating distances...');
+        console.log('User location:', userLocation);
+        console.log('Restaurants before distance calculation:', response.restaurants.length);
+        
         processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
-
+        
+        console.log('Restaurants after distance calculation:', processedRestaurants.length);
+        console.log('Sample restaurant with distance:', processedRestaurants[0]?.name, processedRestaurants[0]?.distance);
       } else {
-
+        console.log('No user location available, skipping distance calculation');
       }
       
       setRestaurants(processedRestaurants);
