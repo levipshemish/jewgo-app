@@ -201,7 +201,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         transition: { duration: 0.1 }
       }}
       className={cn(
-        'relative bg-white rounded-xl cursor-pointer group unified-card',
+        'relative bg-transparent rounded-xl cursor-pointer group unified-card',
         'border border-gray-200 hover:border-gray-300',
         'transition-all duration-200 ease-out',
         'flex flex-col', // Remove h-full to prevent over-extension
