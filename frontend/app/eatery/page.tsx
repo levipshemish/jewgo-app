@@ -439,6 +439,7 @@ function EateryPageContent() {
     container: {
       minHeight: isMobile ? viewportHeight : 'auto',
       padding: isMobile ? '8px' : '16px',
+      backgroundColor: 'transparent', // Force transparent background
     },
     filtersContainer: {
       position: isMobile ? 'fixed' as const : 'relative' as const,

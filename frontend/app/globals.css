@@ -2761,6 +2761,29 @@ div[class*="specials-dynamic-grid"] {
   background: transparent !important;
 }
 
+/* Override any container backgrounds that might interfere with UnifiedCard */
+.restaurant-grid,
+.marketplace-page .grid {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Override any parent container styles that might force white backgrounds */
+.restaurant-grid > div,
+.marketplace-page .grid > div {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Override any inline styles that might be set by JavaScript */
+.restaurant-grid .unified-card[style*="background"],
+.marketplace-page .unified-card[style*="background"] {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
 @media (max-width: 640px) {
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
