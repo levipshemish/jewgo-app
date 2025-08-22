@@ -290,10 +290,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       }}
       className={cn(
         'relative bg-transparent rounded-xl cursor-pointer group unified-card',
-        'border border-gray-200 hover:border-gray-300',
         'transition-all duration-200 ease-out',
         'flex flex-col', // Remove h-full to prevent over-extension
         'p-1', // Add padding to prevent border from covering content
+        'border-0', // Ensure no border
+        'shadow-none', // Ensure no shadow
         className
       )}
       onClick={handleCardClick}
@@ -325,6 +326,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       <div className="relative w-full">
         <div className={cn(
           "w-full rounded-[20px] overflow-hidden bg-transparent transition-transform duration-300 group-hover:scale-105",
+          "border-0 shadow-none", // Ensure no border or shadow
           variantStyles.imageClass
         )}>
           {/* Loading Placeholder */}
@@ -376,7 +378,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 font-size: 12px !important;
                 line-height: 1 !important;
                 font-weight: 500 !important;
-                background-color: transparent !important;
+                background-color: rgba(255, 255, 255, 0.95) !important;
                 color: #111827 !important;
                 border-radius: 9999px !important;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
@@ -393,7 +395,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 backdrop-filter: blur(8px) !important;
               }
               .unified-card-tag:hover {
-                background-color: transparent !important;
+                background-color: rgba(255, 255, 255, 1) !important;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
                 transform: translateY(-1px) !important;
               }
@@ -514,7 +516,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <motion.div 
-        className="pt-2 flex flex-col" // Remove flex-1 to prevent over-extension
+        className="pt-2 flex flex-col bg-transparent" // Remove flex-1 to prevent over-extension
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
