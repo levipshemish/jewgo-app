@@ -1788,6 +1788,48 @@ def create_app(config_class=None):
         
         status_code = 200 if db_healthy and redis_healthy else 503
         return jsonify(health_status), status_code
+
+    @app.route('/api/admin/run-marketplace-migration', methods=['POST'])
+    def run_marketplace_migration():
+        """Temporary admin endpoint to run marketplace migration."""
+        try:
+            # Check for admin token
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"error": "Unauthorized"}), 401
+            
+            token = auth_header.split(" ")[1]
+            admin_token = os.getenv("ADMIN_TOKEN")
+            
+            if not admin_token or token != admin_token:
+                return jsonify({"error": "Invalid admin token"}), 401
+            
+            # Import and run the migration
+            from database.migrations.create_marketplace_schema import run_migration
+            
+            success = run_migration()
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": "Marketplace migration completed successfully",
+                    "tables_created": [
+                        "categories", "subcategories", "listings", "gemachs",
+                        "listing_images", "listing_transactions", "listing_endorsements", "usernames"
+                    ]
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Marketplace migration failed"
+                }), 500
+                
+        except Exception as e:
+            logger.exception("Error running marketplace migration")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
     
     # Error handlers
     @app.errorhandler(404)
