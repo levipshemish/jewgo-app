@@ -24,6 +24,27 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
+  # Frontend Service
+  - type: web
+    name: jewgo-frontend
+    env: node
+    plan: starter
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_BACKEND_URL
+        value: https://jewgo-backend.onrender.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_WEBSOCKET_URL
+        value: wss://jewgo-backend.onrender.com/ws
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /
+    autoDeploy: true
+
   # Redis Service
   - type: redis
     name: jewgo-redis
