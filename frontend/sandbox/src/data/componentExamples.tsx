@@ -68,9 +68,11 @@ const Badge = ({ children, variant = 'default', ...props }: any) => {
     danger: 'bg-red-100 text-red-800'
   }
   
+  const variantKey = variant as keyof typeof variants
+  
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variantKey]}`}
       {...props}
     >
       {children}
@@ -86,9 +88,11 @@ const Alert = ({ children, type = 'info', ...props }: any) => {
     error: 'bg-red-50 text-red-800 border-red-200'
   }
   
+  const typeKey = type as keyof typeof types
+  
   return (
     <div
-      className={`border rounded-lg p-4 ${types[type]}`}
+      className={`border rounded-lg p-4 ${types[typeKey]}`}
       {...props}
     >
       {children}
