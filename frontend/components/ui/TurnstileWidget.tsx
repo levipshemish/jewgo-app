@@ -50,8 +50,8 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     // Load Turnstile script manually to avoid async/defer issues
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
       const script = document.createElement('script');
-      // Add cache-busting parameter to ensure fresh script
-      script.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?v=${Date.now()}`;
+      // Load Turnstile script without cache busting (Cloudflare handles caching)
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       script.onload = () => setIsLoaded(true);
       script.onerror = () => onError?.('Failed to load Turnstile');
       document.head.appendChild(script);
