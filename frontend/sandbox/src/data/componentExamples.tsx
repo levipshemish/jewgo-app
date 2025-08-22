@@ -2,8 +2,6 @@ import React from 'react'
 
 // Sample components for testing
 const Button = ({ children, variant = 'primary', size = 'md', ...props }: any) => {
-  const variantKey = variant as keyof typeof variants
-  const sizeKey = size as keyof typeof sizes
   const baseClasses = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2'
   
   const variants = {
@@ -19,43 +17,35 @@ const Button = ({ children, variant = 'primary', size = 'md', ...props }: any) =
     lg: 'px-6 py-3 text-base'
   }
   
-  return (
-    <button
-      className={`${baseClasses} ${variants[variantKey]} ${sizes[sizeKey]}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
+  const variantKey = variant as keyof typeof variants
+  const sizeKey = size as keyof typeof sizes
+  
+  return React.createElement('button', {
+    className: `${baseClasses} ${variants[variantKey]} ${sizes[sizeKey]}`,
+    ...props
+  }, children)
 }
 
 const Card = ({ title, children, ...props }: any) => {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6" {...props}>
-      {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
-      {children}
-    </div>
+  return React.createElement('div', {
+    className: "bg-white rounded-lg shadow-sm border border-gray-200 p-6",
+    ...props
+  }, 
+    title && React.createElement('h3', { className: "text-lg font-semibold text-gray-900 mb-4" }, title),
+    children
   )
 }
 
 const Input = ({ label, error, ...props }: any) => {
-  return (
-    <div>
-      {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {label}
-        </label>
-      )}
-      <input
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-          error ? 'border-red-300' : 'border-gray-300'
-        }`}
-        {...props}
-      />
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
-    </div>
+  return React.createElement('div', null,
+    label && React.createElement('label', { className: "block text-sm font-medium text-gray-700 mb-1" }, label),
+    React.createElement('input', {
+      className: `w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+        error ? 'border-red-300' : 'border-gray-300'
+      }`,
+      ...props
+    }),
+    error && React.createElement('p', { className: "mt-1 text-sm text-red-600" }, error)
   )
 }
 
@@ -70,14 +60,10 @@ const Badge = ({ children, variant = 'default', ...props }: any) => {
   
   const variantKey = variant as keyof typeof variants
   
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variantKey]}`}
-      {...props}
-    >
-      {children}
-    </span>
-  )
+  return React.createElement('span', {
+    className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variantKey]}`,
+    ...props
+  }, children)
 }
 
 const Alert = ({ children, type = 'info', ...props }: any) => {
@@ -90,36 +76,26 @@ const Alert = ({ children, type = 'info', ...props }: any) => {
   
   const typeKey = type as keyof typeof types
   
-  return (
-    <div
-      className={`border rounded-lg p-4 ${types[typeKey]}`}
-      {...props}
-    >
-      {children}
-    </div>
-  )
+  return React.createElement('div', {
+    className: `border rounded-lg p-4 ${types[typeKey]}`,
+    ...props
+  }, children)
 }
 
 const Modal = ({ isOpen, onClose, title, children }: any) => {
   if (!isOpen) return null
   
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="p-6">
-          {children}
-        </div>
-      </div>
-    </div>
+  return React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" },
+    React.createElement('div', { className: "bg-white rounded-lg shadow-xl max-w-md w-full mx-4" },
+      React.createElement('div', { className: "flex items-center justify-between p-6 border-b border-gray-200" },
+        React.createElement('h3', { className: "text-lg font-semibold text-gray-900" }, title),
+        React.createElement('button', {
+          onClick: onClose,
+          className: "text-gray-400 hover:text-gray-600"
+        }, "✕")
+      ),
+      React.createElement('div', { className: "p-6" }, children)
+    )
   )
 }
 
