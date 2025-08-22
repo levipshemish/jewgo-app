@@ -440,43 +440,41 @@ def create_app():
     
     # Register API v4 routes
     try:
-        logger.info("Attempting to import API v4 routes...")
+        logger.info("Attempting to import simple API v4 routes...")
         
-        # Test import without going through __init__.py
-        import sys
-        import os
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'routes'))
+        # Try to import the simple API v4 routes
+        from routes.api_v4_simple import api_v4_simple
+        logger.info(f"Simple API v4 blueprint imported: {api_v4_simple}")
         
-        try:
-            from api_v4 import api_v4
-            logger.info(f"API v4 blueprint imported directly: {api_v4}")
-        except Exception as direct_import_error:
-            logger.warning(f"Direct import failed: {direct_import_error}")
-            # Try the original import path
-            from routes.api_v4 import api_v4
-            logger.info(f"API v4 blueprint imported via routes: {api_v4}")
+        if api_v4_simple is not None:
+            app.register_blueprint(api_v4_simple)
+            logger.info("Simple API v4 routes registered successfully")
+        else:
+            logger.warning("Simple API v4 blueprint is None - not registering routes")
+            
+    except ImportError as e:
+        logger.warning(f"Could not import simple API v4 routes: {e}")
+    except Exception as e:
+        logger.error(f"Error registering simple API v4 routes: {e}")
+        logger.error(traceback.format_exc())
+    
+    # Try to register the original API v4 routes as well
+    try:
+        logger.info("Attempting to import original API v4 routes...")
+        from routes.api_v4 import api_v4
+        logger.info(f"Original API v4 blueprint imported: {api_v4}")
         
         if api_v4 is not None:
             app.register_blueprint(api_v4)
-            logger.info("API v4 routes registered successfully")
+            logger.info("Original API v4 routes registered successfully")
         else:
-            logger.warning("API v4 blueprint is None - not registering routes")
+            logger.warning("Original API v4 blueprint is None - not registering routes")
             
     except ImportError as e:
-        logger.warning(f"Could not import API v4 routes: {e}")
+        logger.warning(f"Could not import original API v4 routes: {e}")
     except Exception as e:
-        logger.error(f"Error registering API v4 routes: {e}")
+        logger.error(f"Error registering original API v4 routes: {e}")
         logger.error(traceback.format_exc())
-    
-    # Add a simple test endpoint for API v4
-    @app.route('/api/v4/test', methods=['GET'])
-    def api_v4_test():
-        """Test endpoint to verify API v4 routes are working"""
-        return jsonify({
-            'success': True,
-            'message': 'API v4 test endpoint is working',
-            'timestamp': datetime.now(timezone.utc).isoformat()
-        })
     
     logger.info("JewGo Backend application created successfully")
     return app
