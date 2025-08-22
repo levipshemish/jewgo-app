@@ -51,6 +51,8 @@
     "logs": "./scripts/build-and-deploy.sh logs",
     "clean": "./scripts/build-and-deploy.sh clean",
     "validate": "./scripts/build-and-deploy.sh validate-env",
+    "env:check": "node scripts/env-consistency-check.js",
+    "env:check:strict": "STRICT=1 node scripts/env-consistency-check.js",
     "// Quick Update Commands": "",
     "quick-update": "./scripts/update.sh",
     "quick-update:dev": "./scripts/update.sh dev",
