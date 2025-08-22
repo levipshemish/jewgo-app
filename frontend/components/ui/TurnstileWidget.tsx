@@ -119,13 +119,13 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         
         console.log('Turnstile render config:', config);
         
-        // Try to force standard challenge mode by using explicit parameters
+        // Configure for invisible mode - only show challenge when needed
         const renderParams = {
           ...config,
-          // Force standard challenge mode
-          'appearance': 'interaction-only',
+          // Invisible mode configuration
+          'appearance': 'invisible',
           'execution': 'execute',
-          // Disable Private Access Token
+          // Standard parameters
           'refresh-expired': 'auto',
           'response-field-name': 'cf-turnstile-response'
         };
@@ -199,13 +199,16 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     <div className={`${className}`}>
       <div 
         ref={containerRef} 
-        className="flex justify-center min-h-[78px] w-full border border-red-500 bg-yellow-100"
+        className="flex justify-center min-h-[78px] w-full"
         data-testid="turnstile-widget"
         style={{ 
           minHeight: '78px',
           position: 'relative',
           zIndex: 1000,
-          overflow: 'visible'
+          overflow: 'visible',
+          // Hide the container for invisible mode - only show if challenge is needed
+          opacity: 0,
+          pointerEvents: 'none'
         }}
       />
       {/* Test container for debugging */}
@@ -214,15 +217,20 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         className="mt-2 p-2 border border-blue-500 bg-blue-100 min-h-[50px]"
         style={{ display: 'none' }}
       />
-      {!isRendered && isLoaded && (
-        <div className="text-center text-sm text-gray-400 mt-2">
-          Loading security check...
-        </div>
-      )}
-      {isRendered && (
-        <div className="text-center text-sm text-green-400 mt-2">
-          Widget rendered with ID: {widgetId}
-        </div>
+      {/* Only show loading/status messages in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          {!isRendered && isLoaded && (
+            <div className="text-center text-sm text-gray-400 mt-2">
+              Loading security check...
+            </div>
+          )}
+          {isRendered && (
+            <div className="text-center text-sm text-green-400 mt-2">
+              Widget rendered with ID: {widgetId}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
