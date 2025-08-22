@@ -307,7 +307,12 @@ export async function POST(request: NextRequest) {
     }
     
     // Create anonymous user
-    const { data, error: signInError } = await supabase.auth.signInAnonymously();
+    // In development/Docker mode, don't pass captcha token to Supabase
+    const signInOptions = process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true' 
+      ? {}
+      : { options: { captchaToken } };
+    
+    const { data, error: signInError } = await supabase.auth.signInAnonymously(signInOptions);
     
     if (signInError) {
       console.error(`Anonymous signin failed for correlation ID: ${correlationId}`, {
