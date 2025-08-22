@@ -64,6 +64,31 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const [isAnimating, setIsAnimating] = useState(false);
   const [announcement, setAnnouncement] = useState('');
 
+  // Debug logging for UnifiedCard
+  useEffect(() => {
+    console.log('🔍 UnifiedCard Debug - Component Props:', {
+      data,
+      variant,
+      showStarInBadge,
+      className
+    });
+  }, [data, variant, showStarInBadge, className]);
+
+  // Debug logging for element styling after render
+  useEffect(() => {
+    const cardElement = document.querySelector('.unified-card');
+    if (cardElement) {
+      console.log('🔍 UnifiedCard Debug - Card Element Styling:', {
+        className: cardElement.className,
+        style: cardElement.getAttribute('style'),
+        computedStyle: window.getComputedStyle(cardElement),
+        backgroundColor: window.getComputedStyle(cardElement).backgroundColor,
+        background: window.getComputedStyle(cardElement).background,
+        element: cardElement
+      });
+    }
+  }, [data.id]); // Re-run when card data changes
+
   // Sync with favorites manager
   useEffect(() => {
     setIsLiked(isFavorite(data.id));
@@ -215,6 +240,18 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       aria-label={`View details for ${cardData.title}`}
       aria-live="polite"
       aria-describedby={`card-${cardData.id}`}
+      ref={(el) => {
+        if (el) {
+          console.log('🔍 UnifiedCard Debug - Card Element Ref:', {
+            className: el.className,
+            style: el.style.cssText,
+            computedStyle: window.getComputedStyle(el),
+            backgroundColor: window.getComputedStyle(el).backgroundColor,
+            background: window.getComputedStyle(el).background,
+            element: el
+          });
+        }
+      }}
     >
       {/* Persistent live region for announcements */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">

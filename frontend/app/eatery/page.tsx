@@ -45,8 +45,15 @@ function EateryPageContent() {
   
   // Debug mobile detection
   useEffect(() => {
-
-  }, [isMobile, isTouch, viewportWidth, viewportHeight]);
+    console.log('🔍 Eatery Page Debug - Mobile Detection:', {
+      isMobile,
+      isTouch,
+      viewportWidth,
+      viewportHeight,
+      isLowPowerMode,
+      isSlowConnection
+    });
+  }, [isMobile, isTouch, viewportWidth, viewportHeight, isLowPowerMode, isSlowConnection]);
   
   // Mobile gesture support
   const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
@@ -435,30 +442,58 @@ function EateryPageContent() {
   }, [isMobile, isScrolling]);
 
   // Mobile-optimized styles
-  const mobileOptimizedStyles = useMemo(() => ({
-    container: {
-      minHeight: isMobile ? viewportHeight : 'auto',
-      padding: isMobile ? '8px' : '16px',
-      // Remove backgroundColor override to let CSS handle it
-    },
-    filtersContainer: {
-      position: isMobile ? 'fixed' as const : 'relative' as const,
-      top: isMobile ? '0' : 'auto',
-      left: isMobile ? '0' : 'auto',
-      right: isMobile ? '0' : 'auto',
-      zIndex: isMobile ? 1000 : 'auto',
-      backgroundColor: isMobile ? 'white' : 'transparent',
-      boxShadow: isMobile ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-      transform: isMobile ? (showFilters ? 'translateY(0)' : 'translateY(-100%)') : 'none',
-      transition: isMobile ? 'transform 0.3s ease' : 'none',
-    },
-    // Remove conflicting grid styles - let CSS handle the responsive grid
-    loadMoreButton: {
-      ...mobileStyles.touchButton,
-      width: isMobile ? '100%' : 'auto',
-      margin: isMobile ? '16px 8px' : '16px',
-    }
-  }), [isMobile, viewportHeight, showFilters]);
+  const mobileOptimizedStyles = useMemo(() => {
+    const styles = {
+      container: {
+        minHeight: isMobile ? viewportHeight : 'auto',
+        padding: isMobile ? '8px' : '16px',
+        // Remove backgroundColor override to let CSS handle it
+      },
+      filtersContainer: {
+        position: isMobile ? 'fixed' as const : 'relative' as const,
+        top: isMobile ? 'auto' : '0',
+        bottom: isMobile ? '0' : 'auto',
+        left: isMobile ? '0' : 'auto',
+        right: isMobile ? '0' : 'auto',
+        zIndex: isMobile ? 50 : 'auto',
+        backgroundColor: isMobile ? 'white' : 'transparent',
+        borderTop: isMobile ? '1px solid #e5e7eb' : 'none',
+        borderRadius: isMobile ? '16px 16px 0 0' : '0',
+        boxShadow: isMobile ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        maxHeight: isMobile ? '80vh' : 'auto',
+        overflowY: isMobile ? 'auto' as const : 'visible' as const,
+      },
+      grid: {
+        display: 'grid',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: isMobile ? '8px' : '16px',
+        padding: isMobile ? '8px' : '16px',
+      },
+      card: {
+        backgroundColor: 'transparent',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
+      },
+      loadMoreButton: {
+        ...mobileStyles.touchButton,
+        width: isMobile ? '100%' : 'auto',
+        margin: isMobile ? '16px 8px' : '16px',
+      }
+    };
+
+    console.log('🔍 Eatery Page Debug - Mobile Styles:', {
+      isMobile,
+      viewportHeight,
+      viewportWidth,
+      containerStyles: styles.container,
+      gridStyles: styles.grid,
+      cardStyles: styles.card
+    });
+
+    return styles;
+  }, [isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
 
   if (error) {
     return (
@@ -499,6 +534,18 @@ function EateryPageContent() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      ref={(el) => {
+        if (el) {
+          console.log('🔍 Eatery Page Debug - Main Container Element:', {
+            className: el.className,
+            style: el.style.cssText,
+            computedStyle: window.getComputedStyle(el),
+            backgroundColor: window.getComputedStyle(el).backgroundColor,
+            background: window.getComputedStyle(el).background,
+            element: el
+          });
+        }
+      }}
     >
       <Header />
       
@@ -580,7 +627,21 @@ function EateryPageContent() {
           </p>
         </div>
       ) : (
-        <div className="restaurant-grid">
+        <div 
+          className="restaurant-grid"
+          ref={(el) => {
+            if (el) {
+              console.log('🔍 Eatery Page Debug - Restaurant Grid Element:', {
+                className: el.className,
+                style: el.style.cssText,
+                computedStyle: window.getComputedStyle(el),
+                backgroundColor: window.getComputedStyle(el).backgroundColor,
+                background: window.getComputedStyle(el).background,
+                element: el
+              });
+            }
+          }}
+        >
           {restaurants.map((restaurant, index) => (
             <UnifiedCard
               key={restaurant.id}
@@ -588,11 +649,6 @@ function EateryPageContent() {
               variant="default"
               showStarInBadge={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
-              onLikeToggle={(id, isLiked) => {
-                // Handle favorite toggle - this will be managed by the UnifiedCard component
-                // The component will automatically sync with the favorites manager
-              }}
-              className="hover:shadow-lg transition-shadow duration-200"
             />
           ))}
         </div>

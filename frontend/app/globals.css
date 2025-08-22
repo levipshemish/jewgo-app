@@ -2978,5 +2978,19 @@ div[class*="specials-dynamic-grid"] {
   padding-top: 0 !important;
 }
 
+/* 
+🔍 CSS Debug Info:
+This file contains comprehensive overrides for UnifiedCard styling.
+Key sections:
+- Lines ~180-200: UnifiedCard background transparency overrides
+- Lines ~230-300: Heart fill functionality overrides
+- Lines ~310-450: Container and grid background overrides
+- Lines ~450+: Nuclear-level overrides for all unified-card elements
+
+Last updated: Added debugging logs to track styling conflicts
+*/
+
+/* Reset and base styles */
+
 
 
