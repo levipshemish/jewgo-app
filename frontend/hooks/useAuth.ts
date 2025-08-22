@@ -23,11 +23,6 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [rateLimitInfo, setRateLimitInfo] = useState<{
-    remaining_attempts?: number;
-    reset_in_seconds?: number;
-    retry_after?: number;
-  } | null>(null);
   const router = useRouter();
   
   // Guard against concurrent anonymous signin calls
@@ -389,7 +384,6 @@ export function useAuth() {
     isLoading,
     error,
     isAnonymous,
-    rateLimitInfo,
     isAuthenticated,
     isFullyAuthenticated,
     canWrite,

@@ -2,24 +2,28 @@
 
 import { useState } from 'react';
 import Script from 'next/script';
+import { supabaseBrowser } from '@/lib/supabase/client';
+import { extractIsAnonymous } from '@/lib/utils/auth-utils';
+
+declare global {
+  interface Window {
+    turnstile: any;
+    handleTurnstileCallback: (token: string) => void;
+  }
+}
 
 export default function TestTurnstilePage() {
   const [token, setToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  // Global function for Turnstile callback
+  // Make callback available globally
   if (typeof window !== 'undefined') {
-    (window as any).handleTurnstileCallback = (token: string) => {
+    window.handleTurnstileCallback = (token: string) => {
       console.log('Turnstile token received:', token);
       setToken(token);
     };
   }
-
-  const handleTurnstileCallback = (token: string) => {
-    console.log('Turnstile token received:', token);
-    setToken(token);
-  };
 
   const testAnonymousAuth = async () => {
     if (!token) {
@@ -29,18 +33,43 @@ export default function TestTurnstilePage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/anonymous', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          turnstileToken: token
-        })
-      });
+      // Check for existing anonymous session first
+      const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
+      
+      if (!getUserError && user && extractIsAnonymous(user)) {
+        setResult({ 
+          status: 200, 
+          data: { 
+            ok: true, 
+            user_id: user.id,
+            message: 'Anonymous session already exists' 
+          } 
+        });
+        return;
+      }
 
-      const data = await response.json();
-      setResult({ status: response.status, data });
+      // Call Supabase directly
+      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
+
+      if (signInError) {
+        setResult({ 
+          status: 500, 
+          data: { 
+            error: 'ANON_SIGNIN_FAILED',
+            details: signInError.message 
+          } 
+        });
+        return;
+      }
+
+      setResult({ 
+        status: 200, 
+        data: { 
+          ok: true, 
+          user_id: data.user?.id,
+          message: 'Anonymous signin successful' 
+        } 
+      });
     } catch (error) {
       setResult({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
     } finally {
