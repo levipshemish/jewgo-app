@@ -68,9 +68,9 @@ async function getRedisClient() {
  */
 export async function checkRateLimit(
   key: string,
-  limitType: keyof typeof RATE_LIMITS,
-  requestIP: string,
-  forwardedFor?: string
+  bucket: string,
+  ip: string,
+  xff?: string
 ): Promise<{
   allowed: boolean;
   remaining_attempts?: number;
@@ -79,14 +79,14 @@ export async function checkRateLimit(
   error?: string;
 }> {
   try {
-    const config = RATE_LIMITS[limitType];
-    const realIP = validateTrustedIP(requestIP, forwardedFor);
+    const config = RATE_LIMITS[bucket as keyof typeof RATE_LIMITS];
+    const realIP = validateTrustedIP(ip, xff);
     const now = Math.floor(Date.now() / 1000);
     
     const redis = await getRedisClient();
     
     // Create rate limit keys
-    const base = key ? `${limitType}:${key}` : `${limitType}:${realIP}`;
+    const base = key ? `${bucket}:${key}` : `${bucket}:${realIP}`;
     const windowKey = `rate_limit:${base}:window`;
     const dailyKey = `rate_limit:${base}:daily`;
     
@@ -178,15 +178,15 @@ export async function checkRateLimit(
  */
 export async function clearRateLimit(
   key: string,
-  limitType: keyof typeof RATE_LIMITS,
-  requestIP: string,
-  forwardedFor?: string
+  bucket: string,
+  ip: string,
+  xff?: string
 ): Promise<void> {
   try {
-    const realIP = validateTrustedIP(requestIP, forwardedFor);
+    const realIP = validateTrustedIP(ip, xff);
     const redis = await getRedisClient();
     
-    const base = key ? `${limitType}:${key}` : `${limitType}:${realIP}`;
+    const base = key ? `${bucket}:${key}` : `${bucket}:${realIP}`;
     const windowKey = `rate_limit:${base}:window`;
     const dailyKey = `rate_limit:${base}:daily`;
     

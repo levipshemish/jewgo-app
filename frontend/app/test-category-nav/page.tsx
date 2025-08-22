@@ -181,6 +181,11 @@ export default function TestCategoryNavPage() {
               { id: 'custom5', label: 'Custom 5', icon: () => <span className="text-lg">🔥</span> },
               { id: 'custom6', label: 'Custom 6', icon: () => <span className="text-lg">✨</span> },
               { id: 'custom7', label: 'Custom 7', icon: () => <span className="text-lg">🌟</span> },
+              { id: 'custom8', label: 'Custom 8', icon: () => <span className="text-lg">🎨</span> },
+              { id: 'custom9', label: 'Custom 9', icon: () => <span className="text-lg">🎪</span> },
+              { id: 'custom10', label: 'Custom 10', icon: () => <span className="text-lg">🎭</span> },
+              { id: 'custom11', label: 'Custom 11', icon: () => <span className="text-lg">🎪</span> },
+              { id: 'custom12', label: 'Custom 12', icon: () => <span className="text-lg">🎨</span> },
             ]}
             value={customCategory}
             onValueChange={setCustomCategory}

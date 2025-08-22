@@ -437,17 +437,6 @@ export function UnifiedCategoryNav({
       aria-label={ariaLabelledBy ? undefined : ariaLabel}
       aria-labelledby={ariaLabelledBy}
     >
-      {showScrollControls && canScrollLeft && (
-        <button
-          type="button"
-          className={styles.prevButton}
-          onClick={() => scrollTo('left')}
-          aria-label="Scroll to previous categories"
-        >
-          <ChevronLeftIcon className={styles.scrollIcon} aria-hidden="true" />
-        </button>
-      )}
-
       <ul
         ref={scrollerRef}
         className={styles.scroller}
@@ -455,17 +444,6 @@ export function UnifiedCategoryNav({
       >
         {items.map((category, index) => renderItem(category, index, false))}
       </ul>
-
-      {showScrollControls && canScrollRight && (
-        <button
-          type="button"
-          className={styles.nextButton}
-          onClick={() => scrollTo('right')}
-          aria-label="Scroll to next categories"
-        >
-          <ChevronRightIcon className={styles.scrollIcon} aria-hidden="true" />
-        </button>
-      )}
     </nav>
   );
   

@@ -7,7 +7,14 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils/classNames';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+import { 
+  getSafeImageUrl,
+  formatPriceDollarSigns,
+  titleCase,
+  cardStyles,
+  getImageStateClasses
+} from '@/lib/utils/cardUtils';
+import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
 
 // TypeScript Interfaces
 interface CardData {
@@ -20,6 +27,16 @@ interface CardData {
   additionalText?: string;
   showHeart?: boolean;
   isLiked?: boolean;
+  kosherCategory?: string;
+  priceRange?: string;
+  minAvgMealCost?: number;
+  maxAvgMealCost?: number;
+  rating?: number;
+  reviewCount?: number;
+  city?: string;
+  distance?: string;
+  isCholovYisroel?: boolean;
+  isPasYisroel?: boolean;
 }
 
 interface UnifiedCardProps {
@@ -29,8 +46,11 @@ interface UnifiedCardProps {
   onTagClick?: (tagLink: string, event: React.MouseEvent) => void;
   className?: string;
   priority?: boolean;
-  variant?: 'default' | 'minimal' | 'enhanced';
-  showStarInBadge?: boolean; // New prop to control star icon in badge
+  variant?: 'default' | 'minimal' | 'enhanced' | 'eatery' | 'compact' | 'detailed';
+  showStarInBadge?: boolean;
+  showDetails?: boolean;
+  showReviewCount?: boolean;
+  showKosherDetails?: boolean;
 }
 
 // Motion variants for animations
@@ -52,7 +72,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   className = '',
   priority = false,
   variant = 'default',
-  showStarInBadge = false // Default to false for timestamps
+  showStarInBadge = false,
+  showDetails = false,
+  showReviewCount = false,
+  showKosherDetails = false
 }) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
@@ -63,6 +86,22 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  // Enhanced mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+      const isMobileView = windowWidth <= 768;
+      setIsMobileDevice(isMobileView);
+    };
+    
+    checkMobile();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }
+  }, []);
 
   // Sync with favorites manager
   useEffect(() => {
@@ -72,10 +111,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   // Memoized computations
   const cardData = useMemo(() => ({
     ...data,
-    imageTag: data.imageTag || '',
+    imageTag: data.imageTag || data.kosherCategory || '',
     badge: data.badge || '',
-    subtitle: data.subtitle || '',
-    additionalText: data.additionalText || '',
+    subtitle: data.subtitle || formatPriceDollarSigns(data.priceRange, data.minAvgMealCost, data.maxAvgMealCost),
+    additionalText: data.additionalText || data.distance || data.city || '',
     showHeart: data.showHeart !== false
   }), [data]);
 
@@ -98,6 +137,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return safeUrl;
   }, [cardData.imageUrl, imageError]);
 
+  // Get rating display
+  const getRatingDisplay = () => {
+    const rating = data.rating || parseFloat(data.badge || '0');
+    return rating > 0 ? rating.toFixed(1) : null;
+  };
+
   // Handlers
   const handleLikeToggle = useCallback(() => {
     try {
@@ -109,11 +154,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           id: data.id,
           name: data.title,
           address: '',
-          city: '',
+          city: data.city || '',
           state: '',
           zip_code: '',
           phone_number: '',
-          kosher_category: 'unknown' as any,
+          kosher_category: data.kosherCategory || 'unknown' as any,
           certifying_agency: '',
           listing_type: 'restaurant',
           status: 'active' as any,
@@ -136,7 +181,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       console.warn('Card error:', error);
       setIsAnimating(false);
     }
-  }, [isLiked, data.id, data.title, onLikeToggle, addFavorite, removeFavorite]);
+  }, [isLiked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {
@@ -175,6 +220,27 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           titleClass: "text-base font-semibold",
           badgeClass: "text-sm px-3 py-1"
         };
+      case 'eatery':
+        return {
+          cardClass: cardStyles.eatery,
+          imageClass: "aspect-[5/4]",
+          titleClass: "text-base font-bold",
+          badgeClass: "text-xs px-2.5 py-1.5"
+        };
+      case 'compact':
+        return {
+          cardClass: cardStyles.compact,
+          imageClass: "aspect-[4/3]",
+          titleClass: "text-sm font-semibold",
+          badgeClass: "text-xs px-1.5 py-0.5"
+        };
+      case 'detailed':
+        return {
+          cardClass: cardStyles.base,
+          imageClass: "aspect-[3/4]",
+          titleClass: "text-base font-semibold",
+          badgeClass: "text-sm px-2 py-1"
+        };
       default:
         return {
           cardClass: "w-[200px] rounded-2xl overflow-hidden p-2",
@@ -187,13 +253,30 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
   const variantStyles = getVariantStyles();
 
+  // Get kosher category styling
+  const getKosherCategoryStyle = () => {
+    if (variant === 'eatery') {
+      const category = data.kosherCategory?.toLowerCase();
+      if (category === 'dairy') {
+        return 'bg-white text-[#ADD8E6] font-bold';
+      } else if (category === 'meat') {
+        return 'bg-white text-[#A70000] font-bold';
+      } else if (category === 'pareve') {
+        return 'bg-white text-[#FFCE6D] font-bold';
+      } else {
+        return 'bg-white text-gray-500 font-bold';
+      }
+    }
+    return getKosherCategoryBadgeClasses(data.kosherCategory || '');
+  };
+
   return (
     <motion.div
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       whileHover={{ 
-        y: -4,
+        y: variant === 'eatery' ? 0 : -4,
         transition: { duration: 0.2, ease: "easeOut" }
       }}
       whileTap={{ 
@@ -201,11 +284,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         transition: { duration: 0.1 }
       }}
       className={cn(
-        'relative bg-transparent rounded-xl cursor-pointer group',
-        'border border-transparent hover:border-gray-200/30',
-        'transition-all duration-200 ease-out',
-        'flex flex-col', // Remove h-full to allow responsive stretching
-        'p-1', // Add padding to prevent border from covering content
+        variantStyles.cardClass,
         className
       )}
       onClick={handleCardClick}
@@ -215,6 +294,21 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       aria-label={`View details for ${cardData.title}`}
       aria-live="polite"
       aria-describedby={`card-${cardData.id}`}
+      style={{
+        // Ensure proper touch handling on mobile
+        WebkitTapHighlightColor: 'transparent',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        touchAction: 'manipulation',
+        position: 'relative',
+        zIndex: 1,
+        // Force opacity and scale for mobile
+        ...(isMobileDevice && {
+          opacity: 1,
+          transform: 'scale(1)'
+        })
+      }}
     >
       {/* Persistent live region for announcements */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
@@ -222,40 +316,40 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       </span>
       
       {/* Image Container */}
-      <div className="relative w-full">
-        <div className={cn(
-          "w-full rounded-[20px] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300 group-hover:scale-105",
-          variantStyles.imageClass
-        )}>
-          {/* Loading Placeholder */}
-          {imageLoading && (
-            <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center rounded-[20px]">
-              <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-            </div>
-          )}
+      <div className={cn(
+        "relative overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 transition-transform duration-300",
+        variant === 'eatery' ? "rounded-3xl flex-shrink-0" : "rounded-t-xl",
+        variantStyles.imageClass
+      )}>
+        {/* Loading Placeholder */}
+        {imageLoading && (
+          <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          </div>
+        )}
 
-          {/* Next.js Image Component */}
-          {heroImageUrl && (
-            <Image
-              src={heroImageUrl}
-              alt={cardData.title || 'Product image'}
-              fill
-              className={cn(
-                "object-cover transition-all duration-300 rounded-[20px]",
-                imageLoading ? 'opacity-0' : 'opacity-100',
-                "group-hover:scale-110"
-              )}
-              onLoad={() => setImageLoading(false)}
-              onError={() => {
-                setImageError(true);
-                setImageLoading(false);
-              }}
-              sizes="180px"
-              unoptimized={heroImageUrl.includes('cloudinary.com')}
-              priority={priority}
-            />
-          )}
-        </div>
+        {/* Next.js Image Component */}
+        {heroImageUrl && (
+          <Image
+            src={heroImageUrl}
+            alt={cardData.title || 'Product image'}
+            fill
+            className={cn(
+              "object-cover transition-all duration-300",
+              variant === 'eatery' ? "rounded-3xl" : "rounded-t-xl",
+              imageLoading ? 'opacity-0' : 'opacity-100',
+              variant === 'eatery' ? "" : "group-hover:scale-110"
+            )}
+            onLoad={() => setImageLoading(false)}
+            onError={() => {
+              setImageError(true);
+              setImageLoading(false);
+            }}
+            sizes="180px"
+            unoptimized={heroImageUrl.includes('cloudinary.com')}
+            priority={priority}
+          />
+        )}
         
         {/* Image Tag - Enhanced hover effects */}
         {cardData.imageTag && (
@@ -263,8 +357,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             <style jsx>{`
               .unified-card-tag {
                 position: absolute !important;
-                top: 8px !important;
-                left: 8px !important;
+                top: ${variant === 'eatery' ? '12px' : '8px'} !important;
+                left: ${variant === 'eatery' ? '12px' : '8px'} !important;
                 width: 80px !important;
                 max-width: 80px !important;
                 min-width: 80px !important;
@@ -319,26 +413,26 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                   fontWeight: 'inherit'
                 }}
               >
-                {cardData.imageTag}
+                {titleCase(cardData.imageTag)}
               </span>
             </div>
           </>
         )}
         
-        {/* Heart Button - White outline with grey fill, red on hover */}
+        {/* Heart Button - Enhanced styling */}
         {cardData.showHeart && (
           <>
             <style jsx>{`
               .unified-card-heart {
                 position: absolute !important;
-                top: 4px !important;
-                right: 8px !important;
-                width: 28px !important;
-                max-width: 28px !important;
-                min-width: 28px !important;
-                height: 28px !important;
-                max-height: 28px !important;
-                min-height: 28px !important;
+                top: ${variant === 'eatery' ? '12px' : '4px'} !important;
+                right: ${variant === 'eatery' ? '12px' : '8px'} !important;
+                width: ${variant === 'eatery' ? '40px' : '28px'} !important;
+                max-width: ${variant === 'eatery' ? '40px' : '28px'} !important;
+                min-width: ${variant === 'eatery' ? '40px' : '28px'} !important;
+                height: ${variant === 'eatery' ? '40px' : '28px'} !important;
+                max-height: ${variant === 'eatery' ? '40px' : '28px'} !important;
+                min-height: ${variant === 'eatery' ? '40px' : '28px'} !important;
                 background-color: transparent !important;
                 border-radius: 50% !important;
                 display: flex !important;
@@ -366,8 +460,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 opacity: 1 !important;
               }
               .unified-card-heart svg {
-                width: 18px !important;
-                height: 18px !important;
+                width: ${variant === 'eatery' ? '20px' : '18px'} !important;
+                height: ${variant === 'eatery' ? '20px' : '18px'} !important;
                 transition: all 0.2s ease-out !important;
               }
             `}</style>
@@ -382,7 +476,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               aria-pressed={isLiked}
             >
               <Heart
-                size={18}
+                size={variant === 'eatery' ? 20 : 18}
                 style={{
                   fill: isLiked ? '#ef4444' : '#9ca3af',
                   stroke: '#ffffff',
@@ -396,82 +490,162 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         )}
       </div>
       
-      {/* Content - Enhanced hover effects */}
+      {/* Content - Enhanced layout */}
       <motion.div 
-        className="pt-2 flex flex-col"
+        className={cn(
+          variant === 'eatery' ? "pt-2 flex flex-col" : "p-2 flex flex-col",
+          variant === 'eatery' ? "px-2" : ""
+        )}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
-          <h3 
-            className={cn(
-              variantStyles.titleClass,
-              "text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
-            )}
-            aria-label={`Title: ${cardData.title}`}
-          >
-            {cardData.title}
-          </h3>
-          {cardData.badge && (
-            <motion.div
-              className={cn(
-                "inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
-                variantStyles.badgeClass
-              )}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.2 }}
-              aria-label={`Rating: ${cardData.badge}`}
-            >
-              {showStarInBadge && (
-                <Star size={12} className="fill-yellow-400 text-yellow-400" />
-              )}
-              {cardData.badge}
-            </motion.div>
-          )}
-        </div>
-        
-        <div className="flex justify-between items-center min-h-[16px] relative">
-          {/* Subtitle - Locked to left */}
-          <div className="flex-1 min-w-0">
-            {cardData.subtitle && (
-              <p 
-                className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
-                style={{ 
-                  maxWidth: '100%',
+        {variant === 'eatery' ? (
+          // Eatery-style content layout
+          <>
+            {/* Restaurant Name - Fixed height container */}
+            <div className="flex items-start w-full min-w-0 flex-shrink-0 h-8 mb-1">
+              <h3 
+                className="font-bold text-gray-900 leading-tight w-full min-w-0 text-left text-base" 
+                title={titleCase(cardData.title)}
+                style={{
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  display: 'block'
                 }}
-                aria-label={`Price range: ${cardData.subtitle}`}
               >
+                {titleCase(cardData.title)}
+              </h3>
+            </div>
+            
+            {/* Price Range, Distance and Rating - Fixed height meta row */}
+            <div className="flex items-center justify-between min-w-0 w-full flex-shrink-0 h-6 gap-2">
+              <span className="text-gray-700 font-medium flex-shrink-0 text-sm">
                 {cardData.subtitle}
-              </p>
+              </span>
+              
+              {data.distance && (
+                <span className="text-gray-500 text-sm flex-1 text-right mr-2">
+                  {data.distance}
+                </span>
+              )}
+              
+              <div className="flex items-center gap-1 flex-shrink-0" style={{ minWidth: 'fit-content' }}>
+                <Star className="fill-yellow-400 text-yellow-400 flex-shrink-0 w-3.5 h-3.5" />
+                <span className="font-semibold text-gray-800 whitespace-nowrap flex-shrink-0 text-sm">
+                  {getRatingDisplay() || '0.0'}
+                </span>
+              </div>
+            </div>
+
+            {/* Additional Details - Only show if showDetails is true */}
+            {showDetails && (
+              <div className="space-y-2 mt-4 pt-4 border-t border-gray-100 flex-1">
+                {/* Location */}
+                {data.city && (
+                  <div className="flex items-center text-xs text-gray-500 min-w-0">
+                    <span className="truncate break-words min-w-0 w-full location-text" title={data.city}>{data.city}</span>
+                  </div>
+                )}
+
+                {/* Kosher Details */}
+                {showKosherDetails && (
+                  <div className="flex flex-wrap gap-1 min-w-0 mt-3">
+                    {data.isCholovYisroel && (
+                      <span className="inline-block bg-[#FCC0C5]/20 text-[#8a4a4a] rounded-full border border-[#FCC0C5] max-w-full truncate kosher-detail-badge px-2 py-1 text-xs" title="Chalav Yisroel">
+                        Chalav Yisroel
+                      </span>
+                    )}
+                    {data.isPasYisroel && (
+                      <span className="inline-block bg-[#74E1A0]/20 text-[#1a4a2a] rounded-full border border-[#74E1A0] max-w-full truncate kosher-detail-badge px-2 py-1 text-xs" title="Pas Yisroel">
+                        Pas Yisroel
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </div>
-          
-          {/* Spacer to ensure proper separation */}
-          <div className="flex-shrink-0 w-3" />
-          
-          {/* Additional Text - Locked to right */}
-          <div className="flex-shrink-0">
-            {cardData.additionalText && (
-              <p 
-                className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
-                style={{ 
-                  width: '60px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                aria-label={`Additional info: ${cardData.additionalText}`}
+          </>
+        ) : (
+          // Standard content layout
+          <>
+            <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
+              <h3 
+                className={cn(
+                  variantStyles.titleClass,
+                  "text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
+                )}
+                aria-label={`Title: ${cardData.title}`}
               >
-                {cardData.additionalText}
-              </p>
-            )}
-          </div>
-        </div>
+                {cardData.title}
+              </h3>
+              {cardData.badge && (
+                <motion.div
+                  className={cn(
+                    "inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-gray-200 group-hover:shadow-sm",
+                    variantStyles.badgeClass
+                  )}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, duration: 0.2 }}
+                  aria-label={`Rating: ${cardData.badge}`}
+                >
+                  {showStarInBadge && (
+                    <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                  )}
+                  {cardData.badge}
+                  {showReviewCount && data.reviewCount && (
+                    <span className="text-xs text-gray-500">
+                      ({data.reviewCount})
+                    </span>
+                  )}
+                </motion.div>
+              )}
+            </div>
+            
+            <div className="flex justify-between items-center min-h-[16px] relative">
+              {/* Subtitle - Locked to left */}
+              <div className="flex-1 min-w-0">
+                {cardData.subtitle && (
+                  <p 
+                    className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
+                    style={{ 
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    aria-label={`Price range: ${cardData.subtitle}`}
+                  >
+                    {cardData.subtitle}
+                  </p>
+                )}
+              </div>
+              
+              {/* Spacer to ensure proper separation */}
+              <div className="flex-shrink-0 w-3" />
+              
+              {/* Additional Text - Locked to right */}
+              <div className="flex-shrink-0">
+                {cardData.additionalText && (
+                  <p 
+                    className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
+                    style={{ 
+                      width: '60px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    aria-label={`Additional info: ${cardData.additionalText}`}
+                  >
+                    {cardData.additionalText}
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </motion.div>
     </motion.div>
   );

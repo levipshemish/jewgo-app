@@ -142,31 +142,25 @@ function EateryPageContent() {
 
   // Transform restaurant data to UnifiedCard format
   const transformRestaurantToCardData = (restaurant: Restaurant) => {
-    // Format price as dollar signs
-    const formatPriceAsDollarSigns = (priceRange?: string) => {
-      if (!priceRange) return '$$';
-      const matches = priceRange.match(/\$?(\d+)(?:-\$?(\d+))?/);
-      if (matches) {
-        const min = parseInt(matches[1], 10);
-        const max = matches[2] ? parseInt(matches[2], 10) : min;
-        const avg = (min + max) / 2;
-        if (avg < 15) return '$';
-        if (avg < 30) return '$$';
-        if (avg < 50) return '$$$';
-        return '$$$$';
-      }
-      return '$$';
-    };
-
     return {
       id: restaurant.id,
       imageUrl: restaurant.image_url,
       imageTag: restaurant.kosher_category,
       title: restaurant.name,
       badge: restaurant.rating ? `${restaurant.rating}` : undefined,
-      subtitle: formatPriceAsDollarSigns(restaurant.price_range),
+      subtitle: restaurant.price_range,
       additionalText: restaurant.distance || restaurant.city || '',
       showHeart: true,
+      kosherCategory: restaurant.kosher_category,
+      priceRange: restaurant.price_range,
+      minAvgMealCost: restaurant.min_avg_meal_cost,
+      maxAvgMealCost: restaurant.max_avg_meal_cost,
+      rating: restaurant.rating || restaurant.star_rating || restaurant.google_rating,
+      reviewCount: restaurant.review_count,
+      city: restaurant.city,
+      distance: restaurant.distance,
+      isCholovYisroel: restaurant.is_cholov_yisroel,
+      isPasYisroel: restaurant.is_pas_yisroel,
     };
   };
 
@@ -588,8 +582,11 @@ function EateryPageContent() {
             <UnifiedCard
               key={restaurant.id}
               data={transformRestaurantToCardData(restaurant)}
-              variant="default"
+              variant="eatery"
               showStarInBadge={true}
+              showDetails={true}
+              showReviewCount={true}
+              showKosherDetails={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
               onLikeToggle={(id, isLiked) => {
                 console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);

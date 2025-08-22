@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'CSRF validation failed' },
+        { error: 'CSRF' },
         { 
           status: 403,
           headers: getCORSHeaders(origin || undefined)
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'Authentication error' },
+        { error: 'AUTHENTICATION_ERROR' },
         { 
           status: 401,
           headers: getCORSHeaders(origin || undefined)
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'No authenticated user' },
+        { error: 'AUTHENTICATION_ERROR' },
         { 
           status: 401,
           headers: getCORSHeaders(origin || undefined)
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'User is not anonymous' },
+        { error: 'USER_NOT_ANONYMOUS' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Internal server error',
+        error: 'INTERNAL_ERROR',
         correlation_id: correlationId
       },
       { 

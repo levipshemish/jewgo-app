@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { 
   checkRateLimit
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'CSRF validation failed' },
+        { error: 'CSRF' },
         { 
           status: 403,
           headers: getCORSHeaders(origin || undefined)
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     
     if (!mergeToken) {
       return NextResponse.json(
-        { error: 'No merge token found' },
+        { error: 'NO_MERGE_TOKEN' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'Invalid merge token' },
+        { error: 'INVALID_MERGE_TOKEN' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'Current user cannot be anonymous' },
+        { error: 'USER_NOT_ANONYMOUS' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'Invalid merge request' },
+        { error: 'INVALID_MERGE_REQUEST' },
         { 
           status: 400,
           headers: getCORSHeaders(origin || undefined)
@@ -249,22 +250,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Create service role client for database operations
-    const supabaseService = createServerClient(
+    const supabaseService = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: "", ...options, maxAge: 0 });
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
     // Check for existing merge job to ensure idempotency
@@ -388,7 +376,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Internal server error',
+        error: 'INTERNAL_ERROR',
         correlation_id: correlationId
       },
       { 
