@@ -178,7 +178,23 @@ export async function GET(request: NextRequest) {
 
     const data = await backendResponse.json();
 
-    // Return the same status and data from the backend
+    // Transform backend response format to match frontend expectations
+    if (data.success && data.data) {
+      // Backend returns: {success: true, data: [...], count: ...}
+      // Frontend expects: {restaurants: [...], total: ...}
+      const transformedData = {
+        success: data.success,
+        restaurants: data.data,
+        total: data.count || data.data.length,
+        limit: data.limit,
+        offset: data.offset,
+        performance: data.performance,
+        filters_applied: data.filters_applied
+      };
+      return NextResponse.json(transformedData, { status: backendResponse.status });
+    }
+
+    // Return the same status and data from the backend if not in expected format
     return NextResponse.json(data, { status: backendResponse.status });
 
   } catch (error) {
