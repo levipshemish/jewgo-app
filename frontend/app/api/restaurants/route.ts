@@ -141,6 +141,18 @@ export async function GET(request: NextRequest) {
       queryParams.append('search', filters.q);
     }
     
+    // Forward mobile optimization parameters directly from search params
+    // These aren't part of the filters schema but are passed as query params
+    if (searchParams.get('mobile_optimized')) {
+      queryParams.append('mobile_optimized', searchParams.get('mobile_optimized')!);
+    }
+    if (searchParams.get('low_power_mode')) {
+      queryParams.append('low_power_mode', searchParams.get('low_power_mode')!);
+    }
+    if (searchParams.get('slow_connection')) {
+      queryParams.append('slow_connection', searchParams.get('slow_connection')!);
+    }
+    
     // Forward the request to the backend
     const backendResponse = await fetch(
       `${backendUrl}/api/restaurants?${queryParams.toString()}`,

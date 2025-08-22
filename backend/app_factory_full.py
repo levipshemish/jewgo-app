@@ -1462,21 +1462,28 @@ def create_app(config_class=None):
             lat = request.args.get('lat', type=float)
             lng = request.args.get('lng', type=float)
             max_distance_mi = request.args.get('max_distance_mi', type=float)
-            open_now = request.args.get('open_now', type=bool)
-            mobile_optimized = request.args.get('mobile_optimized', type=bool)
-            low_power_mode = request.args.get('low_power_mode', type=bool)
-            slow_connection = request.args.get('slow_connection', type=bool)
+            limit = request.args.get('limit', type=int)  # Get limit from request
+            offset = request.args.get('offset', type=int, default=0)  # Get offset from request
+            
+            # Parse boolean parameters properly (Flask's type=bool doesn't work with 'true'/'false' strings)
+            open_now = request.args.get('open_now', '').lower() in ['true', '1', 'yes', 'on']
+            mobile_optimized = request.args.get('mobile_optimized', '').lower() in ['true', '1', 'yes', 'on']
+            low_power_mode = request.args.get('low_power_mode', '').lower() in ['true', '1', 'yes', 'on']
+            slow_connection = request.args.get('slow_connection', '').lower() in ['true', '1', 'yes', 'on']
             
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
 
-            # Try to get from cache first
-            cached_result = redis_cache.get(cache_key)
-            if cached_result:
-                performance_monitor.record_cache_hit('restaurants')
-                return jsonify(cached_result)
-            
-            performance_monitor.record_cache_miss('restaurants')
+            # Try to get from cache first (skip if redis_cache not available)
+            if 'redis_cache' in locals():
+                cached_result = redis_cache.get(cache_key)
+                if cached_result:
+                    if 'performance_monitor' in locals():
+                        performance_monitor.record_cache_hit('restaurants')
+                    return jsonify(cached_result)
+                
+                if 'performance_monitor' in locals():
+                    performance_monitor.record_cache_miss('restaurants')
             
             # Build base query
             query = "SELECT * FROM restaurants WHERE 1=1"
@@ -1484,28 +1491,75 @@ def create_app(config_class=None):
             
             # Apply distance filtering if coordinates provided
             if lat is not None and lng is not None and max_distance_mi:
-                distance_query, distance_params = distance_service.build_distance_query(
-                    lat, lng, max_distance_mi
-                )
-                query += f" AND {distance_query}"
-                params.extend(distance_params)
+                # Convert miles to meters for earth_distance function (1 mile = 1609.34 meters)
+                max_distance_meters = max_distance_mi * 1609.34
                 
-                # Add distance to SELECT
-                query = query.replace("SELECT *", "SELECT *, earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) as distance_mi")
+                # Add distance calculation to SELECT
+                query = query.replace("SELECT *", "SELECT *, (earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) / 1609.34) as distance_mi")
                 params.extend([lat, lng])
                 
-                performance_monitor.record_distance_filtering(lat, lng, max_distance_mi)
+                # Add distance filter to WHERE clause
+                query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
+                params.extend([lat, lng, max_distance_meters])
+                
+                # Log distance filtering for monitoring
+                if hasattr(locals(), 'performance_monitor'):
+                    performance_monitor.record_distance_filtering(lat, lng, max_distance_mi)
             
             # Apply open now filtering
             if open_now:
-                open_now_query, open_now_params = open_now_service.build_open_now_filter()
-                query += f" AND {open_now_query}"
-                params.extend(open_now_params)
-                
-                performance_monitor.record_open_now_filtering()
+                # For now, skip open_now filtering as it requires complex time/timezone logic
+                # TODO: Implement proper open now filtering based on restaurant hours
+                pass
             
-            # Mobile optimizations
-            if mobile_optimized:
+            # Apply additional filters from request
+            search_term = request.args.get('search')
+            if search_term:
+                query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                search_pattern = f"%{search_term}%"
+                params.extend([search_pattern, search_pattern, search_pattern])
+            
+            certifying_agency = request.args.get('certifying_agency')
+            if certifying_agency:
+                query += " AND certifying_agency = %s"
+                params.append(certifying_agency)
+            
+            kosher_category = request.args.get('kosher_category')
+            if kosher_category:
+                query += " AND kosher_category = %s"
+                params.append(kosher_category)
+            
+            listing_type = request.args.get('listing_type')
+            if listing_type:
+                query += " AND listing_type = %s"
+                params.append(listing_type)
+            
+            min_rating = request.args.get('min_rating', type=float)
+            if min_rating:
+                query += " AND rating >= %s"
+                params.append(min_rating)
+            
+            price_min = request.args.get('price_min', type=int)
+            if price_min:
+                query += " AND min_avg_meal_cost >= %s"
+                params.append(price_min)
+            
+            price_max = request.args.get('price_max', type=int)
+            if price_max:
+                query += " AND max_avg_meal_cost <= %s"
+                params.append(price_max)
+            
+            # Add ordering BEFORE limit (correct SQL syntax)
+            if lat is not None and lng is not None:
+                query += " ORDER BY distance_mi ASC"
+            else:
+                query += " ORDER BY name ASC"
+            
+            # Apply limit from request or use defaults based on optimization mode
+            if limit:
+                # Use explicit limit from request
+                query += f" LIMIT {min(limit, 1000)}"  # Cap at 1000 for safety
+            elif mobile_optimized:
                 if low_power_mode:
                     # Reduce result set for low power mode
                     query += " LIMIT 20"
@@ -1519,17 +1573,28 @@ def create_app(config_class=None):
                 # Desktop optimization
                 query += " LIMIT 100"
             
-            # Add ordering
-            if lat is not None and lng is not None:
-                query += " ORDER BY distance_mi ASC"
-            else:
-                query += " ORDER BY name ASC"
+            # Add offset for pagination
+            if offset > 0:
+                query += f" OFFSET {offset}"
             
             # Execute query
+            db_manager = get_db_manager()
+            if not db_manager:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database connection unavailable'
+                }), 503
+            
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
+                    # Debug logging
+                    logger.info(f"Executing query: {query}")
+                    logger.info(f"With params: {params}")
+                    
                     cursor.execute(query, params)
                     restaurants = cursor.fetchall()
+                    
+                    logger.info(f"Query returned {len(restaurants)} restaurants")
                     
                     # Convert to list of dictionaries
                     columns = [desc[0] for desc in cursor.description]
@@ -1540,17 +1605,17 @@ def create_app(config_class=None):
                         
                         # Format distance if available
                         if 'distance_mi' in restaurant_dict:
-                            restaurant_dict['distance_formatted'] = distance_service.format_distance(
-                                restaurant_dict['distance_mi']
-                            )
+                            # Format distance to 1 decimal place
+                            distance = restaurant_dict['distance_mi']
+                            if distance < 1:
+                                restaurant_dict['distance_formatted'] = f"{distance * 5280:.0f} ft"
+                            else:
+                                restaurant_dict['distance_formatted'] = f"{distance:.1f} mi"
                         
                         # Check open now status if not already filtered
                         if not open_now and restaurant_dict.get('hours_structured'):
-                            is_open = open_now_service.is_open_now(
-                                restaurant_dict['hours_structured'],
-                                restaurant_dict.get('timezone', 'America/New_York')
-                            )
-                            restaurant_dict['is_open_now'] = is_open
+                            # TODO: Implement is_open_now logic
+                            restaurant_dict['is_open_now'] = None
                         
                         restaurants_data.append(restaurant_dict)
             
@@ -1572,17 +1637,21 @@ def create_app(config_class=None):
                 }
             }
             
-            # Cache the result
-            redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
+            logger.info(f"Returning {len(restaurants_data)} restaurants to frontend")
             
-            # Send real-time update via WebSocket
-            websocket_service.broadcast_to_room('restaurant_updates', {
-                'type': 'restaurant_list_update',
-                'data': {
-                    'count': len(restaurants_data),
-                    'filters_applied': response_data['filters_applied']
-                }
-            })
+            # Cache the result (skip if redis_cache not available)
+            if 'redis_cache' in locals():
+                redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
+            
+            # Send real-time update via WebSocket (skip if service not available)
+            if 'websocket_service' in locals():
+                websocket_service.broadcast_to_room('restaurant_updates', {
+                    'type': 'restaurant_list_update',
+                    'data': {
+                        'count': len(restaurants_data),
+                        'filters_applied': response_data['filters_applied']
+                    }
+                })
             
             return jsonify(response_data)
             
