@@ -42,23 +42,31 @@ EXCEPTION
 END $$;
 
 -- Reviews public read policy with moderation filters
-CREATE POLICY "reviews_public_read" ON reviews
-FOR SELECT TO anon, authenticated
-USING (
-  status = 'approved' 
-  AND is_published = true 
-  AND NOT is_flagged
-);
+DO $$ BEGIN
+  CREATE POLICY "reviews_public_read" ON reviews
+  FOR SELECT TO anon, authenticated
+  USING (
+    status = 'approved' 
+    AND is_published = true 
+    AND NOT is_flagged
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Marketplace items public read policy with moderation filters
-CREATE POLICY "marketplace_items_public_read" ON marketplace_items
-FOR SELECT TO anon, authenticated
-USING (
-  status = 'active' 
-  AND is_published = true 
-  AND is_approved = true 
-  AND NOT is_flagged
-);
+DO $$ BEGIN
+  CREATE POLICY "marketplace_items_public_read" ON marketplace_items
+  FOR SELECT TO anon, authenticated
+  USING (
+    status = 'active' 
+    AND is_published = true 
+    AND is_approved = true 
+    AND NOT is_flagged
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Create public user profiles view with limited information
 CREATE OR REPLACE VIEW public_user_profiles AS
@@ -73,13 +81,17 @@ FROM user_profiles
 WHERE true; -- All profiles are publicly readable through this view
 
 -- User profiles public read policy - use the view instead of direct table access
-CREATE POLICY "user_profiles_public_read" ON user_profiles
-FOR SELECT TO anon, authenticated
-USING (
-  -- Only allow reading through the public view
-  -- This prevents direct access to sensitive columns
-  false -- Disable direct table access for public read
-);
+DO $$ BEGIN
+  CREATE POLICY "user_profiles_public_read" ON user_profiles
+  FOR SELECT TO anon, authenticated
+  USING (
+    -- Only allow reading through the public view
+    -- This prevents direct access to sensitive columns
+    false -- Disable direct table access for public read
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Grant access to the public view
 GRANT SELECT ON public_user_profiles TO anon, authenticated;
@@ -87,27 +99,39 @@ GRANT SELECT ON public_user_profiles TO anon, authenticated;
 -- Complete CRUD policies with ownership and non-anonymous checks
 
 -- Restaurants CRUD policies
-CREATE POLICY "restaurants_owner_insert" ON restaurants
-FOR INSERT TO authenticated
-WITH CHECK (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
-);
+DO $$ BEGIN
+  CREATE POLICY "restaurants_owner_insert" ON restaurants
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    auth.uid() = user_id 
+    AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE POLICY "restaurants_owner_update" ON restaurants
-FOR UPDATE TO authenticated
-USING (auth.uid() = user_id)
-WITH CHECK (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
-);
+DO $$ BEGIN
+  CREATE POLICY "restaurants_owner_update" ON restaurants
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (
+    auth.uid() = user_id 
+    AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
-CREATE POLICY "restaurants_owner_delete" ON restaurants
-FOR DELETE TO authenticated
-USING (
-  auth.uid() = user_id 
-  AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
-);
+DO $$ BEGIN
+  CREATE POLICY "restaurants_owner_delete" ON restaurants
+  FOR DELETE TO authenticated
+  USING (
+    auth.uid() = user_id 
+    AND coalesce((auth.jwt()->>'is_anonymous')::boolean, false) = false
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Reviews CRUD policies
 CREATE POLICY "reviews_owner_insert" ON reviews

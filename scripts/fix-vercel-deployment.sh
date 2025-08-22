@@ -40,7 +40,7 @@ fi
 
 # 4. Test backend endpoints
 echo "🧪 Testing backend endpoints..."
-BACKEND_URL="https://jewgo-app-oyoh.onrender.com"
+BACKEND_URL="https://jewgo.onrender.com"
 
 echo "Testing root endpoint..."
 if curl -s "$BACKEND_URL/" | grep -q "JewGo Backend API"; then
