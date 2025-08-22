@@ -67,20 +67,30 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     }
 
     const renderWidget = () => {
+      console.log('Rendering Turnstile widget...', {
+        turnstileExists: !!window.turnstile,
+        containerExists: !!containerRef.current,
+        siteKey: turnstileSiteKey,
+        containerElement: containerRef.current
+      });
+      
       if (!window.turnstile || !containerRef.current) return;
 
       try {
-        const id = window.turnstile.render(containerRef.current, {
+        const config = {
           sitekey: turnstileSiteKey,
           callback: (token: string) => {
+            console.log('Turnstile callback received token:', token);
             setCurrentToken(token);
             onVerify(token);
           },
           'expired-callback': () => {
+            console.log('Turnstile token expired');
             setCurrentToken('');
             onExpired?.();
           },
           'error-callback': () => {
+            console.log('Turnstile error callback');
             setCurrentToken('');
             onError?.('Turnstile verification failed');
           },
@@ -93,7 +103,11 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           // Additional parameters to ensure standard mode
           'refresh-expired': 'auto',
           'response-field-name': 'cf-turnstile-response'
-        });
+        };
+        
+        console.log('Turnstile render config:', config);
+        const id = window.turnstile.render(containerRef.current, config);
+        console.log('Turnstile widget rendered with ID:', id);
         
         setWidgetId(id);
         setIsRendered(true);
@@ -144,11 +158,19 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   }
 
   return (
-    <div 
-      ref={containerRef} 
-      className={`flex justify-center ${className}`}
-      data-testid="turnstile-widget"
-    />
+    <div className={`${className}`}>
+      <div 
+        ref={containerRef} 
+        className="flex justify-center min-h-[78px] w-full"
+        data-testid="turnstile-widget"
+        style={{ minHeight: '78px' }}
+      />
+      {!isRendered && isLoaded && (
+        <div className="text-center text-sm text-gray-400 mt-2">
+          Loading security check...
+        </div>
+      )}
+    </div>
   );
 });
 
