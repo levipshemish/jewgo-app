@@ -2784,6 +2784,85 @@ div[class*="specials-dynamic-grid"] {
   background-image: none !important;
 }
 
+/* Nuclear option: Override ANY element with unified-card class that has any background */
+.unified-card,
+.unified-card *,
+.unified-card[style*="background"],
+.unified-card[style*="background-color"],
+.unified-card[class*="bg-"],
+.unified-card[class*="bg-white"],
+.unified-card[class*="bg-transparent"] {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  background-clip: border-box !important;
+  background-origin: border-box !important;
+  background-size: auto !important;
+  background-repeat: repeat !important;
+  background-attachment: scroll !important;
+  background-position: 0% 0% !important;
+}
+
+/* Override any restaurant-card or eatery-card rules that might affect unified-card */
+.unified-card {
+  /* Override any restaurant-card or eatery-card inheritance */
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  /* Override any potential inheritance from parent elements */
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  /* Force override of any CSS rules */
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Override any potential inheritance from parent containers */
+.restaurant-grid .unified-card,
+.marketplace-page .unified-card,
+.restaurant-grid .unified-card *,
+.marketplace-page .unified-card * {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  background-clip: border-box !important;
+  background-origin: border-box !important;
+  background-size: auto !important;
+  background-repeat: repeat !important;
+  background-attachment: scroll !important;
+  background-position: 0% 0% !important;
+}
+
+/* Override any gradient backgrounds that might appear as white */
+.unified-card .bg-gradient-to-br,
+.unified-card .from-gray-200,
+.unified-card .to-gray-300,
+.unified-card .bg-gray-100,
+.unified-card .bg-gray-200,
+.unified-card .bg-gray-300 {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Override any loading placeholders that might have backgrounds */
+.unified-card .animate-pulse,
+.unified-card .bg-gray-100 {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Override any image containers that might have backgrounds */
+.unified-card .relative,
+.unified-card .w-full {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 @media (max-width: 640px) {
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
