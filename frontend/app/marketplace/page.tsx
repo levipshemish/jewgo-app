@@ -306,8 +306,8 @@ export default function MarketplacePage() {
 
   // Show marketplace not available message
   if (!marketplaceAvailable) {
-    return (
-      <div className="min-h-screen bg-gray-50">
+      return (
+    <div className="min-h-screen bg-gray-50 marketplace-page">
         <Header />
         
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -344,7 +344,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4]">
+    <div className="min-h-screen bg-[#f4f4f4] marketplace-page">
       {/* Header with Logo and Search */}
       <Header
         onSearch={handleSearch}

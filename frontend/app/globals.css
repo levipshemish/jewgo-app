@@ -179,6 +179,9 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Override restaurant-card conflicts */
   padding: 0.25rem !important; /* Override restaurant-card .p-1 rule */
   transform: none !important; /* Override any global transform rules */
+  /* Force transparent background */
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 .unified-card:hover {
@@ -229,6 +232,96 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 
 .unified-card-heart svg {
   transition: all 0.2s ease-out !important;
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+}
+
+.unified-card-heart:hover svg {
+  fill: rgb(239, 68, 68) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
+  transform: scale(1.1) !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+}
+
+.unified-card-heart.liked svg {
+  fill: rgb(239, 68, 68) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
+}
+
+.unified-card-heart:not(.liked) svg {
+  fill: rgb(156, 163, 175) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
+}
+
+/* Mobile touch optimization */
+@media (hover: none) and (pointer: coarse) {
+  .unified-card-heart:active svg {
+    fill: rgb(239, 68, 68) !important;
+    stroke: #ffffff !important;
+    stroke-width: 2 !important;
+  }
+}
+
+/* Marketplace page specific overrides to prevent conflicts */
+.marketplace-page .unified-card {
+  /* Ensure marketplace cards maintain their styling */
+  background-color: transparent !important;
+  background: transparent !important;
+  border: 1px solid rgb(229 231 235) !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease-out !important;
+}
+
+.marketplace-page .unified-card:hover {
+  border-color: rgb(209 213 219) !important;
+  transform: translateY(-4px) !important;
+  scale: none !important;
+}
+
+/* Ensure marketplace grid doesn't conflict with restaurant-grid rules */
+.marketplace-page .grid {
+  display: grid !important;
+  gap: 1rem !important;
+  align-items: start !important;
+}
+
+.marketplace-page .grid > div {
+  height: auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Override any restaurant-card rules that might affect marketplace UnifiedCard */
+.marketplace-page .unified-card .p-1 {
+  padding: 0.25rem !important;
+}
+
+.marketplace-page .unified-card .mb-0\.5 {
+  margin-bottom: 0.125rem !important;
+}
+
+.marketplace-page .unified-card .flex.items-center {
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.marketplace-page .unified-card .w-full {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.marketplace-page .unified-card .flex.items-center.justify-between {
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left !important;
+  gap: 0.5rem !important;
+  min-width: 0 !important;
 }
 
 /* Search Bar Styles - Updated with new color system */

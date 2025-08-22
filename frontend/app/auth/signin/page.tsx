@@ -9,6 +9,8 @@ import { validateRedirectUrl, mapAppleOAuthError, extractIsAnonymous } from "@/l
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 import { shouldRedirectToSetup } from "@/lib/utils/apple-oauth-config";
 import { getClientConfig } from "@/lib/config/client-config";
+import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
+import { useCaptcha } from "@/hooks/useCaptcha";
 
 // Separate component to handle search params with proper Suspense boundary
 function SignInFormWithParams() {
@@ -44,6 +46,23 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     return false;
   });
   const router = useRouter();
+
+  // CAPTCHA management
+  const {
+    state: captchaState,
+    turnstileRef,
+    incrementAttempts,
+    handleCaptchaVerify,
+    handleCaptchaError,
+    handleCaptchaExpired,
+    resetCaptcha,
+    clearError: clearCaptchaError
+  } = useCaptcha({
+    maxAttempts: 3,
+    onRateLimitExceeded: () => {
+      setError('Too many attempts. Please complete the CAPTCHA to continue.');
+    }
+  });
 
   // Check Supabase connection and Apple OAuth config on component mount
   useEffect(() => {
@@ -97,6 +116,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
   const onGuestSignIn = async () => {
     setGuestPending(true);
     setError(null);
+    clearCaptchaError();
     
     try {
       // Single-flight protection
@@ -113,16 +133,54 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         return;
       }
 
-      // Call Supabase directly instead of the server endpoint
-      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
+      // Check if CAPTCHA is required and verified
+      if (captchaState.isRequired && !captchaState.isVerified) {
+        setError('Please complete the CAPTCHA to continue.');
+        setGuestPending(false);
+        return;
+      }
 
-      if (signInError) {
-        setError('Failed to continue as guest. Please try again.');
+      // Increment attempts for rate limiting
+      incrementAttempts();
+
+      // Prepare request body with CAPTCHA token if available
+      const requestBody: any = {};
+      if (captchaState.token) {
+        requestBody.turnstileToken = captchaState.token;
+      }
+
+      // Call the anonymous auth API endpoint instead of Supabase directly
+      const response = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.error === 'TURNSTILE_REQUIRED') {
+          setError('CAPTCHA verification required. Please complete the challenge below.');
+          // Reset CAPTCHA to show it
+          resetCaptcha();
+        } else if (result.error === 'TURNSTILE_FAILED') {
+          setError('CAPTCHA verification failed. Please try again.');
+          // Reset CAPTCHA for retry
+          if (turnstileRef.current) {
+            turnstileRef.current.reset();
+          }
+        } else if (result.error === 'RATE_LIMITED') {
+          setError(`Too many attempts. Please wait ${result.retry_after || 60} seconds before trying again.`);
+        } else {
+          setError(result.error || 'Failed to continue as guest. Please try again.');
+        }
         return;
       }
 
       // Success - redirect
-      if (data.user) {
+      if (result.ok) {
         router.push('/location-access');
       } else {
         setError('Guest session creation failed. Please try again.');
@@ -333,19 +391,45 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
               </div>
             </div>
 
-            <div className="mt-6 space-y-3">
-              {/* Continue as Guest Button */}
-              <button
-                type="button"
-                onClick={onGuestSignIn}
-                disabled={guestPending || pending}
-                className="w-full inline-flex justify-center py-2 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-700 text-sm font-medium text-neutral-300 hover:bg-neutral-600 disabled:opacity-50 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
-              </button>
+                      <div className="mt-6 space-y-3">
+            {/* Continue as Guest Button */}
+            <button
+              type="button"
+              onClick={onGuestSignIn}
+              disabled={guestPending || pending}
+              className="w-full inline-flex justify-center py-2 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-700 text-sm font-medium text-neutral-300 hover:bg-neutral-600 disabled:opacity-50 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
+            </button>
+
+            {/* CAPTCHA Widget - shown when required or when there's an error */}
+            {(captchaState.isRequired || captchaState.error || error?.includes('CAPTCHA')) && (
+              <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
+                <div className="text-center mb-3">
+                  <p className="text-sm text-neutral-300 mb-2">
+                    {captchaState.isRequired 
+                      ? "Please complete the security check to continue"
+                      : "Security verification required"
+                    }
+                  </p>
+                  {captchaState.error && (
+                    <p className="text-red-400 text-xs">{captchaState.error}</p>
+                  )}
+                </div>
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  onVerify={handleCaptchaVerify}
+                  onError={handleCaptchaError}
+                  onExpired={handleCaptchaExpired}
+                  theme="dark"
+                  size="normal"
+                  className="flex justify-center"
+                />
+              </div>
+            )}
 
               {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
               <AppleSignInButton
