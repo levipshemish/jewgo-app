@@ -32,7 +32,7 @@ class MarketplaceServiceV4(BaseService):
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
 
-        logger.info("MarketplaceServiceV4 (Streamlined) initialized")
+        logger.info("MarketplaceServiceV4 (Streamlined) initialized successfully")
 
     def get_listings(
         self,
