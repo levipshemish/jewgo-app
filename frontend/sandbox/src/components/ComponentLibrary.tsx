@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
 import { MagnifyingGlassIcon, FunnelIcon, ViewColumnsIcon, ListBulletIcon } from '@heroicons/react/24/outline'
-import { componentExamples } from '../data/componentExamples'
+import { componentExamples } from '../data/componentExamples.tsx'
 
 interface ComponentLibraryProps {
   onComponentSelect: (componentName: string) => void
