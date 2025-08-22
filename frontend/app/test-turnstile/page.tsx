@@ -26,7 +26,7 @@ export default function TestTurnstilePage() {
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
       const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?v=${Date.now()}`;
       script.onload = () => {
         console.log('Turnstile script loaded');
       };

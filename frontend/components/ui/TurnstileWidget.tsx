@@ -50,7 +50,8 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     // Load Turnstile script manually to avoid async/defer issues
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
       const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      // Add cache-busting parameter to ensure fresh script
+      script.src = `https://challenges.cloudflare.com/turnstile/v0/api.js?v=${Date.now()}`;
       script.onload = () => setIsLoaded(true);
       script.onerror = () => onError?.('Failed to load Turnstile');
       document.head.appendChild(script);
@@ -96,17 +97,25 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       }
     };
 
-    // Add a small delay to ensure the script is fully initialized
-    const timer = setTimeout(() => {
-      if (window.turnstile && window.turnstile.ready) {
-        window.turnstile.ready(renderWidget);
-      } else {
-        // Fallback: try to render directly
+    // Try to render immediately, then retry with increasing delays if needed
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    const tryRender = () => {
+      attempts++;
+      
+      if (window.turnstile && window.turnstile.render) {
         renderWidget();
+      } else if (attempts < maxAttempts) {
+        // Retry with exponential backoff
+        setTimeout(tryRender, Math.pow(2, attempts) * 100);
+      } else {
+        console.error('Failed to render Turnstile widget after multiple attempts');
+        onError?.('Failed to render Turnstile widget');
       }
-    }, 100);
+    };
 
-    return () => clearTimeout(timer);
+    tryRender();
   }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size]);
 
   // Expose methods via ref
