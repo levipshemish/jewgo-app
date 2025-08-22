@@ -205,8 +205,11 @@ git push origin main
 
 - Development containers run with development environment variables
 - Production containers use optimized, secure configurations
-- Never commit sensitive environment variables
-- Use `.env` files for local development
+- Root `.env` is the source of truth; example files must not contain real values (placeholders only)
+- Validate env consistency before running:
+  ```bash
+  npm run env:check
+  ```
 
 ## 📞 Support
 

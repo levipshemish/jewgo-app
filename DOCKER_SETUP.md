@@ -79,10 +79,16 @@ docker-compose -f docker-compose.optimized.yml ps
 
 ## Environment Configuration
 
-The frontend uses a Docker-specific environment file located at:
-`config/environment/frontend.docker.env`
+Environment policy:
+- Root `.env` is the single source of truth used for local dev and validation.
+- Example/env template files must not contain real secrets; use placeholders like `CHANGEME` or `<VALUE>`.
+- Validate anytime:
+  ```bash
+  npm run env:check        # basic check
+  npm run env:check:strict # also flags extra keys
+  ```
 
-This file contains placeholder values for required environment variables to ensure the application starts successfully in Docker.
+For Docker-specific frontend variables, see `config/environment/frontend.docker.env` (placeholders only).
 
 ## Notes
 

@@ -138,6 +138,10 @@ rg -n --glob '!node_modules' 'interface <Name>|type <Name>'
 - **SWR TTLs**: restaurants 5m, profile 10m, search 2m, reviews 3m, admin 1m
 - **HTTP Caching**: static 1y, images 1d, APIs 5m private; admin no-cache
 - Never commit secrets; validate inputs; sanitize outputs; use environment variables for sensitive values
+- Environment Policy:
+  - Root `.env` is the single source of truth for keys/values in dev.
+  - Example env files (e.g., `env.template`, `frontend/env.example`) must not contain real values; only placeholders are allowed.
+  - CI runs `npm run env:check` to ensure examples mirror keys and contain no real secrets.
 
 ## Development Workflow
 - **Docker-First Workflow**: ALWAYS create Docker build to test changes before git operations

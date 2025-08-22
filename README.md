@@ -51,21 +51,20 @@ jewgo-app/
 - Redis (or use Docker)
 
 ### Environment Setup
-All environment variables are now centralized in a single `.env` file in the root directory.
+Environment variables are centralized in the root `.env` file — this is the single source of truth. Example files are for reference only and must not contain real secrets.
 
 ```bash
-# Set up environment configuration
-./scripts/setup-env.sh
+# Create or update your root .env, then validate
+./scripts/setup-env.sh   # optional helper
+npm run env:check        # validates keys across env files
 
-# Edit .env file with your actual values
-# Important variables to configure:
-# - NEXT_PUBLIC_SUPABASE_URL
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Edit .env with your actual values (examples must use placeholders)
+# Common keys:
+# - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 # - SUPABASE_SERVICE_ROLE_KEY
 # - DATABASE_URL
 # - GOOGLE_MAPS_API_KEY
-# - JWT_SECRET_KEY
-# - SECRET_KEY
+# - SECRET_KEY / FLASK_SECRET_KEY
 ```
 
 ### Docker Setup (Recommended)
@@ -88,7 +87,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-# Environment variables are loaded from root .env file
+# Environment variables are loaded from root .env (source of truth)
 python -m uvicorn app:app --reload
 ```
 
@@ -96,7 +95,12 @@ python -m uvicorn app:app --reload
 ```bash
 cd frontend
 npm install
-# Environment variables are loaded from root .env file
+# Environment variables are loaded from root .env (source of truth)
+
+### Environment Policy
+- Root `.env` is the authoritative set of keys/values used locally.
+- Example files (e.g., `env.template`, `frontend/env.example`) must not contain real values; use placeholders like `CHANGEME` or `<VALUE>`.
+- CI enforces this via `npm run env:check` (runs automatically in workflows).
 npm run dev
 ```
 

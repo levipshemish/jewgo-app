@@ -35,6 +35,14 @@ npm run docker:deploy-env all --env-type prod --tag latest
 | `.env.staging` | Staging environment | `--env-type staging` |
 | `.env.production` | Production environment | `--env-type prod` |
 
+Environment policy:
+- Root `.env` is the single source of truth for keys/values used locally.
+- Example files must use placeholders only; never commit real secrets.
+- Validate before deploy/build:
+  ```bash
+  npm run env:check
+  ```
+
 ## 📦 Available Commands
 
 ### Deployment

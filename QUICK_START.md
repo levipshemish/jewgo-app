@@ -66,9 +66,13 @@ docker-compose -f docker-compose.optimized.yml logs -f [service-name]
 ## 🔧 Configuration
 
 ### Environment Files
-- **Backend**: `config/environment/backend.env.example`
-- **Frontend**: `config/environment/frontend.env.example`
-- **Docker Frontend**: `config/environment/frontend.docker.env`
+- Root `.env` is the master source of truth used for local dev and validation.
+- Example files (e.g., `env.template`, `frontend/env.example`) are references only and must not contain real secrets. Use placeholders like `CHANGEME` or `<VALUE>`.
+- Validate consistency anytime:
+  ```bash
+  npm run env:check        # basic check
+  npm run env:check:strict # also flags extra keys
+  ```
 
 ### Ports
 - **Frontend**: 3001

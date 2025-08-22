@@ -410,6 +410,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             <div
               className="unified-card-tag"
               aria-label={`Tag: ${cardData.imageTag}`}
+              style={{ zIndex: 10 }} // Ensure it's above the image
             >
               <span 
                 style={{
@@ -447,6 +448,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 align-items: center !important;
                 justify-content: center !important;
                 border: none !important;
+                /* Override global button min-size rules */
+                min-height: 28px !important;
+                min-width: 28px !important;
                 padding: 0 !important;
                 cursor: pointer !important;
                 -webkit-tap-highlight-color: transparent !important;

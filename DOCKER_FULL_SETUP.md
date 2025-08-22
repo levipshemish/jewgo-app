@@ -176,9 +176,14 @@ docker-compose -f docker-compose.full.yml exec -T postgres psql -U jewgo_user -d
 ## 🔧 Configuration
 
 ### Environment Variables
-All services use environment variables from:
-- `config/environment/backend.env.example`
-- `config/environment/frontend.env.example`
+Environment policy:
+- Root `.env` is the master source of truth for local dev and validation.
+- Example files (e.g., `env.template`, `frontend/env.example`) are references only and must not contain real secrets.
+- Validate consistency anytime:
+  ```bash
+  npm run env:check        # basic check
+  npm run env:check:strict # also flags extra keys
+  ```
 
 ### Volume Mounting
 - Source code is mounted for hot reloading

@@ -11,19 +11,16 @@ This guide covers setting up and running the JewGo frontend application using Do
 
 ### Environment Setup
 
-1. **Copy environment template:**
-   ```bash
-   cp config/environment/frontend.env.example frontend/.env.local
-   ```
+Environment policy:
+- Root `.env` is the source of truth for keys/values in dev.
+- Frontend example files (e.g., `frontend/env.example`) must use placeholders only.
+- Validate consistency anytime:
+  ```bash
+  npm run env:check        # basic check
+  npm run env:check:strict # also flags extra keys
+  ```
 
-2. **Edit environment variables:**
-   ```bash
-   # Edit frontend/.env.local with your actual values:
-   # - Supabase credentials
-   # - Google Maps API key
-   # - Database URL
-   # - Admin token
-   ```
+For local overrides you can still create `frontend/.env.local`, but do not commit real secrets in examples.
 
 ### Using the Setup Script
 

@@ -28,6 +28,6 @@
 - PRs: clear description, linked issues, screenshots for UI changes, updated docs, passing CI (`ci:*`, lint, type‑check, tests). Keep PRs focused and small.
 
 ## Security & Configuration Tips
-- Never commit secrets. Use `env.template`, `frontend/env.example`, and `.env.*` locally. Validate with `npm run validate` (root) or `cd frontend && npm run validate-env`.
+- Never commit secrets. Root `.env` is the source of truth; example files (e.g., `env.template`, `frontend/env.example`) must use placeholders only.
+- Validate env consistency: `npm run env:check` (strict: `npm run env:check:strict`).
 - Prefer Docker or `scripts/sandbox.sh` for reproducible environments. See SUPABASE_SETUP.md and DOCKER_* guides for service setup.
-
