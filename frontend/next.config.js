@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 // Ensure backend URL used in rewrites/redirects is always valid
-const BACKEND_URL = (
-  process.env["NEXT_PUBLIC_BACKEND_URL"] &&
-  /^(https?:)\/\//.test(process.env["NEXT_PUBLIC_BACKEND_URL"])
-) ? process.env["NEXT_PUBLIC_BACKEND_URL"] : 'https://jewgo.onrender.com';
+const rawBackend = process.env["NEXT_PUBLIC_BACKEND_URL"] || '';
+const normalizedBackend = rawBackend.replace(/\/+$/, '');
+const BACKEND_URL = normalizedBackend
+  ? normalizedBackend
+  : (process.env.NODE_ENV === 'production' ? 'https://jewgo.onrender.com' : 'http://127.0.0.1:8082');
 
 // Improved environment detection
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
@@ -14,9 +15,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Import webpack optimization utilities
 const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
 const nextConfig = {
-  // Enable node middleware for nodejs runtime support
+  // Enable modern features for better performance
   experimental: {
-    nodeMiddleware: true,
+    // Removed @prisma/client from optimizePackageImports to prevent Query Engine bundling issues
+    optimizePackageImports: ['lucide-react'],
+    // Disable webpackBuildWorker to avoid flaky missing vendor-chunks during dev
+    webpackBuildWorker: false,
   },
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
@@ -38,14 +42,7 @@ const nextConfig = {
     // Disable image optimization in Docker to prevent issues
     unoptimized: isDocker,
   },
-  // Configure experimental features for optimal performance
-  experimental: {
-    // Enable modern features for better performance
-    // Removed @prisma/client from optimizePackageImports to prevent Query Engine bundling issues
-    optimizePackageImports: ['lucide-react'],
-    // Optimize webpack cache to reduce serialization warnings
-    webpackBuildWorker: true,
-  },
+  // (experimental set above)
 
   // Disable prerendering to avoid build errors
   trailingSlash: false,

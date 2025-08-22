@@ -135,6 +135,14 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
 
       // Check if Turnstile is required and verified
       if (captchaState.isRequired && !captchaState.isVerified) {
+        // Check if Turnstile is configured
+        const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+        if (!turnstileSiteKey) {
+          setError('Guest sign-in is temporarily unavailable. Please try again later or sign in with an account.');
+          setGuestPending(false);
+          return;
+        }
+        
         setError('Please complete the security check to continue.');
         setGuestPending(false);
         return;
@@ -395,7 +403,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
             <button
               type="button"
               onClick={onGuestSignIn}
-              disabled={guestPending || pending}
+              disabled={guestPending || pending || !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
               className="w-full inline-flex justify-center py-2 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-700 text-sm font-medium text-neutral-300 hover:bg-neutral-600 disabled:opacity-50 transition-colors"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -404,26 +412,34 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
               {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
             </button>
 
-            {/* Turnstile Widget - always shown for guest sign-in */}
-            <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
-              <div className="text-center mb-3">
-                <p className="text-sm text-neutral-300 mb-2">
-                  Please complete the security check to continue as guest
-                </p>
-                {captchaState.error && (
-                  <p className="text-red-400 text-xs">{captchaState.error}</p>
-                )}
+            {/* Turnstile Widget - only show if configured */}
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+              <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
+                <div className="text-center mb-3">
+                  <p className="text-sm text-neutral-300 mb-2">
+                    Please complete the security check to continue as guest
+                  </p>
+                  {captchaState.error && (
+                    <p className="text-red-400 text-xs">{captchaState.error}</p>
+                  )}
+                </div>
+                <TurnstileWidget
+                  ref={turnstileRef}
+                  onVerify={handleCaptchaVerify}
+                  onError={handleCaptchaError}
+                  onExpired={handleCaptchaExpired}
+                  theme="dark"
+                  size="normal"
+                  className="flex justify-center"
+                />
               </div>
-              <TurnstileWidget
-                ref={turnstileRef}
-                onVerify={handleCaptchaVerify}
-                onError={handleCaptchaError}
-                onExpired={handleCaptchaExpired}
-                theme="dark"
-                size="normal"
-                className="flex justify-center"
-              />
-            </div>
+            ) : (
+              <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg">
+                <p className="text-sm text-yellow-300 text-center">
+                  ⚠️ Guest sign-in temporarily unavailable
+                </p>
+              </div>
+            )}
 
               {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
               <AppleSignInButton

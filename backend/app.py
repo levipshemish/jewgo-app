@@ -15,7 +15,7 @@ from app_factory import create_app
 from utils.config_manager import ConfigManager
 
 # Create the Flask application instance
-app, socketio = create_app()
+app = create_app()
 
 if __name__ == "__main__":
     app.run(

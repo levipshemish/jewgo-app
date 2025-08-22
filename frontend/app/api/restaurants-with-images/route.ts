@@ -87,8 +87,11 @@ export async function GET(request: NextRequest) {
       queryParams.append('radius', radius);
     }
     
-    // Call the backend API with our local database
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    // Call the backend API (normalize URL and default to local in dev)
+    const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
+    const backendUrl = raw && raw.trim().length > 0
+      ? raw.replace(/\/+$/, '')
+      : (process.env.NODE_ENV === 'production' ? 'https://jewgo.onrender.com' : 'http://127.0.0.1:8082');
     const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {

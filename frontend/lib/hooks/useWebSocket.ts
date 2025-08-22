@@ -24,7 +24,11 @@ export interface UseWebSocketReturn {
 }
 
 const DEFAULT_CONFIG: WebSocketConfig = {
-  url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://jewgo.onrender.com/ws',
+  url:
+    process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'wss://jewgo.onrender.com/ws'
+      : 'ws://127.0.0.1:8082/ws'),
   reconnectInterval: 3000,
   maxReconnectAttempts: 3, // Reduced for production
   heartbeatInterval: 30000,

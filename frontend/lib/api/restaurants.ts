@@ -1,10 +1,9 @@
 import { Restaurant } from '@/lib/types/restaurant';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 
-// Use relative URLs to go through frontend proxy in production
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? ''  // Use relative URLs in production to go through frontend proxy
-  : process.env['NEXT_PUBLIC_BACKEND_URL'] || 'http://127.0.0.1:8081';
+// Use Next.js API proxy from the browser to avoid CORS in both dev and prod
+// Backend URL is handled inside the API routes.
+const API_BASE_URL = '';
 
 interface RestaurantsResponse {
   restaurants: Restaurant[];

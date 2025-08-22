@@ -133,8 +133,8 @@ Make sure Docker Desktop is running on your Mac.
 ```
 
 ### Health Checks
-- Backend: http://localhost:5000/health
-- Frontend: http://localhost:3000
+- Backend: http://localhost:5000/health (full compose) or http://localhost:5001/health (optimized)
+- Frontend: http://localhost:3000 (full compose) or http://localhost:3001 (optimized)
 - Database: Automatic via Docker health checks
 
 ### View Logs

@@ -46,6 +46,24 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
 
   const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+  // Handle missing site key gracefully
+  if (!turnstileSiteKey) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Turnstile site key not configured. Guest sign-in will be disabled.');
+      return (
+        <div className={`text-yellow-500 text-sm ${className}`}>
+          ⚠️ Turnstile not configured - Guest sign-in disabled
+        </div>
+      );
+    } else {
+      return (
+        <div className={`text-red-500 text-sm ${className}`}>
+          Turnstile site key not configured
+        </div>
+      );
+    }
+  }
+
   useEffect(() => {
     // Load Turnstile script manually to avoid async/defer issues
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
@@ -186,14 +204,6 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     },
     getToken: () => currentToken
   }), [widgetId, currentToken]);
-
-  if (!turnstileSiteKey) {
-    return (
-      <div className={`text-red-500 text-sm ${className}`}>
-        Turnstile site key not configured
-      </div>
-    );
-  }
 
   return (
     <div className={`${className}`}>

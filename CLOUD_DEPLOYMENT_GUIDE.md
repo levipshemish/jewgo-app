@@ -72,7 +72,7 @@ services:
     name: jewgo-backend
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app_factory.py
+    startCommand: gunicorn -w 2 -k gevent -b 0.0.0.0:$PORT wsgi:app
     envVars:
       - key: DATABASE_URL
         value: postgresql://[neon-connection-string]

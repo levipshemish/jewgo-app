@@ -5,6 +5,14 @@ import { fromSearchParams, FiltersSchema } from '@/lib/filters/schema';
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
 
+function getBackendUrl() {
+  const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
+  if (raw && raw.trim().length > 0) return raw.replace(/\/+$/, '');
+  return process.env.NODE_ENV === 'production'
+    ? 'https://jewgo.onrender.com'
+    : 'http://127.0.0.1:8082';
+}
+
 export async function POST(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.api, 'restaurants-submit');
@@ -16,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = getBackendUrl();
     
     // Forward the request to the backend
     const backendResponse = await fetch(`${backendUrl}/api/restaurants`, {
@@ -89,7 +97,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = getBackendUrl();
     
     // Build query parameters for backend API
     const queryParams = new URLSearchParams();

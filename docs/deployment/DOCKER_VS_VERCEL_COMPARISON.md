@@ -179,14 +179,14 @@ This script will:
 
 ```bash
 # Build and start services
-docker-compose -f docker-compose.simple.yml build
-docker-compose -f docker-compose.simple.yml up -d
+docker-compose -f docker-compose.optimized.yml build
+docker-compose -f docker-compose.optimized.yml up -d
 
 # Check status
-docker-compose -f docker-compose.simple.yml ps
+docker-compose -f docker-compose.optimized.yml ps
 
 # View logs
-docker-compose -f docker-compose.simple.yml logs -f
+docker-compose -f docker-compose.optimized.yml logs -f
 ```
 
 ### 3. Environment Variables
@@ -244,8 +244,8 @@ SECRET_KEY=your-secret-key
 
 4. **Build Failures**
    ```bash
-   # View build logs
-   docker-compose -f docker-compose.simple.yml build --no-cache
+# View build logs
+docker-compose -f docker-compose.optimized.yml build --no-cache
    
    # Check for missing dependencies
    cat frontend/package.json
@@ -264,7 +264,7 @@ curl http://localhost:3001           # optimized compose
 curl http://localhost:3000           # simple/full compose
 
 # Check database
-docker-compose -f docker-compose.simple.yml exec postgres psql -U jewgo_user -d jewgo -c "SELECT 1;"
+docker-compose -f docker-compose.optimized.yml exec postgres psql -U jewgo_user -d jewgo -c "SELECT 1;"
 ```
 
 ## Performance Comparison
@@ -326,14 +326,14 @@ Your Docker environment is now running with the following configuration:
 # Start all services
 ./scripts/docker-setup.sh
 
-# Or manually
-docker-compose -f docker-compose.simple.yml up -d
+# Or manually (optimized compose)
+docker-compose -f docker-compose.optimized.yml up -d
 
 # View logs
-docker-compose -f docker-compose.simple.yml logs -f
+docker-compose -f docker-compose.optimized.yml logs -f
 
 # Stop services
-docker-compose -f docker-compose.simple.yml down
+docker-compose -f docker-compose.optimized.yml down
 ```
 
 The Docker environment now matches Vercel's behavior while providing a consistent local development experience!

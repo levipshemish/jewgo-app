@@ -56,7 +56,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   variant = 'default',
   showStarInBadge = false // Default to false for timestamps
 }) => {
-  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   
   // State management
@@ -151,10 +151,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return () => clearTimeout(timeout);
   }, [data.id]);
 
-  // Sync with favorites manager
-  useEffect(() => {
-    setIsLiked(isFavorite(data.id));
-  }, [isFavorite, data.id]);
+  // Derive liked status from favorites for consistent UI state
+  const liked = useMemo(() => {
+    return Array.isArray(favorites) && favorites.some(f => f.id === data.id);
+  }, [favorites, data.id]);
 
   // Memoized computations
   const cardData = useMemo(() => ({
@@ -189,7 +189,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const handleLikeToggle = useCallback(() => {
     try {
       setIsAnimating(true);
-      const newIsLiked = !isLiked;
+      const newIsLiked = !liked;
       
       if (newIsLiked) {
         const minimalRestaurant = {
@@ -214,7 +214,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
-      setIsLiked(newIsLiked);
       onLikeToggle?.(data.id, newIsLiked);
       
       // Reset animation state
@@ -223,7 +222,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       // console.warn('Card error:', error);
       setIsAnimating(false);
     }
-  }, [isLiked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
+  }, [liked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {
@@ -503,14 +502,14 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           {/* Heart Button - positioned relative to image wrapper */}
           {cardData.showHeart && (
             <button
-              className={`unified-card-heart ${isLiked ? 'liked' : ''}`}
+            className={`unified-card-heart ${liked ? 'liked' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleLikeToggle();
               }}
               onKeyDown={handleHeartKeyDown}
-              aria-label={isLiked ? 'Remove from favorites' : 'Add to favorites'}
-              aria-pressed={isLiked}
+            aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={liked}
               style={{ transform: isAnimating ? 'scale(0.9)' : 'scale(1)' }}
             >
               <span className="relative block w-[18px] h-[18px]">
@@ -519,7 +518,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                   viewBox="0 0 24 24" 
                   className="absolute inset-0 w-[18px] h-[18px] heart-fill"
                   aria-hidden
-                  style={{ color: isLiked ? 'rgb(239, 68, 68)' : 'rgb(156, 163, 175)' }}
+                  style={{ color: liked ? 'rgb(239, 68, 68)' : 'rgb(156, 163, 175)' }}
                 >
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" />
                 </svg>

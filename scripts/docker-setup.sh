@@ -34,11 +34,11 @@ SETUP_TYPE=${1:-"full"}
 
 if [ "$SETUP_TYPE" = "frontend-only" ]; then
     echo "🐳 Setting up Docker frontend to work with Render backend..."
-    COMPOSE_FILE="docker-compose.frontend-only.yml"
+    COMPOSE_FILE="docker-compose.frontend.dev.yml"
     SERVICES="frontend"
 elif [ "$SETUP_TYPE" = "full" ]; then
     echo "🐳 Setting up complete Docker environment..."
-    COMPOSE_FILE="docker-compose.simple.yml"
+    COMPOSE_FILE="docker-compose.optimized.yml"
     SERVICES="frontend postgres redis"
 else
     echo "Usage: $0 [full|frontend-only]"
@@ -125,11 +125,16 @@ docker-compose -f $COMPOSE_FILE up -d
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
 
+FRONTEND_PORT=3001
+if [ "$SETUP_TYPE" = "frontend-only" ]; then
+  FRONTEND_PORT=3000
+fi
+
 # Wait for frontend
-print_status "Waiting for frontend to be ready..."
+print_status "Waiting for frontend to be ready on :$FRONTEND_PORT..."
 timeout=60
 counter=0
-while ! curl -f http://localhost:3001 > /dev/null 2>&1; do
+while ! curl -f http://localhost:${FRONTEND_PORT} > /dev/null 2>&1; do
     if [ $counter -ge $timeout ]; then
         print_error "Frontend failed to start within $timeout seconds"
         docker-compose -f $COMPOSE_FILE logs frontend
@@ -149,7 +154,7 @@ if [ "$SETUP_TYPE" = "frontend-only" ]; then
     print_status "🎉 Docker frontend is ready!"
     echo ""
     echo "Services available at:"
-    echo "  Frontend: http://localhost:3001"
+    echo "  Frontend: http://localhost:3000"
     echo "  Backend:  https://jewgo-app-oyoh.onrender.com (Render)"
     echo ""
     echo "Useful commands:"

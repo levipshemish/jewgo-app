@@ -158,7 +158,7 @@ sentry-cli releases list --org your-org --project your-project
 ### Verification Commands
 ```bash
 # Test backend Sentry
-curl https://jewgo.onrender.com/test-sentry
+curl https://jewgo-app-oyoh.onrender.com/test-sentry
 
 # Test frontend build
 cd frontend && npm run build

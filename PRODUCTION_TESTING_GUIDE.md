@@ -9,10 +9,10 @@ Test your JewGo application exactly as it would appear in live Vercel deployment
 This gives you the exact same experience as your live Vercel deployment:
 
 ```bash
-# 1. Start your real backend
+# 1. Start your real backend (Flask via app.py)
 source .venv/bin/activate
 cd backend
-python -m flask run
+python app.py   # binds 0.0.0.0:8082 by default
 
 # 2. Build and start frontend in production mode
 cd frontend
@@ -22,7 +22,7 @@ npm start
 
 **Access your production-like app:**
 - **Frontend**: http://localhost:3000 (production build)
-- **Backend**: http://localhost:5000 (real backend)
+- **Backend**: http://localhost:8082 (real backend, from app.py)
 
 ### **Option 2: Vercel Preview Deployment**
 
@@ -71,18 +71,18 @@ npm run start
 
 # Test backend performance
 cd backend
-python -m flask run
-curl http://localhost:5000/health
+python app.py
+curl http://localhost:8082/health
 ```
 
 ### **API Testing**
 ```bash
-# Test API endpoints
-curl http://localhost:5000/api/v4/restaurants
-curl http://localhost:5000/api/v4/health
+# Test API endpoints (adjust port if you set PORT)
+curl http://localhost:8082/api/v4/restaurants
+curl http://localhost:8082/api/v4/health
 
 # Test with real data
-curl -X POST http://localhost:5000/api/v4/search \
+curl -X POST http://localhost:8082/api/v4/search \
   -H "Content-Type: application/json" \
   -d '{"query": "kosher restaurants"}'
 ```
