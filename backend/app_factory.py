@@ -441,8 +441,20 @@ def create_app():
     # Register API v4 routes
     try:
         logger.info("Attempting to import API v4 routes...")
-        from routes.api_v4 import api_v4
-        logger.info(f"API v4 blueprint imported: {api_v4}")
+        
+        # Test import without going through __init__.py
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'routes'))
+        
+        try:
+            from api_v4 import api_v4
+            logger.info(f"API v4 blueprint imported directly: {api_v4}")
+        except Exception as direct_import_error:
+            logger.warning(f"Direct import failed: {direct_import_error}")
+            # Try the original import path
+            from routes.api_v4 import api_v4
+            logger.info(f"API v4 blueprint imported via routes: {api_v4}")
         
         if api_v4 is not None:
             app.register_blueprint(api_v4)
