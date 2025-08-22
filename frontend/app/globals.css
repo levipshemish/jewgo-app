@@ -173,7 +173,6 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 
 /* UnifiedCard specific overrides to prevent conflicts */
 .unified-card {
-  background-color: white !important;
   border: 1px solid rgb(229 231 235) !important;
   border-radius: 0.75rem !important;
   transition: all 0.2s ease-out !important;
