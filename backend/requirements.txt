@@ -21,6 +21,7 @@ sentry-sdk==2.35.0
 # Utilities
 requests==2.31.0
 pytz==2023.3
+structlog==24.1.0
 
 # Development dependencies (optional)
 gunicorn==21.2.0

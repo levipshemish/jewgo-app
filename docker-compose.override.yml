@@ -1,0 +1,16 @@
+services:
+  frontend:
+    image: mml555/jewgo-frontend:commit-4391984c
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  backend:
+    image: mml555/jewgo-backend:commit-886a5ce2
+    env_file:
+      - .env.production
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
