@@ -12,11 +12,11 @@ Successfully aligned Docker builds with Vercel builds to ensure consistent behav
 - ✅ Changed to `npm run build:production`
 - ✅ Changed to `npm run start:production`
 
-### 2. `docker-compose.frontend.yml`
+### 2. `docker-compose.frontend.prod.yml`
 **Changes:**
-- ✅ Changed `NODE_ENV=development` to `NODE_ENV=production`
-- ✅ Added `CI=true`
-- ✅ Added production environment variables (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`)
+Updated to production-specific compose to match Vercel exactly:
+- ✅ `NODE_ENV=production`, `CI=true`
+- ✅ Production env vars (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`)
 
 ### 3. `frontend/Dockerfile.dev`
 **Changes:**

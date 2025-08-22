@@ -245,11 +245,11 @@ docker-compose -f docker-compose.ngrok.yml restart backend
 ### Debug Mode
 For debugging, you can run services in development mode:
 ```bash
-# Use development docker-compose
-docker-compose -f docker-compose.full.yml up -d
+# Use optimized docker-compose
+docker-compose -f docker-compose.optimized.yml up -d
 
 # Check logs
-docker-compose -f docker-compose.full.yml logs -f
+docker-compose -f docker-compose.optimized.yml logs -f
 ```
 
 ## Security Considerations

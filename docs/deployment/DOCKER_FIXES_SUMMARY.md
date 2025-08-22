@@ -59,7 +59,7 @@ NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED=false
 
 ### Docker Configuration Updates
 ```yaml
-# docker-compose.frontend.yml
+# docker-compose.frontend.prod.yml
 environment:
   - DOCKER=true
   - NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED=false
@@ -101,7 +101,7 @@ images: {
    - Improved build process
    - Better error handling
 
-6. **`docker-compose.frontend.yml`**
+6. **`docker-compose.frontend.prod.yml`**
    - Added Docker-specific environment variables
    - Improved container configuration
 
@@ -126,8 +126,8 @@ images: {
 ./scripts/test-docker-build.sh
 
 # Or manually:
-docker-compose -f docker-compose.frontend.yml build --no-cache
-docker-compose -f docker-compose.frontend.yml up -d
+docker-compose -f docker-compose.frontend.prod.yml build --no-cache
+docker-compose -f docker-compose.frontend.prod.yml up -d
 ```
 
 ### Automated Testing
@@ -179,10 +179,10 @@ const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
 ### Log Analysis
 ```bash
 # View container logs
-docker-compose -f docker-compose.frontend.yml logs -f
+docker-compose -f docker-compose.frontend.prod.yml logs -f
 
 # Check for specific errors
-docker-compose -f docker-compose.frontend.yml logs | grep -i "error"
+docker-compose -f docker-compose.frontend.prod.yml logs | grep -i "error"
 ```
 
 ### Health Checks

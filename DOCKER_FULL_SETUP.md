@@ -168,11 +168,11 @@ psql -U jewgo_user -d jewgo
 
 ### Backup/Restore
 ```bash
-# Backup
-docker-compose -f docker-compose.full.yml exec postgres pg_dump -U jewgo_user jewgo > backup.sql
+# Backup (optimized compose)
+docker-compose -f docker-compose.optimized.yml exec postgres pg_dump -U jewgo_user jewgo > backup.sql
 
-# Restore
-docker-compose -f docker-compose.full.yml exec -T postgres psql -U jewgo_user -d jewgo < backup.sql
+# Restore (optimized compose)
+docker-compose -f docker-compose.optimized.yml exec -T postgres psql -U jewgo_user -d jewgo < backup.sql
 ```
 
 ## 🔧 Configuration

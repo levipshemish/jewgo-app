@@ -29,7 +29,7 @@ CMD ["npm", "start:production"]
 
 ### 2. Updated Docker Compose Files
 
-**Production Environment (`docker-compose.frontend.yml`):**
+**Production Environment (`docker-compose.frontend.prod.yml`):**
 - Changed `NODE_ENV=development` to `NODE_ENV=production`
 - Added `CI=true`
 - Added production environment variables (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`)

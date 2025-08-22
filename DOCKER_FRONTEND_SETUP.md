@@ -90,7 +90,7 @@ docker-compose -f docker-compose.frontend.prod.yml logs -f
 ## 📁 File Structure
 
 ```
-├── docker-compose.frontend.yml          # Production Docker Compose
+├── docker-compose.frontend.prod.yml     # Production Docker Compose
 ├── docker-compose.frontend.dev.yml      # Development Docker Compose (Render API)
 ├── docker-compose.frontend.local.yml    # Local Development Docker Compose
 ├── frontend/

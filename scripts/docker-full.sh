@@ -59,10 +59,10 @@ build() {
     check_docker_compose
     
     print_status "Building backend..."
-    docker-compose -f docker-compose.full.yml build backend
+    docker-compose -f docker-compose.optimized.yml build backend
     
     print_status "Building frontend..."
-    docker-compose -f docker-compose.full.yml build frontend
+    docker-compose -f docker-compose.optimized.yml build frontend
     
     print_success "All services built successfully"
 }
@@ -75,15 +75,15 @@ start() {
     check_docker_compose
     
     # Stop any existing containers
-    docker-compose -f docker-compose.full.yml down
+    docker-compose -f docker-compose.optimized.yml down
     
     # Start all services
-    docker-compose -f docker-compose.full.yml up -d
+    docker-compose -f docker-compose.optimized.yml up -d
     
     print_success "All services started successfully"
     print_status "Services available at:"
-    print_status "  - Frontend: http://localhost:3000"
-    print_status "  - Backend:  http://localhost:5000"
+    print_status "  - Frontend: http://localhost:3001"
+    print_status "  - Backend:  http://localhost:5001"
     print_status "  - Database: localhost:5432"
     print_status "  - Redis:    localhost:6379"
     
@@ -98,7 +98,7 @@ start() {
 stop() {
     print_header "Stopping all JewGo services..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml down
+    docker-compose -f docker-compose.optimized.yml down
     print_success "All services stopped"
 }
 
@@ -113,7 +113,7 @@ restart() {
 logs() {
     print_header "Showing service logs..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml logs -f
+    docker-compose -f docker-compose.optimized.yml logs -f
 }
 
 # Function to show logs for specific service
@@ -121,19 +121,19 @@ logs_service() {
     local service=$1
     print_header "Showing logs for $service..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml logs -f "$service"
+    docker-compose -f docker-compose.optimized.yml logs -f "$service"
 }
 
 # Function to show status
 status() {
     print_header "Checking service status..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml ps
+    docker-compose -f docker-compose.optimized.yml ps
     
     echo ""
     print_status "Service URLs:"
-    print_status "  - Frontend: http://localhost:3000"
-    print_status "  - Backend:  http://localhost:5000"
+    print_status "  - Frontend: http://localhost:3001"
+    print_status "  - Backend:  http://localhost:5001"
     print_status "  - Database: localhost:5432"
     print_status "  - Redis:    localhost:6379"
 }
@@ -143,21 +143,21 @@ check_health() {
     print_status "Checking service health..."
     
     # Check backend health
-    if curl -s http://localhost:5000/health > /dev/null 2>&1; then
+    if curl -s http://localhost:5001/health > /dev/null 2>&1; then
         print_success "Backend is healthy"
     else
         print_warning "Backend health check failed"
     fi
     
     # Check frontend
-    if curl -s http://localhost:3000 > /dev/null 2>&1; then
+    if curl -s http://localhost:3001 > /dev/null 2>&1; then
         print_success "Frontend is responding"
     else
         print_warning "Frontend health check failed"
     fi
     
     # Check database
-    if docker-compose -f docker-compose.full.yml exec -T postgres pg_isready -U jewgo_user > /dev/null 2>&1; then
+    if docker-compose -f docker-compose.optimized.yml exec -T postgres pg_isready -U jewgo_user > /dev/null 2>&1; then
         print_success "Database is ready"
     else
         print_warning "Database health check failed"
@@ -174,14 +174,14 @@ shell() {
     
     print_header "Opening shell in $service..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml exec "$service" /bin/bash
+    docker-compose -f docker-compose.optimized.yml exec "$service" /bin/bash
 }
 
 # Function to run database migrations
 migrate() {
     print_header "Running database migrations..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml exec backend python -m alembic upgrade head
+    docker-compose -f docker-compose.optimized.yml exec backend python -m alembic upgrade head
     print_success "Migrations completed"
 }
 
@@ -189,7 +189,7 @@ migrate() {
 seed() {
     print_header "Seeding database..."
     cd "$PROJECT_ROOT"
-    docker-compose -f docker-compose.full.yml exec backend python scripts/add_mock_marketplace_data.py
+    docker-compose -f docker-compose.optimized.yml exec backend python scripts/add_mock_marketplace_data.py
     print_success "Database seeded"
 }
 
@@ -205,9 +205,9 @@ test() {
     cd "$PROJECT_ROOT"
     
     if [ "$service" = "backend" ]; then
-        docker-compose -f docker-compose.full.yml exec backend python -m pytest
+        docker-compose -f docker-compose.optimized.yml exec backend python -m pytest
     elif [ "$service" = "frontend" ]; then
-        docker-compose -f docker-compose.full.yml exec frontend pnpm test
+        docker-compose -f docker-compose.optimized.yml exec frontend pnpm test
     fi
 }
 
@@ -217,7 +217,7 @@ cleanup() {
     cd "$PROJECT_ROOT"
     
     # Stop and remove containers
-    docker-compose -f docker-compose.full.yml down -v --remove-orphans
+    docker-compose -f docker-compose.optimized.yml down -v --remove-orphans
     
     # Remove images
     docker rmi $(docker images -q jewgo-app-backend) 2>/dev/null || true

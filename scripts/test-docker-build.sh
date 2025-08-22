@@ -34,24 +34,24 @@ fi
 
 # Clean up any existing containers
 print_status "Cleaning up existing containers..."
-docker-compose -f docker-compose.frontend.yml down --remove-orphans 2>/dev/null || true
+docker-compose -f docker-compose.frontend.prod.yml down --remove-orphans 2>/dev/null || true
 
 # Build the Docker image
 print_status "Building Docker image..."
-docker-compose -f docker-compose.frontend.yml build --no-cache
+docker-compose -f docker-compose.frontend.prod.yml build --no-cache
 
 # Start the container
 print_status "Starting container..."
-docker-compose -f docker-compose.frontend.yml up -d
+docker-compose -f docker-compose.frontend.prod.yml up -d
 
 # Wait for container to be ready
 print_status "Waiting for container to be ready..."
 sleep 10
 
 # Check if container is running
-if ! docker-compose -f docker-compose.frontend.yml ps | grep -q "Up"; then
+if ! docker-compose -f docker-compose.frontend.prod.yml ps | grep -q "Up"; then
     print_error "Container failed to start. Checking logs..."
-    docker-compose -f docker-compose.frontend.yml logs
+    docker-compose -f docker-compose.frontend.prod.yml logs
     exit 1
 fi
 
@@ -65,7 +65,7 @@ for i in {1..30}; do
     
     if [ $i -eq 30 ]; then
         print_error "Health check failed after 30 attempts"
-        docker-compose -f docker-compose.frontend.yml logs
+        docker-compose -f docker-compose.frontend.prod.yml logs
         exit 1
     fi
     
@@ -83,7 +83,7 @@ fi
 
 # Check for common errors in logs
 print_status "Checking for common errors in logs..."
-LOGS=$(docker-compose -f docker-compose.frontend.yml logs)
+LOGS=$(docker-compose -f docker-compose.frontend.prod.yml logs)
 
 if echo "$LOGS" | grep -q "RealtimeClient"; then
     print_error "RealtimeClient errors detected in logs"
@@ -104,8 +104,8 @@ print_status "Docker build test completed successfully!"
 print_status "Container is running on http://localhost:3000"
 
 # Show container status
-docker-compose -f docker-compose.frontend.yml ps
+docker-compose -f docker-compose.frontend.prod.yml ps
 
 echo ""
-print_status "To stop the container, run: docker-compose -f docker-compose.frontend.yml down"
-print_status "To view logs, run: docker-compose -f docker-compose.frontend.yml logs -f"
+print_status "To stop the container, run: docker-compose -f docker-compose.frontend.prod.yml down"
+print_status "To view logs, run: docker-compose -f docker-compose.frontend.prod.yml logs -f"

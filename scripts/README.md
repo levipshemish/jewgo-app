@@ -197,10 +197,10 @@ docker-compose -f docker-compose.ngrok.yml restart backend
 ```
 
 ### Debug Mode
-For debugging, use the development configuration:
+For debugging, use the optimized development configuration:
 ```bash
-docker-compose -f docker-compose.full.yml up -d
-docker-compose -f docker-compose.full.yml logs -f
+docker-compose -f docker-compose.optimized.yml up -d
+docker-compose -f docker-compose.optimized.yml logs -f
 ```
 
 ## Security Notes

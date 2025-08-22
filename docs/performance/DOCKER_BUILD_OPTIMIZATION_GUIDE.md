@@ -190,7 +190,7 @@ docker images | grep jewgo
 1. **Backup current setup**:
    ```bash
    cp backend/Dockerfile backend/Dockerfile.backup
-   cp docker-compose.full.yml docker-compose.full.yml.backup
+   cp docker-compose.optimized.yml docker-compose.optimized.yml.backup
    ```
 
 2. **Test optimized builds**:
@@ -200,7 +200,7 @@ docker images | grep jewgo
 
 3. **Compare performance**:
    ```bash
-   time docker-compose -f docker-compose.full.yml build
+   time docker-compose -f docker-compose.optimized.yml build
    time ./scripts/docker-build-optimized.sh
    ```
 
