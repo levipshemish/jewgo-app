@@ -7,7 +7,7 @@ export async function GET() {
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
       hasBackendUrl: !!process.env.NEXT_PUBLIC_BACKEND_URL,
-      backendUrlFallback: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com',
+      backendUrlFallback: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com',
     },
     timestamp: new Date().toISOString(),
   });
