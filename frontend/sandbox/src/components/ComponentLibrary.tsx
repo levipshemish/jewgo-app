@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { LiveProvider, LiveEditor, LiveError, LivePreview } from 'react-live'
-import { MagnifyingGlassIcon, FilterIcon, ViewColumnsIcon, ViewListIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, FunnelIcon, ViewColumnsIcon, ViewListIcon } from '@heroicons/react/24/outline'
 import { componentExamples } from '../data/componentExamples'
 
 interface ComponentLibraryProps {
@@ -48,7 +48,7 @@ const ComponentLibrary: React.FC<ComponentLibraryProps> = ({ onComponentSelect }
 
           {/* Category Filter */}
           <div className="flex items-center space-x-2">
-            <FilterIcon className="h-5 w-5 text-gray-400" />
+            <FunnelIcon className="h-5 w-5 text-gray-400" />
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
