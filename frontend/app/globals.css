@@ -2508,9 +2508,9 @@ div[class*="specials-dynamic-grid"] {
   align-items: start !important; /* Ensure cards align to top */
 }
 
-/* Ensure uniform card heights */
+/* Ensure proper card sizing without forcing height */
 .restaurant-grid > div {
-  height: fit-content !important;
+  height: auto !important;
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -2523,10 +2523,9 @@ div[class*="specials-dynamic-grid"] {
     padding: 0.5rem !important;
   }
   
-  /* Ensure mobile cards have consistent height */
+  /* Remove forced min-height for mobile */
   .restaurant-grid > div {
     height: auto !important;
-    min-height: 280px !important;
   }
 }
 
@@ -2537,10 +2536,9 @@ div[class*="specials-dynamic-grid"] {
     padding: 1rem !important;
   }
   
-  /* Ensure tablet cards have consistent height */
+  /* Remove forced min-height for tablet */
   .restaurant-grid > div {
     height: auto !important;
-    min-height: 300px !important;
   }
 }
 
@@ -2551,10 +2549,9 @@ div[class*="specials-dynamic-grid"] {
     padding: 1.25rem !important;
   }
   
-  /* Ensure larger tablet cards have consistent height */
+  /* Remove forced min-height for larger tablet */
   .restaurant-grid > div {
     height: auto !important;
-    min-height: 320px !important;
   }
 }
 
@@ -2565,10 +2562,9 @@ div[class*="specials-dynamic-grid"] {
     padding: 1.5rem !important;
   }
   
-  /* Ensure desktop cards have consistent height */
+  /* Remove forced min-height for desktop */
   .restaurant-grid > div {
     height: auto !important;
-    min-height: 340px !important;
   }
 }
 
@@ -2579,10 +2575,9 @@ div[class*="specials-dynamic-grid"] {
     padding: 2rem !important;
   }
   
-  /* Ensure large desktop cards have consistent height */
+  /* Remove forced min-height for large desktop */
   .restaurant-grid > div {
     height: auto !important;
-    min-height: 360px !important;
   }
 }
 

@@ -201,10 +201,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         transition: { duration: 0.1 }
       }}
       className={cn(
-        'relative bg-transparent rounded-xl cursor-pointer group',
-        'border border-transparent hover:border-gray-200/30',
+        'relative bg-white rounded-xl cursor-pointer group',
+        'border border-gray-200 hover:border-gray-300',
         'transition-all duration-200 ease-out',
-        'flex flex-col h-full', // Ensure full height and flex column
+        'flex flex-col', // Remove h-full to prevent over-extension
         'p-1', // Add padding to prevent border from covering content
         className
       )}
@@ -405,7 +405,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <motion.div 
-        className="pt-2 flex flex-col flex-1" // Add flex-1 to fill remaining space
+        className="pt-2 flex flex-col" // Remove flex-1 to prevent over-extension
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
