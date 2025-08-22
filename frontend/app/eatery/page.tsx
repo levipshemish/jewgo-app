@@ -154,7 +154,7 @@ function EateryPageContent() {
   const transformRestaurantToCardData = (restaurant: Restaurant) => {
     // Enhanced rating logic with better fallbacks
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
-    const ratingText = rating ? `${rating.toFixed(1)}★` : undefined;
+    const ratingText = rating ? rating.toFixed(1) : undefined;
     
     // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
