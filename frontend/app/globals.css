@@ -231,18 +231,34 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 .unified-card-heart {
   opacity: 1 !important;
   transition: all 0.2s ease-out !important;
+  /* Override global button styles */
+  -webkit-appearance: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  /* Override transition duration from global rules */
+  transition-duration: 0.2s !important;
 }
 
 .unified-card-heart:active {
   opacity: 1 !important;
   transform: scale(0.95) !important;
+  /* Override global button active styles */
+  -webkit-appearance: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 .unified-card-heart svg {
   transition: all 0.2s ease-out !important;
+  transition-duration: 0.2s !important;
   stroke: #ffffff !important;
   stroke-width: 2 !important;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+  /* Override any inherited styles */
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
 }
 
 .unified-card-heart:hover svg {
@@ -251,18 +267,33 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   stroke-width: 2 !important;
   transform: scale(1.1) !important;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+  transition: all 0.2s ease-out !important;
+  transition-duration: 0.2s !important;
+  /* Override any inherited styles */
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
 }
 
 .unified-card-heart.liked svg {
   fill: rgb(239, 68, 68) !important;
   stroke: #ffffff !important;
   stroke-width: 2 !important;
+  transition: all 0.2s ease-out !important;
+  transition-duration: 0.2s !important;
+  /* Override any inherited styles */
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
 }
 
 .unified-card-heart:not(.liked) svg {
   fill: rgb(156, 163, 175) !important;
   stroke: #ffffff !important;
   stroke-width: 2 !important;
+  transition: all 0.2s ease-out !important;
+  transition-duration: 0.2s !important;
+  /* Override any inherited styles */
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
 }
 
 /* Mobile touch optimization */
@@ -271,6 +302,11 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
     fill: rgb(239, 68, 68) !important;
     stroke: #ffffff !important;
     stroke-width: 2 !important;
+    transition: all 0.2s ease-out !important;
+    transition-duration: 0.2s !important;
+    /* Override any inherited styles */
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
   }
 }
 
