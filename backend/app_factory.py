@@ -1,15 +1,54 @@
 #!/usr/bin/env python3
 """
-Minimal working version of app_factory.py for testing Docker setup
+JewGo Backend API Server - Application Factory
+==============================================
+
+This module creates and configures the Flask application with all necessary
+routes, middleware, and error handlers.
+
+Author: JewGo Development Team
+Version: 4.1
+Last Updated: 2024
 """
 
-from flask import Flask, jsonify
-from flask_cors import CORS
-import logging
+import os
+import time
+import traceback
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Union
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from utils.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+# Import dependencies with fallbacks
+try:
+    from database.database_manager_v3 import EnhancedDatabaseManager
+except ImportError as e:
+    logger.warning(f"Could not import DatabaseManager: {e}")
+    EnhancedDatabaseManager = None
+
+try:
+    from utils.cache_manager import cache_manager
+except ImportError as e:
+    logger.warning(f"Could not import cache_manager: {e}")
+    cache_manager = None
+
+try:
+    from utils.config_manager import ConfigManager
+except ImportError as e:
+    logger.warning(f"Could not import ConfigManager: {e}")
+    
+    class ConfigManager:
+        @staticmethod
+        def get_port():
+            return int(os.getenv("PORT", 5000))
+
+        @staticmethod
+        def is_production():
+            return os.getenv("ENVIRONMENT", "development") == "production"
 
 def create_app():
     """Create and configure the Flask application"""
@@ -24,19 +63,40 @@ def create_app():
         "https://jewgo.com",
         "https://www.jewgo.com",
         "https://app.jewgo.com",
-        "jewgo.app"
+        "https://jewgo.app",
+        "https://jewgo-app-oyoh.onrender.com"
     ])
+    
+    # Initialize database manager
+    db_manager = None
+    if EnhancedDatabaseManager:
+        try:
+            db_manager = EnhancedDatabaseManager()
+            logger.info("Database manager initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize database manager: {e}")
     
     # Health check endpoint
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint"""
         try:
+            db_healthy = False
+            if db_manager:
+                try:
+                    with db_manager.get_connection() as conn:
+                        with conn.cursor() as cursor:
+                            cursor.execute("SELECT 1")
+                            db_healthy = True
+                except Exception as e:
+                    logger.error(f"Database health check failed: {e}")
+            
             return jsonify({
-                'status': 'healthy',
-                'message': 'JewGo Backend is running',
-                'version': '1.0.0'
-            }), 200
+                'status': 'healthy' if db_healthy else 'unhealthy',
+                'database': 'connected' if db_healthy else 'disconnected',
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'version': '4.1'
+            }), 200 if db_healthy else 503
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return jsonify({
@@ -50,7 +110,7 @@ def create_app():
         """Root endpoint"""
         return jsonify({
             'message': 'JewGo Backend API',
-            'version': '1.0.0',
+            'version': '4.1',
             'status': 'running'
         }), 200
     
@@ -60,26 +120,191 @@ def create_app():
         """API information endpoint"""
         return jsonify({
             'name': 'JewGo Backend API',
-            'version': '1.0.0',
+            'version': '4.1',
             'description': 'Kosher Restaurant Discovery Platform API',
             'endpoints': {
                 'health': '/health',
                 'api_info': '/api',
-                'root': '/'
+                'root': '/',
+                'restaurants': '/api/restaurants',
+                'restaurant_detail': '/api/restaurants/<id>'
             }
         }), 200
+    
+    # Restaurant API endpoints
+    @app.route('/api/restaurants', methods=['GET'])
+    def get_restaurants():
+        """Get restaurants with filtering and pagination"""
+        try:
+            start_time = datetime.now()
+            
+            # Parse query parameters
+            limit = request.args.get('limit', type=int, default=50)
+            offset = request.args.get('offset', type=int, default=0)
+            search = request.args.get('search', type=str)
+            city = request.args.get('city', type=str)
+            state = request.args.get('state', type=str)
+            certifying_agency = request.args.get('certifying_agency', type=str)
+            kosher_category = request.args.get('kosher_category', type=str)
+            listing_type = request.args.get('listing_type', type=str)
+            status = request.args.get('status', type=str, default='active')
+            
+            # Validate parameters
+            if limit > 1000:
+                limit = 1000
+            if limit < 1:
+                limit = 50
+            
+            if not db_manager:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 503
+            
+            # Build query
+            query = "SELECT * FROM restaurants WHERE 1=1"
+            params = []
+            
+            if status:
+                query += " AND status = %s"
+                params.append(status)
+            
+            if search:
+                query += " AND (name ILIKE %s OR address ILIKE %s OR city ILIKE %s)"
+                search_param = f"%{search}%"
+                params.extend([search_param, search_param, search_param])
+            
+            if city:
+                query += " AND city ILIKE %s"
+                params.append(f"%{city}%")
+            
+            if state:
+                query += " AND state ILIKE %s"
+                params.append(f"%{state}%")
+            
+            if certifying_agency:
+                query += " AND certifying_agency ILIKE %s"
+                params.append(f"%{certifying_agency}%")
+            
+            if kosher_category:
+                query += " AND kosher_category ILIKE %s"
+                params.append(f"%{kosher_category}%")
+            
+            if listing_type:
+                query += " AND listing_type ILIKE %s"
+                params.append(f"%{listing_type}%")
+            
+            # Get total count
+            count_query = query.replace("SELECT *", "SELECT COUNT(*)")
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(count_query, params)
+                    total = cursor.fetchone()[0]
+            
+            # Add pagination and ordering
+            query += " ORDER BY name ASC LIMIT %s OFFSET %s"
+            params.extend([limit, offset])
+            
+            # Execute main query
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    restaurants = cursor.fetchall()
+                    
+                    # Convert to list of dictionaries
+                    columns = [desc[0] for desc in cursor.description]
+                    restaurants_data = []
+                    
+                    for row in restaurants:
+                        restaurant_dict = dict(zip(columns, row))
+                        # Convert datetime objects to strings
+                        for key, value in restaurant_dict.items():
+                            if isinstance(value, datetime):
+                                restaurant_dict[key] = value.isoformat()
+                        restaurants_data.append(restaurant_dict)
+            
+            response_data = {
+                'success': True,
+                'restaurants': restaurants_data,
+                'total': total,
+                'limit': limit,
+                'offset': offset,
+                'performance': {
+                    'query_time_ms': (datetime.now() - start_time).total_seconds() * 1000
+                }
+            }
+            
+            return jsonify(response_data)
+            
+        except Exception as e:
+            logger.error(f"Error fetching restaurants: {e}")
+            logger.error(traceback.format_exc())
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch restaurants',
+                'details': str(e)
+            }), 500
+    
+    @app.route('/api/restaurants/<int:restaurant_id>', methods=['GET'])
+    def get_restaurant(restaurant_id):
+        """Get a specific restaurant by ID"""
+        try:
+            if not db_manager:
+                return jsonify({
+                    'success': False,
+                    'error': 'Database not available'
+                }), 503
+            
+            query = "SELECT * FROM restaurants WHERE id = %s"
+            
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, [restaurant_id])
+                    restaurant = cursor.fetchone()
+                    
+                    if not restaurant:
+                        return jsonify({
+                            'success': False,
+                            'error': 'Restaurant not found'
+                        }), 404
+                    
+                    # Convert to dictionary
+                    columns = [desc[0] for desc in cursor.description]
+                    restaurant_dict = dict(zip(columns, restaurant))
+                    
+                    # Convert datetime objects to strings
+                    for key, value in restaurant_dict.items():
+                        if isinstance(value, datetime):
+                            restaurant_dict[key] = value.isoformat()
+            
+            return jsonify({
+                'success': True,
+                'restaurant': restaurant_dict
+            })
+            
+        except Exception as e:
+            logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
+            logger.error(traceback.format_exc())
+            return jsonify({
+                'success': False,
+                'error': 'Failed to fetch restaurant',
+                'details': str(e)
+            }), 500
     
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({
+            'success': False,
             'error': 'Not found',
             'message': 'The requested resource was not found'
         }), 404
     
     @app.errorhandler(500)
     def internal_error(error):
+        logger.error(f"Internal server error: {error}")
         return jsonify({
+            'success': False,
             'error': 'Internal server error',
             'message': 'An unexpected error occurred'
         }), 500
