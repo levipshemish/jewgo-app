@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Script from 'next/script';
 
 interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
@@ -39,6 +38,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   size = 'normal'
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
   const [widgetId, setWidgetId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
@@ -47,10 +47,18 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.turnstile) {
+    // Load Turnstile script manually to avoid async/defer issues
+    if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.onload = () => setIsLoaded(true);
+      script.onerror = () => onError?.('Failed to load Turnstile');
+      document.head.appendChild(script);
+      scriptRef.current = script;
+    } else if (typeof window !== 'undefined' && window.turnstile) {
       setIsLoaded(true);
     }
-  }, []);
+  }, [onError]);
 
   useEffect(() => {
     if (!isLoaded || !containerRef.current || !turnstileSiteKey || isRendered) {
@@ -111,18 +119,11 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   }
 
   return (
-    <>
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        onLoad={() => setIsLoaded(true)}
-        onError={() => onError?.('Failed to load Turnstile')}
-      />
-      <div 
-        ref={containerRef} 
-        className={`flex justify-center ${className}`}
-        data-testid="turnstile-widget"
-      />
-    </>
+    <div 
+      ref={containerRef} 
+      className={`flex justify-center ${className}`}
+      data-testid="turnstile-widget"
+    />
   );
 });
 
