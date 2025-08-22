@@ -242,11 +242,16 @@ build_frontend() {
     if [[ -f "../$env_file" ]]; then
         log_info "Building with environment file: $env_file"
         docker build $build_args \
-            --build-arg ENV_FILE="../$env_file" \
-            -t "${FRONTEND_IMAGE}:${tag}" .
+            --build-arg ENV_FILE="$env_file" \
+            -t "${FRONTEND_IMAGE}:${tag}" \
+            -f Dockerfile \
+            ..
     else
         log_warning "Environment file $env_file not found, building without env"
-        docker build $build_args -t "${FRONTEND_IMAGE}:${tag}" .
+        docker build $build_args \
+            -t "${FRONTEND_IMAGE}:${tag}" \
+            -f Dockerfile \
+            ..
     fi
     
     if [[ $? -eq 0 ]]; then
@@ -287,11 +292,16 @@ build_backend() {
     if [[ -f "../$env_file" ]]; then
         log_info "Building with environment file: $env_file"
         docker build $build_args \
-            --build-arg ENV_FILE="../$env_file" \
-            -t "${BACKEND_IMAGE}:${tag}" .
+            --build-arg ENV_FILE="$env_file" \
+            -t "${BACKEND_IMAGE}:${tag}" \
+            -f Dockerfile \
+            ..
     else
         log_warning "Environment file $env_file not found, building without env"
-        docker build $build_args -t "${BACKEND_IMAGE}:${tag}" .
+        docker build $build_args \
+            -t "${BACKEND_IMAGE}:${tag}" \
+            -f Dockerfile \
+            ..
     fi
     
     if [[ $? -eq 0 ]]; then

@@ -8,21 +8,21 @@ RUN apk add --no-cache curl
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
-COPY package-lock.json ./
+COPY frontend/package*.json ./
+COPY frontend/package-lock.json ./
 
 # Copy Prisma schema before installing dependencies
-COPY prisma ./prisma/
+COPY frontend/prisma ./prisma/
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
 
 # Copy source code
-COPY . .
+COPY frontend/ .
 
-# Copy environment file if provided
-ARG ENV_FILE
-COPY ${ENV_FILE:-.env} .env
+# Copy environment file if provided (relative to build context)
+ARG ENV_FILE=.env
+COPY ${ENV_FILE} .env
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -54,11 +54,11 @@ RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
 # Copy package files for production dependencies
-COPY package*.json ./
-COPY package-lock.json ./
+COPY frontend/package*.json ./
+COPY frontend/package-lock.json ./
 
 # Copy Prisma schema before installing dependencies
-COPY prisma ./prisma/
+COPY frontend/prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --omit=dev
