@@ -2863,6 +2863,35 @@ div[class*="specials-dynamic-grid"] {
   background-image: none !important;
 }
 
+/* Override specific containers that might have white backgrounds affecting cards */
+/* Only target containers that are in the card area, not navigation or modals */
+.restaurant-grid .bg-white,
+.marketplace-page .bg-white,
+.restaurant-grid ~ .bg-white,
+.marketplace-page ~ .bg-white {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Override ActionButtons container background specifically */
+.bg-white.px-4.sm\\:px-6.lg\\:px-8.py-4.lg\\:py-6 {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+/* Ensure the area between ActionButtons and cards is transparent */
+.restaurant-grid {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  /* Override any inherited backgrounds */
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 @media (max-width: 640px) {
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
