@@ -17,6 +17,7 @@ import {
  * This version uses Node.js runtime for better compatibility
  */
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
