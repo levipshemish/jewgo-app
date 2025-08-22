@@ -28,4 +28,7 @@ __pycache__/
 
 # Development files
 .DS_Store
-*.log 
+*.log
+
+# Sandbox directory (separate build process)
+sandbox/ 

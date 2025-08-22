@@ -85,3 +85,6 @@ docs/reports/
 *.pack
 *.pack.*
 webpack-cache/
+
+# Sandbox directory (separate development tool)
+sandbox/
