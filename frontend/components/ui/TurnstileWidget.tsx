@@ -104,7 +104,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     const tryRender = () => {
       attempts++;
       
-      if (window.turnstile && window.turnstile.render) {
+      if (window.turnstile && typeof window.turnstile.render === 'function') {
         renderWidget();
       } else if (attempts < maxAttempts) {
         // Retry with exponential backoff
