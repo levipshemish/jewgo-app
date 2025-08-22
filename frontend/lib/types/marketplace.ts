@@ -67,8 +67,6 @@ export interface MarketplaceSubcategory {
   active: boolean;
 }
 
-
-
 export interface MarketplaceFilters {
   category: string;
   subcategory: string;
@@ -151,8 +149,6 @@ export interface CategoriesResponse {
   data?: MarketplaceCategory[];
   error?: string;
 }
-
-
 
 export interface MarketplaceStats {
   totalListings: number;

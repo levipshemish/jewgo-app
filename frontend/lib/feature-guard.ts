@@ -38,7 +38,6 @@ export class FeatureGuard {
 
   private async performValidation(): Promise<boolean> {
     try {
-      console.log('[Feature Guard] Starting boot-time feature validation...');
 
       // Basic configuration validation
       const basicValidation = validateSupabaseFeatureSupport();
@@ -66,7 +65,7 @@ export class FeatureGuard {
       }
 
       this.validated = true;
-      console.log('✅ Feature Guard: All Supabase features validated successfully');
+
       return true;
 
     } catch (error) {

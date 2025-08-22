@@ -342,8 +342,6 @@ export default function UnifiedLiveMapClient() {
     throttledPost(message);
   }, [allRestaurants, searchQuery, activeFilters, userLocation, throttledPost]);
 
-
-
   // Event handlers
   const handleRestaurantSelect = useCallback((restaurantId: number) => {
     const restaurant = allRestaurants.find(r => parseInt(r.id.toString()) === restaurantId);

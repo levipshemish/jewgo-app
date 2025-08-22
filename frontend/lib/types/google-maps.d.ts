@@ -690,5 +690,3 @@ declare namespace google.maps {
     }
   }
 }
-
- 

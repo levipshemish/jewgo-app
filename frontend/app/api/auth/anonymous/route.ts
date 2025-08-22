@@ -137,10 +137,6 @@ export async function POST(request: NextRequest) {
     }
   }
   
-
-  
-
-  
   // Kill switch check for anonymous auth feature flag
   if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
     return NextResponse.json(
@@ -157,7 +153,6 @@ export async function POST(request: NextRequest) {
   
   try {
 
-    
     // Get request details for security validation
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
@@ -173,7 +168,7 @@ export async function POST(request: NextRequest) {
     // Comprehensive CSRF validation with signed token fallback
     // Skip CSRF validation in development/Docker environments
     if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
-      console.log(`Development/Docker mode: Skipping CSRF validation for correlation ID: ${correlationId}`);
+
     } else if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
@@ -236,7 +231,7 @@ export async function POST(request: NextRequest) {
     // Validate Turnstile token if rate limit exceeded
     // Skip Turnstile validation in development/Docker environments
     if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
-      console.log(`Development/Docker mode: Skipping Turnstile validation for correlation ID: ${correlationId}`);
+
     } else if (rateLimitResult.remaining_attempts === 0) {
       if (!turnstileToken) {
         console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
@@ -334,11 +329,7 @@ export async function POST(request: NextRequest) {
     const { data: { user: existingUser }, error: getUserError } = await supabase.auth.getUser();
     
     if (!getUserError && existingUser && extractIsAnonymous(existingUser)) {
-      console.log(`User already has anonymous session for correlation ID: ${correlationId}`, {
-        user_id: existingUser.id,
-        correlationId
-      });
-      
+
       return NextResponse.json(
         { 
           ok: true, 

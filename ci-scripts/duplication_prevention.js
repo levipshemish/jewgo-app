@@ -204,16 +204,9 @@ function validateDuplication(duplicates) {
 }
 
 function generateReport(newSymbols, duplicates, issues) {
-  console.log('\n🔍 Duplication Prevention Report');
-  console.log('================================\n');
-  
-  console.log(`📊 Analysis:`);
-  console.log(`   • New symbols found: ${newSymbols.length}`);
-  console.log(`   • Duplicates detected: ${duplicates.length}`);
-  console.log(`   • Issues found: ${issues.length}\n`);
-  
+
   if (issues.length === 0) {
-    console.log('✅ No duplication issues detected');
+
     return true;
   }
   
@@ -221,48 +214,32 @@ function generateReport(newSymbols, duplicates, issues) {
   const intentionalDups = issues.filter(issue => issue.type === 'intentional_duplicate');
   
   if (unintentionalDups.length > 0) {
-    console.log('❌ Unintentional Duplicates:');
-    console.log('------------------------------');
+
     unintentionalDups.forEach(issue => {
-      console.log(`📁 ${issue.symbol.file}:${issue.symbol.line}`);
-      console.log(`   Symbol: ${issue.symbol.name} (${issue.symbol.type})`);
-      console.log(`   Conflicts with:`);
+
       issue.existing.forEach(existing => {
-        console.log(`     • ${existing.file}:${existing.line}`);
+
       });
-      console.log(`   ⚠️  Add "// INTENTIONAL DUP" with justification if this is intentional`);
-      console.log('');
+
     });
   }
   
   if (intentionalDups.length > 0) {
-    console.log('⚠️  Intentional Duplicates:');
-    console.log('---------------------------');
+
     intentionalDups.forEach(issue => {
-      console.log(`📁 ${issue.symbol.file}:${issue.symbol.line}`);
-      console.log(`   Symbol: ${issue.symbol.name} (${issue.symbol.type})`);
-      console.log(`   ✅ Marked as intentional duplicate`);
-      console.log('');
+
     });
   }
   
   // Recommendations
-  console.log('💡 How to Fix:');
-  console.log('--------------');
-  console.log('1. Refactor to reuse existing symbols when possible');
-  console.log('2. If duplication is intentional, add:');
-  console.log('   // INTENTIONAL DUP: <justification>');
-  console.log('3. Consider creating shared utilities/components');
-  console.log('4. Document why duplication is necessary');
-  
+
   // Return success if only intentional duplicates
   const hasUnintentionalDups = unintentionalDups.length > 0;
   return !hasUnintentionalDups;
 }
 
 function main() {
-  console.log('🔍 Running Duplication Prevention Check...\n');
-  
+
   try {
     // Get PR diff
     const diff = getPRDiff();
@@ -278,11 +255,10 @@ function main() {
     const success = generateReport(newSymbols, duplicates, issues);
     
     if (!success) {
-      console.log('\n❌ Duplication prevention check failed');
-      console.log('Please fix unintentional duplicates before merging');
+
       process.exit(1);
     } else {
-      console.log('\n✅ Duplication prevention check passed');
+
       process.exit(0);
     }
   } catch (error) {

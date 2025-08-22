@@ -28,8 +28,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        console.log('Loading user data...');
-        
+
         // Check if Supabase is configured using centralized utility
         if (!isSupabaseConfigured()) {
           console.warn('Supabase not configured, allowing access for development');
@@ -39,14 +38,13 @@ export default function SettingsPage() {
         }
         
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
-        console.log('User load result:', { user, error });
-        
+
         if (user) {
           const userData = transformSupabaseUser(user);
-          console.log('Setting user data:', userData);
+
           setUser(userData);
         } else {
-          console.log('No user found');
+
         }
       } catch (error) {
         console.error('Error loading user:', error);

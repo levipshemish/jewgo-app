@@ -263,11 +263,7 @@ export async function POST(request: NextRequest) {
       .single();
     
     if (existingJob) {
-      console.log(`Merge job already exists for correlation ID: ${correlationId}`, {
-        job_id: existingJob.id,
-        correlationId
-      });
-      
+
       const response = NextResponse.json(
         { 
           ok: true,

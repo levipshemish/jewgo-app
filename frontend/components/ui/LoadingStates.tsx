@@ -46,7 +46,6 @@ export function LoadingButton({
   const [isLoading, setIsLoading] = useState(false);
   const { showError } = useToast();
 
-
   const isDisabled = disabled || loading || isLoading;
 
   const variantClasses = {

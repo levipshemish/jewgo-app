@@ -75,7 +75,7 @@ export default function ReviewsSection({
       try {
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-          console.log('[ReviewsSection] Supabase not configured');
+
           setLoading(false);
           return;
         }

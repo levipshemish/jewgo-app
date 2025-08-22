@@ -14,13 +14,6 @@ export async function GET(request: NextRequest) {
     const next = searchParams.get('next') || searchParams.get('redirectTo') || '/location-access';
     const safeNext = validateRedirectUrl(next);
 
-    console.log('OAuth callback received:', { 
-      hasCode: !!code, 
-      hasError: !!error, 
-      next: safeNext,
-      url: request.url 
-    });
-
     // Handle OAuth errors
     if (error) {
       console.error('OAuth error received:', error);
@@ -46,11 +39,11 @@ export async function GET(request: NextRequest) {
     // Get user data
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      console.log('OAuth authentication successful for user:', user.id);
+
     }
 
     // Redirect to the validated next URL
-    console.log('Redirecting to:', safeNext);
+
     return NextResponse.redirect(new URL(safeNext, request.url));
 
   } catch (error) {

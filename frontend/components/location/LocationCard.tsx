@@ -7,7 +7,6 @@ import { Restaurant } from '@/lib/types/restaurant';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/colors';
 import { titleCase } from '@/lib/utils/stringUtils';
 
-
 interface LocationCardProps {
   location: Restaurant;
   type: 'mikvah' | 'shul' | 'store';
@@ -112,8 +111,6 @@ export default function LocationCard({ location, type, onClick }: LocationCardPr
             <span className="truncate">{location.phone_number}</span>
           </div>
         )}
-
-
 
         {/* Kosher Category */}
         {location.kosher_category && (

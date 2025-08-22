@@ -48,7 +48,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   // Mock menu items - in a real app, this would come from the restaurant data
   const menuItems = [
     { id: '1', name: 'Kosher Burger', price: 15.99, category: 'Main Course' },
@@ -57,10 +56,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     { id: '4', name: 'Israeli Salad', price: 6.99, category: 'Side' },
     { id: '5', name: 'Baklava', price: 4.99, category: 'Dessert' },
   ];
-
-
-
-
 
   const addItemToOrder = (item: typeof menuItems[0]): void => {
     setOrderItems(prev => {
@@ -190,8 +185,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

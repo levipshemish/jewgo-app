@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 
-
 export default function SpecialsPageClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('specials');

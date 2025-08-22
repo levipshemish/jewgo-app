@@ -84,8 +84,6 @@ export function validateEnvironment(): void {
     const missingNames = missingVars.map(({ name }) => name).join(', ');
     const errorMessage = `Missing required environment variables: ${missingNames}`;
     
-
-    
     throw new Error(errorMessage);
   }
 
@@ -124,8 +122,7 @@ export function validateEnvironment(): void {
     if (!hasStandardRedis) {
       throw new Error('Standard Redis configuration is required in production for rate limiting. Set either REDIS_URL or REDIS_HOST/REDIS_PASSWORD');
     }
-    
-    console.log('✅ Standard Redis configured for production rate limiting');
+
   }
 }
 
@@ -211,7 +208,7 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
     validateEnvironment();
     
     // Note: Feature validation moved to individual API routes to avoid build issues
-    console.log('✅ Environment validation completed');
+
   } catch (error) {
     console.error('Environment validation failed:', error);
     // Don't throw during build time, only during runtime

@@ -84,7 +84,7 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
     sendToAnalyticsEndpoint(event);
 
     if (process.env.NODE_ENV === 'development') {
-              // console.log('Analytics event:', eventName, properties);
+
     }
   }, [userId, sessionId, sendToAnalyticsEndpoint]);
 

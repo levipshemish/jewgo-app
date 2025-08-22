@@ -92,7 +92,7 @@ export function validateSupabaseFeatureSupport(): boolean {
 
     // Server-side validation would require making a test request
     // For now, we'll validate the configuration is present
-    console.log('[Feature Guard] Supabase configuration validated');
+
     setCachedFeatureSupport(true);
     return true;
     
@@ -164,12 +164,11 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
   const correlationId = `feature_guard_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   
   try {
-    console.log(`🚨 [Feature Guard] Starting critical feature validation (${correlationId})`);
-    
+
     // Check cached result first
     const cachedResult = getCachedFeatureSupport();
     if (cachedResult !== null) {
-      console.log(`[Feature Guard] Using cached result: ${cachedResult} (${correlationId})`);
+
       return cachedResult;
     }
     
@@ -223,8 +222,6 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
       // Don't fail for linkIdentity as it's not critical for basic auth
     }
 
-    console.log(`✅ [Feature Guard] Critical features validated successfully (${correlationId})`);
-    console.log(`✅ signInAnonymously: AVAILABLE`);
     setCachedFeatureSupport(true);
     return true;
 
@@ -383,8 +380,6 @@ export function isAppleUser(user: any): boolean {
   return detectProvider(user) === 'apple';
 }
 
-
-
 // Identity linking functionality removed - implement using official APIs when needed
 // For proactive link: call the official link identity API while the user is authenticated
 // For reactive collisions: use the link attempt's error to branch UX and require re-auth with the primary method
@@ -474,7 +469,7 @@ export async function completeIdentityLinking(userId: string, reauthProvider: st
   }
 
   // TODO: Implement actual Supabase Link API integration
-  // For now, return failure as this is not yet implemented
+  // This will be implemented when Supabase Link API is fully available
   authLogger.info('Identity linking attempted but not implemented yet', {
     userId, 
     reauthProvider
@@ -531,7 +526,7 @@ export function verifySignedCSRFTokenServer(token: string): boolean {
 
     return signature === expectedSignature;
   } catch (error) {
-    console.error('CSRF token verification failed:', error);
+    authLogger.error('CSRF token verification failed', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }

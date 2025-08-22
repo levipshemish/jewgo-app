@@ -35,8 +35,6 @@ interface SearchSuggestion {
   metadata?: unknown;
 }
 
-
-
 export default function SmartSearch({
   onSearch, onLocationSelect, placeholder = "Search for kosher restaurants, agencies, or locations...", className = "", showAdvancedFilters = true, useGoogleAPI = false, // Enhanced UI customization props
   leftIcon: _leftIcon, rightIcon: _rightIcon, inputClassName: _inputClassName, onVoiceInput: _onVoiceInput, suggestions: _customSuggestions = [], autoFocus: _autoFocus = false, debounceMs: _debounceMs = 300, onFilterClick: _onFilterClick
@@ -148,8 +146,6 @@ export default function SmartSearch({
     setRecentSearches(updated);
     localStorage.setItem('jewgo-recent-searches', JSON.stringify(updated));
   }, [recentSearches]);
-
-
 
   // Handle Google Place selection
   const handleGooglePlaceSelect = useCallback(async (place: GooglePlacesResult) => {

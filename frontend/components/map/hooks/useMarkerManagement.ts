@@ -232,12 +232,7 @@ export function useMarkerManagement({
       if (restaurant.latitude === undefined || restaurant.longitude === undefined) {
               if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log('useMarkerManagement: Restaurant missing coordinates:', {
-          id: restaurant.id,
-          name: restaurant.name,
-          latitude: restaurant.latitude,
-          longitude: restaurant.longitude
-        });
+
       }
         return null;
       }

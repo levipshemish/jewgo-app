@@ -37,5 +37,3 @@ export const prisma = prismaInstance
 process.on('beforeExit', async () => {
   await prisma.$disconnect()
 })
-
-

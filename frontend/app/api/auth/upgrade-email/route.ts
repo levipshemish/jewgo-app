@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Comprehensive CSRF validation with signed token fallback
     // Skip CSRF validation in development/Docker environments
     if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
-      console.log(`Development/Docker mode: Skipping CSRF validation for correlation ID: ${correlationId}`);
+
     } else if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,

@@ -103,7 +103,6 @@ export function validateEnvironment(): void {
     throw new Error(errorMessage);
   }
 
-  console.log('✅ Public environment validation completed');
 }
 
 /**

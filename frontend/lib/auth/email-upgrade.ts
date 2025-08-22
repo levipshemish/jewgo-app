@@ -29,7 +29,6 @@ export class EmailUpgradeFlow {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Email Upgrade] Starting email upgrade for ${email} (${correlationId})`);
 
       // First, check if user is currently anonymous
       const { data: { user }, error: getUserError } = await this.supabase.auth.getUser();
@@ -55,7 +54,7 @@ export class EmailUpgradeFlow {
       // Check if user is anonymous
       const isAnonymous = user.user_metadata?.is_anonymous === true;
       if (!isAnonymous) {
-        console.log(`[Email Upgrade] User is not anonymous (${correlationId})`);
+
         return {
           success: false,
           error: 'User is not anonymous',
@@ -73,8 +72,7 @@ export class EmailUpgradeFlow {
         
         // Check if this is an email conflict
         if (updateError.message.includes('EMAIL_IN_USE') || updateError.message.includes('already registered')) {
-          console.log(`[Email Upgrade] Email conflict detected (${correlationId})`);
-          
+
           // Prepare for merge by setting up merge token
           const mergeResult = await this.prepareForMerge(user.id, correlationId);
           
@@ -101,7 +99,6 @@ export class EmailUpgradeFlow {
         };
       }
 
-      console.log(`[Email Upgrade] Email upgrade successful (${correlationId})`);
       return {
         success: true,
         correlationId
@@ -122,7 +119,6 @@ export class EmailUpgradeFlow {
    */
   private async prepareForMerge(anonymousUserId: string, correlationId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      console.log(`[Email Upgrade] Preparing for merge (${correlationId})`);
 
       // Call prepare-merge API to set up merge token
       const response = await fetch('/api/auth/prepare-merge', {
@@ -143,7 +139,6 @@ export class EmailUpgradeFlow {
         };
       }
 
-      console.log(`[Email Upgrade] Merge preparation successful (${correlationId})`);
       return { success: true };
 
     } catch (error) {
@@ -162,7 +157,6 @@ export class EmailUpgradeFlow {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Email Upgrade] Starting account merge (${correlationId})`);
 
       // Call merge-anonymous API
       const response = await fetch('/api/auth/merge-anonymous', {
@@ -209,7 +203,6 @@ export class EmailUpgradeFlow {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Email Upgrade] Verifying email (${correlationId})`);
 
       const { error } = await this.supabase.auth.verifyOtp({
         token_hash: token,
@@ -224,7 +217,6 @@ export class EmailUpgradeFlow {
         };
       }
 
-      console.log(`[Email Upgrade] Email verification successful (${correlationId})`);
       return { success: true };
 
     } catch (error) {
@@ -243,7 +235,6 @@ export class EmailUpgradeFlow {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Email Upgrade] Setting password (${correlationId})`);
 
       const { error } = await this.supabase.auth.updateUser({
         password: password
@@ -257,7 +248,6 @@ export class EmailUpgradeFlow {
         };
       }
 
-      console.log(`[Email Upgrade] Password set successfully (${correlationId})`);
       return { success: true };
 
     } catch (error) {

@@ -26,17 +26,9 @@ const globalThreshold = parseInt(process.argv[2]) || DEFAULT_GLOBAL_THRESHOLD;
 const moduleThreshold = parseInt(process.argv[3]) || DEFAULT_MODULE_THRESHOLD;
 const coverageFile = process.argv[4] || 'coverage/coverage-summary.json';
 
-console.log('🔍 Coverage Gate Enforcement');
-console.log('============================');
-console.log(`Global threshold: ${globalThreshold}%`);
-console.log(`Module threshold: ${moduleThreshold}%`);
-console.log(`Coverage file: ${coverageFile}`);
-console.log('');
-
 // Check if coverage file exists
 if (!fs.existsSync(coverageFile)) {
-  console.log('❌ Coverage file not found:', coverageFile);
-  console.log('💡 Ensure tests are run with coverage enabled');
+
   process.exit(1);
 }
 
@@ -66,54 +58,31 @@ try {
         covered
       });
     }
-    
-    console.log(`${percentage >= moduleThreshold ? '✅' : '❌'} ${filePath}: ${percentage.toFixed(1)}% (${covered}/${statements})`);
+
   }
   
   // Calculate global coverage
   const globalCoverage = totalStatements > 0 ? (totalCovered / totalStatements) * 100 : 100;
-  
-  console.log('');
-  console.log('📊 Coverage Summary:');
-  console.log(`  Global coverage: ${globalCoverage.toFixed(1)}% (${totalCovered}/${totalStatements})`);
-  console.log(`  Global threshold: ${globalThreshold}%`);
-  console.log(`  Failed modules: ${failedModules.length}`);
-  
+
   // Check global threshold
   if (globalCoverage < globalThreshold) {
-    console.log('');
-    console.log('❌ FAIL: Global coverage below threshold');
-    console.log(`   Required: ${globalThreshold}%, Actual: ${globalCoverage.toFixed(1)}%`);
-    console.log('');
-    console.log('💡 Improve coverage by:');
-    console.log('   - Adding tests for uncovered code');
-    console.log('   - Removing dead code');
-    console.log('   - Refactoring complex functions');
+
   }
   
   // Check per-module thresholds
   if (failedModules.length > 0) {
-    console.log('');
-    console.log('❌ FAIL: Modules below coverage threshold');
-    console.log('');
+
     failedModules.forEach(module => {
-      console.log(`   ${module.file}: ${module.coverage}% (${module.covered}/${module.statements})`);
+
     });
-    console.log('');
-    console.log('💡 Improve module coverage by:');
-    console.log('   - Adding unit tests for specific modules');
-    console.log('   - Testing edge cases and error conditions');
-    console.log('   - Mocking external dependencies');
+
   }
   
   // Exit with error if any thresholds failed
   if (globalCoverage < globalThreshold || failedModules.length > 0) {
     process.exit(1);
   }
-  
-  console.log('');
-  console.log('✅ All coverage thresholds met!');
-  
+
 } catch (error) {
   console.error('❌ Error parsing coverage file:', error.message);
   process.exit(1);

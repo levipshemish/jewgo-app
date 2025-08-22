@@ -40,8 +40,6 @@ export interface TransformedUser {
   updatedAt?: string;
 }
 
-
-
 /**
  * Extract JWT ID (jti) from access token
  * Works in both browser and Node.js environments
@@ -122,8 +120,6 @@ export function verifyTokenRotation(
 }
 
 // Note: Server-only HMAC constants moved to auth-utils.server.ts to prevent client bundle inclusion
-
-
 
 /**
  * DEPRECATED: Use validateRedirectUrl instead
@@ -348,8 +344,6 @@ export function extractIsAnonymous(u?: any): boolean {
   if (!u) {return false;}
   return Boolean(u.is_anonymous ?? u.isAnonymous ?? u.app_metadata?.is_anonymous ?? u.user_metadata?.is_anonymous ?? u['is_anonymous']);
 }
-
-
 
 /**
  * Check if Supabase is properly configured
@@ -685,7 +679,6 @@ export function validateSupabaseFeatureSupport(): boolean {
       // Don't fail for linkIdentity as it's not critical for basic auth
     }
 
-    console.log('[Feature Guard] Supabase features validated successfully');
     return true;
     
   } catch (error) {

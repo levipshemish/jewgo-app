@@ -1,5 +1,4 @@
 
-
 import { GooglePlacesHours, GooglePlacesResult } from '@/types';
 
 export async function fetchPlaceDetails(place_id: string): Promise<{

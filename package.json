@@ -25,7 +25,14 @@
     "docker:logs": "./scripts/auto-docker-dev.sh logs",
     "docker:status": "./scripts/auto-docker-dev.sh status",
     "docker:stop": "./scripts/auto-docker-dev.sh stop",
-    "docker:cleanup": "./scripts/auto-docker-dev.sh cleanup"
+    "docker:cleanup": "./scripts/auto-docker-dev.sh cleanup",
+    "// Docker Hub deployment scripts": "",
+    "docker:build": "./scripts/docker-hub-workflow.sh build",
+    "docker:push": "./scripts/docker-hub-workflow.sh push",
+    "docker:deploy": "./scripts/docker-hub-workflow.sh build-and-push",
+    "docker:list": "./scripts/docker-hub-workflow.sh list",
+    "docker:clean": "./scripts/docker-hub-workflow.sh clean",
+    "docker:hub-status": "./scripts/docker-hub-workflow.sh status"
   },
   "devDependencies": {
     "pnpm": "^8.0.0"

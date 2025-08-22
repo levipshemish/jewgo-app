@@ -22,25 +22,20 @@ const REGRESSION_THRESHOLDS = {
   bundleSize: 0.05  // 5% max regression
 };
 
-console.log('📈 Performance Regression Tracking');
-console.log('==================================');
-
 // Parse command line arguments
 const currentMetricsFile = process.argv[2] || 'current-metrics.json';
 const baselineMetricsFile = process.argv[3] || 'baseline-metrics.json';
 
 // Check if files exist
 if (!fs.existsSync(currentMetricsFile)) {
-  console.log(`❌ Current metrics file not found: ${currentMetricsFile}`);
-  console.log('💡 Run performance tests to generate current metrics');
+
   process.exit(1);
 }
 
 if (!fs.existsSync(baselineMetricsFile)) {
-  console.log(`⚠️  Baseline metrics file not found: ${baselineMetricsFile}`);
-  console.log('💡 Creating baseline from current metrics');
+
   fs.copyFileSync(currentMetricsFile, baselineMetricsFile);
-  console.log('✅ Baseline created from current metrics');
+
   process.exit(0);
 }
 
@@ -104,10 +99,6 @@ function hasRegressed(current, baseline, threshold, metricName) {
 const currentMetrics = loadMetrics(currentMetricsFile);
 const baselineMetrics = loadMetrics(baselineMetricsFile);
 
-console.log(`Current metrics: ${currentMetricsFile}`);
-console.log(`Baseline metrics: ${baselineMetricsFile}`);
-console.log('');
-
 // Track regressions
 const regressions = [];
 const improvements = [];
@@ -120,20 +111,15 @@ Object.keys(REGRESSION_THRESHOLDS).forEach(metricName => {
   const threshold = REGRESSION_THRESHOLDS[metricName];
   
   if (current === undefined || baseline === undefined) {
-    console.log(`⚠️  Missing metric: ${metricName}`);
+
     return;
   }
   
   const change = current - baseline;
   const percentageChange = calculatePercentageChange(current, baseline);
-  
-  console.log(`${metricName.toUpperCase()}:`);
-  console.log(`  Current: ${formatMetric(metricName, current)}`);
-  console.log(`  Baseline: ${formatMetric(metricName, baseline)}`);
-  console.log(`  Change: ${change > 0 ? '+' : ''}${formatMetric(metricName, change)} (${percentageChange > 0 ? '+' : ''}${percentageChange.toFixed(1)}%)`);
-  
+
   if (hasRegressed(current, baseline, threshold, metricName)) {
-    console.log(`  ❌ REGRESSION: Exceeds threshold of ${metricName === 'bundleSize' ? (threshold * 100).toFixed(1) + '%' : formatMetric(metricName, threshold)}`);
+
     regressions.push({
       metric: metricName,
       current,
@@ -143,7 +129,7 @@ Object.keys(REGRESSION_THRESHOLDS).forEach(metricName => {
       threshold
     });
   } else if (change < 0) {
-    console.log(`  ✅ IMPROVEMENT: Better than baseline`);
+
     improvements.push({
       metric: metricName,
       current,
@@ -152,7 +138,7 @@ Object.keys(REGRESSION_THRESHOLDS).forEach(metricName => {
       percentageChange
     });
   } else {
-    console.log(`  ➡️  STABLE: Within acceptable range`);
+
     stable.push({
       metric: metricName,
       current,
@@ -161,56 +147,38 @@ Object.keys(REGRESSION_THRESHOLDS).forEach(metricName => {
       percentageChange
     });
   }
-  console.log('');
+
 });
 
 // Summary
-console.log('📊 Performance Regression Summary');
-console.log('==================================');
-console.log(`Regressions: ${regressions.length}`);
-console.log(`Improvements: ${improvements.length}`);
-console.log(`Stable: ${stable.length}`);
-console.log('');
 
 // Report regressions
 if (regressions.length > 0) {
-  console.log('❌ PERFORMANCE REGRESSIONS DETECTED:');
+
   regressions.forEach(regression => {
     const threshold = regression.metric === 'bundleSize' 
       ? `${(REGRESSION_THRESHOLDS[regression.metric] * 100).toFixed(1)}%`
       : formatMetric(regression.metric, REGRESSION_THRESHOLDS[regression.metric]);
-    
-    console.log(`  ${regression.metric.toUpperCase()}: ${formatMetric(regression.metric, regression.current)} (baseline: ${formatMetric(regression.metric, regression.baseline)})`);
-    console.log(`    Threshold: ${threshold}, Change: ${regression.percentageChange.toFixed(1)}%`);
+
   });
-  console.log('');
-  console.log('💡 Performance optimization suggestions:');
-  console.log('   - Code splitting and lazy loading');
-  console.log('   - Image optimization and compression');
-  console.log('   - Bundle analysis and tree shaking');
-  console.log('   - Caching strategies');
-  console.log('   - Server-side optimizations');
-  console.log('');
-  console.log('🚨 FAIL: Performance regressions must be addressed before merging');
+
   process.exit(1);
 }
 
 // Report improvements
 if (improvements.length > 0) {
-  console.log('✅ PERFORMANCE IMPROVEMENTS:');
+
   improvements.forEach(improvement => {
-    console.log(`  ${improvement.metric.toUpperCase()}: ${formatMetric(improvement.metric, improvement.current)} (improved by ${Math.abs(improvement.percentageChange).toFixed(1)}%)`);
+
   });
-  console.log('');
+
 }
 
 // Update baseline if no regressions
-console.log('✅ No performance regressions detected');
-console.log('💡 Consider updating baseline if improvements are significant');
 
 // Optional: Auto-update baseline for improvements
 if (improvements.length > 0) {
-  console.log('🔄 Updating baseline with current metrics...');
+
   fs.copyFileSync(currentMetricsFile, baselineMetricsFile);
-  console.log('✅ Baseline updated');
+
 }

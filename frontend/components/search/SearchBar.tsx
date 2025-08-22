@@ -35,7 +35,6 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
 
-
   // Initialize Google Places services
   useEffect(() => {
     const initializeGooglePlaces = async () => {

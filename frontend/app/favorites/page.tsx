@@ -56,7 +56,7 @@ function FavoritesPageContent() {
 
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-          console.log('[Favorites] Supabase not configured');
+
           setIsAuthenticated(false);
           setLoading(false);
           return;
@@ -64,7 +64,7 @@ function FavoritesPageContent() {
 
         const supabase = await getSupabaseClient();
         if (!supabase) {
-          console.log('[Favorites] Supabase client not available');
+
           setIsAuthenticated(false);
           setLoading(false);
           return;
@@ -133,20 +133,18 @@ function FavoritesPageContent() {
     setShowFilters(false);
   };
 
-
-
   const handleCardClick = (restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
   };
 
   const handleAddToFavorites = (restaurantId: string) => {
     // This will be handled by the useFavorites hook
-    console.log('Add to favorites:', restaurantId);
+
   };
 
   const handleRemoveFromFavorites = (restaurantId: string) => {
     // This will be handled by the useFavorites hook
-    console.log('Remove from favorites:', restaurantId);
+
   };
 
   // Show loading state while checking authentication

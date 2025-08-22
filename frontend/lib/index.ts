@@ -9,7 +9,6 @@ export * from './api/specials';
 
 // Auth exports
 
-
 // Config exports
 export * from './api-config';
 
@@ -21,7 +20,6 @@ export * from './filters/urlSync';
 export * from './hooks/useOptimizedFilters';
 export * from './hooks/useFilterOptions';
 export * from './hooks/useCssLoader';
-
 
 // Type exports
 export * from './types/restaurant';

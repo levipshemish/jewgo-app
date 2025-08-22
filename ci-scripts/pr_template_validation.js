@@ -217,9 +217,7 @@ function validateCICD(prDescription) {
 }
 
 function generateReport(validationResults) {
-  console.log('\n🔍 PR Template Validation Report');
-  console.log('================================\n');
-  
+
   const {
     isHotfix,
     missingSections,
@@ -229,103 +227,63 @@ function generateReport(validationResults) {
     rollbackValidation,
     cicdValidation
   } = validationResults;
-  
-  console.log(`📊 Analysis:`);
-  console.log(`   • PR Type: ${isHotfix ? 'Hotfix' : 'Feature/Refactor'}`);
-  console.log(`   • Missing sections: ${missingSections.length}`);
-  console.log(`   • Missing checkboxes: ${missingCheckboxes.length}`);
-  console.log(`   • Context7: ${context7Validation.isValid ? 'Valid' : 'Invalid'}`);
-  console.log(`   • TEMP/DEPRECATED: ${tempDeprecatedValidation.isValid ? 'Valid' : 'Invalid'}`);
-  console.log(`   • Rollback Testing: ${rollbackValidation.isValid ? 'Valid' : 'Invalid'}`);
-  console.log(`   • CI/CD: ${cicdValidation.isValid ? 'Valid' : 'Invalid'}\n`);
-  
+
   let hasErrors = false;
   
   if (missingSections.length > 0) {
-    console.log('❌ Missing Required Sections:');
-    console.log('-------------------------------');
+
     missingSections.forEach(section => {
-      console.log(`   • ${section}`);
+
     });
-    console.log('');
+
     hasErrors = true;
   }
   
   if (missingCheckboxes.length > 0) {
-    console.log('❌ Missing Required Checkboxes:');
-    console.log('--------------------------------');
+
     missingCheckboxes.forEach(checkbox => {
-      console.log(`   • ${checkbox}`);
+
     });
-    console.log('');
+
     hasErrors = true;
   }
   
   if (!context7Validation.isValid) {
-    console.log('❌ Context7 Validation:');
-    console.log('------------------------');
-    console.log(`   • ${context7Validation.message}`);
-    console.log('');
+
     hasErrors = true;
   }
   
   if (!tempDeprecatedValidation.isValid) {
-    console.log('❌ TEMPORARY/DEPRECATED Validation:');
-    console.log('-----------------------------------');
-    console.log(`   • ${tempDeprecatedValidation.message}`);
-    console.log('');
+
     hasErrors = true;
   }
   
   if (!rollbackValidation.isValid) {
-    console.log('❌ Rollback Testing Validation:');
-    console.log('--------------------------------');
-    console.log(`   • ${rollbackValidation.message}`);
-    console.log('');
+
     hasErrors = true;
   }
   
   if (!cicdValidation.isValid) {
-    console.log('❌ CI/CD Validation:');
-    console.log('--------------------');
-    console.log(`   • ${cicdValidation.message}`);
-    console.log('');
+
     hasErrors = true;
   }
   
   if (!hasErrors) {
-    console.log('✅ PR template validation passed');
-    console.log('');
-    console.log('💡 Template Usage:');
-    console.log('------------------');
-    console.log('• Use full template for features, refactors, and significant changes');
-    console.log('• Use hotfix template for urgent fixes and minimal changes');
-    console.log('• Ensure all required sections are completed');
-    console.log('• Provide Context7 confirmation or skip justification');
-    console.log('• Complete TEMPORARY/DEPRECATED summary table if applicable');
-    console.log('• Confirm rollback testing and CI/CD completion');
+
   } else {
-    console.log('💡 How to Fix:');
-    console.log('--------------');
-    console.log('1. Complete all required sections');
-    console.log('2. Check all required checkboxes');
-    console.log('3. Provide Context7 confirmation or skip justification');
-    console.log('4. Complete TEMPORARY/DEPRECATED summary table');
-    console.log('5. Confirm rollback testing completion');
-    console.log('6. Confirm CI/CD pipeline completion');
+
   }
   
   return !hasErrors;
 }
 
 function main() {
-  console.log('🔍 Running PR Template Validation...\n');
-  
+
   try {
     const prDescription = getPRDescription();
     
     if (!prDescription) {
-      console.log('⚠️  No PR description found. Running in demo mode...');
+
       return true;
     }
     
@@ -350,11 +308,10 @@ function main() {
     const success = generateReport(validationResults);
     
     if (!success) {
-      console.log('\n❌ PR template validation failed');
-      console.log('Please complete all required sections before merging');
+
       process.exit(1);
     } else {
-      console.log('\n✅ PR template validation passed');
+
       process.exit(0);
     }
   } catch (error) {

@@ -57,5 +57,3 @@ export async function loadMaps(): Promise<typeof window.google> {
     throw new Error(`Google Maps loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
-
-

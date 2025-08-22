@@ -130,7 +130,7 @@ export async function checkRateLimit(
 }> {
   // In Docker environment, use in-memory rate limiting
   if (isDockerEnvironment()) {
-    console.log('Using in-memory rate limiting for Docker environment');
+
     return checkRateLimitMemory(key, limitType, requestIP, forwardedFor);
   }
   

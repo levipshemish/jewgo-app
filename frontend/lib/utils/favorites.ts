@@ -6,7 +6,6 @@ import { Restaurant } from '@/lib/types/restaurant';
 
 const FAVORITES_STORAGE_KEY = 'jewgo_favorites';
 
-
 export interface FavoriteRestaurant {
   id: string;
   name: string;

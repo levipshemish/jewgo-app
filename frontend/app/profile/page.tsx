@@ -22,13 +22,11 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        console.log('Profile page: Loading user data...');
-        console.log('Profile page: Current URL:', window.location.href);
-        
+
         // Check if Supabase is configured using centralized utility
         if (!isSupabaseConfigured()) {
           console.warn('Profile page: Supabase not configured, redirecting to settings');
-          console.log('Profile page: About to redirect to /profile/settings');
+
           setRedirectStatus('Supabase not configured, redirecting to settings...');
           // Remove unnecessary delay - redirect immediately
           router.push('/profile/settings');
@@ -36,26 +34,24 @@ export default function ProfilePage() {
         }
         
         const { data: { user }, error } = await supabaseBrowser.auth.getUser();
-        console.log('Profile page: User load result:', { user, error });
-        
+
         if (user) {
           const userData = transformSupabaseUser(user);
-          console.log('Profile page: Setting user data:', userData);
+
           setUser(userData);
           
           // Redirect to settings page immediately
-          console.log('Profile page: About to redirect to /profile/settings');
+
           setRedirectStatus('Redirecting to /profile/settings...');
           router.push('/profile/settings');
         } else {
-          console.log('Profile page: No user found, redirecting to signin');
-          console.log('Profile page: About to redirect to /auth/signin');
+
           setRedirectStatus('Redirecting to /auth/signin...');
           router.push('/auth/signin');
         }
       } catch (error) {
         console.error('Profile page: Error loading user:', error);
-        console.log('Profile page: About to redirect to /auth/signin due to error');
+
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
         handleUserLoadError(error, router);
       } finally {

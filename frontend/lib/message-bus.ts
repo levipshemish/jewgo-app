@@ -80,5 +80,3 @@ export function subscribe(listener: Listener) {
     listeners.delete(listener);
   };
 }
-
-

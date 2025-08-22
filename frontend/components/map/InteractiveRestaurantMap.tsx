@@ -11,7 +11,6 @@ import { safeFilter } from '@/lib/utils/validation';
 import { useMarkerManagement } from './hooks/useMarkerManagement';
 import { MapPerformanceMonitor } from '../monitoring/MapPerformanceMonitor';
 
-
 // Optional globals for clustering when available at runtime
 declare global {
   interface Window {
@@ -19,8 +18,6 @@ declare global {
     SuperClusterAlgorithm?: any;
   }
 }
-
-
 
 interface UserLocation {
   latitude: number;
@@ -140,7 +137,7 @@ export default function InteractiveRestaurantMap({
       if (!map || !window.google?.maps) { 
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
-          console.log('InteractiveRestaurantMap: Map or Google Maps API not ready');
+
         }
         return; 
       }
@@ -148,7 +145,7 @@ export default function InteractiveRestaurantMap({
       if (!bounds) { 
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
-          console.log('InteractiveRestaurantMap: Map bounds not available');
+
         }
         return; 
       }
@@ -202,10 +199,6 @@ export default function InteractiveRestaurantMap({
     }
   }, []);
 
-
-
-
-
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const userLocationMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | google.maps.Marker | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
@@ -219,8 +212,6 @@ export default function InteractiveRestaurantMap({
   const isClusteringRef = useRef<boolean>(false);
   // Marker pool disabled to prevent "old marker" content issues
   const markerPoolRef = useRef<Map<string, (google.maps.marker.AdvancedMarkerElement | google.maps.Marker)[]>>(new Map());
-
-
 
   // Safe error message helper
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -300,7 +291,6 @@ export default function InteractiveRestaurantMap({
     [cleanupMarkers, createMarker, applyClustering]
   );
 
-
   // Cleanup timeouts and marker pool on unmount
   useEffect(() => {
     return () => {
@@ -319,12 +309,7 @@ export default function InteractiveRestaurantMap({
   // Debug logging (disabled to satisfy no-console rule)
   // if (process.env.NODE_ENV === 'development') {
   //   // eslint-disable-next-line no-console
-  //   console.log('InteractiveRestaurantMap Debug:', {
-  //     totalRestaurants: safeRestaurants.length,
-  //     restaurantsWithCoords: restaurantsWithCoords.length,
-  //     userLocation: !!userLocation,
-  //     mapCenter: !!mapCenter
-  //   });
+
   // }
 
   // Load Google Maps API via unified loader
@@ -352,11 +337,7 @@ export default function InteractiveRestaurantMap({
     if (!apiLoaded || !mapRef.current || mapError) {
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log('InteractiveRestaurantMap: Map initialization skipped:', {
-          apiLoaded,
-          hasMapRef: !!mapRef.current,
-          mapError
-        });
+
       }
       return;
     }
@@ -378,7 +359,7 @@ export default function InteractiveRestaurantMap({
 
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log('InteractiveRestaurantMap: Initializing map with restaurants:', restaurantsWithCoords.length);
+
       }
 
       // Only create map if it doesn't exist
@@ -404,18 +385,14 @@ export default function InteractiveRestaurantMap({
 
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
-          console.log('InteractiveRestaurantMap: Map bounds calculated:', {
-            center,
-            hasBounds: bounds !== null,
-            restaurantCount: restaurantsWithCoords.length
-          });
+
         }
 
         // Create map
         const mapId = process.env['NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID'];
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
-          console.log('InteractiveRestaurantMap: Creating map with ID:', mapId);
+
         }
 
         const map = new window.google.maps.Map(mapRef.current, {
@@ -461,7 +438,7 @@ export default function InteractiveRestaurantMap({
 
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
-          console.log('InteractiveRestaurantMap: Map created successfully');
+
         }
 
         // Performance-optimized idle handler with debouncing
@@ -482,8 +459,6 @@ export default function InteractiveRestaurantMap({
             } catch {}
           }, 250); // Increased to 250ms delay after idle for better performance
         });
-
-
 
         // Create info window
         infoWindowRef.current = new window.google.maps.InfoWindow({
@@ -528,15 +503,13 @@ export default function InteractiveRestaurantMap({
 
   }, [apiLoaded, mapError, mapCenter]); // Removed userLocation to prevent re-initialization
 
-
-
   // Viewport-gated, threshold-aware rendering using the marker management hook
   const renderVisibleMarkers = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.google?.maps) { 
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log('InteractiveRestaurantMap: Map or Google Maps API not ready');
+
       }
       return; 
     }
@@ -545,7 +518,7 @@ export default function InteractiveRestaurantMap({
     if (!bounds) { 
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.log('InteractiveRestaurantMap: Map bounds not available');
+
       }
       return; 
     }
@@ -895,8 +868,6 @@ export default function InteractiveRestaurantMap({
   useEffect(() => {
     infoWindowCache.current.clear();
   }, [restaurantsWithCoords]);
-
-
 
   // Function to get directions to a restaurant
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1298,8 +1269,6 @@ export default function InteractiveRestaurantMap({
         </div>
       )}
 
-
-
       {/* Directions Toggle Button - Positioned below get location button */}
       {userLocation && showDirections && (
         <div className="absolute top-48 right-2 sm:top-52 sm:right-4 z-10">
@@ -1326,8 +1295,6 @@ export default function InteractiveRestaurantMap({
           </button>
         </div>
       )}
-
-
 
       {/* Center on User Location Button - Mobile Optimized - Positioned at top right corner */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30">

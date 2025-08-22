@@ -50,12 +50,10 @@ async function getRedisClient() {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });
-    console.log('✅ Using standard Redis client');
 
     // Test connection
     await redisClient.ping();
-    console.log('✅ Redis connection successful');
-    
+
     return redisClient;
   } catch (error) {
     console.error('❌ Redis connection failed:', error);

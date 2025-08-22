@@ -244,5 +244,3 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     }
   }
 };
-
-

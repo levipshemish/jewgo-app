@@ -123,7 +123,7 @@ export function useAuth() {
       const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
       
       if (!getUserError && user && extractIsAnonymous(user)) {
-        console.log('User already has anonymous session:', user.id);
+
         const transformedUser = transformSupabaseUser(user);
         setUser(transformedUser);
         setIsAnonymous(true);

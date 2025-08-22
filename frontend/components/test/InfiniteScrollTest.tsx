@@ -16,8 +16,7 @@ export default function InfiniteScrollTest() {
 
   // Simulate loading more data
   const loadMoreData = async () => {
-    console.log('Test: Loading more data, page:', page);
-    
+
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     

@@ -13,7 +13,7 @@ export async function getSessionUser(): Promise<TransformedUser | null> {
   try {
     // Check if Supabase is configured using centralized utility
     if (!isSupabaseConfigured()) {
-      console.log('[Auth] Supabase not configured, returning null');
+
       return null;
     }
 

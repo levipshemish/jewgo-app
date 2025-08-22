@@ -161,7 +161,7 @@ export class RestaurantsAPI {
     
     // Check if there's already a pending request
     if (this.pendingRequests.has(requestKey)) {
-      // console.log('RestaurantsAPI: Using existing pending request for:', requestKey);
+
       return this.pendingRequests.get(requestKey)!;
     }
     

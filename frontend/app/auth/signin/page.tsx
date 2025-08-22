@@ -196,9 +196,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       
       // Use the correct callback URL that matches Supabase configuration
       const callbackUrl = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
-      
-      console.log('Starting Google OAuth with callback URL:', callbackUrl);
-      
+
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -214,7 +212,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         console.error('Google OAuth error:', error);
         setError(`Google OAuth failed: ${error.message}`);
       } else {
-        console.log('Google OAuth initiated successfully');
+
       }
     } catch (err) {
       console.error('Google sign in error:', err);

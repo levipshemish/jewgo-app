@@ -52,9 +52,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[Cleanup Cron] Starting anonymous user cleanup (${correlationId})`);
-    console.log(`[Cleanup Cron] Dry run mode: ${CLEANUP_CONFIG.DRY_RUN}`);
-
     // Create Supabase service role client
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -96,7 +93,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!oldAnonymousUsers || oldAnonymousUsers.length === 0) {
-      console.log(`[Cleanup Cron] No old anonymous users found (${correlationId})`);
+
       return NextResponse.json({
         success: true,
         message: 'No old anonymous users found',
@@ -106,8 +103,6 @@ export async function GET(request: NextRequest) {
         dry_run: CLEANUP_CONFIG.DRY_RUN
       });
     }
-
-    console.log(`[Cleanup Cron] Found ${oldAnonymousUsers.length} old anonymous users (${correlationId})`);
 
     // Process users in batches
     const results = {
@@ -126,7 +121,7 @@ export async function GET(request: NextRequest) {
           
           if (CLEANUP_CONFIG.DRY_RUN) {
             // Dry run - just log what would be deleted
-            console.log(`[Cleanup Cron] DRY RUN: Would delete anonymous user ${user.id} (created: ${user.created_at})`);
+
             results.userIds.push(user.id);
           } else {
             // Production - actually delete the user
@@ -136,7 +131,7 @@ export async function GET(request: NextRequest) {
               console.error(`[Cleanup Cron] Failed to delete user ${user.id} (${correlationId})`, deleteError);
               results.errors++;
             } else {
-              console.log(`[Cleanup Cron] Deleted anonymous user ${user.id} (${correlationId})`);
+
               results.deleted++;
               results.userIds.push(user.id);
             }

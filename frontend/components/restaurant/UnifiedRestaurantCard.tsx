@@ -254,8 +254,6 @@ export default function UnifiedRestaurantCard({
           </div>
         )}
 
-
-
         {/* Kosher Category Badge */}
         <AnimatePresence>
           {restaurant.kosher_category && (

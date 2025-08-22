@@ -344,7 +344,7 @@ let failed = false;
 if (dupNames.length) {
   console.log('⚠️  Duplicate filenames detected (3+ occurrences):');
   for (const d of dupNames) {
-    console.log(' -', d.base);
+
     d.files.forEach(f => console.log('    ', f));
   }
   failed = true;
@@ -353,7 +353,7 @@ if (dupNames.length) {
 if (dupSymbols.length) {
   console.log('⚠️  Potential duplicate exported symbols detected (3+ files):');
   for (const d of dupSymbols) {
-    console.log(' -', d.sym);
+
     d.files.forEach(f => console.log('    ', f));
   }
   failed = true;
@@ -363,5 +363,5 @@ if (failed) {
   console.error('\nFAIL: Resolve duplicates or document exceptions.');
   process.exit(1);
 } else {
-  console.log('✅ Duplication scan passed');
+
 }

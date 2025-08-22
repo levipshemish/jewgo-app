@@ -262,8 +262,6 @@ const RestaurantDetailPage: React.FC = () => {
     }
   };
 
-
-
   const handleOrderSubmit = async (_orderData: {
     customerName: string;
     customerPhone: string;
@@ -283,6 +281,7 @@ const RestaurantDetailPage: React.FC = () => {
   }) => {
     try {
       // TODO: Implement actual order submission to backend API endpoint
+// This will be implemented when the order system is ready
       if (process.env.NODE_ENV === 'development') {
         // Log order submission for debugging
         // console.log('Order submission (dev mode):', orderData);
@@ -379,8 +378,6 @@ const RestaurantDetailPage: React.FC = () => {
       </div>
     );
   }
-
-
 
   return (
     <div className="min-h-screen bg-white">
@@ -502,8 +499,6 @@ const RestaurantDetailPage: React.FC = () => {
           <h1 className="dynamic-text-2xl font-bold text-gray-900 leading-tight text-center mb-2 px-4">
             {restaurant.name || 'Restaurant Name Not Available'}
           </h1>
-
-
 
           {/* Address - clickable with map choice prompt */}
           <div className="flex justify-center mb-2 px-4">
@@ -683,8 +678,6 @@ const RestaurantDetailPage: React.FC = () => {
         onFavoriteClick={handleFavoriteClick}
         isFavorite={isFavorite}
       />
-
-
 
       {/* Order Form Modal */}
       {showOrderForm && restaurant && (

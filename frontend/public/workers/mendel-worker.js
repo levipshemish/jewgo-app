@@ -62,4 +62,3 @@ self.onmessage = function(e){
   }
   self.postMessage({ type:'FILTER_RESTAURANTS_RESULT', payload:{ restaurants: filtered } });
 };
-

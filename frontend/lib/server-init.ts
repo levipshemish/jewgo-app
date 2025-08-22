@@ -32,11 +32,9 @@ export async function initializeServer(): Promise<boolean> {
 
 async function performInitialization(): Promise<boolean> {
   try {
-    console.log('🚀 Starting server initialization...');
 
     // Validate environment configuration
     validateEnvironment();
-    console.log('✅ Environment validation completed');
 
     // Initialize feature guard
     const featuresValid = await initializeFeatureGuard();
@@ -44,10 +42,9 @@ async function performInitialization(): Promise<boolean> {
       console.error('❌ Feature guard initialization failed');
       return false;
     }
-    console.log('✅ Feature guard initialization completed');
 
     // Validate anonymous auth features once at boot with loud logging and caching
-    console.log('🚨 [Server Init] Starting critical anonymous auth feature validation...');
+
     const anonymousFeaturesValid = await validateSupabaseFeaturesWithLogging();
     featureValidationCache = anonymousFeaturesValid;
     
@@ -61,12 +58,12 @@ async function performInitialization(): Promise<boolean> {
         throw new Error('CRITICAL: Anonymous auth features not supported - application startup failure');
       }
     } else {
-      console.log('✅ Anonymous auth features validated successfully at boot time');
+
       anonymousAuthSupported = true;
     }
 
     initialized = true;
-    console.log('✅ Server initialization completed successfully');
+
     return true;
 
   } catch (error) {

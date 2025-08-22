@@ -6,7 +6,6 @@ import { join } from 'path';
 import { FeedbackData } from '@/types';
 import { appLogger } from '@/lib/utils/logger';
 
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

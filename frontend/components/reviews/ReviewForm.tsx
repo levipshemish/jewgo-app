@@ -44,7 +44,7 @@ export default function ReviewForm({
       try {
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-          console.log('[ReviewForm] Supabase not configured');
+
           setLoading(false);
           return;
         }

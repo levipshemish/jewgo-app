@@ -9,5 +9,3 @@ export async function POST(_request: NextRequest) {
     message: 'This endpoint is disabled. Please use Supabase Auth for user registration.' 
   }, { status: 501 })
 }
-
-

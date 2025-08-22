@@ -33,7 +33,6 @@ export class WriteGates {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Write Gates] Checking write permissions (${correlationId})`);
 
       const { data: { user }, error: getUserError } = await this.supabase.auth.getUser();
       
@@ -47,7 +46,7 @@ export class WriteGates {
       }
 
       if (!user) {
-        console.log(`[Write Gates] No user found (${correlationId})`);
+
         return {
           allowed: false,
           error: 'No authenticated user',
@@ -59,7 +58,7 @@ export class WriteGates {
       // Check if user is anonymous
       const isAnonymous = extractIsAnonymous(user);
       if (isAnonymous) {
-        console.log(`[Write Gates] Anonymous user denied write access (${correlationId})`);
+
         return {
           allowed: false,
           error: 'Anonymous users cannot perform write operations',
@@ -70,7 +69,7 @@ export class WriteGates {
 
       // Check if user email is verified (for non-anonymous users)
       if (!user.email_confirmed_at) {
-        console.log(`[Write Gates] Unverified email denied write access (${correlationId})`);
+
         return {
           allowed: false,
           error: 'Email not verified',
@@ -79,7 +78,6 @@ export class WriteGates {
         };
       }
 
-      console.log(`[Write Gates] Write permission granted (${correlationId})`);
       return {
         allowed: true,
         correlationId
@@ -168,12 +166,11 @@ export class WriteGates {
     const correlationId = generateCorrelationId();
     
     try {
-      console.log(`[Write Gates] Getting user permissions (${correlationId})`);
 
       const { data: { user }, error: getUserError } = await this.supabase.auth.getUser();
       
       if (getUserError || !user) {
-        console.log(`[Write Gates] No user found for permissions (${correlationId})`);
+
         return {
           canWrite: false,
           canCreateReviews: false,

@@ -44,13 +44,7 @@ function EateryPageContent() {
   
   // Debug mobile detection
   useEffect(() => {
-    console.log('Mobile detection:', { 
-      isMobile, 
-      isTouch, 
-      viewportWidth, 
-      viewportHeight,
-      userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'N/A'
-    });
+
   }, [isMobile, isTouch, viewportWidth, viewportHeight]);
   
   // Mobile gesture support
@@ -100,14 +94,7 @@ function EateryPageContent() {
 
   // Debug infinite scroll setup
   useEffect(() => {
-    console.log('Infinite scroll setup:', {
-      isMobile,
-      hasMore,
-      isLoadingMore,
-      disabled: !isMobile,
-      threshold: isMobile ? 0.2 : 0.3,
-      rootMargin: isMobile ? '100px' : '200px'
-    });
+
   }, [isMobile, hasMore, isLoadingMore]);
 
   // Mobile-optimized state
@@ -252,10 +239,6 @@ function EateryPageContent() {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching restaurants with filters:', filters);
-      console.log('User location:', userLocation);
-      console.log('Is mobile:', isMobile);
-
       // Mobile-optimized parameters
       const params = new URLSearchParams();
       
@@ -279,17 +262,15 @@ function EateryPageContent() {
       }
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
-      
-      console.log('Received restaurants:', response.restaurants.length);
-      
+
       // Apply distance calculation and sorting if location is available
       let processedRestaurants = response.restaurants;
       if (userLocation) {
-        console.log('Calculating distances for restaurants');
+
         processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
-        console.log('Processed restaurants with distance:', processedRestaurants.length);
+
       } else {
-        console.log('No user location available for distance calculation');
+
       }
       
       setRestaurants(processedRestaurants);
@@ -297,7 +278,7 @@ function EateryPageContent() {
       
       // Update hasMore state for infinite scroll
       const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
-      console.log('Setting hasMore:', hasMoreContent, 'for mobile:', isMobile);
+
       setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching restaurants:', err);
@@ -314,11 +295,9 @@ function EateryPageContent() {
 
   const fetchMoreRestaurants = async () => {
     if (isLoadingMore || !hasMore) {
-      console.log('Skipping fetchMoreRestaurants:', { isLoadingMore, hasMore });
+
       return;
     }
-
-    console.log('Fetching more restaurants, page:', currentPage + 1);
 
     try {
       const nextPage = currentPage + 1;
@@ -336,13 +315,11 @@ function EateryPageContent() {
       params.append('mobile_optimized', 'true');
 
       const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
-      
-      console.log('Received more restaurants:', response.restaurants.length);
-      
+
       // Apply distance calculation to new restaurants if location is available
       let processedNewRestaurants = response.restaurants;
       if (userLocation) {
-        console.log('Calculating distances for new restaurants');
+
         processedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
       }
       
@@ -351,7 +328,7 @@ function EateryPageContent() {
       
       // Update hasMore state
       const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
-      console.log('Setting hasMore for more restaurants:', hasMoreContent);
+
       setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching more restaurants:', err);
@@ -586,7 +563,7 @@ function EateryPageContent() {
               showStarInBadge={true}
               onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
               onLikeToggle={(id, isLiked) => {
-                console.log(`Restaurant ${id} ${isLiked ? 'liked' : 'unliked'}`);
+
               }}
             />
           ))}

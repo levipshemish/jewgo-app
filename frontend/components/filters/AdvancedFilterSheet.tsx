@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils/classNames';
 
 import BusinessTypeFilter from './BusinessTypeFilter';
 
-
 interface AdvancedFilterSheetProps {
   initialApplied: AppliedFilters;
   onApply: (filters: AppliedFilters) => void;
@@ -284,7 +283,7 @@ const AdvancedFilterSheet: React.FC<AdvancedFilterSheetProps> = ({
               availableTypes={filterOptions.businessTypes.map(type => ({
                 value: type,
                 label: type.charAt(0).toUpperCase() + type.slice(1),
-                count: 0 // TODO: Get actual counts from API
+                count: 0 // TODO: Get actual counts from API when backend endpoint is ready
               }))}
               disabled={loading}
             />

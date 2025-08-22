@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     
     // Log analytics event (in production, you'd send this to your analytics service)
     if (process.env.NODE_ENV === 'development') {
-      console.log('Analytics event received:', event);
+
     }
 
     // Check if Google Analytics is properly configured

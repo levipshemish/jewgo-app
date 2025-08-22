@@ -8,5 +8,3 @@ export function isAdminEmail(email?: string | null): boolean {
   }
   return email.endsWith('@jewgo.com');
 }
-
-

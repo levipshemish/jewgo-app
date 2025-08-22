@@ -53,7 +53,7 @@ export default function ReviewCard({
       try {
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-          console.log('[ReviewCard] Supabase not configured');
+
           setLoading(false);
           return;
         }

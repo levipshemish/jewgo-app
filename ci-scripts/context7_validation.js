@@ -90,17 +90,9 @@ function validateContext7(prData) {
 }
 
 function generateReport(prData, issues) {
-  console.log('\n🔍 Context7 Validation Report');
-  console.log('============================\n');
-  
-  console.log(`📊 PR Analysis:`);
-  console.log(`   • Has Context7 confirmation: ${prData.hasContext7Confirmation ? 'Yes' : 'No'}`);
-  console.log(`   • Context7 confirmed: ${prData.context7Confirmed ? 'Yes' : 'No'}`);
-  console.log(`   • Is hotfix: ${prData.isHotfix ? 'Yes' : 'No'}`);
-  console.log(`   • Issues detected: ${issues.length}\n`);
-  
+
   if (issues.length === 0) {
-    console.log('✅ Context7 validation passed');
+
     return true;
   }
   
@@ -109,40 +101,29 @@ function generateReport(prData, issues) {
   const warnings = issues.filter(issue => issue.severity === 'warning');
   
   if (errors.length > 0) {
-    console.log('❌ Context7 Validation Errors:');
-    console.log('-------------------------------');
+
     errors.forEach(issue => {
-      console.log(`   • ${issue.message}`);
+
     });
-    console.log('');
+
   }
   
   if (warnings.length > 0) {
-    console.log('⚠️  Context7 Validation Warnings:');
-    console.log('--------------------------------');
+
     warnings.forEach(issue => {
-      console.log(`   • ${issue.message}`);
+
     });
-    console.log('');
+
   }
   
   // Recommendations
-  console.log('💡 How to Fix:');
-  console.log('--------------');
-  console.log('1. Add "Context7 confirmed: yes" to PR description');
-  console.log('2. For hotfixes without Context7, add justification:');
-  console.log('   "Context7 confirmed: no"');
-  console.log('   "Justification: emergency fix, Context7 unavailable"');
-  console.log('3. Ensure Context7 docs are consulted before making changes');
-  console.log('4. Add TODO for Context7 review when available');
-  
+
   // Return success if only warnings (no errors)
   return errors.length === 0;
 }
 
 function main() {
-  console.log('🔍 Running Context7 Validation...\n');
-  
+
   try {
     // Get PR description from environment or file
     let prDescription = '';
@@ -166,7 +147,7 @@ function main() {
     }
     
     if (!prDescription) {
-      console.log('⚠️  No PR description found. Running in demo mode...');
+
       prDescription = 'feat: add new feature\n\nContext7 confirmed: yes';
     }
     
@@ -180,11 +161,10 @@ function main() {
     const success = generateReport(prData, issues);
     
     if (!success) {
-      console.log('\n❌ Context7 validation failed');
-      console.log('Please fix Context7 confirmation before merging');
+
       process.exit(1);
     } else {
-      console.log('\n✅ Context7 validation passed');
+
       process.exit(0);
     }
   } catch (error) {

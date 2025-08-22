@@ -17,7 +17,6 @@ import { roboto } from './fonts'
 import { CustomHead } from './head'
 import { initializeFeatureGuard } from '@/lib/feature-guard';
 
-
 export const metadata: Metadata = {
   metadataBase: new URL('https://jewgo.app'),
   title: 'Jewgo - Find Your Kosher Eatery',

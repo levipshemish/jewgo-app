@@ -78,7 +78,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
   // Handle WebSocket connection
   const connect = useCallback(() => {
     if (!shouldUseWebSocket) {
-      console.log('WebSocket disabled in production');
+
       return;
     }
 
@@ -99,8 +99,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
         setError(null);
         reconnectAttemptsRef.current = 0;
         startHeartbeat();
-        
-        console.log('WebSocket connected');
+
       };
 
       ws.onmessage = (event) => {
@@ -120,21 +119,21 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
               
             case 'restaurant_status_update':
               // Handle restaurant status updates
-              console.log('Restaurant status update:', message.data);
+
               break;
               
             case 'open_now_update':
               // Handle open now updates
-              console.log('Open now update:', message.data);
+
               break;
               
             case 'filter_update':
               // Handle filter updates
-              console.log('Filter update:', message.data);
+
               break;
               
             default:
-              console.log('Received message:', message);
+
           }
         } catch (err) {
           console.error('Error parsing WebSocket message:', err);
@@ -145,14 +144,11 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
         setIsConnected(false);
         setIsConnecting(false);
         stopHeartbeat();
-        
-        console.log('WebSocket disconnected:', event.code, event.reason);
-        
+
         // Attempt to reconnect if not manually closed
         if (shouldReconnectRef.current && reconnectAttemptsRef.current < finalConfig.maxReconnectAttempts!) {
           reconnectAttemptsRef.current++;
-          console.log(`Attempting to reconnect (${reconnectAttemptsRef.current}/${finalConfig.maxReconnectAttempts})...`);
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, finalConfig.reconnectInterval);

@@ -11,8 +11,6 @@ export {
   generateIdempotencyKey
 } from './redis';
 
-
-
 // Export backend information for debugging
 export const rateLimitBackend = {
   type: 'redis-cloud',

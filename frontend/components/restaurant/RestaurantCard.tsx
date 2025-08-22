@@ -39,9 +39,6 @@ export default function RestaurantCard({ restaurant, className, onCardClick }: R
     }
   });
 
-
-
-
   const formatPriceRange = () => {
     if (restaurant.price_range) {
       return restaurant.price_range;

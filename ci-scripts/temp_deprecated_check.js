@@ -25,9 +25,6 @@ const IGNORE_PATTERNS = [
 // ISO date regex pattern
 const ISO_DATE_REGEX = /(\d{4}-\d{2}-\d{2})/;
 
-console.log('📅 Temporary & Deprecated Code Date Enforcement');
-console.log('===============================================');
-
 // Parse command line arguments
 const targetDir = process.argv[2] || '.';
 
@@ -48,9 +45,6 @@ const findings = {
 // Get current date
 const currentDate = new Date();
 const currentDateStr = currentDate.toISOString().split('T')[0];
-
-console.log(`Current date: ${currentDateStr}`);
-console.log('');
 
 /**
  * Parse ISO date from comment line
@@ -145,7 +139,7 @@ function processFile(filePath) {
         }
     });
   } catch (error) {
-    console.log(`⚠️  Could not read file: ${filePath} - ${error.message}`);
+
   }
 }
 
@@ -175,7 +169,7 @@ function findFiles(dir, extensions) {
       }
     }
   } catch (error) {
-    console.log(`⚠️  Could not read directory: ${dir} - ${error.message}`);
+
   }
   
   return files;
@@ -183,86 +177,68 @@ function findFiles(dir, extensions) {
 
 // Find and process all relevant files
 const files = findFiles(targetDir, FILE_EXTENSIONS);
-console.log(`Scanning ${files.length} files for TEMPORARY and DEPRECATED markers...`);
-console.log('');
 
 files.forEach(processFile);
 
 // Report findings
-console.log('📊 TEMPORARY Code Analysis');
-console.log('---------------------------');
-console.log(`Total TEMPORARY markers: ${findings.temporary.valid.length + findings.temporary.expired.length + findings.temporary.missingDeadlines.length}`);
-console.log(`Valid (not expired): ${findings.temporary.valid.length}`);
-console.log(`Expired: ${findings.temporary.expired.length}`);
-console.log(`Missing deadlines: ${findings.temporary.missingDeadlines.length}`);
 
 if (findings.temporary.valid.length > 0) {
-  console.log('\n✅ Valid TEMPORARY code:');
+
   findings.temporary.valid.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - expires in ${item.daysRemaining} days (${item.deadline})`);
+
   });
 }
 
 if (findings.temporary.expired.length > 0) {
   console.log('\n❌ EXPIRED TEMPORARY code (must be cleaned up):');
   findings.temporary.expired.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - expired on ${item.deadline}`);
+
   });
 }
 
 if (findings.temporary.missingDeadlines.length > 0) {
-  console.log('\n⚠️  TEMPORARY code missing deadlines:');
+
   findings.temporary.missingDeadlines.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - add 'Cleanup by: YYYY-MM-DD'`);
+
   });
 }
 
-console.log('\n📊 DEPRECATED Code Analysis');
-console.log('---------------------------');
-console.log(`Total DEPRECATED markers: ${findings.deprecated.valid.length + findings.deprecated.expired.length + findings.deprecated.missingDeadlines.length}`);
-console.log(`Valid (not expired): ${findings.deprecated.valid.length}`);
-console.log(`Expired: ${findings.deprecated.expired.length}`);
-console.log(`Missing deadlines: ${findings.deprecated.missingDeadlines.length}`);
-
 if (findings.deprecated.valid.length > 0) {
-  console.log('\n✅ Valid DEPRECATED code:');
+
   findings.deprecated.valid.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - remove in ${item.daysRemaining} days (${item.deadline})`);
+
   });
 }
 
 if (findings.deprecated.expired.length > 0) {
   console.log('\n❌ EXPIRED DEPRECATED code (must be removed):');
   findings.deprecated.expired.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - expired on ${item.deadline}`);
+
   });
 }
 
 if (findings.deprecated.missingDeadlines.length > 0) {
-  console.log('\n⚠️  DEPRECATED code missing deadlines:');
+
   findings.deprecated.missingDeadlines.forEach(item => {
-    console.log(`  ${item.file}:${item.line} - add 'Removal target: YYYY-MM-DD'`);
+
   });
 }
 
 // Summary and exit
-console.log('\n📋 Summary');
-console.log('-----------');
 
 const totalExpired = findings.temporary.expired.length + findings.deprecated.expired.length;
 const totalMissing = findings.temporary.missingDeadlines.length + findings.deprecated.missingDeadlines.length;
 
 if (totalExpired > 0) {
-  console.log(`❌ FAIL: ${totalExpired} expired items must be cleaned up`);
-  console.log('💡 Clean up expired TEMPORARY/DEPRECATED code before merging');
+
   process.exit(1);
 }
 
 if (totalMissing > 0) {
-  console.log(`⚠️  WARNING: ${totalMissing} items missing deadlines`);
+
   console.log('💡 Add proper ISO date deadlines (YYYY-MM-DD)');
 }
 
 if (totalExpired === 0 && totalMissing === 0) {
-  console.log('✅ All TEMPORARY and DEPRECATED code has valid deadlines');
+
 }

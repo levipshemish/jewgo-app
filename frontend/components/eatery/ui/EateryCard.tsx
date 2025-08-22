@@ -209,8 +209,6 @@ export default function EateryCard({ restaurant, className = "", showDetails = f
           priority={false}
         />
 
-
-
         {/* Kosher Category Badge - Properly positioned with consistent spacing */}
         <AnimatePresence>
           {restaurant.kosher_category && (

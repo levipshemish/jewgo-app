@@ -117,56 +117,31 @@ function validateFilePlacement(changedFiles) {
 }
 
 function generateReport(issues) {
-  console.log('\n🔍 File Placement Validation Report');
-  console.log('===================================\n');
-  
-  console.log(`📊 Analysis:`);
-  console.log(`   • Files checked: ${issues.length > 0 ? 'See issues below' : 'All valid'}`);
-  console.log(`   • Issues found: ${issues.length}\n`);
-  
+
   if (issues.length === 0) {
-    console.log('✅ All files are properly placed');
+
     return true;
   }
-  
-  console.log('❌ Invalid File Placements:');
-  console.log('-----------------------------');
+
   issues.forEach(issue => {
-    console.log(`📁 ${issue.file}`);
-    console.log(`   • ${issue.message}`);
-    console.log('');
+
   });
-  
-  console.log('💡 Allowed Directories:');
-  console.log('----------------------');
-  console.log('Frontend: app/, components/, lib/, hooks/, prisma/, types/, services/, utils/');
-  console.log('Backend: backend/routes/, backend/services/, backend/database/, backend/utils/');
-  console.log('Root: .github/, ci-scripts/, docs/, scripts/, config/, deployment/');
-  console.log('');
-  console.log('💡 How to Fix:');
-  console.log('--------------');
-  console.log('1. Move files to appropriate directories');
-  console.log('2. Follow the established project structure');
-  console.log('3. Use proper naming conventions');
-  console.log('4. Place config files in config/ directory');
-  
+
   return false;
 }
 
 function main() {
-  console.log('🔍 Running File Placement Validation...\n');
-  
+
   try {
     const changedFiles = getChangedFiles();
     const issues = validateFilePlacement(changedFiles);
     const success = generateReport(issues);
     
     if (!success) {
-      console.log('\n❌ File placement validation failed');
-      console.log('Please move files to appropriate directories');
+
       process.exit(1);
     } else {
-      console.log('\n✅ File placement validation passed');
+
       process.exit(0);
     }
   } catch (error) {

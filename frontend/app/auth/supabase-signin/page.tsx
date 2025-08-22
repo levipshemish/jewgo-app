@@ -108,7 +108,7 @@ export default function SupabaseSignIn() {
     setError(null);
     
     try {
-      // console.log('Starting Google OAuth flow...');
+
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
@@ -124,7 +124,7 @@ export default function SupabaseSignIn() {
         // console.error('Google OAuth error:', error);
         setError(`Google OAuth failed: ${error.message}`);
       } else {
-        // console.log('Google OAuth initiated successfully');
+
       }
           } catch {
         // console.error('Unexpected error during Google OAuth');

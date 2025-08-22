@@ -209,5 +209,3 @@ export const computeRestaurantStatus = (restaurant: Restaurant): 'open' | 'close
   
   return 'unknown';
 };
-
- 

@@ -52,14 +52,12 @@ export default function ProfileEditForm({ onProfileUpdate, className = "" }: Pro
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        console.log('Loading profile data...');
+
         const result = await getCurrentProfile();
-        console.log('Profile load result:', result);
-        
+
         if (result.success && result.data) {
           const profileData = result.data;
-          console.log('Profile data loaded:', profileData);
-          
+
           // Set form values
           setValue("username", profileData.username);
           setValue("displayName", profileData.displayName);

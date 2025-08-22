@@ -91,8 +91,6 @@ export async function GET(request: NextRequest) {
     const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
-
-    
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {

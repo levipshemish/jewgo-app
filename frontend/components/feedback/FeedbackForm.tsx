@@ -220,8 +220,6 @@ export default function FeedbackForm({
     }
   };
 
-
-
   if (submitStatus === 'success') {
     return (
       <div className={`bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto ${className}`}>

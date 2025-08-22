@@ -178,11 +178,9 @@ function analyzeDatabaseFiles() {
 }
 
 function generateReport(issues) {
-  console.log('\n🔍 Database Performance Guardrails Report');
-  console.log('==========================================\n');
-  
+
   if (issues.length === 0) {
-    console.log('✅ No database performance issues detected');
+
     return true;
   }
   
@@ -190,54 +188,37 @@ function generateReport(issues) {
   const dbQueries = issues.filter(issue => issue.type === 'database_query');
   
   if (slowQueries.length > 0) {
-    console.log('⚠️  Potential Slow Queries Detected:');
-    console.log('------------------------------------');
+
     slowQueries.forEach(issue => {
-      console.log(`📁 ${issue.file}:${issue.line}`);
-      console.log(`   Pattern: ${issue.pattern}`);
-      console.log(`   Query: ${issue.query.substring(0, 150)}...`);
-      console.log(`   ⚠️  Consider adding indexes or optimizing query`);
-      console.log('');
+
     });
   }
   
   if (dbQueries.length > 0) {
-    console.log('ℹ️  Database Queries Found:');
-    console.log('-------------------------');
+
     dbQueries.forEach(issue => {
-      console.log(`📁 ${issue.file}:${issue.line}`);
-      console.log(`   Query: ${issue.query.substring(0, 100)}...`);
-      console.log('');
+
     });
   }
   
   // Recommendations
-  console.log('💡 Performance Recommendations:');
-  console.log('-------------------------------');
-  console.log('• Add database indexes for frequently queried columns');
-  console.log('• Use EXPLAIN ANALYZE to identify slow queries');
-  console.log('• Consider query optimization for complex JOINs');
-  console.log('• Monitor query performance in production');
-  console.log('• Set up database performance monitoring');
-  
+
   // Return success if only info-level issues
   const hasWarnings = slowQueries.length > 0;
   return !hasWarnings;
 }
 
 function main() {
-  console.log('🔍 Running Database Performance Guardrails...\n');
-  
+
   try {
     const issues = analyzeDatabaseFiles();
     const success = generateReport(issues);
     
     if (!success) {
-      console.log('\n❌ Database performance issues detected');
-      console.log('Please review and optimize slow queries before merging');
+
       process.exit(1);
     } else {
-      console.log('\n✅ Database performance check passed');
+
       process.exit(0);
     }
   } catch (error) {

@@ -33,11 +33,7 @@ export async function fetchMarketplaceListings(
   try {
     // Debug logging to help identify URL issues
     if (process.env.NODE_ENV === 'development') {
-      console.log('Marketplace API Debug:', {
-        BACKEND_URL,
-        envUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
-        nodeEnv: process.env.NODE_ENV
-      });
+
     }
     
     const searchParams = new URLSearchParams();
@@ -52,7 +48,7 @@ export async function fetchMarketplaceListings(
     const apiUrl = `${BACKEND_URL}/api/v4/marketplace/listings?${searchParams.toString()}`;
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('Making marketplace API request to:', apiUrl);
+
     }
 
     const response = await fetch(apiUrl, {
@@ -187,8 +183,6 @@ export async function fetchMarketplaceCategories(): Promise<CategoriesResponse> 
   }
 }
 
-
-
 /**
  * Endorse a marketplace listing (upvote/downvote)
  */
@@ -316,8 +310,6 @@ export class MarketplaceAPI {
   static async fetchCategories(): Promise<CategoriesResponse> {
     return fetchMarketplaceCategories();
   }
-
-
 
   // Additional methods for the marketplace page
   static async getCategory(categoryId: string): Promise<MarketplaceCategory | null> {

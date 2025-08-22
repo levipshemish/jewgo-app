@@ -205,16 +205,9 @@ function validateDeprecationOwnership(markers, deprecationsEntries) {
 }
 
 function generateReport(markers, deprecationsEntries, issues) {
-  console.log('\n🔍 Deprecation Ownership Enforcement Report');
-  console.log('==========================================\n');
-  
-  console.log(`📊 Summary:`);
-  console.log(`   • DEPRECATED markers found: ${markers.length}`);
-  console.log(`   • DEPRECATIONS.md entries: ${deprecationsEntries.length}`);
-  console.log(`   • Issues detected: ${issues.length}\n`);
-  
+
   if (issues.length === 0) {
-    console.log('✅ All DEPRECATED markers have proper ownership documentation');
+
     return true;
   }
   
@@ -225,62 +218,42 @@ function generateReport(markers, deprecationsEntries, issues) {
   const invalidDates = issues.filter(issue => issue.type === 'invalid_date');
   
   if (missingEntries.length > 0) {
-    console.log('❌ Missing DEPRECATIONS.md Entries:');
-    console.log('----------------------------------');
+
     missingEntries.forEach(issue => {
-      console.log(`📁 ${issue.marker.filePath}:${issue.marker.lineNumber}`);
-      console.log(`   Reason: ${issue.marker.reason}`);
-      console.log(`   ⚠️  Add entry to ${DEPRECATIONS_FILE} with owner and target date`);
-      console.log('');
+
     });
   }
   
   if (missingOwners.length > 0) {
-    console.log('❌ Missing Owner Fields:');
-    console.log('------------------------');
+
     missingOwners.forEach(issue => {
-      console.log(`📁 ${issue.entry.component} (line ${issue.entry.lineNumber})`);
-      console.log(`   ⚠️  Add owner field: - **Owner**: @username`);
-      console.log('');
+
     });
   }
   
   if (missingDates.length > 0) {
-    console.log('❌ Missing Target Dates:');
-    console.log('------------------------');
+
     missingDates.forEach(issue => {
-      console.log(`📁 ${issue.entry.component} (line ${issue.entry.lineNumber})`);
-      console.log(`   ⚠️  Add target date: - **Target Date**: YYYY-MM-DD`);
-      console.log('');
+
     });
   }
   
   if (invalidDates.length > 0) {
-    console.log('❌ Invalid Date Formats:');
-    console.log('------------------------');
+
     invalidDates.forEach(issue => {
-      console.log(`📁 ${issue.entry.component} (line ${issue.entry.lineNumber})`);
-      console.log(`   Current: ${issue.entry.targetDate}`);
-      console.log(`   ⚠️  Use ISO format: YYYY-MM-DD`);
-      console.log('');
+
     });
   }
   
   // Recommendations
-  console.log('💡 How to Fix:');
-  console.log('--------------');
-  console.log('1. Add missing entries to DEPRECATIONS.md');
-  console.log('2. Include required fields: Component, Reason, Owner, Target Date');
-  console.log('3. Use ISO date format: YYYY-MM-DD');
-  console.log('4. Ensure owner is assigned and accountable');
+
   console.log('5. Set realistic removal deadlines (max 30 days)');
   
   return false;
 }
 
 function main() {
-  console.log('🔍 Running Deprecation Ownership Enforcement...\n');
-  
+
   try {
     // Find all deprecated markers
     const markers = findDeprecatedMarkers();
@@ -295,11 +268,10 @@ function main() {
     const success = generateReport(markers, deprecationsEntries, issues);
     
     if (!success) {
-      console.log('\n❌ Deprecation ownership issues detected');
-      console.log('Please fix DEPRECATIONS.md entries before merging');
+
       process.exit(1);
     } else {
-      console.log('\n✅ Deprecation ownership check passed');
+
       process.exit(0);
     }
   } catch (error) {

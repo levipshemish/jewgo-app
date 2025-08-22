@@ -9,8 +9,6 @@ import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 
-
-
 // Separate component to handle search params with proper Suspense boundary
 function SignUpFormWithParams() {
   const searchParams = useSearchParams();

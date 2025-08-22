@@ -118,8 +118,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     });
   };
 
-
-
   if (allImages.length === 0) {
     return (
       <div className={`relative h-96 bg-gradient-to-br from-gray-100 to-gray-200 ${className}`}>
@@ -191,7 +189,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
               
-
             </div>
           ))}
         </div>

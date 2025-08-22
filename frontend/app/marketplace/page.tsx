@@ -82,7 +82,7 @@ const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocatio
     
     // Debug logging for distance display
     if (process.env.NODE_ENV === 'development') {
-      console.log(`Marketplace listing ${listing.title}: ${distance.toFixed(3)}mi -> ${distanceText}`);
+
     }
   }
 
@@ -166,7 +166,7 @@ export default function MarketplacePage() {
 
       // Debug logging for distance calculations
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Marketplace distance comparison: ${a.title} (${distanceA.toFixed(2)}mi) vs ${b.title} (${distanceB.toFixed(2)}mi)`);
+
       }
 
       return distanceA - distanceB;
@@ -465,7 +465,7 @@ export default function MarketplacePage() {
                     onCardClick={(data) => router.push(`/marketplace/${listing.id}`)}
                     onLikeToggle={(id, isLiked) => {
                       // Handle like toggle - you can add your like logic here
-                      console.log(`Marketplace listing ${id} ${isLiked ? 'liked' : 'unliked'}`);
+
                     }}
 
                     className="w-full"

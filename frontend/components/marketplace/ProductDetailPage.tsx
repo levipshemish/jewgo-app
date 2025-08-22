@@ -41,7 +41,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     // Add to cart logic
     // eslint-disable-next-line no-console
-    console.log('Added to cart:', product, 'Quantity:', quantity);
+
   };
 
   const handleAddToWishlist = () => {
@@ -60,8 +60,6 @@ export default function ProductDetailPage() {
       navigator.clipboard.writeText(window.location.href);
     }
   };
-
-
 
   // Helper functions
   const getConditionColor = (condition?: string) => {

@@ -213,6 +213,7 @@ class Analytics {
     // In production, implement actual analytics service integration
     // For now, silently process the event
     // TODO: Integrate with actual analytics service (Google Analytics, Mixpanel, etc.)
+// This will be implemented when analytics requirements are finalized
     
     // Check if Google Analytics is properly configured
     const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
