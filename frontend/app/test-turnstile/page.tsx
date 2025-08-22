@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import Script from 'next/script';
+import { useState, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { extractIsAnonymous } from '@/lib/utils/auth-utils';
 
@@ -21,6 +20,23 @@ export default function TestTurnstilePage() {
   const [token, setToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+
+  // Load Turnstile script manually to avoid async/defer issues
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.onload = () => {
+        console.log('Turnstile script loaded');
+      };
+      script.onerror = () => {
+        console.error('Failed to load Turnstile script');
+      };
+      document.head.appendChild(script);
+      scriptRef.current = script;
+    }
+  }, []);
 
   // Make callback available globally
   if (typeof window !== 'undefined') {
@@ -141,12 +157,7 @@ export default function TestTurnstilePage() {
         </div>
       </div>
 
-      {/* Turnstile Script */}
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        async
-        defer
-      />
+
     </div>
   );
 }
