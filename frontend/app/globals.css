@@ -179,7 +179,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Override restaurant-card conflicts */
   padding: 0.25rem !important; /* Override restaurant-card .p-1 rule */
   transform: none !important; /* Override any global transform rules */
-  /* Force transparent background */
+  /* Force transparent background with maximum specificity */
   background-color: transparent !important;
   background: transparent !important;
   /* Override any inherited background colors */
@@ -190,6 +190,12 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   background-repeat: repeat !important;
   background-attachment: scroll !important;
   background-position: 0% 0% !important;
+  /* Override any Tailwind bg-white classes */
+  background-color: transparent !important;
+  background: transparent !important;
+  /* Force override of any inherited backgrounds */
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 .unified-card:hover {
@@ -272,6 +278,10 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
+  /* Force heart fill with maximum specificity */
+  fill: rgb(239, 68, 68) !important;
+  fill: rgb(239, 68, 68) !important;
+  fill: rgb(239, 68, 68) !important;
 }
 
 .unified-card-heart.liked svg {
@@ -283,6 +293,10 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
+  /* Force heart fill with maximum specificity */
+  fill: rgb(239, 68, 68) !important;
+  fill: rgb(239, 68, 68) !important;
+  fill: rgb(239, 68, 68) !important;
 }
 
 .unified-card-heart:not(.liked) svg {
@@ -294,6 +308,10 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Override any inherited styles */
   pointer-events: auto !important;
   touch-action: manipulation !important;
+  /* Force heart fill with maximum specificity */
+  fill: rgb(156, 163, 175) !important;
+  fill: rgb(156, 163, 175) !important;
+  fill: rgb(156, 163, 175) !important;
 }
 
 /* Mobile touch optimization */
@@ -307,6 +325,10 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
     /* Override any inherited styles */
     pointer-events: auto !important;
     touch-action: manipulation !important;
+    /* Force heart fill with maximum specificity */
+    fill: rgb(239, 68, 68) !important;
+    fill: rgb(239, 68, 68) !important;
+    fill: rgb(239, 68, 68) !important;
   }
 }
 
@@ -2717,6 +2739,26 @@ div[class*="specials-dynamic-grid"] {
   /* Ensure no background inheritance */
   background: none !important;
   background-color: transparent !important;
+}
+
+/* Force UnifiedCard to be transparent regardless of parent styles */
+.restaurant-grid .unified-card,
+.marketplace-page .unified-card {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  background-clip: border-box !important;
+  background-origin: border-box !important;
+  background-size: auto !important;
+  background-repeat: repeat !important;
+  background-attachment: scroll !important;
+  background-position: 0% 0% !important;
+  /* Override any Tailwind bg-white classes */
+  background-color: transparent !important;
+  background: transparent !important;
+  /* Force override of any inherited backgrounds */
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 @media (max-width: 640px) {
