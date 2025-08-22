@@ -43,9 +43,9 @@ const normalizeIcon = (icon: React.ReactNode): React.ReactNode => {
       const clonedChildren = React.Children.map(icon.props.children, child => {
         if (React.isValidElement(child) && child.type === 'svg') {
           return React.cloneElement(child, {
-            'aria-hidden': true,
+            'aria-hidden': 'true',
             focusable: false,
-          });
+          } as any);
         }
         return child;
       });
