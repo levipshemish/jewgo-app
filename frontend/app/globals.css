@@ -184,6 +184,21 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   transform: translateY(-4px) !important;
 }
 
+/* Heart button specific overrides to prevent global button styles from interfering */
+.unified-card-heart {
+  opacity: 1 !important;
+  transition: all 0.2s ease-out !important;
+}
+
+.unified-card-heart:active {
+  opacity: 1 !important;
+  transform: scale(0.95) !important;
+}
+
+.unified-card-heart svg {
+  transition: all 0.2s ease-out !important;
+}
+
 /* Search Bar Styles - Updated with new color system */
 .search-bar {
   @apply w-full px-4 py-3 rounded-xl bg-white border border-neutral-300 focus:border-jewgo-400 focus:ring-jewgo-400/20 focus:outline-none transition-all duration-200 shadow-soft;
