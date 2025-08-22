@@ -359,7 +359,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               .unified-card-heart:hover svg {
                 fill: rgb(239, 68, 68) !important;
                 stroke: #ffffff !important;
+                stroke-width: 2 !important;
                 transform: scale(1.1) !important;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
               }
               .unified-card-heart:active {
                 transform: scale(0.95) !important;
@@ -369,14 +371,27 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 width: 18px !important;
                 height: 18px !important;
                 transition: all 0.2s ease-out !important;
+                stroke: #ffffff !important;
+                stroke-width: 2 !important;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
               }
               .unified-card-heart.liked svg {
                 fill: rgb(239, 68, 68) !important;
                 stroke: #ffffff !important;
+                stroke-width: 2 !important;
               }
               .unified-card-heart:not(.liked) svg {
                 fill: rgb(156, 163, 175) !important;
                 stroke: #ffffff !important;
+                stroke-width: 2 !important;
+              }
+              /* Mobile touch optimization */
+              @media (hover: none) and (pointer: coarse) {
+                .unified-card-heart:active svg {
+                  fill: rgb(239, 68, 68) !important;
+                  stroke: #ffffff !important;
+                  stroke-width: 2 !important;
+                }
               }
             `}</style>
             <button
@@ -391,12 +406,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             >
               <Heart
                 size={18}
-                style={{
-                  stroke: '#ffffff',
-                  strokeWidth: 2,
-                  transition: 'all 0.2s ease-out',
-                  filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
-                }}
               />
             </button>
           </>

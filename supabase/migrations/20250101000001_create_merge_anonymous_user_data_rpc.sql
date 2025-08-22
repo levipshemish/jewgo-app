@@ -16,6 +16,9 @@ DECLARE
   favorite_record RECORD;
   review_record RECORD;
   search_history_record RECORD;
+  favorites_count INTEGER;
+  reviews_count INTEGER;
+  search_history_count INTEGER;
 BEGIN
   -- Validate inputs
   IF p_anon_uid IS NULL OR p_auth_uid IS NULL OR p_correlation_id IS NULL THEN
@@ -54,9 +57,9 @@ BEGIN
     WHERE user_id = p_anon_uid
     ON CONFLICT (user_id, restaurant_id) DO NOTHING;
     
-    GET DIAGNOSTICS profile_record = ROW_COUNT;
-    IF profile_record > 0 THEN
-      moved_data := moved_data || jsonb_build_object('favorites', profile_record);
+    GET DIAGNOSTICS favorites_count = ROW_COUNT;
+    IF favorites_count > 0 THEN
+      moved_data := moved_data || jsonb_build_object('favorites', favorites_count);
     END IF;
     
     -- Move reviews (if exist)
@@ -66,9 +69,9 @@ BEGIN
     WHERE user_id = p_anon_uid
     ON CONFLICT (user_id, restaurant_id) DO NOTHING;
     
-    GET DIAGNOSTICS review_record = ROW_COUNT;
-    IF review_record > 0 THEN
-      moved_data := moved_data || jsonb_build_object('reviews', review_record);
+    GET DIAGNOSTICS reviews_count = ROW_COUNT;
+    IF reviews_count > 0 THEN
+      moved_data := moved_data || jsonb_build_object('reviews', reviews_count);
     END IF;
     
     -- Move search history (if exists)
@@ -78,9 +81,9 @@ BEGIN
     WHERE user_id = p_anon_uid
     ON CONFLICT (user_id, query) DO NOTHING;
     
-    GET DIAGNOSTICS search_history_record = ROW_COUNT;
-    IF search_history_record > 0 THEN
-      moved_data := moved_data || jsonb_build_object('search_history', search_history_record);
+    GET DIAGNOSTICS search_history_count = ROW_COUNT;
+    IF search_history_count > 0 THEN
+      moved_data := moved_data || jsonb_build_object('search_history', search_history_count);
     END IF;
     
     -- Record the merge job for idempotency

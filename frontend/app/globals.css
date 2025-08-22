@@ -2602,36 +2602,5 @@ div[class*="specials-dynamic-grid"] {
   padding-top: 0 !important;
 }
 
-/* Heart button hover states - ensure they work across all browsers */
-.unified-card-heart:hover svg {
-  fill: rgb(239, 68, 68) !important;
-  stroke: #ffffff !important;
-}
 
-.unified-card-heart.liked svg {
-  fill: rgb(239, 68, 68) !important;
-  stroke: #ffffff !important;
-}
-
-.unified-card-heart:not(.liked) svg {
-  fill: rgb(156, 163, 175) !important;
-  stroke: #ffffff !important;
-}
-
-/* Ensure heart button is clickable and responsive */
-.unified-card-heart {
-  pointer-events: auto !important;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-}
-
-/* Mobile touch optimization for heart button */
-@media (hover: none) and (pointer: coarse) {
-  .unified-card-heart:active svg {
-    fill: rgb(239, 68, 68) !important;
-    stroke: #ffffff !important;
-  }
-}
 
