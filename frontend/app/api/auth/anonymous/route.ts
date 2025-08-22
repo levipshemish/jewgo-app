@@ -147,9 +147,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Parse request body for Turnstile token
+    // Parse request body for captcha token
     const body = await request.json().catch(() => ({}));
-    const { turnstileToken } = body;
+    const { turnstileToken, recaptchaToken } = body;
+    const captchaToken = turnstileToken || recaptchaToken;
     
     // Rate limiting for anonymous auth
     const rateLimitResult = await checkRateLimit(
