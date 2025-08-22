@@ -440,13 +440,21 @@ def create_app():
     
     # Register API v4 routes
     try:
+        logger.info("Attempting to import API v4 routes...")
         from routes.api_v4 import api_v4
-        app.register_blueprint(api_v4)
-        logger.info("API v4 routes registered successfully")
+        logger.info(f"API v4 blueprint imported: {api_v4}")
+        
+        if api_v4 is not None:
+            app.register_blueprint(api_v4)
+            logger.info("API v4 routes registered successfully")
+        else:
+            logger.warning("API v4 blueprint is None - not registering routes")
+            
     except ImportError as e:
         logger.warning(f"Could not import API v4 routes: {e}")
     except Exception as e:
         logger.error(f"Error registering API v4 routes: {e}")
+        logger.error(traceback.format_exc())
     
     logger.info("JewGo Backend application created successfully")
     return app
