@@ -2,6 +2,8 @@ import React from 'react'
 
 // Sample components for testing
 const Button = ({ children, variant = 'primary', size = 'md', ...props }: any) => {
+  const variantKey = variant as keyof typeof variants
+  const sizeKey = size as keyof typeof sizes
   const baseClasses = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2'
   
   const variants = {
@@ -19,7 +21,7 @@ const Button = ({ children, variant = 'primary', size = 'md', ...props }: any) =
   
   return (
     <button
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]}`}
+      className={`${baseClasses} ${variants[variantKey]} ${sizes[sizeKey]}`}
       {...props}
     >
       {children}
