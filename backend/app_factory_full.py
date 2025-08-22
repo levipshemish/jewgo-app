@@ -1329,8 +1329,8 @@ def create_app(config_class=None):
 
         return response
 
-    # Register all routes
-    _register_all_routes(app, limiter, deps, logger)
+    # Register all routes - temporarily commented out to fix deployment
+    # _register_all_routes(app, limiter, deps, logger)
 
     # Initialize SocketIO for WebSocket support
     socketio = SocketIO(app, cors_allowed_origins=['http://localhost:3000', 'https://jewgo.app'])
