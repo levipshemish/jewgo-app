@@ -14,6 +14,7 @@ import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
 import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
+import { useLocation } from '@/lib/contexts/LocationContext';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters } from '@/lib/filters/schema';
@@ -70,10 +71,15 @@ function EateryPageContent() {
     updateFilters
   } = useAdvancedFilters();
   
-  // Location state
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  // Location state from context
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    setError: setLocationError
+  } = useLocation();
 
   // Performance optimization for mobile
   const mobileOptimizedItemsPerPage = useMemo(() => {
@@ -194,48 +200,13 @@ function EateryPageContent() {
     clearAllFilters();
   };
 
-  // Mobile-optimized location handling
-  const requestLocation = async () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by this browser.');
-      return;
-    }
-
-    setLocationLoading(true);
-    setLocationError(null);
-
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: !isLowPowerMode, // Reduce accuracy in low power mode
-          timeout: isSlowConnection ? 30000 : 10000, // Longer timeout on slow connection
-          maximumAge: 5 * 60 * 1000 // 5 minutes
-        });
-      });
-
-      const { latitude, longitude } = position.coords;
-      setUserLocation({ latitude, longitude });
-      
-      // Update filters with location
-      setFilter('lat', latitude);
-      setFilter('lng', longitude);
-      setFilter('nearMe', true);
-      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
-      
-      // Send location update via WebSocket
-      if (isConnected) {
-        sendMessage({
-          type: 'location_update',
-          data: { latitude, longitude }
-        });
-      }
-      
-    } catch (error) {
-      console.error('Error getting location:', error);
-      setLocationError('Unable to get your location. Please check your browser settings.');
-    } finally {
-      setLocationLoading(false);
-    }
+  // Mobile-optimized location handling with context
+  const handleRequestLocation = async () => {
+    // Use the context's requestLocation
+    requestLocation();
+    
+    // Update filters when location is available (this will be handled by useEffect below)
+    // Send location update via WebSocket when location changes (this will be handled by useEffect below)
   };
 
   // Mobile-optimized scroll handling
@@ -261,16 +232,30 @@ function EateryPageContent() {
     };
   }, []);
 
-  // Clear distance filters when no user location
+  // Handle location changes and update filters
   useEffect(() => {
-    if (!userLocation) {
+    if (userLocation) {
+      // Update filters with location
+      setFilter('lat', userLocation.latitude);
+      setFilter('lng', userLocation.longitude);
+      setFilter('nearMe', true);
+      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
+      
+      // Send location update via WebSocket
+      if (isConnected) {
+        sendMessage({
+          type: 'location_update',
+          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
+        });
+      }
+    } else {
       // Clear distance-related filters when no location is available
       clearFilter('lat');
       clearFilter('lng');
       clearFilter('nearMe');
       clearFilter('maxDistanceMi');
     }
-  }, [userLocation, clearFilter]);
+  }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
 
   // Fetch restaurants with mobile optimization and distance sorting
   const fetchRestaurantsData = async (filters: Filters = activeFilters) => {
@@ -560,7 +545,7 @@ function EateryPageContent() {
                 onClearAll={handleClearAllFilters}
                 userLocation={userLocation}
                 locationLoading={locationLoading}
-                onRequestLocation={requestLocation}
+                onRequestLocation={handleRequestLocation}
               />
               
               {/* Action Buttons */}

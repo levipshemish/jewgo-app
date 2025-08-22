@@ -10,7 +10,7 @@ describe('useCaptcha', () => {
     const { result } = renderHook(() => useCaptcha());
 
     expect(result.current.state).toEqual({
-      isRequired: false,
+      isRequired: true, // CAPTCHA is always required now
       isVerified: false,
       token: null,
       error: null,
@@ -18,7 +18,7 @@ describe('useCaptcha', () => {
     });
   });
 
-  it('increments attempts and triggers rate limit', () => {
+  it('increments attempts and triggers rate limit callback', () => {
     const onRateLimitExceeded = jest.fn();
     const { result } = renderHook(() => 
       useCaptcha({ 
@@ -33,10 +33,10 @@ describe('useCaptcha', () => {
     });
 
     expect(result.current.state.attempts).toBe(1);
-    expect(result.current.state.isRequired).toBe(false);
+    expect(result.current.state.isRequired).toBe(true); // Always required now
     expect(onRateLimitExceeded).not.toHaveBeenCalled();
 
-    // Second attempt - should trigger rate limit
+    // Second attempt - should trigger rate limit callback when reaching maxAttempts
     act(() => {
       result.current.incrementAttempts();
     });
@@ -120,7 +120,7 @@ describe('useCaptcha', () => {
     });
 
     expect(result.current.state).toEqual({
-      isRequired: false,
+      isRequired: true, // Always required now
       isVerified: false,
       token: null,
       error: null,

@@ -17,7 +17,7 @@ export function useCaptcha(options: UseCaptchaOptions = {}) {
   const { maxAttempts = 3, onRateLimitExceeded } = options;
   
   const [state, setState] = useState<CaptchaState>({
-    isRequired: false,
+    isRequired: true, // Always require CAPTCHA for guest sign-in
     isVerified: false,
     token: null,
     error: null,
@@ -29,16 +29,16 @@ export function useCaptcha(options: UseCaptchaOptions = {}) {
   const incrementAttempts = useCallback(() => {
     setState(prev => {
       const newAttempts = prev.attempts + 1;
-      const isRequired = newAttempts >= maxAttempts;
       
-      if (isRequired && !prev.isRequired) {
+      // Since CAPTCHA is always required, only trigger callback at rate limit threshold
+      if (newAttempts >= maxAttempts) {
         onRateLimitExceeded?.();
       }
       
       return {
         ...prev,
         attempts: newAttempts,
-        isRequired
+        isRequired: true // Always required
       };
     });
   }, [maxAttempts, onRateLimitExceeded]);
@@ -72,7 +72,7 @@ export function useCaptcha(options: UseCaptchaOptions = {}) {
 
   const resetCaptcha = useCallback(() => {
     setState({
-      isRequired: false,
+      isRequired: true, // Always require CAPTCHA for guest sign-in
       isVerified: false,
       token: null,
       error: null,

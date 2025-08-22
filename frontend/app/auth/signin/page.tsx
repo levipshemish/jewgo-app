@@ -60,7 +60,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
   } = useCaptcha({
     maxAttempts: 3,
     onRateLimitExceeded: () => {
-      setError('Too many attempts. Please complete the CAPTCHA to continue.');
+      setError('Too many attempts. Please wait before trying again.');
     }
   });
 
@@ -405,31 +405,26 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
               {guestPending ? "Continuing as Guest..." : "Continue as Guest"}
             </button>
 
-            {/* CAPTCHA Widget - shown when required or when there's an error */}
-            {(captchaState.isRequired || captchaState.error || error?.includes('CAPTCHA')) && (
-              <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
-                <div className="text-center mb-3">
-                  <p className="text-sm text-neutral-300 mb-2">
-                    {captchaState.isRequired 
-                      ? "Please complete the security check to continue"
-                      : "Security verification required"
-                    }
-                  </p>
-                  {captchaState.error && (
-                    <p className="text-red-400 text-xs">{captchaState.error}</p>
-                  )}
-                </div>
-                <TurnstileWidget
-                  ref={turnstileRef}
-                  onVerify={handleCaptchaVerify}
-                  onError={handleCaptchaError}
-                  onExpired={handleCaptchaExpired}
-                  theme="dark"
-                  size="normal"
-                  className="flex justify-center"
-                />
+            {/* CAPTCHA Widget - always shown for guest sign-in */}
+            <div className="mt-4 p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
+              <div className="text-center mb-3">
+                <p className="text-sm text-neutral-300 mb-2">
+                  Please complete the security check to continue as guest
+                </p>
+                {captchaState.error && (
+                  <p className="text-red-400 text-xs">{captchaState.error}</p>
+                )}
               </div>
-            )}
+              <TurnstileWidget
+                ref={turnstileRef}
+                onVerify={handleCaptchaVerify}
+                onError={handleCaptchaError}
+                onExpired={handleCaptchaExpired}
+                theme="dark"
+                size="normal"
+                className="flex justify-center"
+              />
+            </div>
 
               {/* Apple Sign-In Button - positioned above Google per Apple prominence requirements */}
               <AppleSignInButton

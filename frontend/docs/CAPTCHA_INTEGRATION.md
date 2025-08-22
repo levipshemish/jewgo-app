@@ -38,28 +38,30 @@ The CAPTCHA integration provides protection against automated attacks on the gue
 
 ## How It Works
 
-### 1. Initial State
-- Users can attempt guest sign-in without CAPTCHA initially
-- Each attempt is tracked by the `useCaptcha` hook
+### 1. Always Required
+- CAPTCHA is **always required** for guest sign-in attempts
+- Users must complete CAPTCHA verification before proceeding
+- Each attempt is still tracked by the `useCaptcha` hook for additional rate limiting
 
 ### 2. Rate Limiting
-- After 3 attempts (configurable), CAPTCHA becomes required
-- The `onRateLimitExceeded` callback is triggered
-- User sees a message indicating CAPTCHA is required
+- After 3 attempts (configurable), additional rate limiting may be applied
+- The `onRateLimitExceeded` callback is triggered for enhanced protection
+- Server-side rate limiting provides additional security layer
 
 ### 3. CAPTCHA Display
-- TurnstileWidget is conditionally rendered when:
-  - Rate limit is exceeded (`captchaState.isRequired`)
-  - There's a CAPTCHA-related error
-  - Server requires CAPTCHA verification
+- TurnstileWidget is **always displayed** for guest sign-in
+- Shows immediately when user visits the sign-in page
+- Provides clear instructions to complete security check
 
 ### 4. Verification Flow
-1. User completes CAPTCHA challenge
-2. TurnstileWidget calls `onVerify` with token
-3. Token is stored in CAPTCHA state
-4. Guest sign-in API call includes token
-5. Server validates token with Cloudflare
-6. User is authenticated or error is shown
+1. User visits sign-in page and sees CAPTCHA immediately
+2. User completes CAPTCHA challenge
+3. TurnstileWidget calls `onVerify` with token
+4. Token is stored in CAPTCHA state
+5. User clicks "Continue as Guest" button
+6. Guest sign-in API call includes CAPTCHA token
+7. Server validates token with Cloudflare
+8. User is authenticated or error is shown
 
 ### 5. Error Handling
 - **TURNSTILE_REQUIRED**: Shows CAPTCHA widget
@@ -107,8 +109,9 @@ const response = await fetch('/api/auth/anonymous', {
 
 ### Manual Testing
 - Visit `/test-turnstile` for manual CAPTCHA testing
+- Visit sign-in page and verify CAPTCHA always appears for guest sign-in
 - Test rate limiting by making multiple guest sign-in attempts
-- Verify CAPTCHA appears after 3 attempts
+- Verify CAPTCHA token is required for successful guest authentication
 
 ## Security Features
 
@@ -136,10 +139,11 @@ const response = await fetch('/api/auth/anonymous', {
 
 ### Common Issues
 
-1. **CAPTCHA not appearing**: Check environment variables and rate limit settings
+1. **CAPTCHA not appearing**: Check environment variables (CAPTCHA should always appear now)
 2. **Verification failures**: Verify Turnstile site key and secret key
 3. **Script loading errors**: Check network connectivity and CSP settings
 4. **State synchronization**: Ensure proper error handling in sign-in flow
+5. **Guest sign-in blocked**: Ensure CAPTCHA is completed before attempting sign-in
 
 ### Debug Steps
 
