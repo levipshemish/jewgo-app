@@ -1865,6 +1865,33 @@ def create_app(config_class=None):
                 "success": False,
                 "error": str(e)
             }), 500
+
+    @app.route('/api/fix-marketplace', methods=['POST'])
+    def fix_marketplace():
+        """Simple endpoint to fix marketplace tables."""
+        try:
+            # Import and run the migration directly
+            from database.migrations.create_marketplace_schema import run_migration
+            
+            success = run_migration()
+            
+            if success:
+                return jsonify({
+                    "success": True,
+                    "message": "Marketplace tables created successfully"
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Failed to create marketplace tables"
+                }), 500
+                
+        except Exception as e:
+            logger.exception("Error creating marketplace tables")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
     
     # Error handlers
     @app.errorhandler(404)
