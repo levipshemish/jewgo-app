@@ -41,7 +41,9 @@ const cardVariants = {
     opacity: 1, 
     y: 0,
     transition: { duration: 0.3, ease: "easeOut" as const }
-  }
+  },
+  // Add a fallback state to ensure cards are always visible
+  exit: { opacity: 1, y: 0 }
 };
 
 // Main Unified Card Component
@@ -88,6 +90,25 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       });
     }
   }, [data.id]); // Re-run when card data changes
+
+  // Force cards to be visible after animation timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const cardElements = document.querySelectorAll('.unified-card');
+      cardElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          const computedStyle = window.getComputedStyle(el);
+          if (computedStyle.opacity === '0') {
+            console.log('🔍 UnifiedCard Debug - Forcing visibility for stuck card:', el);
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0px)';
+          }
+        }
+      });
+    }, 1000); // 1 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [data.id]);
 
   // Sync with favorites manager
   useEffect(() => {
@@ -217,6 +238,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
+      exit="exit"
       whileHover={{ 
         y: -4,
         transition: { duration: 0.2, ease: "easeOut" }
