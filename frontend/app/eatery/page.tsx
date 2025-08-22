@@ -439,7 +439,7 @@ function EateryPageContent() {
     container: {
       minHeight: isMobile ? viewportHeight : 'auto',
       padding: isMobile ? '8px' : '16px',
-      backgroundColor: 'transparent', // Force transparent background
+      // Remove backgroundColor override to let CSS handle it
     },
     filtersContainer: {
       position: isMobile ? 'fixed' as const : 'relative' as const,
@@ -494,6 +494,7 @@ function EateryPageContent() {
 
   return (
     <div 
+      className="min-h-screen bg-[#f4f4f4]"
       style={mobileOptimizedStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
