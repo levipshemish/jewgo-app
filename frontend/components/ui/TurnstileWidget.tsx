@@ -106,13 +106,32 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           theme,
           size,
           tabindex: 0,
-          // Disable Cloudflare Zone requirement for non-Cloudflare domains
+          // Explicitly disable Private Access Token mode
           'appearance': 'interaction-only',
-          'execution': 'execute'
+          'execution': 'execute',
+          // Force standard challenge mode
+          'refresh-expired': 'auto',
+          'response-field-name': 'cf-turnstile-response',
+          // Additional parameters to ensure standard mode
+          'language': 'auto',
+          'retry': 'auto'
         };
         
         console.log('Turnstile render config:', config);
-        const id = window.turnstile.render(containerRef.current, config);
+        
+        // Try to force standard challenge mode by using explicit parameters
+        const renderParams = {
+          ...config,
+          // Force standard challenge mode
+          'appearance': 'interaction-only',
+          'execution': 'execute',
+          // Disable Private Access Token
+          'refresh-expired': 'auto',
+          'response-field-name': 'cf-turnstile-response'
+        };
+        
+        console.log('Final render params:', renderParams);
+        const id = window.turnstile.render(containerRef.current, renderParams);
         console.log('Turnstile widget rendered with ID:', id);
         
         // Debug: Check if the widget is actually in the DOM
