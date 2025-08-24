@@ -1109,7 +1109,10 @@ function MarketplacePageContent() {
               }}
             >
                   <UnifiedCard
-                data={transformMarketplaceToCardData(listing)}
+                data={{
+                  ...transformMarketplaceToCardData(listing),
+                  imageUrl: transformMarketplaceToCardData(listing).imageUrl || undefined,
+                }}
                     variant="default"
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/marketplace/product/${listing.id}`)}
