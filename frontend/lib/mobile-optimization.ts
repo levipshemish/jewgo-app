@@ -23,7 +23,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 
 // Mobile detection utilities
 export const isMobileDevice = (): boolean => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {return false;}
   
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
@@ -31,13 +31,13 @@ export const isMobileDevice = (): boolean => {
 };
 
 export const isTouchDevice = (): boolean => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {return false;}
   
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 };
 
 export const getDevicePixelRatio = (): number => {
-  if (typeof window === 'undefined') return 1;
+  if (typeof window === 'undefined') {return 1;}
   
   return window.devicePixelRatio || 1;
 };
@@ -45,23 +45,23 @@ export const getDevicePixelRatio = (): number => {
 // Mobile performance optimizations
 export const useMobileOptimization = () => {
   const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {return false;}
     return isMobileDevice();
   });
   const [isTouch, setIsTouch] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {return false;}
     return isTouchDevice();
   });
   const [pixelRatio, setPixelRatio] = useState(() => {
-    if (typeof window === 'undefined') return 1;
+    if (typeof window === 'undefined') {return 1;}
     return getDevicePixelRatio();
   });
   const [viewportHeight, setViewportHeight] = useState(() => {
-    if (typeof window === 'undefined') return 0;
+    if (typeof window === 'undefined') {return 0;}
     return window.innerHeight;
   });
   const [viewportWidth, setViewportWidth] = useState(() => {
-    if (typeof window === 'undefined') return 0;
+    if (typeof window === 'undefined') {return 0;}
     return window.innerWidth;
   });
 
@@ -119,7 +119,7 @@ export const useTouchInteractions = () => {
   }, []);
 
   const onTouchEnd = useCallback(() => {
-    if (!touchStart || !touchEnd) return null;
+    if (!touchStart || !touchEnd) {return null;}
 
     const distanceX = touchStart.x - touchEnd.x;
     const distanceY = touchStart.y - touchEnd.y;
@@ -213,18 +213,15 @@ export const useMobilePerformance = () => {
 };
 
 // Mobile-specific UI utilities
-export const getMobileSpacing = (baseSpacing: number): number => {
-  const { isMobile } = useMobileOptimization();
+export const getMobileSpacing = (baseSpacing: number, isMobile: boolean): number => {
   return isMobile ? baseSpacing * 1.2 : baseSpacing;
 };
 
-export const getMobileFontSize = (baseSize: number): number => {
-  const { isMobile } = useMobileOptimization();
+export const getMobileFontSize = (baseSize: number, isMobile: boolean): number => {
   return isMobile ? Math.max(baseSize, 16) : baseSize; // Minimum 16px for mobile
 };
 
-export const getMobileTouchTarget = (baseSize: number): number => {
-  const { isMobile } = useMobileOptimization();
+export const getMobileTouchTarget = (baseSize: number, isMobile: boolean): number => {
   return isMobile ? Math.max(baseSize, 44) : baseSize; // Minimum 44px touch target
 };
 
@@ -271,7 +268,7 @@ export const useMobileImageOptimization = () => {
     mobileWidth: number = 400,
     desktopWidth: number = 800
   ): string => {
-    if (!originalUrl) return originalUrl;
+    if (!originalUrl) {return originalUrl;}
 
     const width = isMobile ? mobileWidth : desktopWidth;
     const optimizedWidth = Math.round(width * pixelRatio);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, Fragment, useRef, useMemo, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -185,7 +185,7 @@ function EateryPageContent() {
   }, [clearAllFilters]);
 
   // Infinite scroll with proper mobile detection
-  const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     () => fetchMoreRestaurants(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
@@ -194,20 +194,12 @@ function EateryPageContent() {
     }
   );
 
-  // Debug infinite scroll setup
-  useEffect(() => {
-
-  }, [isMobile, hasMore, isLoadingMore]);
-
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Handle distance filter changes
-  const handleDistanceChange = useCallback((distance: number) => {
-    setFilter('maxDistanceMi', distance);
-  }, [setFilter]);
+
 
   // Handle page changes for desktop pagination
   const handlePageChange = async (page: number) => {
