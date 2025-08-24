@@ -16,10 +16,7 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
       lazyConnect: true,
       retryDelayOnFailover: 100,
       enableReadyCheck: false,
-      maxRetriesPerRequest: 3,
       retryDelayOnClusterDown: 300,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
     };
     
     if (process.env.REDIS_URL) {
