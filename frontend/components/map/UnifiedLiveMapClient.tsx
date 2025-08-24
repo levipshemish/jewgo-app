@@ -140,18 +140,36 @@ export default function UnifiedLiveMapClient() {
           return;
         }
 
-        const hasStoredLocation = localStorage.getItem('userLocation');
+        // Use the same key as LocationContext
+        const locationData = localStorage.getItem('jewgo_location_data');
         const hasHandledPermission = localStorage.getItem('locationPermissionHandled');
 
-        if (!userLocation && !hasStoredLocation && !hasHandledPermission && !locationPromptShown) {
+        // Only show location prompt if:
+        // 1. No user location available
+        // 2. No stored location data
+        // 3. Permission hasn't been handled
+        // 4. Prompt hasn't been shown in this session
+        // 5. Permission status is 'prompt' (not denied or granted)
+        // 6. Haven't shown prompt recently (within last 24 hours)
+        const lastPromptTime = localStorage.getItem('locationPromptLastShown');
+        const timeSinceLastPrompt = lastPromptTime ? Date.now() - parseInt(lastPromptTime) : Infinity;
+        const minTimeBetweenPrompts = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (!userLocation && 
+            !locationData && 
+            !hasHandledPermission && 
+            !locationPromptShown && 
+            permissionStatus === 'prompt' &&
+            timeSinceLastPrompt > minTimeBetweenPrompts) {
           setShowLocationPrompt(true);
           setLocationPromptShown(true);
+          localStorage.setItem('locationPromptLastShown', Date.now().toString());
         }
       };
 
       checkLocationPermission();
     }
-  }, [mounted, userLocation, locationPromptShown]);
+  }, [mounted, userLocation, locationPromptShown, permissionStatus]);
 
   // Optimized data fetching with intelligent caching
   const fetchRestaurantsData = useCallback(async () => {

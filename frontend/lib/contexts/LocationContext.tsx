@@ -45,6 +45,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [permissionStatus, setPermissionStatus] = useState<LocationState['permissionStatus']>('prompt');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRequestTime, setLastRequestTime] = useState<number>(0);
 
   // Load location data from localStorage on mount
   useEffect(() => {
@@ -69,7 +70,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         if (data.permissionStatus) {
           setPermissionStatus(data.permissionStatus);
         }
-      } catch {
+      } catch (error) {
         // Clear corrupted data
         localStorage.removeItem(LOCATION_STORAGE_KEY);
       }
@@ -92,12 +93,22 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   }, [userLocation, permissionStatus]);
 
   const requestLocation = useCallback(() => {
+    // Prevent multiple simultaneous requests
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    const minRequestInterval = 10000; // 10 seconds minimum between requests
+    
+    if (isLoading || timeSinceLastRequest < minRequestInterval) {
+      return;
+    }
+    
     if (!navigator.geolocation) {
       setPermissionStatus('unsupported');
       setError('Geolocation is not supported by this browser');
       return;
     }
 
+    setLastRequestTime(now);
     setIsLoading(true);
     setError(null);
 
@@ -134,10 +145,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       {
         enableHighAccuracy: true,
         timeout: 15000,
-        maximumAge: 300000, // 5 minutes
+        maximumAge: 600000, // 10 minutes - increased to reduce frequency
       }
     );
-  }, []);
+  }, [isLoading, lastRequestTime]);
 
   const setLocation = useCallback((location: UserLocation) => {
     setUserLocation(location);
