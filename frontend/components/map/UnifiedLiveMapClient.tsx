@@ -259,12 +259,11 @@ export default function UnifiedLiveMapClient() {
 
         startTransition(() => {
           setAllRestaurants(validRestaurants);
-          // TEMPORARY: Bypass worker filtering for debugging
           setDisplayedRestaurants(validRestaurants);
           
           if (process.env.NODE_ENV === 'development') {
             // eslint-disable-next-line no-console
-            console.log('LiveMap: State updated (BYPASSING WORKER):', {
+            console.log('LiveMap: State updated:', {
               allRestaurantsLength: validRestaurants.length,
               displayedRestaurantsLength: validRestaurants.length,
               firstRestaurant: validRestaurants[0] ? {
@@ -379,6 +378,20 @@ export default function UnifiedLiveMapClient() {
 
   // Apply filters via worker
   useEffect(() => {
+    // Don't process if there are no restaurants to filter
+    if (allRestaurants.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('LiveMap: Skipping worker (no restaurants):', {
+          allRestaurantsCount: allRestaurants.length,
+          searchQuery,
+          activeFilters,
+          hasUserLocation: !!userLocation
+        });
+      }
+      return;
+    }
+    
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
       console.log('LiveMap: Applying filters via worker:', {

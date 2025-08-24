@@ -329,25 +329,23 @@ export function UnifiedCategoryNav({
     setIsInitialized(true);
   }, [variant, selectedId, items, isInitialized, scrollBehavior]);
   
-  // Manual scroll
-  // const scrollTo = useCallback((direction: 'left' | 'right') => {
-    if (!scrollerRef.current) {return;}
-    
+  /* Manual scroll (currently unused)
+  const scrollTo = useCallback((direction: 'left' | 'right') => {
+    if (!scrollerRef.current) { return; }
+
     const scroller = scrollerRef.current;
     const scrollAmount = scroller.clientWidth * 0.8;
-    const targetScroll = direction === 'left' 
+    const targetScroll = direction === 'left'
       ? Math.max(0, scroller.scrollLeft - scrollAmount)
       : Math.min(scroller.scrollWidth - scroller.clientWidth, scroller.scrollLeft + scrollAmount);
 
     try {
-      scroller.scrollTo({
-        left: targetScroll,
-        behavior: scrollBehavior,
-      });
+      scroller.scrollTo({ left: targetScroll, behavior: scrollBehavior });
     } catch {
       scroller.scrollLeft = targetScroll;
     }
   }, [scrollBehavior]);
+  */
   
   // Get icon for category
   const getIcon = useCallback((category: CategoryItem, isMobile: boolean) => {
