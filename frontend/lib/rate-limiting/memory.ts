@@ -171,7 +171,7 @@ export async function clearRateLimit(
  */
 export async function checkIdempotency(
   idempotencyKey: string,
-  ttlSeconds: number = 300
+  _ttlSeconds: number = 300
 ): Promise<{ exists: boolean; result?: any }> {
   if (isDockerEnvironment()) {
     const data = memoryStore.get(`idempotency:${idempotencyKey}`);
@@ -194,7 +194,7 @@ export async function checkIdempotency(
 export async function storeIdempotencyResult(
   idempotencyKey: string,
   result: any,
-  ttlSeconds: number = 300
+  _ttlSeconds: number = 300
 ): Promise<void> {
   if (isDockerEnvironment()) {
     const now = Math.floor(Date.now() / 1000);

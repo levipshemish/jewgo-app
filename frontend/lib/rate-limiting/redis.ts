@@ -4,7 +4,7 @@
  */
 
 import { validateTrustedIP } from '@/lib/utils/auth-utils';
-import { REDIS_URL, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment';
+import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_DB } from '@/lib/config/environment';
 
 // Rate limit configurations
 const RATE_LIMITS = {
@@ -166,7 +166,7 @@ export async function checkRateLimit(
     }
     
     const newWindowCount = incrementResults[0][1] as number;
-    const newDailyCount = incrementResults[2][1] as number;
+    // const newDailyCount = incrementResults[2][1] as number;
     
     return {
       allowed: true,
@@ -216,7 +216,7 @@ export async function clearRateLimit(
  */
 export async function checkIdempotency(
   idempotencyKey: string,
-  ttlSeconds: number = 300
+  _ttlSeconds: number = 300
 ): Promise<{ exists: boolean; result?: any }> {
   try {
     const redis = await getRedisClient();

@@ -68,7 +68,7 @@ export const performanceMonitor = {
     this.startTime = performance.now();
   },
   
-  end(label: string) {
+  end(_label: string) {
     const duration = performance.now() - this.startTime;
     if (duration > 50 && process.env.NODE_ENV === 'development') {
       // console.warn(`${label} took ${duration.toFixed(0)}ms`);
