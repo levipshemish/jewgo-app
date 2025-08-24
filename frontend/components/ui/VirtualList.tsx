@@ -51,25 +51,25 @@ export function VirtualList<T>({
   }, [onScroll, onEndReached, items.length, itemHeight, height, endReachedThreshold]);
 
   // Scroll to specific item
-  const scrollToItem = useCallback((index: number) => {
-    if (containerRef.current) {
-      const targetScrollTop = index * itemHeight;
-      containerRef.current.scrollTo({
-        top: targetScrollTop,
-        behavior: 'smooth'
-      });
-    }
-  }, [itemHeight]);
+  // const scrollToItem = useCallback((index: number) => {
+  //   if (containerRef.current) {
+  //     const targetScrollTop = index * itemHeight;
+  //     containerRef.current.scrollTo({
+  //       top: targetScrollTop,
+  //       behavior: 'smooth'
+  //     });
+  //   }
+  // }, [itemHeight]);
 
   // Scroll to top
-  const scrollToTop = useCallback(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  }, []);
+  // const scrollToTop = useCallback(() => {
+  //   if (containerRef.current) {
+  //     containerRef.current.scrollTo({
+  //       top: 0,
+  //       behavior: 'smooth'
+  //     });
+  //   }
+  // }, []);
 
   // Get visible items
   const visibleItems = useMemo(() => {
@@ -146,7 +146,7 @@ export function VirtualRestaurantList({
   restaurants, height, itemHeight, renderRestaurant, onLoadMore, hasMore = false, loading = false, className = ''
 }: VirtualRestaurantListProps) {
   const [displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
-  const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
   const itemsPerPage = 50;
 
   // Load more items when needed
@@ -204,7 +204,7 @@ interface VirtualRestaurantCardProps {
 }
 
 export function VirtualRestaurantCard({
-  restaurant, index, onClick, showDistance = false, userLocation
+  restaurant, _index, onClick, showDistance = false, userLocation
 }: VirtualRestaurantCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
