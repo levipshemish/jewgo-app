@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, User, MessageSquare, Bell, Search} from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { useNotifications } from '@/lib/contexts/NotificationsContext';
 
@@ -16,8 +16,27 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   const pathname = usePathname();
   const { unreadCount } = useNotifications();
 
-  // Check if we're on mobile
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  // Check if we're on mobile - ensure it's always detected correctly
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+      setIsMobile(mobile);
+      setIsMobileView(mobile);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+  
   const ButtonContainer = isMobile ? 'button' : motion.button;
   const DivContainer = isMobile ? 'div' : motion.div;
 
@@ -62,7 +81,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-sm">
       <div className="w-full">
-        <div className="dynamic-bottom-nav flex items-center justify-around">
+        <div className={`dynamic-bottom-nav flex items-center justify-around ${isMobileView ? 'mobile-nav' : ''}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.id === 'explore' && pathname === '/eatery');

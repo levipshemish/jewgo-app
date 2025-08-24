@@ -46,6 +46,24 @@ function EateryPageContent() {
   const { isMobile, isTouch, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Ensure mobile detection is working correctly
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileDevice(typeof window !== 'undefined' && window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+  
   // Mobile gesture support
   const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
     () => router.push('/marketplace'), // Swipe left to marketplace
@@ -89,7 +107,7 @@ function EateryPageContent() {
     }
     
     // Calculate items per page to ensure exactly 4 rows on every screen size
-    if (isMobile) {
+    if (isMobile || isMobileDevice) {
       return 8; // 4 rows × 2 columns = 8 items
     } else {
       // For desktop, calculate based on viewport width to ensure 4 rows
@@ -107,15 +125,15 @@ function EateryPageContent() {
       
       return columnsPerRow * 4; // Always 4 rows
     }
-  }, [isMobile, isLowPowerMode, isSlowConnection, viewportWidth]);
+  }, [isMobile, isMobileDevice, isLowPowerMode, isSlowConnection, viewportWidth]);
 
   // Infinite scroll with proper mobile detection
   const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     () => fetchMoreRestaurants(),
     { 
-      threshold: isMobile ? 0.2 : 0.3, 
-      rootMargin: isMobile ? '100px' : '200px',
-      disabled: !isMobile // Only enable infinite scroll on mobile
+      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
+      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
+      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
     }
   );
 
@@ -458,41 +476,42 @@ function EateryPageContent() {
   // Mobile-specific effects
   useEffect(() => {
     // Auto-hide filters on mobile when scrolling
-    if (isMobile && isScrolling) {
+    if ((isMobile || isMobileDevice) && isScrolling) {
       setShowFilters(false);
     }
-  }, [isMobile, isScrolling]);
+  }, [isMobile, isMobileDevice, isScrolling]);
 
   // Consistent responsive styles
   const responsiveStyles = useMemo(() => {
+    const isMobileView = isMobile || isMobileDevice;
     const styles = {
       container: {
-        minHeight: isMobile ? viewportHeight : 'auto',
+        minHeight: isMobileView ? viewportHeight : 'auto',
         // Use consistent padding across all screen sizes
       },
       filtersContainer: {
-        position: isMobile ? 'fixed' as const : 'relative' as const,
-        top: isMobile ? 'auto' : '0',
-        bottom: isMobile ? '0' : 'auto',
-        left: isMobile ? '0' : 'auto',
-        right: isMobile ? '0' : 'auto',
-        zIndex: isMobile ? 50 : 'auto',
-        backgroundColor: isMobile ? 'white' : 'transparent',
-        borderTop: isMobile ? '1px solid #e5e7eb' : 'none',
-        borderRadius: isMobile ? '16px 16px 0 0' : '0',
-        boxShadow: isMobile ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
-        maxHeight: isMobile ? '80vh' : 'auto',
-        overflowY: isMobile ? 'auto' as const : 'visible' as const,
+        position: isMobileView ? 'fixed' as const : 'relative' as const,
+        top: isMobileView ? 'auto' : '0',
+        bottom: isMobileView ? '0' : 'auto',
+        left: isMobileView ? '0' : 'auto',
+        right: isMobileView ? '0' : 'auto',
+        zIndex: isMobileView ? 50 : 'auto',
+        backgroundColor: isMobileView ? 'white' : 'transparent',
+        borderTop: isMobileView ? '1px solid #e5e7eb' : 'none',
+        borderRadius: isMobileView ? '16px 16px 0 0' : '0',
+        boxShadow: isMobileView ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        maxHeight: isMobileView ? '80vh' : 'auto',
+        overflowY: isMobileView ? 'auto' as const : 'visible' as const,
       },
       loadMoreButton: {
         ...mobileStyles.touchButton,
-        width: isMobile ? '100%' : 'auto',
-        margin: isMobile ? '16px 8px' : '16px',
+        width: isMobileView ? '100%' : 'auto',
+        margin: isMobileView ? '16px 8px' : '16px',
       }
     };
 
     return styles;
-  }, [isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
 
   if (error) {
     return (
@@ -616,16 +635,16 @@ function EateryPageContent() {
           </p>
         </div>
       ) : (
-        <div className="restaurant-grid">
+        <div className="restaurant-grid px-4 sm:px-6 lg:px-8">
           {restaurants.map((restaurant, index) => (
-            <div key={restaurant.id}>
+            <div key={restaurant.id} className="w-full">
               <UnifiedCard
                 data={transformRestaurantToCardData(restaurant)}
                 variant="default"
                 showStarInBadge={true}
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
-                className="w-full"
+                className="w-full h-full"
               />
             </div>
           ))}
@@ -640,14 +659,14 @@ function EateryPageContent() {
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
-      {isMobile && isLoadingMore && (
+      {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5">
           <p>Loading more...</p>
         </div>
       )}
 
       {/* Infinite scroll trigger element - only on mobile */}
-      {isMobile && hasMore && (
+      {(isMobile || isMobileDevice) && hasMore && (
         <div 
           ref={loadingRef}
           className="h-5 w-full my-5"
@@ -655,7 +674,7 @@ function EateryPageContent() {
       )}
 
       {/* Desktop pagination - only show on desktop */}
-      {!isMobile && totalPages > 1 && (
+      {!(isMobile || isMobileDevice) && totalPages > 1 && (
         <div className="mt-8 mb-8">
           <Pagination
             currentPage={currentPage}
@@ -671,15 +690,15 @@ function EateryPageContent() {
       )}
 
       {/* Mobile infinite scroll trigger - only on mobile */}
-      {isMobile && hasMore && (
+      {(isMobile || isMobileDevice) && hasMore && (
         <div 
           ref={loadingRef}
           className="h-5 w-full my-5"
         />
       )}
 
-      {/* Mobile bottom navigation */}
-      {isMobile && (
+      {/* Mobile bottom navigation - ensure it's always visible on mobile */}
+      {(isMobile || isMobileDevice) && (
         <BottomNavigation />
       )}
     </div>

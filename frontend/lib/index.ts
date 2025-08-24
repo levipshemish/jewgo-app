@@ -44,6 +44,6 @@ export * from './supabase/middleware';
 // I18n exports
 export * from './i18n/index';
 
-// Backup exports
-export * from './backups/hoursBackup';
-export * from './backups/websiteBackup';
+// Backup exports - temporarily disabled due to missing files
+// export * from './backups/hoursBackup';
+// export * from './backups/websiteBackup';
