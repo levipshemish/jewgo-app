@@ -46,6 +46,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRequestTime, setLastRequestTime] = useState<number>(0);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Load location data from localStorage on mount
   useEffect(() => {
@@ -61,9 +62,15 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           
           if (age < maxAge) {
             setUserLocation(data.userLocation);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('📍 LocationContext: Loaded valid location data from localStorage', data.userLocation);
+            }
           } else {
             // Location is too old, clear it
             localStorage.removeItem(LOCATION_STORAGE_KEY);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('📍 LocationContext: Cleared expired location data (age: ' + Math.floor(age / (1000 * 60)) + ' minutes)');
+            }
           }
         }
         
@@ -75,22 +82,38 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         localStorage.removeItem(LOCATION_STORAGE_KEY);
       }
     }
+    
+    // Mark as initialized to prevent premature saves
+    setHasInitialized(true);
   }, []);
 
-  // Save location data to localStorage whenever it changes
+  // Save location data to localStorage whenever it changes (only save if we have valid data)
   useEffect(() => {
-    const locationData = {
-      userLocation,
-      permissionStatus,
-      lastUpdated: new Date().toISOString(),
-    };
-    
-    try {
-      localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
-    } catch {
-      // Handle storage errors gracefully
+    // Don't save until component has initialized from localStorage
+    if (!hasInitialized) {
+      return;
     }
-  }, [userLocation, permissionStatus]);
+    
+    // Only save to localStorage if we have actual location data or meaningful permission status
+    if (userLocation || permissionStatus !== 'prompt') {
+      const locationData = {
+        userLocation,
+        permissionStatus,
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      try {
+        localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 LocationContext: Saved location data to localStorage', locationData);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ LocationContext: Failed to save location data:', error);
+        }
+      }
+    }
+  }, [hasInitialized, userLocation, permissionStatus]);
 
   const requestLocation = useCallback(() => {
     // Prevent multiple simultaneous requests
@@ -121,6 +144,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           longitude: position.coords.longitude,
           timestamp: Date.now(),
         };
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 LocationContext: Successfully obtained location', location);
+        }
         setUserLocation(location);
       },
       (error: GeolocationPositionError) => {
