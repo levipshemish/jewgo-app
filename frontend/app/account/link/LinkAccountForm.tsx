@@ -29,7 +29,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     setSuccess(null);
     
     try {
-      const response = await fetch('/api/account/link', {
+      const response = await fetch('/api/auth/prepare-merge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     setError(null);
     
     try {
-      const response = await fetch('/api/account/link', {
+      const response = await fetch('/api/auth/prepare-merge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
