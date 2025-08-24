@@ -8,8 +8,15 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
   
   try {
     // Import Redis client dynamically to avoid build issues
-    const { getRedisClient } = await import('@/lib/rate-limiting/redis');
-    const redis = await getRedisClient();
+    const Redis = await import('ioredis');
+    const redis = new Redis.default({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+      db: parseInt(process.env.REDIS_DB || '0'),
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
     
     // Atomic check-and-set using Lua script
     const luaScript = `
@@ -29,6 +36,8 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
     if (result === 0) {
       throw new Error("Replay detected");
     }
+    
+    await redis.disconnect();
   } catch (error) {
     if (error instanceof Error && error.message === "Replay detected") {
       throw error;
@@ -44,12 +53,22 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
  */
 export async function clearReplayTokens(pattern = "captcha:token:*"): Promise<void> {
   try {
-    const { getRedisClient } = await import('@/lib/rate-limiting/redis');
-    const redis = await getRedisClient();
+    const Redis = await import('ioredis');
+    const redis = new Redis.default({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+      db: parseInt(process.env.REDIS_DB || '0'),
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+    });
+    
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
       await redis.del(...keys);
     }
+    
+    await redis.disconnect();
   } catch (error) {
     console.error('Failed to clear replay tokens:', error);
   }

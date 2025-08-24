@@ -92,8 +92,10 @@ export async function signInAction(_: any, formData: FormData) {
       return { ok: false, message: "Security verification failed" };
     }
 
-    // One-shot token consumption (replay guard)
-    await consumeCaptchaTokenOnce(token);
+    // One-shot token consumption (replay guard) - disabled in development
+    if (process.env.NODE_ENV === "production") {
+      await consumeCaptchaTokenOnce(token);
+    }
 
     // Now do the real sign in
     const r = await doActualSignIn(email, password);
@@ -172,8 +174,10 @@ export async function anonymousSignInAction(_: any, formData: FormData) {
       return { ok: false, message: "Security verification failed" };
     }
 
-    // One-shot token consumption (replay guard)
-    await consumeCaptchaTokenOnce(token);
+    // One-shot token consumption (replay guard) - disabled in development
+    if (process.env.NODE_ENV === "production") {
+      await consumeCaptchaTokenOnce(token);
+    }
 
     // Now do the real anonymous sign in
     const r = await doActualAnonymousSignIn();
