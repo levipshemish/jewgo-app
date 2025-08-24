@@ -103,7 +103,7 @@ python -m flask run
 ### Backend Connection Issues
 If the frontend can't connect to the backend:
 1. Ensure backend is running on `http://localhost:5000`
-2. Check backend health endpoint: `curl http://localhost:5000/health`
+2. Check backend health endpoint: `curl http://localhost:5000/health` (or `http://localhost:5001/health` when using optimized compose)
 3. Verify firewall settings allow Docker to access host
 
 ### Port Conflicts

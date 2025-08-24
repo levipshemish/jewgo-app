@@ -36,26 +36,24 @@ def main():
     print(f"✅ Database URL found: {database_url[:20]}...")
     
     try:
-        # Import and run the migration
-        from database.migrations.create_marketplace_schema import run_migration
+        # Import and run the unified migration
+        from database.migrations.create_marketplace_unified import MarketplaceMigration
         
-        print("\n🔄 Running marketplace schema migration...")
-        success = run_migration()
+        print("\n🔄 Running unified marketplace migration...")
+        migration = MarketplaceMigration()
         
-        if success:
-            print("✅ Marketplace migration completed successfully!")
-            print("📋 Created tables:")
-            print("   - categories")
-            print("   - subcategories") 
-            print("   - listings")
-            print("   - gemachs")
-            print("   - listing_images")
-            print("   - listing_transactions")
-            print("   - listing_endorsements")
-            print("   - usernames")
-            return True
+        if migration.connect():
+            success = migration.create_marketplace_table()
+            
+            if success:
+                print("✅ Marketplace migration completed successfully!")
+                print("📋 Created unified marketplace table with all features")
+                return True
+            else:
+                print("❌ Marketplace migration failed")
+                return False
         else:
-            print("❌ Marketplace migration failed")
+            print("❌ Could not connect to database")
             return False
             
     except ImportError as e:

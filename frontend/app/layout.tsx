@@ -11,6 +11,7 @@ import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import { LocationProvider } from '@/lib/contexts/LocationContext'
 import DevNavigation from '@/components/dev/DevNavigation'
+import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 
 // NextAuth removed - using Supabase only
 import { roboto } from './fonts'
@@ -175,6 +176,7 @@ export default function RootLayout({
                       touchAction: 'manipulation'
                     }}
                   >
+                    <RelayEmailBanner />
                     {children}
                   </div>
                 <Analytics />

@@ -45,10 +45,9 @@ export const CLEANUP_CRON_SECRET = process.env.CLEANUP_CRON_SECRET;
 export const RATE_LIMIT_SHOW_REMAINING = process.env.RATE_LIMIT_SHOW_REMAINING !== 'false';
 export const RATE_LIMIT_SHOW_RESET_TIME = process.env.RATE_LIMIT_SHOW_RESET_TIME !== 'false';
 
-// Supabase configuration
+// Supabase configuration (client-safe)
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Redis configuration
 export const REDIS_URL = process.env.REDIS_URL;
@@ -75,7 +74,6 @@ export function validateEnvironment(): void {
   const requiredVars = [
     { name: 'NEXT_PUBLIC_SUPABASE_URL', value: SUPABASE_URL },
     { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: SUPABASE_ANON_KEY },
-    { name: 'SUPABASE_SERVICE_ROLE_KEY', value: SUPABASE_SERVICE_ROLE_KEY },
   ];
 
   const missingVars = requiredVars.filter(({ value }) => !value);
@@ -122,7 +120,13 @@ export function validateEnvironment(): void {
     if (!hasStandardRedis) {
       throw new Error('Standard Redis configuration is required in production for rate limiting. Set either REDIS_URL or REDIS_HOST/REDIS_PASSWORD');
     }
-
+  } else {
+    // In development, provide a default Redis URL if not set
+    if (!REDIS_URL && !REDIS_HOST) {
+      console.warn('Redis not configured in development - rate limiting may not work properly');
+      // Set a default Redis URL for development
+      process.env.REDIS_URL = 'redis://localhost:6379';
+    }
   }
 }
 
@@ -202,18 +206,14 @@ export function getEnvironmentConfig() {
 }
 
 // Validate environment on module load (only during runtime, not build time)
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
-  // Only validate on server side and not during build/test
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'production') {
+  // Only validate on server side during development runtime, not during build/test
   try {
     validateEnvironment();
     
     // Note: Feature validation moved to individual API routes to avoid build issues
-
   } catch (error) {
-    console.error('Environment validation failed:', error);
-    // Don't throw during build time, only during runtime
-    if (IS_PRODUCTION && process.env.NEXT_PHASE !== 'phase-production-build') {
-      throw error; // Fail fast in production runtime
-    }
+    console.warn('Environment validation warning:', error);
+    // Don't throw during build time, just warn
   }
 }

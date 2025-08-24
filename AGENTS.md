@@ -53,4 +53,6 @@
 - Sandbox: `scripts/sandbox.sh` via `npm run sandbox:*`.
 - Environment checks: `scripts/env-consistency-check.js` via `npm run env:check`.
 
+For a summary of recent documentation/script normalization (ports, health endpoints, compose files), see `docs/DOCS_CHANGELOG.md`.
+
 Last updated: 2025-08-22

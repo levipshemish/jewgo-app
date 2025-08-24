@@ -69,28 +69,22 @@ export default function TestTurnstilePage() {
         return;
       }
 
-      // Call Supabase directly
-      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
+      // Call secure server endpoint enforcing Turnstile
+      const response = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ turnstileToken: token })
+      });
 
-      if (signInError) {
-        setResult({ 
-          status: 500, 
-          data: { 
-            error: 'ANON_SIGNIN_FAILED',
-            details: signInError.message 
-          } 
-        });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setResult({ status: response.status, data: result });
         return;
       }
 
-      setResult({ 
-        status: 200, 
-        data: { 
-          ok: true, 
-          user_id: data.user?.id,
-          message: 'Anonymous signin successful' 
-        } 
-      });
+      setResult({ status: 200, data: result });
     } catch (error) {
       setResult({ error: error instanceof Error ? error.message : 'Unknown error occurred' });
     } finally {

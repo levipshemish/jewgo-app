@@ -32,27 +32,40 @@ export function sortRestaurantsByDistance(
     return restaurants;
   }
 
+
+
   const restaurantsWithDistance: RestaurantWithDistance[] = restaurants
     .filter(restaurant => restaurant.latitude && restaurant.longitude)
     .map(restaurant => {
-      const lat = restaurant.latitude;
-      const lng = restaurant.longitude;
-      if (!lat || !lng) {
+      const lat = restaurant.latitude!;
+      const lng = restaurant.longitude!;
+      
+      // Ensure coordinates are numbers
+      const latNum = typeof lat === 'number' ? lat : parseFloat(String(lat));
+      const lngNum = typeof lng === 'number' ? lng : parseFloat(String(lng));
+      
+      // Check if parsing was successful
+      if (isNaN(latNum) || isNaN(lngNum)) {
         return null;
       }
       
+      const calculatedDistance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        latNum,
+        lngNum
+      );
+
+      
       return {
         restaurant,
-        distance: calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          parseFloat(lat.toString()),
-          parseFloat(lng.toString())
-        )
+        distance: calculatedDistance
       };
     })
     .filter((item): item is RestaurantWithDistance => item !== null)
     .sort((a, b) => a.distance - b.distance);
+
+
 
   // Add formatted distance to each restaurant
   return restaurantsWithDistance.map(item => ({

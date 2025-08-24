@@ -7,9 +7,27 @@ import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils'
 // All other auth is handled by route handlers + RLS policies for better performance
 export const config = {
   matcher: [
+    // App pages
     '/admin/:path*',
-    '/messages/:path*', 
-    '/api/admin/:path*'
+    '/messages/:path*',
+    '/eatery/:path*',
+    '/restaurant/:path*',
+    '/marketplace/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/favorites/:path*',
+    '/live-map/:path*',
+    '/location-access/:path*',
+    '/notifications/:path*',
+    '/add-eatery/:path*',
+    '/mikva/:path*',
+    '/shuls/:path*',
+    '/stores/:path*',
+    // API endpoints commonly accessed by authenticated users
+    '/api/admin/:path*',
+    '/api/restaurants/:path*',
+    '/api/reviews/:path*',
+    '/api/feedback/:path*'
   ]
 };
 
@@ -24,6 +42,12 @@ export const config = {
  */
 export async function middleware(request: NextRequest) {
   try {
+    // Only process protected paths. In Next.js runtime, matcher limits execution,
+    // but unit tests call this function directly for any path.
+    const path = request.nextUrl.pathname;
+    if (!isProtectedPath(path)) {
+      return NextResponse.next();
+    }
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
     
@@ -105,7 +129,7 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
   const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
   
   // Create redirect response
-  const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url));
+    const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
   
   // Copy cookies from response to redirectResponse if response exists
   if (response) {
@@ -127,4 +151,17 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
   redirectResponse.headers.set('Expires', '0');
   
   return redirectResponse;
+}
+
+/**
+ * Local matcher to mirror Next.js config in unit tests
+ */
+function isProtectedPath(pathname: string): boolean {
+  const protectedPrefixes = [
+    '/admin/', '/messages/', '/eatery/', '/restaurant/', '/marketplace/', '/profile/', '/settings/',
+    '/favorites/', '/live-map/', '/location-access/', '/notifications/', '/add-eatery/', '/mikva/', '/shuls/', '/stores/',
+    '/api/admin/', '/api/restaurants/', '/api/reviews/', '/api/feedback/'
+  ];
+  const exactMatches = ['/admin', '/messages', '/eatery', '/marketplace', '/profile', '/settings', '/favorites', '/live-map', '/location-access', '/notifications', '/add-eatery', '/mikva', '/shuls', '/stores', '/api/admin', '/api/restaurants', '/api/reviews', '/api/feedback'];
+  return protectedPrefixes.some(p => pathname.startsWith(p)) || exactMatches.includes(pathname);
 }

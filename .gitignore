@@ -43,6 +43,14 @@ venv.bak/
 .env.production.local
 .env-E
 .env.local-E
+.env.development
+.env.staging
+.env.production
+# Ignore any other env files by default, keep templates/examples
+.env.*
+!env.template
+!**/*env.example
+!**/*.env.example
 
 # Next.js
 jewgo-frontend/.next/

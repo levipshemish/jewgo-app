@@ -135,8 +135,10 @@ describe('Middleware Route Protection', () => {
         const response = await middleware(request);
         
         expect(response.status).toBe(302);
-        expect(response.headers.get('location')).toContain('/auth/signin');
-        expect(response.headers.get('location')).toContain('redirectTo=');
+        const loc = response.headers.get('location') || response.headers.get('Location');
+        expect(loc).toBeTruthy();
+        expect(loc as string).toContain('/auth/signin');
+        expect(loc as string).toContain('redirectTo=');
       }
     });
 
@@ -159,7 +161,9 @@ describe('Middleware Route Protection', () => {
       const response = await middleware(request);
       
       expect(response.status).toBe(302);
-      expect(response.headers.get('location')).toContain('/auth/signin');
+      const loc2 = response.headers.get('location') || response.headers.get('Location');
+      expect(loc2).toBeTruthy();
+      expect(loc2 as string).toContain('/auth/signin');
     });
 
     it('should allow authenticated non-anonymous users', async () => {
@@ -197,7 +201,9 @@ describe('Middleware Route Protection', () => {
       const response = await middleware(request);
       
       expect(mockValidateRedirectUrl).toHaveBeenCalledWith('/eatery?param=value');
-      expect(response.headers.get('location')).toContain('redirectTo=');
+      const loc3 = response.headers.get('location') || response.headers.get('Location');
+      expect(loc3).toBeTruthy();
+      expect(loc3 as string).toContain('redirectTo=');
     });
 
     it('should handle malicious redirect URLs', async () => {
@@ -213,7 +219,9 @@ describe('Middleware Route Protection', () => {
       const response = await middleware(request);
       
       expect(mockValidateRedirectUrl).toHaveBeenCalledWith('/eatery?redirect=//evil.com');
-      expect(response.headers.get('location')).toContain('redirectTo=%2F');
+      const loc4 = response.headers.get('location') || response.headers.get('Location');
+      expect(loc4).toBeTruthy();
+      expect(loc4 as string).toContain('redirectTo=%2F');
     });
   });
 
@@ -288,7 +296,7 @@ describe('Middleware Route Protection', () => {
       for (const route of protectedRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         // The middleware should process these routes
-        expect(request.nextUrl.pathname).not.toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-/);
+        expect(request.nextUrl.pathname).not.toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-|^\/api\/auth/);
       }
     });
 
@@ -315,7 +323,7 @@ describe('Middleware Route Protection', () => {
       for (const route of publicRoutes) {
         const request = new NextRequest(new URL(`https://jewgo.app${route}`));
         // The middleware should not process these routes
-        expect(request.nextUrl.pathname).toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-/);
+        expect(request.nextUrl.pathname).toMatch(/^\/$|^\/auth\/|^\/_next\/|^\/favicon|^\/icon|^\/manifest|^\/robots|^\/sitemap|^\/healthz|^\/test-|^\/api\/auth/);
       }
     });
   });

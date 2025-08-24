@@ -30,3 +30,22 @@ export const CLEANUP_CRON_SECRET = process.env.CLEANUP_CRON_SECRET;
 // Feature flags - server-only
 export const APPLE_OAUTH_ENABLED = process.env.APPLE_OAUTH_ENABLED === 'true';
 export const ACCOUNT_LINKING_ENABLED = process.env.ACCOUNT_LINKING_ENABLED === 'true';
+
+// Validate critical server-only environment at runtime (server contexts only)
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+  try {
+    // Service role key must be present in production runtime
+    if (process.env.NODE_ENV === 'production' && !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY must be set in production');
+    }
+  } catch (error) {
+    // Fail fast during production runtime; log in other envs
+    // Do not throw during build time phases
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+      throw error;
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('Server environment validation warning:', error);
+    }
+  }
+}

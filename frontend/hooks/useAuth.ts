@@ -124,17 +124,26 @@ export function useAuth() {
         return { user: transformedUser };
       }
 
-      // Call Supabase directly instead of the server endpoint
-      const { data, error: signInError } = await supabaseBrowser.auth.signInAnonymously();
+      // Call the secure server endpoint that enforces Turnstile and rate limiting
+      const response = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ turnstileToken: turnstileToken || null })
+      });
 
-      if (signInError) {
-        setError('Anonymous sign-in failed');
-        return { error: 'Anonymous sign-in failed' };
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.error || 'Anonymous sign-in failed';
+        setError(message);
+        return { error: message };
       }
 
-      // Success - get the user and update state
-      if (data.user) {
-        const transformedUser = transformSupabaseUser(data.user);
+      // Success - fetch current user from Supabase and update state
+      const { data: { user: newUser } } = await supabaseBrowser.auth.getUser();
+      if (newUser) {
+        const transformedUser = transformSupabaseUser(newUser);
         setUser(transformedUser);
         setIsAnonymous(true);
         return { user: transformedUser };
@@ -166,10 +175,19 @@ export function useAuth() {
       }
 
       // Call server endpoint for email upgrade with normalized error codes
+      // CSRF token for server validation
+      let csrfToken: string | undefined;
+      try {
+        const csrfRes = await fetch('/api/auth/csrf', { method: 'GET', credentials: 'include' });
+        const csrfJson = await csrfRes.json();
+        csrfToken = csrfJson?.token;
+      } catch {}
+
       const response = await fetch('/api/auth/upgrade-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
         },
         credentials: 'include',
         body: JSON.stringify({ email })
@@ -186,6 +204,7 @@ export function useAuth() {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
               },
               credentials: 'include',
             });
@@ -342,10 +361,19 @@ export function useAuth() {
       setIsLoading(true);
       setError(null);
 
+      // CSRF token for server validation
+      let csrfToken: string | undefined;
+      try {
+        const csrfRes = await fetch('/api/auth/csrf', { method: 'GET', credentials: 'include' });
+        const csrfJson = await csrfRes.json();
+        csrfToken = csrfJson?.token;
+      } catch {}
+
       const response = await fetch('/api/auth/merge-anonymous', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
         },
         credentials: 'include',
       });

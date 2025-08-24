@@ -55,15 +55,19 @@ process.env.ANONYMOUS_AUTH = 'true'
 // Mock fetch globally
 global.fetch = jest.fn()
 
-// Mock Next.js Request class
+// Mock Next.js/WHATWG Request class
 global.Request = class Request {
   constructor(url, options = {}) {
-    this.url = url;
+    this._url = typeof url === 'string' ? url : url?.toString?.() || '';
     this.method = options.method || 'GET';
     this.headers = new Map(Object.entries(options.headers || {}));
     this.body = options.body;
   }
-  
+
+  get url() {
+    return this._url;
+  }
+
   get(name) {
     return this.headers.get(name);
   }
@@ -145,35 +149,7 @@ jest.mock('@/lib/rate-limiting', () => ({
   clearRateLimit: jest.fn().mockResolvedValue(true)
 }))
 
-// Mock Supabase client
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      signInAnonymously: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      linkIdentity: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      getSession: jest.fn().mockResolvedValue({ data: { session: { user: { id: 'test-user' } } }, error: null }),
-      updateUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-      signOut: jest.fn().mockResolvedValue({ error: null }),
-    }
-  }))
-}))
-
-// Mock Supabase SSR
-jest.mock('@supabase/ssr', () => ({
-  createServerClient: jest.fn(() => ({
-    auth: {
-      signInAnonymously: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      linkIdentity: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      getSession: jest.fn().mockResolvedValue({ data: { session: { user: { id: 'test-user' } } }, error: null }),
-      updateUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-      signOut: jest.fn().mockResolvedValue({ error: null }),
-    }
-  }))
-}))
+// Allow tests to control Supabase mocks per-suite
 
 // Mock Next.js cookies
 jest.mock('next/headers', () => ({

@@ -272,7 +272,6 @@ export async function POST(request: NextRequest) {
     
     console.log(`Email upgrade successful for correlation ID: ${correlationId}`, {
       user_id: updateData.user?.id,
-      email: updateData.user?.email,
       correlationId,
       token_rotated: tokenRotated,
       duration_ms: Date.now() - startTime

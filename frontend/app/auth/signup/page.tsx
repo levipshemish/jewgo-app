@@ -92,6 +92,14 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     setError(null);
     
     try {
+      // Request server to set HttpOnly state cookie
+      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
+      const stateJson = await stateRes.json();
+      const oauthState = stateJson?.state as string | undefined;
+      if (!oauthState) {
+        setError('Unable to initialize sign up. Please try again.');
+        return;
+      }
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
@@ -99,7 +107,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         provider: 'apple',
         options: {
           scopes: 'email name',
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=apple&state=${encodeURIComponent(oauthState)}`,
         },
       });
 
@@ -119,13 +127,21 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     setError(null);
     
     try {
+      // Request server to set HttpOnly state cookie
+      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
+      const stateJson = await stateRes.json();
+      const oauthState = stateJson?.state as string | undefined;
+      if (!oauthState) {
+        setError('Unable to initialize sign up. Please try again.');
+        return;
+      }
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
       const { error } = await supabaseBrowser.auth.signInWithOAuth({
         provider: "google",
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=google`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=google&state=${encodeURIComponent(oauthState)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

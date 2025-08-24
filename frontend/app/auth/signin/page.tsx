@@ -124,6 +124,16 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         return;
       }
 
+      // Debug: Log captcha state
+      console.log('Guest sign-in - Captcha state:', captchaState);
+      
+      // Get current token from state or widget ref
+      let currentToken = captchaState.token;
+      if (!currentToken && turnstileRef.current) {
+        currentToken = turnstileRef.current.getToken();
+        console.log('Got token directly from widget ref:', currentToken ? 'TOKEN_PRESENT' : 'NO_TOKEN');
+      }
+
       // Check for existing anonymous session first
       const { data: { user }, error: getUserError } = await supabaseBrowser.auth.getUser();
       
@@ -134,7 +144,14 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       }
 
       // Check if Turnstile is required and verified
-      if (captchaState.isRequired && !captchaState.isVerified) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const isTestKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
+      
+      // In development with test keys, skip Turnstile verification
+      if (isDevelopment && isTestKey) {
+        console.log('Development mode: Skipping Turnstile verification');
+      } else if (captchaState.isRequired && !captchaState.isVerified) {
+        console.log('Turnstile verification required but not completed');
         // Check if Turnstile is configured
         const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
         if (!turnstileSiteKey) {
@@ -143,24 +160,50 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
           return;
         }
         
-        setError('Please complete the security check to continue.');
-        setGuestPending(false);
-        return;
+        // Try to get token directly from widget ref if state hasn't updated yet
+        let currentToken = captchaState.token;
+        if (!currentToken && turnstileRef.current) {
+          currentToken = turnstileRef.current.getToken();
+          console.log('Got token directly from widget ref:', currentToken ? 'TOKEN_PRESENT' : 'NO_TOKEN');
+        }
+        
+        if (currentToken) {
+          console.log('Found Turnstile token, proceeding despite verification state');
+        } else {
+          setError('Please complete the security check to continue.');
+          setGuestPending(false);
+          return;
+        }
       }
+
+      console.log('Turnstile verification completed, proceeding with guest sign-in');
 
       // Increment attempts for rate limiting
       incrementAttempts();
 
-      // Prepare request body with Turnstile token - always required
+      // Prepare request body with Turnstile token
       const requestBody: any = {
-        turnstileToken: captchaState.token
+        turnstileToken: isDevelopment && isTestKey ? 'DEVELOPMENT_BYPASS' : (currentToken || captchaState.token)
       };
+
+      console.log('Sending guest sign-in request with token:', isDevelopment && isTestKey ? 'DEVELOPMENT_BYPASS' : ((currentToken || captchaState.token) ? 'TOKEN_PRESENT' : 'NO_TOKEN'));
+
+      // Fetch CSRF token for defense-in-depth
+      let csrfToken: string | undefined;
+      try {
+        const csrfRes = await fetch('/api/auth/csrf', { method: 'GET', credentials: 'include' });
+        const csrfJson = await csrfRes.json();
+        csrfToken = csrfJson?.token;
+      } catch (e) {
+        console.warn('Failed to fetch CSRF token, proceeding with origin/referer checks only');
+      }
 
       // Call the anonymous auth API endpoint instead of Supabase directly
       const response = await fetch('/api/auth/anonymous', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
         },
         body: JSON.stringify(requestBody),
       });
@@ -206,6 +249,14 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     setError(null);
     
     try {
+      // Request server to set HttpOnly state cookie
+      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
+      const stateJson = await stateRes.json();
+      const oauthState = stateJson?.state as string | undefined;
+      if (!oauthState) {
+        setError('Unable to initialize sign in. Please try again.');
+        return;
+      }
       // Check if Apple OAuth is properly configured
       if (shouldRedirectToSetup()) {
         // Redirect to setup page if not configured
@@ -219,7 +270,8 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       // Add re-authentication parameters if this is a re-auth flow
       const callbackParams = new URLSearchParams({
         next: safeNext,
-        provider: 'apple'
+        provider: 'apple',
+        state: oauthState
       });
       
       if (reauth && state) {
@@ -252,13 +304,22 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     setError(null);
     
     try {
+      // Request server to set HttpOnly state cookie
+      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
+      const stateJson = await stateRes.json();
+      const oauthState = stateJson?.state as string | undefined;
+      if (!oauthState) {
+        setError('Unable to initialize sign in. Please try again.');
+        return;
+      }
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
       // Add re-authentication parameters if this is a re-auth flow
       const callbackParams = new URLSearchParams({
         next: safeNext,
-        provider: 'google'
+        provider: 'google',
+        state: oauthState
       });
       
       if (reauth && state) {

@@ -23,20 +23,17 @@ const isValidSupabaseUrl = (url: string | undefined): boolean => {
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
   
-  // Use fallback values if environment variables are not set
-  let url = 'https://placeholder.supabase.co';
-  let key = 'placeholder-key';
-  
-  if (isValidSupabaseUrl(supabaseUrl) && supabaseAnonKey) {
-    url = supabaseUrl!; // We know this is not undefined due to the check above
-    key = supabaseAnonKey;
-  } else {
-    // console.warn('Supabase environment variables not configured. Using fallback client.');
+  // Fail fast on invalid configuration to avoid creating placeholder clients
+  if (!isValidSupabaseUrl(supabaseUrl)) {
+    throw new Error('Invalid NEXT_PUBLIC_SUPABASE_URL. Expected https://<project>.supabase.co');
+  }
+  if (!supabaseAnonKey) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is required');
   }
   
   const supabase = createServerClient(
-    url,
-    key,
+    supabaseUrl!,
+    supabaseAnonKey!,
     {
       cookies: {
         get(name: string) {

@@ -116,7 +116,8 @@ Copy the environment variables from the configuration section above to your `.en
 redis-cli ping
 
 # Test application health
-curl http://localhost:5000/health
+curl http://localhost:5001/health   # optimized compose
+curl http://localhost:5000/health   # non-optimized/full compose
 ```
 
 ## API Endpoints

@@ -46,6 +46,10 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
 
   const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+  // Check if using test keys
+  const isTestKey = turnstileSiteKey === '1x00000000000000000000AA' || 
+                   turnstileSiteKey === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
+
   // Handle missing site key gracefully
   if (!turnstileSiteKey) {
     if (process.env.NODE_ENV === 'development') {
@@ -65,16 +69,24 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   }
 
   useEffect(() => {
-    // Load Turnstile script manually to avoid async/defer issues
+    // Load Turnstile script
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
       const script = document.createElement('script');
-      // Load Turnstile script without async/defer to ensure proper initialization
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      // Don't use async/defer when using turnstile.ready()
       script.async = false;
       script.defer = false;
       script.onload = () => {
         console.log('Turnstile script loaded successfully');
-        setIsLoaded(true);
+        // Use turnstile.ready() for proper initialization
+        if (window.turnstile?.ready) {
+          window.turnstile.ready(() => {
+            setIsLoaded(true);
+          });
+        } else {
+          // Fallback if ready() is not available
+          setIsLoaded(true);
+        }
       };
       script.onerror = () => {
         console.error('Failed to load Turnstile script');
@@ -84,7 +96,13 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       scriptRef.current = script;
     } else if (typeof window !== 'undefined' && window.turnstile) {
       console.log('Turnstile already loaded');
-      setIsLoaded(true);
+      if (window.turnstile?.ready) {
+        window.turnstile.ready(() => {
+          setIsLoaded(true);
+        });
+      } else {
+        setIsLoaded(true);
+      }
     }
   }, [onError]);
 
@@ -98,7 +116,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         turnstileExists: !!window.turnstile,
         containerExists: !!containerRef.current,
         siteKey: turnstileSiteKey,
-        containerElement: containerRef.current
+        isTestKey
       });
       
       if (!window.turnstile || !containerRef.current) return;
@@ -116,67 +134,22 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
             setCurrentToken('');
             onExpired?.();
           },
-          'error-callback': () => {
-            console.log('Turnstile error callback');
+          'error-callback': (error: string) => {
+            console.log('Turnstile error callback:', error);
             setCurrentToken('');
             onError?.('Turnstile verification failed');
           },
           theme,
           size,
-          tabindex: 0,
-          // Explicitly disable Private Access Token mode
-          'appearance': 'interaction-only',
-          'execution': 'execute',
-          // Force standard challenge mode
+          // Simple configuration without complex overrides
           'refresh-expired': 'auto',
-          'response-field-name': 'cf-turnstile-response',
-          // Additional parameters to ensure standard mode
-          'language': 'auto',
           'retry': 'auto'
         };
         
         console.log('Turnstile render config:', config);
         
-        // Configure for invisible mode - only show challenge when needed
-        const renderParams = {
-          ...config,
-          // Invisible mode configuration - use 'interaction-only' for invisible behavior
-          'appearance': 'interaction-only',
-          'execution': 'execute',
-          // Standard parameters
-          'refresh-expired': 'auto',
-          'response-field-name': 'cf-turnstile-response'
-        };
-        
-        console.log('Final render params:', renderParams);
-        const id = window.turnstile.render(containerRef.current, renderParams);
+        const id = window.turnstile.render(containerRef.current, config);
         console.log('Turnstile widget rendered with ID:', id);
-        
-        // Debug: Check if the widget is actually in the DOM
-        setTimeout(() => {
-          const widgetElement = document.querySelector(`[data-widget-id="${id}"]`);
-          const iframeElement = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
-          console.log('Widget debugging:', {
-            widgetElement: widgetElement,
-            iframeElement: iframeElement,
-            containerChildren: containerRef.current?.children,
-            containerHTML: containerRef.current?.innerHTML
-          });
-          
-          // Test: Try to render a simple widget to verify site key
-          if (!iframeElement && window.turnstile) {
-            console.log('Testing simple widget render...');
-            try {
-              const testId = window.turnstile.render('#turnstile-test', {
-                sitekey: turnstileSiteKey,
-                theme: 'dark'
-              });
-              console.log('Test widget rendered with ID:', testId);
-            } catch (error) {
-              console.error('Test widget render failed:', error);
-            }
-          }
-        }, 1000);
         
         setWidgetId(id);
         setIsRendered(true);
@@ -186,13 +159,9 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       }
     };
 
-    // Render widget directly - turnstile.ready() conflicts with async script loading
-    console.log('Rendering Turnstile widget directly...');
-    // Small delay to ensure script is fully initialized
-    setTimeout(() => {
-      renderWidget();
-    }, 100);
-  }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size]);
+    // Render widget when ready
+    renderWidget();
+  }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size, isTestKey]);
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
@@ -214,18 +183,8 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         style={{ 
           minHeight: '78px',
           position: 'relative',
-          zIndex: 1000,
-          overflow: 'visible',
-          // Hide the container for invisible mode - only show if challenge is needed
-          opacity: 0,
-          pointerEvents: 'none'
+          overflow: 'visible'
         }}
-      />
-      {/* Test container for debugging */}
-      <div 
-        id="turnstile-test"
-        className="mt-2 p-2 border border-blue-500 bg-blue-100 min-h-[50px]"
-        style={{ display: 'none' }}
       />
       {/* Only show loading/status messages in development */}
       {process.env.NODE_ENV === 'development' && (
@@ -237,7 +196,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           )}
           {isRendered && (
             <div className="text-center text-sm text-green-400 mt-2">
-              Widget rendered with ID: {widgetId}
+              ✅ Turnstile widget ready (ID: {widgetId})
             </div>
           )}
         </>

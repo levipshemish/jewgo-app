@@ -178,11 +178,14 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
   }, [trackEvent]);
 
   // Error tracking
-  const trackError = useCallback((error: Error, context?: Record<string, unknown>) => {
+  const trackError = useCallback((error: unknown, context?: Record<string, unknown>) => {
+    const errObj = error instanceof Error
+      ? error
+      : new Error(typeof error === 'string' ? error : 'Unknown error');
     trackEvent('error', {
-      error_message: error.message,
-      error_stack: error.stack,
-      error_name: error.name,
+      error_message: errObj.message,
+      error_stack: errObj.stack,
+      error_name: errObj.name,
       ...context,
     });
   }, [trackEvent]);
@@ -276,7 +279,8 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      trackError(new Error(event.reason), {
+      const reason = (event as any)?.reason;
+      trackError(reason, {
         error_type: 'unhandled_promise_rejection',
       });
     };
