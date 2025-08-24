@@ -4,7 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { extractIsAnonymous } from '@/lib/utils/auth-utils';
 
-export {};
+// local augmentation for this module only
+declare global {
+  interface Window {
+    handleTurnstileCallback?: (token: string) => void;
+  }
+}
 
 export default function TestTurnstilePage() {
   const [token, setToken] = useState<string>('');
