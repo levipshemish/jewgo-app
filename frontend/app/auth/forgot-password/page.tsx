@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useActionState } from "react";
 
 import { forgotPasswordAction } from "./actions";
 
@@ -10,7 +9,6 @@ import { forgotPasswordAction } from "./actions";
 export const dynamic = 'force-dynamic';
 
 export default function ForgotPasswordPage() {
-  const [state, formAction] = useActionState(forgotPasswordAction, { ok: false });
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
