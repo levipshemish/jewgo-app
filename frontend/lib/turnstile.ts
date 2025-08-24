@@ -13,19 +13,29 @@ export async function verifyTurnstile(responseToken: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY!;
   if (!secret) throw new Error("TURNSTILE_SECRET_KEY missing");
 
+  // Validate environment configuration
+  if (!secret || secret === "your_turnstile_secret_key") {
+    throw new Error("TURNSTILE_SECRET_KEY must be configured");
+  }
+
   // Development bypass for test keys
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const isTestKey = siteKey === "1x00000000000000000000AA";
   const isDevelopment = process.env.NODE_ENV === "development";
+  const isLocalhost = process.env.NEXT_PUBLIC_APP_HOSTNAME === "localhost" || 
+                     process.env.NEXT_PUBLIC_URL?.includes("localhost");
   
   console.log("Turnstile verification:", {
     tokenLength: responseToken.length,
     isTestKey,
     isDevelopment,
-    hasSecret: !!secret
+    isLocalhost,
+    hasSecret: !!secret,
+    nodeEnv: process.env.NODE_ENV
   });
   
-  if (isDevelopment && isTestKey) {
+  // Use development bypass for test keys in development OR localhost
+  if ((isDevelopment || isLocalhost) && isTestKey) {
     // Return a mock successful response for development
     console.log("Using development bypass for Turnstile");
     return {

@@ -46,13 +46,13 @@ function OAuthSuccessContent() {
             } else {
               setStatus("No authentication tokens found. Please try signing in again.");
               // Remove setTimeout delay - redirect immediately
-              router.push('/auth/supabase-signin');
+              router.push('/auth/signin');
             }
             return;
           } else {
             setStatus("No authentication data found. Please try signing in again.");
             // Remove setTimeout delay - redirect immediately
-            router.push('/auth/supabase-signin');
+            router.push('/auth/signin');
             return;
           }
         }

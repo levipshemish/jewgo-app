@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseBrowser } from "@/lib/supabase";
 import { transformSupabaseUser, type TransformedUser } from "@/lib/utils/auth-utils";
 
 interface AuthStatusProps {

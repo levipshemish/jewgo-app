@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { signInAction, anonymousSignInAction } from "./actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabaseClient } from "@/lib/supabase/client-secure";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function SignInPage() {
   const [state, formAction] = useActionState(signInAction, { ok: false });
