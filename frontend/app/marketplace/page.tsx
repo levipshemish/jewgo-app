@@ -120,7 +120,7 @@ export default function MarketplacePage() {
     isLoading: locationLoading,
     error: locationError,
     requestLocation,
-    setPermissionStatus
+    // setPermissionStatus
   } = useLocation();
   
   // Filter state
@@ -462,7 +462,7 @@ export default function MarketplacePage() {
                   <UnifiedCard
                     data={transformMarketplaceToCardData(listing, userLocation)}
                     variant="default"
-                    onCardClick={(data) => router.push(`/marketplace/${listing.id}`)}
+                    onCardClick={(_data) => router.push(`/marketplace/${listing.id}`)}
                     onLikeToggle={(_id, _isLiked) => {
                       // Handle like toggle - you can add your like logic here
                       // console.log(`Liked: ${id}, ${isLiked}`);

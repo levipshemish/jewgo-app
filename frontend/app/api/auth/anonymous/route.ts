@@ -5,8 +5,9 @@ import { createServerClient } from '@supabase/ssr';
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
 import { validateCSRFServer, validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
-import { verifyTurnstile } from '@/lib/turnstile';
-import { consumeCaptchaTokenOnce } from '@/lib/anti-replay';
+// Note: Do not verify Turnstile here when delegating to Supabase. Supabase
+// verifies the captcha token itself. Verifying here could consume the
+// single-use token and cause Supabase to see an invalid response.
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -72,37 +73,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // If Turnstile token provided, verify and consume it
-  if (turnstileToken) {
-    try {
-      const result = await verifyTurnstile(turnstileToken);
-
-      // Require success
-      if (!result.success) {
-        return NextResponse.json(
-          { error: 'TURNSTILE_INVALID' },
-          { status: 400, headers: baseHeaders }
-        );
-      }
-
-      // In production, require hostname assertion to be present
-      if (process.env.NODE_ENV === 'production' && !result.hostname) {
-        return NextResponse.json(
-          { error: 'TURNSTILE_INVALID' },
-          { status: 400, headers: baseHeaders }
-        );
-      }
-
-      // One-shot replay protection
-      await consumeCaptchaTokenOnce(turnstileToken);
-    } catch (_err) {
-      // Verification or replay protection failed
-      return NextResponse.json(
-        { error: 'TURNSTILE_INVALID' },
-        { status: 400, headers: baseHeaders }
-      );
-    }
-  }
+  // Do not verify/consume Turnstile token here; Supabase will verify it.
 
   // Create SSR Supabase client bound to response cookies
   const cookieStore = await cookies();

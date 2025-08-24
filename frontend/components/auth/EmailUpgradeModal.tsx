@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { emailUpgradeFlow, EmailUpgradeResult, MergeConflictResult } from '@/lib/auth/email-upgrade';
-import { writeGates } from '@/lib/auth/write-gates';
+// import { writeGates } from '@/lib/auth/write-gates';
 
 interface EmailUpgradeModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
   const [step, setStep] = useState<'email' | 'verify' | 'password' | 'merge' | 'success'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [requiresMerge, setRequiresMerge] = useState(false);
+  // const [requiresMerge, setRequiresMerge] = useState(false);
   const [mergeMessage, setMergeMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
       setPassword('');
       setConfirmPassword('');
       setError(null);
-      setRequiresMerge(false);
+      // setRequiresMerge(false);
       setMergeMessage(null);
     }
   }, [isOpen]);
@@ -44,7 +44,7 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
         setStep('verify');
         setMergeMessage('Please check your email and click the verification link.');
       } else if (result.requiresMerge) {
-        setRequiresMerge(true);
+        // setRequiresMerge(true);
         setMergeMessage('This email is already registered. Please sign in with your existing account to merge your data.');
         setStep('merge');
       } else {
@@ -89,26 +89,26 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
     }
   };
 
-  const handleMerge = async () => {
-    setLoading(true);
-    setError(null);
+  // const handleMerge = async () => {
+  //   setLoading(true);
+  //   setError(null);
 
-    try {
-      const result: MergeConflictResult = await emailUpgradeFlow.handleAccountMerge();
+  //   try {
+  //     const result: MergeConflictResult = await emailUpgradeFlow.handleAccountMerge();
       
-      if (result.success) {
-        setStep('success');
-        setMergeMessage(`Account merged successfully! ${result.movedRecords?.length || 0} items moved to your account.`);
-        onSuccess();
-      } else {
-        setError(result.error || 'Failed to merge accounts');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unexpected error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     if (result.success) {
+  //       setStep('success');
+  //       setMergeMessage(`Account merged successfully! ${result.movedRecords?.length || 0} items moved to your account.`);
+  //       onSuccess();
+  //     } else {
+  //       setError(result.error || 'Failed to merge accounts');
+  //     }
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : 'Unexpected error');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleSignInRedirect = () => {
     window.location.href = '/auth/signin?merge=true';
