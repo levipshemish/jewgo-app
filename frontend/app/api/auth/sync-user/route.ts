@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (!existingProfile || getError?.code === 'PGRST116') {
+    if (!existingProfile || (getError as any)?.code === 'PGRST116') {
       upsertPayload.preferences = defaultPreferences;
     }
 
