@@ -49,17 +49,17 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const [isRendered, setIsRendered] = useState(false);
   const [currentToken, setCurrentToken] = useState('');
   const [widgetId, setWidgetId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
   // Calculate key analysis at component level
   const isDevelopment = process.env.NODE_ENV === "development";
-  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  // const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   
   // Always use real Turnstile site key
   const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
   
   const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
-  const isProductionKeyInDev = !isTestKey && isDevelopment;
+  // const isProductionKeyInDev = !isTestKey && isDevelopment;
 
   // Always call useEffect hooks in the same order
   useEffect(() => {
@@ -99,8 +99,8 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
           document.head.appendChild(script);
         });
         setIsLoaded(true);
-      } catch (error) {
-        setError('Failed to load Turnstile script');
+      } catch (_error) {
+        // setError('Failed to load Turnstile script');
         onError?.('Failed to load Turnstile script');
       }
     };
@@ -139,19 +139,19 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
           setCurrentToken('');
           onExpired?.();
         },
-        'error-callback': (error: string) => {
+        'error-callback': (_error: string) => {
           // console.error('Turnstile error:', error);
           setCurrentToken('');
           onLoading?.(false);
           
           let errorMessage = 'Turnstile verification failed';
-          if (error === 'timeout') {
+          if (_error === 'timeout') {
             errorMessage = 'Verification timed out. Please try again.';
-          } else if (error === 'network-error') {
+          } else if (_error === 'network-error') {
             errorMessage = 'Network error. Please check your connection.';
           }
           
-          setError(errorMessage);
+          // setError(errorMessage);
           onError?.(errorMessage);
         },
         theme,
@@ -164,8 +164,8 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
       const id = window.turnstile.render(containerRef.current, config);
       setWidgetId(id);
       setIsRendered(true);
-    } catch (error) {
-      setError('Failed to render Turnstile widget');
+    } catch (_error) {
+      // setError('Failed to render Turnstile widget');
       onError?.('Failed to render Turnstile widget');
     }
   }, [isLoaded, isRendered, siteKey, action, theme, size, onVerify, onError, onExpired, onLoading]);
