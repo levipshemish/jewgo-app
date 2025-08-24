@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function RelayEmailBanner() {
+function RelayEmailBannerContent() {
   const params = useSearchParams();
   const [visible, setVisible] = useState(false);
 
@@ -30,6 +30,14 @@ export default function RelayEmailBanner() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function RelayEmailBanner() {
+  return (
+    <Suspense fallback={null}>
+      <RelayEmailBannerContent />
+    </Suspense>
   );
 }
 
