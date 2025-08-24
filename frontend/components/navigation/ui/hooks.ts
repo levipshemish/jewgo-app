@@ -23,7 +23,7 @@ export const useIsMobile = () => {
 };
 
 // Custom hook for memoizing navigation items
-export const useMemoizedNavItems = <T>(items: T[], dependencies: any[] = []) => {
+export const useMemoizedNavItems = <T>(items: T[], _dependencies: any[] = []) => {
   const [memoizedItems] = useState(() => items);
   return memoizedItems;
 };

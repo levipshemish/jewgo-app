@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 import { fetchMarketplaceCategories } from '@/lib/api/marketplace';

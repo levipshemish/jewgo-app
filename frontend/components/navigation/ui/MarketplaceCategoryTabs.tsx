@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, Car, Home, ShoppingBag, Utensils, Cake, ChefHat } from 'lucide-react';
+import { ShoppingBag, Utensils, Cake, ChefHat } from 'lucide-react';
 import React from 'react';
 
 interface MarketplaceCategoryTabsProps {

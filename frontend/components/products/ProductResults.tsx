@@ -41,7 +41,7 @@ const ProductResults: React.FC<ProductResultsProps> = ({
 
   const { data, isLoading, isValidating, error } = useSWR(
     key,
-    ([url, filterKey]) => fetcher(url, appliedFilters),
+    ([url, _filterKey]) => fetcher(url, appliedFilters),
     {
       keepPreviousData: true,
       revalidateOnFocus: false,
