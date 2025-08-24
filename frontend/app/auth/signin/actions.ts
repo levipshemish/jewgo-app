@@ -40,6 +40,13 @@ export async function signInAction(_: any, formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const token = String(formData.get("cf-turnstile-response") ?? "");
 
+  console.log("SignIn Action Debug:", {
+    email: email ? "present" : "missing",
+    password: password ? "present" : "missing", 
+    tokenLength: token.length,
+    hasToken: !!token
+  });
+
   try {
     const rateLimitResult = await checkRateLimit("email_auth", "email", "", email);
     if (!rateLimitResult.allowed) {
