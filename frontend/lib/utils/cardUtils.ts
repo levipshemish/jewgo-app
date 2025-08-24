@@ -6,7 +6,7 @@
  * and maintain consistency.
  */
 
-import { cn } from './classNames';
+// import { cn } from './classNames';
 
 /**
  * Format price from cents to currency string
@@ -243,22 +243,22 @@ export const cardStyles = {
 /**
  * Get card styling based on type and variant
  */
-export const getCardStyles = (
-  type: 'restaurant' | 'marketplace' | 'eatery' = 'restaurant',
-  variant: 'default' | 'compact' | 'featured' = 'default'
-): string => {
-  const baseStyle = type === 'marketplace' ? cardStyles.marketplace : cardStyles.base;
-  
-  if (variant === 'compact') {
-    return cn(baseStyle, 'scale-95');
-  }
-  
-  if (variant === 'featured') {
-    return cn(baseStyle, 'ring-2 ring-blue-200');
-  }
-  
-  return baseStyle;
-};
+// export const getCardStyles = (
+//   type: 'restaurant' | 'marketplace' | 'eatery' = 'restaurant',
+//   variant: 'default' | 'compact' | 'featured' = 'default'
+// ): string => {
+//   const baseStyle = type === 'marketplace' ? cardStyles.marketplace : cardStyles.base;
+//   
+//   if (variant === 'compact') {
+//     return cn(baseStyle, 'scale-95');
+//   }
+//   
+//   if (variant === 'featured') {
+//     return cn(baseStyle, 'ring-2 ring-blue-200');
+//   }
+//   
+//   return baseStyle;
+// };
 
 /**
  * Standard image loading states
