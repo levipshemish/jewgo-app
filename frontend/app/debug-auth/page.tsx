@@ -11,7 +11,7 @@ export default function DebugAuthPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [cookies, setCookies] = useState<string>('');
+  // const [cookiesValue, setCookiesValue] = useState<string>('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -101,12 +101,15 @@ export default function DebugAuthPage() {
               </pre>
             </div>
 
+            {/* Cookies display (disabled) */}
+            {/*
             <div className="bg-gray-50 p-4 rounded-lg">
               <h2 className="text-lg font-semibold mb-3">Cookies</h2>
               <pre className="text-sm bg-white p-3 rounded border overflow-auto max-h-20">
-                {cookies || 'No cookies found'}
+                {cookiesValue || 'No cookies found'}
               </pre>
             </div>
+            */}
 
             <div className="bg-green-50 p-4 rounded-lg">
               <h2 className="text-lg font-semibold text-green-900 mb-3">Actions</h2>

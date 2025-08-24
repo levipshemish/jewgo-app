@@ -59,9 +59,6 @@ function ensureWorker(): Worker | null {
 
   if (worker) {
     worker.onmessage = (evt: MessageEvent<FilterWorkerResult>) => {
-      console.log('Message-bus: Received worker result:', evt.data.type, {
-        restaurantCount: evt.data.payload?.restaurants?.length || 0
-      });
       latestResult = evt.data;
       scheduleDispatch();
     };
@@ -72,19 +69,9 @@ function ensureWorker(): Worker | null {
 export function postToWorker(message: FilterWorkerMessage) {
   const w = ensureWorker();
   if (!w) {
-    console.warn('Message-bus: Worker not available');
     return;
   }
-  try { 
-    console.log('Message-bus: Posting to worker:', message.type, {
-      restaurantCount: message.payload?.restaurants?.length || 0,
-      searchQuery: message.payload?.searchQuery || '',
-      activeFilters: message.payload?.activeFilters || {}
-    });
-    w.postMessage(message); 
-  } catch (err) { 
-    console.error('Message-bus: Error posting to worker:', err);
-  }
+  try { w.postMessage(message); } catch { /* no-op */ }
 }
 
 export function subscribe(listener: Listener) {

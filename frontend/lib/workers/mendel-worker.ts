@@ -224,45 +224,18 @@ function filterAndSortRestaurants(
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const { data } = e as MessageEvent<WorkerRequest>;
   if (!data) {
-    console.log('Worker: No data received');
     return;
   }
   if (data.type === 'FILTER_RESTAURANTS') {
     const { restaurants, searchQuery, activeFilters, userLocation } = data.payload;
-    
-    console.log('Worker: Filtering restaurants:', {
-      inputCount: (restaurants || []).length,
-      searchQuery: searchQuery || '',
-      activeFilters: activeFilters || {},
-      hasUserLocation: !!userLocation,
-      firstRestaurant: restaurants?.[0] ? {
-        id: restaurants[0].id,
-        name: restaurants[0].name,
-        lat: restaurants[0].latitude,
-        lng: restaurants[0].longitude
-      } : null
-    });
-    
     try {
       const result = filterAndSortRestaurants(restaurants || [], searchQuery || '', activeFilters || {}, userLocation);
-      
-      console.log('Worker: Filter result:', {
-        resultCount: result.length,
-        firstResult: result[0] ? {
-          id: result[0].id,
-          name: result[0].name,
-          lat: result[0].latitude,
-          lng: result[0].longitude
-        } : null
-      });
-      
       const message: WorkerResponse = {
         type: 'FILTER_RESTAURANTS_RESULT',
         payload: { restaurants: result },
       };
       (self as unknown as DedicatedWorkerGlobalScope).postMessage(message);
-    } catch (err) {
-      console.error('Worker: Error filtering restaurants:', err);
+    } catch (_err) {
       const message: WorkerResponse = {
         type: 'FILTER_RESTAURANTS_RESULT',
         payload: { restaurants: restaurants || [] },

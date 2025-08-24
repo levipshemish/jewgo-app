@@ -263,16 +263,7 @@ export default function UnifiedLiveMapClient() {
           
           if (process.env.NODE_ENV === 'development') {
             // eslint-disable-next-line no-console
-            console.log('LiveMap: State updated:', {
-              allRestaurantsLength: validRestaurants.length,
-              displayedRestaurantsLength: validRestaurants.length,
-              firstRestaurant: validRestaurants[0] ? {
-                id: validRestaurants[0].id,
-                name: validRestaurants[0].name,
-                lat: validRestaurants[0].latitude,
-                lng: validRestaurants[0].longitude
-              } : null
-            });
+            console.log(`LiveMap: Loaded ${validRestaurants.length} restaurants`);
           }
         });
         
@@ -349,27 +340,11 @@ export default function UnifiedLiveMapClient() {
         startTransition(() => {
           const newRestaurants = payload.restaurants || [];
           setDisplayedRestaurants(newRestaurants);
-          
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.log('LiveMap: Filter worker result:', {
-              filteredCount: newRestaurants.length,
-              originalCount: allRestaurants.length,
-              hasSearchQuery: !!searchQuery.trim(),
-              hasActiveFilters: Object.values(activeFilters).some(value => value !== undefined && value !== false && value !== ''),
-              firstFiltered: newRestaurants[0] ? {
-                id: newRestaurants[0].id,
-                name: newRestaurants[0].name,
-                lat: newRestaurants[0].latitude,
-                lng: newRestaurants[0].longitude
-              } : null
-            });
-          }
         });
       }
     });
     return () => { unsubscribe(); };
-  }, [allRestaurants.length, searchQuery, activeFilters]);
+  }, []);
 
   // Throttled worker posts
   const throttledPost = useMemo(() => throttleFn((message: FilterWorkerMessage) => {
@@ -380,26 +355,7 @@ export default function UnifiedLiveMapClient() {
   useEffect(() => {
     // Don't process if there are no restaurants to filter
     if (allRestaurants.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log('LiveMap: Skipping worker (no restaurants):', {
-          allRestaurantsCount: allRestaurants.length,
-          searchQuery,
-          activeFilters,
-          hasUserLocation: !!userLocation
-        });
-      }
       return;
-    }
-    
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('LiveMap: Applying filters via worker:', {
-        allRestaurantsCount: allRestaurants.length,
-        searchQuery,
-        activeFilters,
-        hasUserLocation: !!userLocation
-      });
     }
     
     const message: FilterWorkerMessage = {
