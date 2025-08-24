@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';

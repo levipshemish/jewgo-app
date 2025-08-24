@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, Suspense } from 'react';
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -26,9 +26,9 @@ const getSupabaseClient = async () => {
 
 function FavoritesPageContent() {
   const { favorites } = useFavorites();
-  const { handleImmediateTouch } = useMobileTouch();
+  // const { handleImmediateTouch } = useMobileTouch();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  // const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('favorites');
   const [showFilters, setShowFilters] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -268,7 +268,7 @@ function FavoritesPageContent() {
                             <p>Last visited: {new Date(restaurant.lastVisited).toLocaleDateString()}</p>
                           )}
                           {restaurant.notes && (
-                            <p className="italic text-gray-500">"{restaurant.notes}"</p>
+                            <p className="italic text-gray-500">&quot;{restaurant.notes}&quot;</p>
                           )}
                           {restaurant.tags && restaurant.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">

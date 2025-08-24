@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
         // Check if Supabase is configured using centralized utility
         if (!isSupabaseConfigured()) {
-          console.warn('Supabase not configured, allowing access for development');
+          // console.warn('Supabase not configured, allowing access for development');
           // For development, create a mock user
           setUser(createMockUser());
           return;
@@ -46,9 +46,9 @@ export default function SettingsPage() {
         } else {
 
         }
-      } catch (error) {
-        console.error('Error loading user:', error);
-        handleUserLoadError(error);
+      } catch (_error) {
+        // console.error('Error loading user:', error);
+        handleUserLoadError(_error);
       } finally {
         setIsLoading(false);
       }
@@ -292,7 +292,7 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function SecuritySettings({ user }: { user: TransformedUser }) {
+function SecuritySettings({ _user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
@@ -344,7 +344,7 @@ function SecuritySettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function NotificationSettings({ user }: { user: TransformedUser }) {
+function NotificationSettings({ _user }: { user: TransformedUser }) {
   const [preferences, setPreferences] = useState({
     specials: true,
     newRestaurants: true,
@@ -403,7 +403,7 @@ function NotificationSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function PrivacySettings({ user }: { user: TransformedUser }) {
+function PrivacySettings({ _user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>

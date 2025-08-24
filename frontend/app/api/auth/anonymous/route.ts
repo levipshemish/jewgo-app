@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({} as any));
   const turnstileToken: string | undefined = body?.turnstileToken || body?.token;
 
-  // If user has exhausted attempts in the short window, require Turnstile
-  if ((!turnstileToken || turnstileToken.length < 10) && rl.remaining_attempts === 0) {
+  // Since Supabase requires Turnstile for anonymous auth, always require it
+  if (!turnstileToken || turnstileToken.length < 10) {
     return NextResponse.json(
       { error: 'TURNSTILE_REQUIRED' },
       { status: 400, headers: baseHeaders }
@@ -124,9 +124,14 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  // Attempt anonymous sign-in
-  const { data, error } = await supabase.auth.signInAnonymously();
+  // Attempt anonymous sign-in with Turnstile token (required by Supabase)
+  const { data, error } = await supabase.auth.signInAnonymously({
+    options: {
+      captchaToken: turnstileToken // Pass Turnstile token to Supabase
+    }
+  });
   if (error || !data?.user) {
+    console.error('Anonymous sign-in failed:', error);
     return NextResponse.json(
       { error: 'ANON_SIGNIN_FAILED' },
       { status: 500, headers: baseHeaders }

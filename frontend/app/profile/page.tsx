@@ -28,7 +28,7 @@ export default function ProfilePage() {
 
         // Check if Supabase is configured using centralized utility
         if (!isSupabaseConfigured()) {
-          console.warn('Profile page: Supabase not configured, redirecting to settings');
+          // console.warn('Profile page: Supabase not configured, redirecting to settings');
 
           setRedirectStatus('Supabase not configured, redirecting to settings...');
           // Remove unnecessary delay - redirect immediately
@@ -52,11 +52,11 @@ export default function ProfilePage() {
           setRedirectStatus('Redirecting to /auth/signin...');
           router.push('/auth/signin');
         }
-      } catch (error) {
-        console.error('Profile page: Error loading user:', error);
+      } catch (_error) {
+        // console.error('Profile page: Error loading user:', error);
 
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
-        handleUserLoadError(error, router);
+        handleUserLoadError(_error, router);
       } finally {
         setIsLoading(false);
       }

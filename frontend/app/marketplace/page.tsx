@@ -463,9 +463,9 @@ export default function MarketplacePage() {
                     data={transformMarketplaceToCardData(listing, userLocation)}
                     variant="default"
                     onCardClick={(data) => router.push(`/marketplace/${listing.id}`)}
-                    onLikeToggle={(id, isLiked) => {
+                    onLikeToggle={(_id, _isLiked) => {
                       // Handle like toggle - you can add your like logic here
-                      console.log(`Liked: ${id}, ${isLiked}`);
+                      // console.log(`Liked: ${id}, ${isLiked}`);
                     }}
                     className="w-full"
                   />
