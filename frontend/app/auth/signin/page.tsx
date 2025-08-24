@@ -37,6 +37,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
   const [guestPending, setGuestPending] = useState(false);
   const [error, setError] = useState<string | null>(initialError ? mapAppleOAuthError(initialError) : null);
   const [debugInfo, setDebugInfo] = useState<string>("");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   // Initialize with the correct value to avoid flash
   const [appleOAuthEnabled, setAppleOAuthEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -64,27 +65,39 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     }
   });
 
-  // Check Supabase connection and Apple OAuth config on component mount
+  // Check if user is already authenticated and redirect if needed
   useEffect(() => {
-    const checkConnection = async () => {
+    const checkAuthentication = async () => {
       try {
-        const { error } = await supabaseBrowser.auth.getSession();
+        const { data: { session }, error } = await supabaseBrowser.auth.getSession();
+        
         if (error) {
           setDebugInfo(`Connection error: ${error.message}`);
-        } else {
-          setDebugInfo("Supabase connection OK");
+          setIsCheckingAuth(false);
+          return;
         }
+        
+        if (session?.user) {
+          // User is already authenticated, redirect them
+          console.log('User already authenticated, redirecting to:', redirectTo);
+          router.push(redirectTo);
+          return;
+        }
+        
+        setDebugInfo("Supabase connection OK - No active session");
+        setIsCheckingAuth(false);
       } catch (err) {
         setDebugInfo(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsCheckingAuth(false);
       }
     };
     
-    checkConnection();
+    checkAuthentication();
     
     // Check Apple OAuth configuration
     const config = getClientConfig();
     setAppleOAuthEnabled(config.appleOAuthEnabled);
-  }, []);
+  }, [redirectTo, router]);
 
   const onEmailSignIn = async (e: FormEvent) => {
     e.preventDefault();
@@ -473,9 +486,8 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
                 🔗 <strong>Account Linking Required:</strong> We found multiple accounts with the same email address. 
                 Please re-authenticate to securely link them together.
               </p>
-            </div>
-          )}
-        </div>
+                    </div>
+      </div>
         
         {/* Debug info - remove in production */}
         {process.env.NODE_ENV === 'development' && debugInfo && (
@@ -483,8 +495,18 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
             <p className="text-sm text-blue-300">Debug: {debugInfo}</p>
           </div>
         )}
+
+        {/* Loading state while checking authentication */}
+        {isCheckingAuth && (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-jewgo-400 mx-auto mb-4"></div>
+            <p className="text-neutral-400 text-sm">Checking authentication...</p>
+          </div>
+        )}
         
-        <form onSubmit={onEmailSignIn} className="space-y-6">
+        {/* Only show form when not checking authentication */}
+        {!isCheckingAuth && (
+          <form onSubmit={onEmailSignIn} className="space-y-6">
           <div className="space-y-4">
             <div>
               <input
