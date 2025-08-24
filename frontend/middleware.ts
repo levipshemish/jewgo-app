@@ -99,19 +99,11 @@ export async function middleware(request: NextRequest) {
       }
     );
 
-    // Get session with proper error handling
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
+    // Get authenticated user from Supabase Auth server (secure)
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
       console.error('Middleware auth error:', error);
-      // Redirect to signin when auth fails
-      return redirectToSignin(request, response);
-    }
-
-    // Check if user exists and is non-anonymous for protected routes
-    const user = session?.user;
-    if (!user) {
-      // No session - redirect to signin with sanitized redirect URL
+      // Redirect to signin when auth fails or missing user
       return redirectToSignin(request, response);
     }
 

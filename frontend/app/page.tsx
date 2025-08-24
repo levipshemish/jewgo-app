@@ -17,7 +17,7 @@ export default function HomePage() {
     const checkAuth = async () => {
       try {
         // console.log('Checking authentication on home page...');
-        const { data: { session }, error } = await supabaseBrowser.auth.getSession();
+        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
         
         if (error) {
           // console.error('Session check error:', error);
@@ -34,7 +34,7 @@ export default function HomePage() {
         //   currentTime: Math.floor(Date.now() / 1000)
         // });
         
-        if (session?.user) {
+        if (user) {
           // Check if user is anonymous or regular user
           // const isAnonymous = extractIsAnonymous(session.user);
           // console.log('Home page auth check:', { 
@@ -69,7 +69,9 @@ export default function HomePage() {
       async (event: string, session: any) => {
         // console.log('Auth state change:', { event, hasUser: !!session?.user });
         
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === 'SIGNED_IN') {
+          const { data: { user } } = await supabaseBrowser.auth.getUser();
+          if (!user) { return; }
           // const isAnonymous = extractIsAnonymous(session.user);
           // console.log('User signed in:', { isAnonymous, userId: session.user.id });
           

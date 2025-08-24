@@ -5,7 +5,7 @@ import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
-import { supabaseClient } from "@/lib/supabase/client-secure";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
@@ -57,7 +57,7 @@ function SignInForm() {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const redirectUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
-      await supabaseClient.auth.signInWithOAuth({
+      await supabaseBrowser.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: redirectUrl,
@@ -85,7 +85,7 @@ function SignInForm() {
       const nextUrl = redirectTo || '/eatery';
       const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
-      const { error } = await supabaseClient.auth.signInWithOtp({
+      const { error } = await supabaseBrowser.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo,

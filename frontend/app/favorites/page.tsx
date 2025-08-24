@@ -69,8 +69,8 @@ function FavoritesPageContent() {
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
           // Redirect to sign in if not authenticated
           router.push('/auth/signin?redirectTo=/favorites');
           return;

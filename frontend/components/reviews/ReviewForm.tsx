@@ -49,8 +49,8 @@ export default function ReviewForm({
           return;
         }
 
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
-        setSession(session);
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
+        setSession(user ? { user } : null);
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
@@ -62,12 +62,11 @@ export default function ReviewForm({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: string, session: any) => {
-        setSession(session);
-        setLoading(false);
-      }
-    );
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async () => {
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      setSession(user ? { user } : null);
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);

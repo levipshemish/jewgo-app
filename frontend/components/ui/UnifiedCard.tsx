@@ -68,9 +68,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   
   // State management
   const [imageError, setImageError] = useState(false);
-  // const [imageLoading, setImageLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
-  // const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useState('');
 
 
 
@@ -138,10 +138,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           category: { name: 'restaurant' } as any
         };
         addFavorite(minimalRestaurant);
-        // setAnnouncement(`Added ${data.title} to favorites`);
+        setAnnouncement(`Added ${data.title} to favorites`);
       } else {
         removeFavorite(data.id.toString()); // Ensure ID is string
-        // setAnnouncement(`Removed ${data.title} from favorites`);
+        setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
       onLikeToggle?.(data.id.toString(), newIsLiked); // Ensure ID is string
@@ -181,21 +181,21 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       case 'minimal':
         return {
           cardClass: hasFullWidth ? "w-full rounded-xl overflow-hidden p-1" : "w-[160px] rounded-xl overflow-hidden p-1",
-          imageClass: "h-[100px]",
+          imageClass: "aspect-[4/3]",
           titleClass: "text-xs font-medium",
           badgeClass: "text-xs px-1.5 py-0.5"
         };
       case 'enhanced':
         return {
           cardClass: hasFullWidth ? "w-full rounded-3xl overflow-hidden p-3" : "w-[200px] rounded-3xl overflow-hidden p-3",
-          imageClass: "h-[140px]",
+          imageClass: "aspect-[4/3]",
           titleClass: "text-base font-semibold",
           badgeClass: "text-sm px-3 py-1"
         };
       default:
         return {
           cardClass: hasFullWidth ? "w-full rounded-2xl overflow-hidden p-2" : "w-[200px] rounded-2xl overflow-hidden p-2",
-          imageClass: "h-[126px]",
+          imageClass: "aspect-[4/3]",
           titleClass: "text-sm font-semibold",
           badgeClass: "text-xs px-2 py-0.5"
         };

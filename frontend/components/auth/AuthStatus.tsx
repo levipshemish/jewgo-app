@@ -19,11 +19,10 @@ export default function AuthStatus({ className = "" }: AuthStatusProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check Supabase session
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
-        
-        if (session?.user) {
-          setUser(transformSupabaseUser(session.user));
+        // Securely fetch authenticated user
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
+        if (user) {
+          setUser(transformSupabaseUser(user));
         } else {
           setUser(null);
         }
@@ -39,12 +38,12 @@ export default function AuthStatus({ className = "" }: AuthStatusProps) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: string, session: any) => {
+      async (_event: string) => {
         try {
-          // Auth state changed: event, session?.user?.email
-          
-          if (session?.user) {
-            setUser(transformSupabaseUser(session.user));
+          // Re-fetch user to avoid trusting session payload
+          const { data: { user } } = await supabaseBrowser.auth.getUser();
+          if (user) {
+            setUser(transformSupabaseUser(user));
           } else {
             setUser(null);
           }
