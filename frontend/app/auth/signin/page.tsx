@@ -37,7 +37,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
   const [guestPending, setGuestPending] = useState(false);
   const [error, setError] = useState<string | null>(initialError ? mapAppleOAuthError(initialError) : null);
   const [debugInfo, setDebugInfo] = useState<string>("");
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   // Initialize with the correct value to avoid flash
   const [appleOAuthEnabled, setAppleOAuthEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -73,7 +73,6 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         
         if (error) {
           setDebugInfo(`Connection error: ${error.message}`);
-          setIsCheckingAuth(false);
           return;
         }
         
@@ -85,10 +84,8 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
         }
         
         setDebugInfo("Supabase connection OK - No active session");
-        setIsCheckingAuth(false);
       } catch (err) {
         setDebugInfo(`Connection failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setIsCheckingAuth(false);
       }
     };
     
@@ -505,9 +502,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
           </div>
         )}
         
-        {/* Only show form when not checking authentication */}
-        {!isCheckingAuth && (
-          <form onSubmit={onEmailSignIn} className="space-y-6">
+        <form onSubmit={onEmailSignIn} className="space-y-6">
           <div className="space-y-4">
             <div>
               <input
@@ -568,12 +563,12 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-neutral-600" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-neutral-800 text-neutral-400">Or continue with</span>
-              </div>
+                          <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-neutral-800 text-neutral-400">Or continue with</span>
             </div>
+          </div>
 
-                      <div className="mt-6 space-y-3">
+          <div className="mt-6 space-y-3">
             {/* Continue as Guest Button */}
             <button
               type="button"
@@ -652,7 +647,6 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
             </button>
           </div>
         </form>
-        )}
 
         <div className="text-center">
           <button
