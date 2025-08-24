@@ -1,18 +1,33 @@
 'use client';
 
+import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect, useMemo } from 'react';
-
+import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { Header } from '@/components/layout';
-import { BottomNavigation, CategoryTabs } from '@/components/navigation/ui';
+import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
-
+import { Pagination } from '@/components/ui/Pagination';
 import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
-import { fetchMarketplaceListings } from '@/lib/api/marketplace';
-import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+import { scrollToTop } from '@/lib/utils/scrollUtils';
+import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
+import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
+import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+
+import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+
+// Loading component for Suspense fallback
+function MarketplacePageLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    </div>
+  );
+}
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -37,81 +52,54 @@ const formatDistance = (distance: number) => {
   }
 };
 
-// Transform marketplace listing data to UnifiedCard format
-const transformMarketplaceToCardData = (listing: MarketplaceListing, userLocation: { latitude: number; longitude: number } | null) => {
-  // Format price from cents to dollars
-  const formatPrice = (priceCents: number) => {
-    return `$${(priceCents / 100).toFixed(0)}`;
-  };
-
-  // Format condition for display
-  const formatCondition = (condition: string) => {
-    switch (condition) {
-      case 'new': return 'New';
-      case 'used_like_new': return 'Like New';
-      case 'used_good': return 'Good';
-      case 'used_fair': return 'Fair';
-      default: return condition;
-    }
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) {return '1d';}
-    if (diffDays < 7) {return `${diffDays}d`;}
-    if (diffDays < 30) {return `${Math.floor(diffDays / 7)}w`;}
-    if (diffDays < 365) {return `${Math.floor(diffDays / 30)}m`;}
-    return `${Math.floor(diffDays / 365)}y`;
-  };
-
-  let distanceText: string | undefined;
-
-  if (userLocation && listing.lat && listing.lng) {
-    const distance = calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      listing.lat,
-      listing.lng
-    );
-    distanceText = formatDistance(distance);
-    
-    // Debug logging for distance display
-    if (process.env.NODE_ENV === 'development') {
-
-    }
-  }
-
-  return {
-    id: listing.id,
-    imageUrl: listing.thumbnail || listing.images?.[0],
-    imageTag: formatCondition(listing.condition),
-    title: listing.title,
-    badge: formatDate(listing.created_at),
-    subtitle: formatPrice(listing.price_cents),
-    additionalText: distanceText, // Only show if location is enabled
-    showHeart: true,
-    isLiked: false // This will be handled by the component internally
-  };
-};
-
-export default function MarketplacePage() {
+// Main component that uses useSearchParams
+function MarketplacePageContent() {
   const router = useRouter();
-
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalListings, setTotalListings] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('marketplace');
   const [showFilters, setShowFilters] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [marketplaceAvailable, setMarketplaceAvailable] = useState(true);
+  
+  // Mobile optimization hooks
+  const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
+  const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
+  
+  // Ensure mobile detection is working correctly
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobileDevice(typeof window !== 'undefined' && window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+  
+  // Mobile gesture support
+  const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
+    () => router.push('/eatery'), // Swipe left to eatery
+    () => router.push('/favorites'),   // Swipe right to favorites
+    () => scrollToTop(),               // Swipe up to scroll to top
+    () => window.scrollTo(0, document.body.scrollHeight) // Swipe down to bottom
+  );
+  
+  // WebSocket for real-time updates (currently disabled)
+  const { isConnected, sendMessage } = useWebSocket();
   
   // Location state from context
   const {
@@ -120,8 +108,11 @@ export default function MarketplacePage() {
     isLoading: locationLoading,
     error: locationError,
     requestLocation,
-    // setPermissionStatus
   } = useLocation();
+
+  // Location prompt popup state
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
   
   // Filter state
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
@@ -137,6 +128,93 @@ export default function MarketplacePage() {
   
   // Selected category state
   const [selectedCategory, setSelectedCategory] = useState<MarketplaceCategory | undefined>();
+
+  // Performance optimization for mobile
+  const mobileOptimizedItemsPerPage = useMemo(() => {
+    if (isLowPowerMode) {
+      return 4; // Reduce items in low power mode
+    }
+    if (isSlowConnection) {
+      return 6; // Reduce items on slow connection
+    }
+    
+    // Calculate items per page to ensure exactly 4 rows on every screen size
+    if (isMobile || isMobileDevice) {
+      return 8; // 4 rows × 2 columns = 8 items
+    } else {
+      // For desktop, calculate based on viewport width to ensure 4 rows
+      let columnsPerRow = 3; // Default fallback
+      
+      if (viewportWidth >= 1441) {
+        columnsPerRow = 6; // Large desktop: 6 columns × 4 rows = 24 items
+      } else if (viewportWidth >= 1025) {
+        columnsPerRow = 5; // Desktop: 5 columns × 4 rows = 20 items
+      } else if (viewportWidth >= 769) {
+        columnsPerRow = 4; // Tablet: 4 columns × 4 rows = 16 items
+      } else if (viewportWidth >= 641) {
+        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
+      }
+      
+      return columnsPerRow * 4; // Always 4 rows
+    }
+  }, [isMobile, isMobileDevice, isLowPowerMode, isSlowConnection, viewportWidth]);
+
+  // Memoize marketplace listing transformation to prevent unnecessary re-renders
+  const transformMarketplaceToCardData = useCallback((listing: MarketplaceListing) => {
+    // Format price from cents to dollars
+    const formatPrice = (priceCents: number) => {
+      return `$${(priceCents / 100).toFixed(0)}`;
+    };
+
+    // Format condition for display
+    const formatCondition = (condition: string) => {
+      switch (condition) {
+        case 'new': return 'New';
+        case 'used_like_new': return 'Like New';
+        case 'used_good': return 'Good';
+        case 'used_fair': return 'Fair';
+        default: return condition;
+      }
+    };
+
+    // Format date for display
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {return '1d';}
+      if (diffDays < 7) {return `${diffDays}d`;}
+      if (diffDays < 30) {return `${Math.floor(diffDays / 7)}w`;}
+      if (diffDays < 365) {return `${Math.floor(diffDays / 30)}m`;}
+      return `${Math.floor(diffDays / 365)}y`;
+    };
+
+    let distanceText: string | undefined;
+
+    if (userLocation && listing.lat && listing.lng) {
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        listing.lat,
+        listing.lng
+      );
+      distanceText = formatDistance(distance);
+    }
+
+    return {
+      id: listing.id,
+      imageUrl: listing.thumbnail || listing.images?.[0],
+      imageTag: formatCondition(listing.condition),
+      title: listing.title,
+      badge: formatDate(listing.created_at),
+      subtitle: formatPrice(listing.price_cents),
+      additionalText: distanceText, // Only show if location is enabled
+      showHeart: true,
+      isLiked: false // This will be handled by the component internally
+    };
+  }, [userLocation]); // Empty dependency array to prevent recreation
 
   // Sort listings by distance when location is available
   const sortedListings = useMemo(() => {
@@ -164,37 +242,40 @@ export default function MarketplacePage() {
         b.lng
       );
 
-      // Debug logging for distance calculations
-      if (process.env.NODE_ENV === 'development') {
-
-      }
-
       return distanceA - distanceB;
     });
   }, [listings, permissionStatus, userLocation]);
 
-  // Load initial listings
-  useEffect(() => {
-    loadListings();
-  }, []);
+  // Infinite scroll with proper mobile detection
+  const { hasMore: infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
+    () => fetchMoreListings(),
+    { 
+      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
+      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
+      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
+    }
+  );
 
-  // NOTE: Location is only requested when user explicitly clicks the "Enable" button
-  // This prevents browser security violations for geolocation requests without user gestures
+  // Mobile-optimized state
+  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
-  const loadListings = async (page = 1, append = false) => {
+  // Handle page changes for desktop pagination
+  const handlePageChange = async (page: number) => {
+    if (page === currentPage || loading) {
+      return;
+    }
+
     try {
       setLoading(true);
-      setError(null);
-
       const params = {
-        limit: 20,
-        offset: (page - 1) * 20,
+        limit: mobileOptimizedItemsPerPage,
+        offset: (page - 1) * mobileOptimizedItemsPerPage,
         search: searchQuery || undefined,
         category: filters.category || undefined,
         subcategory: filters.subcategory || undefined,
         kind: filters.kind || undefined,
         condition: filters.condition || undefined,
-        min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined, // Convert to cents
+        min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
         max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
         city: filters.city || undefined,
         region: filters.region || undefined
@@ -205,7 +286,85 @@ export default function MarketplacePage() {
       if (response.success && response.data?.listings) {
         const newListings = response.data.listings;
         
-        // Check if marketplace is available (not empty due to "not yet available" message)
+        if (newListings.length === 0 && (response.data as any).message === 'Marketplace is not yet available') {
+          setMarketplaceAvailable(false);
+          setListings([]);
+          setHasMore(false);
+        } else {
+          setMarketplaceAvailable(true);
+          setListings(newListings);
+          setHasMore(newListings.length === mobileOptimizedItemsPerPage);
+          setCurrentPage(page);
+        }
+      } else {
+        setError(response.error || 'Failed to load listings');
+      }
+    } catch (err) {
+      console.error('Error fetching page:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mobile-optimized location handling with context
+  const handleRequestLocation = async () => {
+    requestLocation();
+  };
+
+  // Handle location changes and update filters
+  useEffect(() => {
+    if (userLocation) {
+      // Send location update via WebSocket
+      if (isConnected) {
+        sendMessage({
+          type: 'location_update',
+          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
+        });
+      }
+    }
+  }, [userLocation, isConnected, sendMessage]);
+
+  // Show location prompt when page loads and user doesn't have location
+  useEffect(() => {
+    // Only show prompt if we haven't shown it before and user doesn't have location
+    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
+      setShowLocationPrompt(true);
+      setHasShownLocationPrompt(true);
+    }
+  }, [hasShownLocationPrompt, userLocation, locationLoading]);
+
+  // Close location prompt when user gets location
+  useEffect(() => {
+    if (showLocationPrompt && userLocation) {
+      setShowLocationPrompt(false);
+    }
+  }, [showLocationPrompt, userLocation]);
+
+  // Fetch marketplace listings with mobile optimization and distance sorting
+  const fetchMarketplaceData = async (page = 1, append = false) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        limit: mobileOptimizedItemsPerPage,
+        offset: (page - 1) * mobileOptimizedItemsPerPage,
+        search: searchQuery || undefined,
+        category: filters.category || undefined,
+        subcategory: filters.subcategory || undefined,
+        kind: filters.kind || undefined,
+        condition: filters.condition || undefined,
+        min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
+        max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
+        city: filters.city || undefined,
+        region: filters.region || undefined
+      };
+
+      const response = await fetchMarketplaceListings(params);
+      
+      if (response.success && response.data?.listings) {
+        const newListings = response.data.listings;
+        
         if (newListings.length === 0 && (response.data as any).message === 'Marketplace is not yet available') {
           setMarketplaceAvailable(false);
           setListings([]);
@@ -218,8 +377,18 @@ export default function MarketplacePage() {
             setListings(newListings);
           }
           
-          setHasMore(newListings.length === 20);
+          setHasMore(newListings.length === mobileOptimizedItemsPerPage);
           setCurrentPage(page);
+          
+          // Update pagination state
+          const total = response.data.total || newListings.length;
+          setTotalListings(total);
+          const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+          setTotalPages(calculatedTotalPages);
+          
+          // Update hasMore state for infinite scroll (mobile only)
+          const hasMoreContent = newListings.length >= mobileOptimizedItemsPerPage;
+          setInfiniteScrollHasMore(hasMoreContent);
         }
       } else {
         setError(response.error || 'Failed to load listings');
@@ -232,22 +401,29 @@ export default function MarketplacePage() {
     }
   };
 
+  const fetchMoreListings = async () => {
+    if (isLoadingMore || !hasMore) {
+      return;
+    }
+
+    try {
+      const nextPage = currentPage + 1;
+      await fetchMarketplaceData(nextPage, true);
+    } catch (err) {
+      console.error('Error fetching more listings:', err);
+    }
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
-    loadListings(1, false);
+    fetchMarketplaceData(1, false);
   };
 
   const handleFilterChange = (newFilters: MarketplaceFiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
-    loadListings(1, false);
-  };
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      loadListings(currentPage + 1, true);
-    }
+    fetchMarketplaceData(1, false);
   };
 
   const handleTabChange = (tab: string) => {
@@ -301,13 +477,68 @@ export default function MarketplacePage() {
       }));
     }
     setCurrentPage(1);
-    loadListings(1, false);
+    fetchMarketplaceData(1, false);
   };
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (isConnected) {
+      // Subscribe to marketplace updates
+      sendMessage({
+        type: 'subscribe',
+        data: { room_id: 'marketplace_updates' }
+      });
+    }
+  }, [isConnected, sendMessage]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchMarketplaceData();
+  }, []);
+
+  // Mobile-specific effects
+  useEffect(() => {
+    // Auto-hide filters on mobile when scrolling
+    if ((isMobile || isMobileDevice) && isScrolling) {
+      setShowFilters(false);
+    }
+  }, [isMobile, isMobileDevice, isScrolling]);
+
+  // Consistent responsive styles
+  const responsiveStyles = useMemo(() => {
+    const isMobileView = isMobile || isMobileDevice;
+    const styles = {
+      container: {
+        minHeight: isMobileView ? viewportHeight : 'auto',
+      },
+      filtersContainer: {
+        position: isMobileView ? 'fixed' as const : 'relative' as const,
+        top: isMobileView ? 'auto' : '0',
+        bottom: isMobileView ? '0' : 'auto',
+        left: isMobileView ? '0' : 'auto',
+        right: isMobileView ? '0' : 'auto',
+        zIndex: isMobileView ? 50 : 'auto',
+        backgroundColor: isMobileView ? 'white' : 'transparent',
+        borderTop: isMobileView ? '1px solid #e5e7eb' : 'none',
+        borderRadius: isMobileView ? '16px 16px 0 0' : '0',
+        boxShadow: isMobileView ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        maxHeight: isMobileView ? '80vh' : 'auto',
+        overflowY: isMobileView ? 'auto' as const : 'visible' as const,
+      },
+      loadMoreButton: {
+        ...mobileStyles.touchButton,
+        width: isMobileView ? '100%' : 'auto',
+        margin: isMobileView ? '16px 8px' : '16px',
+      }
+    };
+
+    return styles;
+  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
 
   // Show marketplace not available message
   if (!marketplaceAvailable) {
-      return (
-    <div className="min-h-screen bg-gray-50 marketplace-page">
+    return (
+      <div className="min-h-screen bg-gray-50 marketplace-page">
         <Header />
         
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -343,21 +574,60 @@ export default function MarketplacePage() {
     );
   }
 
+  if (error) {
+    return (
+      <div style={responsiveStyles.container}>
+        <Header />
+        
+        {/* Navigation Tabs - Always visible */}
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        </div>
+        
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
+          <div className="text-red-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              fetchMarketplaceData();
+            }}
+            className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f4f4f4] marketplace-page">
-      {/* Header with Logo and Search */}
-      <Header
+    <div 
+      className="min-h-screen bg-[#f4f4f4] marketplace-page"
+      style={responsiveStyles.container}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      role="main"
+      aria-label="Marketplace listings"
+    >
+      <Header 
         onSearch={handleSearch}
         placeholder="Search marketplace listings..."
         showFilters={true}
         onShowFilters={handleShowFilters}
       />
-
-      {/* Navigation Tabs */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+      
+      {/* Navigation Tabs - Always visible */}
+      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
         <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
-
+      
       {/* Marketplace Action Bar */}
       <MarketplaceActionBar
         onSell={handleSell}
@@ -431,68 +701,98 @@ export default function MarketplacePage() {
         </div>
       )}
 
-      {/* Listings */}
-      <div className="px-4 py-4">
-        <div className="max-w-7xl lg:max-w-none mx-auto">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">{error}</p>
-            </div>
-          )}
-
-          {loading && sortedListings.length === 0 ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : sortedListings.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">🛍️</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
-              <p className="text-gray-500 mb-6">
-                {searchQuery || Object.values(filters).some(f => f) 
-                  ? 'Try adjusting your search or filters'
-                  : 'Be the first to add a listing!'
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-              {sortedListings.map(listing => (
-                <div key={listing.id}>
-                  <UnifiedCard
-                    data={transformMarketplaceToCardData(listing, userLocation)}
-                    variant="default"
-                    onCardClick={(_data) => router.push(`/marketplace/${listing.id}`)}
-                    onLikeToggle={(_id, _isLiked) => {
-                      // Handle like toggle - you can add your like logic here
-                      // console.log(`Liked: ${id}, ${isLiked}`);
-                    }}
-                    className="w-full"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Load More */}
-          {hasMore && !loading && (
-            <div className="mt-8 text-center">
-              <button
-                onClick={handleLoadMore}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Load More Listings
-              </button>
-            </div>
-          )}
-
-          {loading && sortedListings.length > 0 && (
-            <div className="mt-8 text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-            </div>
-          )}
+      {/* Marketplace grid with consistent responsive spacing */}
+      {sortedListings.length === 0 && !loading ? (
+        <div className="text-center py-10 px-5" role="status" aria-live="polite">
+          <div className="text-5xl mb-4" aria-hidden="true">🛍️</div>
+          <p className="text-lg text-gray-600 mb-2">No listings found</p>
+          <p className="text-sm text-gray-500">
+            {searchQuery || Object.values(filters).some(f => f) 
+              ? 'Try adjusting your search or filters'
+              : 'Be the first to add a listing!'
+            }
+          </p>
         </div>
-      </div>
+      ) : (
+        <div 
+          className="restaurant-grid px-4 sm:px-6 lg:px-8"
+          role="grid"
+          aria-label="Marketplace listings"
+          style={{ 
+            contain: 'layout style paint',
+            willChange: 'auto',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
+        >
+          {sortedListings.map((listing, index) => (
+            <div 
+              key={listing.id} 
+              className="w-full" 
+              role="gridcell"
+              style={{
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden'
+              }}
+            >
+              <UnifiedCard
+                data={transformMarketplaceToCardData(listing)}
+                variant="default"
+                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                onCardClick={() => router.push(`/marketplace/product/${listing.id}`)}
+                className="w-full h-full"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Loading states with consistent spacing */}
+      {loading && (
+        <div className="text-center py-5" role="status" aria-live="polite">
+          <p>Loading listings...</p>
+        </div>
+      )}
+
+      {/* Infinite scroll loading indicator - only show on mobile */}
+      {(isMobile || isMobileDevice) && isLoadingMore && (
+        <div className="text-center py-5" role="status" aria-live="polite">
+          <p>Loading more...</p>
+        </div>
+      )}
+
+      {/* Infinite scroll trigger element - only on mobile */}
+      {(isMobile || isMobileDevice) && hasMore && (
+        <div 
+          ref={loadingRef}
+          className="h-5 w-full my-5"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Desktop pagination - only show on desktop */}
+      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+        <div className="mt-8 mb-8" role="navigation" aria-label="Pagination">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+            className="mb-4"
+          />
+          <div className="text-center text-sm text-gray-600">
+            Showing {sortedListings.length} of {totalListings} listings
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bottom navigation - ensure it's always visible on mobile */}
+      {(isMobile || isMobileDevice) && (
+        <BottomNavigation />
+      )}
 
       {/* Categories Dropdown */}
       <MarketplaceCategoriesDropdown
@@ -510,8 +810,22 @@ export default function MarketplacePage() {
         currentFilters={filters}
       />
 
-      {/* Bottom Navigation */}
-      <BottomNavigation />
+      {/* Location Prompt Popup */}
+      <LocationPromptPopup
+        isOpen={showLocationPrompt}
+        onClose={() => setShowLocationPrompt(false)}
+        onLocationGranted={() => {
+          setShowLocationPrompt(false);
+        }}
+      />
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<MarketplacePageLoading />}>
+      <MarketplacePageContent />
+    </Suspense>
   );
 }

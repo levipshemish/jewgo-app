@@ -19,10 +19,10 @@ export function parseReviewSnippets(snippetsJson: string | null | undefined): Re
       }));
     }
     return [];
-  } catch (error) {
+  } catch (_error) {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
-      console.warn('Failed to parse review snippets:', error);
+      // console.warn('Failed to parse review snippets:', error);
     }
     return [];
   }
