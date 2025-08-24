@@ -65,7 +65,7 @@ const RestaurantDetailPage: React.FC = () => {
         setError(`Service temporarily unavailable. Retrying in ${Math.round(delay / 1000)} seconds...`);
         
         setTimeout(() => {
-          setRetryCount(retryAttempt + 1);
+          // Retry without tracking state to avoid unused state warnings
           fetchRestaurant(retryAttempt + 1);
         }, delay);
         return;
