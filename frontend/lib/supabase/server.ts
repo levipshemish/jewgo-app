@@ -18,14 +18,44 @@ export async function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
+        // Preferred cookie API for App Router (server actions, route handlers)
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set(name, value, {
+              ...options,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/',
+            });
+          } catch {
+            // no-op in unsupported contexts
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set(name, '', {
+              ...options,
+              maxAge: 0,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              path: '/',
+            });
+          } catch {
+            // no-op
+          }
+        },
+        // Backward-compat with older SSR helpers using getAll/setAll
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options: any }>) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              // Respect Supabase cookie names and set safe defaults.
-              // Do not rename cookies; only enforce secure defaults.
               cookieStore.set(name, value, {
                 ...options,
                 httpOnly: true,
@@ -34,9 +64,8 @@ export async function createServerSupabaseClient() {
                 path: '/',
               });
             });
-          } catch (error) {
-            // Handle the error when called from Server Components
-            // This is expected in certain contexts
+          } catch {
+            // no-op
           }
         },
       },
