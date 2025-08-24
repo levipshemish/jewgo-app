@@ -9,10 +9,14 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
  */
 function validateTurnstileHostname(resultHostname: string | undefined): boolean {
   // In production, require a hostname assertion
-  if (process.env.NODE_ENV === 'production' && !resultHostname) return false;
+  if (process.env.NODE_ENV === 'production' && !resultHostname) {
+    return false;
+  }
   
   // If no hostname provided, only allow in development
-  if (!resultHostname) return process.env.NODE_ENV !== 'production';
+  if (!resultHostname) {
+    return process.env.NODE_ENV !== 'production';
+  }
   
   const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
   const expectedHostname = expectedHost.split(':')[0]; // Remove port if present
@@ -20,7 +24,7 @@ function validateTurnstileHostname(resultHostname: string | undefined): boolean 
   
   // Allow exact match, subdomains, and localhost
   return resultHostnameClean === expectedHostname || 
-         (resultHostnameClean && resultHostnameClean.endsWith('.' + expectedHostname)) ||
+         (resultHostnameClean && resultHostnameClean.endsWith(`.${expectedHostname}`)) ||
          expectedHostname === 'localhost';
 }
 
@@ -79,7 +83,7 @@ export async function signInAction(prevState: any, formData: FormData) {
     }
 
     return { ok: false, message: "Sign in failed" };
-  } catch (error) {
+  } catch (_error) {
     return { ok: false, message: "An error occurred during sign in" };
   }
 }

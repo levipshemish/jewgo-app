@@ -3,11 +3,10 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
-import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
+import { validateCSRFServer, validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { consumeCaptchaTokenOnce } from '@/lib/anti-replay';
-import { validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

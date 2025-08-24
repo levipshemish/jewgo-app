@@ -2,8 +2,7 @@
 
 import { Heart, MapPin, Clock, User, Eye, Star } from "lucide-react"
 import Image from "next/image"
-import type React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 
 import type { MarketplaceListing } from "@/lib/types/marketplace"
 import { cn } from "@/lib/utils/classNames"

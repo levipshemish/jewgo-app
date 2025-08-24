@@ -1,5 +1,3 @@
-middleware-supabase.ts:8 - middleware
-middleware-supabase.ts:36 - config
 middleware.ts:44 - middleware
 middleware.ts:8 - config
 app/error.tsx:6 - default
@@ -41,11 +39,8 @@ hooks/useAdvancedFilters.ts:6 - UseAdvancedFiltersReturn (used in module)
 hooks/useAuth.ts:21 - useAuth
 hooks/useLocation.ts:16 - useLocation
 lib/anti-replay.ts:85 - clearReplayTokens
-lib/auth.ts:12 - getSessionUser (used in module)
-lib/auth.ts:34 - requireUser (used in module)
-lib/auth.ts:42 - requireAdmin
-lib/auth.ts:59 - isAuthenticated
-lib/auth.ts:65 - getUserProfile
+lib/auth.ts:11 - getSessionUser (used in module)
+lib/auth.ts:32 - requireUser
 lib/email.ts:35 - sendEmail
 lib/email.ts:57 - createVerificationEmail
 lib/email.ts:89 - createPasswordResetEmail
@@ -392,6 +387,12 @@ lib/api/restaurants.ts:19 - RestaurantsAPI (used in module)
 lib/api/restaurants.ts:355 - searchRestaurants (used in module)
 lib/api/restaurants.ts:357 - fetchRestaurantsByIds (used in module)
 lib/api/restaurants.ts:358 - getStatistics (used in module)
+lib/auth/canonical.ts:15 - getSessionUser (used in module)
+lib/auth/canonical.ts:34 - requireUser (used in module)
+lib/auth/canonical.ts:42 - requireAdmin
+lib/auth/canonical.ts:57 - isAuthenticated
+lib/auth/canonical.ts:62 - getUserProfile
+lib/auth/canonical.ts:78 - TransformedUser (used in module)
 lib/auth/email-upgrade.ts:22 - EmailUpgradeFlow (used in module)
 lib/auth/index.ts:12 - createServerSupabaseClient
 lib/auth/index.ts:13 - supabaseBrowser
@@ -527,6 +528,11 @@ lib/hooks/useWebSocket.ts:3 - WebSocketMessage (used in module)
 lib/hooks/useWebSocket.ts:9 - WebSocketConfig (used in module)
 lib/hooks/useWebSocket.ts:16 - UseWebSocketReturn (used in module)
 lib/maps/loader.ts:7 - getMapsLoader (used in module)
+lib/middleware/rate-limit.ts:16 - rateLimitMiddleware (used in module)
+lib/middleware/rate-limit.ts:63 - rateLimitEmailAuth
+lib/middleware/rate-limit.ts:74 - rateLimitAnonymousAuth
+lib/middleware/rate-limit.ts:85 - rateLimitPasswordReset
+lib/middleware/rate-limit.ts:9 - RateLimitConfig (used in module)
 lib/rate-limiting/index.ts:7 - checkRateLimit
 lib/rate-limiting/index.ts:8 - clearRateLimit
 lib/rate-limiting/index.ts:9 - checkIdempotency
@@ -542,8 +548,7 @@ lib/rate-limiting/memory.ts:214 - generateIdempotencyKey
 lib/supabase/index.ts:8 - createClientSupabaseClient
 lib/supabase/index.ts:8 - supabaseClient
 lib/supabase/index.ts:11 - supabaseBrowser
-lib/supabase/index.ts:14 - createServerSupabaseClient
-lib/supabase/server.ts:56 - createSupabaseServerClient
+lib/supabase/server.ts:48 - createSupabaseServerClient
 lib/utils/apple-oauth-config.ts:18 - isAppleOAuthEnabled (used in module)
 lib/utils/apple-oauth-config.ts:26 - isAppleOAuthConfigured (used in module)
 lib/utils/apple-oauth-config.ts:35 - getAppleOAuthConfigStatus (used in module)
@@ -551,18 +556,25 @@ lib/utils/apple-oauth-config.ts:62 - getAppleOAuthSetupInstructions
 lib/utils/apple-oauth-config.ts:113 - getAppleOAuthSetupDocsUrl
 lib/utils/apple-oauth-config.ts:120 - shouldRedirectToSetup
 lib/utils/apple-oauth-config.ts:8 - AppleOAuthConfigStatus (used in module)
-lib/utils/auth-utils.server.ts:44 - getCachedFeatureSupport (used in module)
-lib/utils/auth-utils.server.ts:51 - setCachedFeatureSupport (used in module)
-lib/utils/auth-utils.server.ts:110 - testSupabaseFeatures (used in module)
-lib/utils/auth-utils.server.ts:311 - persistAppleUserName
-lib/utils/auth-utils.server.ts:341 - createAnalyticsKey (used in module)
-lib/utils/auth-utils.server.ts:363 - detectProvider (used in module)
-lib/utils/auth-utils.server.ts:379 - isAppleUser
-lib/utils/auth-utils.server.ts:391 - isAppleOAuthEnabled
-lib/utils/auth-utils.server.ts:398 - logOAuthEvent
-lib/utils/auth-utils.server.ts:462 - completeIdentityLinking
-lib/utils/auth-utils.server.ts:500 - verifySignedCSRFTokenServer (used in module)
-lib/utils/auth-utils.server.ts:602 - generateSecurePassword
+lib/utils/auth-errors.ts:58 - getAuthError
+lib/utils/auth-errors.ts:62 - getGenericAuthError
+lib/utils/auth-errors.ts:66 - logAuthError (used in module)
+lib/utils/auth-errors.ts:72 - createAuthErrorResponse
+lib/utils/auth-errors.ts:81 - mapSupabaseError
+lib/utils/auth-errors.ts:6 - AuthError (used in module)
+lib/utils/auth-errors.ts:13 - AUTH_ERRORS (used in module)
+lib/utils/auth-utils.server.ts:54 - getCachedFeatureSupport (used in module)
+lib/utils/auth-utils.server.ts:61 - setCachedFeatureSupport (used in module)
+lib/utils/auth-utils.server.ts:120 - testSupabaseFeatures (used in module)
+lib/utils/auth-utils.server.ts:328 - persistAppleUserName
+lib/utils/auth-utils.server.ts:358 - createAnalyticsKey (used in module)
+lib/utils/auth-utils.server.ts:380 - detectProvider (used in module)
+lib/utils/auth-utils.server.ts:396 - isAppleUser
+lib/utils/auth-utils.server.ts:408 - isAppleOAuthEnabled
+lib/utils/auth-utils.server.ts:415 - logOAuthEvent
+lib/utils/auth-utils.server.ts:479 - completeIdentityLinking
+lib/utils/auth-utils.server.ts:517 - verifySignedCSRFTokenServer (used in module)
+lib/utils/auth-utils.server.ts:619 - generateSecurePassword
 lib/utils/cardUtils.ts:246 - getCardStyles
 lib/utils/cardUtils.ts:266 - imageStates (used in module)
 lib/utils/colors.ts:9 - JEWGO_COLORS (used in module)
@@ -571,6 +583,19 @@ lib/utils/colors.ts:97 - CERTIFYING_AGENCY_COLORS (used in module)
 lib/utils/colors.ts:126 - getKosherCategoryColors (used in module)
 lib/utils/colors.ts:130 - getCertifyingAgencyColors (used in module)
 lib/utils/colors.ts:145 - getCertifyingAgencyBadgeClasses
+lib/utils/cookie-utils.ts:36 - setSecureCookie (used in module)
+lib/utils/cookie-utils.ts:54 - getCookie
+lib/utils/cookie-utils.ts:59 - deleteCookie (used in module)
+lib/utils/cookie-utils.ts:69 - setAuthCookie (used in module)
+lib/utils/cookie-utils.ts:73 - setCSRFCookie
+lib/utils/cookie-utils.ts:78 - rotateSession
+lib/utils/cookie-utils.ts:85 - invalidateSession
+lib/utils/cookie-utils.ts:92 - validateCookieName
+lib/utils/cookie-utils.ts:97 - sanitizeCookieValue
+lib/utils/cookie-utils.ts:8 - CookieOptions (used in module)
+lib/utils/cookie-utils.ts:17 - DEFAULT_COOKIE_OPTIONS (used in module)
+lib/utils/cookie-utils.ts:24 - AUTH_COOKIE_OPTIONS (used in module)
+lib/utils/cookie-utils.ts:30 - CSRF_COOKIE_OPTIONS (used in module)
 lib/utils/imageValidation.ts:13 - isValidCloudinaryUrl (used in module)
 lib/utils/imageValidation.ts:36 - isLikelyAccessibleCloudinaryUrl (used in module)
 lib/utils/imageValidation.ts:100 - filterValidImageUrls

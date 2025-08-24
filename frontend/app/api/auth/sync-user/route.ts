@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, name, avatar_url } = await request.json().catch(() => ({}));
+    const { name, avatar_url } = await request.json().catch(() => ({}));
 
     // Create SSR Supabase client bound to cookies
     const cookieStore = await cookies();
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const display_name = (name && String(name).trim()) || user.user_metadata?.full_name || user.user_metadata?.name || '';
 
     // Check if profile exists to avoid overwriting preferences on repeat sync
-    const { data: existingProfile, error: getError } = await supabase
+    const { data: existingProfile, error: _getError } = await supabase
       .from('profiles')
       .select('id, preferences')
       .eq('id', user.id)
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (!existingProfile || (getError as any)?.code === 'PGRST116') {
+    if (!existingProfile || (_getError as any)?.code === 'PGRST116') {
       upsertPayload.preferences = defaultPreferences;
     }
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true }, { status: 200, headers: baseHeaders });
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500, headers: baseHeaders });
   }
 }

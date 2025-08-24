@@ -41,7 +41,9 @@ export interface TransformedUser {
  * Check if user is anonymous based on app_metadata
  */
 export function extractIsAnonymous(u?: any): boolean {
-  if (!u?.app_metadata) return false;
+  if (!u?.app_metadata) {
+    return false;
+  }
   return u.app_metadata.provider === 'anonymous';
 }
 
@@ -56,7 +58,9 @@ export function isSupabaseConfigured(): boolean {
  * Transform Supabase user to our internal format
  */
 export function transformSupabaseUser(user: User | null): TransformedUser | null {
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   const provider = user.app_metadata?.provider as 'apple' | 'google' | 'unknown' || 'unknown';
   

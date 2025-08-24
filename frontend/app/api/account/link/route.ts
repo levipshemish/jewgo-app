@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, targetProvider, targetEmail } = body;
+    const { action } = body;
 
     if (action === 'link') {
       // Handle account linking using official Supabase Link API
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     

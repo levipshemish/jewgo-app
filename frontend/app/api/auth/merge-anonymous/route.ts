@@ -127,11 +127,12 @@ export async function POST(request: NextRequest) {
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for merge anonymous IP hash: ${ipHash}`, {
-        correlationId,
-        remaining_attempts: rateLimitResult.remaining_attempts,
-        reset_in_seconds: rateLimitResult.reset_in_seconds
-      });
+      // Rate limit exceeded - log for monitoring but don't expose details
+      // console.warn(`Rate limit exceeded for merge anonymous IP hash: ${ipHash}`, {
+      //   correlationId,
+      //   remaining_attempts: rateLimitResult.remaining_attempts,
+      //   reset_in_seconds: rateLimitResult.reset_in_seconds
+      // });
       
       return NextResponse.json(
         {
@@ -168,10 +169,11 @@ export async function POST(request: NextRequest) {
     // Verify merge token
     const tokenVerification = verifyMergeCookieVersioned(mergeToken);
     if (!tokenVerification.valid) {
-      console.error(`Invalid merge token for correlation ID: ${correlationId}`, {
-        error: tokenVerification.error,
-        correlationId
-      });
+      // Invalid merge token - log for security monitoring
+      // console.error(`Invalid merge token for correlation ID: ${correlationId}`, {
+      //   error: tokenVerification.error,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'INVALID_MERGE_TOKEN' },
@@ -218,10 +220,11 @@ export async function POST(request: NextRequest) {
     
     // Verify user is NON-anonymous (current user must be authenticated)
     if (extractIsAnonymous(user)) {
-      console.error(`Anonymous user attempted merge for correlation ID: ${correlationId}`, {
-        user_id: user.id,
-        correlationId
-      });
+      // Anonymous user attempted merge - log for security monitoring
+      // console.error(`Anonymous user attempted merge for correlation ID: ${correlationId}`, {
+      //   user_id: user.id,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'USER_NOT_ANONYMOUS' },
@@ -234,11 +237,12 @@ export async function POST(request: NextRequest) {
     
     // Verify the anonymous user ID from token matches the expected anon_uid
     if (user.id === anon_uid) {
-      console.error(`Current user ID matches anon_uid for correlation ID: ${correlationId}`, {
-        user_id: user.id,
-        anon_uid,
-        correlationId
-      });
+      // Self-merge attempt - log for security monitoring
+      // console.error(`Current user ID matches anon_uid for correlation ID: ${correlationId}`, {
+      //   user_id: user.id,
+      //   anon_uid,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'INVALID_MERGE_REQUEST' },
@@ -294,12 +298,13 @@ export async function POST(request: NextRequest) {
     });
     
     if (mergeError) {
-      console.error(`Merge operation failed for correlation ID: ${correlationId}`, {
-        error: mergeError,
-        anon_uid,
-        auth_uid: user.id,
-        correlationId
-      });
+      // Merge operation failed - log for debugging
+      // console.error(`Merge operation failed for correlation ID: ${correlationId}`, {
+      //   error: mergeError,
+      //   anon_uid,
+      //   auth_uid: user.id,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { 
@@ -327,20 +332,22 @@ export async function POST(request: NextRequest) {
       });
     
     if (jobError) {
-      console.error(`Failed to record merge job for correlation ID: ${correlationId}`, {
-        error: jobError,
-        correlationId
-      });
+      // Failed to record merge job - log for monitoring
+      // console.error(`Failed to record merge job for correlation ID: ${correlationId}`, {
+      //   error: jobError,
+      //   correlationId
+      // });
       // Don't fail the request, just log the error
     }
     
-    console.log(`Merge operation successful for correlation ID: ${correlationId}`, {
-      anon_uid,
-      auth_uid: user.id,
-      moved_data: movedData,
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // Merge operation successful - log for monitoring
+    // console.log(`Merge operation successful for correlation ID: ${correlationId}`, {
+    //   anon_uid,
+    //   auth_uid: user.id,
+    //   moved_data: movedData,
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     // Clear merge token and return success
     const response = NextResponse.json(
@@ -364,11 +371,12 @@ export async function POST(request: NextRequest) {
     return response;
     
   } catch (error) {
-    console.error(`Unexpected error in merge anonymous for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // Unexpected error - log for debugging
+    // console.error(`Unexpected error in merge anonymous for correlation ID: ${correlationId}`, {
+    //   error: scrubPII(error),
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 

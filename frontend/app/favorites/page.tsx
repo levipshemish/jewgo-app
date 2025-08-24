@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
@@ -14,7 +14,6 @@ import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useFavorites } from '@/lib/utils/favorites';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { Suspense } from 'react';
 
 // Dynamically import Supabase client to prevent SSR issues
 const getSupabaseClient = async () => {
