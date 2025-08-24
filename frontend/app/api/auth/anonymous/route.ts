@@ -64,17 +64,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({} as any));
   const turnstileToken: string | undefined = body?.turnstileToken || body?.token;
 
-  // In development mode, allow bypass if no Turnstile token but log it
-  if (process.env.NODE_ENV === 'development' && (!turnstileToken || turnstileToken === 'null')) {
-    console.log('Development mode: bypassing Turnstile requirement for testing');
-    // Create a minimal successful response for development testing
-    return NextResponse.json(
-      { ok: true, dev_bypass: true },
-      { status: 200, headers: baseHeaders }
-    );
-  }
-
-  // Otherwise require Turnstile token
+  // Always require Turnstile token since it's configured for localhost
   if (!turnstileToken || turnstileToken.length < 10) {
     return NextResponse.json(
       { error: 'TURNSTILE_REQUIRED' },

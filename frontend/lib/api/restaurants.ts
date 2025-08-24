@@ -29,7 +29,7 @@ export class RestaurantsAPI {
       });
       return response.ok;
     } catch (error) {
-      console.warn('Network connectivity check failed:', error);
+      // console.warn('Network connectivity check failed:', error);
       // If connectivity check fails, we'll still try the main API
       // but with shorter timeouts and better fallback handling
       return false;
@@ -126,7 +126,7 @@ export class RestaurantsAPI {
         
         // Handle network errors more gracefully
         if (error instanceof TypeError && error.message.includes('fetch')) {
-          console.warn(`Network error on attempt ${attempt}/${retries}:`, error.message);
+          // console.warn(`Network error on attempt ${attempt}/${retries}:`, error.message);
           
           // If this is a network connectivity issue, wait before retrying
           if (attempt < retries) {
@@ -138,7 +138,7 @@ export class RestaurantsAPI {
         
         // Handle AbortError (timeout)
         if (error instanceof Error && error.name === 'AbortError') {
-          console.warn(`Request timeout on attempt ${attempt}/${retries}`);
+          // console.warn(`Request timeout on attempt ${attempt}/${retries}`);
           if (attempt < retries) {
             const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
             await new Promise(resolve => setTimeout(resolve, delay));
@@ -173,7 +173,7 @@ export class RestaurantsAPI {
       const result = await requestPromise;
       return result;
     } catch (error) {
-      console.error('Error in fetchRestaurants:', error);
+      // console.error('Error in fetchRestaurants:', error);
       // Re-throw the error to be handled by the UI
       throw error;
     } finally {
@@ -235,8 +235,8 @@ export class RestaurantsAPI {
             total,
           };
         }
-      } catch (error) {
-        console.warn('Primary API endpoint failed, trying fallback:', error);
+          } catch (error) {
+      // console.warn('Primary API endpoint failed, trying fallback:', error);
       }
       
       // Graceful degradation: if backend returns no restaurants, try images-only endpoint, then mock
@@ -255,15 +255,15 @@ export class RestaurantsAPI {
             total: withImagesData.length,
           };
         }
-      } catch (error) {
-        console.warn('Images-only endpoint also failed:', error);
+          } catch (error) {
+      // console.warn('Images-only endpoint also failed:', error);
       }
       
       // All endpoints failed
       throw new Error('Unable to connect to restaurant service. Please try again later.');
       
     } catch (error) {
-      console.error('Failed to fetch restaurants:', error);
+      // console.error('Failed to fetch restaurants:', error);
       
       // Re-throw with a user-friendly message
       if (error instanceof Error) {
@@ -312,7 +312,7 @@ export class RestaurantsAPI {
       
       return null;
     } catch (error) {
-      console.error('Error fetching restaurant:', error);
+      // console.error('Error fetching restaurant:', error);
       throw new Error('Unable to load restaurant details. Please try again later.');
     }
   }
