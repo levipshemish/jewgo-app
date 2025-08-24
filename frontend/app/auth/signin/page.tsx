@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useActionState } from "react";
 import { signInAction, anonymousSignInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
 
-export default function SignInPage() {
+function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
   const [anonymousState, anonymousFormAction] = useActionState(anonymousSignInAction, { ok: false, message: "" });
   const [email, setEmail] = useState("");
@@ -182,5 +182,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   );
 }
