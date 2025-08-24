@@ -14,6 +14,8 @@ import { throttle as throttleFn } from '@/lib/utils/touchUtils';
 import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
+import { favoritesManager } from '@/lib/utils/favorites';
+import UnifiedCard from '@/components/ui/UnifiedCard';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -365,6 +367,20 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant(null);
   }, []);
 
+  const handleToggleFavorite = useCallback((restaurant: Restaurant) => {
+    const restaurantId = restaurant.id.toString();
+    const isCurrentlyFavorite = favoritesManager.isFavorite(restaurantId);
+    
+    if (isCurrentlyFavorite) {
+      favoritesManager.removeFavorite(restaurantId);
+    } else {
+      favoritesManager.addFavorite(restaurant);
+    }
+    
+    // Force re-render by updating the selected restaurant
+    setSelectedRestaurant({ ...restaurant });
+  }, []);
+
   const handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
   }, [setFilter]);
@@ -554,25 +570,45 @@ export default function UnifiedLiveMapClient() {
                 );
               })()}
 
-              <div className="absolute top-2 right-2 flex space-x-1">
+              {/* Heart Button - LEFT CORNER */}
+              <div className="absolute top-2 left-2">
                 <button
-                  className="w-8 h-7 bg-transparent border-0 p-0 m-0 rounded-none transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 group"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label="Add to favorites"
-                  title="Add to favorites"
+                  className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 group backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(selectedRestaurant);
+                  }}
+                  aria-label="Toggle favorite"
+                  title="Toggle favorite"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                  }}
                 >
                   <Heart
-                    className="w-5 h-5 transition-all duration-150 ease-out stroke-white stroke-2 fill-gray-300 text-gray-300 drop-shadow-sm group-hover:fill-pink-500 group-hover:text-pink-500"
+                    className={`w-4 h-4 transition-all duration-150 ease-out stroke-2 drop-shadow-sm ${
+                      favoritesManager.isFavorite(selectedRestaurant.id.toString())
+                        ? 'fill-red-500 text-red-500 stroke-red-500'
+                        : 'fill-none text-white stroke-white hover:text-red-300 hover:stroke-red-300'
+                    }`}
                   />
                 </button>
+              </div>
+              
+              {/* Close Button - RIGHT CORNER */}
+              <div className="absolute top-2 right-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCloseRestaurantCard();
                   }}
-                  className="p-1.5 bg-transparent border border-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white/20 transition-colors flex items-center justify-center"
+                  className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                  }}
                 >
-                  <X className="w-3 h-3 text-white" />
+                  <X className="w-4 h-4 text-white drop-shadow-sm hover:text-gray-200 transition-colors" />
                 </button>
               </div>
             </div>

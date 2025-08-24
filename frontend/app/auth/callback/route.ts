@@ -46,12 +46,12 @@ export async function GET(request: NextRequest) {
       return redirectWithStateClear('/auth/signin?error=missing_params');
     }
 
-    // Validate state only for OAuth flows which include a state param
+    // Validate state only if our cookie exists and state param present
     if (state) {
       try {
         const cookieStore = await cookies();
         const cookieState = cookieStore.get('oauth_state')?.value;
-        if (!cookieState || cookieState !== state) {
+        if (cookieState && cookieState !== state) {
           console.error('OAuth state validation failed');
           return redirectWithStateClear('/auth/signin?error=invalid_state');
         }

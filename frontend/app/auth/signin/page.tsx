@@ -49,10 +49,6 @@ function SignInForm() {
   // Start OAuth flow (Google/Apple) via Supabase
   const handleOAuthSignIn = useCallback(async (provider: 'google' | 'apple') => {
     try {
-      // Get CSRF-ish state and set httpOnly cookie for double-submit validation
-      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
-      const { state } = await stateRes.json();
-
       const nextUrl = redirectTo || '/eatery';
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const redirectUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
@@ -61,9 +57,6 @@ function SignInForm() {
         provider,
         options: {
           redirectTo: redirectUrl,
-          queryParams: {
-            state,
-          },
         },
       });
     } catch (_err) {
