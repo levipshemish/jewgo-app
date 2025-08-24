@@ -124,18 +124,33 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  // Attempt anonymous sign-in with Turnstile token (required by Supabase)
-  const { data, error } = await supabase.auth.signInAnonymously({
-    options: {
-      captchaToken: turnstileToken // Pass Turnstile token to Supabase
+  // Handle test tokens in development - skip Supabase captcha for test tokens
+  if (process.env.NODE_ENV === 'development' && turnstileToken === 'XXXX.DUMMY.TOKEN.XXXX') {
+    // console.log('Development mode: using test token, skipping Supabase captcha verification');
+    
+    // Attempt anonymous sign-in without captcha token for test environment
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error || !data?.user) {
+      // console.error('Anonymous sign-in failed:', error);
+      return NextResponse.json(
+        { error: 'ANON_SIGNIN_FAILED' },
+        { status: 500, headers: baseHeaders }
+      );
     }
-  });
-  if (error || !data?.user) {
-    console.error('Anonymous sign-in failed:', error);
-    return NextResponse.json(
-      { error: 'ANON_SIGNIN_FAILED' },
-      { status: 500, headers: baseHeaders }
-    );
+  } else {
+    // Production: Attempt anonymous sign-in with real Turnstile token
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: {
+        captchaToken: turnstileToken // Pass Turnstile token to Supabase
+      }
+    });
+    if (error || !data?.user) {
+      // console.error('Anonymous sign-in failed:', error);
+      return NextResponse.json(
+        { error: 'ANON_SIGNIN_FAILED' },
+        { status: 500, headers: baseHeaders }
+      );
+    }
   }
 
   return NextResponse.json(

@@ -50,6 +50,10 @@ function SignInForm() {
     e.preventDefault();
     setAnonError(null);
     setAnonLoading(true);
+    
+    // Debug logging
+    // console.log('Anonymous sign-in attempt with token:', anonymousTurnstileToken ? 'Present' : 'Missing');
+    
     try {
       const res = await fetch('/api/auth/anonymous', {
         method: 'POST',

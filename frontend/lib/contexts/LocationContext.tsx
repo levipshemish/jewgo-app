@@ -63,13 +63,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           if (age < maxAge) {
             setUserLocation(data.userLocation);
             if (process.env.NODE_ENV === 'development') {
-              console.log('📍 LocationContext: Loaded valid location data from localStorage', data.userLocation);
+              // console.log('📍 LocationContext: Loaded valid location data from localStorage', data.userLocation);
             }
           } else {
             // Location is too old, clear it
             localStorage.removeItem(LOCATION_STORAGE_KEY);
             if (process.env.NODE_ENV === 'development') {
-              console.log(`📍 LocationContext: Cleared expired location data (age: ${  Math.floor(age / (1000 * 60))  } minutes)`);
+              // console.log(`📍 LocationContext: Cleared expired location data (age: ${  Math.floor(age / (1000 * 60))  } minutes)`);
             }
           }
         }
@@ -105,22 +105,22 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
         if (process.env.NODE_ENV === 'development') {
-          console.log('📍 LocationContext: Saved location data to localStorage', locationData);
+          // console.log('📍 LocationContext: Saved location data to localStorage', locationData);
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.error('❌ LocationContext: Failed to save location data:', error);
+          // console.error('❌ LocationContext: Failed to save location data:', error);
         }
       }
     }
   }, [hasInitialized, userLocation, permissionStatus]);
 
   const requestLocation = useCallback(() => {
-    console.log('📍 LocationContext: requestLocation called', {
-      isLoading,
-      lastRequestTime,
-      timeSinceLastRequest: Date.now() - lastRequestTime
-    });
+    // console.log('📍 LocationContext: requestLocation called', {
+    //   isLoading,
+    //   lastRequestTime,
+    //   timeSinceLastRequest: Date.now() - lastRequestTime
+    // });
     
     // Prevent multiple simultaneous requests
     const now = Date.now();
@@ -128,7 +128,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const minRequestInterval = 5000; // Reduced to 5 seconds for testing
     
     if (isLoading || timeSinceLastRequest < minRequestInterval) {
-      console.log('📍 LocationContext: Request blocked', { isLoading, timeSinceLastRequest });
+      // console.log('📍 LocationContext: Request blocked', { isLoading, timeSinceLastRequest });
       return;
     }
     
@@ -144,7 +144,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('📍 LocationContext: Geolocation success', position);
+        // console.log('📍 LocationContext: Geolocation success', position);
         setIsLoading(false);
         setPermissionStatus('granted');
         const location: UserLocation = {
@@ -153,12 +153,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           timestamp: Date.now(),
         };
         if (process.env.NODE_ENV === 'development') {
-          console.log('📍 LocationContext: Successfully obtained location', location);
+          // console.log('📍 LocationContext: Successfully obtained location', location);
         }
         setUserLocation(location);
       },
       (error: GeolocationPositionError) => {
-        console.log('📍 LocationContext: Geolocation error', error);
+        // console.log('📍 LocationContext: Geolocation error', error);
         setIsLoading(false);
         let errorMessage = 'Unable to get your location';
         

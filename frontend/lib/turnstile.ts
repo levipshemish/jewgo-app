@@ -15,15 +15,20 @@ export async function verifyTurnstile(responseToken: string) {
     throw new Error("TURNSTILE_SECRET_KEY missing");
   }
 
-  // In development with test tokens, always pass verification
-  if (process.env.NODE_ENV === 'development' && 
-      (responseToken === 'XXXX.DUMMY.TOKEN.XXXX' || secret === '1x0000000000000000000000000000000AA')) {
-    return {
-      success: true,
-      challenge_ts: new Date().toISOString(),
-      hostname: 'localhost',
-      action: 'test'
-    };
+  // In development with test key, simulate successful verification
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Turnstile verification - token:', responseToken, 'secret:', secret);
+    if (responseToken === 'XXXX.DUMMY.TOKEN.XXXX' || 
+        secret === '1x0000000000000000000000000000000AA' ||
+        responseToken?.startsWith('XXXX.DUMMY.TOKEN')) {
+      console.log('Using test token verification');
+      return {
+        success: true,
+        challenge_ts: new Date().toISOString(),
+        hostname: 'localhost',
+        action: 'test'
+      };
+    }
   }
 
   // Always verify Turnstile tokens

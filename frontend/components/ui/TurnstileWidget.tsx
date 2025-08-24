@@ -55,13 +55,13 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const isDevelopment = process.env.NODE_ENV === "development";
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   
-  // Use test key for development on localhost
+  // Force visible test key for localhost development to ensure visible captcha
   const turnstileSiteKey = (isDevelopment && isLocalhost) 
-    ? "1x00000000000000000000AA" 
+    ? "1x00000000000000000000AA"  // This test key always shows visible challenges
     : (siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA");
   
   const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
-  const isProductionKeyInDev = !isTestKey && isDevelopment && isLocalhost;
+  const isProductionKeyInDev = !isTestKey && isDevelopment;
 
   // Always call useEffect hooks in the same order
   useEffect(() => {
@@ -115,11 +115,9 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
       return;
     }
 
-    // Check for production key in development
-    if (isProductionKeyInDev && isLocalhost) {
-      setError('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
-      onError?.('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
-      return;
+    // Since Turnstile is configured for localhost, allow it to work
+    if (process.env.NODE_ENV === 'development') {
+      // console.log('Turnstile widget rendering with key:', turnstileSiteKey);
     }
 
     try {
@@ -131,6 +129,7 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
         sitekey: turnstileSiteKey,
         action,
         callback: (token: string) => {
+          // console.log('Turnstile completed with token:', `${token.substring(0, 20)}...`);
           setCurrentToken(token);
           onLoading?.(false);
           onVerify(token);
@@ -140,6 +139,7 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
           onExpired?.();
         },
         'error-callback': (error: string) => {
+          // console.error('Turnstile error:', error);
           setCurrentToken('');
           onLoading?.(false);
           
@@ -156,9 +156,8 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
         theme,
         size,
         tabindex: 0,
-        'refresh-expired': 'auto',
-        'auto-reset': true,
-        'execution': 'execute'
+        'refresh-expired': 'auto'
+        // Remove 'auto-reset' and 'execution' as they may interfere with visible challenges
       };
 
       const id = window.turnstile.render(containerRef.current, config);
@@ -194,17 +193,22 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
         className="flex justify-center w-full"
         data-testid="turnstile-widget"
       />
-      {/* Only show loading/status messages in development */}
+      {/* Show helpful messages for development */}
       {process.env.NODE_ENV === 'development' && (
         <>
-          {!isRendered && isLoaded && !isProductionKeyInDev && (
+          {!isRendered && isLoaded && (
             <div className="text-center text-sm text-gray-400 mt-2">
               Loading security check...
             </div>
           )}
-          {isRendered && (
+          {isRendered && !currentToken && (
+            <div className="text-center text-sm text-blue-400 mt-2">
+              ⚡ Complete the captcha above to continue
+            </div>
+          )}
+          {isRendered && currentToken && (
             <div className="text-center text-sm text-green-400 mt-2">
-              ✅ Turnstile widget ready (ID: {widgetId})
+              ✅ Captcha completed! You can now sign in.
             </div>
           )}
         </>
