@@ -494,13 +494,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
           </div>
         )}
 
-        {/* Loading state while checking authentication */}
-        {isCheckingAuth && (
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-jewgo-400 mx-auto mb-4"></div>
-            <p className="text-neutral-400 text-sm">Checking authentication...</p>
-          </div>
-        )}
+
         
         <form onSubmit={onEmailSignIn} className="space-y-6">
           <div className="space-y-4">
@@ -647,7 +641,6 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
             </button>
           </div>
         </form>
-
         <div className="text-center">
           <button
             type="button"
