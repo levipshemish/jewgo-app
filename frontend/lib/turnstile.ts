@@ -17,17 +17,22 @@ export async function verifyTurnstile(responseToken: string) {
 
   // In development with test key, simulate successful verification
   if (process.env.NODE_ENV === 'development') {
-    console.log('Turnstile verification - token:', responseToken, 'secret:', secret);
+    // console.log('Turnstile verification - token:', responseToken, 'secret:', secret);
+    // console.log('Token check - equals XXXX.DUMMY.TOKEN.XXXX?', responseToken === 'XXXX.DUMMY.TOKEN.XXXX');
+    // console.log('Token check - starts with XXXX.DUMMY.TOKEN?', responseToken?.startsWith('XXXX.DUMMY.TOKEN'));
+    
     if (responseToken === 'XXXX.DUMMY.TOKEN.XXXX' || 
         secret === '1x0000000000000000000000000000000AA' ||
         responseToken?.startsWith('XXXX.DUMMY.TOKEN')) {
-      console.log('Using test token verification');
+      // console.log('✅ Using test token verification - returning success');
       return {
         success: true,
         challenge_ts: new Date().toISOString(),
         hostname: 'localhost',
         action: 'test'
       };
+    } else {
+      // console.log('❌ Test token conditions not met');
     }
   }
 
@@ -39,11 +44,11 @@ export async function verifyTurnstile(responseToken: string) {
   // Turnstile verification details logged in development
   if (process.env.NODE_ENV === 'development') {
     // eslint-disable-next-line no-console
-    console.log("Turnstile verification:", {
-      tokenLength: responseToken.length,
-      hasSecret: !!secret,
-      nodeEnv: process.env.NODE_ENV
-    });
+    // console.log("Turnstile verification:", {
+    //   tokenLength: responseToken.length,
+    //   hasSecret: !!secret,
+    //   nodeEnv: process.env.NODE_ENV
+    // });
   }
 
   const headersList = await headers();

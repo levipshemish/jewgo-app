@@ -39,21 +39,21 @@ export default function TestUnifiedCardSimple() {
           data={testData}
           variant="default"
           showStarInBadge={true}
-          onCardClick={() => console.log('Card clicked')}
+          onCardClick={() => {/* console.log('Card clicked') */}}
         />
         
         <UnifiedCard
           data={{...testData, id: 'test-2', title: 'Another Restaurant'}}
           variant="default"
           showStarInBadge={true}
-          onCardClick={() => console.log('Card clicked')}
+          onCardClick={() => {/* console.log('Card clicked') */}}
         />
         
         <UnifiedCard
           data={{...testData, id: 'test-3', title: 'Third Restaurant'}}
           variant="default"
           showStarInBadge={true}
-          onCardClick={() => console.log('Card clicked')}
+          onCardClick={() => {/* console.log('Card clicked') */}}
         />
       </div>
       

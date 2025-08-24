@@ -92,7 +92,7 @@ export default function InfiniteScrollTest() {
         {/* End of content */}
         {!hasMoreData && items.length > 0 && (
           <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-            <p>You've reached the end of the content!</p>
+            <p>You&apos;ve reached the end of the content!</p>
           </div>
         )}
         

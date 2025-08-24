@@ -9,19 +9,19 @@ export default function TestTurnstileDebug() {
   const [error, setError] = useState<string>('');
 
   const handleVerify = (token: string) => {
-    console.log('Turnstile verified with token:', token);
+    // console.log('Turnstile verified with token:', token);
     setToken(token);
     setError('');
   };
 
   const handleError = (error: string) => {
-    console.log('Turnstile error:', error);
+    // console.log('Turnstile error:', error);
     setError(error);
     setToken('');
   };
 
   const handleExpired = () => {
-    console.log('Turnstile expired');
+    // console.log('Turnstile expired');
     setToken('');
     setError('');
   };
@@ -79,7 +79,7 @@ export default function TestTurnstileDebug() {
               <button
                 onClick={() => {
                   const currentToken = turnstileRef.current?.getToken();
-                  console.log('Current token from ref:', currentToken);
+                  // console.log('Current token from ref:', currentToken);
                   alert(`Current token: ${currentToken || 'NO_TOKEN'}`);
                 }}
                 className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded"

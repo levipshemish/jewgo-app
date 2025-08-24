@@ -51,12 +51,12 @@ export default function TestUnifiedCardPage() {
     }
   ];
 
-  const handleCardClick = (data: any) => {
-    console.log('Card clicked:', data);
+  const handleCardClick = (_data: any) => {
+    // console.log('Card clicked:', data);
   };
 
-  const handleLikeToggle = (id: string, isLiked: boolean) => {
-    console.log('Like toggled:', id, isLiked);
+  const handleLikeToggle = (_id: string, _isLiked: boolean) => {
+    // console.log('Like toggled:', id, isLiked);
   };
 
 
@@ -74,7 +74,7 @@ export default function TestUnifiedCardPage() {
           </h2>
           <p className="text-gray-600 mb-4">
             This test verifies that subtitle (left) and additional text (right) are properly positioned 
-            and don't move when one is missing. Also checks that borders don't cover text content.
+            and don&apos;t move when one is missing. Also checks that borders don&apos;t cover text content.
           </p>
         </div>
 

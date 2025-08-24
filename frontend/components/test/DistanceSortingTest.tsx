@@ -216,9 +216,9 @@ export default function DistanceSortingTest() {
       <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#e9ecef', borderRadius: '8px' }}>
         <h3>Test Instructions</h3>
         <ol>
-          <li>Click "Enable Location" to get your current location</li>
+          <li>Click &quot;Enable Location&quot; to get your current location</li>
           <li>Watch the restaurants reorder by distance from your location</li>
-          <li>Click "Reset Location" to return to the original order</li>
+          <li>Click &quot;Reset Location&quot; to return to the original order</li>
           <li>Check the browser console for debugging information</li>
         </ol>
       </div>

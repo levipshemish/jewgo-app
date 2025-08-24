@@ -15,7 +15,7 @@ export default function DebugRoutingPage() {
 
   const testRedirect = (path: string) => {
     setRedirectTest(`Testing redirect to: ${path}`);
-    console.log(`Debug: Testing redirect to ${path}`);
+    // console.log(`Debug: Testing redirect to ${path}`);
     
     setTimeout(() => {
       router.push(path);
@@ -24,7 +24,7 @@ export default function DebugRoutingPage() {
 
   const testReplace = (path: string) => {
     setRedirectTest(`Testing replace to: ${path}`);
-    console.log(`Debug: Testing replace to ${path}`);
+    // console.log(`Debug: Testing replace to ${path}`);
     
     setTimeout(() => {
       router.replace(path);
@@ -33,7 +33,7 @@ export default function DebugRoutingPage() {
 
   const testWindowLocation = (path: string) => {
     setRedirectTest(`Testing window.location to: ${path}`);
-    console.log(`Debug: Testing window.location to ${path}`);
+    // console.log(`Debug: Testing window.location to ${path}`);
     
     setTimeout(() => {
       window.location.href = path;
@@ -72,19 +72,19 @@ export default function DebugRoutingPage() {
                 onClick={() => testRedirect('/')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
-                router.push('/')
+                router.push(&apos;/&apos;)
               </button>
               <button
                 onClick={() => testRedirect('/profile')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
-                router.push('/profile')
+                router.push(&apos;/profile&apos;)
               </button>
               <button
                 onClick={() => testRedirect('/profile/settings')}
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
-                router.push('/profile/settings')
+                router.push(&apos;/profile/settings&apos;)
               </button>
             </div>
           </div>
@@ -96,19 +96,19 @@ export default function DebugRoutingPage() {
                 onClick={() => testReplace('/')}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
-                router.replace('/')
+                router.replace(&apos;/&apos;)
               </button>
               <button
                 onClick={() => testReplace('/profile')}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
-                router.replace('/profile')
+                router.replace(&apos;/profile&apos;)
               </button>
               <button
                 onClick={() => testReplace('/profile/settings')}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
               >
-                router.replace('/profile/settings')
+                router.replace(&apos;/profile/settings&apos;)
               </button>
             </div>
           </div>
@@ -120,19 +120,19 @@ export default function DebugRoutingPage() {
                 onClick={() => testWindowLocation('/')}
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
               >
-                window.location.href = '/'
+                window.location.href = &apos;/&apos;
               </button>
               <button
                 onClick={() => testWindowLocation('/profile')}
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
               >
-                window.location.href = '/profile'
+                window.location.href = &apos;/profile&apos;
               </button>
               <button
                 onClick={() => testWindowLocation('/profile/settings')}
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
               >
-                window.location.href = '/profile/settings'
+                window.location.href = &apos;/profile/settings&apos;
               </button>
             </div>
           </div>

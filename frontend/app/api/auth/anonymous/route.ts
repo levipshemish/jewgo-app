@@ -124,33 +124,45 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  // Handle test tokens in development - skip Supabase captcha for test tokens
+  // Handle test tokens in development - return success immediately for test tokens
   if (process.env.NODE_ENV === 'development' && turnstileToken === 'XXXX.DUMMY.TOKEN.XXXX') {
-    // console.log('Development mode: using test token, skipping Supabase captcha verification');
+    console.log('🧪 Development mode: test token detected, returning mock success');
     
-    // Attempt anonymous sign-in without captcha token for test environment
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error || !data?.user) {
-      // console.error('Anonymous sign-in failed:', error);
-      return NextResponse.json(
-        { error: 'ANON_SIGNIN_FAILED' },
-        { status: 500, headers: baseHeaders }
-      );
-    }
-  } else {
-    // Production: Attempt anonymous sign-in with real Turnstile token
+    // For development with test tokens, we'll simulate a successful anonymous sign-in
+    // without actually calling Supabase, since Supabase rejects test tokens
+    return NextResponse.json(
+      { 
+        ok: true, 
+        dev_mode: true,
+        message: 'Development test token accepted - Supabase captcha bypassed'
+      },
+      { status: 200, headers: baseHeaders }
+    );
+  }
+
+  // For real Turnstile tokens (production or development with real captcha completion)
+  try {
     const { data, error } = await supabase.auth.signInAnonymously({
       options: {
         captchaToken: turnstileToken // Pass Turnstile token to Supabase
       }
     });
+    
     if (error || !data?.user) {
-      // console.error('Anonymous sign-in failed:', error);
+      console.error('Anonymous sign-in failed:', error);
       return NextResponse.json(
-        { error: 'ANON_SIGNIN_FAILED' },
+        { error: 'ANON_SIGNIN_FAILED', details: error?.message },
         { status: 500, headers: baseHeaders }
       );
     }
+    
+    console.log('✅ Anonymous sign-in succeeded');
+  } catch (unexpectedError) {
+    console.error('Unexpected error during anonymous sign-in:', unexpectedError);
+    return NextResponse.json(
+      { error: 'UNEXPECTED_ERROR' },
+      { status: 500, headers: baseHeaders }
+    );
   }
 
   return NextResponse.json(
