@@ -26,6 +26,8 @@ class FavoritesManager {
   private static instance: FavoritesManager;
   private favorites: Map<string, FavoriteRestaurant> = new Map();
   private listeners: Set<(favorites: FavoriteRestaurant[]) => void> = new Set();
+  private saveTimeout: NodeJS.Timeout | null = null;
+  private pendingSave = false;
 
   private constructor() {
     this.loadFromStorage();
@@ -60,8 +62,8 @@ class FavoritesManager {
     }
   }
 
-  // Save favorites to localStorage
-  private saveToStorage(): void {
+  // Save favorites to localStorage immediately
+  private saveToStorageSync(): void {
     try {
       // Check if we're in a browser environment
       if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
@@ -74,9 +76,28 @@ class FavoritesManager {
         version: '1.0'
       };
       localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(data));
+      this.pendingSave = false;
     } catch (_error) {
       // // console.error('Error saving favorites to storage:', error);
     }
+  }
+
+  // Debounced save to localStorage to prevent excessive writes
+  private saveToStorage(): void {
+    if (this.pendingSave) return;
+    
+    this.pendingSave = true;
+    
+    // Clear existing timeout
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+    
+    // Debounce save operations by 100ms
+    this.saveTimeout = setTimeout(() => {
+      this.saveToStorageSync();
+      this.saveTimeout = null;
+    }, 100);
   }
 
   // Notify listeners of changes
@@ -91,19 +112,27 @@ class FavoritesManager {
     });
   }
 
-  // Add a restaurant to favorites
-  addFavorite(restaurant: Restaurant, notes?: string, tags?: string[]): boolean {
+  // Add a restaurant to favorites (optimized for performance)
+  addFavorite(restaurant: Restaurant | { id: string | number; name: string }, notes?: string, tags?: string[]): boolean {
     try {
+      const id = restaurant.id.toString();
+      const name = restaurant.name;
+      
+      // Skip if already exists
+      if (this.favorites.has(id)) {
+        return true;
+      }
+
       const favorite: FavoriteRestaurant = {
-        id: restaurant.id.toString(),
-        name: restaurant.name,
+        id,
+        name,
         addedAt: new Date().toISOString(),
         visitCount: 0,
         notes,
         tags: tags || []
       };
 
-      this.favorites.set(restaurant.id.toString(), favorite);
+      this.favorites.set(id, favorite);
       this.saveToStorage();
       this.notifyListeners();
       return true;
@@ -113,9 +142,14 @@ class FavoritesManager {
     }
   }
 
-  // Remove a restaurant from favorites
+  // Remove a restaurant from favorites (optimized for performance)
   removeFavorite(restaurantId: string): boolean {
     try {
+      // Skip if doesn't exist
+      if (!this.favorites.has(restaurantId)) {
+        return true;
+      }
+      
       const removed = this.favorites.delete(restaurantId);
       if (removed) {
         this.saveToStorage();
@@ -131,6 +165,17 @@ class FavoritesManager {
   // Check if a restaurant is favorited
   isFavorite(restaurantId: string): boolean {
     return this.favorites.has(restaurantId);
+  }
+
+  // Toggle favorite status (optimized single operation)
+  toggleFavorite(restaurant: Restaurant | { id: string | number; name: string }): boolean {
+    const id = restaurant.id.toString();
+    
+    if (this.favorites.has(id)) {
+      return this.removeFavorite(id);
+    } else {
+      return this.addFavorite(restaurant);
+    }
   }
 
   // Get all favorites
@@ -356,6 +401,7 @@ export const useFavorites = () => {
     isLoading,
     addFavorite: favoritesManager.addFavorite.bind(favoritesManager),
     removeFavorite: favoritesManager.removeFavorite.bind(favoritesManager),
+    toggleFavorite: favoritesManager.toggleFavorite.bind(favoritesManager),
     isFavorite: favoritesManager.isFavorite.bind(favoritesManager),
     updateNotes: favoritesManager.updateNotes.bind(favoritesManager),
     addTags: favoritesManager.addTags.bind(favoritesManager),
@@ -372,11 +418,7 @@ export const useFavorites = () => {
 
 // Utility functions
 export const toggleFavorite = (restaurant: Restaurant): boolean => {
-  if (favoritesManager.isFavorite(restaurant.id.toString())) {
-    return favoritesManager.removeFavorite(restaurant.id.toString());
-  } else {
-    return favoritesManager.addFavorite(restaurant);
-  }
+  return favoritesManager.toggleFavorite(restaurant);
 };
 
 export const getFavoriteCount = (): number => {

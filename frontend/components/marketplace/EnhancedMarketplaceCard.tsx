@@ -50,6 +50,8 @@ export default function EnhancedMarketplaceCard({
     e.stopPropagation()
     const newLikeState = !isLiked
     setIsLiked(newLikeState)
+    
+    // Call the parent's onLike handler with optimistic update
     if (onLike) {
       onLike(listing)
     }

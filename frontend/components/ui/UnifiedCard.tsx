@@ -62,23 +62,14 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   variant = 'default',
   showStarInBadge = false // Default to false for timestamps
 }) => {
-  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   const { isScrolling } = useScrollDetection({ debounceMs: 100, enableBodyClass: false });
   
   // State management
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-
-
-
-
-
-
-
-
 
   // Derive liked status from favorites for consistent UI state
   const liked = useMemo(() => {
@@ -118,40 +109,24 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   // Handlers
   const handleLikeToggle = useCallback(() => {
     try {
-      setIsAnimating(true);
-      const newIsLiked = !liked;
+      // Optimistic UI update with minimal data
+      const minimalRestaurant = {
+        id: data.id,
+        name: data.title
+      };
       
-      if (newIsLiked) {
-        const minimalRestaurant = {
-          id: data.id.toString(), // Ensure ID is string
-          name: data.title,
-          address: '',
-          city: data.city || '',
-          state: '',
-          zip_code: '',
-          phone_number: '',
-          kosher_category: data.kosherCategory || 'unknown' as any,
-          certifying_agency: '',
-          listing_type: 'restaurant',
-          status: 'active' as any,
-          hours: {} as any,
-          category: { name: 'restaurant' } as any
-        };
-        addFavorite(minimalRestaurant);
-        setAnnouncement(`Added ${data.title} to favorites`);
-      } else {
-        removeFavorite(data.id.toString()); // Ensure ID is string
-        setAnnouncement(`Removed ${data.title} from favorites`);
+      const newIsLiked = !liked;
+      const success = toggleFavorite(minimalRestaurant);
+      
+      if (success) {
+        setAnnouncement(newIsLiked ? `Added ${data.title} to favorites` : `Removed ${data.title} from favorites`);
+        onLikeToggle?.(data.id.toString(), newIsLiked);
       }
       
-      onLikeToggle?.(data.id.toString(), newIsLiked); // Ensure ID is string
-      
-      // Reset animation state
-      setTimeout(() => setIsAnimating(false), 200);
-    } catch {
-      setIsAnimating(false);
+    } catch (error) {
+      // console.error('Error toggling favorite:', error);
     }
-  }, [liked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
+  }, [liked, data.id, data.title, toggleFavorite, onLikeToggle]);
 
   const handleCardClick = handleImmediateTouch(() => {
     if (onCardClick) {

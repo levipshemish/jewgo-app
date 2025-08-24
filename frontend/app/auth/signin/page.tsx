@@ -16,7 +16,7 @@ function SignInForm() {
   const [anonLoading, setAnonLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/eatery";
+  const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
 
   // Handle successful authentication
   useEffect(() => {

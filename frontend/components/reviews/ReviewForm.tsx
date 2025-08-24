@@ -217,7 +217,7 @@ export default function ReviewForm({
           </p>
           <div className="flex items-center justify-center gap-3">
             <button
-              onClick={() => router.push(`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`)}
+              onClick={() => router.push(`/auth/signin?redirectTo=${encodeURIComponent(callbackUrl)}`)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Sign In

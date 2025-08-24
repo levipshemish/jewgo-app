@@ -87,7 +87,7 @@ export default function InteractiveRestaurantMap({
         // Update data attribute
         button.setAttribute('data-favorite', newIsFavorite ? 'true' : 'false');
         
-        // Update button classes and SVG
+        // Update button classes and SVG with better targeting
         if (newIsFavorite) {
           // Update button styles for favorite state
           button.className = button.className.replace(
@@ -96,10 +96,10 @@ export default function InteractiveRestaurantMap({
           );
           button.setAttribute('title', 'Remove from favorites');
           
-          // Make heart filled
-          const svg = button.querySelector('svg');
+          // Make heart filled - target the SVG more specifically
+          const svg = button.querySelector('svg.heart-icon') || button.querySelector('svg');
           if (svg) {
-            svg.classList.add('fill-current');
+            svg.style.setProperty('fill', 'currentColor', 'important');
             svg.setAttribute('fill', 'currentColor');
           }
         } else {
@@ -110,10 +110,10 @@ export default function InteractiveRestaurantMap({
           );
           button.setAttribute('title', 'Add to favorites');
           
-          // Make heart outlined
-          const svg = button.querySelector('svg');
+          // Make heart outlined - target the SVG more specifically
+          const svg = button.querySelector('svg.heart-icon') || button.querySelector('svg');
           if (svg) {
-            svg.classList.remove('fill-current');
+            svg.style.setProperty('fill', 'none', 'important');
             svg.setAttribute('fill', 'none');
           }
         }
@@ -1083,29 +1083,50 @@ export default function InteractiveRestaurantMap({
 
     const placeholder = '/images/default-restaurant.webp';
     return `
-      <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg" data-popup-version="v3" style="position: relative; overflow: visible;">
-        <!-- Heart/Favorite Button - FIXED LEFT CORNER -->
+      <style>
+        .heart-btn {
+          position: absolute !important;
+          top: 8px !important;
+          left: 8px !important;
+          width: 32px !important;
+          height: 32px !important;
+          z-index: 9999 !important;
+        }
+      </style>
+      <div class="p-4 max-w-sm bg-white rounded-xl shadow-lg" data-popup-version="v4" style="position: relative !important; overflow: visible !important; padding-top: 48px !important;">
+        <!-- Heart/Favorite Button - SUPER FIXED LEFT CORNER -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
-                class="rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm ${
+                class="heart-btn ${
                   isFavorite 
                     ? 'bg-red-100 text-red-500 hover:bg-red-200' 
                     : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
-                }"
+                } rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm"
                 style="
                   position: absolute !important; 
-                  top: 12px !important; 
-                  left: 12px !important; 
+                  top: 8px !important; 
+                  left: 8px !important; 
                   width: 32px !important; 
                   height: 32px !important;
-                  z-index: 999 !important;
+                  z-index: 9999 !important;
                   margin: 0 !important;
+                  padding: 0 !important;
                   border: none !important;
                   transform: none !important;
                   flex-shrink: 0 !important;
+                  display: flex !important;
+                  justify-content: center !important;
+                  align-items: center !important;
+                  box-sizing: border-box !important;
+                  min-width: 32px !important;
+                  min-height: 32px !important;
+                  max-width: 32px !important;
+                  max-height: 32px !important;
+                  float: none !important;
+                  clear: none !important;
                 "
                 data-favorite="${isFavorite ? 'true' : 'false'}"
                 title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-          <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
+          <svg class="heart-icon" style="width: 16px !important; height: 16px !important; flex-shrink: 0 !important;" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>

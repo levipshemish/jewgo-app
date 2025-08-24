@@ -337,10 +337,7 @@ export function useMarkerManagement({
         });
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log('createMarker: Successfully created marker for:', restaurant.name, 'at', position.lat(), position.lng());
-      }
+
 
       // Store metadata
       (marker as any)._contentVersion = getRestaurantKey(restaurant);
