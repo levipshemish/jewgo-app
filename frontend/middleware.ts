@@ -110,7 +110,10 @@ export async function middleware(request: NextRequest) {
     // Check if user is anonymous using shared extractor
     const isAnonymous = extractIsAnonymous(user);
     if (isAnonymous) {
-      // TEMPORARY: Allow anonymous users to access all pages
+      // Allow only specific pages for anonymous guest users
+      if (!isAnonymousAllowedPath(path)) {
+        return redirectToSignin(request, response);
+      }
       return response;
     }
 
@@ -177,7 +180,12 @@ function isProtectedPath(pathname: string): boolean {
 /**
  * Allow list for routes that anonymous users can access
  */
-function isAnonymousAllowedPath(_pathname: string): boolean {
-  // Deprecated: anonymous users are allowed everywhere for now
-  return true;
+function isAnonymousAllowedPath(pathname: string): boolean {
+  // Guest users can access only the following app sections
+  const allowedPrefixes = [
+    '/eatery/', '/shuls/', '/stores/', '/mikva/', '/live-map/',
+    '/favorites/', '/profile/'
+  ];
+  const allowedExact = ['/eatery', '/shuls', '/stores', '/mikva', '/live-map', '/favorites', '/profile'];
+  return allowedPrefixes.some(p => pathname.startsWith(p)) || allowedExact.includes(pathname);
 }

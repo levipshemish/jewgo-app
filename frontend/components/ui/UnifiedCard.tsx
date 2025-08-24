@@ -341,11 +341,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Image Container */}
       <div className="relative w-full">
-        <div className={cn(
-          "relative w-full rounded-[20px] overflow-hidden bg-transparent transition-transform duration-300 group-hover:scale-105",
-          "border-0 shadow-none", // Ensure no border or shadow
-          variantStyles.imageClass
-        )}>
+        <div className="relative w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-transparent border-0 shadow-none">
           {/* Loading Placeholder */}
           {imageLoading && (
             <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center rounded-[20px]">
@@ -362,7 +358,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               className={cn(
                 "object-cover transition-all duration-300 rounded-[20px]",
                 imageLoading ? 'opacity-0' : 'opacity-100',
-                "group-hover:scale-110"
+                "group-hover:scale-105"
               )}
               onLoad={() => setImageLoading(false)}
               onError={() => {
@@ -429,19 +425,20 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="pt-2 flex flex-col bg-transparent"
+        className="unified-card-content pt-2 flex flex-col bg-transparent"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
+        <div className="flex justify-between items-start gap-2 mb-1 min-h-[40px]">
           <h3 
             className={cn(
               variantStyles.titleClass,
-              "text-gray-800 m-0 flex-1 truncate min-w-0 transition-colors duration-200 group-hover:text-gray-900"
+              "text-gray-800 m-0 flex-1 min-w-0 transition-colors duration-200 group-hover:text-gray-900 line-clamp-2 leading-tight"
             )}
+            style={{ minHeight: '32px' }}
             aria-label={`Title: ${cardData.title}`}
           >
             {cardData.title}
@@ -467,23 +464,22 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center min-h-[16px] relative">
+        <div className="flex justify-between items-center h-[20px] relative">
           {/* Subtitle - Locked to left */}
           <div className="flex-1 min-w-0">
-            {cardData.subtitle && (
-              <p 
-                className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
-                style={{ 
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                aria-label={`Price range: ${cardData.subtitle}`}
-              >
-                {cardData.subtitle}
-              </p>
-            )}
+            <p 
+              className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
+              style={{ 
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                opacity: cardData.subtitle ? 1 : 0
+              }}
+              aria-label={cardData.subtitle ? `Price range: ${cardData.subtitle}` : ''}
+            >
+              {cardData.subtitle || 'Placeholder'}
+            </p>
           </div>
           
           {/* Spacer to ensure proper separation */}
@@ -491,20 +487,19 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           
           {/* Additional Text - Locked to right */}
           <div className="flex-shrink-0">
-            {cardData.additionalText && (
-              <p 
-                className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
-                style={{ 
-                  width: '60px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                aria-label={`Additional info: ${cardData.additionalText}`}
-              >
-                {cardData.additionalText}
-              </p>
-            )}
+            <p 
+              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
+              style={{ 
+                width: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                opacity: cardData.additionalText ? 1 : 0
+              }}
+              aria-label={cardData.additionalText ? `Additional info: ${cardData.additionalText}` : ''}
+            >
+              {cardData.additionalText || 'Placeholder'}
+            </p>
           </div>
         </div>
       </div>
@@ -516,8 +511,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return (
       <div
         className={cn(
-          'relative bg-transparent cursor-pointer group unified-card',
-          'flex flex-col',
+                  'relative bg-transparent cursor-pointer group unified-card',
+        'h-full flex flex-col',
           'border-0',
           'shadow-none',
           variantStyles.cardClass,
@@ -563,7 +558,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       className={cn(
         'relative bg-transparent cursor-pointer group unified-card',
         'transition-all duration-200 ease-out',
-        'flex flex-col',
+        'h-full flex flex-col',
         'border-0',
         'shadow-none',
         variantStyles.cardClass,

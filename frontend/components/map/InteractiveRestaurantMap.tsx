@@ -7,6 +7,7 @@ import { Restaurant } from '@/lib/types/restaurant';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { throttle, createBatchProcessor, performanceMonitor, safeSetTimeout } from '@/lib/utils/performanceOptimization';
 import { safeFilter } from '@/lib/utils/validation';
+import { favoritesManager } from '@/lib/utils/favorites';
 
 import { useMarkerManagement } from './hooks/useMarkerManagement';
 import { MapPerformanceMonitor } from '../monitoring/MapPerformanceMonitor';
@@ -66,6 +67,61 @@ export default function InteractiveRestaurantMap({
   // Add info window cache for performance
   const infoWindowCache = useRef<Map<number, { content: string; timestamp: number }>>(new Map());
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
+  // Set up global toggle favorite function for map popups
+  useEffect(() => {
+    (window as any).toggleMapFavorite = (restaurantId: string, buttonElement: HTMLElement) => {
+      const restaurant = restaurants.find(r => r.id.toString() === restaurantId);
+      if (!restaurant) return;
+      
+      const isCurrentlyFavorite = favoritesManager.isFavorite(restaurantId);
+      const success = isCurrentlyFavorite 
+        ? favoritesManager.removeFavorite(restaurantId)
+        : favoritesManager.addFavorite(restaurant);
+      
+      if (success) {
+        // Update button appearance immediately
+        const newIsFavorite = !isCurrentlyFavorite;
+        const button = buttonElement;
+        
+        // Update button classes
+        if (newIsFavorite) {
+          button.className = button.className.replace(
+            'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500',
+            'bg-red-100 text-red-500 hover:bg-red-200'
+          );
+          button.setAttribute('title', 'Remove from favorites');
+          // Make heart filled
+          const svg = button.querySelector('svg');
+          if (svg) {
+            svg.classList.add('fill-current');
+          }
+        } else {
+          button.className = button.className.replace(
+            'bg-red-100 text-red-500 hover:bg-red-200',
+            'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
+          );
+          button.setAttribute('title', 'Add to favorites');
+          // Make heart outlined
+          const svg = button.querySelector('svg');
+          if (svg) {
+            svg.classList.remove('fill-current');
+          }
+        }
+        
+        // Add a little animation effect
+        button.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          button.style.transform = 'scale(1)';
+        }, 150);
+      }
+    };
+    
+    // Cleanup
+    return () => {
+      delete (window as any).toggleMapFavorite;
+    };
+  }, [restaurants]);
 
   // Filter restaurants with valid coordinates and addresses - memoized for performance
   const restaurantsWithCoords = useMemo(() => {
@@ -271,8 +327,16 @@ export default function InteractiveRestaurantMap({
       
       // Start batch processing
       if (inView.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('debouncedUpdateMarkers: Processing', inView.length, 'restaurants in view');
+        }
         batchProcessor();
       } else {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('debouncedUpdateMarkers: No restaurants in view');
+        }
         markersRef.current = newMarkers;
         currentRenderedIdsRef.current = new Set();
         applyClustering(map);
@@ -306,11 +370,26 @@ export default function InteractiveRestaurantMap({
     };
   }, []);
 
-  // Debug logging (disabled to satisfy no-console rule)
-  // if (process.env.NODE_ENV === 'development') {
-  //   // eslint-disable-next-line no-console
-
-  // }
+  // Debug logging for restaurant data
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('InteractiveRestaurantMap: Restaurant filtering:', {
+      totalRestaurants: restaurants.length,
+      restaurantsWithCoords: restaurantsWithCoords.length,
+      sampleRestaurant: restaurantsWithCoords[0] ? {
+        id: restaurantsWithCoords[0].id,
+        name: restaurantsWithCoords[0].name,
+        lat: restaurantsWithCoords[0].latitude,
+        lng: restaurantsWithCoords[0].longitude
+      } : null,
+      filteredSample: restaurantsWithCoords.slice(0, 3).map(r => ({ 
+        id: r.id, 
+        name: r.name, 
+        lat: r.latitude, 
+        lng: r.longitude 
+      }))
+    });
+  }
 
   // Load Google Maps API via unified loader
   useEffect(() => {
@@ -355,6 +434,17 @@ export default function InteractiveRestaurantMap({
         }
         setMapError('Google Maps API not fully loaded');
         return;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('InteractiveRestaurantMap: Google Maps API loaded. Available libraries:', {
+          hasMarkerLibrary: !!(window.google.maps.marker),
+          hasAdvancedMarker: !!(window.google.maps.marker?.AdvancedMarkerElement),
+          hasRegularMarker: !!(window.google.maps.Marker),
+          hasLatLngBounds: !!(window.google.maps.LatLngBounds),
+          hasGeometry: !!(window.google.maps.geometry)
+        });
       }
 
       if (process.env.NODE_ENV === 'development') {
@@ -826,6 +916,28 @@ export default function InteractiveRestaurantMap({
       return lat >= sw.lat() && lat <= ne.lat() && lng >= sw.lng() && lng <= ne.lng();
     });
 
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Map bounds check:', {
+        mapBounds: { 
+          sw: { lat: sw.lat(), lng: sw.lng() }, 
+          ne: { lat: ne.lat(), lng: ne.lng() } 
+        },
+        mapCenter: map.getCenter() ? { 
+          lat: map.getCenter()!.lat(), 
+          lng: map.getCenter()!.lng() 
+        } : 'unknown',
+        zoom: map.getZoom?.() ?? 'unknown',
+        totalRestaurants: restaurantsWithCoords.length,
+        restaurantsInView: inView.length,
+        sampleInView: inView.slice(0, 3).map(r => ({ 
+          name: r.name, 
+          lat: Number(r.latitude), 
+          lng: Number(r.longitude) 
+        }))
+      });
+    }
+
     // Enhanced bounds change detection with minimum distance threshold
     const zoom = map.getZoom?.() ?? 0;
     
@@ -1001,6 +1113,9 @@ export default function InteractiveRestaurantMap({
     if (safeImageUrl) {
       safeImageUrl = safeImageUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
     }
+    
+    // Check if restaurant is already a favorite
+    const isFavorite = favoritesManager.isFavorite(restaurant.id.toString());
 
     // Helper functions to match EateryCard logic
     const titleCase = (str: string) => {
@@ -1048,6 +1163,19 @@ export default function InteractiveRestaurantMap({
     const placeholder = '/images/default-restaurant.webp';
     return `
       <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg">
+        <!-- Heart/Favorite Button -->
+        <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
+                class="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-10 ${
+                  isFavorite 
+                    ? 'bg-red-100 text-red-500 hover:bg-red-200' 
+                    : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
+                } backdrop-blur-sm shadow-sm"
+                title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+          <svg class="w-4 h-4 ${isFavorite ? 'fill-current' : ''}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+        
         <!-- Close Button -->
         <button onclick="this.parentElement.parentElement.parentElement.close()"
                 class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-lg font-bold leading-none z-10">

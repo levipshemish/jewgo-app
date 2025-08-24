@@ -11,7 +11,7 @@ export default function LiveMapPage() {
           <h3 className="font-bold mb-2">Live Map Debug</h3>
           <p>Check browser console for detailed logs</p>
           <p>Environment: {process.env.NODE_ENV}</p>
-          <p>Backend URL: {process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo.onrender.com'}</p>
+          <p>Backend URL: {process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com'}</p>
         </div>
       )}
       

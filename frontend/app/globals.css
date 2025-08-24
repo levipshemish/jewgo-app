@@ -13,6 +13,22 @@
   margin: 0;
 }
 
+/* Line clamp utility for consistent text truncation */
+.line-clamp-2 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* Force bottom navigation to be solid and non-transparent */
+.dynamic-bottom-nav,
+.dynamic-bottom-nav * {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+}
+
 /* Unified Card Tag Styles - Glassy Effect */
 .unified-card-tag {
   position: relative !important;
@@ -550,6 +566,54 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
     will-change: auto !important;
     transform: translateZ(0) !important;
   }
+}
+
+/* Consistent card sizing using fixed track widths (overrides above)
+   Ensures the grid does NOT stretch cards to fill leftover space */
+:root {
+  --card-w: 200px;
+  --card-content-h: 110px; /* default content area height */
+}
+
+.restaurant-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-w), var(--card-w))) !important;
+  justify-content: start !important;
+  align-items: stretch !important; /* ensure cards stretch to fill their cell */
+  max-width: 1400px !important; /* prevent grid from getting too wide on abnormal screens */
+  margin: 0 auto !important; /* center the container itself, not the tracks */
+}
+
+@media (max-width: 640px) {
+  .restaurant-grid { --card-w: 160px; }
+  .unified-card-content { height: var(--card-content-h, 100px) !important; }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .restaurant-grid { --card-w: 180px; }
+  .unified-card-content { height: var(--card-content-h, 105px) !important; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .restaurant-grid { --card-w: 200px; }
+  .unified-card-content { height: var(--card-content-h, 110px) !important; }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .restaurant-grid { --card-w: 220px; }
+  .unified-card-content { height: var(--card-content-h, 115px) !important; }
+}
+
+@media (min-width: 1441px) {
+  .restaurant-grid { --card-w: 240px; }
+  .unified-card-content { height: var(--card-content-h, 120px) !important; }
+}
+
+/* Ensure unified card content doesn't expand card height unevenly */
+.unified-card-content {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
 }
 
 /* Override any restaurant-card rules that might affect marketplace UnifiedCard */

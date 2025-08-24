@@ -26,7 +26,7 @@ export default function ApiHealthIndicator() {
       const apiUrl = process.env['NEXT_PUBLIC_BACKEND_URL']
 ? `${process.env['NEXT_PUBLIC_BACKEND_URL']}/health`
 : process.env['NODE_ENV'] === 'production'
-        ? 'https://jewgo.onrender.com/health'
+        ? 'https://jewgo-app-oyoh.onrender.com/health'
         : 'http://127.0.0.1:8081/health';
 
       const response = await fetch(apiUrl, {

@@ -10,8 +10,10 @@ import { Pagination } from '@/components/ui/Pagination';
 import MarketplaceActionBar from '@/components/marketplace/MarketplaceActionBar';
 import MarketplaceCategoriesDropdown from '@/components/marketplace/MarketplaceCategoriesDropdown';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
+
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
+import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
@@ -19,6 +21,7 @@ import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
+
 
 // Loading component for Suspense fallback
 function MarketplacePageLoading() {
@@ -52,7 +55,7 @@ const formatDistance = (distance: number) => {
   }
 };
 
-// Sample marketplace data with images for demonstration
+// Sample marketplace data with images for demonstration (expanded for pagination testing)
 const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-1",
@@ -205,7 +208,134 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     rating: 4.9,
     images: ["https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400&h=300&fit=crop"],
     thumbnail: "https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400&h=300&fit=crop"
-  }
+  },
+  // Additional items to test pagination
+  {
+    id: "sample-7",
+    kind: 'regular',
+    txn_type: 'sale',
+    title: "Kids Bike - Perfect for Ages 5-8",
+    description: "Well-maintained children's bicycle with training wheels.",
+    price_cents: 7500,
+    currency: "USD",
+    condition: 'used_good',
+    category_id: 5,
+    category_name: "Sports",
+    city: "Miami",
+    region: "FL",
+    country: "US",
+    seller_name: "Karen Miller",
+    endorse_up: 5,
+    endorse_down: 0,
+    status: "active",
+    created_at: "2024-01-15T15:30:00Z",
+    updated_at: "2024-01-15T15:30:00Z",
+    views: 67,
+    rating: 4.3,
+    images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop"],
+    thumbnail: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop"
+  },
+  {
+    id: "sample-8",
+    kind: 'regular',
+    txn_type: 'sale',
+    title: "Garden Tools Set - Complete Collection",
+    description: "Professional quality garden tools including shovels, rakes, and more.",
+    price_cents: 12000,
+    currency: "USD",
+    condition: 'used_like_new',
+    category_id: 6,
+    category_name: "Tools",
+    city: "Miami Beach",
+    region: "FL",
+    country: "US",
+    seller_name: "Bob Johnson",
+    endorse_up: 18,
+    endorse_down: 1,
+    status: "active",
+    created_at: "2024-01-14T09:15:00Z",
+    updated_at: "2024-01-14T09:15:00Z",
+    views: 145,
+    rating: 4.6,
+    images: ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"],
+    thumbnail: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"
+  },
+  {
+    id: "sample-9",
+    kind: 'regular',
+    txn_type: 'sale',
+    title: "Book Collection - Children's Stories",
+    description: "Collection of classic children's books in excellent condition.",
+    price_cents: 4500,
+    currency: "USD",
+    condition: 'used_good',
+    category_id: 7,
+    category_name: "Books",
+    city: "Aventura",
+    region: "FL",
+    country: "US",
+    seller_name: "Emma Davis",
+    endorse_up: 11,
+    endorse_down: 0,
+    status: "active",
+    created_at: "2024-01-13T14:20:00Z",
+    updated_at: "2024-01-13T14:20:00Z",
+    views: 98,
+    rating: 4.8,
+    images: ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop"],
+    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop"
+  },
+  {
+    id: "sample-10",
+    kind: 'regular',
+    txn_type: 'sale',
+    title: "Gaming Chair - Ergonomic Design",
+    description: "High-quality gaming chair with excellent lumbar support.",
+    price_cents: 18000,
+    currency: "USD",
+    condition: 'used_like_new',
+    category_id: 4,
+    category_name: "Furniture",
+    city: "Hollywood",
+    region: "FL",
+    country: "US",
+    seller_name: "Alex Chen",
+    endorse_up: 22,
+    endorse_down: 2,
+    status: "active",
+    created_at: "2024-01-12T16:45:00Z",
+    updated_at: "2024-01-12T16:45:00Z",
+    views: 267,
+    rating: 4.4,
+    images: ["https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&h=300&fit=crop"],
+    thumbnail: "https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&h=300&fit=crop"
+  },
+  // More items to ensure pagination on all screen sizes
+  ...Array.from({ length: 20 }, (_, i) => ({
+    id: `sample-${11 + i}`,
+    kind: 'regular' as const,
+    txn_type: 'sale' as const,
+    title: `Item ${11 + i} - Sample Marketplace Product`,
+    description: `Description for sample item ${11 + i}.`,
+    price_cents: (50 + i * 10) * 100,
+    currency: "USD",
+    condition: 'used_good' as const,
+    category_id: 1 + (i % 7),
+    category_name: ["Vehicles", "Toys", "Appliances", "Furniture", "Sports", "Tools", "Books"][i % 7],
+    city: ["Miami", "Miami Beach", "Hollywood", "Aventura"][i % 4],
+    region: "FL",
+    country: "US",
+    seller_name: `Seller ${11 + i}`,
+    endorse_up: 5 + i,
+    endorse_down: i % 3,
+    status: "active" as const,
+    created_at: new Date(2024, 0, 10 - i).toISOString(),
+    updated_at: new Date(2024, 0, 10 - i).toISOString(),
+    views: 50 + i * 10,
+    rating: 4.0 + (i % 10) / 10,
+    images: [`https://images.unsplash.com/photo-154155886943${i % 10}-2840d308329a?w=400&h=300&fit=crop`],
+    thumbnail: `https://images.unsplash.com/photo-154155886943${i % 10}-2840d308329a?w=400&h=300&fit=crop`
+  }))
 ];
 
 // Main component that uses useSearchParams
@@ -257,6 +387,8 @@ function MarketplacePageContent() {
   // WebSocket for real-time updates (currently disabled)
   const { isConnected, sendMessage } = useWebSocket();
   
+
+  
   // Location state from context
   const {
     userLocation,
@@ -285,15 +417,8 @@ function MarketplacePageContent() {
   // Selected category state
   const [selectedCategory, setSelectedCategory] = useState<MarketplaceCategory | undefined>();
 
-  // Performance optimization for mobile
+  // Standard 4-rows pagination - always show exactly 4 rows
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    if (isLowPowerMode) {
-      return 4; // Reduce items in low power mode
-    }
-    if (isSlowConnection) {
-      return 6; // Reduce items on slow connection
-    }
-    
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile || isMobileDevice) {
       return 8; // 4 rows × 2 columns = 8 items
@@ -313,69 +438,71 @@ function MarketplacePageContent() {
       
       return columnsPerRow * 4; // Always 4 rows
     }
-  }, [isMobile, isMobileDevice, isLowPowerMode, isSlowConnection, viewportWidth]);
+  }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize marketplace listing transformation to prevent unnecessary re-renders
   const transformMarketplaceToCardData = useCallback((listing: MarketplaceListing) => {
     console.log('Transforming listing:', listing);
     
-    // Format price from cents to dollars
-    const formatPrice = (priceCents: number) => {
-      return `$${(priceCents / 100).toFixed(0)}`;
-    };
+  // Format price from cents to dollars
+  const formatPrice = (priceCents: number) => {
+    return `$${(priceCents / 100).toFixed(0)}`;
+  };
 
-    // Format condition for display
-    const formatCondition = (condition: string) => {
-      switch (condition) {
-        case 'new': return 'New';
-        case 'used_like_new': return 'Like New';
-        case 'used_good': return 'Good';
-        case 'used_fair': return 'Fair';
-        default: return condition;
-      }
-    };
-
-    // Format date for display
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - date.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {return '1d';}
-      if (diffDays < 7) {return `${diffDays}d`;}
-      if (diffDays < 30) {return `${Math.floor(diffDays / 7)}w`;}
-      if (diffDays < 365) {return `${Math.floor(diffDays / 30)}m`;}
-      return `${Math.floor(diffDays / 365)}y`;
-    };
-
-    let distanceText: string | undefined;
-
-    if (userLocation && listing.lat && listing.lng) {
-      const distance = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        listing.lat,
-        listing.lng
-      );
-      distanceText = formatDistance(distance);
+  // Format condition for display
+  const formatCondition = (condition: string) => {
+    switch (condition) {
+      case 'new': return 'New';
+      case 'used_like_new': return 'Like New';
+      case 'used_good': return 'Good';
+      case 'used_fair': return 'Fair';
+      default: return condition;
     }
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {return '1d';}
+    if (diffDays < 7) {return `${diffDays}d`;}
+    if (diffDays < 30) {return `${Math.floor(diffDays / 7)}w`;}
+    if (diffDays < 365) {return `${Math.floor(diffDays / 30)}m`;}
+    return `${Math.floor(diffDays / 365)}y`;
+  };
+
+  let distanceText: string | undefined;
+
+  if (userLocation && listing.lat && listing.lng) {
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      listing.lat,
+      listing.lng
+    );
+    distanceText = formatDistance(distance);
+  }
 
     const transformedData = {
-      id: listing.id,
+    id: listing.id,
       imageUrl: listing.thumbnail || listing.images?.[0] || null,
-      imageTag: formatCondition(listing.condition),
-      title: listing.title,
-      badge: formatDate(listing.created_at),
-      subtitle: formatPrice(listing.price_cents),
-      additionalText: distanceText, // Only show if location is enabled
-      showHeart: true,
-      isLiked: false // This will be handled by the component internally
+    imageTag: formatCondition(listing.condition),
+    title: listing.title,
+    badge: formatDate(listing.created_at),
+    subtitle: formatPrice(listing.price_cents),
+    additionalText: distanceText, // Only show if location is enabled
+    showHeart: true,
+    isLiked: false // This will be handled by the component internally
     };
     
     console.log('Transformed data:', transformedData);
     return transformedData;
   }, [userLocation]); // Empty dependency array to prevent recreation
+
+
 
   // Sort listings by distance when location is available
   const sortedListings = useMemo(() => {
@@ -469,10 +596,11 @@ function MarketplacePageContent() {
 
   // Mobile-optimized location handling with context
   const handleRequestLocation = async () => {
+    // Use the context's requestLocation
     requestLocation();
   };
 
-  // Handle location changes and update filters
+  // Handle location changes and update WebSocket
   useEffect(() => {
     if (userLocation) {
       // Send location update via WebSocket
@@ -779,8 +907,8 @@ function MarketplacePageContent() {
 
   // Show marketplace not available message
   if (!marketplaceAvailable) {
-    return (
-      <div className="min-h-screen bg-gray-50 marketplace-page">
+      return (
+    <div className="min-h-screen bg-gray-50 marketplace-page">
         <Header />
         
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -850,7 +978,7 @@ function MarketplacePageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] marketplace-page"
+      className="min-h-screen bg-[#f4f4f4] marketplace-page pb-20"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -858,19 +986,19 @@ function MarketplacePageContent() {
       role="main"
       aria-label="Marketplace listings"
     >
-      <Header 
+      <Header
         onSearch={handleSearch}
         placeholder="Search marketplace listings..."
         showFilters={true}
         onShowFilters={handleShowFilters}
       />
-      
+
       {/* Navigation Tabs - Always visible */}
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
         <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
-      
-      {/* Marketplace Action Bar */}
+
+      {/* Marketplace Action Bar - marketplace specific */}
       <MarketplaceActionBar
         onSell={handleSell}
         onShowCategories={handleShowCategories}
@@ -949,13 +1077,13 @@ function MarketplacePageContent() {
           <div className="text-5xl mb-4" aria-hidden="true">🛍️</div>
           <p className="text-lg text-gray-600 mb-2">No listings found</p>
           <p className="text-sm text-gray-500">
-            {searchQuery || Object.values(filters).some(f => f) 
-              ? 'Try adjusting your search or filters'
-              : 'Be the first to add a listing!'
-            }
-          </p>
-        </div>
-      ) : (
+                {searchQuery || Object.values(filters).some(f => f) 
+                  ? 'Try adjusting your search or filters'
+                  : 'Be the first to add a listing!'
+                }
+              </p>
+            </div>
+          ) : (
         <div 
           className="restaurant-grid"
           role="grid"
@@ -980,31 +1108,31 @@ function MarketplacePageContent() {
                 backfaceVisibility: 'hidden'
               }}
             >
-              <UnifiedCard
+                  <UnifiedCard
                 data={transformMarketplaceToCardData(listing)}
-                variant="default"
+                    variant="default"
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/marketplace/product/${listing.id}`)}
                 className="w-full h-full"
-              />
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading listings...</p>
-        </div>
-      )}
+            </div>
+          )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading more...</p>
-        </div>
-      )}
+            </div>
+          )}
 
       {/* Infinite scroll trigger element - only on mobile */}
       {(isMobile || isMobileDevice) && hasMore && (
@@ -1017,7 +1145,7 @@ function MarketplacePageContent() {
 
       {/* Desktop pagination - only show on desktop */}
       {!(isMobile || isMobileDevice) && totalPages > 1 && (
-        <div className="mt-8 mb-8" role="navigation" aria-label="Pagination">
+        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -1031,10 +1159,8 @@ function MarketplacePageContent() {
         </div>
       )}
 
-      {/* Mobile bottom navigation - ensure it's always visible on mobile */}
-      {(isMobile || isMobileDevice) && (
-        <BottomNavigation />
-      )}
+      {/* Bottom navigation - visible on all screen sizes */}
+      <BottomNavigation />
 
       {/* Categories Dropdown */}
       <MarketplaceCategoriesDropdown

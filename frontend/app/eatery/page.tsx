@@ -40,6 +40,7 @@ function EateryPageContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
@@ -95,15 +96,8 @@ function EateryPageContent() {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
 
-  // Performance optimization for mobile
+  // Standard 4-rows pagination - always show exactly 4 rows
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    if (isLowPowerMode) {
-      return 4; // Reduce items in low power mode
-    }
-    if (isSlowConnection) {
-      return 6; // Reduce items on slow connection
-    }
-    
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile || isMobileDevice) {
       return 8; // 4 rows × 2 columns = 8 items
@@ -123,7 +117,7 @@ function EateryPageContent() {
       
       return columnsPerRow * 4; // Always 4 rows
     }
-  }, [isMobile, isMobileDevice, isLowPowerMode, isSlowConnection, viewportWidth]);
+  }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize restaurant transformation to prevent unnecessary re-renders
   const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
@@ -185,6 +179,16 @@ function EateryPageContent() {
     clearAllFilters();
   }, [clearAllFilters]);
 
+  // Handle search functionality
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    // Trigger data fetch with search query
+    startTransition(() => {
+      fetchRestaurantsData();
+    });
+  }, [setSearchQuery, setCurrentPage]);
+
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     () => fetchMoreRestaurants(),
@@ -210,6 +214,11 @@ function EateryPageContent() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
       
       // Add current filters
       Object.entries(activeFilters).forEach(([key, value]) => {
@@ -300,6 +309,11 @@ function EateryPageContent() {
       // Mobile-optimized parameters
       const params = new URLSearchParams();
       
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+
       // Add filter parameters
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
@@ -361,6 +375,11 @@ function EateryPageContent() {
     try {
       const nextPage = currentPage + 1;
       const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
       
       // Add current filters
       Object.entries(activeFilters).forEach(([key, value]) => {
@@ -476,7 +495,12 @@ function EateryPageContent() {
   if (error) {
     return (
       <div style={responsiveStyles.container}>
-        <Header />
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search restaurants..."
+          showFilters={true}
+          onShowFilters={() => setShowFilters(!showFilters)}
+        />
         
         {/* Navigation Tabs - Always visible */}
         <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
@@ -507,7 +531,7 @@ function EateryPageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4]"
+      className="min-h-screen bg-[#f4f4f4] pb-20"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -515,7 +539,12 @@ function EateryPageContent() {
       role="main"
       aria-label="Restaurant listings"
     >
-      <Header />
+      <Header 
+        onSearch={handleSearch}
+        placeholder="Search restaurants..."
+        showFilters={true}
+        onShowFilters={() => setShowFilters(!showFilters)}
+      />
       
       {/* Navigation Tabs - Always visible */}
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
@@ -664,7 +693,7 @@ function EateryPageContent() {
 
       {/* Desktop pagination - only show on desktop */}
       {!(isMobile || isMobileDevice) && totalPages > 1 && (
-        <div className="mt-8 mb-8" role="navigation" aria-label="Pagination">
+        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -687,10 +716,8 @@ function EateryPageContent() {
         />
       )}
 
-      {/* Mobile bottom navigation - ensure it's always visible on mobile */}
-      {(isMobile || isMobileDevice) && (
-        <BottomNavigation />
-      )}
+      {/* Bottom navigation - visible on all screen sizes */}
+      <BottomNavigation />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

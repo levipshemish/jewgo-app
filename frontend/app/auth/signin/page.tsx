@@ -148,13 +148,15 @@ function SignInForm() {
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
       <div className="w-full max-w-md">
         <div className="bg-neutral-900 rounded-2xl shadow-xl border border-neutral-700 p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">Sign in to JewGo</h1>
+          <div className="text-center mb-6">
+            <div className="mb-6">
+              <img src="/logo.svg" alt="JewGo" className="mx-auto w-full h-20 rounded-xl object-cover" />
+            </div>
             <p className="text-neutral-400">Welcome back! Please sign in to continue.</p>
           </div>
 
           {/* Email/Password Form */}
-          <form action={handleEmailSignIn} className="space-y-6">
+          <form action={handleEmailSignIn} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-neutral-300 mb-2">
                 Email
@@ -167,7 +169,7 @@ function SignInForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
+                className="w-full px-5 py-3.5 bg-neutral-800 border border-neutral-600 rounded-full text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
                 placeholder="Enter your email"
               />
             </div>
@@ -184,7 +186,7 @@ function SignInForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-600 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
+                className="w-full px-5 py-3.5 bg-neutral-800 border border-neutral-600 rounded-full text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:border-transparent"
                 placeholder="Enter your password"
               />
             </div>
@@ -197,12 +199,14 @@ function SignInForm() {
                 action="signin"
                 theme="dark"
                 size="compact"
+                variant="checkbox"
+                hideWidget
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-jewgo-400 text-white py-3 px-4 rounded-lg font-medium hover:bg-jewgo-500 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full bg-jewgo-400 text-white py-3.5 px-6 rounded-full font-medium hover:bg-jewgo-500 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
             >
               Sign In
             </button>
@@ -212,23 +216,23 @@ function SignInForm() {
             )}
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-600" />
+                <div className="w-full border-t border-neutral-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-neutral-900 text-neutral-400">Or continue with</span>
+                <span className="px-3 bg-neutral-900 text-neutral-400">Or continue with</span>
               </div>
             </div>
           </div>
 
           {/* OAuth Providers */}
-          <div className="mt-6 grid grid-cols-1 gap-3">
+          <div className="mt-4 grid grid-cols-1 gap-2.5">
             <button
               type="button"
               onClick={() => handleOAuthSignIn('google')}
-              className="w-full inline-flex items-center justify-center py-3 px-4 border border-neutral-600 rounded-lg bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
               aria-label="Continue with Google"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 533.5 544.3" aria-hidden="true">
@@ -242,7 +246,7 @@ function SignInForm() {
             <button
               type="button"
               onClick={() => handleOAuthSignIn('apple')}
-              className="w-full inline-flex items-center justify-center py-3 px-4 border border-neutral-600 rounded-lg bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
               aria-label="Continue with Apple"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -253,11 +257,11 @@ function SignInForm() {
           </div>
 
           {/* Anonymous Sign In */}
-          <form onSubmit={handleAnonymousSignIn} className="mt-6">
+          <form onSubmit={handleAnonymousSignIn} className="mt-4">
             <button
               type="submit"
               disabled={anonLoading}
-              className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
+              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -271,11 +275,11 @@ function SignInForm() {
           </form>
 
           {/* Magic Link */}
-          <div className="mt-6">
+          <div className="mt-4">
             <button
               type="button"
               onClick={handleSendMagicLink}
-              className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
             >
               Send me a magic link
             </button>
@@ -286,21 +290,13 @@ function SignInForm() {
             )}
           </div>
 
-          <div className="mt-6 text-center">
-            <Link
-              href="/auth/forgot-password"
-              className="text-sm text-neutral-400 hover:text-neutral-300 transition-colors"
-            >
+          <div className="mt-5 flex items-center justify-center gap-2.5 text-sm">
+            <Link href="/auth/forgot-password" className="text-neutral-400 hover:text-neutral-300 transition-colors">
               Forgot password?
             </Link>
-          </div>
-
-          <div className="mt-6 text-center">
-            <Link
-              href="/auth/signup"
-              className="text-sm text-jewgo-400 hover:text-jewgo-300 transition-colors"
-            >
-              Don&apos;t have an account? Sign up
+            <span className="text-neutral-600">•</span>
+            <Link href="/auth/signup" className="text-jewgo-400 hover:text-jewgo-300 transition-colors">
+              Sign up
             </Link>
           </div>
         </div>

@@ -192,34 +192,89 @@ export function useMarkerManagement({
     const rating = getRating(restaurant);
     
     if (showRatingBubbles) {
-      // Create rating bubble content
+      // Create glassy rating bubble content
       const bubbleWidth = isSelected ? 56 : 48;
       const bubbleHeight = isSelected ? 32 : 28;
       
       const element = document.createElement('div');
+      element.style.cssText = `
+        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+        transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
+        transition: all 0.2s ease-out;
+        cursor: pointer;
+      `;
+      
+      // Add hover effects
+      element.addEventListener('mouseenter', () => {
+        element.style.transform = isSelected ? 'scale(1.15)' : 'scale(1.05)';
+        element.style.filter = 'drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25))';
+      });
+      
+      element.addEventListener('mouseleave', () => {
+        element.style.transform = isSelected ? 'scale(1.1)' : 'scale(1)';
+        element.style.filter = 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15))';
+      });
+      
       element.innerHTML = `
         <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}">
+          <!-- Rating bubble with colored border -->
           <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}" 
                 rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
-                fill="${finalColor}" stroke="${markerColor}" stroke-width="2"/>
-          <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#FFD700">⭐</text>
-          <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="${isSelected ? '#FFFFFF' : '#000000'}">
+                fill="${isSelected ? finalColor : 'rgba(255, 255, 255, 0.95)'}" 
+                stroke="${finalColor}" 
+                stroke-width="2"/>
+          
+          <!-- Star icon -->
+          <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" 
+                text-anchor="middle" 
+                font-family="Arial, sans-serif" 
+                font-size="8" 
+                fill="#FFD700">⭐</text>
+          
+          <!-- Rating text -->
+          <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" 
+                text-anchor="middle" 
+                font-family="Arial, sans-serif" 
+                font-size="10" 
+                font-weight="bold" 
+                fill="${isSelected ? '#FFFFFF' : '#1a1a1a'}">
             ${rating.toFixed(1)}
           </text>
         </svg>
       `;
       return element;
     } else {
-      // Create simple marker content
+      // Create glassy pin marker content
       const element = document.createElement('div');
+      element.style.cssText = `
+        filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25));
+        transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        cursor: pointer;
+      `;
+      
+      // Add hover effects
+      element.addEventListener('mouseenter', () => {
+        element.style.transform = isSelected ? 'scale(1.2)' : 'scale(1.1)';
+        element.style.filter = 'drop-shadow(0 8px 25px rgba(0, 0, 0, 0.35))';
+      });
+      
+      element.addEventListener('mouseleave', () => {
+        element.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
+        element.style.filter = 'drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25))';
+      });
+      
       element.innerHTML = `
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pin with colored border -->
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-                fill="${finalColor}" 
-                stroke="#000000" 
-                stroke-width="1.5"/>
-          <circle cx="12" cy="9" r="2.5" fill="white"/>
-          <circle cx="12" cy="9" r="1.5" fill="${finalColor}"/>
+                fill="${isSelected ? finalColor : 'rgba(255, 255, 255, 0.95)'}" 
+                stroke="${finalColor}" 
+                stroke-width="2"/>
+          
+          <!-- Center dot -->
+          <circle cx="12" cy="9" r="2.5" fill="${finalColor}"/>
+          <circle cx="12" cy="9" r="1.5" fill="white"/>
         </svg>
       `;
       return element;
@@ -230,10 +285,10 @@ export function useMarkerManagement({
   const createMarker = useCallback((restaurant: Restaurant, map: google.maps.Map) => {
     try {
       if (restaurant.latitude === undefined || restaurant.longitude === undefined) {
-              if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-
-      }
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.warn('createMarker: Restaurant missing coordinates:', restaurant.name, restaurant.latitude, restaurant.longitude);
+        }
         return null;
       }
 
@@ -257,15 +312,41 @@ export function useMarkerManagement({
       const content = createMarkerContent(restaurant);
       
       if (!content) {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.warn('createMarker: createMarkerContent returned null for:', restaurant.name);
+        }
         return null;
       }
 
-      marker = new window.google.maps.marker.AdvancedMarkerElement({
-        position,
-        content,
-        title: restaurant.name,
-        map
-      });
+      if (!window.google.maps.marker?.AdvancedMarkerElement) {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.warn('createMarker: AdvancedMarkerElement not available, falling back to regular Marker');
+        }
+        // Fallback to regular marker
+        marker = new window.google.maps.Marker({
+          position,
+          title: restaurant.name,
+          map,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#4285F4" stroke="#fff" stroke-width="2"/></svg>'),
+            scaledSize: new window.google.maps.Size(24, 24)
+          }
+        }) as any;
+      } else {
+        marker = new window.google.maps.marker.AdvancedMarkerElement({
+          position,
+          content,
+          title: restaurant.name,
+          map
+        });
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.log('createMarker: Successfully created marker for:', restaurant.name, 'at', position.lat(), position.lng());
+      }
 
       // Store metadata
       (marker as any)._contentVersion = getRestaurantKey(restaurant);
