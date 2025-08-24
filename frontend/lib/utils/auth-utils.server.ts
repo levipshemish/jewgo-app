@@ -262,6 +262,9 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
  */
 export function signMergeCookieVersioned(payload: any, version: 'v1' | 'v2' = 'v2'): string {
   const key = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
+  if (!key) {
+    throw new Error('HMAC key not configured');
+  }
   const data = JSON.stringify(payload);
   const signature = createHmac('sha256', key).update(data).digest('hex');
   return `${version}:${signature}:${data}`;
@@ -293,6 +296,10 @@ export function verifyMergeCookieVersioned(signedCookie: string): {
     // Try current key first, then fallback to previous key
     const currentKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY_V2 : MERGE_COOKIE_HMAC_KEY;
     const previousKey = version === 'v2' ? MERGE_COOKIE_HMAC_KEY : MERGE_COOKIE_HMAC_KEY_V2;
+
+    if (!currentKey || !previousKey) {
+      return { valid: false, error: 'HMAC keys not configured' };
+    }
 
     const currentSignature = createHmac('sha256', currentKey).update(data).digest('hex');
     const previousSignature = createHmac('sha256', previousKey).update(data).digest('hex');
