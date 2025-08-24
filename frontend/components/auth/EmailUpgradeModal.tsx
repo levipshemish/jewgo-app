@@ -179,7 +179,7 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
         {step === 'verify' && (
           <div>
             <p className="mb-4 text-gray-600">
-              We've sent a verification email to <strong>{email}</strong>. 
+              We&apos;ve sent a verification email to <strong>{email}</strong>. 
               Please check your inbox and click the verification link.
             </p>
             <div className="flex gap-2">
@@ -193,7 +193,7 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
                 onClick={() => setStep('password')}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                I've Verified My Email
+                I&apos;ve Verified My Email
               </button>
             </div>
           </div>

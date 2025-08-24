@@ -27,16 +27,16 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
   // Only close when user actually gets location or manually closes
 
   const handleRequestLocation = () => {
-    console.log('📍 LocationPromptPopup: Requesting location...', {
-      permissionStatus,
-      isLoading,
-      error
-    });
+    // console.log('📍 LocationPromptPopup: Requesting location...', {
+    //   permissionStatus,
+    //   isLoading,
+    //   error
+    // });
     
     // Check current permission status first
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-        console.log('📍 LocationPromptPopup: Current permission state:', result.state);
+        // console.log('📍 LocationPromptPopup: Current permission state:', result.state);
         
         if (result.state === 'granted') {
           // Permission already granted, just get location
@@ -46,7 +46,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
           requestLocation();
         } else if (result.state === 'denied') {
           // Permission denied, show instructions
-          console.log('📍 LocationPromptPopup: Permission denied, showing instructions');
+          // console.log('📍 LocationPromptPopup: Permission denied, showing instructions');
         }
       });
     } else {
@@ -106,7 +106,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
             To provide you with the best dining experience, we need your location to show nearby restaurants and accurate delivery times.
             {permissionStatus === 'prompt' && (
               <span className="block mt-2 text-sm text-blue-600">
-                Click "Enable Location" to allow location access in your browser.
+                Click &quot;Enable Location&quot; to allow location access in your browser.
               </span>
             )}
           </p>
@@ -122,7 +122,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
                     <p><strong>Chrome/Edge:</strong> Click the lock icon 🔒 in the address bar → Location → Allow</p>
                     <p><strong>Safari:</strong> Safari → Settings → Websites → Location → Allow for localhost</p>
                     <p><strong>Firefox:</strong> Click the shield icon → Location → Allow</p>
-                    <p className="mt-2 text-blue-600">Or click "Reset Location Settings" below to try again.</p>
+                    <p className="mt-2 text-blue-600">Or click &quot;Reset Location Settings&quot; below to try again.</p>
                   </div>
                 </div>
               )}
