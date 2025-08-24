@@ -54,7 +54,7 @@ class FavoritesManager {
           this.favorites.set(fav.id, fav);
         });
       }
-    } catch {
+    } catch (_error) {
       // // console.error('Error loading favorites from storage:', error);
       this.favorites.clear();
     }
@@ -74,7 +74,7 @@ class FavoritesManager {
         version: '1.0'
       };
       localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(data));
-    } catch {
+    } catch (_error) {
       // // console.error('Error saving favorites to storage:', error);
     }
   }
@@ -85,9 +85,9 @@ class FavoritesManager {
     this.listeners.forEach(listener => {
       try {
         listener(favorites);
-      } catch {
-        // // console.error('Error in favorites listener:', error);
-      }
+          } catch (_error) {
+      // // console.error('Error in favorites listener:', error);
+    }
     });
   }
 
