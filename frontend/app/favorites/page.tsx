@@ -88,8 +88,8 @@ function FavoritesPageContent() {
     checkAuth();
   }, [router, clientLoaded]);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  const handleSearch = (_query: string) => {
+    // Search disabled on this page; no-op to satisfy types
   };
 
   const handleTabChange = (tab: string) => {
