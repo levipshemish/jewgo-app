@@ -376,10 +376,7 @@ export default function InteractiveRestaurantMap({
   // Initialize map (only once)
   useEffect(() => {
     if (!apiLoaded || !mapRef.current || mapError) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
 
-      }
       return;
     }
 
@@ -400,10 +397,7 @@ export default function InteractiveRestaurantMap({
 
 
 
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
 
-      }
 
       // Only create map if it doesn't exist
       if (!mapInstanceRef.current) {
@@ -550,19 +544,13 @@ export default function InteractiveRestaurantMap({
   const renderVisibleMarkers = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map || !window.google?.maps) { 
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
 
-      }
       return; 
     }
 
     const bounds = map.getBounds?.();
     if (!bounds) { 
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
 
-      }
       return; 
     }
 
@@ -869,27 +857,7 @@ export default function InteractiveRestaurantMap({
       return lat >= sw.lat() && lat <= ne.lat() && lng >= sw.lng() && lng <= ne.lng();
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('Map bounds check:', {
-        mapBounds: { 
-          sw: { lat: sw.lat(), lng: sw.lng() }, 
-          ne: { lat: ne.lat(), lng: ne.lng() } 
-        },
-        mapCenter: (map as any).getCenter() ? { 
-          lat: (map as any).getCenter()!.lat(), 
-          lng: (map as any).getCenter()!.lng() 
-        } : 'unknown',
-        zoom: map.getZoom?.() ?? 'unknown',
-        totalRestaurants: restaurantsWithCoords.length,
-        restaurantsInView: inView.length,
-        sampleInView: inView.slice(0, 3).map(r => ({ 
-          name: r.name, 
-          lat: Number(r.latitude), 
-          lng: Number(r.longitude) 
-        }))
-      });
-    }
+
 
     // Enhanced bounds change detection with minimum distance threshold
     const zoom = map.getZoom?.() ?? 0;

@@ -228,21 +228,7 @@ export default function UnifiedLiveMapClient() {
           restaurant && typeof restaurant === 'object' && restaurant.id
         );
 
-        // Debug logging for restaurant data
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('LiveMap: Fetched restaurants:', {
-            total: data.restaurants.length,
-            valid: validRestaurants.length,
-            withCoords: validRestaurants.filter(r => r.latitude && r.longitude).length,
-            sample: validRestaurants[0] ? {
-              id: validRestaurants[0].id,
-              name: validRestaurants[0].name,
-              lat: validRestaurants[0].latitude,
-              lng: validRestaurants[0].longitude
-            } : null
-          });
-        }
+
 
         restaurantsRef.current = validRestaurants;
         
@@ -261,10 +247,7 @@ export default function UnifiedLiveMapClient() {
           setAllRestaurants(validRestaurants);
           setDisplayedRestaurants(validRestaurants);
           
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.log(`LiveMap: Loaded ${validRestaurants.length} restaurants`);
-          }
+
         });
         
         setLoadingProgress(100);
