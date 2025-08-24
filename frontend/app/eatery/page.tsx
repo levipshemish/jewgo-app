@@ -43,18 +43,6 @@ function EateryPageContent() {
   const { isMobile, isTouch, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
-  // Debug mobile detection
-  useEffect(() => {
-    console.log('🔍 Eatery Page Debug - Mobile Detection:', {
-      isMobile,
-      isTouch,
-      viewportWidth,
-      viewportHeight,
-      isLowPowerMode,
-      isSlowConnection
-    });
-  }, [isMobile, isTouch, viewportWidth, viewportHeight, isLowPowerMode, isSlowConnection]);
-  
   // Mobile gesture support
   const { onTouchStart, onTouchMove, onTouchEnd } = useMobileGestures(
     () => router.push('/marketplace'), // Swipe left to marketplace
@@ -172,10 +160,7 @@ function EateryPageContent() {
     // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
     
-    // Debug logging for distance
-    if (userLocation && restaurant.distance) {
-      console.log(`Restaurant: ${restaurant.name}, Distance: "${restaurant.distance}", DistanceText: "${distanceText}"`);
-    }
+    // Distance logging removed - functionality working correctly
     
     // Enhanced price range logic - ensure we have a valid price range
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
@@ -297,16 +282,7 @@ function EateryPageContent() {
       // Apply distance calculation and sorting if location is available
       let processedRestaurants = response.restaurants;
       if (userLocation) {
-        console.log('User location available, calculating distances...');
-        console.log('User location:', userLocation);
-        console.log('Restaurants before distance calculation:', response.restaurants.length);
-        
         processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
-        
-        console.log('Restaurants after distance calculation:', processedRestaurants.length);
-        console.log('Sample restaurant with distance:', processedRestaurants[0]?.name, processedRestaurants[0]?.distance);
-      } else {
-        console.log('No user location available, skipping distance calculation');
       }
       
       setRestaurants(processedRestaurants);
@@ -465,7 +441,7 @@ function EateryPageContent() {
       },
       grid: {
         display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(300px, 1fr))',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
         gap: isMobile ? '8px' : '16px',
         padding: isMobile ? '8px' : '16px',
       },
@@ -482,15 +458,6 @@ function EateryPageContent() {
         margin: isMobile ? '16px 8px' : '16px',
       }
     };
-
-    console.log('🔍 Eatery Page Debug - Mobile Styles:', {
-      isMobile,
-      viewportHeight,
-      viewportWidth,
-      containerStyles: styles.container,
-      gridStyles: styles.grid,
-      cardStyles: styles.card
-    });
 
     return styles;
   }, [isMobile, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
@@ -536,14 +503,14 @@ function EateryPageContent() {
       onTouchEnd={onTouchEnd}
       ref={(el) => {
         if (el) {
-          console.log('🔍 Eatery Page Debug - Main Container Element:', {
-            className: el.className,
-            style: el.style.cssText,
-            computedStyle: window.getComputedStyle(el),
-            backgroundColor: window.getComputedStyle(el).backgroundColor,
-            background: window.getComputedStyle(el).background,
-            element: el
-          });
+          // console.log('🔍 Eatery Page Debug - Main Container Element:', {
+          //   className: el.className,
+          //   style: el.style.cssText,
+          //   computedStyle: window.getComputedStyle(el),
+          //   backgroundColor: window.getComputedStyle(el).backgroundColor,
+          //   background: window.getComputedStyle(el).background,
+          //   element: el
+          // });
         }
       }}
     >
@@ -617,6 +584,8 @@ function EateryPageContent() {
         </>
       )}
 
+
+
       {/* Restaurant grid with mobile optimization */}
       {restaurants.length === 0 && !loading ? (
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -629,27 +598,31 @@ function EateryPageContent() {
       ) : (
         <div 
           className="restaurant-grid"
+          style={mobileOptimizedStyles.grid}
           ref={(el) => {
             if (el) {
-              console.log('🔍 Eatery Page Debug - Restaurant Grid Element:', {
-                className: el.className,
-                style: el.style.cssText,
-                computedStyle: window.getComputedStyle(el),
-                backgroundColor: window.getComputedStyle(el).backgroundColor,
-                background: window.getComputedStyle(el).background,
-                element: el
-              });
+              // console.log('🔍 Eatery Page Debug - Restaurant Grid Element:', {
+              //   className: el.className,
+              //   style: el.style.cssText,
+              //   computedStyle: window.getComputedStyle(el),
+              //   backgroundColor: window.getComputedStyle(el).backgroundColor,
+              //   background: window.getComputedStyle(el).background,
+              //   element: el
+              // });
             }
           }}
         >
           {restaurants.map((restaurant, index) => (
-            <UnifiedCard
-              key={restaurant.id}
-              data={transformRestaurantToCardData(restaurant)}
-              variant="default"
-              showStarInBadge={true}
-              onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
-            />
+            <div key={restaurant.id}>
+              <UnifiedCard
+                data={transformRestaurantToCardData(restaurant)}
+                variant="default"
+                showStarInBadge={true}
+                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+                className="w-full"
+              />
+            </div>
           ))}
         </div>
       )}

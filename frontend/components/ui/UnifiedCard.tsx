@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import { Heart, Star } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { useFavorites } from '@/lib/utils/favorites';
@@ -56,105 +56,28 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   variant = 'default',
   showStarInBadge = false // Default to false for timestamps
 }) => {
-  const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   
   // State management
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [announcement, setAnnouncement] = useState('');
 
-  // Debug logging for UnifiedCard
-  useEffect(() => {
-    console.log('🔍 UnifiedCard Debug - Component Props:', {
-      data,
-      variant,
-      showStarInBadge,
-      className
-    });
-  }, [data, variant, showStarInBadge, className]);
 
-  // Debug logging for element styling after render
-  useEffect(() => {
-    const cardElement = document.querySelector('.unified-card');
-    if (cardElement) {
-      console.log('🔍 UnifiedCard Debug - Card Element Styling:', {
-        className: cardElement.className,
-        style: cardElement.getAttribute('style'),
-        computedStyle: window.getComputedStyle(cardElement),
-        backgroundColor: window.getComputedStyle(cardElement).backgroundColor,
-        background: window.getComputedStyle(cardElement).background,
-        element: cardElement
-      });
-    }
-  }, [data.id]); // Re-run when card data changes
 
-  // Force cards to be visible after animation timeout
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const cardElements = document.querySelectorAll('.unified-card');
-      cardElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          const computedStyle = window.getComputedStyle(el);
-          if (computedStyle.opacity === '0') {
-            console.log('🔍 UnifiedCard Debug - Forcing visibility for stuck card:', el);
-            el.style.opacity = '1';
-            el.style.transform = 'translateY(0px)';
-          }
-        }
-      });
-    }, 1000); // 1 second timeout
 
-    return () => clearTimeout(timeout);
-  }, [data.id]);
 
-  // Debug all child elements to find white background source
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const cardElements = document.querySelectorAll('.unified-card');
-      cardElements.forEach((card, index) => {
-        if (index === 0) { // Only debug first card to avoid spam
-          console.log('🔍 UnifiedCard Debug - Analyzing card structure for white background:', card);
-          
-          // Check all child elements recursively
-          const checkElementBackground = (element: Element, depth: number = 0) => {
-            const indent = '  '.repeat(depth);
-            const computedStyle = window.getComputedStyle(element);
-            const backgroundColor = computedStyle.backgroundColor;
-            const background = computedStyle.background;
-            
-            // Check if this element has a white or solid background
-            if (backgroundColor && backgroundColor !== 'rgba(0, 0, 0, 0)' && backgroundColor !== 'transparent') {
-              console.log(`${indent}🔍 Found element with background:`, {
-                element: element,
-                tagName: element.tagName,
-                className: element.className,
-                backgroundColor: backgroundColor,
-                background: background,
-                depth: depth
-              });
-            }
-            
-            // Recursively check children
-            Array.from(element.children).forEach(child => {
-              checkElementBackground(child, depth + 1);
-            });
-          };
-          
-          checkElementBackground(card);
-        }
-      });
-    }, 2000); // 2 second timeout to ensure everything is rendered
 
-    return () => clearTimeout(timeout);
-  }, [data.id]);
+
+
 
   // Derive liked status from favorites for consistent UI state
   const liked = useMemo(() => {
-    return Array.isArray(favorites) && favorites.some(f => f.id === data.id);
-  }, [favorites, data.id]);
+    const dataIdString = data.id.toString();
+    return isFavorite(dataIdString);
+  }, [isFavorite, data.id]);
 
   // Memoized computations
   const cardData = useMemo(() => ({
@@ -193,7 +116,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       if (newIsLiked) {
         const minimalRestaurant = {
-          id: data.id,
+          id: data.id.toString(), // Ensure ID is string
           name: data.title,
           address: '',
           city: data.city || '',
@@ -205,21 +128,20 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           listing_type: 'restaurant',
           status: 'active' as any,
           hours: {} as any,
-          category: 'restaurant' as any
+          category: { name: 'restaurant' } as any
         };
         addFavorite(minimalRestaurant);
         setAnnouncement(`Added ${data.title} to favorites`);
       } else {
-        removeFavorite(data.id);
+        removeFavorite(data.id.toString()); // Ensure ID is string
         setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
-      onLikeToggle?.(data.id, newIsLiked);
+      onLikeToggle?.(data.id.toString(), newIsLiked); // Ensure ID is string
       
       // Reset animation state
       setTimeout(() => setIsAnimating(false), 200);
-    } catch (error) {
-      // console.warn('Card error:', error);
+    } catch {
       setIsAnimating(false);
     }
   }, [liked, data.id, data.title, data.city, data.kosherCategory, onLikeToggle, addFavorite, removeFavorite]);
@@ -246,24 +168,26 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
   // Variant-specific styling
   const getVariantStyles = () => {
+    const hasFullWidth = className?.includes('w-full');
+    
     switch (variant) {
       case 'minimal':
         return {
-          cardClass: "w-[160px] rounded-xl overflow-hidden p-1",
+          cardClass: hasFullWidth ? "w-full rounded-xl overflow-hidden p-1" : "w-[160px] rounded-xl overflow-hidden p-1",
           imageClass: "h-[100px]",
           titleClass: "text-xs font-medium",
           badgeClass: "text-xs px-1.5 py-0.5"
         };
       case 'enhanced':
         return {
-          cardClass: "w-[200px] rounded-3xl overflow-hidden p-3",
+          cardClass: hasFullWidth ? "w-full rounded-3xl overflow-hidden p-3" : "w-[200px] rounded-3xl overflow-hidden p-3",
           imageClass: "h-[140px]",
           titleClass: "text-base font-semibold",
           badgeClass: "text-sm px-3 py-1"
         };
       default:
         return {
-          cardClass: "w-[200px] rounded-2xl overflow-hidden p-2",
+          cardClass: hasFullWidth ? "w-full rounded-2xl overflow-hidden p-2" : "w-[200px] rounded-2xl overflow-hidden p-2",
           imageClass: "h-[126px]",
           titleClass: "text-sm font-semibold",
           badgeClass: "text-xs px-2 py-0.5"
@@ -275,7 +199,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
   // Remove any surface classes that could reintroduce a panel look
   const sanitizedClassName = useMemo(() => {
-    if (!className) return '';
+    if (!className) {return '';}
     const tokens = className.split(/\s+/).filter(Boolean);
     const filtered = tokens.filter((t) =>
       !/^bg-/.test(t) && // backgrounds
@@ -300,12 +224,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         transition: { duration: 0.1 }
       }}
       className={cn(
-        'relative bg-transparent rounded-xl cursor-pointer group unified-card',
+        'relative bg-transparent cursor-pointer group unified-card',
         'transition-all duration-200 ease-out',
         'flex flex-col', // Remove h-full to prevent over-extension
-        'p-1', // Add padding to prevent border from covering content
         'border-0', // Ensure no border
         'shadow-none', // Ensure no shadow
+        variantStyles.cardClass,
         sanitizedClassName
       )}
       style={{ background: 'transparent', boxShadow: 'none', border: 0 }}
@@ -315,19 +239,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       role="button"
       aria-label={`View details for ${cardData.title}`}
       aria-live="polite"
-      aria-describedby={`card-${cardData.id}`}
-      ref={(el) => {
-        if (el) {
-          console.log('🔍 UnifiedCard Debug - Card Element Ref:', {
-            className: el.className,
-            style: el.style.cssText,
-            computedStyle: window.getComputedStyle(el),
-            backgroundColor: window.getComputedStyle(el).backgroundColor,
-            background: window.getComputedStyle(el).background,
-            element: el
-          });
-        }
-      }}
+      aria-describedby={`card-${cardData.id.toString()}`}
+
     >
       {/* Global styles for transparent surface, tag pill, and heart icon */}
       <style jsx global>{`
@@ -424,16 +337,14 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           width: 18px !important;
           height: 18px !important;
           transition: all 0.2s ease-out !important;
-          color: #ffffff !important; /* keep white stroke via currentColor */
-          stroke: currentColor !important;
-          stroke-width: 2 !important;
           filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
         }
-        /* Filled heart layer color control */
-        .unified-card-heart .heart-fill { color: rgb(156, 163, 175) !important; }
-        .unified-card-heart:hover .heart-fill, .unified-card-heart.liked .heart-fill { color: rgb(239, 68, 68) !important; }
-        @media (hover: none) and (pointer: coarse) {
-          .unified-card-heart:active .heart-fill { color: rgb(239, 68, 68) !important; }
+        /* Heart color control */
+        .unified-card-heart svg {
+          color: #ffffff !important; /* white outline for unfilled hearts */
+        }
+        .unified-card-heart.liked svg {
+          color: rgb(239, 68, 68) !important; /* red for filled hearts */
         }
       `}</style>
       {/* Persistent live region for announcements */}
@@ -513,17 +424,20 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               style={{ transform: isAnimating ? 'scale(0.9)' : 'scale(1)' }}
             >
               <span className="relative block w-[18px] h-[18px]">
-                {/* Filled heart layer for hover/liked color */}
-                <svg 
-                  viewBox="0 0 24 24" 
-                  className="absolute inset-0 w-[18px] h-[18px] heart-fill"
-                  aria-hidden
-                  style={{ color: liked ? 'rgb(239, 68, 68)' : 'rgb(156, 163, 175)' }}
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" />
-                </svg>
-                {/* Outline heart on top */}
-                <Heart size={18} />
+                {liked ? (
+                  /* Filled heart when liked */
+                  <svg 
+                    viewBox="0 0 24 24" 
+                    className="w-[18px] h-[18px]"
+                    aria-hidden
+                    style={{ color: 'rgb(239, 68, 68)' }}
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" />
+                  </svg>
+                ) : (
+                  /* Outline heart when not liked */
+                  <Heart size={18} />
+                )}
               </span>
             </button>
           )}
