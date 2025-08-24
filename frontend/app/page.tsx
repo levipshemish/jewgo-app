@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { extractIsAnonymous } from "@/lib/utils/auth-utils";
+import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);

@@ -10,7 +10,7 @@ import {
   handleUserLoadError,
   createMockUser,
   type TransformedUser 
-} from "@/lib/utils/auth-utils";
+} from "@/lib/utils/auth-utils-client";
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";

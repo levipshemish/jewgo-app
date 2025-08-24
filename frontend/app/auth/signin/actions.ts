@@ -16,11 +16,11 @@ function validateTurnstileHostname(resultHostname: string | undefined): boolean 
   
   const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
   const expectedHostname = expectedHost.split(':')[0]; // Remove port if present
-  const resultHostnameClean = resultHostname.split(':')[0]; // Remove port if present
+  const resultHostnameClean = resultHostname?.split(':')[0]; // Remove port if present
   
   // Allow exact match, subdomains, and localhost
   return resultHostnameClean === expectedHostname || 
-         resultHostnameClean.endsWith('.' + expectedHostname) ||
+         (resultHostnameClean && resultHostnameClean.endsWith('.' + expectedHostname)) ||
          expectedHostname === 'localhost';
 }
 

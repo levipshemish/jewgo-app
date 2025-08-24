@@ -9,7 +9,7 @@ import {
   transformSupabaseUser, 
   handleUserLoadError,
   type TransformedUser 
-} from "@/lib/utils/auth-utils";
+} from "@/lib/utils/auth-utils-client";
 import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function ProfilePage() {
