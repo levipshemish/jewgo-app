@@ -17,7 +17,18 @@ export default function ActionButtons({
     onShowMap();
   };
 
-  const handleAddEateryClick = () => {
+  const handleAddEateryClick = async () => {
+    try {
+      // Dynamically import to avoid SSR issues
+      const { supabaseBrowser } = await import('@/lib/supabase/client');
+      const { data: { user } } = await supabaseBrowser.auth.getUser();
+      if (!user) {
+        window.location.href = `/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`;
+        return;
+      }
+    } catch {
+      // If check fails, fall back to parent handler
+    }
     onAddEatery();
   };
 

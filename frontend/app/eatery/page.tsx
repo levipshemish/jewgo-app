@@ -555,7 +555,7 @@ function EateryPageContent() {
       <ActionButtons 
         onShowFilters={() => setShowFilters(!showFilters)}
         onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-eatery')}
+        onAddEatery={() => router.push('/auth/signin?redirectTo=%2Fadd-eatery')}
       />
       
       {/* Filters Modal/Overlay */}

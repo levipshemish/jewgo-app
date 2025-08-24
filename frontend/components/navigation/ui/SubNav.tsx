@@ -33,7 +33,17 @@ const SubNav: React.FC<SubNavProps> = ({
             </button>
             
             <button
-              onClick={onAddEatery || (() => router.push('/add-eatery'))}
+              onClick={onAddEatery || (async () => {
+                try {
+                  const { supabaseBrowser } = await import('@/lib/supabase/client');
+                  const { data: { user } } = await supabaseBrowser.auth.getUser();
+                  if (!user) {
+                    router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
+                    return;
+                  }
+                } catch {}
+                router.push('/add-eatery');
+              })}
               className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-transparent text-gray-600 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm transition-all duration-200 flex-1 justify-center text-xs sm:text-sm font-medium group"
             >
               <Plus size={12} className="sm:w-4 sm:h-4 group-hover:scale-110 transition-transform duration-200" />
@@ -69,7 +79,17 @@ const SubNav: React.FC<SubNavProps> = ({
         id: 'add-eatery',
         label: 'Add Eatery',
         icon: Plus,
-        onClick: () => router.push('/add-eatery'),
+        onClick: async () => {
+          try {
+            const { supabaseBrowser } = await import('@/lib/supabase/client');
+            const { data: { user } } = await supabaseBrowser.auth.getUser();
+            if (!user) {
+              router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
+              return;
+            }
+          } catch {}
+          router.push('/add-eatery');
+        },
       },
       {
         id: 'advanced-filters',
@@ -120,7 +140,17 @@ const SubNav: React.FC<SubNavProps> = ({
           </button>
           
           <button
-            onClick={onAddEatery || (() => router.push('/add-eatery'))}
+            onClick={onAddEatery || (async () => {
+              try {
+                const { supabaseBrowser } = await import('@/lib/supabase/client');
+                const { data: { user } } = await supabaseBrowser.auth.getUser();
+                if (!user) {
+                  router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
+                  return;
+                }
+              } catch {}
+              router.push('/add-eatery');
+            })}
             className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-transparent text-gray-600 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm transition-all duration-200 flex-1 justify-center text-xs sm:text-sm font-medium group"
           >
             <Plus size={12} className="sm:w-4 sm:h-4 group-hover:scale-110 transition-transform duration-200" />

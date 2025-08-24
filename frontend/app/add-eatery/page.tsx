@@ -57,6 +57,23 @@ interface FilterOptions {
 }
 
 export default function AddEateryPage() {
+  // Client-side auth guard: if unauthenticated, redirect to signin with redirectTo
+  useEffect(() => {
+    let isMounted = true;
+    const check = async () => {
+      try {
+        const { supabaseBrowser } = await import('@/lib/supabase/client');
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
+        if (isMounted && !user) {
+          window.location.replace(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
+        }
+      } catch {
+        // no-op: middleware also protects
+      }
+    };
+    check();
+    return () => { isMounted = false; };
+  }, []);
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);

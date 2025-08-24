@@ -1171,25 +1171,48 @@ export default function InteractiveRestaurantMap({
 
     const placeholder = '/images/default-restaurant.webp';
     return `
-      <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg" data-popup-version="v2">
-        <!-- Heart/Favorite Button -->
+      <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg" data-popup-version="v3" style="position: relative; overflow: visible;">
+        <!-- Heart/Favorite Button - FIXED LEFT CORNER -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
-                class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm ${
+                class="rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm ${
                   isFavorite 
                     ? 'bg-red-100 text-red-500 hover:bg-red-200' 
                     : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
                 }"
-                style="position: absolute !important; top: 12px !important; left: 12px !important; z-index: 30 !important;"
+                style="
+                  position: absolute !important; 
+                  top: 12px !important; 
+                  left: 12px !important; 
+                  width: 32px !important; 
+                  height: 32px !important;
+                  z-index: 999 !important;
+                  margin: 0 !important;
+                  border: none !important;
+                  transform: none !important;
+                  flex-shrink: 0 !important;
+                "
                 data-favorite="${isFavorite ? 'true' : 'false'}"
                 title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-          <svg class="w-4 h-4 ${isFavorite ? 'fill-current' : ''}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
+          <svg style="width: 16px; height: 16px;" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
         
-        <!-- Close Button -->
+        <!-- Close Button - FIXED RIGHT CORNER -->
         <button onclick="this.parentElement.parentElement.parentElement.close()"
-                style="position: absolute !important; top: 12px !important; right: 12px !important; z-index: 25 !important;"
+                style="
+                  position: absolute !important; 
+                  top: 12px !important; 
+                  right: 12px !important; 
+                  z-index: 999 !important;
+                  margin: 0 !important;
+                  border: none !important;
+                  transform: none !important;
+                  background: none !important;
+                  width: 24px !important;
+                  height: 24px !important;
+                  flex-shrink: 0 !important;
+                "
                 class="text-gray-400 hover:text-gray-600 text-lg font-bold leading-none">
           ×
         </button>
