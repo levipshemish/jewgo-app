@@ -381,7 +381,7 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant({ ...restaurant });
   }, []);
 
-  // Transform restaurant data to match UnifiedCard's CardData interface
+  // Transform restaurant data to match MapCard's CardData interface
   const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -389,18 +389,24 @@ export default function UnifiedLiveMapClient() {
     const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
     
+    // Format address info for display
+    const addressParts = [restaurant.address, restaurant.city, restaurant.state].filter(Boolean);
+    const fullAddress = addressParts.join(', ');
+    
     return {
       id: restaurant.id.toString(),
       imageUrl: restaurant.image_url,
       imageTag: restaurant.kosher_category,
       title: restaurant.name,
       badge: ratingText,
-      subtitle: priceRange,
+      subtitle: priceRange || 'Price Range',
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: restaurant.kosher_category,
-      city: restaurant.city,
+      city: fullAddress || restaurant.city,
+      address: restaurant.address,
+      certifyingAgency: restaurant.certifying_agency,
     };
   }, []);
 
@@ -550,7 +556,7 @@ export default function UnifiedLiveMapClient() {
 
       {/* Restaurant Detail Card */}
       {showRestaurantCard && selectedRestaurant && (
-        <div className="fixed bottom-20 left-4 right-4 sm:left-8 sm:right-8 max-w-md mx-auto z-50">
+        <div className="fixed bottom-20 left-4 right-4 sm:left-8 sm:right-8 max-w-lg mx-auto z-50">
           <div className="relative">
             <MapCard
               data={transformRestaurantToCardData(selectedRestaurant)}

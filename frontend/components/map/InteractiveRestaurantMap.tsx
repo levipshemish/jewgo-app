@@ -72,7 +72,9 @@ export default function InteractiveRestaurantMap({
   useEffect(() => {
     (window as any).toggleMapFavorite = (restaurantId: string, buttonElement: HTMLElement) => {
       const restaurant = restaurants.find(r => r.id.toString() === restaurantId);
-      if (!restaurant) return;
+      if (!restaurant) {
+        return;
+      }
       
       const isCurrentlyFavorite = favoritesManager.isFavorite(restaurantId);
       const success = isCurrentlyFavorite 
@@ -1088,9 +1090,9 @@ export default function InteractiveRestaurantMap({
     // Get kosher category color
     const getKosherColor = () => {
       const category = restaurant.kosher_category?.toLowerCase();
-      if (category === 'dairy') return '#3B82F6'; // blue
-      if (category === 'meat') return '#EF4444'; // red  
-      if (category === 'pareve') return '#F59E0B'; // yellow
+      if (category === 'dairy') { return '#3B82F6'; } // blue
+      if (category === 'meat') { return '#EF4444'; } // red  
+      if (category === 'pareve') { return '#F59E0B'; } // yellow
       return '#6B7280'; // gray
     };
 

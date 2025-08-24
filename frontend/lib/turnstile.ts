@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { appLogger } from '@/lib/utils/logger';
 
 type VerifyResp = {
   success: boolean;
@@ -17,7 +18,9 @@ export async function verifyTurnstile(responseToken: string) {
 
   // Log verification attempt in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔐 Turnstile verification - token:', responseToken?.substring(0, 20) + '...', 'secret:', secret?.substring(0, 20) + '...');
+    const tokenPreview = `${responseToken?.substring(0, 20) ?? ''}...`;
+    const secretPreview = `${secret?.substring(0, 20) ?? ''}...`;
+    appLogger.debug(`🔐 Turnstile verification - token: ${tokenPreview} secret: ${secretPreview}`);
   }
 
   // Always verify Turnstile tokens

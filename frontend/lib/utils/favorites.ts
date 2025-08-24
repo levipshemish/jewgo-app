@@ -84,7 +84,9 @@ class FavoritesManager {
 
   // Debounced save to localStorage to prevent excessive writes
   private saveToStorage(): void {
-    if (this.pendingSave) return;
+    if (this.pendingSave) {
+      return;
+    }
     
     this.pendingSave = true;
     

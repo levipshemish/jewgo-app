@@ -147,7 +147,9 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
         // eslint-disable-next-line no-console
         console.log('[Turnstile debug] trying render, api loaded:', !!window.turnstile, 'placeholder exists:', !!placeholderRef.current);
       }
-      if (!placeholderRef.current) return;
+      if (!placeholderRef.current) {
+        return;
+      }
       if (window.turnstile?.render) {
         try {
           const id = window.turnstile.render(placeholderRef.current, {

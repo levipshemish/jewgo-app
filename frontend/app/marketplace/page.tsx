@@ -19,6 +19,7 @@ import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+import { appLogger } from '@/lib/utils/logger';
 
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
@@ -442,7 +443,7 @@ function MarketplacePageContent() {
 
   // Memoize marketplace listing transformation to prevent unnecessary re-renders
   const transformMarketplaceToCardData = useCallback((listing: MarketplaceListing) => {
-    console.log('Transforming listing:', listing);
+    appLogger.debug('Transforming marketplace listing', { listingId: listing.id });
     
   // Format price from cents to dollars
   const formatPrice = (priceCents: number) => {
@@ -498,7 +499,7 @@ function MarketplacePageContent() {
     isLiked: false // This will be handled by the component internally
     };
     
-    console.log('Transformed data:', transformedData);
+    appLogger.debug('Transformed marketplace data', { id: transformedData.id });
     return transformedData;
   }, [userLocation]); // Empty dependency array to prevent recreation
 
@@ -660,7 +661,7 @@ function MarketplacePageContent() {
           setHasMore(false);
         } else if (newListings.length === 0) {
           // No listings available, use sample data
-          console.log('No listings available, using sample data');
+          appLogger.info('No listings available, using sample data');
           const sampleListings = sampleMarketplaceData.slice(0, mobileOptimizedItemsPerPage);
           
           setMarketplaceAvailable(true);
@@ -704,10 +705,10 @@ function MarketplacePageContent() {
         }
       } else {
         // Use sample data when API fails or returns no data
-        console.log('Using sample marketplace data due to API error or no data');
-        console.log('Sample data:', sampleMarketplaceData);
+        appLogger.warn('Using sample marketplace data due to API error or no data');
+        appLogger.debug('Sample data count', { count: sampleMarketplaceData.length });
         const sampleListings = sampleMarketplaceData.slice(0, mobileOptimizedItemsPerPage);
-        console.log('Sample listings to display:', sampleListings);
+        appLogger.debug('Sample listings to display count', { count: sampleListings.length });
         
         setMarketplaceAvailable(true);
         if (append) {
@@ -730,10 +731,10 @@ function MarketplacePageContent() {
       }
     } catch (err) {
       // Use sample data when API throws an error
-      console.log('Using sample marketplace data due to API error:', err);
-      console.log('Sample data:', sampleMarketplaceData);
+      appLogger.error('Using sample marketplace data due to API error', { error: String(err) });
+      appLogger.debug('Sample data count', { count: sampleMarketplaceData.length });
       const sampleListings = sampleMarketplaceData.slice(0, mobileOptimizedItemsPerPage);
-      console.log('Sample listings to display:', sampleListings);
+      appLogger.debug('Sample listings to display count', { count: sampleListings.length });
       
       setMarketplaceAvailable(true);
       if (append) {
@@ -767,7 +768,7 @@ function MarketplacePageContent() {
       const nextPage = currentPage + 1;
       await fetchMarketplaceData(nextPage, true);
     } catch (err) {
-      console.error('Error fetching more listings:', err);
+      appLogger.error('Error fetching more listings', { error: String(err) });
     }
   };
 
@@ -852,7 +853,7 @@ function MarketplacePageContent() {
   useEffect(() => {
     // For development, use sample data immediately
     if (process.env.NODE_ENV === 'development') {
-      console.log('Development mode: Using sample data immediately');
+      appLogger.info('Development mode: using sample data immediately');
       const sampleListings = sampleMarketplaceData.slice(0, mobileOptimizedItemsPerPage);
       setListings(sampleListings);
       setMarketplaceAvailable(true);

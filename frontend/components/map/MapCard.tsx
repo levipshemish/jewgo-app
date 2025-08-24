@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
+import { appLogger } from '@/lib/utils/logger';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
@@ -23,6 +24,8 @@ interface CardData {
   isLiked?: boolean;
   kosherCategory?: string;
   city?: string;
+  address?: string;
+  certifyingAgency?: string;
 }
 
 interface MapCardProps {
@@ -133,17 +136,17 @@ const MapCard = memo<MapCardProps>(({
       // Reset animation state
       setTimeout(() => setIsAnimating(false), 150);
     } catch (error) {
-      console.warn('Error toggling favorite:', error);
+      appLogger.warn('Error toggling favorite', { error });
       setIsAnimating(false);
     }
   }, [liked, data, addFavorite, removeFavorite, onLikeToggle]);
 
-  const handleCardClick = useCallback(() => {
-    if (isAnimating) return;
-    
-    handleImmediateTouch();
-    onCardClick?.(cardData);
-  }, [isAnimating, handleImmediateTouch, onCardClick, cardData]);
+  const handleCardClick = useMemo(() => (
+    handleImmediateTouch(() => {
+      if (isAnimating) { return; }
+      onCardClick?.(cardData);
+    })
+  ), [handleImmediateTouch, isAnimating, onCardClick, cardData]);
 
   const handleImageLoad = useCallback(() => {
     setImageLoading(false);
@@ -179,15 +182,15 @@ const MapCard = memo<MapCardProps>(({
         // Map-specific styling: white background, rectangular shape
         'relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden',
         'w-full border border-gray-100',
-        // Rectangular aspect ratio for map popups
-        'aspect-[1.4/1]', // 1.4:1 ratio (wider than tall)
+        // Very narrow aspect ratio for map popups
+        'aspect-[5/4]', // 1.25:1 ratio (very narrow)
         className
       )}
       onClick={handleCardClick}
       style={{
         backgroundColor: 'white', // Force white background
-        minHeight: '280px',
-        maxHeight: '320px'
+        minHeight: '150px', // 25% smaller (was 200px)
+        maxHeight: '180px'  // 25% smaller (was 240px)
       }}
     >
       {/* Announcement for screen readers */}
@@ -197,102 +200,132 @@ const MapCard = memo<MapCardProps>(({
         </div>
       )}
 
-      {/* Image Section - Adjusted for rectangular layout */}
-      <div className="relative h-40 bg-gray-100 overflow-hidden">
-        {heroImageUrl && (
-          <Image
-            src={heroImageUrl}
-            alt={cardData.title}
-            fill
-            className={cn(
-              'object-cover transition-opacity duration-300',
-              imageLoading ? 'opacity-0' : 'opacity-100'
+      {/* Vertical Layout: Image Top, Content Below */}
+      <div className="flex flex-col h-full">
+        
+        {/* Image Section - Top */}
+        <div className="relative h-24 bg-gray-100 overflow-hidden">
+          {heroImageUrl && (
+            <Image
+              src={heroImageUrl}
+              alt={cardData.title}
+              fill
+              className={cn(
+                'object-cover transition-opacity duration-300',
+                imageLoading ? 'opacity-0' : 'opacity-100'
+              )}
+              priority={priority}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          )}
+
+          {/* Loading skeleton */}
+          {imageLoading && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          )}
+
+          {/* Kosher Category Tag */}
+          {cardData.imageTag && (
+            <div className="absolute bottom-2 left-2">
+              <span className={cn(
+                'text-xs px-2 py-1 rounded-full font-medium shadow-sm',
+                getKosherCategoryColor()
+              )}>
+                {cardData.imageTag.charAt(0).toUpperCase() + cardData.imageTag.slice(1)}
+              </span>
+            </div>
+          )}
+
+
+
+          {/* Heart Button */}
+          {cardData.showHeart && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLikeToggle();
+              }}
+              className={cn(
+                'absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm',
+                liked
+                  ? 'bg-red-100/90 text-red-500 hover:bg-red-200/90'
+                  : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500',
+                isAnimating && 'scale-90'
+              )}
+              aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <svg
+                className={cn(
+                  'w-4 h-4 transition-all duration-150',
+                  liked ? 'fill-current' : 'fill-none'
+                )}
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Content Section - Bottom */}
+        <div className="flex-1 p-3">
+          
+          {/* Header: Title and Rating */}
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 flex-1 pr-2">
+              {cardData.title}
+            </h3>
+            
+            {/* Rating Badge */}
+            {cardData.badge && (
+              <div className="flex items-center space-x-1 bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full flex-shrink-0">
+                {showStarInBadge && <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />}
+                <span className="text-xs font-medium">{cardData.badge}</span>
+              </div>
             )}
-            priority={priority}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
-        )}
-
-        {/* Loading skeleton */}
-        {imageLoading && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
-        )}
-
-        {/* Kosher Category Tag */}
-        {cardData.imageTag && (
-          <div className="absolute top-2 left-2">
-            <span className={cn(
-              'text-xs px-2 py-1 rounded-full font-medium shadow-sm',
-              getKosherCategoryColor()
-            )}>
-              {cardData.imageTag.charAt(0).toUpperCase() + cardData.imageTag.slice(1)}
-            </span>
           </div>
-        )}
 
-        {/* Rating Badge */}
-        {cardData.badge && (
-          <div className="absolute top-2 right-2">
-            <div className="flex items-center space-x-1 bg-black/70 text-white px-2 py-1 rounded-full">
-              {showStarInBadge && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
-              <span className="text-xs font-medium">{cardData.badge}</span>
+          {/* Restaurant Details Grid */}
+          <div className="grid grid-cols-2 gap-1 text-xs">
+            
+            {/* Left Column */}
+            <div className="space-y-0.5">
+              {/* Price Range */}
+              {cardData.subtitle && (
+                <p className="text-gray-600 font-medium">
+                  💰 {cardData.subtitle}
+                </p>
+              )}
+              
+              {/* Distance */}
+              {cardData.additionalText && (
+                <p className="text-green-600 font-medium">
+                  🚶 {cardData.additionalText} away
+                </p>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-0.5">
+              {/* Address/Location */}
+              {cardData.city && (
+                <p className="text-gray-500 line-clamp-2 text-xs">
+                  📍 {cardData.city}
+                </p>
+              )}
+
+              {/* Certifying Agency */}
+              {cardData.certifyingAgency && (
+                <p className="text-blue-600 font-medium text-xs">
+                  🏛️ {cardData.certifyingAgency}
+                </p>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Heart Button */}
-        {cardData.showHeart && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleLikeToggle();
-            }}
-            className={cn(
-              'absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm backdrop-blur-sm',
-              liked
-                ? 'bg-red-100/90 text-red-500 hover:bg-red-200/90'
-                : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500',
-              isAnimating && 'scale-90'
-            )}
-            aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <svg
-              className={cn(
-                'w-4 h-4 transition-all duration-150',
-                liked ? 'fill-current' : 'fill-none'
-              )}
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Content Section - Optimized for rectangular layout */}
-      <div className="p-4 h-32 flex flex-col justify-between">
-        {/* Title */}
-        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-2">
-          {cardData.title}
-        </h3>
-
-        {/* Details */}
-        <div className="space-y-1 flex-1">
-          {cardData.subtitle && (
-            <p className="text-xs text-gray-600 line-clamp-1">
-              {cardData.subtitle}
-            </p>
-          )}
-          
-          {cardData.additionalText && (
-            <p className="text-xs text-green-600 font-medium line-clamp-1">
-              {cardData.additionalText}
-            </p>
-          )}
         </div>
       </div>
     </motion.div>
