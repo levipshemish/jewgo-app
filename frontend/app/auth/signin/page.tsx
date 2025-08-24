@@ -486,8 +486,9 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
                 🔗 <strong>Account Linking Required:</strong> We found multiple accounts with the same email address. 
                 Please re-authenticate to securely link them together.
               </p>
-                    </div>
-      </div>
+            </div>
+          )}
+        </div>
         
         {/* Debug info - remove in production */}
         {process.env.NODE_ENV === 'development' && debugInfo && (
