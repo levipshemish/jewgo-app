@@ -19,9 +19,10 @@ export async function GET(request: NextRequest) {
     const safeNext = validateRedirectUrl(next);
 
     // Utility to build a redirect response and clear oauth_state cookie on the client
-    const redirectWithStateClear = (target: string | URL) => {
+    const redirectWithStateClear = async (target: string | URL) => {
       const url = target instanceof URL ? target : new URL(target, request.url);
       const res = NextResponse.redirect(url, 302);
+      // Clear our optional state cookie
       res.cookies.set('oauth_state', '', {
         httpOnly: true,
         sameSite: 'lax',
@@ -29,6 +30,20 @@ export async function GET(request: NextRequest) {
         path: '/',
         maxAge: 0,
       });
+      // Propagate any cookies set during exchange/verify onto the redirect response
+      try {
+        const store = await cookies();
+        store.getAll().forEach((c) => {
+          res.cookies.set(c.name, c.value, {
+            domain: c.domain,
+            path: c.path,
+            maxAge: c.maxAge,
+            httpOnly: c.httpOnly,
+            secure: c.secure,
+            sameSite: c.sameSite,
+          });
+        });
+      } catch {}
       return res;
     };
 

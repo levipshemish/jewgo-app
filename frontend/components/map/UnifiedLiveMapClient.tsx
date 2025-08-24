@@ -15,7 +15,7 @@ import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { favoritesManager } from '@/lib/utils/favorites';
-import UnifiedCard from '@/components/ui/UnifiedCard';
+import MapCard from '@/components/map/MapCard';
 
 // Removed VirtualRestaurantList import since we're only showing map view
 
@@ -428,29 +428,7 @@ export default function UnifiedLiveMapClient() {
   // Removed handleTabChange since we're only showing map view
 
   // Utility functions
-  const formatPriceRange = useCallback((restaurant: Restaurant) => {
-    if (restaurant.price_range && restaurant.price_range.trim() !== '') {
-      if (restaurant.price_range.includes('-')) {
-        return `$${restaurant.price_range}`;
-      }
-      return restaurant.price_range;
-    }
 
-    if ((restaurant as any).min_avg_meal_cost && (restaurant as any).max_avg_meal_cost) {
-      return `$${(restaurant as any).min_avg_meal_cost}-${(restaurant as any).max_avg_meal_cost}`;
-    }
-
-    return '$15-25';
-  }, []);
-
-  const getRating = useCallback((restaurant: Restaurant) => {
-    const rating = restaurant.rating || (restaurant as any).star_rating || (restaurant as any).google_rating;
-    return rating && rating > 0 ? rating : 4.5;
-  }, []);
-
-  const getReviewCount = useCallback((restaurant: Restaurant) => {
-    return (restaurant as any).review_count || (restaurant as any).google_review_count || 25;
-  }, []);
 
   const hasActiveFilters = useMemo(() => {
     return Boolean(searchQuery.trim()) ||
@@ -572,108 +550,31 @@ export default function UnifiedLiveMapClient() {
 
       {/* Restaurant Detail Card */}
       {showRestaurantCard && selectedRestaurant && (
-        <div
-          className="fixed bottom-20 left-4 right-4 sm:left-8 sm:right-8 max-w-sm mx-auto bg-white rounded-2xl shadow-2xl z-50 max-h-[40vh] overflow-hidden cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => router.push(`/restaurant/${selectedRestaurant.id}`)}
-        >
+        <div className="fixed bottom-20 left-4 right-4 sm:left-8 sm:right-8 max-w-md mx-auto z-50">
           <div className="relative">
-            <div className="relative h-32 bg-gray-200">
-              {(() => {
-                const safeImageUrl = getSafeImageUrl(selectedRestaurant.image_url);
-                return safeImageUrl !== '/images/default-restaurant.webp' ? (
-                  <img
-                    src={safeImageUrl}
-                    alt={selectedRestaurant.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    <span className="text-gray-400 text-sm">No Image</span>
-                  </div>
-                );
-              })()}
-
-              {/* Heart Button - LEFT CORNER */}
-              <div className="absolute top-2 left-2">
-                <button
-                  className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 group backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite(selectedRestaurant);
-                  }}
-                  aria-label="Toggle favorite"
-                  title="Toggle favorite"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-                  }}
-                >
-                  <Heart
-                    className={`w-4 h-4 transition-all duration-150 ease-out stroke-2 drop-shadow-sm ${
-                      favoritesManager.isFavorite(selectedRestaurant.id.toString())
-                        ? 'fill-red-500 text-red-500 stroke-red-500'
-                        : 'fill-none text-white stroke-white hover:text-red-300 hover:stroke-red-300'
-                    }`}
-                  />
-                </button>
-              </div>
-              
-              {/* Close Button - RIGHT CORNER */}
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCloseRestaurantCard();
-                  }}
-                  className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 z-10 flex items-center justify-center active:scale-95 backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-                  }}
-                >
-                  <X className="w-4 h-4 text-white drop-shadow-sm hover:text-gray-200 transition-colors" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-2">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-2">
-                <h2 className="text-base font-semibold text-gray-900 mb-1">
-                  {selectedRestaurant.name}
-                </h2>
-
-                <div className="flex items-center space-x-1 mb-1">
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs font-medium text-gray-900">
-                    {getRating(selectedRestaurant).toFixed(2)} ({getReviewCount(selectedRestaurant)})
-                  </span>
-                </div>
-
-                <p className="text-xs text-gray-600 mb-1">
-                  {selectedRestaurant.kosher_category && (
-                    <span className="capitalize">{selectedRestaurant.kosher_category} cuisine</span>
-                  )}
-                  {selectedRestaurant.certifying_agency && (
-                    <span> • {selectedRestaurant.certifying_agency} certified</span>
-                  )}
-                </p>
-
-                {selectedRestaurant.address && (
-                  <div className="flex items-center space-x-1 text-xs text-gray-500">
-                    <MapPin className="w-3 h-3" />
-                    <span>{selectedRestaurant.address}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="text-right">
-                <span className="text-xs text-gray-500 block">Price Range</span>
-                <p className="text-sm font-semibold text-gray-900">
-                  {formatPriceRange(selectedRestaurant)}
-                </p>
-              </div>
+            <MapCard
+              data={transformRestaurantToCardData(selectedRestaurant)}
+              showStarInBadge={true}
+              onCardClick={() => router.push(`/restaurant/${selectedRestaurant.id}`)}
+              onLikeToggle={(id, isLiked) => handleToggleFavorite(selectedRestaurant)}
+              className="w-full shadow-2xl hover:shadow-3xl transition-shadow"
+            />
+            
+            {/* Close Button - Overlay on top-right */}
+            <div className="absolute top-2 right-2 z-10">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseRestaurantCard();
+                }}
+                className="w-8 h-8 border border-white/60 rounded-full transition-all duration-200 hover:scale-105 flex items-center justify-center active:scale-95 backdrop-blur-md shadow-lg hover:border-white/80 hover:backdrop-blur-lg"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                }}
+              >
+                <X className="w-4 h-4 text-white drop-shadow-sm hover:text-gray-200 transition-colors" />
+              </button>
             </div>
           </div>
         </div>
