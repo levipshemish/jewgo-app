@@ -17,7 +17,7 @@ export async function verifyTurnstile(responseToken: string) {
 
   // Log verification attempt in development
   if (process.env.NODE_ENV === 'development') {
-    // console.log('🔐 Turnstile verification - token:', responseToken?.substring(0, 20) + '...', 'secret:', secret?.substring(0, 20) + '...');
+    console.log('🔐 Turnstile verification - token:', responseToken?.substring(0, 20) + '...', 'secret:', secret?.substring(0, 20) + '...');
   }
 
   // Always verify Turnstile tokens

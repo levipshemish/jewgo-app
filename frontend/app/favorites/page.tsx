@@ -10,7 +10,7 @@ import { BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingState } from '@/components/ui/LoadingState';
-import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+// import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useFavorites } from '@/lib/utils/favorites';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -120,31 +120,31 @@ function FavoritesPageContent() {
     clearAllFilters();
   };
 
-  const handleDistanceChange = (distance: number) => {
-    setFilter('maxDistanceMi', distance);
-  };
+  // const handleDistanceChange = (distance: number) => {
+  //   setFilter('maxDistanceMi', distance);
+  // };
 
   const handleCloseFilters = () => {
     setShowFilters(false);
   };
 
-  const handleApplyFilters = () => {
-    setShowFilters(false);
-  };
+  // const handleApplyFilters = () => {
+  //   setShowFilters(false);
+  // };
 
   const handleCardClick = (restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
   };
 
-  const handleAddToFavorites = (restaurantId: string) => {
-    // This will be handled by the useFavorites hook
+  // const handleAddToFavorites = (_restaurantId: string) => {
+  //   // This will be handled by the useFavorites hook
 
-  };
+  // };
 
-  const handleRemoveFromFavorites = (restaurantId: string) => {
-    // This will be handled by the useFavorites hook
+  // const handleRemoveFromFavorites = (_restaurantId: string) => {
+  //   // This will be handled by the useFavorites hook
 
-  };
+  // };
 
   // Show loading state while checking authentication
   if (loading || !clientLoaded) {

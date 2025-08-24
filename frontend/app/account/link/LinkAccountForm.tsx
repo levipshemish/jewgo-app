@@ -59,7 +59,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
         router.push('/account');
       }, 2000);
       
-    } catch (err) {
+    } catch (_err) {
       // Linking error occurred
       setError('Failed to link accounts. Please try again.');
     } finally {
@@ -93,7 +93,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
       // Redirect to the re-authentication URL
       window.location.href = result.redirectUrl;
       
-    } catch (err) {
+    } catch (_err) {
       // Re-authentication error occurred
       setError('Failed to initiate re-authentication. Please try again.');
     } finally {

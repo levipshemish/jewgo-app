@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
       // One-shot replay protection
       await consumeCaptchaTokenOnce(turnstileToken);
-    } catch (err) {
+    } catch (_err) {
       // Verification or replay protection failed
       return NextResponse.json(
         { error: 'TURNSTILE_INVALID' },
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     }
     
     // console.log('✅ Anonymous sign-in succeeded');
-  } catch (unexpectedError) {
+  } catch (_unexpectedError) {
     // console.error('Unexpected error during anonymous sign-in:', unexpectedError);
     return NextResponse.json(
       { error: 'UNEXPECTED_ERROR' },

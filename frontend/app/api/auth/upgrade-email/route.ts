@@ -6,8 +6,7 @@ import {
 } from '@/lib/rate-limiting';
 import { 
   validateTrustedIP,
-  generateCorrelationId,
-  scrubPII
+  generateCorrelationId
 } from '@/lib/utils/auth-utils';
 import { 
   validateCSRFServer,
@@ -34,7 +33,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
-  const startTime = Date.now();
+  // const startTime = Date.now();
   const origin = request.headers.get('origin');
   
   try {

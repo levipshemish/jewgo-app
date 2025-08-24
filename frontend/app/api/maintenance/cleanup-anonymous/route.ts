@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { 
-  generateCorrelationId, 
-  scrubPII 
+  generateCorrelationId
 } from '@/lib/utils/auth-utils';
 import { 
   CLEANUP_CRON_SECRET,
@@ -254,7 +253,7 @@ export async function POST(request: NextRequest) {
           }
         }
         
-      } catch (userError) {
+      } catch (_userError) {
         // Error processing user - log for debugging
         // console.error(`Error processing user for correlation ID: ${correlationId}`, {
         //   user_id: user.id,
@@ -286,7 +285,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
     
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
     // console.error(`Unexpected error in cleanup for correlation ID: ${correlationId}`, {
     //   error: scrubPII(error),

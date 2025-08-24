@@ -55,7 +55,7 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const isDevelopment = process.env.NODE_ENV === "development";
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   
-  // Use real Turnstile site key for localhost development
+  // Always use real Turnstile site key
   const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
   
   const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
@@ -113,9 +113,12 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
       return;
     }
 
-    // Since Turnstile is configured for localhost, allow it to work
+    // Log Turnstile configuration in development
     if (process.env.NODE_ENV === 'development') {
-      // console.log('Turnstile widget rendering with key:', turnstileSiteKey);
+      console.log('🔧 Turnstile widget rendering with:');
+      console.log('  Site Key:', turnstileSiteKey);
+      console.log('  Hostname:', window.location.hostname);
+      console.log('  Origin:', window.location.origin);
     }
 
     try {

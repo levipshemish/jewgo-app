@@ -7,7 +7,6 @@ import {
 import { 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { validateCSRFServer, signMergeCookieVersioned, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
@@ -36,7 +35,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
-  const startTime = Date.now();
+  // const startTime = Date.now();
   
   // Initialize server-side functionality
   const serverInitialized = await initializeServer();
@@ -250,7 +249,7 @@ export async function POST(request: NextRequest) {
     
     return response;
     
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
     // console.error(`Unexpected error in merge prepare for correlation ID: ${correlationId}`, {
     //   error: scrubPII(error),
