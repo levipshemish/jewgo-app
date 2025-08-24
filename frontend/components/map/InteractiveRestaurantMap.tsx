@@ -87,19 +87,17 @@ export default function InteractiveRestaurantMap({
         // Update data attribute
         button.setAttribute('data-favorite', newIsFavorite ? 'true' : 'false');
         
-        // Update button classes and SVG with better targeting
+        // Update button styles and SVG for new simplified design
         if (newIsFavorite) {
-          // Update button styles for favorite state
-          button.className = button.className.replace(
-            'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500',
-            'bg-red-100 text-red-500 hover:bg-red-200'
-          );
+          // Update button background and color for favorite state
+          button.style.background = '#FEE2E2';
+          button.style.color = '#EF4444';
           button.setAttribute('title', 'Remove from favorites');
           
           // Make heart filled - target the SVG more specifically
           const svg = button.querySelector('svg.heart-icon') || button.querySelector('svg');
-          if (svg) {
-            svg.style.setProperty('fill', 'currentColor', 'important');
+          if (svg && svg instanceof SVGElement) {
+            (svg as SVGElement).style.setProperty('fill', 'currentColor', 'important');
             svg.setAttribute('fill', 'currentColor');
           }
         } else {
@@ -112,8 +110,8 @@ export default function InteractiveRestaurantMap({
           
           // Make heart outlined - target the SVG more specifically
           const svg = button.querySelector('svg.heart-icon') || button.querySelector('svg');
-          if (svg) {
-            svg.style.setProperty('fill', 'none', 'important');
+          if (svg && svg instanceof SVGElement) {
+            (svg as SVGElement).style.setProperty('fill', 'none', 'important');
             svg.setAttribute('fill', 'none');
           }
         }
@@ -1082,168 +1080,206 @@ export default function InteractiveRestaurantMap({
     };
 
     const placeholder = '/images/default-restaurant.webp';
+    const displayImageUrl = safeImageUrl || placeholder;
+    
+    // Get rating for display
+    const rating = restaurant.rating || (restaurant as any).star_rating || (restaurant as any).google_rating || 0;
+    
+    // Get kosher category color
+    const getKosherColor = () => {
+      const category = restaurant.kosher_category?.toLowerCase();
+      if (category === 'dairy') return '#3B82F6'; // blue
+      if (category === 'meat') return '#EF4444'; // red  
+      if (category === 'pareve') return '#F59E0B'; // yellow
+      return '#6B7280'; // gray
+    };
+
     return `
-      <style>
-        .heart-btn {
-          position: absolute !important;
-          top: 8px !important;
-          left: 8px !important;
-          width: 32px !important;
-          height: 32px !important;
-          z-index: 9999 !important;
-        }
-      </style>
-      <div class="p-4 max-w-sm bg-white rounded-xl shadow-lg" data-popup-version="v4" style="position: relative !important; overflow: visible !important; padding-top: 48px !important;">
-        <!-- Heart/Favorite Button - SUPER FIXED LEFT CORNER -->
+      <div style="
+        width: 280px;
+        height: 320px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ">
+        <!-- Heart Button - Fixed Position -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
-                class="heart-btn ${
-                  isFavorite 
-                    ? 'bg-red-100 text-red-500 hover:bg-red-200' 
-                    : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
-                } rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm"
                 style="
-                  position: absolute !important; 
-                  top: 8px !important; 
-                  left: 8px !important; 
-                  width: 32px !important; 
-                  height: 32px !important;
-                  z-index: 9999 !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  border: none !important;
-                  transform: none !important;
-                  flex-shrink: 0 !important;
-                  display: flex !important;
-                  justify-content: center !important;
-                  align-items: center !important;
-                  box-sizing: border-box !important;
-                  min-width: 32px !important;
-                  min-height: 32px !important;
-                  max-width: 32px !important;
-                  max-height: 32px !important;
-                  float: none !important;
-                  clear: none !important;
+                  position: absolute;
+                  top: 8px;
+                  left: 8px;
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 50%;
+                  border: none;
+                  background: ${isFavorite ? '#FEE2E2' : 'rgba(255, 255, 255, 0.9)'};
+                  color: ${isFavorite ? '#EF4444' : '#6B7280'};
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+                  z-index: 1000;
+                  transition: all 0.2s ease;
+                  backdrop-filter: blur(4px);
                 "
                 data-favorite="${isFavorite ? 'true' : 'false'}"
-                title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-          <svg class="heart-icon" style="width: 16px !important; height: 16px !important; flex-shrink: 0 !important;" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
+                title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}"
+                onmouseover="this.style.transform='scale(1.1)'"
+                onmouseout="this.style.transform='scale(1)'">
+          <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
-        
-        <!-- Close Button - FIXED RIGHT CORNER -->
+
+        <!-- Close Button -->
         <button onclick="this.parentElement.parentElement.parentElement.close()"
                 style="
-                  position: absolute !important; 
-                  top: 12px !important; 
-                  right: 12px !important; 
-                  z-index: 999 !important;
-                  margin: 0 !important;
-                  border: none !important;
-                  transform: none !important;
-                  background: none !important;
-                  width: 24px !important;
-                  height: 24px !important;
-                  flex-shrink: 0 !important;
+                  position: absolute;
+                  top: 8px;
+                  right: 8px;
+                  width: 24px;
+                  height: 24px;
+                  border: none;
+                  background: none;
+                  color: #9CA3AF;
+                  font-size: 18px;
+                  font-weight: bold;
+                  cursor: pointer;
+                  z-index: 1000;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
                 "
-                class="text-gray-400 hover:text-gray-600 text-lg font-bold leading-none">
+                onmouseover="this.style.color='#374151'"
+                onmouseout="this.style.color='#9CA3AF'">
           ×
         </button>
 
-        <!-- Image Container -->
-        <div class="relative aspect-[5/4] overflow-hidden rounded-2xl bg-gray-100 mb-3">
-          ${safeImageUrl ? `
-            <img src="${sanitizeHtml(safeImageUrl)}" alt="${sanitizeHtml(restaurant.name)}"
-                 class="w-full h-full object-cover"
-                 loading="lazy" />
-          ` : `
-            <img src="${placeholder}" alt="${sanitizeHtml(restaurant.name)}"
-                 class="w-full h-full object-cover"
-                 loading="lazy" />
-          `}
-
+        <!-- Image Section -->
+        <div style="
+          width: 100%;
+          height: 160px;
+          background-color: #F3F4F6;
+          position: relative;
+          overflow: hidden;
+        ">
+          <img src="${sanitizeHtml(displayImageUrl)}" 
+               alt="${sanitizeHtml(restaurant.name)}"
+               style="
+                 width: 100%;
+                 height: 100%;
+                 object-fit: cover;
+               "
+               loading="lazy" />
+          
           <!-- Kosher Category Badge -->
           ${restaurant.kosher_category ? `
-            <span class="absolute top-2 left-2 text-xs px-2 py-1 rounded-full font-medium shadow-sm ${getKosherCategoryStyle()}">
-              ${sanitizeHtml(titleCase(restaurant.kosher_category))}
+            <span style="
+              position: absolute;
+              bottom: 8px;
+              left: 8px;
+              background: ${getKosherColor()};
+              color: white;
+              padding: 4px 8px;
+              border-radius: 16px;
+              font-size: 11px;
+              font-weight: 600;
+              text-transform: uppercase;
+            ">
+              ${sanitizeHtml(restaurant.kosher_category)}
             </span>
           ` : ''}
-
-          <!-- Distance Badge -->
-          ${distanceFromUser !== null && distanceFromUser !== undefined ? `
-            <span class="absolute top-2 right-2 text-xs px-2 py-1 rounded-full font-medium shadow-sm bg-blue-100 text-blue-800">
-              📍 ${distanceFromUser.toFixed(1)} mi
+          
+          <!-- Rating Badge -->
+          ${rating > 0 ? `
+            <span style="
+              position: absolute;
+              bottom: 8px;
+              right: 8px;
+              background: rgba(0, 0, 0, 0.7);
+              color: white;
+              padding: 4px 8px;
+              border-radius: 16px;
+              font-size: 11px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 2px;
+            ">
+              ⭐ ${rating.toFixed(1)}
             </span>
           ` : ''}
         </div>
 
-        <!-- Content -->
-        <div class="space-y-2">
+        <!-- Content Section -->
+        <div style="padding: 16px;">
           <!-- Restaurant Name -->
-          <h3 class="font-bold text-gray-900 text-base leading-tight">
-            ${sanitizeHtml(titleCase(restaurant.name))}
-          </h3>
-
-          <!-- Price Range and Rating -->
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-500 font-normal">
-              ${formatPriceRange()}
-            </span>
-
-            <div class="flex items-center gap-1">
-              <svg class="w-4 h-4 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-              <span class="text-sm font-medium text-gray-800">
-                ${getRating().toFixed(1)}
-              </span>
-            </div>
-          </div>
-
+          <h3 style="
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          ">${sanitizeHtml(restaurant.name)}</h3>
+          
           <!-- Address -->
           ${restaurant.address ? `
-            <p class="text-sm text-gray-600">
-              ${sanitizeHtml(restaurant.address)}
-            </p>
+            <p style="
+              font-size: 13px;
+              color: #6B7280;
+              margin: 0 0 4px 0;
+              display: -webkit-box;
+              -webkit-line-clamp: 1;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+            ">📍 ${sanitizeHtml(restaurant.address)}</p>
           ` : ''}
-
+          
+          <!-- Distance -->
+          ${distanceFromUser ? `
+            <p style="
+              font-size: 13px;
+              color: #059669;
+              margin: 0 0 8px 0;
+              font-weight: 600;
+            ">🚶 ${distanceFromUser.toFixed(1)} mi away</p>
+          ` : ''}
+          
           <!-- Certifying Agency -->
           ${restaurant.certifying_agency ? `
-            <div class="flex flex-wrap gap-1">
-              <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
-                ${sanitizeHtml(restaurant.certifying_agency)}
-              </span>
-            </div>
+            <p style="
+              font-size: 12px;
+              color: #3B82F6;
+              margin: 0 0 12px 0;
+              font-weight: 600;
+            ">🏛️ ${sanitizeHtml(restaurant.certifying_agency)}</p>
           ` : ''}
-
-          <!-- Kosher Details -->
-          ${(restaurant as any).is_cholov_yisroel || (restaurant as any).cholov_stam || (restaurant as any).is_pas_yisroel ? `
-            <div class="flex flex-wrap gap-1">
-              ${(restaurant as any).is_cholov_yisroel ? `
-                <span class="inline-block px-2 py-1 bg-[#FCC0C5]/20 text-[#8a4a4a] text-xs rounded-full border border-[#FCC0C5]">
-                  Chalav Yisroel
-                </span>
-              ` : ''}
-              ${(restaurant as any).cholov_stam && !(restaurant as any).is_cholov_yisroel ? `
-                <span class="inline-block px-2 py-1 bg-[#FFE4B5]/20 text-[#8B4513] text-xs rounded-full border border-[#FFE4B5]">
-                  Chalav Stam
-                </span>
-              ` : ''}
-              ${(restaurant as any).is_pas_yisroel ? `
-                <span class="inline-block px-2 py-1 bg-[#74E1A0]/20 text-[#1a4a2a] text-xs rounded-full border border-[#74E1A0]">
-                  Pas Yisroel
-                </span>
-              ` : ''}
-            </div>
-          ` : ''}
-
-          <!-- Action Button -->
-          <div class="pt-2 border-t border-gray-100">
-            <a href="/restaurant/${restaurant.id}"
-               class="block w-full text-center bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-              View Details →
-            </a>
-          </div>
+          
+          <!-- View Details Button -->
+          <button onclick="window.location.href='/restaurant/${restaurant.id}'" 
+                  style="
+                    width: 100%;
+                    background: #3B82F6;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                  "
+                  onmouseover="this.style.background='#2563EB'"
+                  onmouseout="this.style.background='#3B82F6'">
+            View Details
+          </button>
         </div>
       </div>
     `;

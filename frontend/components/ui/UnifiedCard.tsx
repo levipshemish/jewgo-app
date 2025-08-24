@@ -379,7 +379,6 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               onKeyDown={handleHeartKeyDown}
             aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
             aria-pressed={liked}
-              style={{ transform: isAnimating ? 'scale(0.9)' : 'scale(1)' }}
             >
               <span className="relative block w-[18px] h-[18px]">
                 {/* Always use filled heart SVG with CSS controlling colors */}
