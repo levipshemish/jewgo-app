@@ -30,8 +30,8 @@ import {
   ANALYTICS_HMAC_SECRET
 } from '@/lib/config/environment.server';
 
-const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT;
-const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS;
+const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT || (process.env.NODE_ENV === 'development' ? 'dev-hmac-key' : undefined);
+const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS || (process.env.NODE_ENV === 'development' ? 'dev-hmac-key-v2' : undefined);
 
 // Validate HMAC keys in production
 if (process.env.NODE_ENV === 'production') {
