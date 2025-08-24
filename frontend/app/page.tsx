@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Force dynamic rendering to avoid SSR issues with Supabase client
+export const dynamic = 'force-dynamic';
+
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 

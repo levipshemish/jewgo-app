@@ -178,10 +178,15 @@ export function verifyTokenRotation(
     
     const jtiChanged = preJti !== postJti;
     
-    // Return true if either refresh_token OR jti changed
-    return refreshChanged || jtiChanged;
+    // Return true if either changed, false only if both unchanged
+    if (!refreshChanged && !jtiChanged) {
+      // Token rotation failed: both refresh_token and JWT jti unchanged
+      return false;
+    }
+    
+    return true;
   } catch (error) {
-    console.error('Error verifying token rotation:', error);
+    // Token rotation verification failed - return false as fallback
     return false;
   }
 }
