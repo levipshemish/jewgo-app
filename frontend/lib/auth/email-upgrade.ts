@@ -179,7 +179,7 @@ export class EmailUpgradeFlow {
         };
       }
 
-      console.log(`[Email Upgrade] Account merge successful (${correlationId})`, data);
+      // console.log(`[Email Upgrade] Account merge successful (${correlationId})`, data);
       return {
         success: true,
         movedRecords: data.moved || [],
@@ -187,7 +187,7 @@ export class EmailUpgradeFlow {
       };
 
     } catch (error) {
-      console.error(`[Email Upgrade] Merge error (${correlationId})`, error);
+      // console.error(`[Email Upgrade] Merge error (${correlationId})`, error);
       return {
         success: false,
         error: 'Unexpected error during account merge',
@@ -210,7 +210,7 @@ export class EmailUpgradeFlow {
       });
 
       if (error) {
-        console.error(`[Email Upgrade] Email verification failed (${correlationId})`, error);
+        // console.error(`[Email Upgrade] Email verification failed (${correlationId})`, error);
         return {
           success: false,
           error: error.message
@@ -220,7 +220,7 @@ export class EmailUpgradeFlow {
       return { success: true };
 
     } catch (error) {
-      console.error(`[Email Upgrade] Email verification error (${correlationId})`, error);
+      // console.error(`[Email Upgrade] Email verification error (${correlationId})`, error);
       return {
         success: false,
         error: 'Unexpected error during email verification'
@@ -241,7 +241,7 @@ export class EmailUpgradeFlow {
       });
 
       if (error) {
-        console.error(`[Email Upgrade] Set password failed (${correlationId})`, error);
+        // console.error(`[Email Upgrade] Set password failed (${correlationId})`, error);
         return {
           success: false,
           error: error.message
@@ -251,7 +251,7 @@ export class EmailUpgradeFlow {
       return { success: true };
 
     } catch (error) {
-      console.error(`[Email Upgrade] Set password error (${correlationId})`, error);
+      // console.error(`[Email Upgrade] Set password error (${correlationId})`, error);
       return {
         success: false,
         error: 'Unexpected error while setting password'

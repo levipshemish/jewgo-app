@@ -109,7 +109,7 @@ export function validateEnvironment(): void {
   
   // In development, provide a default value if not set
   if (IS_DEVELOPMENT && !CLEANUP_CRON_SECRET) {
-    console.warn('CLEANUP_CRON_SECRET not set in development - using default value');
+    // console.warn('CLEANUP_CRON_SECRET not set in development - using default value');
     process.env.CLEANUP_CRON_SECRET = 'development-cleanup-secret';
   }
 
@@ -123,7 +123,7 @@ export function validateEnvironment(): void {
   } else {
     // In development, provide a default Redis URL if not set
     if (!REDIS_URL && !REDIS_HOST) {
-      console.warn('Redis not configured in development - rate limiting may not work properly');
+      // console.warn('Redis not configured in development - rate limiting may not work properly');
       // Set a default Redis URL for development
       process.env.REDIS_URL = 'redis://localhost:6379';
     }
@@ -213,7 +213,7 @@ if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test' && process.
     
     // Note: Feature validation moved to individual API routes to avoid build issues
   } catch (error) {
-    console.warn('Environment validation warning:', error);
+    // console.warn('Environment validation warning:', error);
     // Don't throw during build time, just warn
   }
 }

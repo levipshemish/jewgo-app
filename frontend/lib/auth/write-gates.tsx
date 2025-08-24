@@ -185,12 +185,12 @@ export class WriteGates {
       const isAnonymous = extractIsAnonymous(user);
       const canWrite = !isAnonymous && !!user.email_confirmed_at;
 
-      console.log(`[Write Gates] User permissions calculated (${correlationId})`, {
-        userId: user.id,
-        isAnonymous,
-        canWrite,
-        emailConfirmed: !!user.email_confirmed_at
-      });
+      // console.log(`[Write Gates] User permissions calculated (${correlationId})`, {
+      //   userId: user.id,
+      //   isAnonymous,
+      //   canWrite,
+      //   emailConfirmed: !!user.email_confirmed_at
+      // });
 
       return {
         canWrite,
@@ -203,7 +203,7 @@ export class WriteGates {
       };
 
     } catch (error) {
-      console.error(`[Write Gates] Error getting permissions (${correlationId})`, error);
+      // console.error(`[Write Gates] Error getting permissions (${correlationId})`, error);
       return {
         canWrite: false,
         canCreateReviews: false,

@@ -54,9 +54,9 @@ export class FeatureGuard {
       // Comprehensive feature validation
       const featureValidation = await validateSupabaseFeaturesWithLogging();
       if (!featureValidation) {
-        console.error('🚨 CRITICAL: Supabase feature validation failed');
-        console.error('Required features (signInAnonymously, linkIdentity) not available');
-        console.error('Application startup failure - check Supabase SDK version');
+        // console.error('🚨 CRITICAL: Supabase feature validation failed');
+        // console.error('Required features (signInAnonymously, linkIdentity) not available');
+        // console.error('Application startup failure - check Supabase SDK version');
         
         // Log to Sentry if available
         this.logToSentry('Supabase feature validation failed', 'error');
@@ -69,8 +69,8 @@ export class FeatureGuard {
       return true;
 
     } catch (error) {
-      console.error('🚨 CRITICAL: Feature Guard validation failed:', error);
-      console.error('Application startup failure - Supabase SDK may be corrupted');
+      // console.error('🚨 CRITICAL: Feature Guard validation failed:', error);
+      // console.error('Application startup failure - Supabase SDK may be corrupted');
       
       // Log to Sentry if available
       this.logToSentry('Feature Guard validation failed', 'error', error);
@@ -116,7 +116,7 @@ export class FeatureGuard {
         }
       }
     } catch (sentryError) {
-      console.warn('[Feature Guard] Failed to log to Sentry:', sentryError);
+      // console.warn('[Feature Guard] Failed to log to Sentry:', sentryError);
     }
   }
 }
