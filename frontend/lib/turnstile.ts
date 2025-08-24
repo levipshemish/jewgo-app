@@ -15,25 +15,9 @@ export async function verifyTurnstile(responseToken: string) {
     throw new Error("TURNSTILE_SECRET_KEY missing");
   }
 
-  // In development with test key, simulate successful verification
+  // Log verification attempt in development
   if (process.env.NODE_ENV === 'development') {
-    // console.log('Turnstile verification - token:', responseToken, 'secret:', secret);
-    // console.log('Token check - equals XXXX.DUMMY.TOKEN.XXXX?', responseToken === 'XXXX.DUMMY.TOKEN.XXXX');
-    // console.log('Token check - starts with XXXX.DUMMY.TOKEN?', responseToken?.startsWith('XXXX.DUMMY.TOKEN'));
-    
-    if (responseToken === 'XXXX.DUMMY.TOKEN.XXXX' || 
-        secret === '1x0000000000000000000000000000000AA' ||
-        responseToken?.startsWith('XXXX.DUMMY.TOKEN')) {
-      // console.log('✅ Using test token verification - returning success');
-      return {
-        success: true,
-        challenge_ts: new Date().toISOString(),
-        hostname: 'localhost',
-        action: 'test'
-      };
-    } else {
-      // console.log('❌ Test token conditions not met');
-    }
+    console.log('🔐 Turnstile verification - token:', responseToken?.substring(0, 20) + '...', 'secret:', secret?.substring(0, 20) + '...');
   }
 
   // Always verify Turnstile tokens

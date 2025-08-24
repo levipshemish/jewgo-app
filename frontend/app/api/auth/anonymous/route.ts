@@ -124,23 +124,7 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  // Handle test tokens in development - return success immediately for test tokens
-  if (process.env.NODE_ENV === 'development' && turnstileToken === 'XXXX.DUMMY.TOKEN.XXXX') {
-    console.log('🧪 Development mode: test token detected, returning mock success');
-    
-    // For development with test tokens, we'll simulate a successful anonymous sign-in
-    // without actually calling Supabase, since Supabase rejects test tokens
-    return NextResponse.json(
-      { 
-        ok: true, 
-        dev_mode: true,
-        message: 'Development test token accepted - Supabase captcha bypassed'
-      },
-      { status: 200, headers: baseHeaders }
-    );
-  }
-
-  // For real Turnstile tokens (production or development with real captcha completion)
+  // Attempt anonymous sign-in with Turnstile token (required by Supabase)
   try {
     const { data, error } = await supabase.auth.signInAnonymously({
       options: {
@@ -149,16 +133,16 @@ export async function POST(request: NextRequest) {
     });
     
     if (error || !data?.user) {
-      console.error('Anonymous sign-in failed:', error);
+      // console.error('Anonymous sign-in failed:', error);
       return NextResponse.json(
         { error: 'ANON_SIGNIN_FAILED', details: error?.message },
         { status: 500, headers: baseHeaders }
       );
     }
     
-    console.log('✅ Anonymous sign-in succeeded');
+    // console.log('✅ Anonymous sign-in succeeded');
   } catch (unexpectedError) {
-    console.error('Unexpected error during anonymous sign-in:', unexpectedError);
+    // console.error('Unexpected error during anonymous sign-in:', unexpectedError);
     return NextResponse.json(
       { error: 'UNEXPECTED_ERROR' },
       { status: 500, headers: baseHeaders }

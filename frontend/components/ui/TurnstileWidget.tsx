@@ -55,10 +55,8 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const isDevelopment = process.env.NODE_ENV === "development";
   const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   
-  // Force visible test key for localhost development to ensure visible captcha
-  const turnstileSiteKey = (isDevelopment && isLocalhost) 
-    ? "1x00000000000000000000AA"  // This test key always shows visible challenges
-    : (siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA");
+  // Use real Turnstile site key for localhost development
+  const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
   
   const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
   const isProductionKeyInDev = !isTestKey && isDevelopment;
