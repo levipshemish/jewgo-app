@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { supabaseBrowser } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";

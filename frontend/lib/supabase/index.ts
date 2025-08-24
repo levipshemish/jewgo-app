@@ -10,5 +10,5 @@ export { createClientSupabaseClient, supabaseClient } from './client-secure';
 // Deprecated exports (remove these gradually)
 export { supabaseBrowser } from './client';
 
-// Server-side exports (only for server components and API routes)
-export type { createServerSupabaseClient } from './server';
+// Note: Server-side exports are available in './server' for server components and API routes
+// Import them directly: import { createServerSupabaseClient } from './server'

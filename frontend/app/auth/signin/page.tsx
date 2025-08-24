@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useActionState } from "react";
-import { signInAction, anonymousSignInAction } from "./actions";
+import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
 
 function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
-  const [anonymousState, anonymousFormAction] = useActionState(anonymousSignInAction, { ok: false, message: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [anonymousTurnstileToken, setAnonymousTurnstileToken] = useState("");
+  const [anonError, setAnonError] = useState<string | null>(null);
+  const [anonLoading, setAnonLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/eatery";
@@ -25,11 +26,7 @@ function SignInForm() {
     }
   }, [state.ok, router, redirectTo]);
 
-  useEffect(() => {
-    if (anonymousState.ok) {
-      router.push(redirectTo);
-    }
-  }, [anonymousState.ok, router, redirectTo]);
+  // Anonymous success handled inline in handler
 
   // Handle Turnstile verification for email signin
   const handleTurnstileVerify = (token: string) => {
@@ -50,13 +47,43 @@ function SignInForm() {
     formAction(formData);
   };
 
-  const handleAnonymousSignIn = (formData: FormData) => {
-    // Add the Turnstile token to the form data
-    if (anonymousTurnstileToken) {
-      formData.append('cf-turnstile-response', anonymousTurnstileToken);
+  const handleAnonymousSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setAnonError(null);
+    setAnonLoading(true);
+    try {
+      const res = await fetch('/api/auth/anonymous', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ turnstileToken: anonymousTurnstileToken || null })
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        const code = json?.error || 'ANON_SIGNIN_FAILED';
+        switch (code) {
+          case 'TURNSTILE_REQUIRED':
+          case 'TURNSTILE_INVALID':
+            setAnonError('Security check failed. Please try again.');
+            break;
+          case 'RATE_LIMITED':
+            setAnonError('Too many attempts. Please try again later.');
+            break;
+          case 'ANON_SIGNIN_UNSUPPORTED':
+            setAnonError('Guest sign-in is not available right now.');
+            break;
+          default:
+            setAnonError('Failed to continue as guest');
+        }
+        setAnonLoading(false);
+        return;
+      }
+      router.push(redirectTo);
+    } catch (err) {
+      setAnonError('Guest sign-in failed. Please try again.');
+      setAnonLoading(false);
     }
-    anonymousFormAction(formData);
-  };
+  }, [router, redirectTo, anonymousTurnstileToken]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
@@ -137,7 +164,7 @@ function SignInForm() {
           </div>
 
           {/* Anonymous Sign In */}
-          <form action={handleAnonymousSignIn} className="mt-6">
+          <form onSubmit={handleAnonymousSignIn} className="mt-6">
             {/* Turnstile widget for anonymous signin */}
             <div className="flex justify-center mb-4">
               <TurnstileWidget
@@ -149,16 +176,17 @@ function SignInForm() {
             </div>
             <button
               type="submit"
-              className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              disabled={anonLoading}
+              className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Continue as Guest
+              {anonLoading ? 'Continuing…' : 'Continue as Guest'}
             </button>
 
-            {!anonymousState.ok && "message" in anonymousState && anonymousState.message && (
-              <div className="text-red-400 text-sm text-center mt-2">{anonymousState.message}</div>
+            {anonError && (
+              <div className="text-red-400 text-sm text-center mt-2">{anonError}</div>
             )}
           </form>
 
