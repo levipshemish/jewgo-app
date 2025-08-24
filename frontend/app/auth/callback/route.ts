@@ -35,12 +35,11 @@ export async function GET(request: NextRequest) {
         const store = await cookies();
         store.getAll().forEach((c) => {
           res.cookies.set(c.name, c.value, {
-            domain: c.domain,
-            path: c.path,
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
             maxAge: c.maxAge,
-            httpOnly: c.httpOnly,
-            secure: c.secure,
-            sameSite: c.sameSite,
           });
         });
       } catch {}
