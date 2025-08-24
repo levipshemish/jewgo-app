@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition, Suspense } from 'react';
+import React, { useState, useEffect, Fragment, useRef, useMemo, useTransition, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -11,7 +11,7 @@ import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { scrollToTop, isMobileDevice } from '@/lib/utils/scrollUtils';
+import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
@@ -86,7 +86,6 @@ function EateryPageContent() {
   // Location state from context
   const {
     userLocation,
-    permissionStatus,
     isLoading: locationLoading,
     requestLocation
   } = useLocation();
@@ -125,61 +124,14 @@ function EateryPageContent() {
     }
   }, [isMobile, isMobileDevice, isLowPowerMode, isSlowConnection, viewportWidth]);
 
-  // Infinite scroll with proper mobile detection
-  const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => fetchMoreRestaurants(),
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
-
-  // Debug infinite scroll setup
-  useEffect(() => {
-
-  }, [isMobile, hasMore, isLoadingMore]);
-
-  // Mobile-optimized state
-  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Handle filter changes with mobile optimization
-  const handleFilterChange = (filterType: keyof Filters, value: Filters[keyof Filters]) => {
-    setFilter(filterType, value);
-    
-    // Send real-time filter update via WebSocket
-    if (isConnected) {
-      sendMessage({
-        type: 'filter_update',
-        data: {
-          filter_type: filterType,
-          filter_value: value,
-          location: userLocation
-        }
-      });
-    }
-  };
-
-  const handleToggleFilter = (filterType: keyof Filters) => {
-    toggleFilter(filterType);
-  };
-
-  const handleDistanceChange = (distance: number) => {
-    setFilter('maxDistanceMi', distance);
-  };
-
-  // Transform restaurant data to UnifiedCard format
-  const transformRestaurantToCardData = (restaurant: Restaurant) => {
+  // Memoize restaurant transformation to prevent unnecessary re-renders
+  const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
     // Enhanced rating logic with better fallbacks
     const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     
     // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
-    
-    // Distance logging removed - functionality working correctly
     
     // Enhanced price range logic - ensure we have a valid price range
     const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
@@ -205,11 +157,57 @@ function EateryPageContent() {
       isCholovYisroel: restaurant.is_cholov_yisroel,
       isPasYisroel: restaurant.is_pas_yisroel,
     };
-  };
+  }, []);
 
-  const handleClearAllFilters = () => {
+  // Memoize filter change handlers to prevent unnecessary re-renders
+  const handleFilterChange = useCallback((filterType: keyof Filters, value: Filters[keyof Filters]) => {
+    setFilter(filterType, value);
+    
+    // Send real-time filter update via WebSocket (currently disabled)
+    if (isConnected) {
+      sendMessage({
+        type: 'filter_update',
+        data: {
+          filter_type: filterType,
+          filter_value: value,
+          location: userLocation
+        }
+      });
+    }
+  }, [setFilter, isConnected, sendMessage, userLocation]);
+
+  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
+    toggleFilter(filterType);
+  }, [toggleFilter]);
+
+  const handleClearAllFilters = useCallback(() => {
     clearAllFilters();
-  };
+  }, [clearAllFilters]);
+
+  // Infinite scroll with proper mobile detection
+  const { loadMore, hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    () => fetchMoreRestaurants(),
+    { 
+      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
+      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
+      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
+    }
+  );
+
+  // Debug infinite scroll setup
+  useEffect(() => {
+
+  }, [isMobile, hasMore, isLoadingMore]);
+
+  // Mobile-optimized state
+  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Handle distance filter changes
+  const handleDistanceChange = useCallback((distance: number) => {
+    setFilter('maxDistanceMi', distance);
+  }, [setFilter]);
 
   // Handle page changes for desktop pagination
   const handlePageChange = async (page: number) => {
@@ -543,6 +541,8 @@ function EateryPageContent() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      role="main"
+      aria-label="Restaurant listings"
     >
       <Header />
       
@@ -565,17 +565,24 @@ function EateryPageContent() {
           <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setShowFilters(false)}
+            aria-hidden="true"
           />
           
           {/* Filters Panel */}
-          <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-xl z-50 max-h-[80vh] overflow-y-auto">
+          <div 
+            className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-xl z-50 max-h-[80vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="filters-title"
+          >
             <div className="p-4 sm:p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Filters</h3>
+                <h3 id="filters-title" className="text-lg font-semibold">Filters</h3>
                 <button
                   onClick={() => setShowFilters(false)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Close filters"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -614,21 +621,23 @@ function EateryPageContent() {
         </>
       )}
 
-
-
       {/* Restaurant grid with consistent responsive spacing */}
       {restaurants.length === 0 && !loading ? (
-        <div className="text-center py-10 px-5">
-          <div className="text-5xl mb-4">🍽️</div>
+        <div className="text-center py-10 px-5" role="status" aria-live="polite">
+          <div className="text-5xl mb-4" aria-hidden="true">🍽️</div>
           <p className="text-lg text-gray-600 mb-2">No restaurants found</p>
           <p className="text-sm text-gray-500">
             Try adjusting your filters or check back later
           </p>
         </div>
       ) : (
-        <div className="restaurant-grid px-4 sm:px-6 lg:px-8">
+        <div 
+          className="restaurant-grid px-4 sm:px-6 lg:px-8"
+          role="grid"
+          aria-label="Restaurant listings"
+        >
           {restaurants.map((restaurant, index) => (
-            <div key={restaurant.id} className="w-full">
+            <div key={restaurant.id} className="w-full" role="gridcell">
               <UnifiedCard
                 data={transformRestaurantToCardData(restaurant)}
                 variant="default"
@@ -644,14 +653,14 @@ function EateryPageContent() {
 
       {/* Loading states with consistent spacing */}
       {loading && (
-        <div className="text-center py-5">
+        <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading restaurants...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
-        <div className="text-center py-5">
+        <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading more...</p>
         </div>
       )}
@@ -661,12 +670,13 @@ function EateryPageContent() {
         <div 
           ref={loadingRef}
           className="h-5 w-full my-5"
+          aria-hidden="true"
         />
       )}
 
       {/* Desktop pagination - only show on desktop */}
       {!(isMobile || isMobileDevice) && totalPages > 1 && (
-        <div className="mt-8 mb-8">
+        <div className="mt-8 mb-8" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -685,6 +695,7 @@ function EateryPageContent() {
         <div 
           ref={loadingRef}
           className="h-5 w-full my-5"
+          aria-hidden="true"
         />
       )}
 
@@ -698,7 +709,6 @@ function EateryPageContent() {
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
         onLocationGranted={() => {
-          console.log('📍 Eatery: Location granted, closing prompt');
           setShowLocationPrompt(false);
         }}
       />
