@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
+import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
 // TypeScript Interfaces
@@ -34,15 +35,20 @@ interface UnifiedCardProps {
   showStarInBadge?: boolean; // New prop to control star icon in badge
 }
 
-// Motion variants for animations
+// Motion variants for animations - optimized to prevent flickering
 const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 10 },
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.3, ease: "easeOut" as const }
+    transition: { duration: 0.2, ease: "easeOut" as const }
   },
-  // Add a fallback state to ensure cards are always visible
+  // Disable animations during scroll
+  scroll: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0 }
+  },
   exit: { opacity: 1, y: 0 }
 };
 
@@ -58,6 +64,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 }) => {
   const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
+  const { isScrolling } = useScrollDetection({ debounceMs: 100, enableBodyClass: false });
   
   // State management
   const [imageError, setImageError] = useState(false);
@@ -87,7 +94,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     subtitle: data.subtitle || '',
     additionalText: data.additionalText || '',
     showHeart: data.showHeart !== false
-  }), [data]);
+  }), [data.id, data.imageTag, data.badge, data.subtitle, data.additionalText, data.showHeart]);
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {
@@ -209,39 +216,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return filtered.join(' ');
   }, [className]);
 
-  return (
-    <motion.div
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      whileHover={{ 
-        y: -4,
-        transition: { duration: 0.2, ease: "easeOut" }
-      }}
-      whileTap={{ 
-        scale: 0.98,
-        transition: { duration: 0.1 }
-      }}
-      className={cn(
-        'relative bg-transparent cursor-pointer group unified-card',
-        'transition-all duration-200 ease-out',
-        'flex flex-col', // Remove h-full to prevent over-extension
-        'border-0', // Ensure no border
-        'shadow-none', // Ensure no shadow
-        variantStyles.cardClass,
-        sanitizedClassName
-      )}
-      style={{ background: 'transparent', boxShadow: 'none', border: 0 }}
-      onClick={handleCardClick}
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`View details for ${cardData.title}`}
-      aria-live="polite"
-      aria-describedby={`card-${cardData.id.toString()}`}
-
-    >
+  // Render content without motion during scroll to prevent flickering
+  const cardContent = (
+    <>
       {/* Global styles for transparent surface, tag pill, and heart icon */}
       <style jsx global>{`
         .unified-card {
@@ -451,11 +428,13 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       </div>
       
       {/* Content - Enhanced hover effects */}
-      <motion.div 
-        className="pt-2 flex flex-col bg-transparent" // Remove flex-1 to prevent over-extension
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
+      <div 
+        className="pt-2 flex flex-col bg-transparent"
+        style={{
+          transform: isScrolling ? 'none' : undefined,
+          transition: isScrolling ? 'none' : undefined,
+          animation: isScrolling ? 'none' : undefined
+        }}
       >
         <div className="flex justify-between items-start gap-2 mb-1 min-h-[20px]">
           <h3 
@@ -468,21 +447,23 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             {cardData.title}
           </h3>
           {cardData.badge && (
-            <motion.div
+            <div
               className={cn(
                 "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
                 variantStyles.badgeClass
               )}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.2 }}
+              style={{
+                transform: isScrolling ? 'none' : undefined,
+                transition: isScrolling ? 'none' : undefined,
+                animation: isScrolling ? 'none' : undefined
+              }}
               aria-label={`Rating: ${cardData.badge}`}
             >
               {showStarInBadge && (
                 <Star size={12} className="fill-yellow-400 text-yellow-400" />
               )}
               {cardData.badge}
-            </motion.div>
+            </div>
           )}
         </div>
         
@@ -526,7 +507,78 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
+    </>
+  );
+
+  // Use regular div during scroll to prevent flickering
+  if (isScrolling) {
+    return (
+      <div
+        className={cn(
+          'relative bg-transparent cursor-pointer group unified-card',
+          'flex flex-col',
+          'border-0',
+          'shadow-none',
+          variantStyles.cardClass,
+          sanitizedClassName
+        )}
+        style={{ 
+          background: 'transparent', 
+          boxShadow: 'none', 
+          border: 0,
+          transform: 'none',
+          transition: 'none',
+          animation: 'none',
+          willChange: 'auto'
+        }}
+        onClick={handleCardClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`View details for ${cardData.title}`}
+        aria-live="polite"
+        aria-describedby={`card-${cardData.id.toString()}`}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  // Use motion.div when not scrolling
+  return (
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      whileHover={{ 
+        y: -4,
+        transition: { duration: 0.2, ease: "easeOut" }
+      }}
+      whileTap={{ 
+        scale: 0.98,
+        transition: { duration: 0.1 }
+      }}
+      className={cn(
+        'relative bg-transparent cursor-pointer group unified-card',
+        'transition-all duration-200 ease-out',
+        'flex flex-col',
+        'border-0',
+        'shadow-none',
+        variantStyles.cardClass,
+        sanitizedClassName
+      )}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${cardData.title}`}
+      aria-live="polite"
+      aria-describedby={`card-${cardData.id.toString()}`}
+
+    >
+      {cardContent}
     </motion.div>
   );
 });

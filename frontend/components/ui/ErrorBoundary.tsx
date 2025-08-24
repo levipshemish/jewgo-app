@@ -27,9 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // // console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Call the onError callback if provided
     this.props.onError?.(error, errorInfo);
     
@@ -43,43 +41,14 @@ export class ErrorBoundary extends Component<Props, State> {
   private logErrorToService(error: Error, errorInfo: ErrorInfo): void {
     // In production, this would send to your error reporting service
     if (process.env['NODE_ENV'] === 'production') {
-      // Temporarily disabled Sentry to fix module resolution issues
-      // try {
-      //   // Send to Sentry
-      //   Sentry.captureException(error, { 
-      //     extra: {
-      //       componentStack: errorInfo.componentStack,
-      //       timestamp: new Date().toISOString(),
-      //       url: window.location.href,
-      //       userAgent: navigator.userAgent,
-      //     }
-      //   });
-      // } catch (sentryError) {
-      //   // Fallback logging when Sentry fails
-      //   console.error('Sentry error reporting failed, using fallback logging:', {
-      //     originalError: {
-      //       message: error.message,
-      //       stack: error.stack,
-      //       componentStack: errorInfo.componentStack,
-      //     },
-      //     sentryError: {
-      //       message: sentryError instanceof Error ? sentryError.message : String(sentryError),
-      //       stack: sentryError instanceof Error ? sentryError.stack : undefined,
-      //     },
-      //     timestamp: new Date().toISOString(),
-      //     url: window.location.href,
-      //     userAgent: navigator.userAgent,
-      //   });
-      // }
-      
       // Simple error logging for now
       console.error('Production error:', {
         message: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       });
     } else {
       // Development logging
@@ -88,8 +57,8 @@ export class ErrorBoundary extends Component<Props, State> {
         stack: error.stack,
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       });
     }
   }
@@ -99,10 +68,12 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleGoHome = (): void => {
-    window.location.href = '/';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
-  override render(): ReactNode {
+  render(): ReactNode {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {
@@ -195,40 +166,13 @@ export function useErrorHandler() {
     
     // Log to error reporting service
     if (process.env['NODE_ENV'] === 'production') {
-      // Temporarily disabled Sentry to fix module resolution issues
-      // try {
-      //   // Send to Sentry
-      //   Sentry.captureException(error, {
-      //     extra: {
-      //       timestamp: new Date().toISOString(),
-      //       url: window.location.href,
-      //       userAgent: navigator.userAgent,
-      //     }
-      //   });
-      // } catch (sentryError) {
-      //   // Fallback logging when Sentry fails
-      //   console.error('Sentry error reporting failed in useErrorHandler, using fallback logging:', {
-      //     originalError: {
-      //       message: error.message,
-      //       stack: error.stack,
-      //     },
-      //     sentryError: {
-      //       message: sentryError instanceof Error ? sentryError.message : String(sentryError),
-      //       stack: sentryError instanceof Error ? sentryError.stack : undefined,
-      //     },
-      //     timestamp: new Date().toISOString(),
-      //     url: window.location.href,
-      //     userAgent: navigator.userAgent,
-      //   });
-      // }
-      
       // Simple error logging for now
       console.error('Production error:', {
         message: error.message,
         stack: error.stack,
         timestamp: new Date().toISOString(),
-        url: window.location.href,
-        userAgent: navigator.userAgent,
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
       });
     } else {
       // Development logging
@@ -236,7 +180,7 @@ export function useErrorHandler() {
         message: error.message,
         stack: error.stack,
         timestamp: new Date().toISOString(),
-        url: window.location.href,
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
       });
     }
   }, []);
@@ -250,7 +194,9 @@ export function useErrorHandler() {
 
 // Higher-order component for error handling
 export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>, fallback?: ReactNode, onError?: (error: Error, errorInfo: ErrorInfo) => void
+  Component: React.ComponentType<P>, 
+  fallback?: ReactNode, 
+  onError?: (error: Error, errorInfo: ErrorInfo) => void
 ): React.ComponentType<P> {
   const WrappedComponent = (props: P): JSX.Element => (
     <ErrorBoundary fallback={fallback} onError={onError}>
@@ -265,7 +211,8 @@ export function withErrorBoundary<P extends object>(
 
 // Async error boundary for async operations
 export function AsyncErrorBoundary({ 
-  children, fallback 
+  children, 
+  fallback 
 }: { 
   children: ReactNode; 
   fallback?: ReactNode; 

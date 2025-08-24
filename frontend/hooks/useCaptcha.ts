@@ -1,36 +1,37 @@
 import { useState, useCallback, useRef } from 'react';
 
-interface TurnstileState {
+interface CheckboxCaptchaState {
   isRequired: boolean;
   isVerified: boolean;
+  isLoading: boolean;
   token: string | null;
   error: string | null;
   attempts: number;
 }
 
-interface UseTurnstileOptions {
+interface UseCheckboxCaptchaOptions {
   maxAttempts?: number;
   onRateLimitExceeded?: () => void;
 }
 
-export function useCaptcha(options: UseTurnstileOptions = {}) {
+export function useCaptcha(options: UseCheckboxCaptchaOptions = {}) {
   const { maxAttempts = 3, onRateLimitExceeded } = options;
   
-  const [state, setState] = useState<TurnstileState>({
-    isRequired: true, // Always require Turnstile for guest sign-in
+  const [state, setState] = useState<CheckboxCaptchaState>({
+    isRequired: true, // Always require checkbox verification for guest sign-in
     isVerified: false,
+    isLoading: false, // Start in not loading state
     token: null,
     error: null,
     attempts: 0
   });
 
-  const turnstileRef = useRef<any>(null);
+  const checkboxRef = useRef<HTMLInputElement>(null);
 
   const incrementAttempts = useCallback(() => {
     setState(prev => {
       const newAttempts = prev.attempts + 1;
       
-      // Since Turnstile is always required, only trigger callback at rate limit threshold
       if (newAttempts >= maxAttempts) {
         onRateLimitExceeded?.();
       }
@@ -44,18 +45,26 @@ export function useCaptcha(options: UseTurnstileOptions = {}) {
   }, [maxAttempts, onRateLimitExceeded]);
 
   const handleCaptchaVerify = useCallback((token: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Checkbox captcha verified with token:', token);
+    }
     setState(prev => ({
       ...prev,
       isVerified: true,
+      isLoading: false,
       token,
       error: null
     }));
   }, []);
 
   const handleCaptchaError = useCallback((error: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Checkbox captcha error:', error);
+    }
     setState(prev => ({
       ...prev,
       isVerified: false,
+      isLoading: false,
       token: null,
       error
     }));
@@ -72,15 +81,16 @@ export function useCaptcha(options: UseTurnstileOptions = {}) {
 
   const resetCaptcha = useCallback(() => {
     setState({
-      isRequired: true, // Always require Turnstile for guest sign-in
+      isRequired: true,
       isVerified: false,
+      isLoading: false,
       token: null,
       error: null,
       attempts: 0
     });
     
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
+    if (checkboxRef.current) {
+      checkboxRef.current.checked = false;
     }
   }, []);
 
@@ -91,14 +101,31 @@ export function useCaptcha(options: UseTurnstileOptions = {}) {
     }));
   }, []);
 
+  const setLoading = useCallback((loading: boolean) => {
+    setState(prev => ({
+      ...prev,
+      isLoading: loading
+    }));
+  }, []);
+
+  // Generate a simple token when checkbox is checked
+  const generateCheckboxToken = useCallback(() => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2);
+    const token = `checkbox_${timestamp}_${random}`;
+    handleCaptchaVerify(token);
+  }, [handleCaptchaVerify]);
+
   return {
     state,
-    turnstileRef,
+    checkboxRef,
     incrementAttempts,
     handleCaptchaVerify,
     handleCaptchaError,
     handleCaptchaExpired,
     resetCaptcha,
-    clearError
+    clearError,
+    setLoading,
+    generateCheckboxToken
   };
 }

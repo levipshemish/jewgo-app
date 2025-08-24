@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
+import { securityMiddleware, corsHeaders } from '@/middleware-security';
 
-// Minimal private route protection - only guard admin and messaging routes
-// All other auth is handled by route handlers + RLS policies for better performance
+// Enhanced middleware with security hardening and private route protection
 export const config = {
   matcher: [
-    // App pages
+    // Apply security middleware to all routes
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Protected app pages
     '/admin/:path*',
     '/messages/:path*',
     '/eatery/:path*',
@@ -23,28 +25,36 @@ export const config = {
     '/mikva/:path*',
     '/shuls/:path*',
     '/stores/:path*',
-    // API endpoints commonly accessed by authenticated users
+    // Protected API endpoints
     '/api/admin/:path*',
     '/api/restaurants/:path*',
     '/api/reviews/:path*',
-    '/api/feedback/:path*'
+    '/api/feedback/:path*',
+    // Auth endpoints (for rate limiting)
+    '/api/auth/:path*',
+    '/auth/:path*'
   ]
 };
 
 /**
- * Minimal middleware with redirect sanitization for private routes only
- * Handles authentication checks for admin and messaging routes with security safeguards
- * Redirects unauthenticated users to sign-in page
- * 
- * Note: Only these specific routes are guarded in middleware to avoid performance impact
- * on public routes. All other authentication is handled by individual route handlers
- * and Row Level Security (RLS) policies for better scalability.
+ * Enhanced security middleware with authentication checks
+ * Applies security headers, rate limiting, CSRF protection, and auth checks
+ * Redirects unauthenticated users to sign-in page for protected routes
  */
 export async function middleware(request: NextRequest) {
   try {
-    // Skip middleware in development for easier testing
-    if (process.env.NODE_ENV === 'development') {
-      return NextResponse.next();
+    // Apply security middleware first (rate limiting, headers, CSRF)
+    const securityResponse = await securityMiddleware(request);
+    if (securityResponse.status !== 200) {
+      return securityResponse;
+    }
+
+    // Handle CORS preflight requests
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, { 
+        status: 200, 
+        headers: corsHeaders(request) 
+      });
     }
     
     // Only process protected paths. In Next.js runtime, matcher limits execution,

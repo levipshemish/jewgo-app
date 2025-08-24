@@ -3,4 +3,5 @@ export { useRecentSearches } from './useRecentSearches';
 export { useSearchInput } from './useSearchInput';
 export { useIsMobile } from './useIsMobile';
 export { useInfiniteScroll } from './useInfiniteScroll';
+export { useScrollDetection } from './useScrollDetection';
 export { useCaptcha } from '../../hooks/useCaptcha'; 

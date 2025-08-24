@@ -14,6 +14,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Import webpack optimization utilities
 const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
+
 const nextConfig = {
   // Enable modern features for better performance
   experimental: {
@@ -21,6 +22,8 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
     // Disable webpackBuildWorker to avoid flaky missing vendor-chunks during dev
     webpackBuildWorker: false,
+    // Disable CSS script injection to prevent CSS files from being loaded as scripts
+    optimizeCss: false,
   },
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
@@ -42,11 +45,126 @@ const nextConfig = {
     // Disable image optimization in Docker to prevent issues
     unoptimized: isDocker,
   },
-  // (experimental set above)
+
+  // Webpack configuration to fix eval errors and CSS issues
+  webpack: (config, { isServer, dev }) => {
+    // Apply webpack optimizations
+    config = optimizeWebpackConfig(config, { isServer });
+
+    // Fix eval errors by configuring module resolution
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve?.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+      },
+    };
+
+    // Configure CSS processing to prevent syntax errors
+    config.module.rules.forEach((rule) => {
+      if (rule.oneOf) {
+        rule.oneOf.forEach((oneOfRule) => {
+          if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
+            // Ensure CSS loaders are properly configured
+            if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
+              oneOfRule.use.forEach((loader) => {
+                if (loader.loader && loader.loader.includes('css-loader')) {
+                  // Configure CSS loader to handle syntax errors gracefully
+                  loader.options = {
+                    ...loader.options,
+                    sourceMap: false, // Disable source maps to prevent comment issues
+                    importLoaders: 1,
+                    // Add options to handle long comments and special characters
+                    url: false,
+                    import: false,
+                    // Disable CSS modules for global CSS
+                    modules: false,
+                  };
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Suppress eval-related warnings and errors
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      /Critical dependency: the request of a dependency is an expression/,
+      /Module not found: Can't resolve 'encoding'/,
+      /Failed to parse source map/,
+      /eval\(/,
+      /Serializing big strings.*impacts deserialization performance/,
+      // Suppress CSS-related warnings
+      /vendors\.css/,
+      /Invalid or unexpected token/,
+      /CSS.*syntax.*error/,
+    ];
+
+    // Configure webpack to handle eval more gracefully
+    config.optimization = {
+      ...config.optimization,
+      minimize: isProduction,
+      minimizer: config.optimization?.minimizer || [],
+    };
+
+    // Disable CSS source maps and comments to prevent parsing issues
+    config.module.rules.forEach((rule) => {
+      if (rule.oneOf) {
+        rule.oneOf.forEach((oneOfRule) => {
+          if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
+            if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
+              oneOfRule.use.forEach((loader) => {
+                if (loader.loader && loader.loader.includes('css-loader')) {
+                  loader.options = {
+                    ...loader.options,
+                    sourceMap: false,
+                    importLoaders: 1,
+                    url: false,
+                    import: false,
+                    modules: false,
+                    // Disable comments to prevent parsing issues
+                    comments: false,
+                  };
+                }
+                if (loader.loader && loader.loader.includes('postcss-loader')) {
+                  loader.options = {
+                    ...loader.options,
+                    sourceMap: false,
+                  };
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return config;
+  },
 
   // Disable prerendering to avoid build errors
   trailingSlash: false,
   generateEtags: false,
+  
+  // Ensure proper MIME types for CSS files
+  async headers() {
+    return [
+      {
+        source: '/static/css/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+        ],
+      },
+    ];
+  },
 
   // Redirects configuration
   async redirects() {
@@ -62,6 +180,9 @@ const nextConfig = {
       { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*`, permanent: false },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*`, permanent: false },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*`, permanent: false },
+      // Add restaurants API redirects
+      { source: '/api/restaurants/:path*', destination: `${BACKEND_URL}/api/restaurants/:path*`, permanent: false },
+      { source: '/api/restaurants-with-images/:path*', destination: `${BACKEND_URL}/api/restaurants-with-images/:path*`, permanent: false },
     ];
   },
   // Rewrites configuration
@@ -74,44 +195,13 @@ const nextConfig = {
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*` },
       { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*` },
       { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*` },
-      { source: '/api/migrate/:path*', destination: `${BACKEND_URL}/api/migrate/:path*` },
-      { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*` },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*` },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*` },
+      // Add restaurants API rewrites
+      { source: '/api/restaurants/:path*', destination: `${BACKEND_URL}/api/restaurants/:path*` },
+      { source: '/api/restaurants-with-images/:path*', destination: `${BACKEND_URL}/api/restaurants-with-images/:path*` },
     ];
   },
 };
-
-// Temporarily disable Sentry to fix Edge Runtime module conflicts
-// const { withSentryConfig } = require("@sentry/nextjs");
-
-// module.exports = withSentryConfig(
-//   nextConfig,
-//   {
-//     // For all available options, see:
-//     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-//     
-//     // Disable source map upload to avoid build issues
-//     dryRun: true,
-//     silent: true,
-//     
-//     // Upload a larger set of source maps for prettier stack traces (increases build time)
-//     widenClientFileUpload: true,
-//     
-//     // Automatically tree-shake Sentry logger statements to reduce bundle size
-//     disableLogger: true,
-//     
-//     // Ensure webpack cache configuration is preserved
-//     webpack: (config, options) => {
-//       // Ensure cache type is set to memory for Sentry webpack configurations
-//       if (config.cache) {
-//         config.cache = {
-//           type: 'memory',
-//         };
-//       }
-//       return config;
-//     },
-//   }
-// );
 
 module.exports = nextConfig;

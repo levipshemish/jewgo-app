@@ -11,6 +11,7 @@ declare global {
       render: (container: string | HTMLElement, options: any) => string;
       reset: (widgetId: string) => void;
       getResponse: (widgetId: string) => string;
+      execute?: (widgetId: string) => void;
     };
     handleTurnstileCallback: (token: string) => void;
   }

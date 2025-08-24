@@ -369,7 +369,7 @@ const RestaurantDetailPage: React.FC = () => {
             <p className="text-xs text-gray-400">ID: {params?.['id']}</p>
           </div>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/eatery')}
             className="bg-green-600 text-white px-6 py-3 rounded-full font-medium hover:bg-green-700 transition-colors"
           >
             Back to Home

@@ -1,8 +1,23 @@
+/* CSS Imports - Must come first */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 /* Leaflet CSS import - moved to separate file to prevent MIME type issues */
 /* @import './leaflet.css'; - Removed to prevent circular import issues */
+
+/* CSS Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 
 /* Global Background Color */
 html, body {
@@ -15,20 +30,18 @@ html.font-applied {
   font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Ensure fonts are used immediately when loaded - prevent preload warnings */
-@font-face {
-  font-family: 'Roboto';
-  font-display: swap;
-  font-weight: 300 400 500 700;
+/* Font loading through CSS imports */
+.font-roboto {
+  font-family: var(--font-roboto);
 }
 
 /* Font loading optimization - apply fonts immediately to prevent preload warnings */
 .font-roboto-non-critical {
-  font-family: var(--font-roboto-non-critical), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .font-roboto-critical {
-  font-family: var(--font-roboto-critical), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Immediate font application to prevent preload warnings */
@@ -49,6 +62,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 /* Design System CSS Variables */
 :root {
   /* Font Family */
+  --font-roboto: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
   --font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   
   /* Primary JewGo Brand Colors */
@@ -615,8 +629,164 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 }
 
 /* Smooth transitions for all interactive elements */
-* {
+/* REMOVED: Universal transition rule that was causing flickering during scroll */
+/* * {
   transition: all 0.2s ease-in-out;
+} */
+
+/* Instead, apply transitions only to specific interactive elements */
+button,
+a,
+[role="button"],
+.unified-card,
+.restaurant-card,
+.eatery-card,
+.nav-item,
+.menu-item,
+.tab-item,
+.filter-item,
+.pagination-item {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Disable transitions during scroll to prevent flickering */
+.scrolling * {
+  transition: none !important;
+}
+
+/* Optimize card rendering during scroll */
+.scrolling .unified-card,
+.scrolling .restaurant-card {
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Prevent layout shifts during scroll */
+.scrolling .restaurant-grid {
+  contain: layout style paint;
+}
+
+/* Additional flickering prevention */
+.scrolling .motion-div,
+.scrolling [data-framer-motion] {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Disable all animations during scroll */
+.scrolling * {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Disable Framer Motion animations during scroll */
+.scrolling [data-framer-motion] {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Disable hover effects during scroll */
+.scrolling *:hover {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Completely disable all card animations during scroll */
+.scrolling .unified-card,
+.scrolling .restaurant-card,
+.scrolling .eatery-card {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  backface-visibility: hidden !important;
+  perspective: none !important;
+}
+
+/* Disable image animations during scroll */
+.scrolling img {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Disable all motion animations during scroll */
+.scrolling [class*="motion"] {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Force hardware acceleration and prevent layout shifts */
+.scrolling .restaurant-grid {
+  contain: layout style paint !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+  perspective: 1000px !important;
+}
+
+/* Disable all CSS animations during scroll */
+.scrolling * {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 0 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* Nuclear option: completely disable all animations and transforms during scroll */
+.scrolling *,
+.scrolling *::before,
+.scrolling *::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  backface-visibility: hidden !important;
+  perspective: none !important;
+  transform-style: flat !important;
+}
+
+/* Force GPU acceleration and prevent any layout shifts */
+.scrolling {
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+  perspective: 1000px !important;
+  will-change: auto !important;
+}
+
+/* Prevent any remaining flickering in grid items */
+.scrolling .restaurant-grid > div {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+  contain: layout style paint !important;
+  backface-visibility: hidden !important;
+}
+
+/* Ensure grid items are stable during scroll */
+.restaurant-grid > div {
+  contain: layout style paint !important;
+  will-change: auto !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+}
+
+/* Optimize image rendering during scroll */
+.scrolling img {
+  image-rendering: optimizeSpeed !important;
+  image-rendering: -moz-crisp-edges !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: optimize-contrast !important;
+  -ms-interpolation-mode: nearest-neighbor !important;
 }
 
 /* Optimized loading states */
@@ -2852,6 +3022,7 @@ div[class*="specials-dynamic-grid"] {
 
 /* Ensure the area between ActionButtons and cards is transparent */
 .restaurant-grid {
+  display: grid !important;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -2859,6 +3030,9 @@ div[class*="specials-dynamic-grid"] {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
+  /* Prevent layout thrashing */
+  contain: layout style paint !important;
+  will-change: auto !important;
 }
 
 /* Mobile: 2 columns with consistent spacing */
@@ -2868,6 +3042,10 @@ div[class*="specials-dynamic-grid"] {
     gap: 1rem !important;
     padding: 1rem !important;
     margin-bottom: 80px !important; /* Ensure space for bottom navigation */
+    /* Prevent layout thrashing during scroll */
+    contain: layout style paint !important;
+    will-change: auto !important;
+    transform: translateZ(0) !important;
   }
   
   /* Ensure bottom navigation is always visible on mobile */
@@ -2907,6 +3085,10 @@ div[class*="specials-dynamic-grid"] {
     gap: 1rem !important;
     padding: 1rem !important;
     margin-bottom: 80px !important; /* Ensure space for bottom navigation */
+    /* Prevent layout thrashing during scroll */
+    contain: layout style paint !important;
+    will-change: auto !important;
+    transform: translateZ(0) !important;
   }
 }
 
@@ -2916,6 +3098,10 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
+    /* Prevent layout thrashing during scroll */
+    contain: layout style paint !important;
+    will-change: auto !important;
+    transform: translateZ(0) !important;
   }
 }
 
@@ -2925,6 +3111,10 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(5, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
+    /* Prevent layout thrashing during scroll */
+    contain: layout style paint !important;
+    will-change: auto !important;
+    transform: translateZ(0) !important;
   }
 }
 
@@ -2934,6 +3124,10 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(6, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
+    /* Prevent layout thrashing during scroll */
+    contain: layout style paint !important;
+    will-change: auto !important;
+    transform: translateZ(0) !important;
   }
 }
 

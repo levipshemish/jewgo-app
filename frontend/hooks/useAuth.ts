@@ -73,7 +73,7 @@ export function useAuth() {
       setUser(null);
       setIsAnonymous(false);
       setError(null);
-      router.push('/');
+      router.push('/auth/signin');
     } catch (err) {
       console.error('Sign out error:', err);
       setError('Failed to sign out');

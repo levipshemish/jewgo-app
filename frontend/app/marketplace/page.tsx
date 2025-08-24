@@ -330,7 +330,7 @@ export default function MarketplacePage() {
               </ul>
             </div>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/eatery')}
               className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
             >
               Back to Home

@@ -6,6 +6,7 @@ interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onError?: (error: string) => void;
   onExpired?: () => void;
+  onLoading?: (loading: boolean) => void;
   className?: string;
   siteKey?: string;
   theme?: 'light' | 'dark';
@@ -24,14 +25,18 @@ declare global {
       render: (container: string | HTMLElement, options: any) => string;
       reset: (widgetId: string) => void;
       getResponse: (widgetId: string) => string;
+      execute?: (widgetId: string) => void;
     };
+    turnstileDebugLogged?: boolean;
+    turnstileRenderLogged?: boolean;
   }
 }
 
-export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWidgetProps>(({ 
+export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, TurnstileWidgetProps>(({ 
   onVerify, 
   onError, 
   onExpired, 
+  onLoading,
   className = '',
   siteKey,
   theme = 'light',
@@ -49,6 +54,34 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   // Check if using test keys
   const isTestKey = turnstileSiteKey === '1x00000000000000000000AA' || 
                    turnstileSiteKey === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
+
+  // Check if we're in development and using a production key
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isLocalhost = typeof window !== 'undefined' && 
+                     (window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' ||
+                      window.location.hostname.includes('localhost'));
+  
+  const isProductionKeyInDev = isDevelopment && 
+                              isLocalhost && 
+                              turnstileSiteKey && 
+                              !isTestKey && 
+                              turnstileSiteKey.startsWith('0x4AAAAAA');
+
+  // Debug the key detection (only in development and only once)
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && !window.turnstileDebugLogged) {
+    console.log('Turnstile Key Analysis:', {
+      turnstileSiteKey,
+      isTestKey,
+      isDevelopment,
+      isLocalhost,
+      isProductionKeyInDev,
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+    });
+    window.turnstileDebugLogged = true;
+  }
+
+
 
   // Handle missing site key gracefully
   if (!turnstileSiteKey) {
@@ -68,6 +101,20 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     }
   }
 
+  // Handle production key in development
+  if (isProductionKeyInDev) {
+    console.warn('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
+    return (
+      <div className={`text-orange-500 text-sm ${className}`}>
+        ⚠️ Production Turnstile key detected on localhost. 
+        <br />
+        <span className="text-xs">
+          Use test key or configure domain-specific key for development.
+        </span>
+      </div>
+    );
+  }
+
   useEffect(() => {
     // Load Turnstile script
     if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
@@ -81,6 +128,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         // Use turnstile.ready() for proper initialization
         if (window.turnstile?.ready) {
           window.turnstile.ready(() => {
+            console.log('Turnstile ready callback triggered');
             setIsLoaded(true);
           });
         } else {
@@ -107,17 +155,27 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
   }, [onError]);
 
   useEffect(() => {
-    if (!isLoaded || !containerRef.current || !turnstileSiteKey || isRendered) {
+    if (!isLoaded || !containerRef.current || !turnstileSiteKey || isRendered || isProductionKeyInDev) {
       return;
     }
 
     const renderWidget = () => {
-      console.log('Rendering Turnstile widget...', {
-        turnstileExists: !!window.turnstile,
-        containerExists: !!containerRef.current,
-        siteKey: turnstileSiteKey,
-        isTestKey
-      });
+      // Only log once per render cycle
+      if (process.env.NODE_ENV === 'development' && !window.turnstileRenderLogged) {
+        console.log('Rendering Turnstile widget...', {
+          turnstileExists: !!window.turnstile,
+          containerExists: !!containerRef.current,
+          siteKey: turnstileSiteKey,
+          isTestKey,
+          isDevelopment,
+          hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+        });
+        window.turnstileRenderLogged = true;
+        // Reset after a short delay
+        setTimeout(() => {
+          window.turnstileRenderLogged = false;
+        }, 1000);
+      }
       
       if (!window.turnstile || !containerRef.current) {return;}
 
@@ -127,6 +185,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           callback: (token: string) => {
             console.log('Turnstile callback received token:', token);
             setCurrentToken(token);
+            onLoading?.(false); // Widget is done loading
             onVerify(token);
           },
           'expired-callback': () => {
@@ -137,10 +196,26 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
           'error-callback': (error: string) => {
             console.log('Turnstile error callback:', error);
             setCurrentToken('');
-            onError?.('Turnstile verification failed');
+            onLoading?.(false); // Stop loading on error
+            
+            // Handle specific error codes
+            let errorMessage = 'Turnstile verification failed';
+            if (error === '110200') {
+              errorMessage = 'Domain mismatch - check Turnstile site key configuration';
+            } else if (error === '110201') {
+              errorMessage = 'Invalid site key';
+            } else if (error === '110202') {
+              errorMessage = 'Widget expired';
+            }
+            
+            onError?.(errorMessage);
           },
           theme,
           size,
+          // Invisible mode configuration - use 'execute' for invisible behavior
+          'appearance': 'execute',
+          // Auto-execute for invisible mode
+          'auto': true,
           // Simple configuration without complex overrides
           'refresh-expired': 'auto',
           'retry': 'auto'
@@ -153,6 +228,13 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         
         setWidgetId(id);
         setIsRendered(true);
+        
+        // For execute mode, the widget should auto-execute
+        if (config.appearance === 'execute') {
+          console.log('Turnstile widget configured for auto-execution');
+          // Notify parent that we're starting to execute
+          onLoading?.(true);
+        }
       } catch (error) {
         console.error('Failed to render Turnstile widget:', error);
         onError?.('Failed to render Turnstile widget');
@@ -161,7 +243,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
 
     // Render widget when ready
     renderWidget();
-  }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size, isTestKey]);
+  }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size, isTestKey, isProductionKeyInDev]);
 
   // Expose methods via ref
   React.useImperativeHandle(ref, () => ({
@@ -178,18 +260,21 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
     <div className={`${className}`}>
       <div 
         ref={containerRef} 
-        className="flex justify-center min-h-[78px] w-full"
+        className="flex justify-center w-full"
         data-testid="turnstile-widget"
         style={{ 
-          minHeight: '78px',
-          position: 'relative',
-          overflow: 'visible'
+          minHeight: '1px',
+          height: '1px',
+          position: 'absolute',
+          overflow: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none'
         }}
       />
       {/* Only show loading/status messages in development */}
       {process.env.NODE_ENV === 'development' && (
         <>
-          {!isRendered && isLoaded && (
+          {!isRendered && isLoaded && !isProductionKeyInDev && (
             <div className="text-center text-sm text-gray-400 mt-2">
               Loading security check...
             </div>
@@ -203,6 +288,4 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
       )}
     </div>
   );
-});
-
-TurnstileWidget.displayName = 'TurnstileWidget';
+}));

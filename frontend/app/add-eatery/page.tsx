@@ -362,7 +362,7 @@ export default function AddEateryPage() {
       if (result.success) {
         // Show success message and redirect
         alert('Thank you! Your submission has been received and will be reviewed by our team.');
-        router.push('/');
+        router.push('/eatery');
       } else {
         // Handle validation errors
         if (result.errors) {
@@ -384,7 +384,7 @@ export default function AddEateryPage() {
   };
 
   const handleCancel = () => {
-    router.push('/');
+    router.push('/eatery');
   };
 
   return (

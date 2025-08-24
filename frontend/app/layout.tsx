@@ -92,6 +92,21 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
+        {/* Fix for CSS script injection bug */}
+        <Script id="css-fix" strategy="beforeInteractive">
+          {`
+            // Remove any script tags that incorrectly load CSS files
+            (function() {
+              const scripts = document.querySelectorAll('script[src*="vendors.css"], script[src*="layout.css"]');
+              scripts.forEach(script => {
+                if (script.src && script.src.includes('.css')) {
+                  script.remove();
+                }
+              });
+            })();
+          `}
+        </Script>
+        
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
           <>

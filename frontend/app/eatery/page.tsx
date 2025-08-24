@@ -17,6 +17,7 @@ import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileS
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters } from '@/lib/filters/schema';
@@ -157,7 +158,7 @@ function EateryPageContent() {
       isCholovYisroel: restaurant.is_cholov_yisroel,
       isPasYisroel: restaurant.is_pas_yisroel,
     };
-  }, []);
+  }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
   const handleFilterChange = useCallback((filterType: keyof Filters, value: Filters[keyof Filters]) => {
@@ -196,8 +197,7 @@ function EateryPageContent() {
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
 
 
@@ -248,28 +248,7 @@ function EateryPageContent() {
     // Send location update via WebSocket when location changes (this will be handled by useEffect below)
   };
 
-  // Mobile-optimized scroll handling
-  const handleScroll = () => {
-    setIsScrolling(true);
-    
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-    
-    scrollTimeoutRef.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 150);
-  };
 
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Handle location changes and update filters
   useEffect(() => {
@@ -627,9 +606,26 @@ function EateryPageContent() {
           className="restaurant-grid px-4 sm:px-6 lg:px-8"
           role="grid"
           aria-label="Restaurant listings"
+          style={{ 
+            contain: 'layout style paint',
+            willChange: 'auto',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
         >
           {restaurants.map((restaurant, index) => (
-            <div key={restaurant.id} className="w-full" role="gridcell">
+            <div 
+              key={restaurant.id} 
+              className="w-full" 
+              role="gridcell"
+              style={{
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden'
+              }}
+            >
               <UnifiedCard
                 data={transformRestaurantToCardData(restaurant)}
                 variant="default"

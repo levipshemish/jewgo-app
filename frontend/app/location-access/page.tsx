@@ -16,13 +16,13 @@ export default function LocationAccessPage() {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         if (!session) {
           // Redirect to sign in if not authenticated
-          router.push('/');
+          router.push('/auth/signin');
           return;
         }
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check failed:', error);
-        router.push('/');
+        router.push('/auth/signin');
       }
     };
 
