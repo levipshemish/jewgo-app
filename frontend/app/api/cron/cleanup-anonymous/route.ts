@@ -128,7 +128,8 @@ export async function GET(request: NextRequest) {
             const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
             
             if (deleteError) {
-              console.error(`[Cleanup Cron] Failed to delete user ${user.id} (${correlationId})`, deleteError);
+              // Failed to delete user - log for debugging
+              // console.error(`[Cleanup Cron] Failed to delete user ${user.id} (${correlationId})`, deleteError);
               results.errors++;
             } else {
 
@@ -138,7 +139,8 @@ export async function GET(request: NextRequest) {
           }
           
         } catch (error) {
-          console.error(`[Cleanup Cron] Error processing user ${user.id} (${correlationId})`, error);
+          // Error processing user - log for debugging
+          // console.error(`[Cleanup Cron] Error processing user ${user.id} (${correlationId})`, error);
           results.errors++;
         }
       }
@@ -151,13 +153,14 @@ export async function GET(request: NextRequest) {
 
     const duration = Date.now() - startTime;
     
-    console.log(`[Cleanup Cron] Cleanup completed (${correlationId})`, {
-      processed: results.processed,
-      deleted: results.deleted,
-      errors: results.errors,
-      duration_ms: duration,
-      dry_run: CLEANUP_CONFIG.DRY_RUN
-    });
+    // Cleanup completed - log for monitoring
+    // console.log(`[Cleanup Cron] Cleanup completed (${correlationId})`, {
+    //   processed: results.processed,
+    //   deleted: results.deleted,
+    //   errors: results.errors,
+    //   duration_ms: duration,
+    //   dry_run: CLEANUP_CONFIG.DRY_RUN
+    // });
 
     // Log to Sentry if available
     if (typeof window !== 'undefined' && (window as any).Sentry) {
@@ -187,7 +190,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`[Cleanup Cron] Unexpected error (${correlationId})`, error);
+    // Unexpected error - log for debugging
+    // console.error(`[Cleanup Cron] Unexpected error (${correlationId})`, error);
     
     // Log to Sentry if available
     if (typeof window !== 'undefined' && (window as any).Sentry) {

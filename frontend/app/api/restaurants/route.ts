@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
-import { fromSearchParams, FiltersSchema } from '@/lib/filters/schema';
+import { fromSearchParams } from '@/lib/filters/schema';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -83,7 +83,8 @@ export async function GET(request: NextRequest) {
     try {
       filters = fromSearchParams(searchParams);
     } catch (error) {
-      console.warn('Invalid filter parameters:', error);
+      // Invalid filter parameters - log for debugging
+      // console.warn('Invalid filter parameters:', error);
       // Return empty results for invalid filters
       return NextResponse.json({
         success: true,

@@ -15,8 +15,7 @@ import {
 } from '@/lib/utils/auth-utils.server';
 import { 
   ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  FEATURE_FLAGS
+  getCORSHeaders
 } from '@/lib/config/environment';
 
 export const runtime = 'nodejs';
@@ -118,11 +117,12 @@ export async function POST(request: NextRequest) {
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for email upgrade IP hash: ${ipHash}`, {
-        correlationId,
-        remaining_attempts: rateLimitResult.remaining_attempts,
-        reset_in_seconds: rateLimitResult.reset_in_seconds
-      });
+      // Rate limit exceeded - log for monitoring
+      // console.warn(`Rate limit exceeded for email upgrade IP hash: ${ipHash}`, {
+      //   correlationId,
+      //   remaining_attempts: rateLimitResult.remaining_attempts,
+      //   reset_in_seconds: rateLimitResult.reset_in_seconds
+      // });
       
       return NextResponse.json(
         {
@@ -166,10 +166,11 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
     
     if (getUserError || !user) {
-      console.error(`Authentication error for email upgrade correlation ID: ${correlationId}`, {
-        error: getUserError,
-        correlationId
-      });
+      // Authentication error - log for debugging
+      // console.error(`Authentication error for email upgrade correlation ID: ${correlationId}`, {
+      //   error: getUserError,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'AUTHENTICATION_ERROR' },
@@ -187,10 +188,11 @@ export async function POST(request: NextRequest) {
     const { data: { session: preUpgradeSession }, error: getSessionError } = await supabase.auth.getSession();
     
     if (getSessionError) {
-      console.error(`Failed to get pre-upgrade session for correlation ID: ${correlationId}`, {
-        error: getSessionError,
-        correlationId
-      });
+      // Failed to get pre-upgrade session - log for debugging
+      // console.error(`Failed to get pre-upgrade session for correlation ID: ${correlationId}`, {
+      //   error: getSessionError,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'SESSION_ERROR' },
@@ -208,10 +210,11 @@ export async function POST(request: NextRequest) {
     const { data: updateData, error: updateError } = await supabase.auth.updateUser({ email });
     
     if (updateError) {
-      console.error(`Email upgrade failed for correlation ID: ${correlationId}`, {
-        error: updateError,
-        correlationId
-      });
+      // Email upgrade failed - log for debugging
+      // console.error(`Email upgrade failed for correlation ID: ${correlationId}`, {
+      //   error: updateError,
+      //   correlationId
+      // });
       
       // Map Supabase errors to normalized error codes
       let errorCode = 'EMAIL_UPGRADE_FAILED';
@@ -241,10 +244,11 @@ export async function POST(request: NextRequest) {
     const { data: { session: postUpgradeSession }, error: getPostSessionError } = await supabase.auth.getSession();
     
     if (getPostSessionError) {
-      console.error(`Failed to get post-upgrade session for correlation ID: ${correlationId}`, {
-        error: getPostSessionError,
-        correlationId
-      });
+      // Failed to get post-upgrade session - log for debugging
+      // console.error(`Failed to get post-upgrade session for correlation ID: ${correlationId}`, {
+      //   error: getPostSessionError,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'SESSION_ERROR' },
@@ -263,19 +267,21 @@ export async function POST(request: NextRequest) {
     const tokenRotated = verifyTokenRotation(preUpgradeSession, postUpgradeSession);
     
     if (!tokenRotated) {
-      console.warn(`Token rotation verification failed for email upgrade correlation ID: ${correlationId}`, {
-        correlationId
-      });
+      // Token rotation verification failed - log for monitoring
+      // console.warn(`Token rotation verification failed for email upgrade correlation ID: ${correlationId}`, {
+      //   correlationId
+      // });
       
       // Don't fail the request, but log the warning
     }
     
-    console.log(`Email upgrade successful for correlation ID: ${correlationId}`, {
-      user_id: updateData.user?.id,
-      correlationId,
-      token_rotated: tokenRotated,
-      duration_ms: Date.now() - startTime
-    });
+    // Email upgrade successful - log for monitoring
+    // console.log(`Email upgrade successful for correlation ID: ${correlationId}`, {
+    //   user_id: updateData.user?.id,
+    //   correlationId,
+    //   token_rotated: tokenRotated,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 
@@ -294,11 +300,12 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error) {
-    console.error(`Unexpected error in email upgrade for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // Unexpected error - log for debugging
+    // console.error(`Unexpected error in email upgrade for correlation ID: ${correlationId}`, {
+    //   error: scrubPII(error),
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 

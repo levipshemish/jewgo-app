@@ -203,7 +203,7 @@ function SignInForm() {
               href="/auth/signup"
               className="text-sm text-jewgo-400 hover:text-jewgo-300 transition-colors"
             >
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </div>
         </div>

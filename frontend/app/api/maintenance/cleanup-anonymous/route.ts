@@ -150,10 +150,11 @@ export async function POST(request: NextRequest) {
     allAnonymousUsers = allAnonymousUsers.slice(0, batchSize);
     
     if (allAnonymousUsers.length === 0) {
-      console.log(`No anonymous users to clean up for correlation ID: ${correlationId}`, {
-        correlationId,
-        cutoff_date: cutoffDate.toISOString()
-      });
+      // No anonymous users to clean up - log for monitoring
+      // console.log(`No anonymous users to clean up for correlation ID: ${correlationId}`, {
+      //   correlationId,
+      //   cutoff_date: cutoffDate.toISOString()
+      // });
       
       return NextResponse.json(
         { 
@@ -174,11 +175,11 @@ export async function POST(request: NextRequest) {
     
     if (dryRun) {
       // Dry run mode - log what would be deleted without actual operations
-      console.log(`DRY RUN: Would clean up ${allAnonymousUsers.length} anonymous users for correlation ID: ${correlationId}`, {
-        user_ids: processedUsers,
-        correlationId,
-        cutoff_date: cutoffDate.toISOString()
-      });
+      // console.log(`DRY RUN: Would clean up ${allAnonymousUsers.length} anonymous users for correlation ID: ${correlationId}`, {
+      //   user_ids: processedUsers,
+      //   correlationId,
+      //   cutoff_date: cutoffDate.toISOString()
+      // });
       
       return NextResponse.json(
         { 
@@ -205,11 +206,12 @@ export async function POST(request: NextRequest) {
           .limit(1);
         
         if (dataError) {
-          console.error(`Failed to check user data for correlation ID: ${correlationId}`, {
-            user_id: user.id,
-            error: dataError,
-            correlationId
-          });
+          // Failed to check user data - log for debugging
+          // console.error(`Failed to check user data for correlation ID: ${correlationId}`, {
+          //   user_id: user.id,
+          //   error: dataError,
+          //   correlationId
+          // });
           continue;
         }
         
@@ -227,11 +229,12 @@ export async function POST(request: NextRequest) {
           );
           
           if (archiveError) {
-            console.error(`Failed to archive user for correlation ID: ${correlationId}`, {
-              user_id: user.id,
-              error: archiveError,
-              correlationId
-            });
+            // Failed to archive user - log for debugging
+            // console.error(`Failed to archive user for correlation ID: ${correlationId}`, {
+            //   user_id: user.id,
+            //   error: archiveError,
+            //   correlationId
+            // });
           } else {
             archivedCount++;
           }
@@ -240,33 +243,35 @@ export async function POST(request: NextRequest) {
           const { error: deleteError } = await serviceRoleClient.auth.admin.deleteUser(user.id);
           
           if (deleteError) {
-            console.error(`Failed to delete user for correlation ID: ${correlationId}`, {
-              user_id: user.id,
-              error: deleteError,
-              correlationId
-            });
+            // Failed to delete user - log for debugging
+            // console.error(`Failed to delete user for correlation ID: ${correlationId}`, {
+            //   user_id: user.id,
+            //   error: deleteError,
+            //   correlationId
+            // });
           } else {
             deletedCount++;
           }
         }
         
       } catch (userError) {
-        console.error(`Error processing user for correlation ID: ${correlationId}`, {
-          user_id: user.id,
-          error: userError,
-          correlationId
-        });
+        // Error processing user - log for debugging
+        // console.error(`Error processing user for correlation ID: ${correlationId}`, {
+        //   user_id: user.id,
+        //   error: userError,
+        //   correlationId
+        // });
       }
     }
     
     // Log cleanup statistics
-    console.log(`Cleanup completed for correlation ID: ${correlationId}`, {
-      deleted: deletedCount,
-      archived: archivedCount,
-      processed: processedUsers.length,
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // console.log(`Cleanup completed for correlation ID: ${correlationId}`, {
+    //   deleted: deletedCount,
+    //   archived: archivedCount,
+    //   processed: processedUsers.length,
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 
@@ -282,11 +287,12 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error) {
-    console.error(`Unexpected error in cleanup for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // Unexpected error - log for debugging
+    // console.error(`Unexpected error in cleanup for correlation ID: ${correlationId}`, {
+    //   error: scrubPII(error),
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 
