@@ -62,7 +62,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   variant = 'default',
   showStarInBadge = false // Default to false for timestamps
 }) => {
-  const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
   const { isScrolling } = useScrollDetection({ debounceMs: 100, enableBodyClass: false });
   

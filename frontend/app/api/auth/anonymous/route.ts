@@ -86,10 +86,28 @@ export async function POST(request: NextRequest) {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options });
+          // Ensure cookies work on localhost (no Secure on http, SameSite=Lax, path=/)
+          cookieStore.set({
+            name,
+            value,
+            ...options,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+          });
         },
         remove(name: string, options: any) {
-          cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+          cookieStore.set({
+            name,
+            value: '',
+            ...options,
+            maxAge: 0,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+          });
         },
       },
     }

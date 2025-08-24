@@ -118,11 +118,8 @@ export async function middleware(request: NextRequest) {
     // Check if user is anonymous using shared extractor
     const isAnonymous = extractIsAnonymous(user);
     if (isAnonymous) {
-      // Allow anonymous users to access specific read-only routes
-      if (!isAnonymousAllowedPath(path)) {
-        // Anonymous user - redirect to signin with sanitized redirect URL
-        return redirectToSignin(request, response);
-      }
+      // TEMPORARY: Allow anonymous users to access all pages
+      return response;
     }
 
     // Authenticated, non-anonymous user - allow access and return response with persisted cookies
@@ -188,10 +185,7 @@ function isProtectedPath(pathname: string): boolean {
 /**
  * Allow list for routes that anonymous users can access
  */
-function isAnonymousAllowedPath(pathname: string): boolean {
-  // Allow the eatery pages for guest browsing
-  if (pathname === '/eatery' || pathname.startsWith('/eatery/')) {
-    return true;
-  }
-  return false;
+function isAnonymousAllowedPath(_pathname: string): boolean {
+  // Deprecated: anonymous users are allowed everywhere for now
+  return true;
 }

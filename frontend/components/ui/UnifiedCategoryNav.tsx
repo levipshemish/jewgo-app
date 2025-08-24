@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+// import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { 
   Store, 
@@ -18,7 +18,7 @@ import {
   Calendar,
   Gift
 } from 'lucide-react';
-import { useRovingFocus } from '@/hooks/useRovingFocus';
+// import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
 import styles from './UnifiedCategoryNav.module.css';
 
@@ -241,8 +241,8 @@ export function UnifiedCategoryNav({
   // Scrollable variant refs and state
   const scrollerRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  // const [canScrollLeft, setCanScrollLeft] = useState(false);
+  // const [canScrollRight, setCanScrollRight] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   
   // Handle selection
@@ -275,8 +275,8 @@ export function UnifiedCategoryNav({
     const scroller = scrollerRef.current;
     const { scrollLeft, scrollWidth, clientWidth } = scroller;
     
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    // setCanScrollLeft(scrollLeft > 0);
+    // setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
   }, [variant]);
   
   // Throttled overflow check
@@ -330,7 +330,7 @@ export function UnifiedCategoryNav({
   }, [variant, selectedId, items, isInitialized, scrollBehavior]);
   
   // Manual scroll
-  const scrollTo = useCallback((direction: 'left' | 'right') => {
+  // const scrollTo = useCallback((direction: 'left' | 'right') => {
     if (!scrollerRef.current) {return;}
     
     const scroller = scrollerRef.current;
