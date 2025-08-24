@@ -6,13 +6,7 @@ import { extractIsAnonymous } from '@/lib/utils/auth-utils';
 
 declare global {
   interface Window {
-    turnstile: {
-      ready: (callback: () => void) => void;
-      render: (container: string | HTMLElement, options: any) => string;
-      reset: (widgetId: string) => void;
-      getResponse: (widgetId: string) => string;
-      execute?: (widgetId: string) => void;
-    };
+    turnstile?: any;
     handleTurnstileCallback: (token: string) => void;
   }
 }

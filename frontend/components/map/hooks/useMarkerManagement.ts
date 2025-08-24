@@ -266,56 +266,15 @@ export function useMarkerManagement({
       
       element.innerHTML = `
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <!-- Glass gradient for pin background -->
-            <linearGradient id="pinGlassGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:rgba(255,255,255,0.95);stop-opacity:1" />
-              <stop offset="30%" style="stop-color:rgba(255,255,255,0.85);stop-opacity:1" />
-              <stop offset="70%" style="stop-color:rgba(255,255,255,0.75);stop-opacity:1" />
-              <stop offset="100%" style="stop-color:rgba(255,255,255,0.65);stop-opacity:1" />
-            </linearGradient>
-            
-            <!-- Colored gradient for selected pin -->
-            <linearGradient id="pinSelectedGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:${finalColor};stop-opacity:0.9" />
-              <stop offset="50%" style="stop-color:${finalColor};stop-opacity:0.8" />
-              <stop offset="100%" style="stop-color:${finalColor};stop-opacity:0.7" />
-            </linearGradient>
-            
-            <!-- Border gradient for pin -->
-            <linearGradient id="pinBorderGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:${finalColor};stop-opacity:1" />
-              <stop offset="100%" style="stop-color:${finalColor};stop-opacity:0.8" />
-            </linearGradient>
-            
-            <!-- Glass highlight gradient -->
-            <linearGradient id="pinHighlight-${restaurant.id}" x1="20%" y1="20%" x2="80%" y2="80%">
-              <stop offset="0%" style="stop-color:rgba(255,255,255,0.8);stop-opacity:1" />
-              <stop offset="100%" style="stop-color:rgba(255,255,255,0.1);stop-opacity:1" />
-            </linearGradient>
-          </defs>
-          
-          <!-- Main pin with glass effect -->
+          <!-- Pin with colored border -->
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
-                fill="${isSelected ? `url(#pinSelectedGradient-${restaurant.id})` : `url(#pinGlassGradient-${restaurant.id})`}" 
-                stroke="url(#pinBorderGradient-${restaurant.id})" 
+                fill="${isSelected ? finalColor : 'white'}" 
+                stroke="${finalColor}" 
                 stroke-width="2"/>
           
-          <!-- Glass highlight overlay on pin -->
-          <path d="M12 2C8.7 2 6 4.7 6 8c0 1.5 0.4 2.9 1.1 4.1L12 2z" 
-                fill="url(#pinHighlight-${restaurant.id})" 
-                opacity="0.6"/>
-          
-          <!-- Inner glow -->
-          <path d="M12 2.5C8.4 2.5 5.5 5.4 5.5 9c0 4.9 6.5 12.5 6.5 12.5s6.5-7.6 6.5-12.5c0-3.6-2.9-6.5-6.5-6.5z" 
-                fill="none" 
-                stroke="rgba(255,255,255,0.7)" 
-                stroke-width="0.5"/>
-          
-          <!-- Center dot with glass effect -->
-          <circle cx="12" cy="9" r="2.5" fill="url(#pinBorderGradient-${restaurant.id})"/>
-          <circle cx="12" cy="9" r="1.8" fill="rgba(255,255,255,0.9)"/>
-          <circle cx="11.5" cy="8.5" r="0.8" fill="rgba(255,255,255,0.8)"/>
+          <!-- Center dot -->
+          <circle cx="12" cy="9" r="2.5" fill="${finalColor}"/>
+          <circle cx="12" cy="9" r="1.5" fill="white"/>
         </svg>
       `;
       return element;
