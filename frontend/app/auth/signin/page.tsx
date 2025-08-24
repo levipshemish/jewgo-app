@@ -23,11 +23,21 @@ export default function SignInPage() {
     document.head.appendChild(script);
 
     // Expose a global callback so Turnstile can write into our hidden input
-    (window as any).onTurnstileSuccess = (token: string) => {
+    (window as any).onTurnstileSuccess = (token: string, origin?: string) => {
+      // Validate origin to prevent token injection
+      const expectedOrigin = 'https://challenges.cloudflare.com';
+      if (origin && origin !== expectedOrigin) {
+        console.warn('Turnstile token from unexpected origin:', origin);
+        return;
+      }
+      
       const input = document.querySelector(
         'input[name="cf-turnstile-response"]'
       ) as HTMLInputElement | null;
-      if (input) input.value = token;
+      
+      if (input && token && typeof token === 'string' && token.length > 10) {
+        input.value = token;
+      }
     };
 
     return () => {

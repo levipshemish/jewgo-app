@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { oauthLogger } from '@/lib/utils/logger';
 import LinkAccountForm from './LinkAccountForm';
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function LinkAccountPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createServerSupabaseClient();
   
   // Get current user session
   const { data: { user }, error: userError } = await supabase.auth.getUser();

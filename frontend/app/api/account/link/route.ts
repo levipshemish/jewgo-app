@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { oauthLogger } from '@/lib/utils/logger';
 import { attemptIdentityLinking } from '@/lib/utils/auth-utils.server';
 
@@ -9,7 +9,7 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user session
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user session
     const { data: { user }, error: userError } = await supabase.auth.getUser();

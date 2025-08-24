@@ -43,3 +43,6 @@ export async function createServerSupabaseClient() {
     }
   );
 }
+
+// Legacy export for backward compatibility
+export const createSupabaseServerClient = createServerSupabaseClient;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
  * Server action to upload an avatar image to Supabase Storage
@@ -14,7 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
  */
 export async function uploadAvatar(formData: FormData) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -114,7 +114,7 @@ export async function uploadAvatar(formData: FormData) {
  */
 export async function deleteAvatar() {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();

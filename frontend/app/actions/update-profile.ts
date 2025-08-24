@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ProfileSchema, UsernameSchema, type ProfileData } from "@/lib/validators/profile";
 import { isSupabaseConfigured } from "@/lib/utils/auth-utils";
 
@@ -15,7 +15,7 @@ import { isSupabaseConfigured } from "@/lib/utils/auth-utils";
  */
 export async function updateProfile(data: ProfileData) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -151,7 +151,7 @@ export async function updateProfile(data: ProfileData) {
  */
 export async function checkUsernameAvailability(username: string) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -220,7 +220,7 @@ export async function getCurrentProfile() {
       return { success: true, data: mockProfile };
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();

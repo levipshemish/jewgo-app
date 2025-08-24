@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import PublicProfile from "@/components/profile/PublicProfile";
 
 interface PublicProfilePageProps {
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PublicProfilePageProps): Prom
   const usernameLower = username.toLowerCase();
   
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get profile data
     const { data: profile, error } = await supabase
@@ -89,7 +89,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   const usernameLower = username.toLowerCase();
   
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get profile data with case-insensitive username lookup
     const { data: profile, error } = await supabase
@@ -136,7 +136,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
  */
 async function getProfileStats(userId: string) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get review count
     const { count: reviewCount } = await supabase

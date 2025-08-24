@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { validateRedirectUrl, isPrivateRelayEmail } from '@/lib/utils/auth-utils';
 
 export const runtime = 'nodejs';
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Perform server-side code exchange
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
     
     if (exchangeError) {

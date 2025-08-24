@@ -88,3 +88,5 @@ webpack-cache/
 
 # Sandbox directory (separate development tool)
 sandbox/
+*.key
+*.key

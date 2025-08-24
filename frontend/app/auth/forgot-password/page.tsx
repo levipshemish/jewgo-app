@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useActionState } from "react";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { forgotPasswordAction } from "./actions";
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic';
 
 export default function ForgotPasswordPage() {
+  const [state, formAction] = useActionState(forgotPasswordAction, { ok: false });
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -19,21 +21,17 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setError(null);
 
-    try {
-      const { error } = await supabaseBrowser.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setIsSuccess(true);
-      }
-    } catch (_err) {
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+    const formData = new FormData();
+    formData.set('email', email);
+    const result = await forgotPasswordAction(formData);
+    
+    if (!result.ok) {
+      setError(result.message);
+    } else {
+      setIsSuccess(true);
     }
+    
+    setIsLoading(false);
   };
 
   if (isSuccess) {

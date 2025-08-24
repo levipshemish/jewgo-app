@@ -6,7 +6,7 @@
 
 import { createHmac, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { authLogger } from '@/lib/utils/logger';
 import { createServerClient } from '@supabase/ssr';
 
@@ -314,7 +314,7 @@ export async function persistAppleUserName(userId: string, name: string | null, 
   }
   
   try {
-    const supabaseServer = await createSupabaseServerClient();
+    const supabaseServer = await createServerSupabaseClient();
     
     // Call the SQL function via RPC for race-safe name persistence
     const { error } = await supabaseServer.rpc('upsert_profile_with_name', {
@@ -410,7 +410,7 @@ export async function attemptIdentityLinking(userId: string, targetProvider: str
   requiresReAuth?: boolean;
 }> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     
     // Get current user to check identities
     const { data: { user }, error: userError } = await supabase.auth.getUser();

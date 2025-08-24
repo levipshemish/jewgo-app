@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { 
   isSupabaseConfigured, 
   transformSupabaseUser, 
@@ -17,7 +17,7 @@ export async function getSessionUser(): Promise<TransformedUser | null> {
       return null;
     }
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
