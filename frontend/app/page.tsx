@@ -36,7 +36,7 @@ export default function HomePage() {
         
         if (session?.user) {
           // Check if user is anonymous or regular user
-          const isAnonymous = extractIsAnonymous(session.user);
+          // const isAnonymous = extractIsAnonymous(session.user);
           // console.log('Home page auth check:', { 
           //   hasUser: !!session.user, 
           //   isAnonymous, 
@@ -70,7 +70,7 @@ export default function HomePage() {
         // console.log('Auth state change:', { event, hasUser: !!session?.user });
         
         if (event === 'SIGNED_IN' && session?.user) {
-          const isAnonymous = extractIsAnonymous(session.user);
+          // const isAnonymous = extractIsAnonymous(session.user);
           // console.log('User signed in:', { isAnonymous, userId: session.user.id });
           
           setIsAuthenticated(true);

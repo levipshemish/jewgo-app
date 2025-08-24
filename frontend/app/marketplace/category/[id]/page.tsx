@@ -21,7 +21,7 @@ export default function CategoryPage() {
   
   const [category, setCategory] = useState<MarketplaceCategory | null>(null);
   const [products, setProducts] = useState<MarketplaceListing[]>([]);
-  const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
+  // const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: '',
     subcategory: '',
@@ -46,15 +46,14 @@ export default function CategoryPage() {
   const loadCategoryData = async () => {
     try {
       setLoading(true);
-      const [categoryData, productsData, categoriesData] = await Promise.all([
+      const [categoryData, productsData] = await Promise.all([
         MarketplaceAPI.getCategory(categoryId),
-        MarketplaceAPI.getCategoryProducts(categoryId),
-        MarketplaceAPI.fetchCategories()
+        MarketplaceAPI.getCategoryProducts(categoryId)
       ]);
 
       setCategory(categoryData);
       setProducts(productsData);
-      setCategories(categoriesData.data || []);
+      // setCategories(categoriesData.data || []);
     } catch (error) {
       console.error('Failed to load category data:', error);
     } finally {

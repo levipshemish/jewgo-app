@@ -32,7 +32,7 @@ const RestaurantDetailPage: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  // const [retryCount, setRetryCount] = useState(0);
 
   // Intersection observers for animations
   const { ref: specialsSectionRef } = useIntersectionObserver();

@@ -11,7 +11,7 @@ export default function DebugAuthPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cookies, setCookies] = useState<string>('');
+  // const [cookies, setCookies] = useState<string>('');
 
   useEffect(() => {
     const checkAuth = async () => {

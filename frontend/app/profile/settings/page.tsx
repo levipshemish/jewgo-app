@@ -37,7 +37,7 @@ export default function SettingsPage() {
           return;
         }
         
-        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
 
         if (user) {
           const userData = transformSupabaseUser(user);
