@@ -1,32 +1,10 @@
 "use server";
 import { checkRateLimit } from "@/lib/rate-limiting";
-import { verifyTurnstile } from "@/lib/turnstile";
-import { consumeCaptchaTokenOnce } from "@/lib/anti-replay";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-/**
- * Validate Turnstile hostname with relaxed rules for subdomains and ports
- */
-function validateTurnstileHostname(resultHostname: string | undefined): boolean {
-  // In production, require a hostname assertion
-  if (process.env.NODE_ENV === 'production' && !resultHostname) {
-    return false;
-  }
-  
-  // If no hostname provided, only allow in development
-  if (!resultHostname) {
-    return process.env.NODE_ENV !== 'production';
-  }
-  
-  const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
-  const expectedHostname = expectedHost.split(':')[0]; // Remove port if present
-  const resultHostnameClean = resultHostname?.split(':')[0]; // Remove port if present
-  
-  // Allow exact match, subdomains, and localhost
-  return resultHostnameClean === expectedHostname || 
-         (resultHostnameClean && resultHostnameClean.endsWith(`.${expectedHostname}`)) ||
-         expectedHostname === 'localhost';
-}
+// Note: We no longer verify or consume Turnstile tokens here.
+// Supabase Auth verifies captcha tokens itself. Double-verification can
+// consume the one-time token before Supabase sees it and cause failures.
 
 export async function signInAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string;
@@ -43,35 +21,20 @@ export async function signInAction(prevState: any, formData: FormData) {
       return { ok: false, message: "Too many attempts. Try again shortly." };
     }
 
+    // Require a token but let Supabase perform verification to avoid
+    // consuming the one-time token prematurely.
     if (!token || token.length < 10) {
       return { ok: false, message: "Security verification required" };
     }
-
-    const result = await verifyTurnstile(token);
-    
-    // Turnstile verification failed
-    if (!result.success) {
-      return { ok: false, message: "Security verification failed" };
-    }
-
-    // Validate action
-    if (result.action && result.action !== "signin" && result.action !== "anonymous_signin") {
-      return { ok: false, message: "Security verification failed" };
-    }
-
-    // Validate hostname (relaxed to allow subdomains and ports)
-    if (!validateTurnstileHostname(result.hostname)) {
-      return { ok: false, message: "Security verification failed" };
-    }
-
-    // One-shot token consumption (replay guard) - always enforce
-    await consumeCaptchaTokenOnce(token);
 
     // Attempt sign in
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: token,
+      },
     });
 
     if (error) {

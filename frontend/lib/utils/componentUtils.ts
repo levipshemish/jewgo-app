@@ -65,8 +65,8 @@ export const handleMapClick = (
   // This is a generic implementation - specific map libraries may need different handling
   const target = event.target as HTMLElement;
   const rect = target.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  // const x = event.clientX - rect.left;
+  // const y = event.clientY - rect.top;
   
   // Convert pixel coordinates to lat/lng (this would need to be implemented based on your map library)
   // For now, we'll use placeholder values

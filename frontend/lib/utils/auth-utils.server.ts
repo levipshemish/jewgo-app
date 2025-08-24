@@ -5,7 +5,7 @@
  */
 
 import { createHmac, randomBytes } from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { authLogger } from '@/lib/utils/logger';
 import { createServerClient } from '@supabase/ssr';
@@ -15,7 +15,7 @@ let cookies: any;
 if (typeof window === 'undefined') {
   try {
     cookies = require('next/headers').cookies;
-  } catch (error) {
+  } catch (_error) {
     // Ignore import errors in client context
   }
 }
@@ -316,7 +316,7 @@ export function verifyMergeCookieVersioned(signedCookie: string): {
     }
 
     return { valid: false, error: 'Invalid signature' };
-  } catch (error) {
+  } catch (_error) {
     return { valid: false, error: 'Cookie verification failed' };
   }
 }
