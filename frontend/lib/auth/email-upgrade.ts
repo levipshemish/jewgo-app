@@ -64,7 +64,7 @@ export class EmailUpgradeFlow {
 
       // Attempt to update user with email
       const { error: updateError } = await this.supabase.auth.updateUser({
-        email: email
+        email
       });
 
       if (updateError) {
@@ -237,7 +237,7 @@ export class EmailUpgradeFlow {
     try {
 
       const { error } = await this.supabase.auth.updateUser({
-        password: password
+        password
       });
 
       if (error) {

@@ -9,7 +9,17 @@
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
     "NEXT_PUBLIC_WEBSOCKET_URL": "@websocket-url",
     "NEXT_PUBLIC_VERCEL_URL": "@vercel-url",
-    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com"
+    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com",
+    "MERGE_COOKIE_HMAC_KEY_CURRENT": "@merge-cookie-hmac-key-current",
+    "MERGE_COOKIE_HMAC_KEY_PREVIOUS": "@merge-cookie-hmac-key-previous",
+    "CLEANUP_CRON_SECRET": "@cleanup-cron-secret",
+    "REDIS_URL": "@redis-url",
+    "TURNSTILE_SECRET_KEY": "@turnstile-secret-key",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "@turnstile-site-key",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google-maps-api-key",
+    "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "@google-maps-map-id",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "@ga-measurement-id",
+    "NEXT_PUBLIC_ADMIN_EMAIL": "@admin-email"
   },
   "functions": {
     "app/api/**/*.ts": {

@@ -270,7 +270,7 @@ export function UnifiedCategoryNav({
   
   // Overflow detection for scrollable variant
   const checkOverflow = useCallback(() => {
-    if (variant !== 'scrollable' || !scrollerRef.current) return;
+    if (variant !== 'scrollable' || !scrollerRef.current) {return;}
     
     const scroller = scrollerRef.current;
     const { scrollLeft, scrollWidth, clientWidth } = scroller;
@@ -286,10 +286,10 @@ export function UnifiedCategoryNav({
   
   // Setup overflow detection
   useIsomorphicLayoutEffect(() => {
-    if (variant !== 'scrollable') return;
+    if (variant !== 'scrollable') {return;}
     
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    if (!scroller) {return;}
 
     // Initial check
     checkOverflow();
@@ -308,13 +308,13 @@ export function UnifiedCategoryNav({
   
   // Scroll selected item into view
   useEffect(() => {
-    if (variant !== 'scrollable' || !selectedId || !scrollerRef.current || isInitialized) return;
+    if (variant !== 'scrollable' || !selectedId || !scrollerRef.current || isInitialized) {return;}
     
     const selectedIndex = items.findIndex(item => item.id === selectedId);
-    if (selectedIndex === -1) return;
+    if (selectedIndex === -1) {return;}
     
     const selectedElement = itemRefs.current[selectedIndex];
-    if (!selectedElement) return;
+    if (!selectedElement) {return;}
     
     try {
       selectedElement.scrollIntoView({
@@ -331,7 +331,7 @@ export function UnifiedCategoryNav({
   
   // Manual scroll
   const scrollTo = useCallback((direction: 'left' | 'right') => {
-    if (!scrollerRef.current) return;
+    if (!scrollerRef.current) {return;}
     
     const scroller = scrollerRef.current;
     const scrollAmount = scroller.clientWidth * 0.8;

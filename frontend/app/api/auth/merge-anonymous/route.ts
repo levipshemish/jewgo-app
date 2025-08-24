@@ -319,7 +319,7 @@ export async function POST(request: NextRequest) {
       .from('merge_jobs')
       .insert({
         correlation_id: correlationId,
-        anon_uid: anon_uid,
+        anon_uid,
         auth_uid: user.id,
         moved_data: movedData,
         status: 'completed',

@@ -95,7 +95,7 @@ export function CategoryNav({
   // Overflow detection with rAF throttle
   const checkOverflow = useCallback(() => {
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    if (!scroller) {return;}
 
     const { scrollLeft, scrollWidth, clientWidth } = scroller;
     const canScrollLeft = scrollLeft > 0;
@@ -128,7 +128,7 @@ export function CategoryNav({
   // Initialize overflow state and direction with hydration stability
   useIsomorphicLayoutEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    if (!scroller) {return;}
 
     // Cache direction from computed styles
     const computedDirection = getComputedStyle(scroller).direction as 'ltr' | 'rtl';
@@ -288,7 +288,7 @@ export function CategoryNav({
   // Manual scroll handlers with fallback
   const scrollTo = useCallback((direction: 'left' | 'right') => {
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    if (!scroller) {return;}
 
     const scrollAmount = scroller.clientWidth * 0.8;
     const targetScroll = direction === 'left' 
@@ -311,8 +311,8 @@ export function CategoryNav({
   // Accessibility attributes
   const ariaAttributes = useMemo(() => {
     const attrs: Record<string, string> = {};
-    if (ariaLabel && !ariaLabelledBy) attrs['aria-label'] = ariaLabel;
-    if (ariaLabelledBy) attrs['aria-labelledby'] = ariaLabelledBy;
+    if (ariaLabel && !ariaLabelledBy) {attrs['aria-label'] = ariaLabel;}
+    if (ariaLabelledBy) {attrs['aria-labelledby'] = ariaLabelledBy;}
     return attrs;
   }, [ariaLabel, ariaLabelledBy]);
 

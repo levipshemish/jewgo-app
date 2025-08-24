@@ -67,10 +67,10 @@ export const formatPriceDollarSigns = (priceRange?: string, minCost?: number, ma
   }
   
   // Convert to dollar signs based on average price
-  if (avgPrice === 0) return '$$';
-  if (avgPrice < 15) return '$';
-  if (avgPrice < 30) return '$$';
-  if (avgPrice < 50) return '$$$';
+  if (avgPrice === 0) {return '$$';}
+  if (avgPrice < 15) {return '$';}
+  if (avgPrice < 30) {return '$$';}
+  if (avgPrice < 50) {return '$$$';}
   return '$$$$';
 };
 

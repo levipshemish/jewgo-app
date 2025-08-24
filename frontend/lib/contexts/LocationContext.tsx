@@ -69,7 +69,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
             // Location is too old, clear it
             localStorage.removeItem(LOCATION_STORAGE_KEY);
             if (process.env.NODE_ENV === 'development') {
-              console.log('📍 LocationContext: Cleared expired location data (age: ' + Math.floor(age / (1000 * 60)) + ' minutes)');
+              console.log(`📍 LocationContext: Cleared expired location data (age: ${  Math.floor(age / (1000 * 60))  } minutes)`);
             }
           }
         }

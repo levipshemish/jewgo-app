@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // Get user data
     const { data: { user } } = await supabase.auth.getUser();
-    let target = new URL(safeNext, request.url);
+    const target = new URL(safeNext, request.url);
     if (user?.email && isPrivateRelayEmail(user.email)) {
       // Append relay hint for onboarding UX
       if (!target.searchParams.has('relay')) {

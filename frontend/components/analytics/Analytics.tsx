@@ -33,7 +33,7 @@ export default function Analytics({ userId, sessionId, pageName }: AnalyticsProp
   const sendToAnalyticsEndpoint = useCallback(async (event: AnalyticsEvent) => {
     try {
       // Skip network calls in development to avoid noisy errors
-      if (process.env.NODE_ENV !== 'production') return;
+      if (process.env.NODE_ENV !== 'production') {return;}
       const response = await fetch('/api/analytics', {
         method: 'POST',
         headers: {

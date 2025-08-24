@@ -312,7 +312,7 @@ export async function POST(request: NextRequest) {
           ok: true,
           user: {
             id: 'dev-user-id',
-            email: email,
+            email,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             app_metadata: { provider: 'email' },
@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
             token_type: 'bearer',
             user: {
               id: 'dev-user-id',
-              email: email,
+              email,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               app_metadata: { provider: 'email' },

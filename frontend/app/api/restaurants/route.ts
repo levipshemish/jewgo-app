@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 function getBackendUrl() {
   const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
-  if (raw && raw.trim().length > 0) return raw.replace(/\/+$/, '');
+  if (raw && raw.trim().length > 0) {return raw.replace(/\/+$/, '');}
   return process.env.NODE_ENV === 'production'
     ? 'https://jewgo.onrender.com'
     : 'http://127.0.0.1:8082';

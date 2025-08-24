@@ -119,7 +119,7 @@ export const TurnstileWidget = React.forwardRef<TurnstileWidgetRef, TurnstileWid
         isTestKey
       });
       
-      if (!window.turnstile || !containerRef.current) return;
+      if (!window.turnstile || !containerRef.current) {return;}
 
       try {
         const config = {

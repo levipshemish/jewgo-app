@@ -12,7 +12,7 @@ function RelayEmailBannerContent() {
     setVisible(flag === '1');
   }, [params]);
 
-  if (!visible) return null;
+  if (!visible) {return null;}
 
   return (
     <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-900">
