@@ -108,13 +108,13 @@ export function verifyTokenRotation(
     
     // Return true if either changed, false only if both unchanged
     if (!refreshChanged && !jtiChanged) {
-      console.warn('Token rotation failed: both refresh_token and JWT jti unchanged');
+      // Token rotation failed: both refresh_token and JWT jti unchanged
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Token rotation verification failed:', error);
+    // Token rotation verification failed - return false as fallback
     return false;
   }
 }
@@ -130,7 +130,7 @@ export function verifyTokenRotation(
  * WARNING: Do not introduce alternative sanitizers. Use validateRedirectUrl only.
  */
 export function sanitizeRedirectUrl(url: string | null | undefined): string {
-  console.warn('DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead.');
+  // DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead.
   return validateRedirectUrl(url);
 }
 
@@ -307,7 +307,7 @@ function verifySignedCSRFToken(token: string): boolean {
     // Actual signature verification should be done server-side
     return true;
   } catch (error) {
-    console.error('CSRF token verification failed:', error);
+    // CSRF token verification failed
     return false;
   }
 }
@@ -409,8 +409,7 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
  * Handle authentication errors consistently
  */
 export function handleAuthError(error: any, router?: any): void {
-  console.error('Auth error:', error);
-  
+  // Auth error handled - redirect if appropriate
   if (router && error?.message?.includes('auth')) {
     router.push('/auth/signin');
   }
@@ -647,7 +646,7 @@ export function validateSupabaseFeatureSupport(): boolean {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('[Feature Guard] Supabase environment variables not configured');
+      // Supabase environment variables not configured
       return false;
     }
 
@@ -655,7 +654,7 @@ export function validateSupabaseFeatureSupport(): boolean {
     try {
       new URL(supabaseUrl);
     } catch {
-      console.error('[Feature Guard] Invalid Supabase URL format');
+      // Invalid Supabase URL format
       return false;
     }
 
@@ -669,20 +668,20 @@ export function validateSupabaseFeatureSupport(): boolean {
 
     // Check if signInAnonymously method exists
     if (typeof testClient.auth.signInAnonymously !== 'function') {
-      console.error('[Feature Guard] signInAnonymously method not available');
+      // signInAnonymously method not available
       return false;
     }
 
     // Check if linkIdentity method exists (for merge flow)
     if (typeof testClient.auth.linkIdentity !== 'function') {
-      console.warn('[Feature Guard] linkIdentity method not available - merge flow may not work');
+      // linkIdentity method not available - merge flow may not work
       // Don't fail for linkIdentity as it's not critical for basic auth
     }
 
     return true;
     
   } catch (error) {
-    console.error('[Feature Guard] Feature validation failed:', error);
+    // Feature validation failed
     return false;
   }
 }

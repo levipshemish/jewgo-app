@@ -47,7 +47,7 @@ jest.mock('@/lib/utils/imageUrlValidator', () => ({
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ alt, onError, onLoad, ...props }: any) => {
+  default: function MockImage({ alt, onError, onLoad, ...props }: any) {
     React.useEffect(() => {
       if (props.src && props.src.includes('error')) {
         onError?.();

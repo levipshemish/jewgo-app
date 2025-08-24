@@ -17,7 +17,7 @@ interface LinkAccountFormProps {
   identities: Identity[];
 }
 
-export default function LinkAccountForm({ user, identities }: LinkAccountFormProps) {
+export default function LinkAccountForm({ user: _user, identities }: LinkAccountFormProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export default function LinkAccountForm({ user, identities }: LinkAccountFormPro
       }, 2000);
       
     } catch (err) {
-      console.error('Linking error:', err);
+      // Linking error occurred
       setError('Failed to link accounts. Please try again.');
     } finally {
       setPending(false);
@@ -94,7 +94,7 @@ export default function LinkAccountForm({ user, identities }: LinkAccountFormPro
       window.location.href = result.redirectUrl;
       
     } catch (err) {
-      console.error('Re-authentication error:', err);
+      // Re-authentication error occurred
       setError('Failed to initiate re-authentication. Please try again.');
     } finally {
       setPending(false);

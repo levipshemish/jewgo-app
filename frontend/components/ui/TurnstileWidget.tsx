@@ -11,6 +11,7 @@ interface TurnstileWidgetProps {
   siteKey?: string;
   theme?: 'light' | 'dark';
   size?: 'normal' | 'compact';
+  action?: string;
 }
 
 interface TurnstileWidgetRef {
@@ -40,220 +41,146 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   className = '',
   siteKey,
   theme = 'light',
-  size = 'normal'
+  size = 'normal',
+  action = 'verify'
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptRef = useRef<HTMLScriptElement | null>(null);
-  const [widgetId, setWidgetId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
-  const [currentToken, setCurrentToken] = useState<string>('');
+  const [currentToken, setCurrentToken] = useState('');
+  const [widgetId, setWidgetId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  // Calculate key analysis at component level
+  const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
+  const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isLocalhost = process.env.NEXT_PUBLIC_APP_HOSTNAME === "localhost" || 
+                     process.env.NEXT_PUBLIC_URL?.includes("localhost");
+  const isProductionKeyInDev = !isTestKey && isDevelopment;
 
-  // Check if using test keys
-  const isTestKey = turnstileSiteKey === '1x00000000000000000000AA' || 
-                   turnstileSiteKey === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
-
-  // Check if we're in development and using a production key
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const isLocalhost = typeof window !== 'undefined' && 
-                     (window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname.includes('localhost'));
-  
-  const isProductionKeyInDev = isDevelopment && 
-                              isLocalhost && 
-                              turnstileSiteKey && 
-                              !isTestKey && 
-                              turnstileSiteKey.startsWith('0x4AAAAAA');
-
-  // Debug the key detection (only in development and only once)
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && !window.turnstileDebugLogged) {
-    console.log('Turnstile Key Analysis:', {
-      turnstileSiteKey,
-      isTestKey,
-      isDevelopment,
-      isLocalhost,
-      isProductionKeyInDev,
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
-    });
-    window.turnstileDebugLogged = true;
-  }
-
-
-
-  // Handle missing site key gracefully
-  if (!turnstileSiteKey) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Turnstile site key not configured. Guest sign-in will be disabled.');
-      return (
-        <div className={`text-yellow-500 text-sm ${className}`}>
-          ⚠️ Turnstile not configured - Guest sign-in disabled
-        </div>
-      );
-    } else {
-      return (
-        <div className={`text-red-500 text-sm ${className}`}>
-          Turnstile site key not configured
-        </div>
-      );
-    }
-  }
-
-  // Handle production key in development
-  if (isProductionKeyInDev) {
-    console.warn('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
-    return (
-      <div className={`text-orange-500 text-sm ${className}`}>
-        ⚠️ Production Turnstile key detected on localhost. 
-        <br />
-        <span className="text-xs">
-          Use test key or configure domain-specific key for development.
-        </span>
-      </div>
-    );
-  }
-
+  // Always call useEffect hooks in the same order
   useEffect(() => {
-    // Load Turnstile script
-    if (typeof window !== 'undefined' && !window.turnstile && !scriptRef.current) {
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-      // Don't use async/defer when using turnstile.ready()
-      script.async = false;
-      script.defer = false;
-      script.onload = () => {
-        console.log('Turnstile script loaded successfully');
-        // Use turnstile.ready() for proper initialization
-        if (window.turnstile?.ready) {
-          window.turnstile.ready(() => {
-            console.log('Turnstile ready callback triggered');
-            setIsLoaded(true);
-          });
-        } else {
-          // Fallback if ready() is not available
-          setIsLoaded(true);
-        }
-      };
-      script.onerror = () => {
-        console.error('Failed to load Turnstile script');
-        onError?.('Failed to load Turnstile');
-      };
-      document.head.appendChild(script);
-      scriptRef.current = script;
-    } else if (typeof window !== 'undefined' && window.turnstile) {
-      console.log('Turnstile already loaded');
-      if (window.turnstile?.ready) {
-        window.turnstile.ready(() => {
-          setIsLoaded(true);
-        });
-      } else {
+    const loadTurnstileScript = async () => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      // Check if Turnstile is already loaded
+      if (window.turnstile) {
         setIsLoaded(true);
+        return;
       }
-    }
-  }, [onError]);
 
-  useEffect(() => {
-    if (!isLoaded || !containerRef.current || !turnstileSiteKey || isRendered || isProductionKeyInDev) {
-      return;
-    }
-
-    const renderWidget = () => {
-      // Only log once per render cycle
-      if (process.env.NODE_ENV === 'development' && !window.turnstileRenderLogged) {
-        console.log('Rendering Turnstile widget...', {
-          turnstileExists: !!window.turnstile,
-          containerExists: !!containerRef.current,
-          siteKey: turnstileSiteKey,
-          isTestKey,
-          isDevelopment,
-          hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown'
-        });
-        window.turnstileRenderLogged = true;
-        // Reset after a short delay
-        setTimeout(() => {
-          window.turnstileRenderLogged = false;
-        }, 1000);
+      // Check if script is already being loaded
+      if (document.querySelector('script[src*="turnstile/v0/api.js"]')) {
+        // Wait for existing script to load
+        const checkLoaded = () => {
+          if (window.turnstile) {
+            setIsLoaded(true);
+          } else {
+            setTimeout(checkLoaded, 100);
+          }
+        };
+        checkLoaded();
+        return;
       }
-      
-      if (!window.turnstile || !containerRef.current) {return;}
 
       try {
-        const config = {
-          sitekey: turnstileSiteKey,
-          callback: (token: string) => {
-            console.log('Turnstile callback received token:', token);
-            setCurrentToken(token);
-            onLoading?.(false); // Widget is done loading
-            onVerify(token);
-          },
-          'expired-callback': () => {
-            console.log('Turnstile token expired');
-            setCurrentToken('');
-            onExpired?.();
-          },
-          'error-callback': (error: string) => {
-            console.log('Turnstile error callback:', error);
-            setCurrentToken('');
-            onLoading?.(false); // Stop loading on error
-            
-            // Handle specific error codes
-            let errorMessage = 'Turnstile verification failed';
-            if (error === '110200') {
-              errorMessage = 'Domain mismatch - check Turnstile site key configuration';
-            } else if (error === '110201') {
-              errorMessage = 'Invalid site key';
-            } else if (error === '110202') {
-              errorMessage = 'Widget expired';
-            }
-            
-            onError?.(errorMessage);
-          },
-          theme,
-          size,
-          // Invisible mode configuration - use 'execute' for invisible behavior
-          'appearance': 'execute',
-          // Auto-execute for invisible mode
-          'auto': true,
-          // Simple configuration without complex overrides
-          'refresh-expired': 'auto',
-          'retry': 'auto'
-        };
-        
-        console.log('Turnstile render config:', config);
-        
-        const id = window.turnstile.render(containerRef.current, config);
-        console.log('Turnstile widget rendered with ID:', id);
-        
-        setWidgetId(id);
-        setIsRendered(true);
-        
-        // For execute mode, the widget should auto-execute
-        if (config.appearance === 'execute') {
-          console.log('Turnstile widget configured for auto-execution');
-          // Notify parent that we're starting to execute
-          onLoading?.(true);
-        }
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+          script.async = true;
+          script.defer = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Turnstile script'));
+          document.head.appendChild(script);
+        });
+        setIsLoaded(true);
       } catch (error) {
-        console.error('Failed to render Turnstile widget:', error);
-        onError?.('Failed to render Turnstile widget');
+        setError('Failed to load Turnstile script');
+        onError?.('Failed to load Turnstile script');
       }
     };
 
-    // Render widget when ready
-    renderWidget();
-  }, [isLoaded, turnstileSiteKey, isRendered, onVerify, onExpired, onError, theme, size, isTestKey, isProductionKeyInDev]);
+    loadTurnstileScript();
+  }, [onError]);
 
-  // Expose methods via ref
+  useEffect(() => {
+    if (!isLoaded || !containerRef.current || isRendered) {
+      return;
+    }
+
+    // Check for production key in development
+    if (isProductionKeyInDev && isLocalhost) {
+      setError('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
+      onError?.('Production Turnstile key detected in development environment. This will cause domain mismatch errors.');
+      return;
+    }
+
+    try {
+      if (!window.turnstile) {
+        throw new Error('Turnstile not loaded');
+      }
+
+      const config = {
+        sitekey: turnstileSiteKey,
+        action,
+        callback: (token: string) => {
+          setCurrentToken(token);
+          onLoading?.(false);
+          onVerify(token);
+        },
+        'expired-callback': () => {
+          setCurrentToken('');
+          onExpired?.();
+        },
+        'error-callback': (error: string) => {
+          setCurrentToken('');
+          onLoading?.(false);
+          
+          let errorMessage = 'Turnstile verification failed';
+          if (error === 'timeout') {
+            errorMessage = 'Verification timed out. Please try again.';
+          } else if (error === 'network-error') {
+            errorMessage = 'Network error. Please check your connection.';
+          }
+          
+          setError(errorMessage);
+          onError?.(errorMessage);
+        },
+        theme,
+        size,
+        tabindex: 0,
+        'refresh-expired': 'auto',
+        'auto-reset': true,
+        'execution': 'execute'
+      };
+
+      const id = window.turnstile.render(containerRef.current, config);
+      setWidgetId(id);
+      setIsRendered(true);
+    } catch (error) {
+      setError('Failed to render Turnstile widget');
+      onError?.('Failed to render Turnstile widget');
+    }
+  }, [isLoaded, isRendered, siteKey, action, theme, size, onVerify, onError, onExpired, onLoading]);
+
+  // Always call useImperativeHandle
   React.useImperativeHandle(ref, () => ({
     reset: () => {
       if (widgetId && window.turnstile) {
         window.turnstile.reset(widgetId);
         setCurrentToken('');
+        setError(null);
       }
     },
-    getToken: () => currentToken
+    getToken: () => currentToken,
+    execute: () => {
+      if (widgetId && window.turnstile?.execute) {
+        window.turnstile.execute(widgetId);
+      }
+    }
   }), [widgetId, currentToken]);
 
   return (
@@ -262,14 +189,6 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
         ref={containerRef} 
         className="flex justify-center w-full"
         data-testid="turnstile-widget"
-        style={{ 
-          minHeight: '1px',
-          height: '1px',
-          position: 'absolute',
-          overflow: 'hidden',
-          opacity: 0,
-          pointerEvents: 'none'
-        }}
       />
       {/* Only show loading/status messages in development */}
       {process.env.NODE_ENV === 'development' && (

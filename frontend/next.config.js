@@ -48,8 +48,20 @@ const nextConfig = {
 
   // Webpack configuration to fix eval errors and CSS issues
   webpack: (config, { isServer, dev }) => {
-    // Apply webpack optimizations
-    config = optimizeWebpackConfig(config, { isServer });
+    // Temporarily disable webpack optimizations to fix module issues
+    // config = optimizeWebpackConfig(config, { isServer });
+
+    // Fix eval errors by configuring module resolution
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve?.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+      },
+    };
 
     // Fix eval errors by configuring module resolution
     config.resolve = {

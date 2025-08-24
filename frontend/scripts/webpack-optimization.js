@@ -42,6 +42,11 @@ function optimizeModuleRules(config) {
       '.js': ['.js', '.ts', '.tsx'],
       '.mjs': ['.mjs', '.js', '.ts', '.tsx'],
     },
+    // Fix module system issues
+    extensionAlias: {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.mjs': ['.mjs', '.js', '.ts', '.tsx'],
+    },
   };
 
   // Optimize module parsing - but don't disable dynamic imports
@@ -103,6 +108,8 @@ function addPerformanceOptimizations(config) {
   return config;
 }
 
+
+
 /**
  * Suppress webpack warnings for known issues
  * @param {Object} config - Webpack configuration object
@@ -136,6 +143,8 @@ function optimizeWebpackConfig(config, options = {}) {
   config = optimizeModuleRules(config);
   config = addPerformanceOptimizations(config);
   config = suppressWarnings(config);
+
+
 
   // Server-specific optimizations
   if (isServer) {

@@ -9,14 +9,43 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
   try {
     // Import Redis client dynamically to avoid build issues
     const Redis = await import('ioredis');
-    const redis = new Redis.default({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
+    
+    // Parse Redis URL if available, otherwise use individual config
+    let redisConfig: any = {
       maxRetriesPerRequest: 3,
       lazyConnect: true,
-    });
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: 3,
+      retryDelayOnClusterDown: 300,
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+    };
+    
+    if (process.env.REDIS_URL) {
+      // Clean up Redis URL (remove trailing % if present)
+      const cleanRedisUrl = process.env.REDIS_URL.replace(/%$/, '');
+      redisConfig = Redis.default.parseURL(cleanRedisUrl);
+      Object.assign(redisConfig, {
+        maxRetriesPerRequest: 3,
+        lazyConnect: true,
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+      });
+    } else {
+      redisConfig = {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        maxRetriesPerRequest: 3,
+        lazyConnect: true,
+        retryDelayOnFailover: 100,
+        enableReadyCheck: false,
+      };
+    }
+    
+    const redis = new Redis.default(redisConfig);
     
     // Atomic check-and-set using Lua script
     const luaScript = `
@@ -42,9 +71,14 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
     if (error instanceof Error && error.message === "Replay detected") {
       throw error;
     }
-    // Log Redis errors but fail secure
+    // In development, allow bypassing Redis for testing
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Anti-replay Redis error (development mode - allowing):', error);
+      return; // Allow the request to proceed in development
+    }
+    // Fail secure - reject requests when replay protection unavailable
     console.error('Anti-replay Redis error:', error);
-    throw new Error("Replay protection unavailable");
+    throw new Error("Security verification unavailable");
   }
 }
 

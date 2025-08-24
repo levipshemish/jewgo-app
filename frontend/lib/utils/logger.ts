@@ -43,25 +43,29 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext): void {
-    if (this.shouldLog('debug')) {
+    if (this.shouldLog('debug') && process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.debug(this.formatMessage('debug', message, context));
     }
   }
 
   info(message: string, context?: LogContext): void {
-    if (this.shouldLog('info')) {
+    if (this.shouldLog('info') && process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.info(this.formatMessage('info', message, context));
     }
   }
 
   warn(message: string, context?: LogContext): void {
-    if (this.shouldLog('warn')) {
+    if (this.shouldLog('warn') && process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.warn(this.formatMessage('warn', message, context));
     }
   }
 
   error(message: string, context?: LogContext): void {
     if (this.shouldLog('error')) {
+      // eslint-disable-next-line no-console
       console.error(this.formatMessage('error', message, context));
     }
   }

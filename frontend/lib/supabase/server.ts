@@ -28,8 +28,8 @@ export async function createServerSupabaseClient() {
                 ...options,
                 // Enhanced secure cookie settings
                 httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: process.env.WEBVIEW_MODE === 'true' ? 'none' : 'lax',
+                secure: true,
+                sameSite: 'strict',
                 // Prevent XSS attacks
                 path: "/",
                 // Use __Secure- prefix in production

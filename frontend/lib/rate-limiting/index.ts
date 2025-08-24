@@ -17,3 +17,25 @@ export const rateLimitBackend = {
   isProduction: true,
   standardRedisConfigured: true
 };
+
+// Centralized rate limit configuration
+export const RATE_LIMIT_CONFIG = {
+  email_auth: {
+    max_requests: 10,
+    window: 300, // 5 minutes
+    max_requests_daily: 100,
+    window_daily: 86400, // 24 hours
+  },
+  anonymous_auth: {
+    max_requests: 5,
+    window: 300, // 5 minutes
+    max_requests_daily: 50,
+    window_daily: 86400, // 24 hours
+  },
+  password_reset: {
+    max_requests: 3,
+    window: 300, // 5 minutes
+    max_requests_daily: 10,
+    window_daily: 86400, // 24 hours
+  },
+} as const;

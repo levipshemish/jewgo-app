@@ -63,6 +63,7 @@ export async function middleware(request: NextRequest) {
     if (!isProtectedPath(path)) {
       return NextResponse.next();
     }
+    
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
     
@@ -126,7 +127,7 @@ export async function middleware(request: NextRequest) {
     
   } catch (error) {
     console.error('Middleware error:', error);
-    // Fail closed for security - redirect to signin on unexpected errors
+    // Fail closed for security - redirect to signin on any error
     return redirectToSignin(request);
   }
 }

@@ -5,49 +5,16 @@ import { useActionState } from "react";
 import { signInAction, anonymousSignInAction } from "./actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabaseClient } from "@/lib/supabase";
+import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
 
 export default function SignInPage() {
-  const [state, formAction] = useActionState(signInAction, { ok: false });
-  const [anonymousState, anonymousFormAction] = useActionState(anonymousSignInAction, { ok: false });
+  const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
+  const [anonymousState, anonymousFormAction] = useActionState(anonymousSignInAction, { ok: false, message: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [anonymousTurnstileToken, setAnonymousTurnstileToken] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    // Load Turnstile script
-    const script = document.createElement('script');
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-
-    // Expose a global callback so Turnstile can write into our hidden input
-    (window as any).onTurnstileSuccess = (token: string, origin?: string) => {
-      // Validate origin to prevent token injection
-      const expectedOrigin = 'https://challenges.cloudflare.com';
-      if (origin && origin !== expectedOrigin) {
-        console.warn('Turnstile token from unexpected origin:', origin);
-        return;
-      }
-      
-      const input = document.querySelector(
-        'input[name="cf-turnstile-response"]'
-      ) as HTMLInputElement | null;
-      
-      if (input && token && typeof token === 'string' && token.length > 10) {
-        input.value = token;
-      }
-    };
-
-    return () => {
-      // Cleanup script on unmount
-      const existingScript = document.querySelector('script[src="https://challenges.cloudflare.com/turnstile/v0/api.js"]');
-      if (existingScript) {
-        existingScript.remove();
-      }
-    };
-  }, []);
 
   // Handle successful authentication
   useEffect(() => {
@@ -62,6 +29,33 @@ export default function SignInPage() {
     }
   }, [anonymousState.ok, router]);
 
+  // Handle Turnstile verification for email signin
+  const handleTurnstileVerify = (token: string) => {
+    setTurnstileToken(token);
+  };
+
+  // Handle Turnstile verification for anonymous signin
+  const handleAnonymousTurnstileVerify = (token: string) => {
+    setAnonymousTurnstileToken(token);
+  };
+
+  // Handle form submission
+  const handleEmailSignIn = (formData: FormData) => {
+    // Add the Turnstile token to the form data
+    if (turnstileToken) {
+      formData.append('cf-turnstile-response', turnstileToken);
+    }
+    formAction(formData);
+  };
+
+  const handleAnonymousSignIn = (formData: FormData) => {
+    // Add the Turnstile token to the form data
+    if (anonymousTurnstileToken) {
+      formData.append('cf-turnstile-response', anonymousTurnstileToken);
+    }
+    anonymousFormAction(formData);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
       <div className="w-full max-w-md">
@@ -72,7 +66,7 @@ export default function SignInPage() {
           </div>
 
           {/* Email/Password Form */}
-          <form action={formAction} className="space-y-6">
+          <form action={handleEmailSignIn} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-neutral-300 mb-2">
                 Email
@@ -112,12 +106,11 @@ export default function SignInPage() {
 
             {/* Turnstile widget */}
             <div className="flex justify-center">
-              <div
-                className="cf-turnstile"
-                data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                data-callback="onTurnstileSuccess"
-                data-action="signin"
-                data-theme="dark"
+              <TurnstileWidget
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                onVerify={handleTurnstileVerify}
+                action="signin"
+                theme="dark"
               />
             </div>
 
@@ -145,8 +138,16 @@ export default function SignInPage() {
           </div>
 
           {/* Anonymous Sign In */}
-          <form action={anonymousFormAction} className="mt-6">
-            <input type="hidden" name="cf-turnstile-response" />
+          <form action={handleAnonymousSignIn} className="mt-6">
+            {/* Turnstile widget for anonymous signin */}
+            <div className="flex justify-center mb-4">
+              <TurnstileWidget
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                onVerify={handleAnonymousTurnstileVerify}
+                action="anonymous_signin"
+                theme="dark"
+              />
+            </div>
             <button
               type="submit"
               className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"

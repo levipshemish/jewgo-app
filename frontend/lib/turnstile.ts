@@ -11,39 +11,28 @@ type VerifyResp = {
 
 export async function verifyTurnstile(responseToken: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY!;
-  if (!secret) throw new Error("TURNSTILE_SECRET_KEY missing");
+  if (!secret) {
+    throw new Error("TURNSTILE_SECRET_KEY missing");
+  }
 
   // Validate environment configuration
   if (!secret || secret === "your_turnstile_secret_key") {
     throw new Error("TURNSTILE_SECRET_KEY must be configured");
   }
 
-  // Development bypass for test keys
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const isTestKey = siteKey === "1x00000000000000000000AA";
-  const isDevelopment = process.env.NODE_ENV === "development";
-  const isLocalhost = process.env.NEXT_PUBLIC_APP_HOSTNAME === "localhost" || 
-                     process.env.NEXT_PUBLIC_URL?.includes("localhost");
+  // Always verify Turnstile tokens
+  if (!responseToken || responseToken.length < 10) {
+    throw new Error("Invalid Turnstile token");
+  }
   
-  console.log("Turnstile verification:", {
-    tokenLength: responseToken.length,
-    isTestKey,
-    isDevelopment,
-    isLocalhost,
-    hasSecret: !!secret,
-    nodeEnv: process.env.NODE_ENV
-  });
-  
-  // Use development bypass for test keys in development OR localhost
-  if ((isDevelopment || isLocalhost) && isTestKey) {
-    // Return a mock successful response for development
-    console.log("Using development bypass for Turnstile");
-    return {
-      success: true,
-      challenge_ts: new Date().toISOString(),
-      hostname: "localhost",
-      action: "signin"
-    };
+  // Turnstile verification details logged in development
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log("Turnstile verification:", {
+      tokenLength: responseToken.length,
+      hasSecret: !!secret,
+      nodeEnv: process.env.NODE_ENV
+    });
   }
 
   const headersList = await headers();

@@ -13,7 +13,9 @@ export function createClientSupabaseClient() {
     {
       cookies: {
         getAll() {
-          if (typeof document === 'undefined') return [];
+          if (typeof document === 'undefined') {
+            return [];
+          }
           
           return document.cookie
             .split('; ')
@@ -24,7 +26,9 @@ export function createClientSupabaseClient() {
             });
         },
         setAll(cookiesToSet) {
-          if (typeof document === 'undefined') return;
+          if (typeof document === 'undefined') {
+            return;
+          }
           
           cookiesToSet.forEach(({ name, value, options }) => {
             let cookieString = `${name}=${value}`;

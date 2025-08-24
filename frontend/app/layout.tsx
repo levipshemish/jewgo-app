@@ -92,16 +92,48 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
-        {/* Fix for CSS script injection bug */}
-        <Script id="css-fix" strategy="beforeInteractive">
+        {/* Targeted CSS protection - only removes CSS files masquerading as scripts */}
+        <Script id="css-protection" strategy="beforeInteractive">
           {`
-            // Remove any script tags that incorrectly load CSS files
             (function() {
-              const scripts = document.querySelectorAll('script[src*="vendors.css"], script[src*="layout.css"]');
-              scripts.forEach(script => {
-                if (script.src && script.src.includes('.css')) {
-                  script.remove();
-                }
+              // Only remove script tags that are clearly CSS files
+              function removeCssScripts() {
+                const scripts = document.querySelectorAll('script[src*=".css"]');
+                scripts.forEach(script => {
+                  if (script.src && script.src.includes('.css')) {
+                    console.warn('Removing CSS file loaded as script:', script.src);
+                    script.remove();
+                  }
+                });
+              }
+              
+              // Run immediately
+              removeCssScripts();
+              
+              // Run after DOM is ready
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', removeCssScripts);
+              }
+              
+              // Monitor for new script tags (but don't override createElement)
+              const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                  mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SCRIPT') {
+                      const script = node;
+                      if (script.src && script.src.includes('.css')) {
+                        console.warn('Removing dynamically added CSS script:', script.src);
+                        script.remove();
+                      }
+                    }
+                  });
+                });
+              });
+              
+              // Only observe for new script tags, don't interfere with existing ones
+              observer.observe(document.head, {
+                childList: true,
+                subtree: false
               });
             })();
           `}
