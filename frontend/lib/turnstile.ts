@@ -15,13 +15,8 @@ export async function verifyTurnstile(responseToken: string) {
     throw new Error("TURNSTILE_SECRET_KEY missing");
   }
 
-  // Validate environment configuration
-  if (!secret || secret === "your_turnstile_secret_key") {
-    throw new Error("TURNSTILE_SECRET_KEY must be configured");
-  }
-
   // Always verify Turnstile tokens
-  if (!responseToken || responseToken.length < 10) {
+  if (!responseToken || responseToken.length < 32) {
     throw new Error("Invalid Turnstile token");
   }
   

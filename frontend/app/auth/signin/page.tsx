@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { signInAction, anonymousSignInAction } from "./actions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
 
@@ -15,19 +15,21 @@ export default function SignInPage() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [anonymousTurnstileToken, setAnonymousTurnstileToken] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/eatery";
 
   // Handle successful authentication
   useEffect(() => {
     if (state.ok) {
-      router.push("/eatery");
+      router.push(redirectTo);
     }
-  }, [state.ok, router]);
+  }, [state.ok, router, redirectTo]);
 
   useEffect(() => {
     if (anonymousState.ok) {
-      router.push("/eatery");
+      router.push(redirectTo);
     }
-  }, [anonymousState.ok, router]);
+  }, [anonymousState.ok, router, redirectTo]);
 
   // Handle Turnstile verification for email signin
   const handleTurnstileVerify = (token: string) => {
@@ -100,9 +102,6 @@ export default function SignInPage() {
                 placeholder="Enter your password"
               />
             </div>
-
-            {/* Hidden field for the Turnstile token */}
-            <input type="hidden" name="cf-turnstile-response" />
 
             {/* Turnstile widget */}
             <div className="flex justify-center">

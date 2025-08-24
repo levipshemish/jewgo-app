@@ -145,7 +145,7 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
   const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
   
   // Create redirect response
-    const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
+  const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
   
   // Copy cookies from response to redirectResponse if response exists
   if (response) {

@@ -1,0 +1,778 @@
+middleware-supabase.ts:8 - middleware
+middleware-supabase.ts:36 - config
+middleware.ts:44 - middleware
+middleware.ts:8 - config
+app/error.tsx:6 - default
+app/fonts.ts:12 - fallbackFonts
+app/global-error.tsx:7 - default
+app/layout.tsx:80 - default
+app/layout.tsx:21 - metadata
+app/layout.tsx:71 - viewport
+app/not-found.tsx:3 - default
+components/index.ts:22 - UnifiedRestaurantCard
+components/index.ts:102 - LoadingSpinner
+components/index.ts:132 - LoadingState
+components/index.ts:162 - LoadingOverlay
+components/index.ts:183 - Skeleton
+components/index.ts:221 - SkeletonCard
+components/index.ts:10 - RestaurantCardSkeleton
+components/index.ts:23 - RestaurantGridSkeleton
+components/index.ts:34 - InfiniteScrollLoader
+components/index.ts:56 - PullToRefreshIndicator
+components/index.ts:161 - useErrorHandler
+components/index.ts:196 - withErrorBoundary
+components/index.ts:213 - AsyncErrorBoundary
+components/index.ts:20 - ErrorBoundary
+components/index.ts:17 - VirtualList
+components/index.ts:145 - VirtualRestaurantList
+components/index.ts:206 - VirtualRestaurantCard
+components/index.ts:9 - FontLoader
+components/index.ts:13 - CssLoader
+components/index.ts:60 - LeafletCssLoader
+components/index.ts:7 - FilterOption
+components/index.ts:17 - FilterBaseProps
+components/index.ts:30 - FilterOptionButton
+components/index.ts:115 - FilterBase
+components/index.ts:22 - CategoryFilters
+components/index.ts:17 - DietaryFilters
+components/index.ts:6 - ClaimData
+components/index.ts:6 - NewsletterData
+hooks/useAdvancedFilters.ts:6 - UseAdvancedFiltersReturn (used in module)
+hooks/useAuth.ts:21 - useAuth
+hooks/useLocation.ts:16 - useLocation
+lib/anti-replay.ts:85 - clearReplayTokens
+lib/auth.ts:12 - getSessionUser (used in module)
+lib/auth.ts:34 - requireUser (used in module)
+lib/auth.ts:42 - requireAdmin
+lib/auth.ts:59 - isAuthenticated
+lib/auth.ts:65 - getUserProfile
+lib/email.ts:35 - sendEmail
+lib/email.ts:57 - createVerificationEmail
+lib/email.ts:89 - createPasswordResetEmail
+lib/email.ts:123 - createPasswordChangedEmail
+lib/feature-guard.ts:136 - getFeatureGuard
+lib/feature-guard.ts:144 - validateFeaturesSync
+lib/feature-guard.ts:7 - FeatureGuard (used in module)
+lib/index.ts:30 - fetchMarketplaceListings
+lib/index.ts:93 - fetchMarketplaceListing
+lib/index.ts:129 - createMarketplaceListing
+lib/index.ts:161 - fetchMarketplaceCategories
+lib/index.ts:189 - endorseListing
+lib/index.ts:221 - searchMarketplaceListings
+lib/index.ts:234 - getListingsByCategory
+lib/index.ts:247 - getListingsByKind
+lib/index.ts:260 - getListingsByLocation
+lib/index.ts:277 - MarketplaceAPI
+lib/index.ts:161 - adminClient
+lib/index.ts:22 - HealthAPI
+lib/index.ts:129 - checkHealth
+lib/index.ts:130 - checkApiEndpoints
+lib/index.ts:28 - SpecialsAPI
+lib/index.ts:182 - fetchSpecials
+lib/index.ts:183 - claimDeal
+lib/index.ts:184 - getMockSpecials
+lib/index.ts:20 - API_CONFIG
+lib/index.ts:27 - API_ENDPOINTS
+lib/index.ts:47 - apiCall
+lib/index.ts:73 - frontendApiCall
+lib/index.ts:90 - isProduction
+lib/index.ts:91 - isDevelopment
+lib/index.ts:92 - isTest
+lib/index.ts:1 - Filters
+lib/index.ts:19 - FilterState
+lib/index.ts:38 - FilterValue
+lib/index.ts:40 - FilterOptions
+lib/index.ts:47 - AppliedFilters
+lib/index.ts:66 - DraftFilters
+lib/index.ts:3 - replaceUrlQuery
+lib/index.ts:28 - parseUrlQuery
+lib/index.ts:56 - syncFiltersToUrl
+lib/index.ts:69 - hydrateFiltersFromUrl
+lib/index.ts:157 - useOptimizedFilters
+lib/index.ts:30 - useFilterOptions
+lib/index.ts:9 - useCssLoader
+lib/index.ts:62 - useCssMimeTypeFix
+lib/index.ts:2 - KosherCategory
+lib/index.ts:5 - RestaurantStatus
+lib/index.ts:8 - SpecialType
+lib/index.ts:11 - DayHours
+lib/index.ts:17 - WeeklyHours
+lib/index.ts:27 - HoursData
+lib/index.ts:38 - RestaurantCategory
+lib/index.ts:46 - RestaurantSpecial
+lib/index.ts:70 - MenuPricing
+lib/index.ts:78 - RestaurantCardProps
+lib/index.ts:83 - RestaurantGridProps
+lib/index.ts:91 - SearchBarProps
+lib/index.ts:95 - CategoryNavProps
+lib/index.ts:100 - Restaurant
+lib/index.ts:192 - computeRestaurantStatus
+lib/index.ts:1 - MarketplaceListing
+lib/index.ts:47 - MarketplaceProduct
+lib/index.ts:49 - MarketplaceCategory
+lib/index.ts:62 - MarketplaceSubcategory
+lib/index.ts:70 - MarketplaceFilters
+lib/index.ts:81 - MarketplaceSearchParams
+lib/index.ts:100 - MarketplaceSearchResponse
+lib/index.ts:112 - MarketplaceListingResponse
+lib/index.ts:118 - CreateListingRequest
+lib/index.ts:138 - CreateListingResponse
+lib/index.ts:147 - CategoriesResponse
+lib/index.ts:153 - MarketplaceStats
+lib/index.ts:162 - VehicleAttributes
+lib/index.ts:171 - ApplianceAttributes
+lib/index.ts:180 - RegularAttributes
+lib/index.ts:12 - DateFormatOptions
+lib/index.ts:25 - formatDate
+lib/index.ts:60 - formatDateShort
+lib/index.ts:71 - formatDateLong
+lib/index.ts:82 - formatDateTime
+lib/index.ts:110 - formatRelativeTime
+lib/index.ts:155 - formatDateISO
+lib/index.ts:167 - isToday
+lib/index.ts:180 - isYesterday
+lib/index.ts:194 - getDayOfWeek
+lib/index.ts:206 - getMonthName
+lib/index.ts:250 - analytics
+lib/index.ts:253 - AnalyticsEventData
+lib/index.ts:253 - RegistrationMetrics
+lib/index.ts:1 - isAdminEmail
+lib/index.ts:63 - forwardGetRequest
+lib/index.ts:107 - forwardPostRequest
+lib/index.ts:155 - forwardPutRequest
+lib/index.ts:203 - forwardDeleteRequest
+lib/index.ts:241 - createGetRoute
+lib/index.ts:253 - createPostRoute
+lib/index.ts:266 - createPutRoute
+lib/index.ts:279 - createDeleteRoute
+lib/index.ts:291 - createCrudRoutes
+lib/index.ts:307 - validators
+lib/index.ts:364 - responses
+lib/index.ts:17 - handleEscape
+lib/index.ts:36 - handleSubmit
+lib/index.ts:60 - handleMapClick
+lib/index.ts:82 - handleAddEateryClick
+lib/index.ts:97 - handleFiltersClick
+lib/index.ts:112 - handleTabClick
+lib/index.ts:125 - handleSearch
+lib/index.ts:140 - handleShowFilters
+lib/index.ts:150 - handleFiltersChange
+lib/index.ts:160 - handleClearFilters
+lib/index.ts:169 - handleSearchWithSuggestions
+lib/index.ts:185 - handleLoadingState
+lib/index.ts:204 - handleErrorState
+lib/index.ts:218 - handleConfirmation
+lib/index.ts:233 - handleFileUpload
+lib/index.ts:254 - handleImageLoad
+lib/index.ts:267 - handleScroll
+lib/index.ts:286 - handleResize
+lib/index.ts:303 - handleClickOutside
+lib/index.ts:317 - handleKeyboardNavigation
+lib/index.ts:354 - handleTouch
+lib/index.ts:369 - handleDragAndDrop
+lib/index.ts:14 - calculateDistance
+lib/index.ts:29 - sortRestaurantsByDistance
+lib/index.ts:78 - formatDistance
+lib/index.ts:94 - getRestaurantDistance
+lib/index.ts:109 - getRestaurantsWithinRadius
+lib/index.ts:3 - Location
+lib/index.ts:8 - RestaurantWithDistance
+lib/index.ts:114 - withRateLimit
+lib/index.ts:89 - rateLimiter
+lib/index.ts:92 - rateLimitConfigs
+lib/index.ts:5 - verifyTurnstile
+lib/index.ts:53 - useTurnstile
+lib/index.ts:1 - Review
+lib/index.ts:22 - ReviewsResponse
+lib/index.ts:38 - ReviewFilters
+lib/index.ts:46 - ReviewUpdateRequest
+lib/index.ts:55 - ReviewCreateRequest
+lib/index.ts:35 - createSupabaseMiddlewareClient
+lib/index.ts:786 - initI18n
+lib/index.ts:793 - getI18n
+lib/index.ts:801 - useTranslation
+lib/index.ts:6 - SupportedLocale
+lib/index.ts:8 - I18nConfig
+lib/index.ts:14 - TranslationNamespace
+lib/index.ts:814 - translations
+lib/message-bus.ts:10 - FilterWorkerResult (used in module)
+lib/mobile-optimization.ts:25 - isMobileDevice (used in module)
+lib/mobile-optimization.ts:33 - isTouchDevice (used in module)
+lib/mobile-optimization.ts:39 - getDevicePixelRatio (used in module)
+lib/mobile-optimization.ts:100 - useTouchInteractions (used in module)
+lib/mobile-optimization.ts:216 - getMobileSpacing (used in module)
+lib/mobile-optimization.ts:220 - getMobileFontSize (used in module)
+lib/mobile-optimization.ts:224 - getMobileTouchTarget (used in module)
+lib/mobile-optimization.ts:229 - useMobileScroll (used in module)
+lib/mobile-optimization.ts:263 - useMobileImageOptimization (used in module)
+lib/mobile-optimization.ts:290 - useMobileLazyLoading (used in module)
+lib/mobile-optimization.ts:322 - useMobileBatteryOptimization (used in module)
+lib/mobile-optimization.ts:349 - useMobileAccessibility (used in module)
+lib/mobile-optimization.ts:426 - useMobilePerformanceMonitoring (used in module)
+lib/mobile-optimization.ts:468 - default
+lib/server-init.ts:80 - isServerInitialized
+lib/server-init.ts:87 - isAnonymousAuthSupported
+lib/server-init.ts:94 - getFeatureValidationCache
+lib/server-init.ts:101 - reinitializeServer
+sandbox/vite.config.ts:6 - default
+scripts/check-env-setup.ts:144 - checkEnvironmentVariables (used in module)
+scripts/check-env-setup.ts:144 - printEnvironmentStatus (used in module)
+scripts/generate-secret.ts:28 - generateSecret (used in module)
+scripts/generate-secret.ts:28 - generateNextAuthSecret (used in module)
+types/index.ts:9 - AnalyticsEvent
+types/index.ts:20 - FeedbackData
+types/index.ts:33 - FeedbackSubmission
+types/index.ts:43 - ApiResponse (used in module)
+types/index.ts:50 - PaginatedResponse
+types/index.ts:77 - UserLocation
+types/index.ts:83 - MapCenter
+types/index.ts:89 - GooglePlacesHours (used in module)
+types/index.ts:98 - GooglePlacesResult (used in module)
+types/index.ts:116 - GooglePlacesResponse
+types/index.ts:123 - CacheEntry
+types/index.ts:130 - PerformanceEvent
+types/index.ts:140 - NotificationPreference
+types/index.ts:150 - OrderData
+types/index.ts:168 - SafeArrayResult
+types/index.ts:173 - ValidationResult
+types/index.ts:2 - KosherCategory
+types/index.ts:5 - RestaurantStatus
+types/index.ts:8 - SpecialType
+types/index.ts:11 - DayHours
+types/index.ts:17 - WeeklyHours
+types/index.ts:27 - HoursData
+types/index.ts:38 - RestaurantCategory
+types/index.ts:46 - RestaurantSpecial
+types/index.ts:70 - MenuPricing
+types/index.ts:78 - RestaurantCardProps
+types/index.ts:83 - RestaurantGridProps
+types/index.ts:91 - SearchBarProps
+types/index.ts:95 - CategoryNavProps
+types/index.ts:100 - Restaurant
+types/index.ts:192 - computeRestaurantStatus
+types/index.ts:1 - MarketplaceListing
+types/index.ts:47 - MarketplaceProduct
+types/index.ts:49 - MarketplaceCategory
+types/index.ts:62 - MarketplaceSubcategory
+types/index.ts:70 - MarketplaceFilters
+types/index.ts:81 - MarketplaceSearchParams
+types/index.ts:100 - MarketplaceSearchResponse
+types/index.ts:112 - MarketplaceListingResponse
+types/index.ts:118 - CreateListingRequest
+types/index.ts:138 - CreateListingResponse
+types/index.ts:147 - CategoriesResponse
+types/index.ts:153 - MarketplaceStats
+types/index.ts:162 - VehicleAttributes
+types/index.ts:171 - ApplianceAttributes
+types/index.ts:180 - RegularAttributes
+types/index.ts:1 - Review
+types/index.ts:22 - ReviewsResponse
+types/index.ts:38 - ReviewFilters
+types/index.ts:46 - ReviewUpdateRequest
+types/index.ts:55 - ReviewCreateRequest
+utils/analytics.ts:188 - analytics
+utils/analytics.ts:191 - AnalyticsEventData (used in module)
+utils/analytics.ts:191 - RegistrationMetrics (used in module)
+components/admin/FeatureFlagManager.tsx:18 - default
+components/analytics/index.ts:1 - Analytics
+components/auth/EmailUpgradeModal.tsx:13 - default
+components/auth/index.ts:3 - AuthStatus
+components/filters/AdvancedFilterSheet.tsx:323 - default
+components/filters/BusinessTypeFilter.tsx:8 - BusinessType (used in module)
+components/forms/ImageUpload.tsx:14 - default
+components/layout/index.ts:1 - Header
+components/layout/index.ts:2 - SearchHeader
+components/layout/index.ts:3 - ActionButtons
+components/layout/MarketplaceActionButtons.tsx:12 - default
+components/location/index.ts:1 - LocationCard
+components/location/index.ts:2 - LocationPermissionPrompt
+components/map/index.ts:1 - InteractiveRestaurantMap
+components/map/index.ts:2 - MapControls
+components/map/index.ts:3 - MapLegend
+components/map/index.ts:4 - MapNotification
+components/map/MapWhenVisible.tsx:13 - default
+components/marketplace/index.ts:1 - CategoryCard
+components/marketplace/index.ts:2 - MarketplaceFilters
+components/marketplace/index.ts:3 - MarketplacePageClient
+components/marketplace/index.ts:6 - EnhancedMarketplaceCard
+components/marketplace/index.ts:7 - EnhancedMarketplaceCardSkeleton
+components/marketplace/index.ts:8 - EnhancedMarketplaceGrid
+components/marketplace/MarketplaceSearch.tsx:13 - default
+components/monitoring/index.ts:1 - ApiHealthIndicator
+components/pages/index.ts:1 - SpecialsPageClient
+components/products/ProductResults.tsx:146 - default
+components/restaurant/index.ts:1 - RestaurantCard
+components/restaurant/index.ts:2 - RestaurantGrid
+components/restaurant/index.ts:3 - HoursDisplay
+components/restaurant/index.ts:4 - Reviews
+components/restaurant/index.ts:5 - RestaurantCardSkeleton
+components/reviews/index.ts:1 - ReviewsSection
+components/reviews/index.ts:2 - ReviewForm
+components/reviews/index.ts:3 - ReviewCard
+components/reviews/index.ts:4 - ReviewModeration
+components/reviews/index.ts:6 - Review
+components/reviews/index.ts:7 - ReviewData
+components/reviews/ReviewModeration.tsx:6 - Review (used in module)
+components/reviews/ReviewModeration.tsx:26 - ReviewFlag (used in module)
+components/reviews/ReviewSnippets.tsx:24 - default
+components/search/AdvancedSearchBox.tsx:25 - default
+components/search/index.ts:1 - SearchBar
+components/search/index.ts:2 - SmartSearch
+components/search/index.ts:3 - AdvancedFilters
+components/search/index.ts:4 - SearchSuggestions
+components/search/index.ts:5 - RecentSearches
+components/search/index.ts:6 - QuickFilters
+components/search/index.ts:7 - AgencyFilters
+components/search/index.ts:8 - DietaryFilters
+components/search/index.ts:9 - AdvancedFiltersRefactored
+components/search/index.ts:10 - SmartSearchRefactored
+components/specials/index.ts:1 - SpecialsCard
+components/ui/AnalyticsDashboard.tsx:23 - default
+components/ui/CategoryNav.types.ts:50 - OverflowState
+components/ui/CategoryNav.types.ts:55 - ScrollDirection
+components/ui/CategoryNav.types.ts:60 - LinkOptimizationConfig (used in module)
+components/ui/CategoryNav.types.ts:72 - ExternalLinkConfig (used in module)
+components/ui/CategoryNav.types.ts:82 - IconAccessibilityConfig (used in module)
+components/ui/CategoryNav.types.ts:94 - ButtonTypeConfig (used in module)
+components/ui/CategoryNav.types.ts:102 - FocusManagementConfig (used in module)
+components/ui/CategoryNav.types.ts:114 - PerformanceConfig (used in module)
+components/ui/CategoryNav.types.ts:126 - AccessibilityConfig (used in module)
+components/ui/CategoryNav.types.ts:140 - ProductionGuardrailsConfig (used in module)
+components/ui/CategoryNav.types.ts:160 - CategoryNavConfig (used in module)
+components/ui/CategoryNav.types.ts:182 - DEFAULT_CATEGORY_NAV_CONFIG
+components/ui/ConfirmModal.tsx:17 - default
+components/ui/FontOptimizer.tsx:9 - FontOptimizer
+components/ui/index.ts:160 - CategoryNav
+components/ui/index.ts:161 - CategoryNavProps
+components/ui/index.ts:161 - CategoryNavItem
+components/ui/index.ts:196 - useRovingFocus
+components/ui/index.ts:197 - UseRovingFocusOptions
+components/ui/index.ts:197 - UseRovingFocusReturn
+components/ui/index.ts:200 - Logo
+components/ui/index.ts:201 - LogoIcon
+components/ui/index.ts:203 - TurnstileWidget
+components/ui/LazyImage.tsx:110 - default
+components/ui/LazyLoader.tsx:17 - LazyLoader
+components/ui/LazyLoader.tsx:30 - LazyMap
+components/ui/LazyLoader.tsx:31 - LazyAnalytics
+components/ui/LazyLoader.tsx:32 - LazyImageCarousel
+components/ui/LazyLoader.tsx:33 - LazyReviews
+components/ui/LoadingState.tsx:43 - CompactLoadingState
+components/ui/LoadingStates.tsx:13 - LoadingSpinner (used in module)
+components/ui/LoadingStates.tsx:113 - AsyncComponent
+components/ui/LoadingStates.tsx:160 - Skeleton (used in module)
+components/ui/LoadingStates.tsx:177 - SkeletonCard
+components/ui/LoadingStates.tsx:197 - useAsyncOperation
+components/ui/NotificationDemo.tsx:53 - default
+components/ui/NotificationPreferences.tsx:25 - default
+components/ui/PasswordChangeModal.tsx:13 - default
+components/ui/PerformanceDashboard.tsx:22 - default
+components/ui/PerformanceMonitor.tsx:18 - PerformanceMonitor
+components/ui/PerformanceMonitor.tsx:186 - useFilterPerformance
+components/ui/RefreshButton.tsx:3 - default
+components/ui/SharePopup.tsx:13 - default
+components/ui/StarRating.tsx:129 - renderStars
+components/ui/StarRating.tsx:144 - default
+components/ui/Toast.tsx:13 - Toast (used in module)
+components/ui/TouchTestComponent.tsx:10 - TouchTestComponent
+components/ui/UnifiedCategoryNav.tsx:478 - CategorySet (used in module)
+components/ui/UnifiedCategoryNav.tsx:478 - LayoutVariant (used in module)
+components/ui/UnifiedCategoryNav.tsx:478 - CategoryItem (used in module)
+components/ui/UnifiedCategoryNav.tsx:478 - UnifiedCategoryNavProps (used in module)
+db/sync/updateHours.ts:1 - updateRestaurantHours
+lib/analytics/performance.ts:328 - measureRender
+lib/analytics/performance.ts:334 - measureApi
+lib/analytics/performance.ts:340 - trackInteraction
+lib/analytics/performance.ts:345 - usePerformanceTracking
+lib/api/mockData.ts:4 - mockRestaurants
+lib/api/mockData.ts:225 - mockExportUserData
+lib/api/mockData.ts:256 - mockDeleteAccount
+lib/api/mockData.ts:269 - mockClaimDeal
+lib/api/restaurants.ts:19 - RestaurantsAPI (used in module)
+lib/api/restaurants.ts:355 - searchRestaurants (used in module)
+lib/api/restaurants.ts:357 - fetchRestaurantsByIds (used in module)
+lib/api/restaurants.ts:358 - getStatistics (used in module)
+lib/auth/email-upgrade.ts:22 - EmailUpgradeFlow (used in module)
+lib/auth/index.ts:12 - createServerSupabaseClient
+lib/auth/index.ts:13 - supabaseBrowser
+lib/auth/index.ts:16 - TransformedUser
+lib/auth/index.ts:19 - AUTH_CONFIG
+lib/auth/index.ts:48 - extractJtiFromToken
+lib/auth/index.ts:87 - verifyTokenRotation
+lib/auth/index.ts:132 - sanitizeRedirectUrl
+lib/auth/index.ts:144 - validateTrustedIP
+lib/auth/index.ts:233 - validateCSRF
+lib/auth/index.ts:318 - generateCorrelationId
+lib/auth/index.ts:325 - scrubPII
+lib/auth/index.ts:343 - extractIsAnonymous
+lib/auth/index.ts:352 - isSupabaseConfigured
+lib/auth/index.ts:363 - transformSupabaseUser
+lib/auth/index.ts:411 - handleAuthError
+lib/auth/index.ts:421 - handleUserLoadError
+lib/auth/index.ts:433 - createMockUser
+lib/auth/index.ts:452 - isValidUser
+lib/auth/index.ts:463 - validateRedirectUrl
+lib/auth/index.ts:567 - isPrivateRelayEmail
+lib/auth/index.ts:575 - mapAppleOAuthError
+lib/auth/index.ts:642 - validateSupabaseFeatureSupport
+lib/auth/index.ts:12 - getCurrentSession
+lib/auth/index.ts:27 - getCurrentUser
+lib/auth/index.ts:70 - isSessionRecent
+lib/auth/index.ts:48 - isValidEmail
+lib/auth/index.ts:56 - isStrongPassword
+lib/auth/index.ts:68 - isValidRedirectUrl
+lib/auth/index.ts:89 - sanitizeInput
+lib/auth/index.ts:11 - EmailSchema
+lib/auth/index.ts:18 - PasswordSchema
+lib/auth/index.ts:27 - SignInSchema
+lib/auth/index.ts:32 - TurnstileSchema
+lib/auth/index.ts:39 - RateLimitSchema
+lib/auth/write-gates.ts:263 - useWritePermissions (used in module)
+lib/auth/write-gates.ts:292 - withWritePermission
+lib/auth/write-gates.ts:5 - WritePermissionResult (used in module)
+lib/auth/write-gates.ts:12 - UserPermissions (used in module)
+lib/auth/write-gates.ts:26 - WriteGates (used in module)
+lib/config/client-config.ts:33 - useClientConfig
+lib/config/environment.public.ts:60 - getCORSHeaders
+lib/config/environment.public.ts:91 - validateEnvironment
+lib/config/environment.public.ts:111 - getEnvironmentConfig
+lib/config/environment.public.ts:7 - TRUSTED_CDN_IPS (used in module)
+lib/config/environment.public.ts:18 - TRUSTED_PROXY_STRATEGY (used in module)
+lib/config/environment.public.ts:21 - COOKIE_SAMESITE_STRATEGY (used in module)
+lib/config/environment.public.ts:22 - WEBVIEW_MODE_ENABLED (used in module)
+lib/config/environment.public.ts:25 - ALLOWED_ORIGINS (used in module)
+lib/config/environment.public.ts:32 - CORS_CREDENTIALS_ENABLED (used in module)
+lib/config/environment.public.ts:35 - CLEANUP_DRY_RUN_MODE (used in module)
+lib/config/environment.public.ts:36 - CLEANUP_SAFETY_CHECKS_ENABLED (used in module)
+lib/config/environment.public.ts:39 - RATE_LIMIT_SHOW_REMAINING (used in module)
+lib/config/environment.public.ts:40 - RATE_LIMIT_SHOW_RESET_TIME (used in module)
+lib/config/environment.public.ts:43 - SUPABASE_URL (used in module)
+lib/config/environment.public.ts:44 - SUPABASE_ANON_KEY (used in module)
+lib/config/environment.public.ts:47 - SENTRY_DSN
+lib/config/environment.public.ts:48 - SENTRY_ENVIRONMENT
+lib/config/environment.public.ts:51 - APP_URL (used in module)
+lib/config/environment.public.ts:52 - NODE_ENV (used in module)
+lib/config/environment.public.ts:53 - IS_PRODUCTION (used in module)
+lib/config/environment.public.ts:54 - IS_DEVELOPMENT (used in module)
+lib/config/environment.public.ts:80 - FEATURE_FLAGS (used in module)
+lib/config/environment.server.ts:9 - MERGE_COOKIE_KEY_ID (used in module)
+lib/config/environment.server.ts:12 - SUPABASE_SERVICE_ROLE_KEY (used in module)
+lib/config/environment.server.ts:15 - REDIS_URL (used in module)
+lib/config/environment.server.ts:16 - REDIS_HOST (used in module)
+lib/config/environment.server.ts:17 - REDIS_PORT (used in module)
+lib/config/environment.server.ts:18 - REDIS_PASSWORD (used in module)
+lib/config/environment.server.ts:19 - REDIS_DB (used in module)
+lib/config/environment.server.ts:25 - TURNSTILE_SECRET_KEY (used in module)
+lib/config/environment.server.ts:28 - CLEANUP_CRON_SECRET (used in module)
+lib/config/environment.server.ts:31 - APPLE_OAUTH_ENABLED (used in module)
+lib/config/environment.server.ts:32 - ACCOUNT_LINKING_ENABLED (used in module)
+lib/config/environment.ts:136 - getCookieDomain (used in module)
+lib/config/environment.ts:195 - getEnvironmentConfig
+lib/config/environment.ts:7 - MERGE_COOKIE_HMAC_KEY_CURRENT (used in module)
+lib/config/environment.ts:8 - MERGE_COOKIE_HMAC_KEY_PREVIOUS (used in module)
+lib/config/environment.ts:9 - MERGE_COOKIE_KEY_ID (used in module)
+lib/config/environment.ts:23 - TRUSTED_PROXY_STRATEGY (used in module)
+lib/config/environment.ts:26 - COOKIE_SAMESITE_STRATEGY (used in module)
+lib/config/environment.ts:27 - WEBVIEW_MODE_ENABLED (used in module)
+lib/config/environment.ts:37 - CORS_CREDENTIALS_ENABLED (used in module)
+lib/config/environment.ts:45 - RATE_LIMIT_SHOW_REMAINING (used in module)
+lib/config/environment.ts:46 - RATE_LIMIT_SHOW_RESET_TIME (used in module)
+lib/config/environment.ts:49 - SUPABASE_URL (used in module)
+lib/config/environment.ts:50 - SUPABASE_ANON_KEY (used in module)
+lib/config/environment.ts:60 - SENTRY_DSN
+lib/config/environment.ts:61 - SENTRY_ENVIRONMENT
+lib/config/environment.ts:64 - APP_URL (used in module)
+lib/config/environment.ts:65 - NODE_ENV (used in module)
+lib/config/environment.ts:66 - IS_PRODUCTION (used in module)
+lib/config/environment.ts:67 - IS_DEVELOPMENT (used in module)
+lib/db/prisma.ts:34 - prisma (used in module)
+lib/filters/schema.ts:77 - validateFilters
+lib/filters/serialize.ts:3 - serializeFilters (used in module)
+lib/filters/serialize.ts:21 - parseFilters
+lib/filters/serialize.ts:33 - isFilterEmpty
+lib/google/places.ts:4 - fetchPlaceDetails
+lib/google/places.ts:44 - ModernGooglePlacesAPI (used in module)
+lib/hooks/index.ts:1 - useSearchSuggestions
+lib/hooks/index.ts:2 - useRecentSearches
+lib/hooks/index.ts:3 - useSearchInput
+lib/hooks/index.ts:4 - useIsMobile
+lib/hooks/index.ts:5 - useInfiniteScroll
+lib/hooks/index.ts:6 - useScrollDetection
+lib/hooks/index.ts:7 - useCaptcha
+lib/hooks/useFeatureFlags.tsx:101 - useFeatureFlag (used in module)
+lib/hooks/useFeatureFlags.tsx:130 - FeatureFlagsProvider
+lib/hooks/useFeatureFlags.tsx:140 - useFeatureFlagsContext
+lib/hooks/useFeatureFlags.tsx:149 - withFeatureFlag
+lib/hooks/useFeatureFlags.tsx:3 - FeatureFlag (used in module)
+lib/hooks/useFeatureFlags.tsx:12 - FeatureFlagsResponse (used in module)
+lib/hooks/useFeatureFlags.tsx:18 - UseFeatureFlagsOptions (used in module)
+lib/hooks/useInfiniteScroll.ts:117 - useScrollInfiniteScroll
+lib/hooks/useInfiniteScroll.ts:184 - useVirtualizedInfiniteScroll
+lib/hooks/useInfiniteScroll.ts:3 - InfiniteScrollOptions (used in module)
+lib/hooks/useInfiniteScroll.ts:10 - UseInfiniteScrollReturn (used in module)
+lib/hooks/useLazyLoading.ts:32 - useLazyLoading (used in module)
+lib/hooks/useLazyLoading.ts:114 - useLazyComponent
+lib/hooks/useLocalFilters.ts:39 - UseLocalFiltersReturn (used in module)
+lib/hooks/usePerformanceOptimization.ts:214 - useComponentPerformance
+lib/hooks/usePerformanceOptimization.ts:241 - useMemoryOptimization
+lib/hooks/useSearchInput.ts:3 - UseSearchInputProps (used in module)
+lib/hooks/useSearchSuggestions.ts:14 - GooglePlaceSuggestion
+lib/hooks/useSearchSuggestions.ts:24 - AddressEntry
+lib/hooks/useSearchSuggestions.ts:33 - PopularSearch
+lib/hooks/useWebSocket.ts:234 - useWebSocketRoom (used in module)
+lib/hooks/useWebSocket.ts:273 - useRestaurantUpdates
+lib/hooks/useWebSocket.ts:279 - useOpenNowUpdates
+lib/hooks/useWebSocket.ts:284 - useFilterUpdates
+lib/hooks/useWebSocket.ts:3 - WebSocketMessage (used in module)
+lib/hooks/useWebSocket.ts:9 - WebSocketConfig (used in module)
+lib/hooks/useWebSocket.ts:16 - UseWebSocketReturn (used in module)
+lib/maps/loader.ts:7 - getMapsLoader (used in module)
+lib/rate-limiting/index.ts:7 - checkRateLimit
+lib/rate-limiting/index.ts:8 - clearRateLimit
+lib/rate-limiting/index.ts:9 - checkIdempotency
+lib/rate-limiting/index.ts:10 - storeIdempotencyResult
+lib/rate-limiting/index.ts:11 - generateIdempotencyKey
+lib/rate-limiting/index.ts:15 - rateLimitBackend
+lib/rate-limiting/index.ts:22 - RATE_LIMIT_CONFIG
+lib/rate-limiting/memory.ts:125 - checkRateLimit
+lib/rate-limiting/memory.ts:150 - clearRateLimit
+lib/rate-limiting/memory.ts:172 - checkIdempotency
+lib/rate-limiting/memory.ts:194 - storeIdempotencyResult
+lib/rate-limiting/memory.ts:214 - generateIdempotencyKey
+lib/supabase/index.ts:8 - createClientSupabaseClient
+lib/supabase/index.ts:8 - supabaseClient
+lib/supabase/index.ts:11 - supabaseBrowser
+lib/supabase/index.ts:14 - createServerSupabaseClient
+lib/supabase/server.ts:56 - createSupabaseServerClient
+lib/utils/apple-oauth-config.ts:18 - isAppleOAuthEnabled (used in module)
+lib/utils/apple-oauth-config.ts:26 - isAppleOAuthConfigured (used in module)
+lib/utils/apple-oauth-config.ts:35 - getAppleOAuthConfigStatus (used in module)
+lib/utils/apple-oauth-config.ts:62 - getAppleOAuthSetupInstructions
+lib/utils/apple-oauth-config.ts:113 - getAppleOAuthSetupDocsUrl
+lib/utils/apple-oauth-config.ts:120 - shouldRedirectToSetup
+lib/utils/apple-oauth-config.ts:8 - AppleOAuthConfigStatus (used in module)
+lib/utils/auth-utils.server.ts:44 - getCachedFeatureSupport (used in module)
+lib/utils/auth-utils.server.ts:51 - setCachedFeatureSupport (used in module)
+lib/utils/auth-utils.server.ts:110 - testSupabaseFeatures (used in module)
+lib/utils/auth-utils.server.ts:311 - persistAppleUserName
+lib/utils/auth-utils.server.ts:341 - createAnalyticsKey (used in module)
+lib/utils/auth-utils.server.ts:363 - detectProvider (used in module)
+lib/utils/auth-utils.server.ts:379 - isAppleUser
+lib/utils/auth-utils.server.ts:391 - isAppleOAuthEnabled
+lib/utils/auth-utils.server.ts:398 - logOAuthEvent
+lib/utils/auth-utils.server.ts:462 - completeIdentityLinking
+lib/utils/auth-utils.server.ts:500 - verifySignedCSRFTokenServer (used in module)
+lib/utils/auth-utils.server.ts:602 - generateSecurePassword
+lib/utils/cardUtils.ts:246 - getCardStyles
+lib/utils/cardUtils.ts:266 - imageStates (used in module)
+lib/utils/colors.ts:9 - JEWGO_COLORS (used in module)
+lib/utils/colors.ts:72 - KOSHER_CATEGORY_COLORS (used in module)
+lib/utils/colors.ts:97 - CERTIFYING_AGENCY_COLORS (used in module)
+lib/utils/colors.ts:126 - getKosherCategoryColors (used in module)
+lib/utils/colors.ts:130 - getCertifyingAgencyColors (used in module)
+lib/utils/colors.ts:145 - getCertifyingAgencyBadgeClasses
+lib/utils/imageValidation.ts:13 - isValidCloudinaryUrl (used in module)
+lib/utils/imageValidation.ts:36 - isLikelyAccessibleCloudinaryUrl (used in module)
+lib/utils/imageValidation.ts:100 - filterValidImageUrls
+lib/utils/imageValidation.ts:201 - getRestaurantFallbackImage
+lib/utils/imageValidation.ts:211 - getPlaceholderImages (used in module)
+lib/utils/index.ts:12 - DateFormatOptions
+lib/utils/index.ts:25 - formatDate
+lib/utils/index.ts:60 - formatDateShort
+lib/utils/index.ts:71 - formatDateLong
+lib/utils/index.ts:82 - formatDateTime
+lib/utils/index.ts:110 - formatRelativeTime
+lib/utils/index.ts:155 - formatDateISO
+lib/utils/index.ts:167 - isToday
+lib/utils/index.ts:180 - isYesterday
+lib/utils/index.ts:194 - getDayOfWeek
+lib/utils/index.ts:206 - getMonthName
+lib/utils/index.ts:250 - analytics
+lib/utils/index.ts:253 - AnalyticsEventData
+lib/utils/index.ts:253 - RegistrationMetrics
+lib/utils/index.ts:1 - isAdminEmail
+lib/utils/index.ts:63 - forwardGetRequest
+lib/utils/index.ts:107 - forwardPostRequest
+lib/utils/index.ts:155 - forwardPutRequest
+lib/utils/index.ts:203 - forwardDeleteRequest
+lib/utils/index.ts:241 - createGetRoute
+lib/utils/index.ts:253 - createPostRoute
+lib/utils/index.ts:266 - createPutRoute
+lib/utils/index.ts:279 - createDeleteRoute
+lib/utils/index.ts:291 - createCrudRoutes
+lib/utils/index.ts:307 - validators
+lib/utils/index.ts:364 - responses
+lib/utils/index.ts:17 - handleEscape
+lib/utils/index.ts:36 - handleSubmit
+lib/utils/index.ts:60 - handleMapClick
+lib/utils/index.ts:82 - handleAddEateryClick
+lib/utils/index.ts:97 - handleFiltersClick
+lib/utils/index.ts:112 - handleTabClick
+lib/utils/index.ts:125 - handleSearch
+lib/utils/index.ts:140 - handleShowFilters
+lib/utils/index.ts:150 - handleFiltersChange
+lib/utils/index.ts:160 - handleClearFilters
+lib/utils/index.ts:169 - handleSearchWithSuggestions
+lib/utils/index.ts:185 - handleLoadingState
+lib/utils/index.ts:204 - handleErrorState
+lib/utils/index.ts:218 - handleConfirmation
+lib/utils/index.ts:233 - handleFileUpload
+lib/utils/index.ts:254 - handleImageLoad
+lib/utils/index.ts:267 - handleScroll
+lib/utils/index.ts:286 - handleResize
+lib/utils/index.ts:303 - handleClickOutside
+lib/utils/index.ts:317 - handleKeyboardNavigation
+lib/utils/index.ts:354 - handleTouch
+lib/utils/index.ts:369 - handleDragAndDrop
+lib/utils/index.ts:14 - calculateDistance
+lib/utils/index.ts:29 - sortRestaurantsByDistance
+lib/utils/index.ts:78 - formatDistance
+lib/utils/index.ts:94 - getRestaurantDistance
+lib/utils/index.ts:109 - getRestaurantsWithinRadius
+lib/utils/index.ts:3 - Location
+lib/utils/index.ts:8 - RestaurantWithDistance
+lib/utils/index.ts:114 - withRateLimit
+lib/utils/index.ts:89 - rateLimiter
+lib/utils/index.ts:92 - rateLimitConfigs
+lib/utils/index.ts:5 - verifyTurnstile
+lib/utils/index.ts:53 - useTurnstile
+lib/utils/index.ts:4 - cn
+lib/utils/index.ts:15 - titleCase
+lib/utils/index.ts:27 - sentenceCase
+lib/utils/index.ts:37 - camelCase
+lib/utils/index.ts:51 - kebabCase
+lib/utils/index.ts:64 - snakeCase
+lib/utils/index.ts:77 - pascalCase
+lib/utils/index.ts:89 - truncate
+lib/utils/index.ts:102 - capitalizeWords
+lib/utils/index.ts:114 - normalizeWhitespace
+lib/utils/index.ts:124 - toSlug
+lib/utils/index.ts:138 - escapeHtml
+lib/utils/index.ts:156 - unescapeHtml
+lib/utils/index.ts:174 - getInitials
+lib/utils/index.ts:188 - isEmpty
+lib/utils/index.ts:195 - isAlphaSpace
+lib/utils/index.ts:205 - isAlphanumericSpace
+lib/utils/index.ts:215 - formatPhoneNumber
+lib/utils/index.ts:235 - formatCurrency
+lib/utils/index.ts:245 - formatNumber
+lib/utils/index.ts:252 - randomString
+lib/utils/index.ts:22 - getSafeImageUrl
+lib/utils/index.ts:78 - isLikelyAccessibleUrl
+lib/utils/index.ts:95 - filterValidImageUrls
+lib/utils/index.ts:116 - isValidImageUrl
+lib/utils/index.ts:145 - fixCloudinaryUrl
+lib/utils/index.ts:236 - sanitizeRestaurantImageUrl
+lib/utils/index.ts:244 - sanitizeRestaurantData
+lib/utils/index.ts:9 - FavoriteRestaurant
+lib/utils/index.ts:19 - FavoritesData
+lib/utils/index.ts:338 - favoritesManager
+lib/utils/index.ts:341 - useFavorites
+lib/utils/index.ts:374 - toggleFavorite
+lib/utils/index.ts:382 - getFavoriteCount
+lib/utils/index.ts:386 - isStorageAvailable
+lib/utils/index.ts:5 - scrollToTop
+lib/utils/index.ts:29 - scrollToElement
+lib/utils/index.ts:41 - isMobileDevice
+lib/utils/index.ts:52 - getScrollPosition
+lib/utils/index.ts:63 - createThrottledScrollHandler
+lib/utils/index.ts:97 - createThrottledResizeHandler
+lib/utils/index.ts:131 - createDebouncedScrollHandler
+lib/utils/index.ts:156 - isElementInViewport
+lib/utils/index.ts:179 - getElementDimensions
+lib/utils/index.ts:130 - getHoursStatus
+lib/utils/index.ts:244 - formatWeeklyHours
+lib/utils/index.ts:264 - formatWeeklyHoursArray
+lib/utils/index.ts:12 - HoursStatus
+lib/utils/index.ts:25 - OpeningHours
+lib/utils/index.ts:94 - validateForm
+lib/utils/index.ts:126 - validateField
+lib/utils/index.ts:159 - validateEmail
+lib/utils/index.ts:167 - validatePassword
+lib/utils/index.ts:175 - validatePhone
+lib/utils/index.ts:183 - validateUrl
+lib/utils/index.ts:192 - validateRequired
+lib/utils/index.ts:209 - createFormState
+lib/utils/index.ts:220 - updateFormField
+lib/utils/index.ts:235 - setFormErrors
+lib/utils/index.ts:249 - clearFormErrors
+lib/utils/index.ts:258 - setSubmitting
+lib/utils/index.ts:267 - validateZipCode
+lib/utils/index.ts:275 - validatePriceRange
+lib/utils/index.ts:295 - validateHours
+lib/utils/index.ts:309 - validateUniqueEmail
+lib/utils/index.ts:331 - validateRestaurantName
+lib/utils/index.ts:354 - submitForm
+lib/utils/index.ts:4 - emailSchema
+lib/utils/index.ts:9 - passwordSchema
+lib/utils/index.ts:14 - phoneSchema
+lib/utils/index.ts:19 - urlSchema
+lib/utils/index.ts:25 - requiredStringSchema
+lib/utils/index.ts:29 - optionalStringSchema
+lib/utils/index.ts:35 - restaurantSchema
+lib/utils/index.ts:54 - restaurantSpecialSchema
+lib/utils/index.ts:80 - ValidationError
+lib/utils/index.ts:85 - ValidationResult
+lib/utils/index.ts:201 - FormState
+lib/utils/index.ts:384 - RestaurantFormData
+lib/utils/index.ts:385 - RestaurantSpecialFormData
+lib/utils/logger.ts:5 - LogLevel (used in module)
+lib/utils/logger.ts:12 - LOG_LEVELS
+lib/utils/logger.ts:19 - LogContext (used in module)
+lib/utils/logger.ts:79 - default
+lib/utils/password-validation.ts:6 - PasswordValidationResult (used in module)
+lib/utils/password-validation.ts:36 - getPasswordStrength
+lib/utils/password-validation.ts:74 - getPasswordStrengthColor
+lib/utils/password-validation.ts:91 - getPasswordStrengthText
+lib/utils/performanceOptimization.ts:90 - debounce
+lib/utils/reviewUtils.ts:46 - getReviewCount
+lib/utils/spacing.ts:79 - getSpacingClasses (used in module)
+lib/utils/spacing.ts:9 - spacing (used in module)
+lib/utils/supabase-utils.ts:19 - createSafeSupabaseClient (used in module)
+lib/utils/supabase-utils.ts:108 - isSupabaseConfigured
+lib/utils/supabase-utils.ts:118 - getSupabaseClient
+lib/utils/supabase-utils.ts:125 - resetSupabaseClient
+lib/utils/touchUtils.ts:5 - TOUCH_TARGET_SIZE (used in module)
+lib/utils/touchUtils.ts:10 - isTouchDevice (used in module)
+lib/utils/touchUtils.ts:30 - getTouchTargetSize (used in module)
+lib/utils/touchUtils.ts:56 - debounce
+lib/utils/touchUtils.ts:87 - preventDoubleTapZoom
+lib/utils/touchUtils.ts:102 - addTouchFeedback
+lib/utils/touchUtils.ts:122 - removeTouchFeedback
+lib/utils/typography.ts:172 - getTypographyClasses (used in module)
+lib/utils/typography.ts:23 - typography (used in module)
+lib/utils/validation.ts:7 - isValidRestaurant (used in module)
+lib/utils/validation.ts:31 - validateRestaurants
+lib/utils/validation.ts:47 - safeGet
+lib/utils/validation.ts:86 - safeMap
+lib/utils/validation.ts:103 - safeReduce
+lib/utils/validation.ts:125 - safeLength
+lib/utils/validation.ts:135 - safeIncludes
+lib/utils/validation.ts:151 - safeFind
+lib/utils/validation.ts:167 - safeFindIndex
+lib/utils/validation.ts:183 - validateApiResponse
+lib/validators/profile.ts:83 - UsernameData
+lib/validators/profile.ts:88 - PartialProfileSchema (used in module)
+lib/validators/profile.ts:90 - PartialProfileData
+app/u/[username]/not-found.tsx:4 - default
+components/map/hooks/index.ts:1 - useMarkerManagement
+components/map/hooks/index.ts:2 - useDistanceCircles
+components/map/hooks/index.ts:3 - useDirections
+components/navigation/ui/index.ts:1 - BottomNavigation
+components/navigation/ui/index.ts:2 - CategoryTabs
+components/navigation/ui/index.ts:3 - MobileCategoryTabs
+components/navigation/ui/index.ts:4 - SubNav
+components/navigation/ui/index.ts:4 - NavigationItem
+components/navigation/ui/index.ts:13 - sharedButtonStyles
+components/navigation/ui/index.ts:22 - useNavigation
+components/navigation/ui/index.ts:44 - handleKeyNavigation
+components/navigation/ui/index.ts:4 - useIsMobile
+components/navigation/ui/index.ts:26 - useMemoizedNavItems
+components/navigation/ui/MarketplaceCategoryTabs.tsx:88 - default
+sandbox/src/components/Button.stories.tsx:49 - default
+sandbox/src/components/Button.stories.tsx:52 - Primary
+sandbox/src/components/Button.stories.tsx:59 - Secondary
+sandbox/src/components/Button.stories.tsx:66 - Danger
+sandbox/src/components/Button.stories.tsx:73 - Success
+sandbox/src/components/Button.stories.tsx:80 - Small
+sandbox/src/components/Button.stories.tsx:87 - Large

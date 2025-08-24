@@ -30,8 +30,18 @@ import {
   ANALYTICS_HMAC_SECRET
 } from '@/lib/config/environment.server';
 
-const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT || 'fallback-key-change-in-production';
-const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS || 'fallback-key-v2-change-in-production';
+const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT;
+const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS;
+
+// Validate HMAC keys in production
+if (process.env.NODE_ENV === 'production') {
+  if (!MERGE_COOKIE_HMAC_KEY) {
+    throw new Error("MERGE_COOKIE_HMAC_KEY_CURRENT required in production");
+  }
+  if (!MERGE_COOKIE_HMAC_KEY_V2) {
+    throw new Error("MERGE_COOKIE_HMAC_KEY_PREVIOUS required in production");
+  }
+}
 
 // Feature support validation
 let featureSupportValidated = false;

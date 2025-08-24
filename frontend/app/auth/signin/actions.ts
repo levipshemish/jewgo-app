@@ -6,6 +6,22 @@ import { verifyTurnstile } from "@/lib/turnstile";
 import { consumeCaptchaTokenOnce } from "@/lib/anti-replay";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+/**
+ * Validate Turnstile hostname with relaxed rules for subdomains and ports
+ */
+function validateTurnstileHostname(resultHostname: string | undefined): boolean {
+  if (!resultHostname) return true;
+  
+  const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
+  const expectedHostname = expectedHost.split(':')[0]; // Remove port if present
+  const resultHostnameClean = resultHostname.split(':')[0]; // Remove port if present
+  
+  // Allow exact match, subdomains, and localhost
+  return resultHostnameClean === expectedHostname || 
+         resultHostnameClean.endsWith('.' + expectedHostname) ||
+         expectedHostname === 'localhost';
+}
+
 export async function signInAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -37,9 +53,8 @@ export async function signInAction(prevState: any, formData: FormData) {
       return { ok: false, message: "Security verification failed" };
     }
 
-    // Validate hostname
-    const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
-    if (result.hostname && result.hostname !== expectedHost) {
+    // Validate hostname (relaxed to allow subdomains and ports)
+    if (!validateTurnstileHostname(result.hostname)) {
       return { ok: false, message: "Security verification failed" };
     }
 
@@ -58,7 +73,7 @@ export async function signInAction(prevState: any, formData: FormData) {
     }
 
     if (data.user) {
-      redirect("/");
+      return { ok: true, message: "Sign in successful" };
     }
 
     return { ok: false, message: "Sign in failed" };
@@ -92,9 +107,8 @@ export async function anonymousSignInAction(prevState: any, formData: FormData) 
       return { ok: false, message: "Security verification failed" };
     }
 
-    // Validate hostname
-    const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
-    if (result.hostname && result.hostname !== expectedHost) {
+    // Validate hostname (relaxed to allow subdomains and ports)
+    if (!validateTurnstileHostname(result.hostname)) {
       return { ok: false, message: "Security verification failed" };
     }
 
@@ -110,7 +124,7 @@ export async function anonymousSignInAction(prevState: any, formData: FormData) 
     }
 
     if (data.user) {
-      redirect("/");
+      return { ok: true, message: "Guest sign in successful" };
     }
 
     return { ok: false, message: "Failed to continue as guest" };

@@ -98,7 +98,7 @@ export function validateEnvironment(): void {
     // Additional boot-time assertion that neither key equals a default value
     if (MERGE_COOKIE_HMAC_KEY_CURRENT === 'fallback-key-change-in-production' || 
         MERGE_COOKIE_HMAC_KEY_PREVIOUS === 'fallback-key-change-in-production') {
-      throw new Error('HMAC keys must not use default fallback values in production');
+      throw new Error('HMAC keys must be real secrets in production');
     }
   }
 
