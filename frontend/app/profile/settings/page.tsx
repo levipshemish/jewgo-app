@@ -403,7 +403,7 @@ function NotificationSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function PrivacySettings({ _user }: { user: TransformedUser }) {
+function PrivacySettings({ user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
