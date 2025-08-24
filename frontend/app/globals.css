@@ -307,13 +307,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   }
 }
 
-/* Use the filled layer to control heart color consistently */
-.unified-card-heart .heart-fill { color: rgb(156, 163, 175) !important; }
-.unified-card-heart:hover .heart-fill { color: rgb(239, 68, 68) !important; }
-.unified-card-heart.liked .heart-fill { color: rgb(239, 68, 68) !important; }
-@media (hover: none) and (pointer: coarse) {
-  .unified-card-heart:active .heart-fill { color: rgb(239, 68, 68) !important; }
-}
+/* Heart fill colors are now handled in UnifiedCard component inline styles */
 
 /* Marketplace page specific overrides to prevent conflicts */
 .marketplace-page .unified-card {

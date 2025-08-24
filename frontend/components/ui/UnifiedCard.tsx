@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, memo } from 'react';
-import { Heart, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { cn } from '@/lib/utils/cn';
@@ -339,12 +339,22 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           transition: all 0.2s ease-out !important;
           filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
         }
-        /* Heart color control */
+        /* Heart color control - light grey fill by default */
         .unified-card-heart svg {
-          color: #ffffff !important; /* white outline for unfilled hearts */
+          color: rgb(156, 163, 175) !important; /* light grey for default state */
+          fill: rgb(156, 163, 175) !important; /* light grey fill for default state */
+          stroke: #ffffff !important; /* white outline */
+          stroke-width: 1.5px !important;
+        }
+        .unified-card-heart:hover svg {
+          color: rgb(239, 68, 68) !important; /* red on hover */
+          fill: rgb(239, 68, 68) !important; /* red fill on hover */
+          stroke: #ffffff !important; /* keep white outline */
         }
         .unified-card-heart.liked svg {
-          color: rgb(239, 68, 68) !important; /* red for filled hearts */
+          color: rgb(239, 68, 68) !important; /* red when liked */
+          fill: rgb(239, 68, 68) !important; /* red fill when liked */
+          stroke: #ffffff !important; /* keep white outline */
         }
       `}</style>
       {/* Persistent live region for announcements */}
@@ -424,20 +434,14 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               style={{ transform: isAnimating ? 'scale(0.9)' : 'scale(1)' }}
             >
               <span className="relative block w-[18px] h-[18px]">
-                {liked ? (
-                  /* Filled heart when liked */
-                  <svg 
-                    viewBox="0 0 24 24" 
-                    className="w-[18px] h-[18px]"
-                    aria-hidden
-                    style={{ color: 'rgb(239, 68, 68)' }}
-                  >
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor" />
-                  </svg>
-                ) : (
-                  /* Outline heart when not liked */
-                  <Heart size={18} />
-                )}
+                {/* Always use filled heart SVG with CSS controlling colors */}
+                <svg 
+                  viewBox="0 0 24 24" 
+                  className="w-[18px] h-[18px]"
+                  aria-hidden
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
               </span>
             </button>
           )}
