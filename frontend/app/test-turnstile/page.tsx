@@ -29,10 +29,10 @@ export default function TestTurnstilePage() {
       const script = document.createElement('script');
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
       script.onload = () => {
-        console.log('Turnstile script loaded');
+        // console.log('Turnstile script loaded');
       };
       script.onerror = () => {
-        console.error('Failed to load Turnstile script');
+        // console.error('Failed to load Turnstile script');
       };
       document.head.appendChild(script);
       scriptRef.current = script;
@@ -42,7 +42,7 @@ export default function TestTurnstilePage() {
   // Make callback available globally
   if (typeof window !== 'undefined') {
     window.handleTurnstileCallback = (token: string) => {
-      console.log('Turnstile token received:', token);
+      // console.log('Turnstile token received:', token);
       setToken(token);
     };
   }

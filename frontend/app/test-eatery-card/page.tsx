@@ -107,12 +107,12 @@ export default function TestEateryCardPage() {
     };
   };
 
-  const handleCardClick = (data: any) => {
-    console.log('Card clicked:', data);
+  const handleCardClick = (_data: any) => {
+    // console.log('Card clicked:', data);
   };
 
-  const handleLikeToggle = (id: string, isLiked: boolean) => {
-    console.log('Like toggled:', id, isLiked);
+  const handleLikeToggle = (_id: string, _isLiked: boolean) => {
+    // console.log('Like toggled:', id, isLiked);
   };
 
   return (
@@ -156,9 +156,9 @@ export default function TestEateryCardPage() {
         <div className="mt-12 p-6 bg-white rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-4">Expected Behavior:</h3>
           <ul className="space-y-2 text-sm">
-            <li>✅ <strong>Rating Badge:</strong> Should show star rating (e.g., "4.5★") in top-right badge</li>
-            <li>✅ <strong>Distance:</strong> Should show distance (e.g., "2.3 mi") in bottom-right</li>
-            <li>✅ <strong>Price Range:</strong> Should show price range (e.g., "$$$") in bottom-left</li>
+            <li>✅ <strong>Rating Badge:</strong> Should show star rating (e.g., &quot;4.5★&quot;) in top-right badge</li>
+            <li>✅ <strong>Distance:</strong> Should show distance (e.g., &quot;2.3 mi&quot;) in bottom-right</li>
+            <li>✅ <strong>Price Range:</strong> Should show price range (e.g., &quot;$$$&quot;) in bottom-left</li>
             <li>✅ <strong>Heart Button:</strong> Should be white/gray, turn red on hover/click</li>
             <li>✅ <strong>Kosher Badge:</strong> Should show kosher category in top-left</li>
           </ul>
