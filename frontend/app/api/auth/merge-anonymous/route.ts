@@ -8,7 +8,6 @@ import {
 import { 
   validateTrustedIP,
   generateCorrelationId,
-  scrubPII,
   extractIsAnonymous
 } from '@/lib/utils/auth-utils';
 import { 
@@ -40,7 +39,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
-  const startTime = Date.now();
+  // const startTime = Date.now();
   
   // Initialize server-side functionality
   const serverInitialized = await initializeServer();
@@ -150,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse request body (email/password not required for merge)
-    const body = await request.json().catch(() => ({}));
+    // const body = await request.json().catch(() => ({}));
     
     // Get merge token from cookies
     const cookieStore = await cookies();
@@ -370,10 +369,10 @@ export async function POST(request: NextRequest) {
     
     return response;
     
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
     // console.error(`Unexpected error in merge anonymous for correlation ID: ${correlationId}`, {
-    //   error: scrubPII(error),
+    //   error: scrubPII(_error),
     //   correlationId,
     //   duration_ms: Date.now() - startTime
     // });

@@ -124,11 +124,12 @@ export async function POST(request: NextRequest) {
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for merge prepare IP hash: ${ipHash}`, {
-        correlationId,
-        remaining_attempts: rateLimitResult.remaining_attempts,
-        reset_in_seconds: rateLimitResult.reset_in_seconds
-      });
+      // Rate limit exceeded - log for monitoring
+      // console.warn(`Rate limit exceeded for merge prepare IP hash: ${ipHash}`, {
+      //   correlationId,
+      //   remaining_attempts: rateLimitResult.remaining_attempts,
+      //   reset_in_seconds: rateLimitResult.reset_in_seconds
+      // });
       
       return NextResponse.json(
         {
@@ -169,10 +170,11 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: getUserError } = await supabase.auth.getUser();
     
     if (getUserError) {
-      console.error(`Failed to get user for merge prepare correlation ID: ${correlationId}`, {
-        error: getUserError,
-        correlationId
-      });
+      // Failed to get user - log for debugging
+      // console.error(`Failed to get user for merge prepare correlation ID: ${correlationId}`, {
+      //   error: getUserError,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'AUTHENTICATION_ERROR' },
@@ -184,9 +186,10 @@ export async function POST(request: NextRequest) {
     }
     
     if (!user) {
-      console.error(`No user found for merge prepare correlation ID: ${correlationId}`, {
-        correlationId
-      });
+      // No user found - log for debugging
+      // console.error(`No user found for merge prepare correlation ID: ${correlationId}`, {
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'AUTHENTICATION_ERROR' },
@@ -199,10 +202,11 @@ export async function POST(request: NextRequest) {
     
     // Verify user is anonymous
     if (!extractIsAnonymous(user)) {
-      console.error(`Non-anonymous user attempted merge prepare for correlation ID: ${correlationId}`, {
-        user_id: user.id,
-        correlationId
-      });
+      // Non-anonymous user attempted merge prepare - log for security monitoring
+      // console.error(`Non-anonymous user attempted merge prepare for correlation ID: ${correlationId}`, {
+      //   user_id: user.id,
+      //   correlationId
+      // });
       
       return NextResponse.json(
         { error: 'USER_NOT_ANONYMOUS' },
@@ -238,20 +242,21 @@ export async function POST(request: NextRequest) {
     });
     
     // Log successful merge preparation
-    console.log(`Merge preparation successful for correlation ID: ${correlationId}`, {
-      user_id: user.id,
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // console.log(`Merge preparation successful for correlation ID: ${correlationId}`, {
+    //   user_id: user.id,
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return response;
     
   } catch (error) {
-    console.error(`Unexpected error in merge prepare for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
-      correlationId,
-      duration_ms: Date.now() - startTime
-    });
+    // Unexpected error - log for debugging
+    // console.error(`Unexpected error in merge prepare for correlation ID: ${correlationId}`, {
+    //   error: scrubPII(error),
+    //   correlationId,
+    //   duration_ms: Date.now() - startTime
+    // });
     
     return NextResponse.json(
       { 
