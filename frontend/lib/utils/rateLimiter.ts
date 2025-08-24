@@ -113,7 +113,7 @@ export const rateLimitConfigs = {
 // Middleware helper
 export async function withRateLimit(
   request: NextRequest, config: RateLimitConfig, keyPrefix: string = 'global'): Promise<Response | null> {
-  const { allowed, remaining, resetTime } = await rateLimiter.checkLimit(
+  const { allowed, resetTime } = await rateLimiter.checkLimit(
     request,
     config,
     keyPrefix
