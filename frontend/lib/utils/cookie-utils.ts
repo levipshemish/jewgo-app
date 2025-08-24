@@ -33,12 +33,12 @@ export const CSRF_COOKIE_OPTIONS: CookieOptions = {
   maxAge: 60 * 60, // 1 hour
 };
 
-export function setSecureCookie(
+export async function setSecureCookie(
   name: string,
   value: string,
   options: Partial<CookieOptions> = {}
-): void {
-  const cookieStore = cookies();
+): Promise<void> {
+  const cookieStore = await cookies();
   const finalOptions = { ...DEFAULT_COOKIE_OPTIONS, ...options };
   
   cookieStore.set(name, value, {
@@ -51,13 +51,13 @@ export function setSecureCookie(
   });
 }
 
-export function getCookie(name: string): string | undefined {
-  const cookieStore = cookies();
+export async function getCookie(name: string): Promise<string | undefined> {
+  const cookieStore = await cookies();
   return cookieStore.get(name)?.value;
 }
 
-export function deleteCookie(name: string, options: Partial<CookieOptions> = {}): void {
-  const cookieStore = cookies();
+export async function deleteCookie(name: string, options: Partial<CookieOptions> = {}): Promise<void> {
+  const cookieStore = await cookies();
   const finalOptions = { ...DEFAULT_COOKIE_OPTIONS, ...options };
   
   cookieStore.set(name, '', {
@@ -66,26 +66,26 @@ export function deleteCookie(name: string, options: Partial<CookieOptions> = {})
   });
 }
 
-export function setAuthCookie(name: string, value: string): void {
-  setSecureCookie(name, value, AUTH_COOKIE_OPTIONS);
+export async function setAuthCookie(name: string, value: string): Promise<void> {
+  await setSecureCookie(name, value, AUTH_COOKIE_OPTIONS);
 }
 
-export function setCSRFCookie(name: string, value: string): void {
-  setSecureCookie(name, value, CSRF_COOKIE_OPTIONS);
+export async function setCSRFCookie(name: string, value: string): Promise<void> {
+  await setSecureCookie(name, value, CSRF_COOKIE_OPTIONS);
 }
 
 // Session rotation utilities
-export function rotateSession(): void {
+export async function rotateSession(): Promise<void> {
   // In a real implementation, this would invalidate the current session
   // and create a new one. For now, we'll just set a new session ID.
   const sessionId = crypto.randomUUID();
-  setAuthCookie('session_id', sessionId);
+  await setAuthCookie('session_id', sessionId);
 }
 
-export function invalidateSession(): void {
-  deleteCookie('session_id', AUTH_COOKIE_OPTIONS);
-  deleteCookie('access_token', AUTH_COOKIE_OPTIONS);
-  deleteCookie('refresh_token', AUTH_COOKIE_OPTIONS);
+export async function invalidateSession(): Promise<void> {
+  await deleteCookie('session_id', AUTH_COOKIE_OPTIONS);
+  await deleteCookie('access_token', AUTH_COOKIE_OPTIONS);
+  await deleteCookie('refresh_token', AUTH_COOKIE_OPTIONS);
 }
 
 // Cookie validation
