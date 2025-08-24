@@ -5,7 +5,7 @@ const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/sit
 export async function verifyTurnstile(
   token: string,
   expectedAction?: string,
-  minScore: number = 0.5
+  _minScore: number = 0.5
 ): Promise<{ success: boolean; score?: number; action?: string; errors?: unknown }> {
   try {
     if (!TURNSTILE_SECRET_KEY) {
@@ -52,7 +52,7 @@ export async function verifyTurnstile(
 
 export function useTurnstile() {
   return {
-    async execute(action: string): Promise<string> {
+    async execute(_action: string): Promise<string> {
       try {
         if (typeof window === 'undefined') {
           return '';

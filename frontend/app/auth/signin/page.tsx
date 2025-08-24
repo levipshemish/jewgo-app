@@ -21,7 +21,12 @@ function SignInForm() {
   // Handle successful authentication
   useEffect(() => {
     if (state.ok) {
-      router.push(redirectTo);
+      // Use full navigation so auth cookies are applied before middleware checks
+      if (typeof window !== 'undefined') {
+        window.location.assign(redirectTo);
+      } else {
+        router.push(redirectTo);
+      }
     }
   }, [state.ok, router, redirectTo]);
 

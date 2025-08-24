@@ -67,7 +67,7 @@ export function createThrottledScrollHandler(
   let lastCall = 0;
   let timeoutId: NodeJS.Timeout | null = null;
 
-  return (event: Event) => {
+  return (_event: Event) => {
     const now = Date.now();
     
     if (now - lastCall >= delay) {
@@ -101,7 +101,7 @@ export function createThrottledResizeHandler(
   let lastCall = 0;
   let timeoutId: NodeJS.Timeout | null = null;
 
-  return (event: Event) => {
+  return (_event: Event) => {
     const now = Date.now();
     
     if (now - lastCall >= delay) {
@@ -134,7 +134,7 @@ export function createDebouncedScrollHandler(
 ): (event: Event) => void {
   let timeoutId: NodeJS.Timeout | null = null;
 
-  return (event: Event) => {
+  return (_event: Event) => {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
