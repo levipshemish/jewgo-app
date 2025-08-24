@@ -22,13 +22,13 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
     if (process.env.REDIS_URL) {
       // Clean up Redis URL (remove trailing % if present)
       const cleanRedisUrl = process.env.REDIS_URL.replace(/%$/, '');
-      redisConfig = Redis.default.parseURL(cleanRedisUrl);
-      Object.assign(redisConfig, {
+      redisConfig = {
+        url: cleanRedisUrl,
         maxRetriesPerRequest: 3,
         lazyConnect: true,
         retryDelayOnFailover: 100,
         enableReadyCheck: false,
-      });
+      };
     } else {
       redisConfig = {
         host: process.env.REDIS_HOST || 'localhost',
