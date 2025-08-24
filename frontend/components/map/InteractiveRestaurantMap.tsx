@@ -932,9 +932,9 @@ export default function InteractiveRestaurantMap({
           sw: { lat: sw.lat(), lng: sw.lng() }, 
           ne: { lat: ne.lat(), lng: ne.lng() } 
         },
-        mapCenter: map.getCenter() ? { 
-          lat: map.getCenter()!.lat(), 
-          lng: map.getCenter()!.lng() 
+        mapCenter: (map as any).getCenter() ? { 
+          lat: (map as any).getCenter()!.lat(), 
+          lng: (map as any).getCenter()!.lng() 
         } : 'unknown',
         zoom: map.getZoom?.() ?? 'unknown',
         totalRestaurants: restaurantsWithCoords.length,
