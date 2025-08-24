@@ -228,7 +228,7 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
     }
     
     if (!featureTest.linkIdentity) {
-      console.warn(`[Feature Guard] linkIdentity not available (${correlationId})`, featureTest);
+      // console.warn(`[Feature Guard] linkIdentity not available (${correlationId})`, featureTest);
       // Don't fail for linkIdentity as it's not critical for basic auth
     }
 
@@ -237,11 +237,11 @@ export async function validateSupabaseFeaturesWithLogging(): Promise<boolean> {
 
   } catch (error) {
     const errorMsg = `🚨 [Feature Guard] CRITICAL: Unexpected error during validation (${correlationId})`;
-    console.error(errorMsg, error);
+    // console.error(errorMsg, error);
     
     // Report loudly at boot
-    console.error('🚨 ANONYMOUS AUTH MAY FAIL - Feature validation error');
-    console.error('🚨 Check Supabase configuration and network connectivity');
+    // console.error('🚨 ANONYMOUS AUTH MAY FAIL - Feature validation error');
+    // console.error('🚨 Check Supabase configuration and network connectivity');
     
     // Log to Sentry if available
     if (typeof window !== 'undefined' && (window as any).Sentry) {

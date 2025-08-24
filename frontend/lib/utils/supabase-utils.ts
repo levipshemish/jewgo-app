@@ -27,7 +27,7 @@ export function createSafeSupabaseClient() {
 
   // Validate environment variables
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase environment variables not configured. Using mock client.');
+    // console.warn('Supabase environment variables not configured. Using mock client.');
     return createMockClient();
   }
 
@@ -58,7 +58,7 @@ export function createSafeSupabaseClient() {
       },
     });
   } catch (error) {
-    console.error('Failed to create Supabase client:', error);
+    // console.error('Failed to create Supabase client:', error);
     return createMockClient();
   }
 

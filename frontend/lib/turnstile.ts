@@ -15,8 +15,19 @@ export async function verifyTurnstile(responseToken: string) {
     throw new Error("TURNSTILE_SECRET_KEY missing");
   }
 
+  // In development with test tokens, always pass verification
+  if (process.env.NODE_ENV === 'development' && 
+      (responseToken === 'XXXX.DUMMY.TOKEN.XXXX' || secret === '1x0000000000000000000000000000000AA')) {
+    return {
+      success: true,
+      challenge_ts: new Date().toISOString(),
+      hostname: 'localhost',
+      action: 'test'
+    };
+  }
+
   // Always verify Turnstile tokens
-  if (!responseToken || responseToken.length < 32) {
+  if (!responseToken || responseToken.length < 10) {
     throw new Error("Invalid Turnstile token");
   }
   

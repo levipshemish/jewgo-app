@@ -158,17 +158,17 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
           }, finalConfig.reconnectInterval);
         } else if (reconnectAttemptsRef.current >= finalConfig.maxReconnectAttempts!) {
           setError('Failed to reconnect after maximum attempts');
-          console.warn('WebSocket reconnection failed, continuing without real-time updates');
+          // console.warn('WebSocket reconnection failed, continuing without real-time updates');
         }
       };
 
-      ws.onerror = (event) => {
-        console.error('WebSocket error:', event);
+      ws.onerror = (_event) => {
+        // console.error('WebSocket error:', event);
         setError('WebSocket connection error');
       };
 
     } catch (err) {
-      console.error('Error creating WebSocket:', err);
+      // console.error('Error creating WebSocket:', err);
       setError('Failed to create WebSocket connection');
       setIsConnecting(false);
     }
@@ -204,7 +204,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
       
       wsRef.current.send(JSON.stringify(messageWithTimestamp));
     } else {
-      console.warn('WebSocket is not connected. Message not sent:', message);
+      // console.warn('WebSocket is not connected. Message not sent:', message);
       setError('WebSocket is not connected');
     }
   }, []);

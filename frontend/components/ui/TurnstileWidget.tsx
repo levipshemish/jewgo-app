@@ -52,12 +52,16 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const [error, setError] = useState<string | null>(null);
 
   // Calculate key analysis at component level
-  const turnstileSiteKey = siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
-  const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
   const isDevelopment = process.env.NODE_ENV === "development";
-  const isLocalhost = process.env.NEXT_PUBLIC_APP_HOSTNAME === "localhost" || 
-                     process.env.NEXT_PUBLIC_URL?.includes("localhost");
-  const isProductionKeyInDev = !isTestKey && isDevelopment;
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  
+  // Use test key for development on localhost
+  const turnstileSiteKey = (isDevelopment && isLocalhost) 
+    ? "1x00000000000000000000AA" 
+    : (siteKey || process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA");
+  
+  const isTestKey = turnstileSiteKey === "1x00000000000000000000AA";
+  const isProductionKeyInDev = !isTestKey && isDevelopment && isLocalhost;
 
   // Always call useEffect hooks in the same order
   useEffect(() => {

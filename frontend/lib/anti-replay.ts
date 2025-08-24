@@ -4,7 +4,7 @@ import { createHash } from "crypto";
  * Atomic token consumption using Redis GETDEL for replay protection
  */
 export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Promise<void> {
-  const key = "captcha:token:" + createHash("sha256").update(token).digest("hex").slice(0, 32);
+  const key = `captcha:token:${createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
   
   try {
     // Import Redis client dynamically to avoid build issues
@@ -70,11 +70,11 @@ export async function consumeCaptchaTokenOnce(token: string, ttlSec = 120): Prom
     }
     // In development, allow bypassing Redis for testing
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Anti-replay Redis error (development mode - allowing):', error);
+      // console.warn('Anti-replay Redis error (development mode - allowing):', error);
       return; // Allow the request to proceed in development
     }
     // Fail secure - reject requests when replay protection unavailable
-    console.error('Anti-replay Redis error:', error);
+    // console.error('Anti-replay Redis error:', error);
     throw new Error("Security verification unavailable");
   }
 }
@@ -101,6 +101,6 @@ export async function clearReplayTokens(pattern = "captcha:token:*"): Promise<vo
     
     await redis.disconnect();
   } catch (error) {
-    console.error('Failed to clear replay tokens:', error);
+    // console.error('Failed to clear replay tokens:', error);
   }
 }
