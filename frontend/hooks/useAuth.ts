@@ -7,11 +7,11 @@ import {
   isSupabaseConfigured, 
   handleUserLoadError, 
   createMockUser,
-  verifyTokenRotation,
   extractIsAnonymous,
-  type TransformedUser,
-  extractJtiFromToken
-} from '@/lib/utils/auth-utils';
+  verifyTokenRotation,
+  extractJtiFromToken,
+  type TransformedUser
+} from '@/lib/utils/auth-utils-client';
 
 /**
  * Custom hook for authentication state management

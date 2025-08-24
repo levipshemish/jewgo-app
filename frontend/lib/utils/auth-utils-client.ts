@@ -111,3 +111,156 @@ export function createMockUser(): TransformedUser {
     updatedAt: new Date().toISOString(),
   };
 }
+
+/**
+ * Extract JWT ID (jti) from access token
+ * Works in both browser and Node.js environments
+ * Converts base64url to base64 before decoding
+ */
+export function extractJtiFromToken(token: string): string | null {
+  try {
+    const segments = token.split('.');
+    if (segments.length !== 3) {
+      return null;
+    }
+    
+    const payloadSegment = segments[1];
+    
+    // Convert base64url to base64: replace -→+, _→/, add = padding
+    const base64Segment = payloadSegment
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    const padding = 4 - (base64Segment.length % 4);
+    const paddedSegment = padding !== 4 ? base64Segment + '='.repeat(padding) : base64Segment;
+    
+    let payload: any;
+    
+    if (typeof window !== 'undefined') {
+      // Browser environment - use atob
+      payload = JSON.parse(atob(paddedSegment));
+    } else {
+      // Node.js environment - use Buffer
+      payload = JSON.parse(Buffer.from(paddedSegment, 'base64').toString('utf-8'));
+    }
+    
+    return payload.jti || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verify token rotation after account upgrade
+ * Checks refresh_token and JWT jti changes between pre/post upgrade states
+ * Returns true if either refresh_token OR jti changed (not requiring both)
+ */
+export function verifyTokenRotation(
+  preUpgradeSession: any,
+  postUpgradeSession: any
+): boolean {
+  try {
+    // Compute refresh_token change
+    const refreshChanged = preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token;
+    
+    // Compute JWT jti change - defensively check that tokens are strings
+    let preJti: string | null = null;
+    let postJti: string | null = null;
+    
+    if (typeof preUpgradeSession.access_token === 'string') {
+      preJti = extractJtiFromToken(preUpgradeSession.access_token);
+    }
+    
+    if (typeof postUpgradeSession.access_token === 'string') {
+      postJti = extractJtiFromToken(postUpgradeSession.access_token);
+    }
+    
+    const jtiChanged = preJti !== postJti;
+    
+    // Return true if either changed, false only if both unchanged
+    if (!refreshChanged && !jtiChanged) {
+      // Token rotation failed: both refresh_token and JWT jti unchanged
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    // Token rotation verification failed - return false as fallback
+    return false;
+  }
+}
+
+/**
+ * Extract JWT ID (jti) from access token
+ * Works in both browser and Node.js environments
+ * Converts base64url to base64 before decoding
+ */
+export function extractJtiFromToken(token: string): string | null {
+  try {
+    const segments = token.split('.');
+    if (segments.length !== 3) {
+      return null;
+    }
+    
+    const payloadSegment = segments[1];
+    
+    // Convert base64url to base64: replace -→+, _→/, add = padding
+    const base64Segment = payloadSegment
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    const padding = 4 - (base64Segment.length % 4);
+    const paddedSegment = padding !== 4 ? base64Segment + '='.repeat(padding) : base64Segment;
+    
+    let payload: any;
+    
+    if (typeof window !== 'undefined') {
+      // Browser environment - use atob
+      payload = JSON.parse(atob(paddedSegment));
+    } else {
+      // Node.js environment - use Buffer
+      payload = JSON.parse(Buffer.from(paddedSegment, 'base64').toString('utf-8'));
+    }
+    
+    return payload.jti || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verify token rotation after account upgrade
+ * Checks refresh_token and JWT jti changes between pre/post upgrade states
+ * Returns true if either refresh_token OR jti changed (not requiring both)
+ */
+export function verifyTokenRotation(
+  preUpgradeSession: any,
+  postUpgradeSession: any
+): boolean {
+  try {
+    // Compute refresh_token change
+    const refreshChanged = preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token;
+    
+    // Compute JWT jti change - defensively check that tokens are strings
+    let preJti: string | null = null;
+    let postJti: string | null = null;
+    
+    if (typeof preUpgradeSession.access_token === 'string') {
+      preJti = extractJtiFromToken(preUpgradeSession.access_token);
+    }
+    
+    if (typeof postUpgradeSession.access_token === 'string') {
+      postJti = extractJtiFromToken(postUpgradeSession.access_token);
+    }
+    
+    const jtiChanged = preJti !== postJti;
+    
+    // Return true if either refresh_token OR jti changed
+    return refreshChanged || jtiChanged;
+  } catch (error) {
+    console.error('Error verifying token rotation:', error);
+    return false;
+  }
+}
