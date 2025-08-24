@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit } from '@/lib/rate-limiting';
+import { checkRateLimit, RATE_LIMIT_CONFIG } from '@/lib/rate-limiting';
 
 export interface RateLimitConfig {
   key: string;
@@ -27,9 +27,13 @@ export async function rateLimitMiddleware(
 
     // Add rate limit headers
     const response = NextResponse.next();
-    response.headers.set('X-RateLimit-Limit', result.limit.toString());
-    response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
-    response.headers.set('X-RateLimit-Reset', result.reset_time.toString());
+    const limit = RATE_LIMIT_CONFIG[config.type]?.max_requests || 10;
+    const remaining = result.remaining_attempts || 0;
+    const resetTime = result.reset_in_seconds || 300;
+    
+    response.headers.set('X-RateLimit-Limit', limit.toString());
+    response.headers.set('X-RateLimit-Remaining', remaining.toString());
+    response.headers.set('X-RateLimit-Reset', resetTime.toString());
 
     if (!result.allowed) {
       // Return rate limit exceeded response
@@ -39,10 +43,10 @@ export async function rateLimitMiddleware(
       );
 
       // Copy rate limit headers
-      errorResponse.headers.set('X-RateLimit-Limit', result.limit.toString());
+      errorResponse.headers.set('X-RateLimit-Limit', limit.toString());
       errorResponse.headers.set('X-RateLimit-Remaining', '0');
-      errorResponse.headers.set('X-RateLimit-Reset', result.reset_time.toString());
-      errorResponse.headers.set('Retry-After', Math.ceil(result.reset_time / 1000).toString());
+      errorResponse.headers.set('X-RateLimit-Reset', resetTime.toString());
+      errorResponse.headers.set('Retry-After', Math.ceil(resetTime).toString());
 
       return errorResponse;
     }
