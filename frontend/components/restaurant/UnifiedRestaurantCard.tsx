@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 import FeedbackButton from '@/components/feedback/FeedbackButton';
@@ -58,7 +58,7 @@ export default function UnifiedRestaurantCard({
   const router = useRouter();
   const { isFavorite } = useFavorites();
   const [imageError, setImageError] = useState(false);
-  // const [imageLoading, setImageLoading] = useState(true);
+  const [imageLoading, setImageLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const { handleImmediateTouch } = useMobileTouch();
 
@@ -130,10 +130,10 @@ export default function UnifiedRestaurantCard({
     return safeUrl;
   };
 
-  // const handleImageLoad = () => setImageLoading(false);
+  const handleImageLoad = () => setImageLoading(false);
   const handleImageError = () => {
     setImageError(true);
-    // setImageLoading(false);
+    setImageLoading(false);
   };
 
   // Get business type information
