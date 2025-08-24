@@ -11,6 +11,9 @@ function validateTurnstileHostname(resultHostname: string | undefined): boolean 
   // In production, require a hostname assertion
   if (process.env.NODE_ENV === 'production' && !resultHostname) return false;
   
+  // If no hostname provided, only allow in development
+  if (!resultHostname) return process.env.NODE_ENV !== 'production';
+  
   const expectedHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || "localhost";
   const expectedHostname = expectedHost.split(':')[0]; // Remove port if present
   const resultHostnameClean = resultHostname.split(':')[0]; // Remove port if present
