@@ -1,4 +1,9 @@
-// import { ValidationResult } from '@/types';
+// Import ValidationResult directly since it's defined locally
+interface ValidationResult<T> {
+  isValid: boolean;
+  data?: T;
+  error?: string;
+}
 import { Restaurant } from '@/lib/types/restaurant';
 
 /**

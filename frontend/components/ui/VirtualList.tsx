@@ -146,7 +146,7 @@ export function VirtualRestaurantList({
   restaurants, height, itemHeight, renderRestaurant, onLoadMore, hasMore = false, loading = false, className = ''
 }: VirtualRestaurantListProps) {
   const [displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
-  // const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);
   const itemsPerPage = 50;
 
   // Load more items when needed
@@ -204,7 +204,7 @@ interface VirtualRestaurantCardProps {
 }
 
 export function VirtualRestaurantCard({
-  restaurant, _index, onClick, showDistance = false, userLocation
+  restaurant, onClick, showDistance = false, userLocation
 }: VirtualRestaurantCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);

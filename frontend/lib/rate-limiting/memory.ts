@@ -200,7 +200,7 @@ export async function storeIdempotencyResult(
     const now = Math.floor(Date.now() / 1000);
     memoryStore.set(`idempotency:${idempotencyKey}`, {
       count: result,
-      expiry: now + ttlSeconds
+      expiry: now + _ttlSeconds
     });
     return;
   }

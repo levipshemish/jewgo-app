@@ -1091,11 +1091,11 @@ export default function InteractiveRestaurantMap({
     const cacheKey: number = parseInt(restaurant.id.toString());
     const now = Date.now();
     
-    // Check cache first
-    const cached = infoWindowCache.current.get(cacheKey);
-    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-      return cached.content;
-    }
+    // Check cache first (TEMPORARILY DISABLED for heart button fix)
+    // const cached = infoWindowCache.current.get(cacheKey);
+    // if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    //   return cached.content;
+    // }
     
     // Generate new content
     const content = _createInfoWindowContent(restaurant, distanceFromUser);
@@ -1171,7 +1171,7 @@ export default function InteractiveRestaurantMap({
 
     const placeholder = '/images/default-restaurant.webp';
     return `
-      <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg">
+      <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg" data-popup-version="v2">
         <!-- Heart/Favorite Button -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
                 class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm ${
