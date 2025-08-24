@@ -1165,11 +1165,12 @@ export default function InteractiveRestaurantMap({
       <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg">
         <!-- Heart/Favorite Button -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
-                class="absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-10 ${
+                class="absolute w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-20 ${
                   isFavorite 
                     ? 'bg-red-100 text-red-500 hover:bg-red-200' 
                     : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
                 } backdrop-blur-sm shadow-sm"
+                style="top: 12px; left: 12px;"
                 title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
           <svg class="w-4 h-4 ${isFavorite ? 'fill-current' : ''}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />

@@ -198,7 +198,6 @@ export function useMarkerManagement({
       
       const element = document.createElement('div');
       element.style.cssText = `
-        filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
         transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
         transition: all 0.2s ease-out;
         cursor: pointer;
@@ -207,12 +206,10 @@ export function useMarkerManagement({
       // Add hover effects
       element.addEventListener('mouseenter', () => {
         element.style.transform = isSelected ? 'scale(1.15)' : 'scale(1.05)';
-        element.style.filter = 'drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25))';
       });
       
       element.addEventListener('mouseleave', () => {
         element.style.transform = isSelected ? 'scale(1.1)' : 'scale(1)';
-        element.style.filter = 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15))';
       });
       
       element.innerHTML = `
@@ -244,10 +241,9 @@ export function useMarkerManagement({
       `;
       return element;
     } else {
-      // Create glassy pin marker content
+      // Create pin marker content
       const element = document.createElement('div');
       element.style.cssText = `
-        filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25));
         transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         cursor: pointer;
@@ -256,12 +252,10 @@ export function useMarkerManagement({
       // Add hover effects
       element.addEventListener('mouseenter', () => {
         element.style.transform = isSelected ? 'scale(1.2)' : 'scale(1.1)';
-        element.style.filter = 'drop-shadow(0 8px 25px rgba(0, 0, 0, 0.35))';
       });
       
       element.addEventListener('mouseleave', () => {
         element.style.transform = isSelected ? 'scale(1.15)' : 'scale(1)';
-        element.style.filter = 'drop-shadow(0 6px 20px rgba(0, 0, 0, 0.25))';
       });
       
       element.innerHTML = `
