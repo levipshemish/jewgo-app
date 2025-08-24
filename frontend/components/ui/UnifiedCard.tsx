@@ -70,7 +70,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
   const [imageError, setImageError] = useState(false);
   // const [imageLoading, setImageLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
+  // const [announcement, setAnnouncement] = useState('');
 
 
 
