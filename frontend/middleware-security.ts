@@ -126,7 +126,7 @@ export async function securityMiddleware(request: NextRequest) {
     // For server actions, check the Next.js action header
     if (url.pathname.startsWith("/api/") && !request.headers.get("next-action")) {
       const referer = request.headers.get("referer");
-      if (referer && !allowedOrigins.some(allowed => referer.startsWith(allowed))) {
+      if (referer && !allowedOrigins.some(allowed => allowed && referer.startsWith(allowed))) {
         return new NextResponse("Forbidden - Invalid Referer", { status: 403 });
       }
     }
