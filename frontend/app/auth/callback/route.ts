@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const error = searchParams.get('error');
     const state = searchParams.get('state');
+    const tokenHash = searchParams.get('token_hash');
+    const otpType = searchParams.get('type');
     const next = searchParams.get('next') || searchParams.get('redirectTo') || '/location-access';
     const safeNext = validateRedirectUrl(next);
 
@@ -38,32 +40,43 @@ export async function GET(request: NextRequest) {
       return redirectWithStateClear(errorUrl);
     }
 
-    if (!code) {
-      console.error('OAuth callback missing authorization code');
-      return redirectWithStateClear('/auth/signin?error=no_code');
+    // If neither code nor token_hash present, bail
+    if (!code && !tokenHash) {
+      console.error('Auth callback missing required parameters');
+      return redirectWithStateClear('/auth/signin?error=missing_params');
     }
 
-    // Validate state using double-submit cookie
-    try {
-      const cookieStore = await cookies();
-      const cookieState = cookieStore.get('oauth_state')?.value;
-
-      if (!cookieState || !state || cookieState !== state) {
-        console.error('OAuth state validation failed');
-        return redirectWithStateClear('/auth/signin?error=invalid_state');
+    // Validate state only for OAuth flows which include a state param
+    if (state) {
+      try {
+        const cookieStore = await cookies();
+        const cookieState = cookieStore.get('oauth_state')?.value;
+        if (!cookieState || cookieState !== state) {
+          console.error('OAuth state validation failed');
+          return redirectWithStateClear('/auth/signin?error=invalid_state');
+        }
+      } catch (err) {
+        console.error('OAuth state cookie validation error:', err);
+        return redirectWithStateClear('/auth/signin?error=state_error');
       }
-    } catch (err) {
-      console.error('OAuth state cookie validation error:', err);
-      return redirectWithStateClear('/auth/signin?error=state_error');
     }
 
-    // Perform server-side code exchange
+    // Perform server-side session establishment
     const supabase = await createServerSupabaseClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    
-    if (exchangeError) {
-      console.error('OAuth code exchange failed:', exchangeError);
-      return redirectWithStateClear('/auth/signin?error=invalid_grant');
+    if (code) {
+      // Works for both OAuth and magic link flows that provide 'code'
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError) {
+        console.error('Auth code exchange failed:', exchangeError);
+        return redirectWithStateClear('/auth/signin?error=invalid_grant');
+      }
+    } else if (tokenHash && otpType) {
+      // Fallback for email OTP flows that provide token_hash + type
+      const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType as any });
+      if (verifyError) {
+        console.error('OTP verification failed:', verifyError);
+        return redirectWithStateClear('/auth/signin?error=otp_invalid');
+      }
     }
 
     // Get user data

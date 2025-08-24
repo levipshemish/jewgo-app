@@ -49,7 +49,7 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
   const [isRendered, setIsRendered] = useState(false);
   const [currentToken, setCurrentToken] = useState('');
   const [widgetId, setWidgetId] = useState<string | null>(null);
-  // const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Calculate key analysis at component level
   const isDevelopment = process.env.NODE_ENV === "development";
@@ -165,7 +165,7 @@ export const TurnstileWidget = React.memo(React.forwardRef<TurnstileWidgetRef, T
       setWidgetId(id);
       setIsRendered(true);
     } catch (_error) {
-      // setError('Failed to render Turnstile widget');
+      setError('Failed to render Turnstile widget');
       onError?.('Failed to render Turnstile widget');
     }
   }, [isLoaded, isRendered, siteKey, action, theme, size, onVerify, onError, onExpired, onLoading]);

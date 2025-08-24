@@ -69,14 +69,96 @@ export default function EnhancedMarketplaceCard({
   const isImageUrl = typeof heroImageUrl === "string" && heroImageUrl.startsWith("http")
 
   return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group",
-        variant === "featured" && "ring-2 ring-blue-200",
-        className,
-      )}
-    >
+    <>
+      {/* Global styles for glassy effects */}
+      <style jsx global>{`
+        .unified-card-tag {
+          position: relative !important;
+          background-color: rgba(17, 24, 39, 0.70) !important; /* slate-900 at 70% */
+          color: #ffffff !important;
+          border-radius: 9999px !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
+          transition: all 0.2s ease-out !important;
+          transform: none !important;
+          backdrop-filter: blur(8px) !important;
+        }
+        .unified-card-tag:hover {
+          background-color: rgba(17, 24, 39, 0.85) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+          transform: translateY(-1px) !important;
+        }
+        .unified-card-tag { cursor: pointer !important; }
+        .unified-card-tag:active { transform: translateY(0px) !important; opacity: 1 !important; }
+        @media (prefers-color-scheme: dark) {
+          .unified-card-tag {
+            background-color: rgba(255, 255, 255, 0.14) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            backdrop-filter: blur(8px) !important;
+          }
+          .unified-card-tag:hover {
+            background-color: rgba(255, 255, 255, 0.22) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          }
+        }
+
+        /* Heart button styling */
+        .unified-card-heart {
+          background-color: transparent !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          border: none !important;
+          padding: 0 !important;
+          cursor: pointer !important;
+          -webkit-tap-highlight-color: transparent !important;
+          touch-action: manipulation !important;
+          z-index: 10 !important;
+          transition: all 0.2s ease-out !important;
+        }
+        .unified-card-heart:hover { transform: scale(1.1) !important; }
+        .unified-card-heart:active { transform: scale(0.95) !important; opacity: 1 !important; }
+        .unified-card-heart svg {
+          width: 14px !important;
+          height: 14px !important;
+          transition: all 0.2s ease-out !important;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+        }
+        /* Heart color control - light grey fill by default */
+        .unified-card-heart svg {
+          color: rgb(156, 163, 175) !important; /* light grey for default state */
+          fill: rgb(156, 163, 175) !important; /* light grey fill for default state */
+          stroke: #ffffff !important; /* white outline */
+          stroke-width: 1.5px !important;
+        }
+        .unified-card-heart:hover svg {
+          color: rgb(239, 68, 68) !important; /* red on hover */
+          fill: rgb(239, 68, 68) !important; /* red fill on hover */
+          stroke: #ffffff !important; /* keep white outline */
+        }
+        .unified-card-heart.liked svg {
+          color: rgb(239, 68, 68) !important; /* red when liked */
+          fill: rgb(239, 68, 68) !important; /* red fill when liked */
+          stroke: #ffffff !important; /* keep white outline */
+        }
+      `}</style>
+      <div
+        onClick={onClick}
+        className={cn(
+          "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group",
+          variant === "featured" && "ring-2 ring-blue-200",
+          className,
+        )}
+      >
       {/* Image Section */}
       <div className={cardStyles.imageContainer.default}>
         {isImageUrl ? (
@@ -104,7 +186,7 @@ export default function EnhancedMarketplaceCard({
         {/* Category Badge */}
         {listing.category_name && (
           <div className={cardStyles.badge.topLeft}>
-            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm">
+            <span className="unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full text-white shadow-sm">
               {listing.category_name}
             </span>
           </div>
@@ -115,10 +197,8 @@ export default function EnhancedMarketplaceCard({
           onClick={handleLikeClick}
           className={cn(
             cardStyles.button.topRight,
-            "p-1 rounded-full transition-all duration-200",
-            isLiked
-              ? "text-red-500 bg-red-50 shadow-sm"
-              : "text-gray-400 bg-white/90 backdrop-blur-sm hover:text-red-500 hover:bg-red-50 shadow-sm",
+            "unified-card-heart p-1 rounded-full transition-all duration-200",
+            isLiked ? "liked" : "",
           )}
         >
           <Heart className={cn("w-3.5 h-3.5", isLiked ? "fill-current" : "")} />
@@ -129,8 +209,7 @@ export default function EnhancedMarketplaceCard({
           <div className={cardStyles.badge.bottomLeft}>
             <span
               className={cn(
-                "px-1.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
-                getConditionColor(listing.condition),
+                "unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
               )}
             >
               {listing.condition.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
@@ -140,9 +219,9 @@ export default function EnhancedMarketplaceCard({
 
         {/* Rating Badge */}
         {listing.rating && listing.rating > 0 && (
-          <div className={cn(cardStyles.badge.bottomRight, "flex items-center bg-white/90 backdrop-blur-sm rounded-full px-1.5 py-0.5 shadow-sm")}>
+          <div className={cn(cardStyles.badge.bottomRight, "flex items-center unified-card-tag rounded-full px-1.5 py-0.5 shadow-sm")}>
             <Star className="w-3 h-3 text-yellow-500 fill-current mr-0.5" />
-            <span className="text-xs font-medium text-gray-700">{listing.rating.toFixed(1)}</span>
+            <span className="text-xs font-medium text-white">{listing.rating.toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -169,7 +248,7 @@ export default function EnhancedMarketplaceCard({
             )}
           </div>
 
-          <span className={cn("px-1.5 py-0.5 text-xs font-medium rounded-full", getListingTypeColor(listing.kind))}>
+          <span className={cn("unified-card-tag px-1.5 py-0.5 text-xs font-medium rounded-full")}>
             {listing.kind.charAt(0).toUpperCase() + listing.kind.slice(1)}
           </span>
         </div>
@@ -229,5 +308,6 @@ export default function EnhancedMarketplaceCard({
         </div>
       </div>
     </div>
+    </>
   )
 }

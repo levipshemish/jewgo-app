@@ -5,13 +5,13 @@ import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 
 function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
-  const [anonymousTurnstileToken, setAnonymousTurnstileToken] = useState("");
   const [anonError, setAnonError] = useState<string | null>(null);
   const [anonLoading, setAnonLoading] = useState(false);
   const router = useRouter();
@@ -32,14 +32,9 @@ function SignInForm() {
 
   // Anonymous success handled inline in handler
 
-  // Handle Turnstile verification for email signin
+  // Handle Turnstile verification (shared for all flows)
   const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token);
-  };
-
-  // Handle Turnstile verification for anonymous signin
-  const handleAnonymousTurnstileVerify = (token: string) => {
-    setAnonymousTurnstileToken(token);
   };
 
   // Handle form submission
@@ -51,20 +46,76 @@ function SignInForm() {
     formAction(formData);
   };
 
+  // Start OAuth flow (Google/Apple) via Supabase
+  const handleOAuthSignIn = useCallback(async (provider: 'google' | 'apple') => {
+    try {
+      // Get CSRF-ish state and set httpOnly cookie for double-submit validation
+      const stateRes = await fetch('/api/auth/oauth/state', { method: 'POST', credentials: 'include' });
+      const { state } = await stateRes.json();
+
+      const nextUrl = redirectTo || '/eatery';
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const redirectUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+
+      await supabaseClient.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            state,
+          },
+        },
+      });
+    } catch (_err) {
+      // surface basic error via URL
+      router.push(`/auth/signin?error=oauth_init_failed&provider=${provider}`);
+    }
+  }, [router, redirectTo]);
+
+  // Magic link (passwordless) sign-in via Supabase
+  const [magicStatus, setMagicStatus] = useState<string | null>(null);
+  const handleSendMagicLink = useCallback(async () => {
+    setMagicStatus(null);
+    if (!email) {
+      setMagicStatus('Please enter your email first.');
+      return;
+    }
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const nextUrl = redirectTo || '/eatery';
+      const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo,
+          captchaToken: turnstileToken || undefined,
+        },
+      });
+      if (error) {
+        setMagicStatus(error.message || 'Failed to send magic link.');
+        return;
+      }
+      setMagicStatus('Check your email for a sign-in link.');
+    } catch (_err) {
+      setMagicStatus('Failed to send magic link.');
+    }
+  }, [email, redirectTo, turnstileToken]);
+
   const handleAnonymousSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAnonError(null);
     setAnonLoading(true);
     
     // Debug logging
-    // console.log('Anonymous sign-in attempt with token:', anonymousTurnstileToken ? 'Present' : 'Missing');
+    // console.log('Anonymous sign-in attempt with token:', turnstileToken ? 'Present' : 'Missing');
     
     try {
       const res = await fetch('/api/auth/anonymous', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ turnstileToken: anonymousTurnstileToken || null })
+        body: JSON.stringify({ turnstileToken: turnstileToken || null })
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) {
@@ -91,7 +142,7 @@ function SignInForm() {
       setAnonError('Guest sign-in failed. Please try again.');
       setAnonLoading(false);
     }
-  }, [router, redirectTo, anonymousTurnstileToken]);
+  }, [router, redirectTo, turnstileToken]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
@@ -138,13 +189,14 @@ function SignInForm() {
               />
             </div>
 
-            {/* Turnstile widget */}
+            {/* Turnstile widget (single, shared across flows) */}
             <div className="flex justify-center">
               <TurnstileWidget
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
                 onVerify={handleTurnstileVerify}
                 action="signin"
                 theme="dark"
+                size="compact"
               />
             </div>
 
@@ -171,17 +223,37 @@ function SignInForm() {
             </div>
           </div>
 
+          {/* OAuth Providers */}
+          <div className="mt-6 grid grid-cols-1 gap-3">
+            <button
+              type="button"
+              onClick={() => handleOAuthSignIn('google')}
+              className="w-full inline-flex items-center justify-center py-3 px-4 border border-neutral-600 rounded-lg bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              aria-label="Continue with Google"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 533.5 544.3" aria-hidden="true">
+                <path fill="#EA4335" d="M533.5 278.4c0-18.5-1.7-36.3-4.8-53.6H272v101.5h147c-6.3 34-25.1 62.8-53.6 82v68.2h86.6c50.6-46.6 81.5-115.4 81.5-198.1z"/>
+                <path fill="#34A853" d="M272 544.3c72.8 0 134-24.1 178.7-65.7l-86.6-68.2c-24.1 16.2-55 25.9-92.1 25.9-70.8 0-130.8-47.8-152.3-112.1H30.7v70.5C75.1 490.3 167.4 544.3 272 544.3z"/>
+                <path fill="#4A90E2" d="M119.7 324.1c-5.5-16.2-8.7-33.5-8.7-51.2s3.2-35 8.7-51.2V151H30.7C11 189.6 0 232.1 0 272.9s11 83.3 30.7 121.9l89-70.7z"/>
+                <path fill="#FBBC05" d="M272 107.7c39.6 0 75.2 13.6 103.2 40.4l77.4-77.4C406 25.3 344.8 0 272 0 167.4 0 75.1 54 30.7 151l89 70.7C141.2 155.5 201.2 107.7 272 107.7z"/>
+              </svg>
+              Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuthSignIn('apple')}
+              className="w-full inline-flex items-center justify-center py-3 px-4 border border-neutral-600 rounded-lg bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              aria-label="Continue with Apple"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M16.365 1.43c0 1.14-.414 1.947-1.242 2.535-.828.59-1.756.95-2.785 1.09-.048-.174-.072-.365-.072-.575 0-1.094.377-1.973 1.131-2.642.757-.67 1.708-1.008 2.954-1.008.004.2.014.4.014.6zM21.6 17.42c-.34.786-.75 1.49-1.23 2.113-.57.742-1.04 1.254-1.41 1.533-.565.52-1.172.79-1.82.81-.465.01-1.026-.13-1.684-.42-.658-.29-1.264-.435-1.82-.435-.58 0-1.203.145-1.87.435-.666.29-1.206.438-1.62.446-.62.012-1.236-.26-1.85-.82-.39-.32-.875-.85-1.453-1.59-.623-.8-1.136-1.723-1.54-2.77-.43-1.11-.645-2.184-.645-3.22 0-1.19.257-2.22.77-3.09.402-.7.94-1.25 1.612-1.66.672-.41 1.398-.62 2.177-.63.51-.01 1.176.16 1.996.51.818.35 1.343.53 1.57.53.17 0 .73-.206 1.686-.62.904-.39 1.668-.55 2.29-.48 1.69.14 2.96.81 3.81 2.01-1.51.91-2.26 2.19-2.25 3.83.01 1.28.47 2.35 1.38 3.2.41.38.86.67 1.35.86-.11.32-.23.63-.37.93z"/>
+              </svg>
+              Continue with Apple
+            </button>
+          </div>
+
           {/* Anonymous Sign In */}
           <form onSubmit={handleAnonymousSignIn} className="mt-6">
-            {/* Turnstile widget for anonymous signin */}
-            <div className="flex justify-center mb-4">
-              <TurnstileWidget
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                onVerify={handleAnonymousTurnstileVerify}
-                action="anonymous_signin"
-                theme="dark"
-              />
-            </div>
             <button
               type="submit"
               disabled={anonLoading}
@@ -197,6 +269,22 @@ function SignInForm() {
               <div className="text-red-400 text-sm text-center mt-2">{anonError}</div>
             )}
           </form>
+
+          {/* Magic Link */}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleSendMagicLink}
+              className="w-full inline-flex justify-center py-3 px-4 border border-neutral-600 rounded-lg shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+            >
+              Send me a magic link
+            </button>
+            {magicStatus && (
+              <div className="text-sm text-center mt-2 {magicStatus.includes('Check') ? 'text-green-400' : 'text-red-400'}">
+                {magicStatus}
+              </div>
+            )}
+          </div>
 
           <div className="mt-6 text-center">
             <Link
