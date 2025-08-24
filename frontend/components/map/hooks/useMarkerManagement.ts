@@ -217,27 +217,61 @@ export function useMarkerManagement({
       
       element.innerHTML = `
         <svg width="${bubbleWidth}" height="${bubbleHeight}" viewBox="0 0 ${bubbleWidth} ${bubbleHeight}">
-          <!-- Rating bubble with colored border -->
+          <defs>
+            <!-- Glass gradient for background -->
+            <linearGradient id="glassGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:rgba(255,255,255,0.95);stop-opacity:1" />
+              <stop offset="30%" style="stop-color:rgba(255,255,255,0.85);stop-opacity:1" />
+              <stop offset="70%" style="stop-color:rgba(255,255,255,0.75);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:rgba(255,255,255,0.65);stop-opacity:1" />
+            </linearGradient>
+            
+            <!-- Colored gradient for selected state -->
+            <linearGradient id="selectedGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:${finalColor};stop-opacity:0.9" />
+              <stop offset="100%" style="stop-color:${finalColor};stop-opacity:0.7" />
+            </linearGradient>
+            
+            <!-- Border gradient -->
+            <linearGradient id="borderGradient-${restaurant.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:${finalColor};stop-opacity:1" />
+              <stop offset="100%" style="stop-color:${finalColor};stop-opacity:0.8" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Main background with glass effect -->
           <rect x="2" y="2" width="${bubbleWidth - 4}" height="${bubbleHeight - 4}" 
                 rx="${(bubbleHeight - 4) / 2}" ry="${(bubbleHeight - 4) / 2}"
-                fill="${isSelected ? finalColor : 'rgba(255, 255, 255, 0.95)'}" 
-                stroke="${finalColor}" 
+                fill="${isSelected ? `url(#selectedGradient-${restaurant.id})` : `url(#glassGradient-${restaurant.id})`}" 
+                stroke="url(#borderGradient-${restaurant.id})" 
                 stroke-width="2"/>
           
-          <!-- Star icon -->
+          <!-- Glass highlight overlay -->
+          <rect x="3" y="3" width="${bubbleWidth - 6}" height="${(bubbleHeight - 6) * 0.4}" 
+                rx="${(bubbleHeight - 6) / 4}" ry="${(bubbleHeight - 6) / 4}"
+                fill="rgba(255,255,255,0.6)" opacity="0.9"/>
+          
+          <!-- Inner glow -->
+          <rect x="2.5" y="2.5" width="${bubbleWidth - 5}" height="${bubbleHeight - 5}" 
+                rx="${(bubbleHeight - 5) / 2}" ry="${(bubbleHeight - 5) / 2}"
+                fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="0.5"/>
+          
+          <!-- Star icon with glow -->
           <text x="${bubbleWidth/2 - 6}" y="${bubbleHeight/2 + 4}" 
                 text-anchor="middle" 
                 font-family="Arial, sans-serif" 
                 font-size="8" 
-                fill="#FFD700">⭐</text>
+                fill="#FFD700"
+                style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));">⭐</text>
           
-          <!-- Rating text -->
+          <!-- Rating text with shadow -->
           <text x="${bubbleWidth/2 + 6}" y="${bubbleHeight/2 + 4}" 
                 text-anchor="middle" 
                 font-family="Arial, sans-serif" 
                 font-size="10" 
                 font-weight="bold" 
-                fill="${isSelected ? '#FFFFFF' : '#1a1a1a'}">
+                fill="${isSelected ? '#FFFFFF' : '#1a1a1a'}"
+                style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));">
             ${rating.toFixed(1)}
           </text>
         </svg>

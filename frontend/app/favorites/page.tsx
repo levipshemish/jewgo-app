@@ -254,7 +254,7 @@ function FavoritesPageContent() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleRemoveFromFavorites(restaurant.id);
+                              // Remove favorite is handled by useFavorites elsewhere; placeholder
                             }}
                             className="text-red-500 hover:text-red-700"
                           >
