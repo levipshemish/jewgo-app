@@ -142,27 +142,7 @@ export default function InteractiveRestaurantMap({
       return !isNaN(lat) && !isNaN(lng);
     });
     
-    // Debug logging only in development
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('InteractiveRestaurantMap: Restaurant filtering:', {
-        totalRestaurants: safeRestaurants.length,
-        restaurantsWithCoords: filtered.length,
-        sampleRestaurant: safeRestaurants[0] ? {
-          id: safeRestaurants[0].id,
-          name: safeRestaurants[0].name,
-          hasCoords: !!(safeRestaurants[0].latitude && safeRestaurants[0].longitude),
-          latitude: safeRestaurants[0].latitude,
-          longitude: safeRestaurants[0].longitude
-        } : null,
-        filteredSample: filtered[0] ? {
-          id: filtered[0].id,
-          name: filtered[0].name,
-          latitude: filtered[0].latitude,
-          longitude: filtered[0].longitude
-        } : null
-      });
-    }
+
     
     return filtered;
   }, [safeRestaurants]);
@@ -336,16 +316,8 @@ export default function InteractiveRestaurantMap({
       
       // Start batch processing
       if (inView.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('debouncedUpdateMarkers: Processing', inView.length, 'restaurants in view');
-        }
         batchProcessor();
       } else {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('debouncedUpdateMarkers: No restaurants in view');
-        }
         markersRef.current = newMarkers;
         currentRenderedIdsRef.current = new Set();
         applyClustering(map);
@@ -379,26 +351,7 @@ export default function InteractiveRestaurantMap({
     };
   }, []);
 
-  // Debug logging for restaurant data
-  if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log('InteractiveRestaurantMap: Restaurant filtering:', {
-      totalRestaurants: restaurants.length,
-      restaurantsWithCoords: restaurantsWithCoords.length,
-      sampleRestaurant: restaurantsWithCoords[0] ? {
-        id: restaurantsWithCoords[0].id,
-        name: restaurantsWithCoords[0].name,
-        lat: restaurantsWithCoords[0].latitude,
-        lng: restaurantsWithCoords[0].longitude
-      } : null,
-      filteredSample: restaurantsWithCoords.slice(0, 3).map(r => ({ 
-        id: r.id, 
-        name: r.name, 
-        lat: r.latitude, 
-        lng: r.longitude 
-      }))
-    });
-  }
+
 
   // Load Google Maps API via unified loader
   useEffect(() => {
@@ -445,16 +398,7 @@ export default function InteractiveRestaurantMap({
         return;
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log('InteractiveRestaurantMap: Google Maps API loaded. Available libraries:', {
-          hasMarkerLibrary: !!(window.google.maps.marker),
-          hasAdvancedMarker: !!(window.google.maps.marker?.AdvancedMarkerElement),
-          hasRegularMarker: !!(window.google.maps.Marker),
-          hasLatLngBounds: !!(window.google.maps.LatLngBounds),
-          hasGeometry: !!((window.google.maps as any)?.geometry)
-        });
-      }
+
 
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console

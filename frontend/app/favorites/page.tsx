@@ -105,7 +105,7 @@ function FavoritesPageContent() {
   };
 
   const handleAddEatery = () => {
-    router.push('/auth/signin?redirectTo=%2Fadd-eatery');
+    router.push('/add-eatery');
   };
 
   const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
