@@ -381,6 +381,29 @@ export default function UnifiedLiveMapClient() {
     setSelectedRestaurant({ ...restaurant });
   }, []);
 
+  // Transform restaurant data to match UnifiedCard's CardData interface
+  const transformRestaurantToCardData = useCallback((restaurant: Restaurant) => {
+    const rating = restaurant.rating || restaurant.star_rating || restaurant.google_rating || restaurant.quality_rating;
+    const ratingText = rating ? rating.toFixed(1) : undefined;
+    
+    const distanceText = restaurant.distance && restaurant.distance.trim() !== '' ? restaurant.distance : '';
+    const priceRange = restaurant.price_range && restaurant.price_range.trim() !== '' ? restaurant.price_range : '';
+    
+    return {
+      id: restaurant.id.toString(),
+      imageUrl: restaurant.image_url,
+      imageTag: restaurant.kosher_category,
+      title: restaurant.name,
+      badge: ratingText,
+      subtitle: priceRange,
+      additionalText: distanceText,
+      showHeart: true,
+      isLiked: false, // Will be set by the component based on favorites state
+      kosherCategory: restaurant.kosher_category,
+      city: restaurant.city,
+    };
+  }, []);
+
   const handleFilterChange = useCallback((filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
   }, [setFilter]);
