@@ -84,28 +84,37 @@ export default function InteractiveRestaurantMap({
         const newIsFavorite = !isCurrentlyFavorite;
         const button = buttonElement;
         
-        // Update button classes
+        // Update data attribute
+        button.setAttribute('data-favorite', newIsFavorite ? 'true' : 'false');
+        
+        // Update button classes and SVG
         if (newIsFavorite) {
+          // Update button styles for favorite state
           button.className = button.className.replace(
             'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500',
             'bg-red-100 text-red-500 hover:bg-red-200'
           );
           button.setAttribute('title', 'Remove from favorites');
+          
           // Make heart filled
           const svg = button.querySelector('svg');
           if (svg) {
             svg.classList.add('fill-current');
+            svg.setAttribute('fill', 'currentColor');
           }
         } else {
+          // Update button styles for non-favorite state
           button.className = button.className.replace(
             'bg-red-100 text-red-500 hover:bg-red-200',
             'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
           );
           button.setAttribute('title', 'Add to favorites');
+          
           // Make heart outlined
           const svg = button.querySelector('svg');
           if (svg) {
             svg.classList.remove('fill-current');
+            svg.setAttribute('fill', 'none');
           }
         }
         
@@ -443,7 +452,7 @@ export default function InteractiveRestaurantMap({
           hasAdvancedMarker: !!(window.google.maps.marker?.AdvancedMarkerElement),
           hasRegularMarker: !!(window.google.maps.Marker),
           hasLatLngBounds: !!(window.google.maps.LatLngBounds),
-          hasGeometry: !!(window.google.maps.geometry)
+          hasGeometry: !!((window.google.maps as any)?.geometry)
         });
       }
 
@@ -1165,21 +1174,23 @@ export default function InteractiveRestaurantMap({
       <div class="p-4 max-w-sm relative bg-white rounded-xl shadow-lg">
         <!-- Heart/Favorite Button -->
         <button onclick="window.toggleMapFavorite && window.toggleMapFavorite('${restaurant.id}', this)"
-                class="absolute w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 z-20 ${
+                class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm shadow-sm ${
                   isFavorite 
                     ? 'bg-red-100 text-red-500 hover:bg-red-200' 
                     : 'bg-white/90 hover:bg-white text-gray-600 hover:text-red-500'
-                } backdrop-blur-sm shadow-sm"
-                style="top: 12px; left: 12px;"
+                }"
+                style="position: absolute !important; top: 12px !important; left: 12px !important; z-index: 30 !important;"
+                data-favorite="${isFavorite ? 'true' : 'false'}"
                 title="${isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-          <svg class="w-4 h-4 ${isFavorite ? 'fill-current' : ''}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="w-4 h-4 ${isFavorite ? 'fill-current' : ''}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="${isFavorite ? 'currentColor' : 'none'}">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
         
         <!-- Close Button -->
         <button onclick="this.parentElement.parentElement.parentElement.close()"
-                class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-lg font-bold leading-none z-10">
+                style="position: absolute !important; top: 12px !important; right: 12px !important; z-index: 25 !important;"
+                class="text-gray-400 hover:text-gray-600 text-lg font-bold leading-none">
           ×
         </button>
 
