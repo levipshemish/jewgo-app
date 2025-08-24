@@ -292,7 +292,7 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function SecuritySettings({ _user }: { user: TransformedUser }) {
+function SecuritySettings({ user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
@@ -344,7 +344,7 @@ function SecuritySettings({ _user }: { user: TransformedUser }) {
   );
 }
 
-function NotificationSettings({ _user }: { user: TransformedUser }) {
+function NotificationSettings({ user }: { user: TransformedUser }) {
   const [preferences, setPreferences] = useState({
     specials: true,
     newRestaurants: true,
