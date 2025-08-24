@@ -138,10 +138,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           category: { name: 'restaurant' } as any
         };
         addFavorite(minimalRestaurant);
-        setAnnouncement(`Added ${data.title} to favorites`);
+        // setAnnouncement(`Added ${data.title} to favorites`);
       } else {
         removeFavorite(data.id.toString()); // Ensure ID is string
-        setAnnouncement(`Removed ${data.title} from favorites`);
+        // setAnnouncement(`Removed ${data.title} from favorites`);
       }
       
       onLikeToggle?.(data.id.toString(), newIsLiked); // Ensure ID is string
