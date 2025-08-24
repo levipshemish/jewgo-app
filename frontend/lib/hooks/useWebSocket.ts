@@ -144,7 +144,7 @@ export function useWebSocket(config: Partial<WebSocketConfig> = {}): UseWebSocke
         }
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = (_event) => {
         setIsConnected(false);
         setIsConnecting(false);
         stopHeartbeat();

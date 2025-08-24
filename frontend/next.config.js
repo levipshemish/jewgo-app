@@ -192,9 +192,8 @@ const nextConfig = {
       { source: '/api/remove-duplicates/:path*', destination: `${BACKEND_URL}/api/remove-duplicates/:path*`, permanent: false },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*`, permanent: false },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*`, permanent: false },
-      // Add restaurants API redirects
-      { source: '/api/restaurants/:path*', destination: `${BACKEND_URL}/api/restaurants/:path*`, permanent: false },
-      { source: '/api/restaurants-with-images/:path*', destination: `${BACKEND_URL}/api/restaurants-with-images/:path*`, permanent: false },
+      // Note: Do not redirect '/api/restaurants/*' so that Next API routes
+      // like '/api/restaurants' and '/api/restaurants/filter-options' work locally
     ];
   },
   // Rewrites configuration
@@ -209,9 +208,8 @@ const nextConfig = {
       { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*` },
       { source: '/api/update-database/:path*', destination: `${BACKEND_URL}/api/update-database/:path*` },
       { source: '/api/test/:path*', destination: `${BACKEND_URL}/api/test/:path*` },
-      // Add restaurants API rewrites
-      { source: '/api/restaurants/:path*', destination: `${BACKEND_URL}/api/restaurants/:path*` },
-      { source: '/api/restaurants-with-images/:path*', destination: `${BACKEND_URL}/api/restaurants-with-images/:path*` },
+      // Note: Do not rewrite '/api/restaurants/*' so that Next API routes
+      // like '/api/restaurants' and '/api/restaurants/filter-options' work locally
     ];
   },
 };

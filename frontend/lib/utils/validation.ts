@@ -1,4 +1,4 @@
-import { ValidationResult } from '@/types';
+// import { ValidationResult } from '@/types';
 import { Restaurant } from '@/lib/types/restaurant';
 
 /**
@@ -35,8 +35,8 @@ export function validateRestaurants(restaurants: unknown[]): Restaurant[] {
 
   const validRestaurants = restaurants.filter(isValidRestaurant);
   
-  if (validRestaurants.length !== restaurants.length) {
-    }
+  // if (validRestaurants.length !== restaurants.length) {
+  //   }
 
   return validRestaurants;
 }
