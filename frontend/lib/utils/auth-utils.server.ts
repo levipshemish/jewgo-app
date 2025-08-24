@@ -33,8 +33,8 @@ import {
 const MERGE_COOKIE_HMAC_KEY = MERGE_COOKIE_HMAC_KEY_CURRENT || (process.env.NODE_ENV === 'development' ? 'dev-hmac-key' : undefined);
 const MERGE_COOKIE_HMAC_KEY_V2 = MERGE_COOKIE_HMAC_KEY_PREVIOUS || (process.env.NODE_ENV === 'development' ? 'dev-hmac-key-v2' : undefined);
 
-// Validate HMAC keys in production
-if (process.env.NODE_ENV === 'production') {
+// Validate HMAC keys in production (only if actually deployed to production)
+if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
   if (!MERGE_COOKIE_HMAC_KEY) {
     throw new Error("MERGE_COOKIE_HMAC_KEY_CURRENT required in production");
   }
