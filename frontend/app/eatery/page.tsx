@@ -463,13 +463,12 @@ function EateryPageContent() {
     }
   }, [isMobile, isScrolling]);
 
-  // Mobile-optimized styles
-  const mobileOptimizedStyles = useMemo(() => {
+  // Consistent responsive styles
+  const responsiveStyles = useMemo(() => {
     const styles = {
       container: {
         minHeight: isMobile ? viewportHeight : 'auto',
-        padding: isMobile ? '8px' : '16px',
-        // Remove backgroundColor override to let CSS handle it
+        // Use consistent padding across all screen sizes
       },
       filtersContainer: {
         position: isMobile ? 'fixed' as const : 'relative' as const,
@@ -485,19 +484,6 @@ function EateryPageContent() {
         maxHeight: isMobile ? '80vh' : 'auto',
         overflowY: isMobile ? 'auto' as const : 'visible' as const,
       },
-      grid: {
-        display: 'grid',
-        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: '16px', // Consistent gap across all screen sizes
-        padding: '16px', // Consistent padding across all screen sizes
-      },
-      card: {
-        backgroundColor: 'transparent',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-        transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
-      },
       loadMoreButton: {
         ...mobileStyles.touchButton,
         width: isMobile ? '100%' : 'auto',
@@ -510,7 +496,7 @@ function EateryPageContent() {
 
   if (error) {
     return (
-      <div style={mobileOptimizedStyles.container}>
+      <div style={responsiveStyles.container}>
         <Header />
         
         {/* Navigation Tabs - Always visible */}
@@ -543,22 +529,10 @@ function EateryPageContent() {
   return (
     <div 
       className="min-h-screen bg-[#f4f4f4]"
-      style={mobileOptimizedStyles.container}
+      style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      ref={(el) => {
-        if (el) {
-          // console.log('🔍 Eatery Page Debug - Main Container Element:', {
-          //   className: el.className,
-          //   style: el.style.cssText,
-          //   computedStyle: window.getComputedStyle(el),
-          //   backgroundColor: window.getComputedStyle(el).backgroundColor,
-          //   background: window.getComputedStyle(el).background,
-          //   element: el
-          // });
-        }
-      }}
     >
       <Header />
       
@@ -632,32 +606,17 @@ function EateryPageContent() {
 
 
 
-      {/* Restaurant grid with mobile optimization */}
+      {/* Restaurant grid with consistent responsive spacing */}
       {restaurants.length === 0 && !loading ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🍽️</div>
-          <p style={{ fontSize: '18px', color: '#666' }}>No restaurants found</p>
-          <p style={{ fontSize: '14px', color: '#999', marginTop: '8px' }}>
+        <div className="text-center py-10 px-5">
+          <div className="text-5xl mb-4">🍽️</div>
+          <p className="text-lg text-gray-600 mb-2">No restaurants found</p>
+          <p className="text-sm text-gray-500">
             Try adjusting your filters or check back later
           </p>
         </div>
       ) : (
-        <div 
-          className="restaurant-grid"
-          style={mobileOptimizedStyles.grid}
-          ref={(el) => {
-            if (el) {
-              // console.log('🔍 Eatery Page Debug - Restaurant Grid Element:', {
-              //   className: el.className,
-              //   style: el.style.cssText,
-              //   computedStyle: window.getComputedStyle(el),
-              //   backgroundColor: window.getComputedStyle(el).backgroundColor,
-              //   background: window.getComputedStyle(el).background,
-              //   element: el
-              // });
-            }
-          }}
-        >
+        <div className="restaurant-grid">
           {restaurants.map((restaurant, index) => (
             <div key={restaurant.id}>
               <UnifiedCard
@@ -673,16 +632,16 @@ function EateryPageContent() {
         </div>
       )}
 
-      {/* Mobile-optimized loading states */}
+      {/* Loading states with consistent spacing */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div className="text-center py-5">
           <p>Loading restaurants...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {isMobile && isLoadingMore && (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div className="text-center py-5">
           <p>Loading more...</p>
         </div>
       )}
@@ -691,11 +650,7 @@ function EateryPageContent() {
       {isMobile && hasMore && (
         <div 
           ref={loadingRef}
-          style={{ 
-            height: '20px', 
-            width: '100%',
-            margin: '20px 0'
-          }}
+          className="h-5 w-full my-5"
         />
       )}
 
@@ -719,11 +674,7 @@ function EateryPageContent() {
       {isMobile && hasMore && (
         <div 
           ref={loadingRef}
-          style={{ 
-            height: '20px', 
-            width: '100%',
-            margin: '20px 0'
-          }}
+          className="h-5 w-full my-5"
         />
       )}
 

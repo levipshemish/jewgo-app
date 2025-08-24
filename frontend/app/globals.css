@@ -720,12 +720,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   max-width: 100% !important;
 }
 
-/* Restaurant grid responsive adjustments */
+/* Restaurant card responsive styling */
 @media (max-width: 640px) {
-  .restaurant-grid {
-    gap: 0.5rem !important;
-  }
-  
   .restaurant-card {
     @apply rounded-3xl;
   }
@@ -756,14 +752,6 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   .restaurant-card .w-full {
     width: 100% !important;
     min-width: 0 !important;
-  }
-}
-
-/* Desktop restaurant grid - ensure consistent spacing */
-@media (min-width: 641px) {
-  .restaurant-grid {
-    gap: 16px !important; /* Consistent gap */
-    padding: 16px !important; /* Consistent padding */
   }
 }
 
@@ -801,13 +789,6 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 
 /* Responsive Adjustments */
 @media (max-width: 640px) {
-  /* Ensure proper grid behavior on mobile */
-  .restaurant-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 16px !important; /* Consistent gap */
-    padding: 16px !important; /* Consistent padding */
-  }
-  
   /* Remove any horizontal scrolling on mobile */
   .restaurant-grid {
     overflow-x: visible !important;
@@ -2716,11 +2697,12 @@ div[class*="specials-dynamic-grid"] {
     }
   }
 
-/* Eatery Grid Layout - Responsive design */
+/* Eatery Grid Layout - Consistent responsive design */
 .restaurant-grid {
   display: grid !important;
-  gap: 1rem !important;
   align-items: start !important; /* Ensure cards align to top */
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Ensure proper card sizing without forcing height */
@@ -2885,68 +2867,48 @@ div[class*="specials-dynamic-grid"] {
   background-image: none !important;
 }
 
+/* Mobile: 2 columns with consistent spacing */
 @media (max-width: 640px) {
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
-    padding: 0.5rem !important;
-  }
-  
-  /* Remove forced min-height for mobile */
-  .restaurant-grid > div {
-    height: auto !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
   }
 }
 
+/* Small tablet: 3 columns */
 @media (min-width: 641px) and (max-width: 768px) {
   .restaurant-grid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
   }
-  
-  /* Remove forced min-height for tablet */
-  .restaurant-grid > div {
-    height: auto !important;
-  }
 }
 
+/* Large tablet: 4 columns */
 @media (min-width: 769px) and (max-width: 1024px) {
   .restaurant-grid {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 1.25rem !important;
-    padding: 1.25rem !important;
-  }
-  
-  /* Remove forced min-height for larger tablet */
-  .restaurant-grid > div {
-    height: auto !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
   }
 }
 
+/* Desktop: 5 columns */
 @media (min-width: 1025px) and (max-width: 1440px) {
   .restaurant-grid {
     grid-template-columns: repeat(5, 1fr) !important;
-    gap: 1.5rem !important;
-    padding: 1.5rem !important;
-  }
-  
-  /* Remove forced min-height for desktop */
-  .restaurant-grid > div {
-    height: auto !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
   }
 }
 
+/* Large desktop: 6 columns */
 @media (min-width: 1441px) {
   .restaurant-grid {
     grid-template-columns: repeat(6, 1fr) !important;
-    gap: 2rem !important;
-    padding: 2rem !important;
-  }
-  
-  /* Remove forced min-height for large desktop */
-  .restaurant-grid > div {
-    height: auto !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
   }
 }
 
