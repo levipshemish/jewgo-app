@@ -759,6 +759,14 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   }
 }
 
+/* Desktop restaurant grid - ensure consistent spacing */
+@media (min-width: 641px) {
+  .restaurant-grid {
+    gap: 16px !important; /* Consistent gap */
+    padding: 16px !important; /* Consistent padding */
+  }
+}
+
 /* Restaurant card text truncation - ensure it works on all screen sizes */
 .restaurant-card h3 {
   overflow: hidden !important;
@@ -796,6 +804,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Ensure proper grid behavior on mobile */
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important; /* Consistent gap */
+    padding: 16px !important; /* Consistent padding */
   }
   
   /* Remove any horizontal scrolling on mobile */

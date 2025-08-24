@@ -6,6 +6,7 @@ import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
+import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -37,6 +38,8 @@ function EateryPageContent() {
   const [isPending, startTransition] = useTransition();
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRestaurants, setTotalRestaurants] = useState(0);
   const [activeTab, setActiveTab] = useState('eatery');
   
   // Mobile optimization hooks
@@ -192,6 +195,44 @@ function EateryPageContent() {
     clearAllFilters();
   };
 
+  // Handle page changes for desktop pagination
+  const handlePageChange = async (page: number) => {
+    if (page === currentPage || loading) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      // Add current filters
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      params.append('page', page.toString());
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+
+      const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
+
+      // Apply distance calculation to new restaurants if location is available
+      let processedRestaurants = response.restaurants;
+      if (userLocation) {
+        processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+      }
+      
+      setRestaurants(processedRestaurants);
+      setCurrentPage(page);
+    } catch (err) {
+      console.error('Error fetching page:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mobile-optimized location handling with context
   const handleRequestLocation = async () => {
     // Use the context's requestLocation
@@ -288,9 +329,14 @@ function EateryPageContent() {
       setRestaurants(processedRestaurants);
       setCurrentPage(1);
       
-      // Update hasMore state for infinite scroll
+      // Update pagination state
+      const total = response.total || response.restaurants.length;
+      setTotalRestaurants(total);
+      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+      setTotalPages(calculatedTotalPages);
+      
+      // Update hasMore state for infinite scroll (mobile only)
       const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
-
       setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching restaurants:', err);
@@ -442,8 +488,8 @@ function EateryPageContent() {
       grid: {
         display: 'grid',
         gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: isMobile ? '8px' : '16px',
-        padding: isMobile ? '8px' : '16px',
+        gap: '16px', // Consistent gap across all screen sizes
+        padding: '16px', // Consistent padding across all screen sizes
       },
       card: {
         backgroundColor: 'transparent',
@@ -654,14 +700,31 @@ function EateryPageContent() {
       )}
 
       {/* Desktop pagination - only show on desktop */}
-      {!isMobile && hasMore && !loading && (
-        <button
-          onClick={loadMore}
-          disabled={isLoadingMore}
-          style={mobileOptimizedStyles.loadMoreButton}
-        >
-          {isLoadingMore ? 'Loading...' : 'Load More'}
-        </button>
+      {!isMobile && totalPages > 1 && (
+        <div className="mt-8 mb-8">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+            className="mb-4"
+          />
+          <div className="text-center text-sm text-gray-600">
+            Showing {restaurants.length} of {totalRestaurants} restaurants
+          </div>
+        </div>
+      )}
+
+      {/* Mobile infinite scroll trigger - only on mobile */}
+      {isMobile && hasMore && (
+        <div 
+          ref={loadingRef}
+          style={{ 
+            height: '20px', 
+            width: '100%',
+            margin: '20px 0'
+          }}
+        />
       )}
 
       {/* Mobile bottom navigation */}
