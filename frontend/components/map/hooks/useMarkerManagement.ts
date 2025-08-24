@@ -347,10 +347,12 @@ export function useMarkerManagement({
       (marker as any)._lastUsed = Date.now();
       (marker as any)._restaurantId = restaurant.id;
 
-      // Add event listeners
-      marker.addListener('gmp-click', () => {
-        onRestaurantSelect?.(parseInt(restaurant.id.toString()));
-      });
+      // Add event listeners (guard against null)
+      if (marker) {
+        (marker as any).addListener?.('gmp-click', () => {
+          onRestaurantSelect?.(parseInt(restaurant.id.toString()));
+        });
+      }
 
       return marker;
     } catch (markerError) {
