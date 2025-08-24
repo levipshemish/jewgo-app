@@ -18,15 +18,8 @@ export default function HomePage() {
         if (session?.user) {
           setIsAuthenticated(true);
           
-          // Check if user has already been prompted for location
-          const locationRequested = localStorage.getItem('locationRequested');
-          if (!locationRequested) {
-            // First time authenticated - redirect to location access
-            router.push('/location-access');
-          } else {
-            // Already requested location - redirect to eatery
-            router.push('/eatery');
-          }
+          // Redirect authenticated users to eatery page
+          router.push('/eatery');
         } else {
           setIsAuthenticated(false);
         }
@@ -44,25 +37,18 @@ export default function HomePage() {
         if (event === 'SIGNED_IN' && session?.user) {
           setIsAuthenticated(true);
           
-          // Check if user has already been prompted for location
-          const locationRequested = localStorage.getItem('locationRequested');
-          if (!locationRequested) {
-            // First time authenticated - redirect to location access
-            router.push('/location-access');
-          } else {
-            // Already requested location - redirect to eatery
-            router.push('/eatery');
-          }
+          // Redirect to eatery page
+          router.push('/eatery');
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
-          // Clear location request flag on sign out
-          localStorage.removeItem('locationRequested');
         }
       }
     );
 
     return () => subscription.unsubscribe();
   }, [router]);
+
+
 
   // Show loading while checking authentication
   if (isAuthenticated === null) {

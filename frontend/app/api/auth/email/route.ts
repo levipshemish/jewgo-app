@@ -8,7 +8,6 @@ import {
   validateTrustedIP,
   generateCorrelationId,
   scrubPII,
-  extractIsAnonymous,
   validateSupabaseFeatureSupport
 } from '@/lib/utils/auth-utils';
 import { 
@@ -21,28 +20,8 @@ import {
   getCORSHeaders,
   FEATURE_FLAGS
 } from '@/lib/config/environment';
-import { initializeServer, isAnonymousAuthSupported, getFeatureValidationCache } from '@/lib/server-init';
+import { initializeServer, getFeatureValidationCache } from '@/lib/server-init';
 
-/**
- * Runtime choice documentation:
- * 
- * Using 'nodejs' runtime for server-side features:
- * - HMAC-based CSRF validation requires Node.js crypto
- * - Server initialization and feature guard
- * - Complex rate limiting with Redis operations (ioredis/standard Redis)
- * - Comprehensive logging and error handling
- * 
- * Alternative: 'edge' runtime could be used when:
- * - Using Redis REST API exclusively
- * - No Node.js-specific crypto operations needed
- * - Simplified rate limiting with Redis REST calls
- * 
- * Performance considerations:
- * - Edge runtime: Lower latency, better cold start performance
- * - Node.js runtime: Full Node.js ecosystem, better for complex operations
- * 
- * Current choice: Node.js for production reliability and feature completeness
- */
 export const runtime = 'nodejs';
 
 export async function OPTIONS(request: NextRequest) {
@@ -62,7 +41,7 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
   const origin = request.headers.get('origin');
   
-  console.log(`Anonymous auth request received for correlation ID: ${correlationId}`, {
+  console.log(`Email auth request received for correlation ID: ${correlationId}`, {
     method: request.method,
     origin,
     correlationId
@@ -76,24 +55,7 @@ export async function POST(request: NextRequest) {
     });
     
     return NextResponse.json(
-      { error: 'ANON_SIGNIN_UNSUPPORTED' },
-      { 
-        status: 503,
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      }
-    );
-  }
-
-  // Check cached anonymous auth support
-  if (!isAnonymousAuthSupported()) {
-    console.error(`Anonymous auth not supported for correlation ID: ${correlationId}`, {
-      correlationId
-    });
-    
-    return NextResponse.json(
-      { error: 'ANON_SIGNIN_UNSUPPORTED' },
+      { error: 'SERVICE_UNAVAILABLE' },
       { 
         status: 503,
         headers: {
@@ -111,7 +73,7 @@ export async function POST(request: NextRequest) {
     });
     
     return NextResponse.json(
-      { error: 'ANON_SIGNIN_UNSUPPORTED' },
+      { error: 'SERVICE_UNAVAILABLE' },
       { 
         status: 503,
         headers: {
@@ -131,7 +93,7 @@ export async function POST(request: NextRequest) {
       });
       
       return NextResponse.json(
-        { error: 'ANON_SIGNIN_UNSUPPORTED' },
+        { error: 'SERVICE_UNAVAILABLE' },
         { 
           status: 503,
           headers: {
@@ -143,22 +105,7 @@ export async function POST(request: NextRequest) {
     }
   }
   
-  // Kill switch check for anonymous auth feature flag
-  if (!FEATURE_FLAGS.ANONYMOUS_AUTH) {
-    return NextResponse.json(
-      { error: 'ANON_SIGNIN_UNSUPPORTED' },
-      { 
-        status: 503,
-        headers: {
-          ...getCORSHeaders(origin || undefined),
-          'Cache-Control': 'no-store'
-        }
-      }
-    );
-  }
-  
   try {
-
     // Get request details for security validation
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
@@ -174,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Comprehensive CSRF validation with signed token fallback
     // Skip CSRF validation in development/Docker environments
     if (process.env.NODE_ENV === 'development' || process.env.DOCKER === 'true') {
-
+      // Development bypass
     } else if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
         origin,
@@ -196,20 +143,34 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Parse request body for captcha token
+    // Parse request body for email, password, and captcha token
     const body = await request.json().catch(() => ({}));
-    const { turnstileToken } = body;
+    const { email, password, turnstileToken } = body;
     
-    // Rate limiting for anonymous auth
+    // Validate required fields
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'INVALID_CREDENTIALS' },
+        { 
+          status: 400,
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
+    }
+    
+    // Rate limiting for email auth
     const rateLimitResult = await checkRateLimit(
-      `anonymous_auth:${ipHash}`,
-      'anonymous_auth',
+      `email_auth:${ipHash}`,
+      'email_auth',
       validatedIP,
       forwardedFor || undefined
     );
     
     if (!rateLimitResult.allowed) {
-      console.warn(`Rate limit exceeded for anonymous auth IP hash: ${ipHash}`, {
+      console.warn(`Rate limit exceeded for email auth IP hash: ${ipHash}`, {
         correlationId,
         remaining_attempts: rateLimitResult.remaining_attempts,
         reset_in_seconds: rateLimitResult.reset_in_seconds
@@ -233,9 +194,9 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate Turnstile token - always required for guest sign-in
+    // Validate Turnstile token - required for email sign-in
     if (!turnstileToken) {
-      console.warn(`Turnstile token required for anonymous auth IP hash: ${ipHash}`, {
+      console.warn(`Turnstile token required for email auth IP hash: ${ipHash}`, {
         correlationId,
         ipHash
       });
@@ -253,11 +214,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify Turnstile token server-side
-    const isTestKey = process.env.TURNSTILE_SECRET_KEY === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
+    const isTestKey = process.env.TURNSTILE_SECRET_KEY === '1x0000000000000000000000000000000AA';
     const isDevelopmentBypass = turnstileToken === 'DEVELOPMENT_BYPASS';
     
     if (isDevelopmentBypass) {
-      console.log(`Development bypass detected for anonymous auth IP hash: ${ipHash}`, {
+      console.log(`Development bypass detected for email auth IP hash: ${ipHash}`, {
         correlationId,
         ipHash
       });
@@ -278,7 +239,7 @@ export async function POST(request: NextRequest) {
         const turnstileResult = await turnstileResponse.json();
         
         if (!turnstileResult.success) {
-          console.warn(`Turnstile verification failed for anonymous auth IP hash: ${ipHash}`, {
+          console.warn(`Turnstile verification failed for email auth IP hash: ${ipHash}`, {
             correlationId,
             ipHash,
             turnstileErrors: turnstileResult['error-codes']
@@ -296,16 +257,16 @@ export async function POST(request: NextRequest) {
           );
         }
       } catch (turnstileError) {
-        console.error(`Turnstile verification error for anonymous auth IP hash: ${ipHash}`, {
+        console.error(`Turnstile verification error for email auth IP hash: ${ipHash}`, {
           correlationId,
           ipHash,
           error: turnstileError
         });
         
         return NextResponse.json(
-          { error: 'TURNSTILE_FAILED' },
+          { error: 'TURNSTILE_ERROR' },
           { 
-            status: 400,
+            status: 500,
             headers: {
               ...getCORSHeaders(origin || undefined),
               'Cache-Control': 'no-store'
@@ -313,62 +274,69 @@ export async function POST(request: NextRequest) {
           }
         );
       }
-    } else {
-      console.log(`Skipping Turnstile verification for test key in development`);
     }
     
+    // Create Supabase server client
     const cookieStore = await cookies();
-    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+          getAll() {
+            return cookieStore.getAll();
           },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
           },
         },
       }
     );
     
-    // Check for existing anonymous session before creating new one
-    const { data: { user: existingUser }, error: getUserError } = await supabase.auth.getUser();
-    
-    if (!getUserError && existingUser && extractIsAnonymous(existingUser)) {
-
-      return NextResponse.json(
-        { 
-          ok: true, 
-          user_id: existingUser.id,
-          message: 'Anonymous session already exists'
-        },
-        { 
-          status: 200,
-          headers: {
-            ...getCORSHeaders(origin || undefined),
-            'Cache-Control': 'no-store'
-          }
-        }
-      );
-    }
-    
-    // Create anonymous user
+    // Attempt email sign-in with Supabase
     // For development, return mock response to bypass CAPTCHA issues
     if (process.env.NODE_ENV === 'development' && isDevelopmentBypass) {
-      console.log(`Development bypass: Mocking successful anonymous auth`);
+      console.log(`Development bypass: Mocking successful email auth for ${scrubPII(email)}`);
       
       // Return a mock successful response for development
       return NextResponse.json(
         { 
           ok: true,
-          user_id: 'dev-anonymous-user-id',
-          message: 'Anonymous signin successful (development bypass)'
+          user: {
+            id: 'dev-user-id',
+            email: email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            app_metadata: { provider: 'email' },
+            user_metadata: {},
+            aud: 'authenticated',
+            role: 'authenticated'
+          },
+          session: {
+            access_token: 'dev-access-token',
+            refresh_token: 'dev-refresh-token',
+            expires_in: 3600,
+            token_type: 'bearer',
+            user: {
+              id: 'dev-user-id',
+              email: email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              app_metadata: { provider: 'email' },
+              user_metadata: {},
+              aud: 'authenticated',
+              role: 'authenticated'
+            }
+          },
+          correlation_id: correlationId
         },
         { 
           status: 200,
@@ -380,24 +348,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Only pass Turnstile token when not using development bypass
-    const signInOptions = isDevelopmentBypass ? undefined : { options: { captchaToken: turnstileToken } } as any;
-    const { data, error: signInError } = await supabase.auth.signInAnonymously(signInOptions);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     
-    if (signInError) {
-      console.error(`Anonymous signin failed for correlation ID: ${correlationId}`, {
-        error: signInError,
-        correlationId
+    if (error) {
+      console.warn(`Email auth failed for IP hash: ${ipHash}`, {
+        correlationId,
+        ipHash,
+        error: error.message,
+        email: scrubPII(email)
       });
       
       return NextResponse.json(
+        { error: error.message },
         { 
-          error: 'ANON_SIGNIN_FAILED',
-          details: signInError.message,
-          correlation_id: correlationId
-        },
-        { 
-          status: 500,
+          status: 400,
           headers: {
             ...getCORSHeaders(origin || undefined),
             'Cache-Control': 'no-store'
@@ -406,17 +373,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log(`Anonymous signin successful for correlation ID: ${correlationId}`, {
-      user_id: data.user?.id,
+    // Success - return user data
+    console.log(`Email auth successful for IP hash: ${ipHash}`, {
       correlationId,
+      ipHash,
+      email: scrubPII(email),
       duration_ms: Date.now() - startTime
     });
     
     return NextResponse.json(
       { 
-        ok: true, 
-        user_id: data.user?.id,
-        message: 'Anonymous signin successful'
+        ok: true,
+        user: data.user,
+        session: data.session,
+        correlation_id: correlationId
       },
       { 
         status: 200,
@@ -428,18 +398,14 @@ export async function POST(request: NextRequest) {
     );
     
   } catch (error) {
-    console.error(`Unexpected error in anonymous auth for correlation ID: ${correlationId}`, {
-      error: scrubPII(error),
+    console.error(`Unexpected error in email auth for correlation ID: ${correlationId}`, {
       correlationId,
+      error: error instanceof Error ? error.message : 'Unknown error',
       duration_ms: Date.now() - startTime
     });
     
     return NextResponse.json(
-      { 
-        error: 'ANON_SIGNIN_FAILED',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        correlation_id: correlationId
-      },
+      { error: 'INTERNAL_ERROR' },
       { 
         status: 500,
         headers: {

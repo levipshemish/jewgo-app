@@ -16,6 +16,7 @@ import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
+import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters } from '@/lib/filters/schema';
@@ -35,15 +36,12 @@ function EateryPageContent() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
-  const [activeTab, setActiveTab] = useState('eatery');
   
   // Mobile optimization hooks
-  const { isMobile, isTouch, viewportHeight, viewportWidth } = useMobileOptimization();
+  const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
   // Ensure mobile detection is working correctly
@@ -72,7 +70,7 @@ function EateryPageContent() {
     () => window.scrollTo(0, document.body.scrollHeight) // Swipe down to bottom
   );
   
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates (currently disabled)
   const { isConnected, sendMessage } = useWebSocket();
   
   // URL-backed filter state
@@ -82,9 +80,7 @@ function EateryPageContent() {
     setFilter,
     toggleFilter,
     clearFilter,
-    clearAllFilters,
-    getFilterCount,
-    updateFilters
+    clearAllFilters
   } = useAdvancedFilters();
   
   // Location state from context
@@ -92,10 +88,12 @@ function EateryPageContent() {
     userLocation,
     permissionStatus,
     isLoading: locationLoading,
-    error: locationError,
-    requestLocation,
-    setError: setLocationError
+    requestLocation
   } = useLocation();
+
+  // Location prompt popup state
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
 
   // Performance optimization for mobile
   const mobileOptimizedItemsPerPage = useMemo(() => {
@@ -308,6 +306,22 @@ function EateryPageContent() {
     }
   }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
 
+  // Show location prompt when page loads and user doesn't have location
+  useEffect(() => {
+    // Only show prompt if we haven't shown it before and user doesn't have location
+    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
+      setShowLocationPrompt(true);
+      setHasShownLocationPrompt(true);
+    }
+  }, [hasShownLocationPrompt, userLocation, locationLoading]);
+
+  // Close location prompt when user gets location
+  useEffect(() => {
+    if (showLocationPrompt && userLocation) {
+      setShowLocationPrompt(false);
+    }
+  }, [showLocationPrompt, userLocation]);
+
   // Fetch restaurants with mobile optimization and distance sorting
   const fetchRestaurantsData = async (filters: Filters = activeFilters) => {
     try {
@@ -428,34 +442,11 @@ function EateryPageContent() {
     }
   }, [isConnected, sendMessage]);
 
-  // Handle real-time updates
+  // Handle real-time updates (currently disabled)
   useEffect(() => {
     if (isConnected) {
-      // Listen for restaurant status updates
-      const handleRestaurantUpdate = (data: any) => {
-        setRestaurants(prev => 
-          prev.map(restaurant => 
-            restaurant.id === data.restaurant_id 
-              ? { ...restaurant, status: data.status }
-              : restaurant
-          )
-        );
-      };
-
-      // Listen for open now updates
-      const handleOpenNowUpdate = (data: any) => {
-        setRestaurants(prev => 
-          prev.map(restaurant => 
-            restaurant.id === data.restaurant_id 
-              ? { ...restaurant, is_open: data.is_open }
-              : restaurant
-          )
-        );
-      };
-
-      // Add event listeners (implementation depends on your WebSocket hook)
-      // websocket.on('restaurant_status_update', handleRestaurantUpdate);
-      // websocket.on('open_now_update', handleOpenNowUpdate);
+      // WebSocket functionality is currently disabled
+      // TODO: Re-enable when backend supports WebSocket
     }
   }, [isConnected]);
 
@@ -701,6 +692,16 @@ function EateryPageContent() {
       {(isMobile || isMobileDevice) && (
         <BottomNavigation />
       )}
+
+      {/* Location Prompt Popup */}
+      <LocationPromptPopup
+        isOpen={showLocationPrompt}
+        onClose={() => setShowLocationPrompt(false)}
+        onLocationGranted={() => {
+          console.log('📍 Eatery: Location granted, closing prompt');
+          setShowLocationPrompt(false);
+        }}
+      />
     </div>
   );
 }

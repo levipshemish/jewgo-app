@@ -14,6 +14,12 @@ const RATE_LIMITS = {
     max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 50,
     window_daily: 86400, // 24 hours
   },
+  email_auth: {
+    max_requests: process.env.NODE_ENV === 'development' ? 100 : 10,
+    window: process.env.NODE_ENV === 'development' ? 60 : 300, // 1 minute in dev, 5 minutes in prod
+    max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 100,
+    window_daily: 86400, // 24 hours
+  },
   merge_operations: {
     max_requests: 3,
     window: 300, // 5 minutes
@@ -77,7 +83,12 @@ export async function checkRateLimit(
   error?: string;
 }> {
   try {
-    const config = RATE_LIMITS[bucket as keyof typeof RATE_LIMITS];
+    const config = RATE_LIMITS[bucket as keyof typeof RATE_LIMITS] || {
+      max_requests: process.env.NODE_ENV === 'development' ? 100 : 10,
+      window: process.env.NODE_ENV === 'development' ? 60 : 300,
+      max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 100,
+      window_daily: 86400,
+    };
     const realIP = validateTrustedIP(ip, xff);
     const now = Math.floor(Date.now() / 1000);
     

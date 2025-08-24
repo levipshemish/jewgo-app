@@ -90,20 +90,107 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
     e.preventDefault();
     setPending(true);
     setError(null);
+    clearCaptchaError();
     
     try {
-      const { error } = await supabaseBrowser.auth.signInWithPassword({
+      // Check if Turnstile is required and verified
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const isTestKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === '1x00000000000000000000AA';
+      
+      // Get current token from state or widget ref
+      let currentToken = captchaState.token;
+      if (!currentToken && turnstileRef.current) {
+        currentToken = turnstileRef.current.getToken();
+        console.log('Got token directly from widget ref:', currentToken ? 'TOKEN_PRESENT' : 'NO_TOKEN');
+      }
+
+      // In development with test keys, skip Turnstile verification
+      if (isDevelopment && isTestKey) {
+        console.log('Development mode: Skipping Turnstile verification for email sign-in');
+      } else if (captchaState.isRequired && !captchaState.isVerified) {
+        console.log('Turnstile verification required but not completed for email sign-in');
+        // Check if Turnstile is configured
+        const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+        if (!turnstileSiteKey) {
+          setError('Email sign-in is temporarily unavailable. Please try again later.');
+          setPending(false);
+          return;
+        }
+        
+        if (currentToken) {
+          console.log('Found Turnstile token, proceeding despite verification state');
+        } else {
+          setError('Please complete the security check to continue.');
+          setPending(false);
+          return;
+        }
+      }
+
+      console.log('Turnstile verification completed, proceeding with email sign-in');
+
+      // Increment attempts for rate limiting
+      incrementAttempts();
+
+      // Prepare request body with Turnstile token
+      const requestBody: any = {
         email,
         password,
+        turnstileToken: isDevelopment && isTestKey ? 'DEVELOPMENT_BYPASS' : (currentToken || captchaState.token)
+      };
+
+      console.log('Sending email sign-in request with token:', isDevelopment && isTestKey ? 'DEVELOPMENT_BYPASS' : ((currentToken || captchaState.token) ? 'TOKEN_PRESENT' : 'NO_TOKEN'));
+
+      // Fetch CSRF token for defense-in-depth
+      let csrfToken: string | undefined;
+      try {
+        const csrfRes = await fetch('/api/auth/csrf', { method: 'GET', credentials: 'include' });
+        const csrfJson = await csrfRes.json();
+        csrfToken = csrfJson?.token;
+      } catch (e) {
+        console.warn('Failed to fetch CSRF token, proceeding with origin/referer checks only');
+      }
+
+      // Call the email auth API endpoint instead of Supabase directly
+      const response = await fetch('/api/auth/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        },
+        body: JSON.stringify(requestBody),
       });
-      
-      if (error) {
-        setError(error.message);
+
+      const result = await response.json();
+      console.log('Email sign-in API response:', { status: response.status, result });
+
+      if (!response.ok) {
+        if (result.error === 'TURNSTILE_REQUIRED') {
+          setError('Security verification required. Please complete the challenge below.');
+          // Reset Turnstile to show it
+          resetCaptcha();
+        } else if (result.error === 'TURNSTILE_FAILED') {
+          setError('Security verification failed. Please try again.');
+          // Reset Turnstile for retry
+          if (turnstileRef.current) {
+            turnstileRef.current.reset();
+          }
+        } else if (result.error === 'RATE_LIMITED') {
+          setError(`Too many attempts. Please wait ${result.retry_after || 60} seconds before trying again.`);
+        } else {
+          setError(result.error || 'Sign in failed. Please try again.');
+        }
         return;
       }
-      
-      // User authenticated successfully - redirect to location access first
-      router.push('/location-access');
+
+      // Success - redirect
+      console.log('Email sign-in redirect check:', { resultOk: result.ok, result });
+      if (result.ok) {
+        console.log('Email sign-in successful, redirecting to /eatery');
+        router.push('/eatery');
+      } else {
+        console.log('Email sign-in failed, showing error');
+        setError('Sign in failed. Please try again.');
+      }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Sign in error:', err);
@@ -139,13 +226,13 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       
       if (!getUserError && user && extractIsAnonymous(user)) {
         // User already has anonymous session, redirect
-        router.push('/location-access');
+        router.push('/eatery');
         return;
       }
 
       // Check if Turnstile is required and verified
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const isTestKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === '0x4AAAAAAADUAAAAAAAAAAAAAAAAAAAB';
+      const isTestKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === '1x00000000000000000000AA';
       
       // In development with test keys, skip Turnstile verification
       if (isDevelopment && isTestKey) {
@@ -209,6 +296,7 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       });
 
       const result = await response.json();
+      console.log('Guest sign-in API response:', { status: response.status, result });
 
       if (!response.ok) {
         if (result.error === 'TURNSTILE_REQUIRED') {
@@ -230,9 +318,12 @@ function SignInForm({ redirectTo, initialError, reauth, provider, state }: {
       }
 
       // Success - redirect
+      console.log('Guest sign-in redirect check:', { resultOk: result.ok, result });
       if (result.ok) {
-        router.push('/location-access');
+        console.log('Guest sign-in successful, redirecting to /eatery');
+        router.push('/eatery');
       } else {
+        console.log('Guest sign-in failed, showing error');
         setError('Guest session creation failed. Please try again.');
       }
     } catch (err) {

@@ -42,6 +42,11 @@ export const config = {
  */
 export async function middleware(request: NextRequest) {
   try {
+    // Skip middleware in development for easier testing
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.next();
+    }
+    
     // Only process protected paths. In Next.js runtime, matcher limits execution,
     // but unit tests call this function directly for any path.
     const path = request.nextUrl.pathname;

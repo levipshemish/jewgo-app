@@ -116,12 +116,19 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   }, [hasInitialized, userLocation, permissionStatus]);
 
   const requestLocation = useCallback(() => {
+    console.log('📍 LocationContext: requestLocation called', {
+      isLoading,
+      lastRequestTime,
+      timeSinceLastRequest: Date.now() - lastRequestTime
+    });
+    
     // Prevent multiple simultaneous requests
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
-    const minRequestInterval = 10000; // 10 seconds minimum between requests
+    const minRequestInterval = 5000; // Reduced to 5 seconds for testing
     
     if (isLoading || timeSinceLastRequest < minRequestInterval) {
+      console.log('📍 LocationContext: Request blocked', { isLoading, timeSinceLastRequest });
       return;
     }
     
@@ -137,6 +144,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('📍 LocationContext: Geolocation success', position);
         setIsLoading(false);
         setPermissionStatus('granted');
         const location: UserLocation = {
@@ -150,6 +158,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         setUserLocation(location);
       },
       (error: GeolocationPositionError) => {
+        console.log('📍 LocationContext: Geolocation error', error);
         setIsLoading(false);
         let errorMessage = 'Unable to get your location';
         
