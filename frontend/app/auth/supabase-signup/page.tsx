@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function SupabaseSignUp() {

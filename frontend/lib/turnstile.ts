@@ -18,8 +18,16 @@ export async function verifyTurnstile(responseToken: string) {
   const isTestKey = siteKey === "1x00000000000000000000AA";
   const isDevelopment = process.env.NODE_ENV === "development";
   
+  console.log("Turnstile verification:", {
+    tokenLength: responseToken.length,
+    isTestKey,
+    isDevelopment,
+    hasSecret: !!secret
+  });
+  
   if (isDevelopment && isTestKey) {
     // Return a mock successful response for development
+    console.log("Using development bypass for Turnstile");
     return {
       success: true,
       challenge_ts: new Date().toISOString(),

@@ -26,12 +26,20 @@ export async function createServerSupabaseClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {
                 ...options,
-                // Force secure cookie settings
+                // Enhanced secure cookie settings
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
+                sameSite: process.env.WEBVIEW_MODE === 'true' ? 'none' : 'lax',
                 // Prevent XSS attacks
                 path: "/",
+                // Use __Secure- prefix in production
+                ...(process.env.NODE_ENV === "production" && name.startsWith('sb-') ? {
+                  name: `__Secure-${name}`
+                } : {}),
+                // Add domain for production
+                ...(process.env.NODE_ENV === "production" ? {
+                  domain: '.jewgo.app'
+                } : {})
               });
             });
           } catch (error) {

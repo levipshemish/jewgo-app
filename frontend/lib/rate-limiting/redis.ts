@@ -20,6 +20,12 @@ const RATE_LIMITS = {
     max_requests_daily: process.env.NODE_ENV === 'development' ? 1000 : 100,
     window_daily: 86400, // 24 hours
   },
+  password_reset: {
+    max_requests: 3,
+    window: 300, // 5 minutes
+    max_requests_daily: 10,
+    window_daily: 86400, // 24 hours
+  },
   merge_operations: {
     max_requests: 3,
     window: 300, // 5 minutes

@@ -13,6 +13,12 @@ const RATE_LIMITS = {
     max_requests_daily: 50,
     window_daily: 86400, // 24 hours
   },
+  password_reset: {
+    max_requests: 3,
+    window: 300, // 5 minutes
+    max_requests_daily: 10,
+    window_daily: 86400, // 24 hours
+  },
   merge_operations: {
     max_requests: 3,
     window: 300, // 5 minutes
