@@ -484,7 +484,7 @@ export const responses = {
   },
 };
 
-export default {
+const apiRouteUtils = {
   forwardGetRequest,
   forwardPostRequest,
   forwardPutRequest,
@@ -499,3 +499,5 @@ export default {
   getBackendUrl,
   getDefaultHeaders,
 };
+
+export default apiRouteUtils;

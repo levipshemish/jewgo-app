@@ -465,7 +465,7 @@ export const useMobilePerformanceMonitoring = () => {
 };
 
 // Export all utilities
-export default {
+const mobileOptimizationUtils = {
   isMobileDevice,
   isTouchDevice,
   getDevicePixelRatio,
@@ -484,3 +484,5 @@ export default {
   mobileStyles,
   useMobilePerformanceMonitoring,
 };
+
+export default mobileOptimizationUtils;
