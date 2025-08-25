@@ -96,21 +96,10 @@ const nextConfig = {
     // Temporarily disable webpack optimizations to fix module issues
     // config = optimizeWebpackConfig(config, { isServer });
 
-    // Optimize webpack cache performance
-    const path = require('path');
-    config.cache = {
-      ...config.cache,
-      type: 'filesystem',
-      buildDependencies: {
-        config: [__filename],
-      },
-      cacheDirectory: path.resolve(__dirname, '.next/cache'),
-      compression: 'gzip',
-      maxAge: 172800000, // 2 days
-      // Optimize serialization for large strings
-      store: 'pack',
-      version: `${process.env.NODE_ENV}-${process.env.npm_package_version || '1.0.0'}`,
-    };
+    // Disable filesystem cache in development to prevent cache corruption issues
+    if (dev) {
+      config.cache = false;
+    }
 
     // Fix eval errors by configuring module resolution
     config.resolve = {
@@ -166,30 +155,11 @@ const nextConfig = {
       /CSS.*syntax.*error/,
     ];
 
-    // Configure webpack to handle eval more gracefully and optimize performance
+    // Configure webpack to handle eval more gracefully
     config.optimization = {
       ...config.optimization,
       minimize: isProduction,
       minimizer: config.optimization?.minimizer || [],
-      // Optimize chunk splitting to reduce serialization overhead
-      splitChunks: {
-        ...config.optimization?.splitChunks,
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-          },
-        },
-      },
     };
 
     // Disable CSS source maps and comments to prevent parsing issues
