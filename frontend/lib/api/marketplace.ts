@@ -164,7 +164,8 @@ export async function createMarketplaceListing(
  */
 export async function fetchMarketplaceCategories(): Promise<CategoriesResponse> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/v4/marketplace/categories`, {
+    // Use the local API route instead of calling backend directly
+    const response = await fetch('/api/marketplace/categories', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

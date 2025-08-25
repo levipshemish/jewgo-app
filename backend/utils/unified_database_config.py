@@ -64,6 +64,8 @@ class UnifiedDatabaseConfig:
     @staticmethod
     def get_db_pool_size() -> int:
         """Get database pool size setting."""
+        # Optimized for Oracle Cloud PostgreSQL with 2-4 Gunicorn workers
+        # Each worker uses DB connections, so keep pool size reasonable
         return int(os.getenv("DB_POOL_SIZE", "5"))
 
     @staticmethod

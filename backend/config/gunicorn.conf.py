@@ -11,8 +11,9 @@ port = int(os.environ.get("PORT", 8081))
 bind = f"0.0.0.0:{port}"
 backlog = 2048
 
-# Worker processes - optimized for Render's free tier
-workers = min(multiprocessing.cpu_count() * 2 + 1, 4)  # Cap at 4 workers for free tier
+# Worker processes - optimized for Oracle Cloud PostgreSQL
+# Start with 2-4 workers as recommended for database connection pooling
+workers = min(multiprocessing.cpu_count() * 2 + 1, 4)  # Cap at 4 workers
 worker_class = "sync"
 worker_connections = 1000
 max_requests = 1000

@@ -240,6 +240,15 @@ def create_marketplace_service():
         return None
 
 
+def get_marketplace_service():
+    """Get or create a MarketplaceServiceV4 instance."""
+    try:
+        return create_marketplace_service()
+    except Exception as e:
+        logger.error(f"Error getting marketplace service: {str(e)}")
+        return None
+
+
 def success_response(data: Any, message: str = "Success", status_code: int = 200):
     """Create a standardized success response."""
     return jsonify({"success": True, "message": message, "data": data})
@@ -1003,165 +1012,213 @@ def get_marketplace_categories():
         # Check if marketplace service is available
         if not MarketplaceServiceV4:
             logger.warning("MarketplaceServiceV4 not available, returning fallback categories")
-            return success_response({
-                "categories": [
+            fallback_categories = [
+                {
+                    "id": 1,
+                    "name": "Baked Goods",
+                    "slug": "baked-goods",
+                    "sort_order": 1,
+                    "active": True,
+                    "subcategories": [
+                        {
+                            "id": 1,
+                            "name": "Bread",
+                            "slug": "bread",
+                            "sort_order": 1,
+                            "active": True,
+                        },
+                        {
+                            "id": 2,
+                            "name": "Pastries",
+                            "slug": "pastries",
+                            "sort_order": 2,
+                            "active": True,
+                        }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "name": "Accessories",
+                    "slug": "accessories",
+                    "sort_order": 2,
+                    "active": True,
+                    "subcategories": [
+                        {
+                            "id": 3,
+                            "name": "Jewelry",
+                            "slug": "jewelry",
+                            "sort_order": 1,
+                            "active": True,
+                        },
+                        {
+                            "id": 4,
+                            "name": "Clothing",
+                            "slug": "clothing",
+                            "sort_order": 2,
+                            "active": True,
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "name": "Vehicles",
+                    "slug": "vehicles",
+                    "sort_order": 3,
+                    "active": True,
+                    "subcategories": [
+                        {
+                            "id": 5,
+                            "name": "Cars",
+                            "slug": "cars",
+                            "sort_order": 1,
+                            "active": True,
+                        },
+                        {
+                            "id": 6,
+                            "name": "Motorcycles",
+                            "slug": "motorcycles",
+                            "sort_order": 2,
+                            "active": True,
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "name": "Appliances",
+                    "slug": "appliances",
+                    "sort_order": 4,
+                    "active": True,
+                    "subcategories": [
+                        {
+                            "id": 7,
+                            "name": "Kitchen",
+                            "slug": "kitchen",
+                            "sort_order": 1,
+                            "active": True,
+                        },
+                        {
+                            "id": 8,
+                            "name": "Laundry",
+                            "slug": "laundry",
+                            "sort_order": 2,
+                            "active": True,
+                        }
+                    ]
+                }
+            ]
+            return success_response(fallback_categories)
+        
+        # Try to use the marketplace service if available
+        try:
+            service = get_marketplace_service()
+            if service:
+                result = service.get_categories()
+                if result.get("success") and result.get("data"):
+                    return success_response(result["data"])
+                else:
+                    logger.warning("Marketplace service returned no data, using fallback")
+            else:
+                logger.warning("Could not create marketplace service, using fallback")
+        except Exception as e:
+            logger.warning(f"Error using marketplace service: {e}, using fallback")
+        
+        # Return fallback categories if service fails
+        logger.info("Returning fallback categories for marketplace")
+        fallback_categories = [
+            {
+                "id": 1,
+                "name": "Baked Goods",
+                "slug": "baked-goods",
+                "sort_order": 1,
+                "active": True,
+                "subcategories": [
                     {
                         "id": 1,
-                        "name": "Baked Goods",
-                        "slug": "baked-goods",
+                        "name": "Bread",
+                        "slug": "bread",
                         "sort_order": 1,
                         "active": True,
-                        "subcategories": [
-                            {
-                                "id": 1,
-                                "name": "Bread",
-                                "slug": "bread",
-                                "sort_order": 1,
-                                "active": True,
-                            },
-                            {
-                                "id": 2,
-                                "name": "Pastries",
-                                "slug": "pastries",
-                                "sort_order": 2,
-                                "active": True,
-                            }
-                        ]
                     },
                     {
                         "id": 2,
-                        "name": "Accessories",
-                        "slug": "accessories",
+                        "name": "Pastries",
+                        "slug": "pastries",
                         "sort_order": 2,
                         "active": True,
-                        "subcategories": [
-                            {
-                                "id": 3,
-                                "name": "Jewelry",
-                                "slug": "jewelry",
-                                "sort_order": 1,
-                                "active": True,
-                            },
-                            {
-                                "id": 4,
-                                "name": "Clothing",
-                                "slug": "clothing",
-                                "sort_order": 2,
-                                "active": True,
-                            }
-                        ]
                     }
-                ],
-                "subcategories": []
-            })
-        
-        # Skip service creation and always return fallback categories
-        logger.info("Bypassing marketplace service, returning fallback categories")
-        return success_response({
-            "categories": [
-                {
-                    "id": 1,
-                    "name": "Baked Goods",
-                    "slug": "baked-goods",
-                    "sort_order": 1,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 1,
-                            "name": "Bread",
-                            "slug": "bread",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 2,
-                            "name": "Pastries",
-                            "slug": "pastries",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                },
-                {
-                    "id": 2,
-                    "name": "Accessories",
-                    "slug": "accessories",
-                    "sort_order": 2,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 3,
-                            "name": "Jewelry",
-                            "slug": "jewelry",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 4,
-                            "name": "Clothing",
-                            "slug": "clothing",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                }
-            ],
-            "subcategories": []
-        })
-
-        # Always return fallback categories for now
-        logger.info("Returning fallback categories for marketplace")
-        return success_response({
-            "categories": [
-                {
-                    "id": 1,
-                    "name": "Baked Goods",
-                    "slug": "baked-goods",
-                    "sort_order": 1,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 1,
-                            "name": "Bread",
-                            "slug": "bread",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 2,
-                            "name": "Pastries",
-                            "slug": "pastries",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                },
-                {
-                    "id": 2,
-                    "name": "Accessories",
-                    "slug": "accessories",
-                    "sort_order": 2,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 3,
-                            "name": "Jewelry",
-                            "slug": "jewelry",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 4,
-                            "name": "Clothing",
-                            "slug": "clothing",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                }
-            ],
-            "subcategories": []
-        })
+                ]
+            },
+            {
+                "id": 2,
+                "name": "Accessories",
+                "slug": "accessories",
+                "sort_order": 2,
+                "active": True,
+                "subcategories": [
+                    {
+                        "id": 3,
+                        "name": "Jewelry",
+                        "slug": "jewelry",
+                        "sort_order": 1,
+                        "active": True,
+                    },
+                    {
+                        "id": 4,
+                        "name": "Clothing",
+                        "slug": "clothing",
+                        "sort_order": 2,
+                        "active": True,
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "name": "Vehicles",
+                "slug": "vehicles",
+                "sort_order": 3,
+                "active": True,
+                "subcategories": [
+                    {
+                        "id": 5,
+                        "name": "Cars",
+                        "slug": "cars",
+                        "sort_order": 1,
+                        "active": True,
+                    },
+                    {
+                        "id": 6,
+                        "name": "Motorcycles",
+                        "slug": "motorcycles",
+                        "sort_order": 2,
+                        "active": True,
+                    }
+                ]
+            },
+            {
+                "id": 4,
+                "name": "Appliances",
+                "slug": "appliances",
+                "sort_order": 4,
+                "active": True,
+                "subcategories": [
+                    {
+                        "id": 7,
+                        "name": "Kitchen",
+                        "slug": "kitchen",
+                        "sort_order": 1,
+                        "active": True,
+                    },
+                    {
+                        "id": 8,
+                        "name": "Laundry",
+                        "slug": "laundry",
+                        "sort_order": 2,
+                        "active": True,
+                    }
+                ]
+            }
+        ]
+        return success_response(fallback_categories)
 
     except Exception as e:
         logger.exception("Error fetching marketplace categories")
