@@ -24,6 +24,32 @@ export const FiltersSchema = z.object({
   priceMin: z.coerce.number().min(1).max(4).optional(),
   priceMax: z.coerce.number().min(1).max(4).optional(),
   
+  // Mikvah-specific filters
+  mikvahType: z.string().optional(),
+  mikvahCategory: z.string().optional(),
+  requiresAppointment: z.coerce.boolean().optional(),
+  walkInAvailable: z.coerce.boolean().optional(),
+  hasChangingRooms: z.coerce.boolean().optional(),
+  hasShowerFacilities: z.coerce.boolean().optional(),
+  
+  // Store-specific filters
+  hasDelivery: z.coerce.boolean().optional(),
+  hasPickup: z.coerce.boolean().optional(),
+  
+  // Shul-specific filters
+  denomination: z.string().optional(),
+  shulType: z.string().optional(),
+  hasMikvah: z.coerce.boolean().optional(),
+  hasKiddush: z.coerce.boolean().optional(),
+  hasKosherFood: z.coerce.boolean().optional(),
+  hasHebrewSchool: z.coerce.boolean().optional(),
+  hasWheelchairAccess: z.coerce.boolean().optional(),
+  hasSeparateSeating: z.coerce.boolean().optional(),
+  hasDailyMincha: z.coerce.boolean().optional(),
+  
+  // General facility filters
+  hasParking: z.coerce.boolean().optional(),
+  
   // Pagination
   page: z.coerce.number().min(1).optional(),
   limit: z.coerce.number().min(1).max(100).optional(),
