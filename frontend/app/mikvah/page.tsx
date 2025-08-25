@@ -307,7 +307,7 @@ function MikvahPageContent() {
     const mikvahType = mikvah.mikvah_type && mikvah.mikvah_type.trim() !== '' ? mikvah.mikvah_type : '';
     
     return {
-      id: mikvah.id,
+      id: String(mikvah.id),
       imageUrl: mikvah.image_url,
       imageTag: mikvah.kosher_certification,
       title: mikvah.name,
