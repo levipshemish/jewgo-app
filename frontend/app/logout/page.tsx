@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export default function LogoutPage() {
   useEffect(() => {
     const signOut = async () => {
       try {
-        await supabaseBrowser.auth.signOut();
+        await supabaseClient.auth.signOut();
         // Redirect to home page after successful sign out
         router.push("/");
       } catch (error) {

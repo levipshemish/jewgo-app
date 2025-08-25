@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { validatePassword } from "@/lib/utils/password-validation";
 
 // Force dynamic rendering to avoid build issues
@@ -63,7 +63,7 @@ function ResetPasswordForm() {
     }
 
     try {
-      const { error } = await supabaseBrowser.auth.updateUser({
+      const { error } = await supabaseClient.auth.updateUser({
         password,
       });
 

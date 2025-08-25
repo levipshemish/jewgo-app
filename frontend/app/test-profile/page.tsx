@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 
 // Force dynamic rendering to avoid build issues
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export default function TestProfilePage() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (error) {
           setError(error.message);
@@ -92,7 +92,7 @@ export default function TestProfilePage() {
                 <br />
                 <button
                   onClick={async () => {
-                    await supabaseBrowser.auth.signOut();
+                    await supabaseClient.auth.signOut();
                     window.location.href = '/';
                   }}
                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"

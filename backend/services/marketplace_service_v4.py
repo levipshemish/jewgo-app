@@ -72,11 +72,12 @@ class MarketplaceServiceV4(BaseService):
                 logger.warning(f"Could not check marketplace tables: {e}")
                 return self._get_empty_listings_response(limit, offset)
             
-            # Build query for marketplace table with correct column names
+            # Build query for marketplace table with correct column names including images
             query = """
                 SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip, 
                        m.latitude as lat, m.longitude as lng, m.vendor_id as seller_user_id, m.category as type, m.status as condition,
-                       m.category, m.subcategory, m.status, m.created_at, m.updated_at
+                       m.category, m.subcategory, m.status, m.created_at, m.updated_at,
+                       m.product_image, m.additional_images, m.thumbnail
                 FROM marketplace m
                 WHERE m.status = :status
             """
@@ -176,6 +177,37 @@ class MarketplaceServiceV4(BaseService):
             for listing in listings:
                 # Convert marketplace table structure to expected format
                 # Use dictionary access since SQLAlchemy returns Row objects
+                # Process image fields
+                product_image = listing[18] if len(listing) > 18 else None  # product_image
+                additional_images = listing[19] if len(listing) > 19 else None  # additional_images
+                thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
+                
+                # Create images array with thumbnail as first image if available
+                images = []
+                if thumbnail:
+                    images.append(thumbnail)
+                elif product_image:
+                    images.append(product_image)
+                
+                # Add additional images if available
+                if additional_images:
+                    if isinstance(additional_images, list):
+                        images.extend(additional_images)
+                    elif isinstance(additional_images, str):
+                        # Handle case where additional_images might be a JSON string
+                        try:
+                            import json
+                            parsed_images = json.loads(additional_images)
+                            if isinstance(parsed_images, list):
+                                images.extend(parsed_images)
+                        except (json.JSONDecodeError, TypeError):
+                            # If it's not JSON, treat as single image
+                            images.append(additional_images)
+                
+                # Ensure we have at least one image (use placeholder if none)
+                if not images:
+                    images = ["/images/default-restaurant.webp"]
+                
                 formatted_listing = {
                     "id": str(listing[0]),  # id
                     "kind": "regular",  # Default to regular for marketplace items
@@ -194,6 +226,8 @@ class MarketplaceServiceV4(BaseService):
                     "lat": float(listing[8]) if listing[8] else None,  # lat (latitude)
                     "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
                     "seller_user_id": listing[10],  # seller_user_id (vendor_id)
+                    "images": images,  # Add images array
+                    "thumbnail": thumbnail or product_image or images[0] if images else None,  # Add thumbnail
                     "attributes": {
                         "type": listing[11],  # type (category)
                         "condition": listing[12],  # condition (status)
@@ -277,10 +311,11 @@ class MarketplaceServiceV4(BaseService):
                 from sqlalchemy import text
 
                 query = """
-                    SELECT m.id, m.title, m.description, m.price_cents, m.currency, m.city, m.region, m.zip, 
-                           m.lat, m.lng, m.seller_user_id, m.type, m.condition,
-                           m.category_id, m.subcategory_id, m.status, m.created_at, m.updated_at
-                    FROM Marketplace_listings m
+                    SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip, 
+                           m.latitude as lat, m.longitude as lng, m.vendor_id as seller_user_id, m.category as type, m.status as condition,
+                           m.category, m.subcategory, m.status, m.created_at, m.updated_at,
+                           m.product_image, m.additional_images, m.thumbnail
+                    FROM marketplace m
                     WHERE m.id = :listing_id
                 """
 
@@ -290,30 +325,63 @@ class MarketplaceServiceV4(BaseService):
                 if not listing:
                     return {"success": False, "error": "Listing not found"}
 
-                # Format response for Marketplace_listings table with correct column structure
+                # Process image fields
+                product_image = listing[18] if len(listing) > 18 else None  # product_image
+                additional_images = listing[19] if len(listing) > 19 else None  # additional_images
+                thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
+                
+                # Create images array with thumbnail as first image if available
+                images = []
+                if thumbnail:
+                    images.append(thumbnail)
+                elif product_image:
+                    images.append(product_image)
+                
+                # Add additional images if available
+                if additional_images:
+                    if isinstance(additional_images, list):
+                        images.extend(additional_images)
+                    elif isinstance(additional_images, str):
+                        # Handle case where additional_images might be a JSON string
+                        try:
+                            import json
+                            parsed_images = json.loads(additional_images)
+                            if isinstance(parsed_images, list):
+                                images.extend(parsed_images)
+                        except (json.JSONDecodeError, TypeError):
+                            # If it's not JSON, treat as single image
+                            images.append(additional_images)
+                
+                # Ensure we have at least one image (use placeholder if none)
+                if not images:
+                    images = ["/images/default-restaurant.webp"]
+
+                # Format response for marketplace table with correct column structure
                 formatted_listing = {
                     "id": str(listing[0]),  # id
                     "kind": "regular",  # Default to regular for marketplace items
                     "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
                     "title": listing[1],  # title
                     "description": listing[2],  # description
-                    "price_cents": int(listing[3]) if listing[3] else 0,  # price_cents
+                    "price_cents": int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
                     "currency": listing[4] or "USD",  # currency
                     "condition": listing[12] or "new",  # condition
-                    "category_id": listing[13],  # category_id
-                    "subcategory_id": listing[14],  # subcategory_id
+                    "category_id": listing[13],  # category
+                    "subcategory_id": listing[14],  # subcategory
                     "city": listing[5],  # city
-                    "region": listing[6],  # region
-                    "zip": listing[7],  # zip
+                    "region": listing[6],  # region (state)
+                    "zip": listing[7],  # zip (zip_code)
                     "country": "US",  # Default country
-                    "lat": float(listing[8]) if listing[8] else None,  # lat
-                    "lng": float(listing[9]) if listing[9] else None,  # lng
-                    "seller_user_id": listing[10],  # seller_user_id
+                    "lat": float(listing[8]) if listing[8] else None,  # lat (latitude)
+                    "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
+                    "seller_user_id": listing[10],  # seller_user_id (vendor_id)
+                    "images": images,  # Add images array
+                    "thumbnail": thumbnail or product_image or images[0] if images else None,  # Add thumbnail
                     "attributes": {
-                        "type": listing[11],  # type
-                        "condition": listing[12],  # condition
-                        "category_id": listing[13],  # category_id
-                        "subcategory_id": listing[14],  # subcategory_id
+                        "type": listing[11],  # type (category)
+                        "condition": listing[12],  # condition (status)
+                        "category_id": listing[13],  # category
+                        "subcategory_id": listing[14],  # subcategory
                     },
                     "endorse_up": 0,  # Default values
                     "endorse_down": 0,  # Default values
@@ -324,8 +392,8 @@ class MarketplaceServiceV4(BaseService):
                     "updated_at": listing[17].isoformat()
                     if listing[17]
                     else None,  # updated_at
-                    "category_name": None,  # Will be populated by join if needed
-                    "subcategory_name": None,  # Will be populated by join if needed
+                    "category_name": listing[13],  # category name
+                    "subcategory_name": listing[14],  # subcategory name
                     "seller_name": listing[10],  # seller_user_id as seller_name
                 }
 

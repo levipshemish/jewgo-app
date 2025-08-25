@@ -58,15 +58,39 @@ export default function MarketplaceFilters({
     return null;
   }
 
+  // Debug log to ensure modal is being rendered
+  console.log('MarketplaceFilters modal is open:', isOpen);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleClose} />
-      
-      {/* Filters Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+    <>
+      {/* Render modal outside of any container to avoid CSS conflicts */}
+      <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-20" style={{ pointerEvents: 'auto' }}>
+        {/* Backdrop */}
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={handleClose} />
+        
+        {/* Filters Modal */}
+        <div 
+          className="marketplace-filters-modal relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden border border-gray-200 transform transition-all duration-200 ease-out"
+          style={{
+            backgroundColor: 'white',
+            background: 'white',
+            zIndex: 9999,
+          }}
+        >
+        <style jsx>{`
+          .marketplace-filters-modal {
+            background-color: white !important;
+            background: white !important;
+          }
+          .marketplace-filters-modal * {
+            background-color: inherit !important;
+          }
+        `}</style>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div 
+          className="flex items-center justify-between p-4 border-b border-gray-200"
+          style={{ backgroundColor: 'white' }}
+        >
           <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
           <button
             onClick={handleClose}
@@ -77,7 +101,7 @@ export default function MarketplaceFilters({
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-4 space-y-6">
+        <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-4 space-y-6 bg-white">
           {/* Kind Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -169,7 +193,10 @@ export default function MarketplaceFilters({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-200">
+        <div 
+          className="flex items-center justify-between p-4 border-t border-gray-200"
+          style={{ backgroundColor: 'white' }}
+        >
           <button
             onClick={handleClearFilters}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"

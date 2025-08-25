@@ -7,7 +7,7 @@ import Link from "next/link";
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
   isSupabaseConfigured, 
   transformSupabaseUser, 

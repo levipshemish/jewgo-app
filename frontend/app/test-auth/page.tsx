@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
   isSupabaseConfigured, 
   transformSupabaseUser, 
@@ -30,7 +30,7 @@ export default function TestAuthPage() {
         }
         
         // Get user session using centralized approach
-        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (error) {
           setDebugInfo(prev => `${prev  }\nAuth error: ${error.message}`);
@@ -45,7 +45,7 @@ export default function TestAuthPage() {
         }
         
         // Get session info
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         setDebugInfo(prev => `${prev  }\nSession: ${session ? 'active' : 'none'}`);
         
       } catch (error) {
@@ -61,7 +61,7 @@ export default function TestAuthPage() {
 
   const handleSignOut = async () => {
     try {
-      await supabaseBrowser.auth.signOut();
+      await supabaseClient.auth.signOut();
       setUser(null);
       setDebugInfo(prev => `${prev  }\nSigned out successfully`);
     } catch (error) {

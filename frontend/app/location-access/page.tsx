@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import LocationAccess from "@/components/location/LocationAccess";
 
 export default function LocationAccessPage() {
@@ -13,7 +13,7 @@ export default function LocationAccessPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
           // Redirect to sign in if not authenticated
           router.push('/auth/signin');

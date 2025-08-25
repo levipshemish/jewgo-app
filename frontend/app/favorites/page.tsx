@@ -21,8 +21,8 @@ const getSupabaseClient = async () => {
   if (typeof window === 'undefined') {
     return null;
   }
-  const { supabaseBrowser } = await import('@/lib/supabase/client');
-  return supabaseBrowser;
+  const { supabaseClient } = await import('@/lib/supabase/client-secure');
+  return supabaseClient;
 };
 
 function FavoritesPageContent() {

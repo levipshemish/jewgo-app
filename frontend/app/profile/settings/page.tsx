@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
   isSupabaseConfigured, 
   transformSupabaseUser, 
@@ -181,7 +181,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabaseBrowser.auth.updateUser({
+      const { error } = await supabaseClient.auth.updateUser({
         data: { full_name: name }
       });
 

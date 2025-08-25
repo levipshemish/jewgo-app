@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
@@ -17,7 +17,7 @@ export default function HomePage() {
     const checkAuth = async () => {
       try {
         // console.log('Checking authentication on home page...');
-        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (error) {
           // console.error('Session check error:', error);
@@ -65,12 +65,12 @@ export default function HomePage() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, session: any) => {
         // console.log('Auth state change:', { event, hasUser: !!session?.user });
         
         if (event === 'SIGNED_IN') {
-          const { data: { user } } = await supabaseBrowser.auth.getUser();
+          const { data: { user } } = await supabaseClient.auth.getUser();
           if (!user) { return; }
           // const isAnonymous = extractIsAnonymous(session.user);
           // console.log('User signed in:', { isAnonymous, userId: session.user.id });

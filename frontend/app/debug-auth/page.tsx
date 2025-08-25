@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { Session, User } from '@supabase/supabase-js';
 
 // Force dynamic rendering to avoid build issues
@@ -16,7 +16,7 @@ export default function DebugAuthPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
         setSession(currentSession);
         setUser(currentSession?.user || null);
       } catch (error) {
@@ -29,7 +29,7 @@ export default function DebugAuthPage() {
     checkAuth();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: any, session: Session | null) => {
         setSession(session);
         setUser(session?.user || null);
@@ -41,7 +41,7 @@ export default function DebugAuthPage() {
 
   const handleSignIn = async () => {
     try {
-      await supabaseBrowser.auth.signInWithPassword({
+      await supabaseClient.auth.signInWithPassword({
         email: 'mendel1023@gmail.com',
         password: 'your-password-here' // You'll need to enter this
       });
@@ -52,7 +52,7 @@ export default function DebugAuthPage() {
 
   const handleSignOut = async () => {
     try {
-      await supabaseBrowser.auth.signOut();
+      await supabaseClient.auth.signOut();
     } catch {
       // Sign out error
     }
