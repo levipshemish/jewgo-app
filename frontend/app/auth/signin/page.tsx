@@ -15,6 +15,7 @@ function SignInForm() {
   const [anonError, setAnonError] = useState<string | null>(null);
   const [anonLoading, setAnonLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
@@ -70,18 +71,30 @@ function SignInForm() {
       } else {
         router.push(redirectTo);
       }
+    } else if (state.message) {
+      // Reset loading state when form action completes (success or error)
+      setIsEmailSigningIn(false);
     }
-  }, [state.ok, router, redirectTo]);
+  }, [state.ok, state.message, router, redirectTo]);
 
   // Anonymous success handled inline in handler
 
   // Handle form submission
   const handleEmailSignIn = async (formData: FormData) => {
+    setIsEmailSigningIn(true);
     try {
-      // Execute reCAPTCHA v3 for 'login' action if site key is present
-      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey) {
+      // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
         console.log('Executing reCAPTCHA v3 for login action...');
-        const token = await (window as any).grecaptcha.execute(siteKey, { action: 'login' });
+        
+        // Add timeout to prevent hanging
+        const tokenPromise = (window as any).grecaptcha.execute(siteKey, { action: 'login' });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('reCAPTCHA timeout')), 5000)
+        );
+        
+        const token = await Promise.race([tokenPromise, timeoutPromise]);
+        
         if (token) {
           console.log('reCAPTCHA token obtained successfully');
           formData.set('recaptchaToken', token);
@@ -90,12 +103,15 @@ function SignInForm() {
           console.warn('reCAPTCHA token was empty');
         }
       } else {
-        console.log('reCAPTCHA not configured or not available');
+        console.log('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
     } catch (error) {
       console.error('reCAPTCHA execution failed:', error);
-      // Non-fatal; server will handle missing token appropriately
+      // Non-fatal; continue without reCAPTCHA token
     }
+    
+    // Always call formAction, even if reCAPTCHA fails
+    console.log('Submitting form with or without reCAPTCHA token');
     formAction(formData);
   };
 
@@ -269,9 +285,10 @@ function SignInForm() {
 
             <button
               type="submit"
-              className="w-full bg-jewgo-400 text-white py-3.5 px-6 rounded-full font-medium hover:bg-jewgo-500 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              disabled={isEmailSigningIn}
+              className="w-full bg-jewgo-400 text-white py-3.5 px-6 rounded-full font-medium hover:bg-jewgo-500 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
             >
-              Sign In
+              {isEmailSigningIn ? 'Signing In...' : 'Sign In'}
             </button>
 
             {!state.ok && "message" in state && state.message && (

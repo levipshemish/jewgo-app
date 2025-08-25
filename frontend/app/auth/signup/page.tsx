@@ -64,10 +64,10 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       return;
     }
 
-    // Execute reCAPTCHA v3 for 'signup' action if site key is present
+    // Execute reCAPTCHA v3 for 'signup' action if site key is present and properly configured
     let recaptchaToken = null;
     try {
-      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey) {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
         console.log('Executing reCAPTCHA v3 for signup action...');
         recaptchaToken = await (window as any).grecaptcha.execute(siteKey, { action: 'signup' });
         if (recaptchaToken) {
@@ -76,7 +76,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
           console.warn('reCAPTCHA token was empty for signup');
         }
       } else {
-        console.log('reCAPTCHA not configured or not available for signup');
+        console.log('reCAPTCHA not configured or not available for signup - proceeding without reCAPTCHA');
       }
     } catch (error) {
       console.error('reCAPTCHA execution failed for signup:', error);
