@@ -8,17 +8,25 @@ After the Oracle Cloud PostgreSQL migration and cleanup, the JewGo project has b
 
 ```
 jewgo-app/
-├── backend/                 # Python Flask backend
-├── frontend/               # Next.js React frontend
+├── .github/                # GitHub Actions, issue templates, and other repository configurations
+├── .husky/                 # Git hooks for pre-commit checks
+├── .vscode/                # VS Code editor settings and configurations
+├── backend/                # Python Flask backend API
+├── ci-scripts/             # Scripts for Continuous Integration (CI) checks
+├── config/                 # Project-wide configuration files (Docker, etc.)
+├── data/                   # CSV and JSON data files
+├── deployment/             # Deployment-related configurations (Procfile, etc.)
 ├── docs/                   # Project documentation
-├── scripts/                # Utility scripts
-├── config/                 # Configuration files
-├── data/                   # Data files and exports
-├── deployment/             # Deployment configurations
-├── monitoring/             # Monitoring and health checks
-├── supabase/              # Supabase configuration
-├── tools/                  # Development tools
-└── README.md              # Project overview
+├── frontend/               # Next.js and React frontend application
+├── monitoring/             # Monitoring and health check configurations
+├── node_modules/           # Node.js dependencies (managed by npm)
+├── scripts/                # General utility and automation scripts
+├── supabase/               # Supabase-specific configurations
+├── tools/                  # Developer tools and utilities
+├── .gitignore              # Specifies files and directories to be ignored by Git
+├── package.json            # Defines project scripts and dependencies for the root workspace
+├── README.md               # Top-level project overview and setup instructions
+└── requirements.txt        # Python dependencies for the root level (if any)
 ```
 
 ## 🐍 **Backend Structure**

@@ -78,6 +78,45 @@
 2. **[DEPRECATIONS.md](DEPRECATIONS.md)** - Deprecated code tracking
 3. **[reports/SYSTEM_STATUS_REPORT.md](reports/SYSTEM_STATUS_REPORT.md)** - System status
 
+### 🛠️ Troubleshooting
+1. **[TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions
+2. **[development/WEBPACK_OPTIMIZATION_GUIDE.md](development/WEBPACK_OPTIMIZATION_GUIDE.md)** - Webpack optimization and cache fixes
+3. **[development/BUILD_TESTING.md](development/BUILD_TESTING.md)** - Build and testing issues
+
+---
+
+## 🆕 Recent Critical Fixes (August 2025)
+
+### ✅ Webpack Cache Corruption Issues - RESOLVED
+- **Problem**: Critical development server failures due to webpack cache corruption
+- **Solution**: Disabled filesystem cache in development mode
+- **Result**: Reliable development server startup, no more cache corruption errors
+- **Documentation**: [Webpack Optimization Guide](development/WEBPACK_OPTIMIZATION_GUIDE.md)
+
+### ✅ Marketplace Categories Loading - RESOLVED
+- **Problem**: "Failed to load categories" error on marketplace page
+- **Solution**: Fixed data structure mismatch between frontend and backend
+- **Result**: Categories load correctly, marketplace page functions properly
+- **Documentation**: [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)
+
+### ✅ Categories Popup Transparency - RESOLVED
+- **Problem**: Categories popup was transparent and hard to read
+- **Solution**: Added white background and improved visibility
+- **Result**: Better user experience with solid white background
+- **Documentation**: [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)
+
+### ✅ Layout.js Syntax Error - RESOLVED
+- **Problem**: `layout.js:73 Uncaught SyntaxError: Invalid or unexpected token`
+- **Solution**: Replaced problematic emoji character with simple text icon
+- **Result**: Clean compilation, successful builds
+- **Documentation**: [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)
+
+### ✅ Restaurant Filter Options 500 Error - RESOLVED
+- **Problem**: `GET http://localhost:3000/api/restaurants/filter-options 500 (Internal Server Error)`
+- **Solution**: Fixed webpack cache and module resolution issues
+- **Result**: Filter options API works correctly, no more 500 errors
+- **Documentation**: [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)
+
 ---
 
 ## 📝 Documentation Standards
@@ -102,16 +141,48 @@
 ### Environment Variables Policy
 - Never publish real values in documentation or examples.
 - Use placeholders only (e.g., `https://<PROJECT_ID>.supabase.co`, `<YOUR_ADMIN_TOKEN>`).
-- Store real values only in environment files: root `.env` (backend) and `frontend/.env.local` (frontend), or in your hosting provider’s secret manager.
+- Store real values only in environment files: root `.env` (backend) and `frontend/.env.local` (frontend), or in your hosting provider's secret manager.
 - Reference example templates like `frontend/.env.example` for the list of supported keys.
 
 ---
 
 ## 🔄 Recent Updates
 
+- **August 2025**: Critical webpack cache corruption fixes
+- **August 2025**: Marketplace categories loading issues resolved
+- **August 2025**: UI/UX improvements (categories popup, syntax fixes)
+- **August 2025**: Enhanced troubleshooting documentation
 - **January 2025**: Major documentation reorganization
-- **August 2025**: Latest implementation reports added
 - **Ongoing**: Regular cleanup and consolidation
+
+---
+
+## 🚨 Emergency Procedures
+
+### Critical Issues
+If you encounter critical issues:
+
+1. **Check [Troubleshooting Guide](TROUBLESHOOTING_GUIDE.md)** for immediate solutions
+2. **Review [Webpack Optimization Guide](development/WEBPACK_OPTIMIZATION_GUIDE.md)** for cache-related issues
+3. **Follow emergency procedures** in the troubleshooting guide
+4. **Contact development team** if issues persist
+
+### Common Quick Fixes
+```bash
+# Development server issues
+pkill -f "next dev" || true
+rm -rf .next node_modules/.cache
+npm run dev
+
+# Build issues
+rm -rf .next
+npm run build
+
+# Cache corruption
+rm -rf .next node_modules/.cache
+npm install
+npm run dev
+```
 
 ---
 

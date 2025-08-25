@@ -1,798 +1,557 @@
-# JewGo Troubleshooting Guide
+# Troubleshooting Guide
 
 ## Overview
 
-This guide helps you diagnose and resolve common issues with the JewGo application.
+This guide provides solutions for common issues encountered during development and deployment of the Jewgo application.
 
-## Quick Diagnostic Commands
+## Recent Critical Issues (August 2025)
 
-### Check System Status
-```bash
-# Check Python version (should be 3.11.8+)
-python3 --version
+### Webpack Cache Corruption Issues ✅ RESOLVED
 
-# Check Node.js version (should be 22.x)
-node --version
+**Problem**: Critical development server failures due to webpack cache corruption
 
-# Check npm version
-npm --version
-
-# Check if PostgreSQL is running
-pg_isready
-
-# Check if ports are in use
-lsof -i :3000  # Frontend (standard)
-lsof -i :3001  # Frontend (optimized compose)
-lsof -i :5000  # Backend (container/internal or non-optimized)
-lsof -i :5001  # Backend (optimized compose)
-lsof -i :8082  # Backend (local development)
-lsof -i :5432  # Database port
+**Symptoms**:
+```
+⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '.next/cache/webpack/client-development/7.pack.gz']
+⨯ [Error: ENOENT: no such file or directory, open '.next/routes-manifest.json']
+⨯ Error: Cannot find module './4985.js'
+⨯ Error [ReferenceError]: exports is not defined at <unknown> (.next/server/vendors.js:9)
 ```
 
-### Check Application Health
-```bash
-# Backend health check (try whichever applies)
-curl http://localhost:8082/healthz  # local development
-curl http://localhost:5001/health   # optimized compose
-curl http://localhost:5000/health   # non-optimized/full compose or direct run
-curl https://jewgo-app-oyoh.onrender.com/health
+**Root Cause**: Filesystem cache corruption in development mode with complex chunk splitting
 
-# Frontend health check
-curl http://localhost:3000/api/health
-curl https://jewgo-app.vercel.app/api/health
-```
-
-## Common Issues and Solutions
-
-### 1. Database Connection Issues
-
-#### Problem: Cannot connect to database
-```
-Error: connection to server at "localhost" (127.0.0.1), port 5432 failed
-```
-
-**Solutions:**
-
-1. **Check if PostgreSQL is running:**
+**Solution**: 
+1. **Immediate Fix**:
    ```bash
-   # macOS
-   brew services list | grep postgresql
+   # Stop development server
+   pkill -f "next dev" || true
    
-   # Ubuntu
-   sudo systemctl status postgresql
-   ```
-
-2. **Start PostgreSQL if not running:**
-   ```bash
-   # macOS
-   brew services start postgresql
+   # Clean all caches
+   rm -rf .next node_modules/.cache
    
-   # Ubuntu
-   sudo systemctl start postgresql
-   ```
-
-3. **Verify database exists:**
-   ```bash
-   psql -l | grep jewgo_db
-   ```
-
-4. **Create database if missing:**
-   ```bash
-   createdb jewgo_db
-   ```
-
-5. **Check DATABASE_URL format:**
-   ```bash
-   # Should be in format:
-   DATABASE_URL=postgresql://username:password@localhost:5432/jewgo_db
-   ```
-
-#### Problem: Permission denied for database
-```
-Error: permission denied for database "jewgo_db"
-```
-
-**Solutions:**
-
-1. **Create database user:**
-   ```bash
-   sudo -u postgres createuser --interactive
-   ```
-
-2. **Grant permissions:**
-   ```bash
-   sudo -u postgres psql
-   GRANT ALL PRIVILEGES ON DATABASE jewgo_db TO your_username;
-   ```
-
-### 2. Backend Issues
-
-#### Problem: Flask app won't start
-```
-Error: No module named 'flask'
-```
-
-**Solutions:**
-
-1. **Activate virtual environment:**
-   ```bash
-   cd backend
-   source venv_py311/bin/activate
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Check Python path:**
-   ```bash
-   which python
-   # Should point to venv_py311/bin/python
-   ```
-
-#### Problem: Import errors
-```
-ModuleNotFoundError: No module named 'config'
-```
-
-**Solutions:**
-
-1. **Check working directory:**
-   ```bash
-   pwd
-   # Should be in backend/ directory
-   ```
-
-2. **Set PYTHONPATH:**
-   ```bash
-   export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-   ```
-
-3. **Run from correct directory:**
-   ```bash
-   cd backend
-   python app.py
-   ```
-
-#### Problem: Port already in use
-```
-Error: [Errno 48] Address already in use
-```
-
-**Solutions:**
-
-1. **Find process using port:**
-   ```bash
-   lsof -i :5000
-   ```
-
-2. **Kill the process:**
-   ```bash
-   kill -9 <PID>
-   ```
-
-3. **Use different port:**
-   ```bash
-   PORT=5001 python app.py
-   ```
-
-### 3. Frontend Issues
-
-#### Problem: Next.js build fails
-```
-Error: Cannot find module 'react'
-```
-
-**Solutions:**
-
-1. **Install dependencies:**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Clear npm cache:**
-   ```bash
-   npm cache clean --force
-   ```
-
-3. **Delete node_modules and reinstall:**
-   ```bash
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
-
-#### Problem: Environment variables not loading
-```
-Error: NEXT_PUBLIC_BACKEND_URL is undefined
-```
-
-**Solutions:**
-
-1. **Check .env.local file:**
-   ```bash
-   cat frontend/.env.local
-   ```
-
-2. **Restart development server:**
-   ```bash
+   # Restart development server
    npm run dev
    ```
 
-3. **Verify variable names:**
-   ```bash
-   # Should start with NEXT_PUBLIC_ for client-side access
-   NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+2. **Prevention**: Updated `frontend/next.config.js` to disable cache in development:
+   ```javascript
+   // Disable filesystem cache in development to prevent corruption
+   if (dev) {
+     config.cache = false;
+   }
+   
+   // Simplified optimization without complex chunk splitting
+   config.optimization = {
+     ...config.optimization,
+     minimize: isProduction,
+     minimizer: config.optimization?.minimizer || [],
+   };
    ```
 
-#### Problem: API calls failing
-```
-Error: Failed to fetch
-```
+**Result**: 
+- ✅ Development server starts reliably
+- ✅ No more cache corruption errors
+- ✅ All API endpoints working correctly
+- ✅ Pages load without module resolution errors
 
-**Solutions:**
+### Marketplace Categories Loading Issue ✅ RESOLVED
 
-1. **Check backend is running:**
-   ```bash
-   curl http://localhost:5000/health
-   ```
+**Problem**: "Failed to load categories" error on marketplace page
 
-2. **Check CORS configuration:**
-   ```bash
-   # In backend/.env
-   CORS_ORIGINS=http://localhost:3000
-   ```
+**Symptoms**:
+- Categories dropdown shows "Failed to load categories"
+- API endpoint returns 500 errors
+- Data structure mismatch between frontend and backend
 
-3. **Check network tab in browser:**
-   - Open Developer Tools
-   - Check Network tab for failed requests
+**Solution**:
+1. **Backend Fix**: Updated `backend/routes/api_v4.py` to return categories in correct format
+2. **Frontend API Route**: Created `frontend/app/api/marketplace/categories/route.ts` to proxy and transform requests
+3. **Frontend Update**: Modified `frontend/lib/api/marketplace.ts` to use local API route
 
-### 4. Authentication Issues
+**Result**: 
+- ✅ Categories load correctly
+- ✅ Marketplace page functions properly
+- ✅ Data transformation handles both old and new backend formats
 
-#### Problem: API key authentication failing
-```
-Error: 401 Unauthorized
-```
+### Categories Popup Transparency Issue ✅ RESOLVED
 
-**Solutions:**
+**Problem**: Categories popup was transparent and hard to read
 
-1. **Check API key in headers:**
-   ```bash
-   curl -H "Authorization: Bearer YOUR_API_KEY" http://localhost:5000/api/restaurants
-   ```
-
-2. **Verify token in environment:**
-   ```bash
-   echo $ADMIN_TOKEN
-   ```
-
-3. **Check token format:**
-   ```bash
-   # Should be a valid token string
-   ADMIN_TOKEN=your-secure-admin-token
-   ```
-
-#### Problem: NextAuth not working
-```
-Error: Invalid credentials
-```
-
-**Solutions:**
-
-1. **Check NEXTAUTH_SECRET:**
-   ```bash
-   # Should be set in .env.local
-   NEXTAUTH_SECRET=your-secure-secret
-   ```
-
-2. **Check NEXTAUTH_URL:**
-   ```bash
-   # Should match your frontend URL
-   NEXTAUTH_URL=http://localhost:3000
-   ```
-
-### 5. Google API Issues
-
-#### Problem: Google Places API errors
-```
-Error: REQUEST_DENIED
+**Solution**: Updated `frontend/components/marketplace/MarketplaceCategoriesDropdown.tsx`:
+```tsx
+// Added white background and improved visibility
+<div 
+  ref={dropdownRef}
+  className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-96 overflow-hidden border border-gray-200"
+  style={{ backgroundColor: 'white' }}
+>
+  <div className="max-h-80 overflow-y-auto bg-white">
+    {/* Content */}
+  </div>
+</div>
 ```
 
-**Solutions:**
+**Result**: 
+- ✅ Popup has solid white background
+- ✅ Better visibility and readability
+- ✅ Improved user experience
 
-1. **Check API key:**
-   ```bash
-   echo $GOOGLE_PLACES_API_KEY
-   ```
+### Layout.js Syntax Error ✅ RESOLVED
 
-2. **Enable Google Places API:**
-   - Go to Google Cloud Console
-   - Enable Places API
-   - Enable Maps JavaScript API
+**Problem**: `layout.js:73 Uncaught SyntaxError: Invalid or unexpected token`
 
-3. **Check billing:**
-   - Ensure billing is enabled
-   - Check quota limits
+**Root Cause**: Problematic emoji character in `frontend/components/ui/RelayEmailBanner.tsx`
 
-4. **Verify API key restrictions:**
-   - Check if key is restricted to specific domains
-   - Add localhost for development
-
-### 6. Image Upload Issues
-
-#### Problem: Cloudinary upload failing
-```
-Error: Invalid cloud name
+**Solution**: Replaced emoji with simple text icon:
+```tsx
+// Before: <span role="img" aria-label="info">🔒</span>
+// After: <span className="text-lg font-bold" aria-label="info">!</span>
 ```
 
-**Solutions:**
+**Result**: 
+- ✅ No more syntax errors
+- ✅ Clean compilation
+- ✅ Successful builds
 
-1. **Check Cloudinary credentials:**
-   ```bash
-   echo $CLOUDINARY_CLOUD_NAME
-   echo $CLOUDINARY_API_KEY
-   echo $CLOUDINARY_API_SECRET
-   ```
+### Restaurant Filter Options 500 Error ✅ RESOLVED
 
-2. **Verify cloud name format:**
-   ```bash
-   # Should be your cloud name, not full URL
-   CLOUDINARY_CLOUD_NAME=your-cloud-name
-   ```
+**Problem**: `GET http://localhost:3000/api/restaurants/filter-options 500 (Internal Server Error)`
 
-3. **Test Cloudinary connection:**
-   ```python
-   import cloudinary
-   cloudinary.config(
-       cloud_name="your-cloud-name",
-       api_key="your-api-key",
-       api_secret="your-api-secret"
-   )
-   ```
+**Root Cause**: Build cache corruption and webpack module resolution issues
 
-### 7. Performance Issues
+**Solution**: 
+1. **Cache Cleanup**: Removed corrupted cache files
+2. **Webpack Configuration**: Simplified webpack config for development
+3. **Module Resolution**: Fixed webpack cache and chunk splitting
 
-#### Problem: Slow page loads
+**Result**: 
+- ✅ Filter options API works correctly
+- ✅ No more 500 errors
+- ✅ Reliable development server
+
+## Common Issues
+
+### Development Server Issues
+
+#### Server Won't Start
+
+**Symptoms**:
+- `npm run dev` fails to start
+- Port already in use errors
+- Module resolution errors
+
+**Solutions**:
+```bash
+# Kill existing processes
+pkill -f "next dev" || true
+pkill -f "node" || true
+
+# Clean cache
+rm -rf .next node_modules/.cache
+
+# Reinstall dependencies (if needed)
+rm -rf node_modules package-lock.json
+npm install
+
+# Start server
+npm run dev
 ```
-Page takes >5 seconds to load
+
+#### Hot Reload Not Working
+
+**Symptoms**:
+- Changes not reflected in browser
+- Manual refresh required
+- Fast Refresh errors
+
+**Solutions**:
+```bash
+# Restart development server
+pkill -f "next dev" || true
+npm run dev
+
+# Check for syntax errors in console
+# Ensure all imports are correct
 ```
 
-**Solutions:**
+### Build Issues
 
-1. **Check database queries:**
-   ```bash
-   # Enable query logging in PostgreSQL
-   ALTER SYSTEM SET log_statement = 'all';
-   SELECT pg_reload_conf();
-   ```
+#### Build Fails
 
-2. **Check bundle size:**
+**Symptoms**:
+- `npm run build` fails
+- TypeScript errors
+- Webpack compilation errors
+
+**Solutions**:
+```bash
+# Clean build cache
+rm -rf .next
+
+# Check TypeScript errors
+npm run typecheck
+
+# Fix linting issues
+npm run lint
+
+# Rebuild
+npm run build
+```
+
+#### Large Bundle Size
+
+**Symptoms**:
+- Build warnings about large chunks
+- Slow page loads
+- Performance issues
+
+**Solutions**:
+1. **Analyze Bundle**:
    ```bash
-   cd frontend
    npm run analyze
    ```
 
-3. **Optimize images:**
+2. **Optimize Imports**:
+   - Use dynamic imports for large components
+   - Split large files into smaller modules
+   - Remove unused dependencies
+
+3. **Code Splitting**:
+   - Implement route-based code splitting
+   - Use React.lazy for component lazy loading
+
+### API Issues
+
+#### API Endpoints Return 500
+
+**Symptoms**:
+- Frontend API calls fail
+- 500 Internal Server Error
+- Network errors
+
+**Solutions**:
+1. **Check Backend Status**:
+   ```bash
+   curl -s "https://jewgo-app-oyoh.onrender.com/health" | jq .
+   ```
+
+2. **Check Environment Variables**:
+   ```bash
+   # Verify backend URL is correct
+   echo $NEXT_PUBLIC_BACKEND_URL
+   ```
+
+3. **Check API Route Implementation**:
+   - Verify route handlers are correct
+   - Check for syntax errors
+   - Ensure proper error handling
+
+#### CORS Issues
+
+**Symptoms**:
+- CORS errors in browser console
+- API calls blocked by browser
+
+**Solutions**:
+1. **Check Backend CORS Configuration**:
+   - Verify allowed origins
+   - Check CORS middleware setup
+
+2. **Frontend Configuration**:
+   - Ensure correct backend URL
+   - Check for mixed content issues
+
+### Database Issues
+
+#### Connection Errors
+
+**Symptoms**:
+- Database connection failures
+- Timeout errors
+- Connection pool exhaustion
+
+**Solutions**:
+1. **Check Database Status**:
+   ```bash
+   # Test database connection
+   python -c "from backend.database.connection_manager import get_connection; print('Connected')"
+   ```
+
+2. **Check Environment Variables**:
+   ```bash
+   # Verify database URL
+   echo $DATABASE_URL
+   ```
+
+3. **Connection Pool Management**:
+   - Increase connection pool size
+   - Implement connection retry logic
+   - Add connection health checks
+
+#### Migration Issues
+
+**Symptoms**:
+- Database schema out of sync
+- Migration errors
+- Data integrity issues
+
+**Solutions**:
+1. **Check Migration Status**:
+   ```bash
+   # Run migrations
+   python backend/database/migrations/run_migrations.py
+   ```
+
+2. **Backup Before Changes**:
+   ```bash
+   # Create backup
+   pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+3. **Reset Database (Development Only)**:
+   ```bash
+   # Drop and recreate database
+   python backend/database/migrations/reset_database.py
+   ```
+
+### Authentication Issues
+
+#### Login Problems
+
+**Symptoms**:
+- Users can't log in
+- Authentication errors
+- Session issues
+
+**Solutions**:
+1. **Check Auth Configuration**:
+   - Verify Supabase configuration
+   - Check environment variables
+   - Test auth endpoints
+
+2. **Clear Browser Data**:
+   - Clear cookies and local storage
+   - Try incognito mode
+   - Check browser console for errors
+
+3. **Check User Database**:
+   ```bash
+   # Verify user exists
+   python -c "from backend.database.repositories.user_repository import UserRepository; print(UserRepository().get_by_email('test@example.com'))"
+   ```
+
+#### OAuth Issues
+
+**Symptoms**:
+- OAuth providers not working
+- Redirect errors
+- Provider configuration issues
+
+**Solutions**:
+1. **Check Provider Configuration**:
+   - Verify OAuth app settings
+   - Check redirect URIs
+   - Test provider endpoints
+
+2. **Environment Variables**:
+   ```bash
+   # Check OAuth configuration
+   echo $GOOGLE_CLIENT_ID
+   echo $GOOGLE_CLIENT_SECRET
+   ```
+
+### Performance Issues
+
+#### Slow Page Loads
+
+**Symptoms**:
+- Pages take long to load
+- Slow API responses
+- Poor user experience
+
+**Solutions**:
+1. **Optimize Images**:
    - Use Next.js Image component
-   - Implement lazy loading
-   - Compress images
+   - Implement proper image sizing
+   - Enable image optimization
 
-#### Problem: High memory usage
-```
-Memory usage >80%
-```
+2. **Code Splitting**:
+   - Implement route-based splitting
+   - Use dynamic imports
+   - Optimize bundle size
 
-**Solutions:**
+3. **API Optimization**:
+   - Implement caching
+   - Optimize database queries
+   - Use pagination for large datasets
 
-1. **Check memory usage:**
+#### Memory Issues
+
+**Symptoms**:
+- High memory usage
+- Out of memory errors
+- Slow performance
+
+**Solutions**:
+1. **Monitor Memory Usage**:
    ```bash
-   top
-   htop
+   # Check memory usage
+   top -p $(pgrep -f "next dev")
    ```
 
-2. **Optimize database connections:**
-   ```python
-   # In backend config
-   SQLALCHEMY_ENGINE_OPTIONS = {
-       'pool_size': 10,
-       'pool_recycle': 3600,
-   }
-   ```
+2. **Optimize Code**:
+   - Remove memory leaks
+   - Implement proper cleanup
+   - Use efficient data structures
 
-3. **Implement caching:**
-   - Add Redis for caching
-   - Cache frequently accessed data
+### Deployment Issues
 
-### 8. Deployment Issues
+#### Build Failures
 
-#### Problem: Render deployment fails
-```
-Build failed: pip install failed
-```
+**Symptoms**:
+- CI/CD pipeline fails
+- Build errors in production
+- Deployment timeouts
 
-**Solutions:**
+**Solutions**:
+1. **Check Build Logs**:
+   - Review CI/CD logs
+   - Identify specific errors
+   - Fix build issues locally first
 
-1. **Check requirements.txt:**
-   ```bash
-   # Ensure all dependencies are listed
-   cat backend/requirements.txt
-   ```
-
-2. **Check Python version:**
-   ```bash
-   # In render.yaml
-   PYTHON_VERSION: 3.11.8
-   ```
-
-3. **Check build logs:**
-   - Go to Render dashboard
-   - Check build logs for specific errors
-
-#### Problem: Vercel deployment fails
-```
-Build failed: npm run build failed
-```
-
-**Solutions:**
-
-1. **Check build command:**
-   ```bash
-   # In vercel.json
-   "buildCommand": "cd frontend && npm install && npm run build"
-   ```
-
-2. **Check environment variables:**
+2. **Environment Variables**:
    - Verify all required variables are set
-   - Check variable names match code
+   - Check for missing secrets
+   - Test build locally
 
-3. **Check Node.js version:**
+3. **Dependencies**:
+   - Update outdated packages
+   - Fix security vulnerabilities
+   - Ensure compatibility
+
+#### Production Issues
+
+**Symptoms**:
+- Production site not working
+- 500 errors in production
+- Performance degradation
+
+**Solutions**:
+1. **Check Production Logs**:
+   - Review application logs
+   - Check error monitoring
+   - Identify root cause
+
+2. **Rollback if Needed**:
    ```bash
-   # In package.json
-   "engines": {
-     "node": "22.x"
-   }
+   # Rollback to previous version
+   git revert HEAD
+   git push origin main
    ```
 
-## Debug Mode
-
-### Enable Debug Mode
-
-1. **Backend debug mode:**
+3. **Health Checks**:
    ```bash
-   # In backend/.env
-   DEBUG=True
-   LOG_LEVEL=DEBUG
+   # Test production endpoints
+   curl -s "https://jewgo-app.vercel.app/healthz" | jq .
    ```
 
-2. **Frontend debug mode:**
-   ```bash
-   # In frontend/.env.local
-   NODE_ENV=development
-   ```
+## Prevention Strategies
 
-3. **Database debug mode:**
-   ```bash
-   # In PostgreSQL
-   ALTER SYSTEM SET log_statement = 'all';
-   SELECT pg_reload_conf();
-   ```
+### Development Best Practices
 
-### Debug Tools
+1. **Regular Testing**:
+   - Run tests before committing
+   - Test locally before pushing
+   - Use staging environment
 
-1. **Backend debugging:**
-   ```bash
-   # Use Python debugger
-   import pdb; pdb.set_trace()
-   
-   # Use logging
-   import logging
-   logging.basicConfig(level=logging.DEBUG)
-   ```
+2. **Code Quality**:
+   - Follow linting rules
+   - Use TypeScript properly
+   - Implement proper error handling
 
-2. **Frontend debugging:**
-   ```javascript
-   // Use browser console
-   console.log('Debug info:', data);
-   
-   // Use React DevTools
-   // Install React Developer Tools extension
-   ```
+3. **Monitoring**:
+   - Watch for console errors
+   - Monitor performance
+   - Check for memory leaks
 
-3. **Database debugging:**
-   ```bash
-   # Connect to database
-   psql $DATABASE_URL
-   
-   # Check table structure
-   \d restaurants
-   
-   # Check data
-   SELECT * FROM restaurants LIMIT 5;
-   ```
+### Deployment Best Practices
 
-## Log Analysis
+1. **Staging Environment**:
+   - Test changes in staging first
+   - Use feature flags
+   - Implement gradual rollouts
 
-### Check Logs
+2. **Backup Strategy**:
+   - Regular database backups
+   - Version control for all changes
+   - Document rollback procedures
 
-1. **Backend logs:**
-   ```bash
-   # Check application logs
-   tail -f backend/logs/app.log
-   
-   # Check error logs
-   tail -f backend/logs/error.log
-   ```
-
-2. **Frontend logs:**
-   ```bash
-   # Check Next.js logs
-   tail -f frontend/.next/server.log
-   ```
-
-3. **System logs:**
-   ```bash
-   # Check system logs
-   journalctl -u postgresql
-   journalctl -u nginx
-   ```
-
-### Common Log Patterns
-
-1. **Database connection errors:**
-   ```
-   ERROR: connection to server failed
-   ```
-
-2. **Authentication errors:**
-   ```
-   ERROR: Invalid token
-   ```
-
-3. **API rate limiting:**
-   ```
-   ERROR: Rate limit exceeded
-   ```
-
-## Performance Monitoring
-
-### Monitor Key Metrics
-
-1. **Response times:**
-   ```bash
-   # Test API response time
-   time curl http://localhost:5000/api/restaurants
-   ```
-
-2. **Database performance:**
-   ```sql
-   -- Check slow queries
-   SELECT query, mean_time, calls 
-   FROM pg_stat_statements 
-   ORDER BY mean_time DESC 
-   LIMIT 10;
-   ```
-
-3. **Memory usage:**
-   ```bash
-   # Monitor memory usage
-   free -h
-   top -p $(pgrep -f "python.*app.py")
-   ```
-
-## Backend Server Issues
-
-### Problem: Backend Server Won't Start
-
-#### Issue: Sentry SDK Import Error
-```
-ImportError: cannot import name 'Client' from partially initialized module 'sentry_sdk'
-```
-
-**Solution:**
-- The server uses `app_factory.py` instead of `app_factory_full.py` to avoid this issue
-- This is already configured in the current setup
-- If you encounter this, ensure you're using the correct app factory
-
-#### Issue: Port Already in Use
-```
-Address already in use
-Port 8082 is in use by another program
-```
-
-**Solutions:**
-```bash
-# Check what's using port 8082
-lsof -i :8082
-
-# Kill the process if needed
-pkill -f "python app.py"
-
-# Or use a different port by modifying app.py
-```
-
-#### Issue: Database Connection Warning
-```
-Failed to initialize database manager: DATABASE_URL environment variable is required
-```
-
-**Solution:**
-- This is expected in local development without a local database
-- The server will still run and serve endpoints
-- For full functionality, configure a local PostgreSQL database
-
-### Problem: Health Endpoints Not Working
-
-#### Issue: 404 Not Found on Health Endpoints
-```
-{
-  "error": "Not found",
-  "message": "The requested resource was not found",
-  "success": false
-}
-```
-
-**Solutions:**
-1. **Verify correct endpoints:**
-   ```bash
-   # Use these endpoints:
-   curl http://localhost:8082/healthz
-   curl http://localhost:8082/api/health/basic
-   curl http://localhost:8082/api/v4/direct-test
-   ```
-
-2. **Check server is running:**
-   ```bash
-   ps aux | grep python | grep app.py
-   ```
-
-3. **Restart server:**
-   ```bash
-   cd backend
-   source .venv/bin/activate
-   python app.py
-   ```
-
-### Problem: Virtual Environment Issues
-
-#### Issue: Virtual Environment Not Found
-```
--bash: .venv/bin/activate: No such file or directory
-```
-
-**Solutions:**
-```bash
-# Check if virtual environment exists
-ls -la backend/.venv
-
-# If missing, create it
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-#### Issue: Dependencies Missing
-```
-ModuleNotFoundError: No module named 'flask'
-```
-
-**Solutions:**
-```bash
-# Activate virtual environment
-cd backend
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Or upgrade specific packages
-pip install --upgrade flask sentry-sdk
-```
-
-### Backend Server Health Check
-
-#### Quick Diagnostic Commands
-```bash
-# Check if server is running
-ps aux | grep python | grep app.py
-
-# Test health endpoints
-curl -s http://localhost:8082/healthz | jq .
-curl -s http://localhost:8082/api/health/basic | jq .
-curl -s http://localhost:8082/api/v4/direct-test | jq .
-
-# Check server logs
-tail -f backend/logs/app.log  # if logging is configured
-```
-
-#### Expected Health Response
-```json
-{
-  "success": true,
-  "status": "healthy",
-  "message": "JewGo Backend is running",
-  "timestamp": "2025-08-25T15:37:35.910879+00:00"
-}
-```
-
-## Emergency Procedures
-
-### Database Recovery
-
-1. **Restore from backup:**
-   ```bash
-   pg_restore -d jewgo_db backup.dump
-   ```
-
-2. **Reset database:**
-   ```bash
-   dropdb jewgo_db
-   createdb jewgo_db
-   python -m alembic upgrade head
-   ```
-
-### Application Recovery
-
-1. **Restart services:**
-   ```bash
-   # Kill all processes
-   pkill -f "python.*app.py"
-   pkill -f "next"
-   
-   # Restart
-   ./start-dev.sh
-   ```
-
-2. **Clear caches:**
-   ```bash
-   # Clear npm cache
-   npm cache clean --force
-   
-   # Clear Python cache
-   find . -type d -name "__pycache__" -exec rm -rf {} +
-   ```
+3. **Monitoring**:
+   - Set up error monitoring
+   - Monitor performance metrics
+   - Implement health checks
 
 ## Getting Help
 
-### Before Asking for Help
+### Internal Resources
 
-1. **Check this guide**
-2. **Search existing issues**
-3. **Check logs for errors**
-4. **Try debug mode**
-5. **Document the issue**
+1. **Documentation**:
+   - Check relevant documentation files
+   - Review recent changes
+   - Look for similar issues
 
-### When Asking for Help
+2. **Team Communication**:
+   - Ask team members
+   - Check recent discussions
+   - Review pull requests
 
-Include:
-- Error message
-- Steps to reproduce
-- Environment details
-- Logs
-- What you've tried
+### External Resources
 
-### Support Channels
+1. **Next.js Documentation**:
+   - [Next.js Troubleshooting](https://nextjs.org/docs/advanced-features/debugging)
+   - [Next.js Error Reference](https://nextjs.org/docs/advanced-features/error-handling)
 
-- GitHub Issues
-- Documentation
-- Community forums
-- Email support
+2. **React Documentation**:
+   - [React Error Boundaries](https://reactjs.org/docs/error-boundaries.html)
+   - [React Performance](https://reactjs.org/docs/optimizing-performance.html)
 
-## Prevention
+3. **Community Resources**:
+   - Stack Overflow
+   - GitHub Issues
+   - Discord/Slack communities
 
-### Best Practices
+## Emergency Procedures
 
-1. **Regular backups**
-2. **Monitor logs**
-3. **Test deployments**
-4. **Keep dependencies updated**
-5. **Document changes**
+### Critical Issues
 
-### Monitoring Setup
+1. **Site Down**:
+   - Check deployment status
+   - Verify environment variables
+   - Rollback to stable version
 
-1. **Health checks**
-2. **Error tracking**
-3. **Performance monitoring**
-4. **Alerting**
-5. **Log aggregation** 
+2. **Data Loss**:
+   - Stop all writes immediately
+   - Restore from backup
+   - Investigate root cause
+
+3. **Security Issues**:
+   - Assess impact
+   - Implement immediate fixes
+   - Notify stakeholders
+
+### Contact Information
+
+- **Development Team**: Check team communication channels
+- **Infrastructure**: Contact hosting provider support
+- **Security**: Follow security incident procedures
+
+## Conclusion
+
+This troubleshooting guide covers the most common issues and their solutions. For issues not covered here:
+
+1. **Document the Problem**: Record symptoms, error messages, and steps to reproduce
+2. **Check Recent Changes**: Look for recent commits or deployments that might have caused the issue
+3. **Search Documentation**: Check project documentation and external resources
+4. **Ask for Help**: Reach out to the team or community for assistance
+
+Remember to always test solutions in a safe environment before applying them to production. 

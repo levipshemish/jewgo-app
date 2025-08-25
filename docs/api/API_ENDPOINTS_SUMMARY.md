@@ -79,29 +79,92 @@ Get all restaurants with optional filtering.
 {
   "success": true,
   "data": {
-    "restaurants": [
-      {
-        "id": 1,
-        "name": "Restaurant Name",
-        "address": "123 Main St",
-        "city": "Miami",
-        "state": "FL",
-        "phone_number": "+1-555-1234",
-        "website": "https://example.com",
-        "kosher_category": "dairy",
-        "certifying_agency": "ORB",
-        "image_url": "https://example.com/image.jpg",
-        "google_rating": 4.5,
-        "google_review_count": 150,
-        "is_open": true,
-        "status": "active",
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z"
-      }
-    ],
-    "total": 100,
+    "restaurants": [...],
+    "pagination": {
+      "total": 107,
+      "limit": 100,
+      "offset": 0,
+      "hasMore": false
+    }
+  }
+}
+```
+
+#### GET `/api/restaurants/search`
+Search restaurants by query.
+
+**Query Parameters:**
+- `q` (required): Search query
+- `limit` (optional): Number of results (default: 50)
+- `offset` (optional): Pagination offset (default: 0)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "restaurants": [...],
+    "query": "kosher",
+    "total": 25,
     "limit": 50,
     "offset": 0
+  }
+}
+```
+
+#### POST `/api/restaurants`
+Submit a new restaurant for review.
+
+**Request Body:**
+```json
+{
+  "name": "New Restaurant",
+  "short_description": "Brief description",
+  "description": "Detailed description",
+  "certifying_agency": "ORB",
+  "kosher_category": "dairy",
+  "is_cholov_yisroel": true,
+  "is_pas_yisroel": false,
+  "phone": "(555) 123-4567",
+  "email": "info@restaurant.com",
+  "address": "123 Main St",
+  "city": "Miami",
+  "state": "FL",
+  "zip_code": "33101",
+  "website": "https://restaurant.com",
+  "google_listing_url": "https://maps.google.com",
+  "hours_open": "Mon-Fri: 11AM-9PM",
+  "price_range": "$$",
+  "business_images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+  "is_owner_submission": true,
+  "owner_name": "Owner Name",
+  "owner_email": "owner@restaurant.com",
+  "owner_phone": "(555) 987-6543",
+  "business_license": "LIC123456",
+  "tax_id": "TAX123456",
+  "years_in_business": 5,
+  "seating_capacity": 50,
+  "delivery_available": true,
+  "takeout_available": true,
+  "catering_available": false,
+  "preferred_contact_method": "email",
+  "preferred_contact_time": "afternoon",
+  "contact_notes": "Additional contact information",
+  "instagram_link": "https://instagram.com/restaurant",
+  "facebook_link": "https://facebook.com/restaurant",
+  "tiktok_link": "https://tiktok.com/@restaurant"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant submitted successfully for review",
+  "data": {
+    "id": 108,
+    "name": "New Restaurant",
+    "submission_status": "pending_approval"
   }
 }
 ```
@@ -114,420 +177,349 @@ Get a specific restaurant by ID.
 {
   "success": true,
   "data": {
+    "id": 1,
+    "name": "Restaurant Name",
+    "address": "123 Main St",
+    "city": "Miami",
+    "state": "FL",
+    "phone_number": "(555) 123-4567",
+    "website": "https://restaurant.com",
+    "kosher_category": "dairy",
+    "certifying_agency": "ORB",
+    "is_cholov_yisroel": true,
+    "submission_status": "approved"
+  }
+}
+```
+
+#### PUT `/api/restaurants/{id}`
+Update a restaurant.
+
+**Request Body:**
+```json
+{
+  "name": "Updated Restaurant Name",
+  "address": "456 New St",
+  "phone_number": "(555) 987-6543"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant updated successfully",
+  "data": {
+    "id": 1,
+    "name": "Updated Restaurant Name"
+  }
+}
+```
+
+#### DELETE `/api/restaurants/{id}`
+Delete a restaurant.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant deleted successfully",
+  "data": {
+    "restaurant_id": 1
+  }
+}
+```
+
+### Enhanced Add Eatery Workflow Endpoints
+
+#### PUT `/api/restaurants/{id}/approve`
+Approve a restaurant submission (Admin only).
+
+**Request Body:**
+```json
+{
+  "status": "approved"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant approved successfully",
+  "data": {
     "restaurant": {
       "id": 1,
       "name": "Restaurant Name",
-      "address": "123 Main St",
-      "city": "Miami",
-      "state": "FL",
-      "zip_code": "33101",
-      "phone_number": "+1-555-1234",
-      "website": "https://example.com",
-      "kosher_category": "dairy",
-      "certifying_agency": "ORB",
-      "listing_type": "Restaurant",
-      "image_url": "https://example.com/image.jpg",
-      "google_rating": 4.5,
-      "google_review_count": 150,
-      "google_reviews": [...],
-      "specials": [...],
-      "hours_of_operation": "Mon-Fri 9:00 AM-5:00 PM",
-      "latitude": 25.7617,
-      "longitude": -80.1918,
-      "is_cholov_yisroel": true,
-      "is_pas_yisroel": false,
-      "cholov_stam": false,
-      "is_open": true,
-      "status": "active",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
+      "submission_status": "approved",
+      "approval_date": "2024-01-01T00:00:00Z",
+      "approved_by": "admin"
+    },
+    "status": "approved"
   }
 }
 ```
 
-#### GET `/api/restaurants/search`
-Search restaurants with advanced filtering.
+#### PUT `/api/restaurants/{id}/reject`
+Reject a restaurant submission (Admin only).
 
-**Query Parameters:**
-- `q` (string): Search query
-- `category` (string): Filter by category
-- `state` (string): Filter by state
-- `is_kosher` (boolean): Filter by kosher status
-- `limit` (integer): Number of results (default: 50)
-- `offset` (integer): Number of results to skip (default: 0)
+**Request Body:**
+```json
+{
+  "status": "rejected",
+  "reason": "Incomplete information provided"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant rejected successfully",
+  "data": {
+    "restaurant": {
+      "id": 1,
+      "name": "Restaurant Name",
+      "submission_status": "rejected",
+      "rejection_reason": "Incomplete information provided",
+      "approval_date": "2024-01-01T00:00:00Z",
+      "approved_by": "admin"
+    },
+    "status": "rejected",
+    "reason": "Incomplete information provided"
+  }
+}
+```
 
 #### GET `/api/restaurants/filter-options`
-Get available filter options.
+Get filter options for restaurant forms and search.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "kosher_types": ["meat", "dairy", "pareve"],
+    "agencies": ["ORB", "OU", "Star-K", "CRC", "Kof-K", "OK Kosher"],
+    "kosherCategories": ["meat", "dairy", "pareve"],
+    "listingTypes": ["restaurant", "bakery", "catering", "cafe", "deli"],
+    "priceRanges": ["$", "$$", "$$$", "$$$$"],
+    "cities": ["Miami", "Miami Beach", "Boca Raton"],
+    "states": ["FL", "NY", "CA"]
+  }
+}
+```
+
+### Filter Options
+```http
+GET /api/restaurants/filter-options
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "cities": ["Miami", "Miami Beach", "Boca Raton"],
     "states": ["FL", "NY", "CA"],
-    "cities": ["Miami", "New York", "Los Angeles"],
-    "certifying_agencies": ["ORB", "OU", "Kof-K"]
+    "agencies": ["ORB", "KM", "Star-K", "CRC"],
+    "listingTypes": ["restaurant", "bakery", "catering"],
+    "priceRanges": ["$", "$$", "$$$", "$$$$"],
+    "kosherCategories": ["meat", "dairy", "pareve"]
   }
 }
 ```
 
-#### GET `/api/restaurants/statistics`
-Get restaurant statistics.
+### Statistics
+```http
+GET /api/statistics
+```
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "total_restaurants": 100,
-    "active_restaurants": 95,
-    "restaurants_with_images": 80,
-    "restaurants_with_reviews": 75,
-    "restaurants_with_websites": 90,
+    "total_restaurants": 107,
+    "dairy_restaurants": 99,
+    "pareve_restaurants": 8,
+    "chalav_yisroel": 104,
+    "pas_yisroel": 22,
+    "states": ["FL", "NY", "CA"],
+    "cities": ["Miami", "New York", "Los Angeles"]
+  }
+}
+```
+
+### Kosher Types
+```http
+GET /api/kosher-types
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
     "kosher_types": {
-      "dairy": 50,
-      "meat": 30,
-      "pareve": 20
+      "dairy": 99,
+      "meat": 8,
+      "pareve": 0
     },
-    "states": {
-      "FL": 60,
-      "NY": 25,
-      "CA": 15
+    "chalav_yisroel": 104,
+    "chalav_stam": 3,
+    "pas_yisroel": 22
+  }
+}
+```
+
+## 🔍 Frontend API Routes
+
+### Restaurant Management
+```http
+GET /api/restaurants/{id}/approve
+POST /api/restaurants/{id}/approve
+POST /api/restaurants/{id}/reject
+```
+
+### Authentication
+```http
+GET /api/auth/[...nextauth]
+```
+
+## 📊 Error Handling
+
+### Error Response Format
+```json
+{
+  "success": false,
+  "error": "Error type",
+  "message": "Human-readable error message",
+  "details": {
+    "field": "Specific field error"
+  }
+}
+```
+
+### Common Error Codes
+- `400`: Bad Request - Invalid input data
+- `401`: Unauthorized - Authentication required
+- `403`: Forbidden - Insufficient permissions
+- `404`: Not Found - Resource not found
+- `422`: Unprocessable Entity - Validation errors
+- `500`: Internal Server Error - Server error
+
+### Validation Errors
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "message": "Input validation failed",
+  "errors": [
+    {
+      "field": "name",
+      "message": "Restaurant name is required"
+    },
+    {
+      "field": "email",
+      "message": "Invalid email format"
     }
-  }
+  ]
 }
 ```
 
-### Reviews
-
-#### GET `/api/reviews`
-Get reviews with optional filtering.
-
-**Query Parameters:**
-- `restaurant_id` (integer): Filter by restaurant ID
-- `status` (string): Filter by status (approved, pending, rejected)
-- `limit` (integer): Number of results (default: 10)
-- `offset` (integer): Number of results to skip (default: 0)
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "reviews": [
-      {
-        "id": "review_123",
-        "restaurant_id": 1,
-        "user_name": "John Doe",
-        "user_email": "john@example.com",
-        "rating": 5,
-        "title": "Great food!",
-        "content": "Excellent kosher restaurant with amazing food.",
-        "images": ["https://example.com/image1.jpg"],
-        "status": "approved",
-        "verified_purchase": true,
-        "helpful_count": 5,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z"
-      }
-    ],
-    "total": 50,
-    "limit": 10,
-    "offset": 0
-  }
-}
-```
-
-#### POST `/api/reviews`
-Create a new review.
-
-**Request Body:**
-```json
-{
-  "restaurant_id": 1,
-  "user_name": "John Doe",
-  "user_email": "john@example.com",
-  "rating": 5,
-  "title": "Great food!",
-  "content": "Excellent kosher restaurant with amazing food.",
-  "images": ["https://example.com/image1.jpg"]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "review": {
-      "id": "review_123",
-      "restaurant_id": 1,
-      "user_name": "John Doe",
-      "user_email": "john@example.com",
-      "rating": 5,
-      "title": "Great food!",
-      "content": "Excellent kosher restaurant with amazing food.",
-      "images": ["https://example.com/image1.jpg"],
-      "status": "pending",
-      "verified_purchase": false,
-      "helpful_count": 0,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
-  },
-  "message": "Review submitted successfully"
-}
-```
-
-#### GET `/api/reviews/{id}`
-Get a specific review by ID.
-
-#### PUT `/api/reviews/{id}`
-Update a review (admin only).
-
-#### DELETE `/api/reviews/{id}`
-Delete a review (admin only).
-
-### Admin Operations
-
-#### POST `/api/admin/google-reviews/fetch`
-Fetch Google reviews for restaurants.
-
-**Request Body:**
-```json
-{
-  "restaurant_id": 1,
-  "batch_size": 10
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "processed": 10,
-    "updated": 8,
-    "errors": [],
-    "details": [
-      {
-        "restaurant_id": 1,
-        "name": "Restaurant Name",
-        "status": "updated"
-      }
-    ]
-  },
-  "message": "Google reviews batch update completed"
-}
-```
-
-#### GET `/api/admin/google-reviews/status`
-Get Google reviews status.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "total_restaurants": 100,
-    "with_reviews": 75,
-    "without_reviews": 25,
-    "coverage_percentage": 75.0,
-    "recent_reviews_count": 10,
-    "sample_restaurants": [
-      {
-        "name": "Restaurant Name",
-        "review_count": 150,
-        "overall_rating": 4.5
-      }
-    ]
-  }
-}
-```
-
-### Analytics
-
-#### GET `/api/analytics`
-Get analytics data.
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "total_restaurants": 100,
-    "total_reviews": 500,
-    "average_rating": 4.2,
-    "top_restaurants": [...],
-    "recent_activity": [...],
-    "growth_metrics": {
-      "restaurants_added_this_month": 5,
-      "reviews_added_this_month": 25
-    }
-  }
-}
-```
-
-### Feedback
-
-#### POST `/api/feedback`
-Submit user feedback.
-
-**Request Body:**
-```json
-{
-  "type": "bug_report",
-  "subject": "Issue with search",
-  "message": "Search is not working properly",
-  "user_email": "user@example.com",
-  "user_agent": "Mozilla/5.0...",
-  "page_url": "https://example.com/search"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "feedback_id": "feedback_123",
-    "status": "submitted"
-  },
-  "message": "Feedback submitted successfully"
-}
-```
-
-## Error Codes
-
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 400 | Bad Request - Invalid parameters |
-| 401 | Unauthorized - Authentication required |
-| 403 | Forbidden - Insufficient permissions |
-| 404 | Not Found - Resource not found |
-| 422 | Unprocessable Entity - Validation error |
-| 500 | Internal Server Error - Server error |
-
-## Rate Limiting
+## 🔧 Rate Limiting
 
 - **Public endpoints**: 100 requests per minute
-- **Admin endpoints**: 50 requests per minute
-- **Scraping endpoints**: 10 requests per minute
+- **Authenticated endpoints**: 1000 requests per minute
+- **Admin endpoints**: 5000 requests per minute
 
-## Pagination
+## 📝 Request/Response Examples
 
-Endpoints that return lists support pagination:
-
-- `limit`: Number of items per page (default: varies by endpoint)
-- `offset`: Number of items to skip
-- Response includes `total`, `limit`, and `offset` fields
-
-## Filtering
-
-Many endpoints support filtering:
-
-- **Exact match**: `?status=active`
-- **Multiple values**: `?kosher_type=meat&kosher_type=dairy`
-- **Range**: `?rating_min=4&rating_max=5`
-- **Search**: `?search=restaurant name`
-
-## Sorting
-
-Endpoints that support sorting use the `sort` parameter:
-
-- `?sort=name` - Sort by name ascending
-- `?sort=-name` - Sort by name descending
-- `?sort=rating,-created_at` - Sort by rating ascending, then by creation date descending
-
-## Data Types
-
-### Restaurant Object
-```json
-{
-  "id": "integer",
-  "name": "string",
-  "address": "string",
-  "city": "string",
-  "state": "string",
-  "zip_code": "string",
-  "phone_number": "string",
-  "website": "string|null",
-  "kosher_category": "string (meat|dairy|pareve)",
-  "certifying_agency": "string",
-  "listing_type": "string",
-  "image_url": "string|null",
-  "google_rating": "number|null",
-  "google_review_count": "integer|null",
-  "google_reviews": "array|null",
-  "specials": "array|null",
-  "hours_of_operation": "string|null",
-  "latitude": "number|null",
-  "longitude": "number|null",
-  "is_cholov_yisroel": "boolean|null",
-  "is_pas_yisroel": "boolean|null",
-  "cholov_stam": "boolean|null",
-  "is_open": "boolean",
-  "status": "string (active|inactive|pending)",
-  "created_at": "datetime",
-  "updated_at": "datetime"
-}
+### Search Example
+```bash
+curl "https://jewgo.onrender.com/api/restaurants?search=kosher&city=Miami&limit=10"
 ```
 
-### Review Object
-```json
-{
-  "id": "string",
-  "restaurant_id": "integer",
-  "user_name": "string",
-  "user_email": "string|null",
-  "rating": "integer (1-5)",
-  "title": "string|null",
-  "content": "string",
-  "images": "array|null",
-  "status": "string (approved|pending|rejected)",
-  "verified_purchase": "boolean",
-  "helpful_count": "integer",
-  "report_count": "integer",
-  "created_at": "datetime",
-  "updated_at": "datetime"
-}
+### Filter Example
+```bash
+curl "https://jewgo.onrender.com/api/restaurants?certifying_agency=ORB&kosher_category=dairy&is_cholov_yisroel=true"
 ```
 
-## Versioning
-
-The API version is included in the response headers:
-
+### Submit Restaurant Example
+```bash
+curl -X POST "https://jewgo.onrender.com/api/restaurants" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "New Kosher Restaurant",
+    "short_description": "Authentic kosher cuisine",
+    "certifying_agency": "ORB",
+    "kosher_category": "dairy",
+    "is_cholov_yisroel": true,
+    "phone": "(555) 123-4567",
+    "address": "123 Main St",
+    "city": "Miami",
+    "state": "FL",
+    "zip_code": "33101",
+    "is_owner_submission": true,
+    "owner_name": "Owner Name",
+    "owner_email": "owner@restaurant.com",
+    "owner_phone": "(555) 987-6543"
+  }'
 ```
-X-API-Version: 1.0.0
+
+### Approve Restaurant Example
+```bash
+curl -X PUT "https://jewgo.onrender.com/api/restaurants/1/approve" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{"status": "approved"}'
 ```
 
-## Changelog
+### Reject Restaurant Example
+```bash
+curl -X PUT "https://jewgo.onrender.com/api/restaurants/1/reject" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{
+    "status": "rejected",
+    "reason": "Incomplete business information"
+  }'
+```
 
-### v1.0.0 (2024-01-01)
-- Initial API release
-- Restaurant management endpoints
-- Review system
-- Google Places integration
-- Admin operations
-- Analytics and feedback
+## 🔒 Security Considerations
 
-## Support
+### Admin Endpoints
+- Restaurant approval/rejection endpoints require admin authentication
+- Use `Authorization: Bearer YOUR_ADMIN_TOKEN` header
+- Admin token should be kept secure and rotated regularly
 
-For API support:
-- Check the error messages for specific issues
-- Verify request format and parameters
-- Ensure proper authentication (if required)
-- Check rate limiting if receiving 429 errors
+### Input Validation
+- All endpoints validate input data
+- Enhanced add eatery workflow includes comprehensive validation
+- Conditional validation based on kosher category and owner submission status
 
-## SDKs and Libraries
+### Rate Limiting
+- Admin endpoints have higher rate limits
+- Public endpoints are rate-limited to prevent abuse
+- Monitor for unusual activity patterns
 
-Official SDKs and libraries are available for:
-- JavaScript/TypeScript
-- Python
-- Ruby
-- PHP
+## 📈 Performance Considerations
 
-See the [SDK documentation](../sdk/) for more details. 
+### Caching
+- Filter options are cached for performance
+- Restaurant data is cached with appropriate TTL
+- Use cache headers for static data
+
+### Pagination
+- Large result sets are paginated
+- Use `limit` and `offset` parameters
+- Include pagination metadata in responses
+
+### Database Optimization
+- Use indexes on frequently queried fields
+- Optimize queries for common filter combinations
+- Monitor query performance
+
+---
+
+*Last Updated: August 25, 2024* 
