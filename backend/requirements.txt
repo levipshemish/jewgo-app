@@ -23,6 +23,7 @@ requests==2.31.0
 pytz==2023.3
 structlog==24.1.0
 python-dateutil==2.8.2
+playwright==1.40.0
 
 # Development dependencies (optional)
 gunicorn==21.2.0
