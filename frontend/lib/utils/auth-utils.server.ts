@@ -591,13 +591,15 @@ export function validateCSRFServer(
   const isProduction = process.env.NODE_ENV === 'production';
   const hasValidCSRFSecret = CSRF_SECRET && CSRF_SECRET !== 'default-csrf-secret-change-in-production';
   
+  // In production with invalid CSRF secret, be very lenient
+  if (isProduction && !hasValidCSRFSecret) {
+    console.log('CSRF validation: Production with invalid CSRF secret - allowing request');
+    return true;
+  }
+  
   // If both Origin and Referer are missing, require a valid signed CSRF token
   if (!origin && !referer) {
     if (!csrfToken) {
-      // In production with invalid CSRF secret, allow requests without token
-      if (isProduction && !hasValidCSRFSecret) {
-        return true;
-      }
       return false;
     }
     
