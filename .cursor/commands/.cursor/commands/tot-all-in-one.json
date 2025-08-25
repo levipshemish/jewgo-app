@@ -1,0 +1,11 @@
+{
+    "name": "ToT — All-in-One (Brainstorm→Evaluate→Explore→Decide)",
+    "description": "Run the full pipeline in one shot; returns four sections with the same schemas.",
+    "prompt": "You are {{role}}. Solve the problem end-to-end with brutal pragmatism. No filler.\n\nProblem:\n{{problem}}\n\nContext:\n{{context}}\n\nOutput FOUR sections in order, each in JSON fenced blocks with the exact schemas used by the individual commands:\n\n1) ```json\n{\"options\": [...]}\n```\n2) ```json\n[{ evaluation objects per option }]\n```\n3) ```json\n{\"plans\": [...]}\n```\n4) ```json\n{\"ranking\": [...], \"final_notes\": [...], \"next_7_days\": [...]}\n```\n\nRules:\n- Keep each answer tight.\n- Ask up to 3 clarifying questions ONLY if essential; otherwise proceed with reasonable assumptions and state them.",
+    "arguments": [
+      { "name": "role", "type": "string", "required": true },
+      { "name": "problem", "type": "string", "required": true },
+      { "name": "context", "type": "string", "required": false }
+    ]
+  }
+  
