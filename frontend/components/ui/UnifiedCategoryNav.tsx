@@ -85,10 +85,10 @@ const scrollItemIntoViewX = (container: HTMLElement, item: HTMLElement) => {
 const CATEGORY_SETS = {
   main: [
     {
-      id: 'mikvahs',
-      label: 'Mikvahs',
+      id: 'mikvah',
+      label: 'Mikvah',
       icon: Droplets,
-      href: '/mikvahs',
+      href: '/mikvah',
     },
     {
       id: 'shuls',

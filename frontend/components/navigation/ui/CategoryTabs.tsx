@@ -59,10 +59,10 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   // Standard category navigation for all pages
   const categories = [
     {
-      id: 'mikvahs',
-      label: 'Mikvahs',
+      id: 'mikvah',
+      label: 'Mikvah',
       icon: Droplets,
-      href: '/mikvahs'
+      href: '/mikvah'
     },
     {
       id: 'shuls',

@@ -56,10 +56,10 @@ const MobileCategoryTabs: React.FC<MobileCategoryTabsProps> = ({
 
   const categories = [
     {
-      id: 'mikvahs',
-      label: 'Mikvahs',
+      id: 'mikvah',
+      label: 'Mikvah',
       icon: Droplets,
-      href: '/mikvahs',
+      href: '/mikvah',
     },
     {
       id: 'shuls',

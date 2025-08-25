@@ -7,7 +7,7 @@ export default function TestCategoryNavPage() {
   const [activeTab, setActiveTab] = useState('eatery');
   const [marketplaceCategory, setMarketplaceCategory] = useState('all');
   const [customCategory, setCustomCategory] = useState('custom1');
-  const [scrollableCategory, setScrollableCategory] = useState('mikvahs');
+  const [scrollableCategory, setScrollableCategory] = useState('mikvah');
 
   return (
     <div className="min-h-screen bg-gray-50">

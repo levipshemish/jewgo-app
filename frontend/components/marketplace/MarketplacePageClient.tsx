@@ -268,8 +268,8 @@ export default function MarketplacePageClient() {
     setActiveTab(tab)
 
     switch (tab) {
-      case "mikvahs":
-        router.push("/mikvahs")
+              case "mikvah":
+          router.push("/mikvah")
         break
       case "shuls":
         router.push("/shuls")

@@ -16,8 +16,8 @@ export default function SpecialsPageClient() {
     
     // Navigate to different pages based on the selected tab
     switch (tab) {
-      case 'mikvahs':
-        router.push('/mikvahs');
+              case 'mikvah':
+          router.push('/mikvah');
         break;
       case 'shuls':
         router.push('/shuls');
