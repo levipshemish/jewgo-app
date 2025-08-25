@@ -17,7 +17,7 @@ function RelayEmailBannerContent() {
   return (
     <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-900">
       <div className="max-w-5xl mx-auto px-4 py-2 text-sm flex items-start gap-3">
-        <span role="img" aria-label="info">🔒</span>
+        <span className="text-lg font-bold" aria-label="info">!</span>
         <div className="flex-1">
           You signed in with an Apple private relay email. For account recovery, consider adding a backup email in settings.
         </div>
