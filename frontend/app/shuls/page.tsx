@@ -334,7 +334,7 @@ function ShulsPageContent() {
     const shulType = shul.shul_type && shul.shul_type.trim() !== '' ? shul.shul_type : '';
     
     return {
-      id: shul.id,
+      id: shul.id.toString(),
       imageUrl: shul.image_url,
       imageTag: shul.denomination,
       title: shul.name,
