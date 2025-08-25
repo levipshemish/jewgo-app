@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -23,6 +24,7 @@ export default function SettingsPage() {
   const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("account");
+  const router = useRouter();
 
   // Load user data
   useEffect(() => {
@@ -37,6 +39,17 @@ export default function SettingsPage() {
         if (response.ok) {
           const userData = await response.json();
           if (userData.user) {
+            // Check if user is a guest user (no email, provider unknown)
+            // Guest users should be redirected to sign in for protected pages
+            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
+            
+            if (isGuest) {
+              // Guest users should sign in to access settings
+              router.push('/auth/signin');
+              return;
+            }
+            
+            // User is authenticated with email (not a guest)
             setUser(userData.user);
             return;
           }

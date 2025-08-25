@@ -42,9 +42,24 @@ export default function ProfilePage() {
           console.log('Profile page: User data received:', userData);
           
           if (userData.user) {
-            // User is authenticated (either with email or as guest)
-            // Guest users have email: undefined and provider: unknown, but they're still authenticated
-            console.log('Profile page: User is authenticated, setting user data');
+            // Check if user is a guest user (no email, provider unknown)
+            // Guest users should be redirected to sign in for protected pages
+            console.log('Profile page: Checking if user is a guest...');
+            console.log('Profile page: user.email:', userData.user.email);
+            console.log('Profile page: user.provider:', userData.user.provider);
+            
+            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
+            console.log('Profile page: isGuest:', isGuest);
+            
+            if (isGuest) {
+              console.log('Profile page: User is a guest, redirecting to signin');
+              setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
+              router.push('/auth/signin');
+              return;
+            }
+            
+            // User is authenticated with email (not a guest)
+            console.log('Profile page: User is authenticated with email, setting user data');
             setUser(userData.user);
             setIsLoading(false);
             return;
