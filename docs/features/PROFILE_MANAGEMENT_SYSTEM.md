@@ -14,7 +14,7 @@ User → Supabase Auth → PostgreSQL (User Data) → Frontend (Profile Manageme
 ### Technology Stack
 - **Frontend**: Next.js 15, React 18, TypeScript, Tailwind CSS
 - **Authentication**: Supabase Auth (Email/Password, Google OAuth, Magic Links)
-- **Database**: PostgreSQL (Neon) for extended profile data
+- **Database**: PostgreSQL (Oracle Cloud) for extended profile data
 - **State Management**: React hooks with Supabase client
 
 ## Implemented Features

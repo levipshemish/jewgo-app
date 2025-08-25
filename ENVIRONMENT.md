@@ -25,7 +25,7 @@ See `frontend/.env.example` for the authoritative list. Common keys:
 
 ## Backend (.env)
 Common keys (adjust to your deployment):
-- DATABASE_URL: postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DB>
+- DATABASE_URL: postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require
 - ADMIN_TOKEN: <YOUR_ADMIN_TOKEN>
 - SCRAPER_TOKEN: <YOUR_SCRAPER_TOKEN> (optional)
 - SENTRY_DSN: <YOUR_SENTRY_DSN> (optional)

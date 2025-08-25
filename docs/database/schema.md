@@ -7,10 +7,10 @@ This document provides comprehensive details about the JewGo database schema, in
 ## 🗄️ Database Architecture
 
 ### Technology Stack
-- **Database**: PostgreSQL (Neon)
+- **Database**: PostgreSQL (Oracle Cloud)
 - **ORM**: SQLAlchemy 1.4
 - **Connection**: Connection pooling with psycopg2
-- **Backup**: Automated backups via Neon
+- **Backup**: Automated nightly backups on Oracle Cloud VM
 
 ### Database Schema
 The application uses a single consolidated `restaurants` table with 28 optimized columns for kosher restaurant data.

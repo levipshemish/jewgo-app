@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully added comprehensive sample data to the correct marketplace tables in the Neon database. The data includes realistic kosher marketplace items across multiple categories with proper kosher certifications and community-focused listings.
+Successfully added comprehensive sample data to the correct marketplace tables in the Oracle Cloud PostgreSQL database. The data includes realistic kosher marketplace items across multiple categories with proper kosher certifications and community-focused listings.
 
 ## 📊 Data Summary
 
@@ -148,7 +148,7 @@ CREATE TABLE "Marketplace Catagories" (
 
 - **Frontend**: http://localhost:3000/marketplace
 - **API**: http://localhost:5001/api/v4/marketplace
-- **Database**: Neon PostgreSQL (production)
+- **Database**: Oracle Cloud PostgreSQL (production)
 
 ## 📝 Notes
 

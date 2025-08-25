@@ -7,10 +7,10 @@ This guide covers the database architecture, schema, and management for the JewG
 ## 🗄️ Database Architecture
 
 ### Technology Stack
-- **Database**: PostgreSQL (Neon)
+- **Database**: PostgreSQL (Oracle Cloud)
 - **ORM**: SQLAlchemy 1.4
 - **Connection**: Connection pooling with psycopg2
-- **Backup**: Automated backups via Neon
+- **Backup**: Automated nightly backups on Oracle Cloud VM
 
 ### Database Schema
 The application uses a single consolidated `restaurants` table with 28 optimized columns for kosher restaurant data.
@@ -199,7 +199,7 @@ success = db_manager.update_restaurant_orb_data(
 ## 📊 Backup & Recovery
 
 ### Automated Backups
-- **Neon Backups**: Daily automated backups
+- **Oracle Cloud Backups**: Nightly automated backups (3:17am UTC, 7-day retention)
 - **Point-in-time Recovery**: Available for 7 days
 - **Backup Retention**: 30 days of backups
 
@@ -215,7 +215,7 @@ python scripts/maintenance/populate_remote_backend.py
 ### Recovery Procedures
 1. **Identify Issue**: Check logs and error messages
 2. **Stop Services**: Pause application if needed
-3. **Restore Backup**: Use Neon point-in-time recovery
+3. **Restore Backup**: Use Oracle Cloud backup restore procedures
 4. **Verify Data**: Check data integrity
 5. **Restart Services**: Resume normal operation
 

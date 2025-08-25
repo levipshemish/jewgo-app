@@ -29,7 +29,7 @@ jewgo app/
 
 ### Backend Variables
 - `FLASK_ENV`, `FLASK_SECRET_KEY`
-- `DATABASE_URL` (Neon PostgreSQL)
+- `DATABASE_URL` (Oracle Cloud PostgreSQL)
 - `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT`, etc.
 - `GOOGLE_PLACES_API_KEY`
 

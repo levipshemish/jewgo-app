@@ -2,22 +2,21 @@
 
 ## 🚀 **Quick Setup Options**
 
-### **Option 1: Neon (Recommended - Free Tier)**
+### **Option 1: Oracle Cloud PostgreSQL (Current Production)**
 
-**Step 1: Create Neon Account**
-1. Go to [neon.tech](https://neon.tech)
-2. Sign up with GitHub or email
-3. Create a new project
+**Step 1: Oracle Cloud Setup**
+1. Oracle Cloud VM running Ubuntu with PostgreSQL 16
+2. Server IP: 141.148.50.111
+3. Database: app_db
+4. User: app_user
 
 **Step 2: Get Database URL**
-1. In your Neon dashboard, click on your project
-2. Go to "Connection Details"
-3. Copy the connection string
-4. It will look like: `postgresql://username:password@host.neon.tech:5432/database_name`
+1. Use the Oracle Cloud PostgreSQL connection string
+2. Format: `postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require`
 
 **Step 3: Set Environment Variable**
 ```bash
-export DATABASE_URL="postgresql://username:password@host.neon.tech:5432/database_name"
+export DATABASE_URL="postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require"
 ```
 
 ### **Option 2: Supabase (Free Tier)**

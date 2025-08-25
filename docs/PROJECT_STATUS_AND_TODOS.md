@@ -17,7 +17,7 @@
 #### 🚀 **Deployment & Infrastructure**
 - ✅ Backend: Render (https://jewgo-app-oyoh.onrender.com)
 - ✅ Frontend: Vercel (https://jewgo-app.vercel.app)
-- ✅ Database: Neon PostgreSQL
+- ✅ Database: Oracle Cloud PostgreSQL
 - ✅ CDN: Cloudinary
 - ✅ Monitoring: Sentry
 - ✅ CI/CD: GitHub Actions

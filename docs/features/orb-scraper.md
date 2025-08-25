@@ -15,7 +15,7 @@ A comprehensive web scraper for extracting kosher business listings from ORB Kos
 ## 📋 Prerequisites
 
 - Python 3.11
-- Neon PostgreSQL database with current schema
+- Oracle Cloud PostgreSQL database with current schema
 - Internet connection for web scraping
 - `DATABASE_URL` environment variable set
 
@@ -34,7 +34,7 @@ playwright install chromium
 Ensure your `.env` file contains:
 
 ```env
-DATABASE_URL=postgresql://username:password@ep-something.neon.tech/dbname?sslmode=require
+DATABASE_URL=postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require
 ```
 
 ### 3. Run the Scraper

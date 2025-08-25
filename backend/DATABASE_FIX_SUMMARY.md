@@ -29,7 +29,7 @@ This was caused by the database URL using the format `postgres://` instead of `p
 ### Local Testing
 1. Set your DATABASE_URL environment variable:
    ```bash
-   export DATABASE_URL="postgresql://username:password@host:port/database"
+   export DATABASE_URL="postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require"
    ```
 
 2. Run the test script:
