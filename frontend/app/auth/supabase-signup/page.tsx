@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase/client";
+// Use SSR-aware browser client so PKCE + cookies work with server callback
+import { supabaseClient } from "@/lib/supabase/client-secure";
 
 export default function SupabaseSignUp() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,7 @@ export default function SupabaseSignUp() {
     
     try {
       // First, check if user already exists by attempting to sign in with a dummy password
-      const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({
         email,
         password: "dummy-password-for-check",
       });
@@ -33,14 +34,14 @@ export default function SupabaseSignUp() {
       // If sign in succeeds (unlikely with dummy password), user exists
       if (!signInError) {
         // Sign out immediately since we don't want to actually sign them in
-        await supabaseBrowser.auth.signOut();
+        await supabaseClient.auth.signOut();
         setError("An account with this email already exists. Please sign in instead.");
         setPending(false);
         return;
       }
       
       // If we get "User not found" or similar, user doesn't exist, proceed with signup
-      const { error } = await supabaseBrowser.auth.signUp({
+      const { error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -72,7 +73,7 @@ export default function SupabaseSignUp() {
     setPending(true);
     setError(null);
     
-    const { error } = await supabaseBrowser.auth.signInWithOAuth({
+    const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });

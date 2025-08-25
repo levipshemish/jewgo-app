@@ -4,7 +4,8 @@ import Link from "next/link";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { supabaseBrowser } from "@/lib/supabase/client";
+// Use SSR-aware browser client so PKCE + cookies work with server callback
+import { supabaseClient } from "@/lib/supabase/client-secure";
 import { validatePassword } from "@/lib/utils/password-validation";
 import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
@@ -62,7 +63,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     }
     
     try {
-      const { data, error } = await supabaseBrowser.auth.signUp({
+      const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -103,7 +104,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
-      const { error } = await supabaseBrowser.auth.signInWithOAuth({
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'apple',
         options: {
           scopes: 'email name',
@@ -138,7 +139,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
-      const { error } = await supabaseBrowser.auth.signInWithOAuth({
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: "google",
         options: { 
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=google&state=${encodeURIComponent(oauthState)}`,

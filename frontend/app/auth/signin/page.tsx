@@ -4,7 +4,8 @@ import { useEffect, useState, Suspense, useCallback, useActionState } from "reac
 import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { supabaseBrowser } from "@/lib/supabase/client";
+// Use SSR-aware browser client so PKCE + cookies work with server callback
+import { supabaseClient } from "@/lib/supabase/client-secure";
 
 function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
@@ -74,7 +75,7 @@ function SignInForm() {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const redirectUrl = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
-      await supabaseBrowser.auth.signInWithOAuth({
+      await supabaseClient.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: redirectUrl,
@@ -99,7 +100,7 @@ function SignInForm() {
       const nextUrl = redirectTo || '/eatery';
       const emailRedirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
-      const { error } = await supabaseBrowser.auth.signInWithOtp({
+      const { error } = await supabaseClient.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo,
