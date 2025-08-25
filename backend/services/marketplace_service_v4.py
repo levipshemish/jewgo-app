@@ -564,7 +564,7 @@ class MarketplaceServiceV4(BaseService):
                     }
                     formatted_categories.append(formatted_category)
 
-                    return {"success": True, "data": formatted_categories}
+                return {"success": True, "data": formatted_categories}
 
         except Exception as e:
             logger.exception("Error fetching marketplace categories")

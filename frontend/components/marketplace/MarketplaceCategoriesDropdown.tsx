@@ -31,6 +31,11 @@ export default function MarketplaceCategoriesDropdown({
     }
   }, [isOpen, categories.length]);
 
+  // Add error boundary to prevent component from crashing
+  if (!isOpen) {
+    return null;
+  }
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,10 +64,14 @@ export default function MarketplaceCategoriesDropdown({
         setCategories(response.data);
       } else {
         setError(response.error || 'Failed to load categories');
+        // Set empty array to prevent undefined errors
+        setCategories([]);
       }
     } catch (err) {
       setError('Failed to load categories');
       console.error('Error loading categories:', err);
+      // Set empty array to prevent undefined errors
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -78,19 +87,18 @@ export default function MarketplaceCategoriesDropdown({
     onClose();
   };
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
       
       {/* Dropdown */}
       <div 
         ref={dropdownRef}
-        className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-96 overflow-hidden"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-96 overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -123,6 +131,12 @@ export default function MarketplaceCategoriesDropdown({
           ) : categories.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-gray-500">No categories available</p>
+              <button
+                onClick={loadCategories}
+                className="mt-2 text-blue-600 hover:text-blue-700"
+              >
+                Try Again
+              </button>
             </div>
           ) : (
             <div className="p-2">
@@ -141,7 +155,7 @@ export default function MarketplaceCategoriesDropdown({
               {/* Category list */}
               {categories.map((category) => (
                 <button
-                  key={category.id}
+                  key={category.id || `category-${Math.random()}`}
                   onClick={() => handleCategoryClick(category)}
                   className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                     selectedCategory?.id === category.id 
@@ -150,7 +164,7 @@ export default function MarketplaceCategoriesDropdown({
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">{category.name}</span>
+                    <span className="font-medium">{category.name || 'Unnamed Category'}</span>
                     {category.productCount !== undefined && (
                       <span className="text-sm text-gray-500">
                         {category.productCount}
