@@ -80,8 +80,7 @@ curl -f https://jewgo-app-oyoh.onrender.com/health
 | `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` | Google Maps Map ID | Google Cloud Console |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | Google Cloud Console |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Google Cloud Console |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile site key | Cloudflare Turnstile |
-| `TURNSTILE_SECRET_KEY` | Turnstile secret key | Cloudflare Turnstile |
+
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics ID | Google Analytics |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN | Sentry dashboard |
 
@@ -136,7 +135,7 @@ Before deploying to production, test these features in Docker:
 
 ### ✅ External Services
 - [ ] Google Maps displays correctly
-- [ ] Turnstile works (if enabled)
+
 - [ ] Email functionality works
 - [ ] Analytics tracking works
 

@@ -24,12 +24,7 @@ vercel secrets add cleanup-cron-secret "your-cleanup-secret-here"
 vercel secrets add redis-url "redis://default:password@redis-host:port"
 ```
 
-### Turnstile Configuration
-```bash
-# Turnstile secret key
-vercel secrets add turnstile-secret-key "your-turnstile-secret-key"
-vercel secrets add turnstile-site-key "your-turnstile-site-key"
-```
+
 
 ### Google Services
 ```bash
@@ -52,7 +47,7 @@ vercel secrets add admin-email "admin@jewgo.com"
 - ✅ Supabase configuration: Configured
 - ❌ HMAC keys: Missing (causing 503 errors)
 - ❌ Redis configuration: Missing (rate limiting broken)
-- ❌ Turnstile configuration: Missing (CAPTCHA broken)
+
 - ❌ Google services: Missing (maps broken)
 - ❌ Admin configuration: Missing
 
@@ -60,7 +55,7 @@ vercel secrets add admin-email "admin@jewgo.com"
 
 1. **Set HMAC keys** (highest priority - fixes 503 errors)
 2. **Set Redis URL** (required for rate limiting)
-3. **Set Turnstile keys** (required for CAPTCHA)
+
 4. **Set other configuration** (for full functionality)
 
 ## Testing After Setup
@@ -70,7 +65,7 @@ After setting the secrets, test the anonymous authentication:
 ```bash
 curl -X POST https://jewgo-app.vercel.app/api/auth/anonymous \
   -H "Content-Type: application/json" \
-  -d '{"turnstileToken": "test-token"}'
+  -d '{}'
 ```
 
 Expected response: 200 OK with user session

@@ -41,12 +41,7 @@ export const AUTH_ERRORS = {
     userMessage: 'Too many attempts. Please try again later.',
     shouldLog: true
   },
-  TURNSTILE_FAILED: {
-    code: 'TURNSTILE_FAILED',
-    message: 'Security verification failed',
-    userMessage: 'Security verification failed. Please try again.',
-    shouldLog: true
-  },
+
   GENERIC_ERROR: {
     code: 'GENERIC_ERROR',
     message: 'Authentication failed',

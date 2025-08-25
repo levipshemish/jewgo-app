@@ -103,7 +103,7 @@ export function useAuth() {
     }
   };
 
-  const signInAnonymously = async (turnstileToken?: string) => {
+  const signInAnonymously = async () => {
     // Prevent multiple simultaneous calls
     if (isStartingAnonRef.current) {
       return { error: 'Sign-in already in progress' };
@@ -124,12 +124,23 @@ export function useAuth() {
         return { user: transformedUser };
       }
 
-      // Call the secure server endpoint that enforces Turnstile and rate limiting
+      // Get CSRF token first
+      let csrfToken: string | undefined;
+      try {
+        const csrfRes = await fetch('/api/auth/csrf', { method: 'GET', credentials: 'include' });
+        const csrfJson = await csrfRes.json();
+        csrfToken = csrfJson?.token;
+      } catch {}
+
+      // Call the secure server endpoint that enforces rate limiting
       const response = await fetch('/api/auth/anonymous', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        },
         credentials: 'include',
-        body: JSON.stringify({ turnstileToken: turnstileToken || null })
+        body: JSON.stringify({})
       });
 
       const result = await response.json().catch(() => ({}));

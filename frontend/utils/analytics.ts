@@ -15,7 +15,7 @@ interface RegistrationMetrics {
   failedRegistrations: number;
   validationErrors: number;
   rateLimitHits: number;
-  turnstileFailures: number;
+
 }
 
 class Analytics {
@@ -26,7 +26,6 @@ class Analytics {
     failedRegistrations: 0,
     validationErrors: 0,
     rateLimitHits: 0,
-    turnstileFailures: 0,
   };
 
   // Track a generic event
@@ -74,8 +73,7 @@ class Analytics {
       this.metrics.validationErrors++;
     } else if (reason === 'rate_limit') {
       this.metrics.rateLimitHits++;
-    } else if (reason === 'turnstile_failed') {
-      this.metrics.turnstileFailures++;
+    
     }
 
     this.track('registration_failure', {
@@ -132,8 +130,7 @@ class Analytics {
       successfulRegistrations: 0,
       failedRegistrations: 0,
       validationErrors: 0,
-      rateLimitHits: 0,
-      turnstileFailures: 0,
+          rateLimitHits: 0,
     };
   }
 
@@ -152,7 +149,7 @@ class Analytics {
     const sanitized = { ...details };
     delete sanitized.password;
     delete sanitized.token;
-          delete sanitized.turnstileToken;
+      
     
     return sanitized;
   }

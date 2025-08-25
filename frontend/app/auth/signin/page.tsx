@@ -4,19 +4,49 @@ import { useEffect, useState, Suspense, useCallback, useActionState } from "reac
 import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function SignInForm() {
   const [state, formAction] = useActionState(signInAction, { ok: false, message: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [anonError, setAnonError] = useState<string | null>(null);
   const [anonLoading, setAnonLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
+
+  // Check if user is already authenticated and redirect to eatery
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/sync-user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.user) {
+            // User is authenticated, redirect to eatery (or the intended destination)
+            console.log('User is already authenticated, redirecting to:', redirectTo);
+            router.push(redirectTo);
+            return;
+          }
+        }
+        
+        // User is not authenticated, show sign-in form
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        // On error, show sign-in form
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, [router, redirectTo]);
 
   // Handle successful authentication
   useEffect(() => {
@@ -32,17 +62,8 @@ function SignInForm() {
 
   // Anonymous success handled inline in handler
 
-  // Handle Turnstile verification (shared for all flows)
-  const handleTurnstileVerify = (token: string) => {
-    setTurnstileToken(token);
-  };
-
   // Handle form submission
   const handleEmailSignIn = (formData: FormData) => {
-    // Add the Turnstile token to the form data
-    if (turnstileToken) {
-      formData.append('cf-turnstile-response', turnstileToken);
-    }
     formAction(formData);
   };
 
@@ -82,7 +103,6 @@ function SignInForm() {
         email,
         options: {
           emailRedirectTo,
-          captchaToken: turnstileToken || undefined,
         },
       });
       if (error) {
@@ -93,31 +113,35 @@ function SignInForm() {
     } catch (_err) {
       setMagicStatus('Failed to send magic link.');
     }
-  }, [email, redirectTo, turnstileToken]);
+  }, [email, redirectTo]);
 
   const handleAnonymousSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAnonError(null);
     setAnonLoading(true);
     
-    // Debug logging
-    // console.log('Anonymous sign-in attempt with token:', turnstileToken ? 'Present' : 'Missing');
-    
     try {
+      // Get CSRF token first
+      const csrfRes = await fetch('/api/auth/csrf', { 
+        method: 'GET', 
+        credentials: 'include' 
+      });
+      const csrfJson = await csrfRes.json();
+      const csrfToken = csrfJson?.token;
+
       const res = await fetch('/api/auth/anonymous', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'x-csrf-token': csrfToken } : {})
+        },
         credentials: 'include',
-        body: JSON.stringify({ turnstileToken: turnstileToken || null })
+        body: JSON.stringify({})
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json?.ok) {
         const code = json?.error || 'ANON_SIGNIN_FAILED';
         switch (code) {
-          case 'TURNSTILE_REQUIRED':
-          case 'TURNSTILE_INVALID':
-            setAnonError('Security check failed. Please try again.');
-            break;
           case 'RATE_LIMITED':
             setAnonError('Too many attempts. Please try again later.');
             break;
@@ -135,7 +159,26 @@ function SignInForm() {
       setAnonError('Guest sign-in failed. Please try again.');
       setAnonLoading(false);
     }
-  }, [router, redirectTo, turnstileToken]);
+  }, [router, redirectTo]);
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-neutral-900 rounded-2xl shadow-xl border border-neutral-700 p-8">
+            <div className="text-center">
+              <div className="mb-6">
+                <img src="/logo.svg" alt="JewGo" className="mx-auto w-full h-20 rounded-xl object-cover" />
+              </div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-jewgo-400 mx-auto mb-4"></div>
+              <p className="text-neutral-400">Checking authentication...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
@@ -184,18 +227,7 @@ function SignInForm() {
               />
             </div>
 
-            {/* Turnstile widget (single, shared across flows) */}
-            <div className="flex justify-center">
-              <TurnstileWidget
-                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                onVerify={handleTurnstileVerify}
-                action="signin"
-                theme="dark"
-                size="compact"
-                variant="checkbox"
-                hideWidget
-              />
-            </div>
+
 
             <button
               type="submit"

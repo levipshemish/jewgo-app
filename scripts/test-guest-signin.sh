@@ -22,7 +22,7 @@ SIGNIN_RESPONSE=$(curl -s http://localhost:3000/auth/signin)
 # Check if guest button exists and is enabled (more accurate detection)
 if echo "$SIGNIN_RESPONSE" | grep -q "Continue as Guest.*disabled"; then
     echo "❌ Guest sign-in button is disabled"
-    echo "   This means Turnstile is not properly configured"
+    echo "   This means the system is not properly configured"
     exit 1
 fi
 
@@ -33,21 +33,7 @@ else
     exit 1
 fi
 
-# Check if Turnstile widget container is present
-if echo "$SIGNIN_RESPONSE" | grep -q "data-testid=\"turnstile-widget\""; then
-    echo "✅ Turnstile widget container is present"
-else
-    echo "❌ Turnstile widget container not found"
-    exit 1
-fi
 
-# Check if Turnstile site key is loaded
-if echo "$SIGNIN_RESPONSE" | grep -q "1x00000000000000000000AA"; then
-    echo "✅ Turnstile test site key is loaded"
-else
-    echo "❌ Turnstile site key not found"
-    exit 1
-fi
 
 echo ""
 echo "🎉 Guest sign-in functionality is working correctly!"
@@ -55,8 +41,4 @@ echo ""
 echo "📋 Next steps:"
 echo "1. Visit http://localhost:3000/auth/signin"
 echo "2. Click 'Continue as Guest'"
-echo "3. Complete the Turnstile challenge"
-echo "4. You should be redirected to the location access page"
-echo ""
-echo "💡 Note: The Turnstile widget is invisible and will only show"
-echo "   a challenge if Cloudflare determines it's necessary."
+echo "3. You should be redirected to the location access page"

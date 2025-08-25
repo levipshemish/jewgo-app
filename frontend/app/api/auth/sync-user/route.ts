@@ -15,6 +15,50 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const baseHeaders = getCORSHeaders(origin || undefined);
+
+  try {
+    // Create SSR Supabase client bound to cookies
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value; },
+          set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }); },
+          remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options, maxAge: 0 }); },
+        },
+      }
+    );
+
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401, headers: baseHeaders });
+    }
+
+    // Transform user data for client consumption
+    const transformedUser = {
+      id: user.id,
+      email: user.email || undefined,
+      name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+      username: user.user_metadata?.username,
+      provider: user.app_metadata?.provider || 'unknown',
+      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    };
+
+    return NextResponse.json({ user: transformedUser }, { status: 200, headers: baseHeaders });
+
+  } catch (_error) {
+    return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500, headers: baseHeaders });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   const referer = request.headers.get('referer');

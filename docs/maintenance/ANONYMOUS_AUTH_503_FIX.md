@@ -17,7 +17,7 @@ The production environment was missing critical environment variables required f
 
 ## Error Flow
 
-1. User attempts anonymous sign-in with valid Turnstile token
+1. User attempts anonymous sign-in
 2. Frontend calls `/api/auth/anonymous` endpoint
 3. Server initialization fails due to missing environment variables
 4. Feature guard validation fails
@@ -37,7 +37,7 @@ Updated `frontend/vercel.json` to include all required environment variables:
     "MERGE_COOKIE_HMAC_KEY_PREVIOUS": "@merge-cookie-hmac-key-previous",
     "CLEANUP_CRON_SECRET": "@cleanup-cron-secret",
     "REDIS_URL": "@redis-url",
-    "TURNSTILE_SECRET_KEY": "@turnstile-secret-key",
+
     // ... other required variables
   }
 }
@@ -73,7 +73,7 @@ Updated `docs/deployment/PRODUCTION_ENVIRONMENT_SETUP.md` with:
 ```bash
 curl -X POST https://jewgo-app.vercel.app/api/auth/anonymous \
   -H "Content-Type: application/json" \
-  -d '{"turnstileToken": "test-token"}'
+  -d '{}'
 
 # Response: 503 Service Unavailable
 ```
@@ -82,7 +82,7 @@ curl -X POST https://jewgo-app.vercel.app/api/auth/anonymous \
 ```bash
 curl -X POST https://jewgo-app.vercel.app/api/auth/anonymous \
   -H "Content-Type: application/json" \
-  -d '{"turnstileToken": "test-token"}'
+  -d '{}'
 
 # Response: 200 OK with user session
 ```
@@ -95,7 +95,6 @@ curl -X POST https://jewgo-app.vercel.app/api/auth/anonymous \
    - Add cleanup cron secret to Vercel secrets
 
 2. **High Priority**:
-   - Add Turnstile configuration
    - Add Google services configuration
    - Add admin configuration
 

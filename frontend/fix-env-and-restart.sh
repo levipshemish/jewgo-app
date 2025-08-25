@@ -42,9 +42,8 @@ RECAPTCHA_SECRET_KEY=6LcnmqArAAAAABV9QybjVvnCdbZn3tMjqHG6oDdR
 # Cron Jobs (Required in production)
 CLEANUP_CRON_SECRET=72882b5a73bbc1388fe1672e2d9fd20077fbc334e8b5ffe50945917ff96c8bf3
 
-# Cloudflare Turnstile
-NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAABuBu7lWKado8L_e
-TURNSTILE_SECRET_KEY=0x4AAAAAABuBu0_6cvhcyJkqf-2isoUC8ts
+
+
 
 # Redis Configuration (for anti-replay protection)
 REDIS_URL=redis://default:p4El96DKlpczWdIIkdelvNUC8JBRm83r@redis-10768.c14.us-east-1-2.ec2.redns.redis-cloud.com:10768

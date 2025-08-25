@@ -75,7 +75,7 @@ UPSTASH_REDIS_REST_TOKEN=your-redis-token
 ### 6. **Authentication Flow Security**
 
 #### ✅ **What's Implemented:**
-- **Turnstile CAPTCHA** with server-side verification
+
 - **Anti-replay protection** for one-time token usage
 - **Uniform error messages** to prevent account enumeration
 - **Server actions** instead of client-side API calls

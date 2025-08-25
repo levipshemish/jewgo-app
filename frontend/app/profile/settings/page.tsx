@@ -28,24 +28,29 @@ export default function SettingsPage() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Use server-side API to get user data instead of client-side Supabase
+        const response = await fetch('/api/auth/sync-user', {
+          method: 'GET',
+          credentials: 'include',
+        });
 
-        // Check if Supabase is configured using centralized utility
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.user) {
+            setUser(userData.user);
+            return;
+          }
+        }
+
+        // If no user data, check if Supabase is configured for development fallback
         if (!isSupabaseConfigured()) {
-          // console.warn('Supabase not configured, allowing access for development');
           // For development, create a mock user
           setUser(createMockUser());
           return;
         }
-        
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
 
-        if (user) {
-          const userData = transformSupabaseUser(user);
-
-          setUser(userData);
-        } else {
-
-        }
+        // No user found, will show access denied
+        setUser(null);
       } catch (_error) {
         // console.error('Error loading user:', error);
         handleUserLoadError(_error);

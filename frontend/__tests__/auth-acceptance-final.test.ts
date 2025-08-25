@@ -157,7 +157,7 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
       expect(result.error).toBe('ANON_SIGNIN_UNSUPPORTED');
     });
 
-    it('should return TURNSTILE_REQUIRED when token is missing', async () => {
+  
       const { POST } = await import('@/app/api/auth/anonymous/route');
       
       const mockRequest = {
@@ -170,20 +170,10 @@ describe('Final Production-Ready Supabase Anonymous Auth Acceptance Tests', () =
           })
         },
         ip: '127.0.0.1',
-        json: jest.fn().mockResolvedValue({}) // No turnstileToken
+        json: jest.fn().mockResolvedValue({})
       } as any;
 
-      // Mock rate limiting to require turnstile
-      jest.spyOn(require('@/lib/rate-limiting'), 'checkRateLimit').mockResolvedValue({
-        allowed: true,
-        remaining_attempts: 0, // This triggers turnstile requirement
-        reset_in_seconds: 300
-      });
 
-      const response = await POST(mockRequest);
-      const result = await response.json();
-      
-      expect(result.error).toBe('TURNSTILE_REQUIRED');
     });
 
     it('should return ANON_SIGNIN_FAILED when signin fails', async () => {

@@ -10,7 +10,7 @@ describe('useCaptcha', () => {
     const { result } = renderHook(() => useCaptcha());
 
     expect(result.current.state).toEqual({
-      isRequired: true, // Turnstile is always required now
+      isRequired: false, // No CAPTCHA required
       isVerified: false,
       token: null,
       error: null,
@@ -146,10 +146,5 @@ describe('useCaptcha', () => {
     expect(result.current.state.error).toBe(null);
   });
 
-  it('provides turnstile ref', () => {
-    const { result } = renderHook(() => useCaptcha());
-
-    expect(result.current.turnstileRef).toBeDefined();
-    expect(result.current.turnstileRef.current).toBe(null);
-  });
+  
 });

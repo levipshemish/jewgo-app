@@ -23,7 +23,7 @@ async function clearAnonymousAuthRateLimit() {
     console.log('');
     console.log('curl -X POST http://localhost:3001/api/auth/anonymous \\');
     console.log('  -H "Content-Type: application/json" \\');
-    console.log('  -d \'{"turnstileToken": "your-token"}\'');
+    console.log('  -d \'{}\'');
     console.log('');
     
   } catch (error) {

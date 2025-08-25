@@ -26,9 +26,7 @@ jest.mock('@/lib/rate-limiting', () => ({
   checkRateLimit: jest.fn(async () => ({ allowed: true, remaining_attempts: 2, reset_in_seconds: 300 })),
 }));
 
-jest.mock('@/lib/turnstile', () => ({
-  verifyTurnstile: jest.fn(async () => ({ success: true, hostname: 'localhost' }))
-}));
+
 
 jest.mock('@/lib/anti-replay', () => ({
   consumeCaptchaTokenOnce: jest.fn(async () => {})
@@ -78,7 +76,7 @@ describe('API routes: auth', () => {
       const { POST } = await import('@/app/api/auth/anonymous/route');
       const req = makeRequest('POST', 'http://localhost/api/auth/anonymous', {
         headers: { origin: 'http://localhost', referer: 'http://localhost/auth/signin' },
-        json: { turnstileToken: 'token1234567890' }
+        json: {}
       });
       const res = await POST(req);
       expect(res.status).toBe(200);

@@ -49,7 +49,7 @@ EXCEPTION
 ### **Updated Files**
 - `frontend/hooks/useAuth.ts` - Direct Supabase calls instead of POST endpoint
 - `frontend/app/auth/signin/page.tsx` - Direct Supabase calls
-- `frontend/app/test-turnstile/page.tsx` - Updated test page
+
 
 ## **Application Steps**
 

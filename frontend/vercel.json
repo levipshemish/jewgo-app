@@ -14,8 +14,7 @@
     "MERGE_COOKIE_HMAC_KEY_PREVIOUS": "@merge-cookie-hmac-key-previous",
     "CLEANUP_CRON_SECRET": "@cleanup-cron-secret",
     "REDIS_URL": "@redis-url",
-    "TURNSTILE_SECRET_KEY": "@turnstile-secret-key",
-    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "@turnstile-site-key",
+
     "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google-maps-api-key",
     "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "@google-maps-map-id",
     "NEXT_PUBLIC_GA_MEASUREMENT_ID": "@ga-measurement-id",

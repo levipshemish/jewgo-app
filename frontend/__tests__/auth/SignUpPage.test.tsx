@@ -13,9 +13,7 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-// Mock Turnstile
-jest.mock('@/lib/utils/turnstile', () => ({
-  useTurnstile: () => ({
+
     execute: jest.fn().mockResolvedValue('test-token' as any),
     siteKey: 'test-site-key',
   }),

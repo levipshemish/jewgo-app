@@ -19,10 +19,19 @@ export default function AuthStatus({ className = "" }: AuthStatusProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Securely fetch authenticated user
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        if (user) {
-          setUser(transformSupabaseUser(user));
+        // Use server-side API to get user data
+        const response = await fetch('/api/auth/sync-user', {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.user) {
+            setUser(userData.user);
+          } else {
+            setUser(null);
+          }
         } else {
           setUser(null);
         }
@@ -36,32 +45,19 @@ export default function AuthStatus({ className = "" }: AuthStatusProps) {
 
     checkAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (_event: string) => {
-        try {
-          // Re-fetch user to avoid trusting session payload
-          const { data: { user } } = await supabaseBrowser.auth.getUser();
-          if (user) {
-            setUser(transformSupabaseUser(user));
-          } else {
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Auth state change error:', error);
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      }
-    );
+    // Set up polling for auth changes since we can't use Supabase auth state change
+    const interval = setInterval(checkAuth, 30000); // Check every 30 seconds
 
-    return () => subscription.unsubscribe();
+    return () => clearInterval(interval);
   }, []);
 
   const handleSignOut = async () => {
     try {
-      await supabaseBrowser.auth.signOut();
+      // Call server-side sign out endpoint
+      await fetch('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'include',
+      });
       setUser(null);
       // Redirect to home page after sign out
       router.push("/");

@@ -26,12 +26,8 @@ export const PasswordSchema = z.object({
  */
 export const SignInSchema = EmailSchema.merge(PasswordSchema);
 
-/**
- * Turnstile token validation
- */
-export const TurnstileSchema = z.object({
-  token: z.string().min(10, 'Invalid security token'),
-});
+
+
 
 /**
  * Rate limit validation

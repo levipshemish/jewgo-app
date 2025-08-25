@@ -21,7 +21,7 @@ This document summarizes all security patches implemented as part of the Mendel 
 - **Fix**: Moved to server action with rate limiting and uniform error messages
 - **Security**: Prevents token theft and enumeration attacks
 
-### 3. **Secure Turnstile Integration**
+
 - **File**: `frontend/app/auth/signin/page.tsx`
 - **Issue**: Global callback exposed tokens to window object
 - **Fix**: Added origin validation and token format validation
@@ -56,9 +56,7 @@ This document summarizes all security patches implemented as part of the Mendel 
 ## P2 Patches Implemented
 
 ### 8. **Environment Variable Validation**
-- **File**: `frontend/lib/turnstile.ts`
-- **Issue**: Hardcoded test keys could bypass captcha in misconfigured production
-- **Fix**: Added validation for Turnstile secret configuration
+
 - **Security**: Prevents captcha bypass in production
 
 ### 9. **Enhanced Cookie Security**
@@ -75,8 +73,8 @@ This document summarizes all security patches implemented as part of the Mendel 
 
 ### 11. **Environment Configuration Updates**
 - **File**: `frontend/env.example`
-- **Issue**: Missing Turnstile environment variables
-- **Fix**: Added `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`
+
+
 - **Security**: Ensures proper configuration documentation
 
 ### 12. **Unified Supabase Client Exports**
@@ -127,20 +125,20 @@ Updated OAuth success and error pages to use canonical auth routes:
 ## Migration Notes
 
 1. **Redis Required**: Anti-replay protection now requires Redis in production
-2. **Environment Variables**: Add Turnstile keys to production environment
+
 3. **Cookie Migration**: Test secure cookie prefixes don't break existing sessions
 4. **Rate Limiting**: Password reset now has strict rate limits (3 attempts per 5 minutes)
 
 ## Commit Messages Used
 
 ```bash
-fix(auth): atomic turnstile replay protection via redis lua
+
 fix(security): consolidate supabase clients; remove client-side auth
 chore: remove unused next-auth dep; delete duplicate auth pages  
 feat(auth): enhanced csp with violation reporting
 fix(cookies): secure prefix + domain for production sessions
 fix(auth): server-side password reset with rate limiting
-fix(security): origin validation for turnstile callbacks
+
 ```
 
 ## Outstanding Items (Not in Scope)
@@ -159,7 +157,7 @@ fix(security): origin validation for turnstile callbacks
 - [x] Anti-enumeration messaging implemented
 - [x] Cookies hardened with secure prefixes
 - [x] Rate limits enforced on all auth endpoints
-- [x] Turnstile verified server-side with bypass protection
+
 - [x] Clear, minimal diffs ready for production deployment
 
 ---

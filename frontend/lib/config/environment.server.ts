@@ -22,7 +22,6 @@ export const REDIS_DB = process.env.REDIS_DB ? parseInt(process.env.REDIS_DB) : 
 export const CSRF_SECRET = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
 export const IP_HASH_SALT = process.env.IP_HASH_SALT || 'default-ip-salt-change-in-production';
 export const ANALYTICS_HMAC_SECRET = process.env.ANALYTICS_HMAC_SECRET;
-export const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
 
 // Cleanup configuration - server-only
 export const CLEANUP_CRON_SECRET = process.env.CLEANUP_CRON_SECRET;

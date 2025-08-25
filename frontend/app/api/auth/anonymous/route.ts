@@ -5,9 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
 import { validateCSRFServer, validateSupabaseFeaturesWithLogging } from '@/lib/utils/auth-utils.server';
 import { checkRateLimit } from '@/lib/rate-limiting';
-// Note: Do not verify Turnstile here when delegating to Supabase. Supabase
-// verifies the captcha token itself. Verifying here could consume the
-// single-use token and cause Supabase to see an invalid response.
+// Anonymous authentication endpoint - no CAPTCHA required
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -61,19 +59,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Parse body for optional Turnstile token
+  // Parse body (no CAPTCHA token required)
   const body = await request.json().catch(() => ({} as any));
-  const turnstileToken: string | undefined = body?.turnstileToken || body?.token;
-
-  // Always require Turnstile token since it's configured for localhost
-  if (!turnstileToken || turnstileToken.length < 10) {
-    return NextResponse.json(
-      { error: 'TURNSTILE_REQUIRED' },
-      { status: 400, headers: baseHeaders }
-    );
-  }
-
-  // Do not verify/consume Turnstile token here; Supabase will verify it.
 
   // Create SSR Supabase client bound to response cookies
   const cookieStore = await cookies();
@@ -113,13 +100,9 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  // Attempt anonymous sign-in with Turnstile token (required by Supabase)
+  // Attempt anonymous sign-in (no CAPTCHA required)
   try {
-    const { data, error } = await supabase.auth.signInAnonymously({
-      options: {
-        captchaToken: turnstileToken // Pass Turnstile token to Supabase
-      }
-    });
+    const { data, error } = await supabase.auth.signInAnonymously();
     
     if (error || !data?.user) {
       // console.error('Anonymous sign-in failed:', error);

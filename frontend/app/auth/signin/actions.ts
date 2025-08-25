@@ -2,14 +2,14 @@
 import { checkRateLimit } from "@/lib/rate-limiting";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-// Note: We no longer verify or consume Turnstile tokens here.
+// Note: No CAPTCHA verification required.
 // Supabase Auth verifies captcha tokens itself. Double-verification can
 // consume the one-time token before Supabase sees it and cause failures.
 
 export async function signInAction(prevState: any, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const token = formData.get("cf-turnstile-response") as string;
+  
 
   if (!email || !password) {
     return { ok: false, message: "Email and password are required" };
@@ -21,20 +21,13 @@ export async function signInAction(prevState: any, formData: FormData) {
       return { ok: false, message: "Too many attempts. Try again shortly." };
     }
 
-    // Require a token but let Supabase perform verification to avoid
-    // consuming the one-time token prematurely.
-    if (!token || token.length < 10) {
-      return { ok: false, message: "Security verification required" };
-    }
+
 
     // Attempt sign in
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        captchaToken: token,
-      },
     });
 
     if (error) {

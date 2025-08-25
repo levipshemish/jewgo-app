@@ -103,7 +103,7 @@ REDIS_DB=0
 - [x] Rate limiting configuration (100 requests/minute in dev)
 - [x] Redis connection successful
 - [x] Anonymous auth endpoint accepts requests
-- [x] Turnstile captcha integration working
+
 
 ## 🎉 **Result:**
 
