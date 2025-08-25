@@ -1111,7 +1111,7 @@ def get_marketplace_categories():
                 "subcategories": []
             })
 
-        # For now, always return fallback categories to get the frontend working
+        # Always return fallback categories for now
         logger.info("Returning fallback categories for marketplace")
         return success_response({
             "categories": [
