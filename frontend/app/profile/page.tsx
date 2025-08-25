@@ -42,21 +42,12 @@ export default function ProfilePage() {
           console.log('Profile page: User data received:', userData);
           
           if (userData.user) {
-            // Check if user is anonymous/guest
-            // Anonymous users typically don't have an email and have provider 'unknown'
-            console.log('Profile page: Checking if user is anonymous...');
-            console.log('Profile page: user.email:', userData.user.email);
-            console.log('Profile page: user.provider:', userData.user.provider);
-            
-            const isAnonymous = !userData.user.email && userData.user.provider === 'unknown';
-            console.log('Profile page: isAnonymous:', isAnonymous);
-            
-            if (isAnonymous) {
-              console.log('Profile page: User is anonymous, redirecting to signin');
-              setRedirectStatus('Guest users must sign in to view profile. Redirecting to /auth/signin...');
-              router.push('/auth/signin');
-              return;
-            }
+            // User is authenticated (either with email or as guest)
+            // Guest users have email: undefined and provider: unknown, but they're still authenticated
+            console.log('Profile page: User is authenticated, setting user data');
+            setUser(userData.user);
+            setIsLoading(false);
+            return;
             
             console.log('Profile page: User is not anonymous, setting user data');
             setUser(userData.user);
