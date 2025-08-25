@@ -60,11 +60,10 @@ export default function MarketplaceFilters({
 
   // Debug log to ensure modal is being rendered
   console.log('MarketplaceFilters modal is open:', isOpen);
+  console.log('MarketplaceFilters modal should be visible with z-index:', 9999);
 
   return (
-    <>
-      {/* Render modal outside of any container to avoid CSS conflicts */}
-      <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-20" style={{ pointerEvents: 'auto' }}>
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-20" style={{ pointerEvents: 'auto' }}>
         {/* Backdrop */}
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={handleClose} />
         
