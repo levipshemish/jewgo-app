@@ -759,7 +759,7 @@ function MikvahPageContent() {
         </div>
       ) : (
         <div 
-          className="mikvah-grid px-4 sm:px-6 lg:px-8"
+          className="restaurant-grid px-4 sm:px-6 lg:px-8"
           role="grid"
           aria-label="Mikvah facility listings"
           style={{ 

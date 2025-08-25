@@ -786,7 +786,7 @@ function ShulsPageContent() {
         </div>
       ) : (
         <div 
-          className="shul-grid px-4 sm:px-6 lg:px-8"
+          className="restaurant-grid px-4 sm:px-6 lg:px-8"
           role="grid"
           aria-label="Synagogue listings"
           style={{ 

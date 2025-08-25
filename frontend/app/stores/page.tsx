@@ -714,7 +714,7 @@ function StoresPageContent() {
         </div>
       ) : (
         <div 
-          className="store-grid px-4 sm:px-6 lg:px-8"
+          className="restaurant-grid px-4 sm:px-6 lg:px-8"
           role="grid"
           aria-label="Store listings"
           style={{ 
