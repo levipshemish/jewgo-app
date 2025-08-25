@@ -24,6 +24,8 @@ const nextConfig = {
     webpackBuildWorker: false,
     // Disable CSS script injection to prevent CSS files from being loaded as scripts
     optimizeCss: false,
+    // Optimize webpack cache performance
+    // Note: turbo config moved to turbopack (stable in Next.js 15)
   },
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
@@ -94,16 +96,20 @@ const nextConfig = {
     // Temporarily disable webpack optimizations to fix module issues
     // config = optimizeWebpackConfig(config, { isServer });
 
-    // Fix eval errors by configuring module resolution
-    config.resolve = {
-      ...config.resolve,
-      fallback: {
-        ...config.resolve?.fallback,
-        fs: false,
-        path: false,
-        os: false,
-        crypto: false,
+    // Optimize webpack cache performance
+    const path = require('path');
+    config.cache = {
+      ...config.cache,
+      type: 'filesystem',
+      buildDependencies: {
+        config: [__filename],
       },
+      cacheDirectory: path.resolve(__dirname, '.next/cache'),
+      compression: 'gzip',
+      maxAge: 172800000, // 2 days
+      // Optimize serialization for large strings
+      store: 'pack',
+      version: `${process.env.NODE_ENV}-${process.env.npm_package_version || '1.0.0'}`,
     };
 
     // Fix eval errors by configuring module resolution
@@ -160,11 +166,30 @@ const nextConfig = {
       /CSS.*syntax.*error/,
     ];
 
-    // Configure webpack to handle eval more gracefully
+    // Configure webpack to handle eval more gracefully and optimize performance
     config.optimization = {
       ...config.optimization,
       minimize: isProduction,
       minimizer: config.optimization?.minimizer || [],
+      // Optimize chunk splitting to reduce serialization overhead
+      splitChunks: {
+        ...config.optimization?.splitChunks,
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+          },
+        },
+      },
     };
 
     // Disable CSS source maps and comments to prevent parsing issues
