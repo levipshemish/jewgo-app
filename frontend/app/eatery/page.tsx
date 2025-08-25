@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
@@ -35,7 +35,8 @@ function EateryPageLoading() {
 function EateryPageContent() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // initial load only
+  const [refreshing, setRefreshing] = useState(false); // background refresh state
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -84,6 +85,14 @@ function EateryPageContent() {
     clearFilter,
     clearAllFilters
   } = useAdvancedFilters();
+
+  // Create a stable key for filters to prevent effect loops due to object identity
+  const filtersKey = useMemo(() => {
+    const entries = Object.entries(activeFilters)
+      .filter(([, value]) => value !== undefined && value !== '' && value !== null)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return JSON.stringify(Object.fromEntries(entries));
+  }, [activeFilters]);
   
   // Location state from context
   const {
@@ -95,9 +104,15 @@ function EateryPageContent() {
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+  const [isSettingLocationFilters, setIsSettingLocationFilters] = useState(false);
+  const [fetchTimeout, setFetchTimeout] = useState<NodeJS.Timeout | null>(null);
+  // const fetchRestaurantsDataRef = useRef<typeof fetchRestaurantsData | null>(null); // Removed - not needed
 
   // Standard 4-rows pagination - always show exactly 4 rows
   const mobileOptimizedItemsPerPage = useMemo(() => {
+    // TEMPORARY FIX: Hardcode to 20 to match API response
+    return 20;
+    
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile || isMobileDevice) {
       return 8; // 4 rows × 2 columns = 8 items
@@ -115,7 +130,17 @@ function EateryPageContent() {
         columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
       }
       
-      return columnsPerRow * 4; // Always 4 rows
+      const result = columnsPerRow * 4; // Always 4 rows
+      
+      console.log('🔍 MOBILE OPTIMIZATION:', {
+        isMobile,
+        isMobileDevice,
+        viewportWidth,
+        columnsPerRow,
+        result
+      });
+      
+      return result;
     }
   }, [isMobile, isMobileDevice, viewportWidth]);
 
@@ -193,8 +218,13 @@ function EateryPageContent() {
     });
   }, [setSearchQuery, setCurrentPage]);
 
+  // Precompute stable card data to avoid re-creating objects every render
+  const cardDataList = useMemo(() => {
+    return restaurants.map((r) => transformRestaurantToCardData(r));
+  }, [restaurants, transformRestaurantToCardData]);
+
   // Infinite scroll with proper mobile detection
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+  const { hasMore, isLoadingMore, loadingRef, setHasMore, setIsLoadingMore } = useInfiniteScroll(
     () => fetchMoreRestaurants(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
@@ -224,9 +254,9 @@ function EateryPageContent() {
         params.append('search', searchQuery.trim());
       }
       
-      // Add current filters
+      // Add current filters - exclude page and limit to prevent duplicates
       Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
+        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
           params.append(key, String(value));
         }
       });
@@ -235,12 +265,18 @@ function EateryPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
+      // Call the working API endpoint directly
+      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch restaurants');
+      }
 
       // Apply distance calculation to new restaurants if location is available
-      let processedRestaurants = response.restaurants;
+      let processedRestaurants = data.data || [];
       if (userLocation) {
-        processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+        processedRestaurants = sortRestaurantsByDistance(processedRestaurants, userLocation);
       }
       
       setRestaurants(processedRestaurants);
@@ -251,6 +287,8 @@ function EateryPageContent() {
       setLoading(false);
     }
   };
+
+
 
   // Mobile-optimized location handling with context
   const handleRequestLocation = async () => {
@@ -266,6 +304,9 @@ function EateryPageContent() {
   // Handle location changes and update filters
   useEffect(() => {
     if (userLocation) {
+      // Set flag to prevent API calls during automatic location filter setting
+      setIsSettingLocationFilters(true);
+      
       // Update filters with location
       setFilter('lat', userLocation.latitude);
       setFilter('lng', userLocation.longitude);
@@ -279,14 +320,115 @@ function EateryPageContent() {
           data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
         });
       }
+      
+      // Reset flag after a short delay to allow filter updates to complete
+      setTimeout(() => {
+        setIsSettingLocationFilters(false);
+      }, 100);
     } else {
+      // Set flag to prevent API calls during automatic location filter clearing
+      setIsSettingLocationFilters(true);
+      
       // Clear distance-related filters when no location is available
       clearFilter('lat');
       clearFilter('lng');
       clearFilter('nearMe');
       clearFilter('maxDistanceMi');
+      
+      // Reset flag after a short delay to allow filter updates to complete
+      setTimeout(() => {
+        setIsSettingLocationFilters(false);
+      }, 100);
     }
   }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
+
+  // Fetch restaurants with mobile optimization and distance sorting
+  const fetchRestaurantsData = useCallback(async (filters: Filters = activeFilters, resetPage: boolean = true) => {
+    // Prevent API calls when automatically setting location filters
+    if (isSettingLocationFilters) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+      
+      // Add current filters - exclude page and limit to prevent duplicates
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
+          params.append(key, String(value));
+        }
+      });
+
+      params.append('page', '1');
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+
+      // Call the working API endpoint directly
+      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch restaurants');
+      }
+
+      // Apply distance calculation to new restaurants if location is available
+      let processedRestaurants = data.data || [];
+      if (userLocation) {
+        processedRestaurants = sortRestaurantsByDistance(processedRestaurants, userLocation);
+      }
+      
+      setRestaurants(processedRestaurants);
+      setCurrentPage(1);
+      
+      // Update pagination state
+      const total = data.total || processedRestaurants.length;
+      setTotalRestaurants(total);
+      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+      setTotalPages(calculatedTotalPages);
+      
+      // Update hasMore state for infinite scroll (mobile only)
+      const hasMoreContent = processedRestaurants.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    } catch (err) {
+      console.error('Error fetching restaurants:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unable to load restaurants. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation]);
+
+  // Handle location-based data fetching after filters are set
+  useEffect(() => {
+    // Only fetch data if we're not currently setting location filters and we have a location
+    if (!isSettingLocationFilters && userLocation) {
+      // Small delay to ensure filters have been applied
+      const timeout = setTimeout(() => {
+        fetchRestaurantsData();
+      }, 150);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [userLocation, isSettingLocationFilters]); // Removed fetchRestaurantsData from dependencies
+
+  // Remove the shouldFetchData pattern entirely
+  // useEffect(() => {
+  //   if (shouldFetchData && typeof fetchRestaurantsData === 'function') {
+  //     fetchRestaurantsData();
+  //     setShouldFetchData(false);
+  //   }
+  // }, [shouldFetchData, fetchRestaurantsData]);
 
   // Show location prompt when page loads and user doesn't have location
   useEffect(() => {
@@ -304,79 +446,35 @@ function EateryPageContent() {
     }
   }, [showLocationPrompt, userLocation]);
 
-  // Fetch restaurants with mobile optimization and distance sorting
-  const fetchRestaurantsData = async (filters: Filters = activeFilters) => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Store the function in ref to avoid circular dependencies
+  // Remove this effect to eliminate circular dependency
+  // useEffect(() => {
+  //   fetchRestaurantsDataRef.current = fetchRestaurantsData;
+  // }, [fetchRestaurantsData]);
 
-      // Mobile-optimized parameters
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
+  // Separate function for fetching data with current page (for filter changes)
+  const fetchDataWithCurrentPage = useCallback(async () => {
+    if (currentPage === 1) {
+      // If we're on page 1, use the regular fetchRestaurantsData
+      if (typeof fetchRestaurantsData === 'function') {
+        await fetchRestaurantsData(activeFilters, false);
       }
-
-      // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      // Mobile-specific optimizations
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-      
-      if (isLowPowerMode) {
-        params.append('low_power_mode', 'true');
-      }
-      
-      if (isSlowConnection) {
-        params.append('slow_connection', 'true');
-      }
-
-      const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
-
-      // Apply distance calculation and sorting if location is available
-      let processedRestaurants = response.restaurants;
-      if (userLocation) {
-        processedRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
-      }
-      
-      setRestaurants(processedRestaurants);
-      setCurrentPage(1);
-      
-      // Update pagination state
-      const total = response.total || response.restaurants.length;
-      setTotalRestaurants(total);
-      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-      setTotalPages(calculatedTotalPages);
-      
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-    } catch (err) {
-      console.error('Error fetching restaurants:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unable to load restaurants. Please try again later.');
-      }
-      setRestaurants([]); // Clear any existing restaurants
-    } finally {
-      setLoading(false);
+    } else {
+      // If we're on a different page, fetch that specific page
+      await handlePageChange(currentPage);
     }
-  };
+  }, [currentPage, activeFilters, fetchRestaurantsData]);
 
+  // Remove the complex fetchMoreRestaurants function - we don't need it with proper pagination
+
+  // Add back the simple fetchMoreRestaurants function for mobile infinite scroll
   const fetchMoreRestaurants = async () => {
     if (isLoadingMore || !hasMore) {
-
       return;
     }
 
     try {
+      setIsLoadingMore(true);
       const nextPage = currentPage + 1;
       const params = new URLSearchParams();
       
@@ -385,9 +483,9 @@ function EateryPageContent() {
         params.append('search', searchQuery.trim());
       }
       
-      // Add current filters
+      // Add current filters - exclude page and limit to prevent duplicates
       Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
+        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
           params.append(key, String(value));
         }
       });
@@ -396,24 +494,36 @@ function EateryPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchRestaurants(mobileOptimizedItemsPerPage, params.toString());
+      console.log('🔍 FETCHING MORE RESTAURANTS:', {
+        nextPage,
+        url: `/api/restaurants-with-images?${params.toString()}`,
+        mobileOptimizedItemsPerPage
+      });
+
+      // Call the working API endpoint directly
+      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch restaurants');
+      }
 
       // Apply distance calculation to new restaurants if location is available
-      let processedNewRestaurants = response.restaurants;
+      let processedNewRestaurants = data.data || [];
       if (userLocation) {
-
-        processedNewRestaurants = sortRestaurantsByDistance(response.restaurants, userLocation);
+        processedNewRestaurants = sortRestaurantsByDistance(processedNewRestaurants, userLocation);
       }
       
       setRestaurants(prev => [...prev, ...processedNewRestaurants]);
       setCurrentPage(nextPage);
       
-      // Update hasMore state
-      const hasMoreContent = response.restaurants.length >= mobileOptimizedItemsPerPage;
-
+      // Update hasMore state based on response
+      const hasMoreContent = processedNewRestaurants.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
       console.error('Error fetching more restaurants:', err);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -444,17 +554,46 @@ function EateryPageContent() {
 
   // Initial data fetch
   useEffect(() => {
-    fetchRestaurantsData();
-  }, [fetchRestaurantsData]);
+    // Only fetch if we haven't already fetched
+    if (restaurants.length === 0) {
+      fetchRestaurantsData();
+    }
+  }, [restaurants.length]); // Removed fetchRestaurantsData from dependencies
+
+  // Handle filter changes while preserving current page
+  useEffect(() => {
+    // Skip API calls when automatically setting location filters
+    if (isSettingLocationFilters) {
+      return;
+    }
+    
+    // Ensure fetchDataWithCurrentPage is available
+    if (typeof fetchDataWithCurrentPage !== 'function') {
+      return;
+    }
+    
+    // Clear any existing timeout
+    if (fetchTimeout) {
+      clearTimeout(fetchTimeout);
+    }
+    
+    // Debounce the API call to prevent rapid successive calls
+    const timeout = setTimeout(() => {
+      fetchDataWithCurrentPage();
+    }, 300); // 300ms debounce
+    
+    setFetchTimeout(timeout);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+    };
+  }, [filtersKey, fetchDataWithCurrentPage, isSettingLocationFilters]); // Removed fetchTimeout from dependencies
 
   // Mobile-optimized filter changes
-  useEffect(() => {
-    if (hasActiveFilters) {
-      startTransition(() => {
-        fetchRestaurantsData();
-      });
-    }
-  }, [activeFilters, hasActiveFilters, startTransition, fetchRestaurantsData]);
+  // Remove redundant filter-change effect; fetchRestaurantsData already depends on filtersKey
 
   // Mobile-specific effects
   useEffect(() => {
@@ -522,7 +661,9 @@ function EateryPageContent() {
           <button
             onClick={() => {
               setError(null);
-              fetchRestaurantsData();
+              if (typeof fetchRestaurantsData === 'function') {
+                fetchRestaurantsData();
+              }
             }}
             className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
           >
@@ -605,9 +746,10 @@ function EateryPageContent() {
               }}
             >
               <UnifiedCard
-                data={transformRestaurantToCardData(restaurant)}
+                data={cardDataList[index]}
                 variant="default"
                 showStarInBadge={true}
+                isScrolling={isScrolling}
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
                 className="w-full h-full"
@@ -617,51 +759,48 @@ function EateryPageContent() {
         </div>
       )}
 
-      {/* Loading states with consistent spacing */}
-      {loading && (
+      {/* Loading states: only show on true initial load */}
+      {loading && restaurants.length === 0 && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading restaurants...</p>
         </div>
       )}
 
-      {/* Infinite scroll loading indicator - only show on mobile */}
+      {/* Infinite scroll loading indicator - only show on mobile; avoid layout shift */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading more...</p>
         </div>
       )}
 
-      {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
-        <div 
-          ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
-        />
-      )}
-
       {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
-        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            isLoading={loading}
-            className="mb-4"
-          />
-          <div className="text-center text-sm text-gray-600">
-            Showing {restaurants.length} of {totalRestaurants} restaurants
+      {(() => {
+        const shouldShowPagination = !(isMobile || isMobileDevice) && totalPages > 1;
+        return shouldShowPagination ? (
+          <div className="mt-8 mb-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              isLoading={loading}
+              className="mb-4"
+            />
+            <div className="text-center text-sm text-gray-600">
+              Showing {restaurants.length} of {totalRestaurants} restaurants
+            </div>
           </div>
-        </div>
-      )}
+        ) : null;
+      })()}
 
       {/* Mobile infinite scroll trigger - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
+      {isMobile && hasMore && (
         <div 
           ref={loadingRef}
-          className="h-5 w-full my-5"
-          aria-hidden="true"
+          style={{ 
+            height: '20px', 
+            width: '100%',
+            margin: '20px 0'
+          }}
         />
       )}
 
