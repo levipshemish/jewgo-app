@@ -7,10 +7,11 @@ interface ActionButtonsProps {
   onShowFilters: () => void;
   onShowMap: () => void;
   onAddEatery: () => void;
+  addButtonText?: string;
 }
 
 export default function ActionButtons({
-  onShowFilters, onShowMap, onAddEatery, }: ActionButtonsProps) {
+  onShowFilters, onShowMap, onAddEatery, addButtonText = "Add Eatery" }: ActionButtonsProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   const handleMapClick = () => {
@@ -77,7 +78,7 @@ export default function ActionButtons({
             }}
           >
             <Plus className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
-            <span className="whitespace-nowrap overflow-hidden text-ellipsis">Add Eatery</span>
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">{addButtonText}</span>
           </button>
           
           {/* Advanced Filters Button */}

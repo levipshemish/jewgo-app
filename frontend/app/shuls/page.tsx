@@ -706,11 +706,12 @@ function ShulsPageContent() {
       </div>
       
       {/* Action buttons */}
-      <ActionButtons 
-        onShowFilters={() => setShowFilters(!showFilters)}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-shul')}
-      />
+                <ActionButtons 
+            onShowFilters={() => setShowFilters(!showFilters)}
+            onShowMap={() => router.push('/live-map')}
+            onAddEatery={() => router.push('/add-shul')}
+            addButtonText="Add Shul"
+          />
       
       {/* Filters Modal/Overlay */}
       {showFilters && (

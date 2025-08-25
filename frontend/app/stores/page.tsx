@@ -634,11 +634,12 @@ function StoresPageContent() {
       </div>
       
       {/* Action buttons */}
-      <ActionButtons 
-        onShowFilters={() => setShowFilters(!showFilters)}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-store')}
-      />
+                <ActionButtons 
+            onShowFilters={() => setShowFilters(!showFilters)}
+            onShowMap={() => router.push('/live-map')}
+            onAddEatery={() => router.push('/add-store')}
+            addButtonText="Add Store"
+          />
       
       {/* Filters Modal/Overlay */}
       {showFilters && (

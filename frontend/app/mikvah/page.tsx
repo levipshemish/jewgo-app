@@ -679,11 +679,12 @@ function MikvahPageContent() {
       </div>
       
       {/* Action buttons */}
-      <ActionButtons 
-        onShowFilters={() => setShowFilters(!showFilters)}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-mikvah')}
-      />
+                <ActionButtons 
+            onShowFilters={() => setShowFilters(!showFilters)}
+            onShowMap={() => router.push('/live-map')}
+            onAddEatery={() => router.push('/add-mikvah')}
+            addButtonText="Add Mikvah"
+          />
       
       {/* Filters Modal/Overlay */}
       {showFilters && (
