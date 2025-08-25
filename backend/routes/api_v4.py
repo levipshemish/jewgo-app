@@ -1169,6 +1169,84 @@ def migrate_marketplace_tables():
             "message": f"Error during migration: {str(e)}"
         }), 500
 
+
+@safe_route("/marketplace/create-tables", methods=["POST"])
+def create_marketplace_tables():
+    """Create basic marketplace tables."""
+    try:
+        from sqlalchemy import create_engine, text
+        import os
+        
+        database_url = os.getenv('DATABASE_URL')
+        if not database_url:
+            return jsonify({
+                "success": False,
+                "message": "DATABASE_URL not configured"
+            }), 500
+        
+        engine = create_engine(database_url)
+        
+        with engine.begin() as conn:
+            # Create categories table
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS categories (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    slug VARCHAR(100) UNIQUE NOT NULL,
+                    sort_order INTEGER DEFAULT 0,
+                    active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            
+            # Create subcategories table
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS subcategories (
+                    id SERIAL PRIMARY KEY,
+                    category_id INTEGER REFERENCES categories(id),
+                    name VARCHAR(100) NOT NULL,
+                    slug VARCHAR(100) UNIQUE NOT NULL,
+                    sort_order INTEGER DEFAULT 0,
+                    active BOOLEAN DEFAULT true,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """))
+            
+            # Insert sample categories
+            conn.execute(text("""
+                INSERT INTO categories (id, name, slug, sort_order, active) 
+                VALUES 
+                    (1, 'Baked Goods', 'baked-goods', 1, true),
+                    (2, 'Accessories', 'accessories', 2, true)
+                ON CONFLICT (id) DO NOTHING
+            """))
+            
+            # Insert sample subcategories
+            conn.execute(text("""
+                INSERT INTO subcategories (id, category_id, name, slug, sort_order, active) 
+                VALUES 
+                    (1, 1, 'Bread', 'bread', 1, true),
+                    (2, 1, 'Pastries', 'pastries', 2, true),
+                    (3, 2, 'Jewelry', 'jewelry', 1, true),
+                    (4, 2, 'Clothing', 'clothing', 2, true)
+                ON CONFLICT (id) DO NOTHING
+            """))
+        
+        logger.info("Marketplace tables created successfully")
+        return jsonify({
+            "success": True,
+            "message": "Marketplace tables created successfully"
+        }), 200
+        
+    except Exception as e:
+        logger.exception("Error creating marketplace tables")
+        return jsonify({
+            "success": False,
+            "message": f"Error creating tables: {str(e)}"
+        }), 500
+
 # Error handlers - only register if api_v4 blueprint is available
 if api_v4 is not None:
     @api_v4.errorhandler(ValidationError)
