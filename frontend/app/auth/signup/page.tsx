@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Script from "next/script";
 
 // Use SSR-aware browser client so PKCE + cookies work with server callback
 import { supabaseClient } from "@/lib/supabase/client-secure";
@@ -26,6 +27,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   // Initialize with the correct value to avoid flash
   const [appleOAuthEnabled, setAppleOAuthEnabled] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -60,6 +62,25 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       setError(passwordValidation.errors.join(", "));
       setPending(false);
       return;
+    }
+
+    // Execute reCAPTCHA v3 for 'signup' action if site key is present
+    let recaptchaToken = null;
+    try {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey) {
+        console.log('Executing reCAPTCHA v3 for signup action...');
+        recaptchaToken = await (window as any).grecaptcha.execute(siteKey, { action: 'signup' });
+        if (recaptchaToken) {
+          console.log('reCAPTCHA token obtained successfully for signup');
+        } else {
+          console.warn('reCAPTCHA token was empty for signup');
+        }
+      } else {
+        console.log('reCAPTCHA not configured or not available for signup');
+      }
+    } catch (error) {
+      console.error('reCAPTCHA execution failed for signup:', error);
+      // Non-fatal; continue with signup
     }
     
     try {
@@ -162,6 +183,12 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {siteKey && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="afterInteractive"
+        />
+      )}
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

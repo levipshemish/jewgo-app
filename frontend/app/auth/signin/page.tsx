@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
+import Script from "next/script";
 import { signInAction } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +18,7 @@ function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   // Check if user is already authenticated and redirect to eatery
   useEffect(() => {
@@ -74,7 +76,26 @@ function SignInForm() {
   // Anonymous success handled inline in handler
 
   // Handle form submission
-  const handleEmailSignIn = (formData: FormData) => {
+  const handleEmailSignIn = async (formData: FormData) => {
+    try {
+      // Execute reCAPTCHA v3 for 'login' action if site key is present
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey) {
+        console.log('Executing reCAPTCHA v3 for login action...');
+        const token = await (window as any).grecaptcha.execute(siteKey, { action: 'login' });
+        if (token) {
+          console.log('reCAPTCHA token obtained successfully');
+          formData.set('recaptchaToken', token);
+          formData.set('recaptchaAction', 'login');
+        } else {
+          console.warn('reCAPTCHA token was empty');
+        }
+      } else {
+        console.log('reCAPTCHA not configured or not available');
+      }
+    } catch (error) {
+      console.error('reCAPTCHA execution failed:', error);
+      // Non-fatal; server will handle missing token appropriately
+    }
     formAction(formData);
   };
 
@@ -193,6 +214,12 @@ function SignInForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-800 p-6">
+      {siteKey && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="afterInteractive"
+        />
+      )}
       <div className="w-full max-w-md">
         <div className="bg-neutral-900 rounded-2xl shadow-xl border border-neutral-700 p-8">
           <div className="text-center mb-6">
