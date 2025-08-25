@@ -15,15 +15,3 @@ def test():
         "message": "API v4 simple test endpoint is working",
         "timestamp": datetime.now(timezone.utc).isoformat()
     })
-
-@api_v4_simple.route("/marketplace/categories", methods=["GET"])
-def marketplace_categories():
-    """Simple marketplace categories endpoint."""
-    return jsonify({
-        "success": True,
-        "data": {
-            "categories": [],
-            "subcategories": []
-        },
-        "message": "Simple marketplace categories endpoint"
-    })
