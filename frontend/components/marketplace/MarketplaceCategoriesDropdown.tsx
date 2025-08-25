@@ -25,40 +25,35 @@ export default function MarketplaceCategoriesDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadCategories = useCallback(async () => {
+    if (!isOpen) return;
+    
     try {
       setLoading(true);
       setError(null);
       
       const response = await fetchMarketplaceCategories();
       
-      if (response.success && response.data) {
+      if (response.success && response.data && Array.isArray(response.data)) {
         setCategories(response.data);
       } else {
         setError(response.error || 'Failed to load categories');
-        // Set empty array to prevent undefined errors
         setCategories([]);
       }
     } catch (err) {
       setError('Failed to load categories');
       console.error('Error loading categories:', err);
-      // Set empty array to prevent undefined errors
       setCategories([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOpen]);
 
-  // Load categories when component mounts
+  // Load categories when component mounts and is open
   useEffect(() => {
     if (isOpen && categories.length === 0) {
       loadCategories();
     }
   }, [isOpen, categories.length, loadCategories]);
-
-  // Add error boundary to prevent component from crashing
-  if (!isOpen) {
-    return null;
-  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -86,6 +81,11 @@ export default function MarketplaceCategoriesDropdown({
     onCategorySelect({} as MarketplaceCategory);
     onClose();
   };
+
+  // Don't render if not open
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

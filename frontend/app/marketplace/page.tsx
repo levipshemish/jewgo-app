@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, Fragment, useMemo, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGuestProtection } from '@/lib/utils/guest-protection';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
@@ -82,8 +82,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-15T10:30:00Z",
     views: 127,
     rating: 4.5,
-    images: ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-2",
@@ -107,8 +107,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-15T08:15:00Z",
     views: 89,
     rating: 4.8,
-    images: ["https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-3",
@@ -132,8 +132,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-14T16:45:00Z",
     views: 203,
     rating: 5.0,
-    images: ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-4",
@@ -157,8 +157,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-15T12:20:00Z",
     views: 156,
     rating: 4.2,
-    images: ["https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-5",
@@ -183,8 +183,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-14T14:30:00Z",
     views: 234,
     rating: 4.7,
-    images: ["https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-6",
@@ -208,8 +208,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-13T11:15:00Z",
     views: 178,
     rating: 4.9,
-    images: ["https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   // Additional items to test pagination
   {
@@ -234,8 +234,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-15T15:30:00Z",
     views: 67,
     rating: 4.3,
-    images: ["https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-8",
@@ -259,8 +259,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-14T09:15:00Z",
     views: 145,
     rating: 4.6,
-    images: ["https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-9",
@@ -284,8 +284,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-13T14:20:00Z",
     views: 98,
     rating: 4.8,
-    images: ["https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   {
     id: "sample-10",
@@ -309,8 +309,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: "2024-01-12T16:45:00Z",
     views: 267,
     rating: 4.4,
-    images: ["https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&h=300&fit=crop"],
-    thumbnail: "https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&h=300&fit=crop"
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   },
   // More items to ensure pagination on all screen sizes
   ...Array.from({ length: 20 }, (_, i) => ({
@@ -335,8 +335,8 @@ const sampleMarketplaceData: MarketplaceListing[] = [
     updated_at: new Date(2024, 0, 10 - i).toISOString(),
     views: 50 + i * 10,
     rating: 4.0 + (i % 10) / 10,
-    images: [`https://images.unsplash.com/photo-154155886943${i % 10}-2840d308329a?w=400&h=300&fit=crop`],
-    thumbnail: `https://images.unsplash.com/photo-154155886943${i % 10}-2840d308329a?w=400&h=300&fit=crop`
+    images: ["/images/default-restaurant.webp"],
+    thumbnail: "/images/default-restaurant.webp"
   }))
 ];
 
@@ -1215,9 +1215,5 @@ export default function MarketplacePage() {
     );
   }
 
-  return (
-    <Suspense fallback={<MarketplacePageLoading />}>
-      <MarketplacePageContent />
-    </Suspense>
-  );
+  return <MarketplacePageContent />;
 }
