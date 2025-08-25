@@ -19,8 +19,8 @@ import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Filters } from '@/lib/filters/schema';
 
-// Mock shul type for now - will be replaced with actual API
-interface Shul {
+// Mock mikvah type for now - will be replaced with actual API
+interface Mikvah {
   id: number;
   name: string;
   description?: string;
@@ -30,16 +30,14 @@ interface Shul {
   phone_number?: string;
   website?: string;
   email?: string;
-  shul_type?: string;
-  shul_category?: string;
-  denomination?: string;
+  mikvah_type?: string;
+  mikvah_category?: string;
   business_hours?: string;
-  has_daily_minyan?: boolean;
-  has_shabbat_services?: boolean;
-  has_holiday_services?: boolean;
-  has_women_section?: boolean;
-  has_mechitza?: boolean;
-  has_separate_entrance?: boolean;
+  requires_appointment?: boolean;
+  appointment_phone?: string;
+  appointment_website?: string;
+  walk_in_available?: boolean;
+  advance_booking_days?: number;
   distance?: string;
   distance_miles?: number;
   rating?: number;
@@ -48,26 +46,23 @@ interface Shul {
   google_rating?: number;
   image_url?: string;
   logo_url?: string;
-  has_parking?: boolean;
+  has_changing_rooms?: boolean;
+  has_shower_facilities?: boolean;
+  has_towels_provided?: boolean;
+  has_soap_provided?: boolean;
+  has_hair_dryers?: boolean;
+  has_private_entrance?: boolean;
   has_disabled_access?: boolean;
-  has_kiddush_facilities?: boolean;
-  has_social_hall?: boolean;
-  has_library?: boolean;
-  has_hebrew_school?: boolean;
-  has_adult_education?: boolean;
-  has_youth_programs?: boolean;
-  has_senior_programs?: boolean;
-  rabbi_name?: string;
-  rabbi_phone?: string;
-  rabbi_email?: string;
-  religious_authority?: string;
-  community_affiliation?: string;
+  has_parking?: boolean;
+  rabbinical_supervision?: string;
   kosher_certification?: string;
-  membership_required?: boolean;
-  membership_fee?: number;
+  community_affiliation?: string;
+  religious_authority?: string;
+  fee_amount?: number;
   fee_currency?: string;
-  accepts_visitors?: boolean;
-  visitor_policy?: string;
+  accepts_credit_cards?: boolean;
+  accepts_cash?: boolean;
+  accepts_checks?: boolean;
   is_active?: boolean;
   is_verified?: boolean;
   created_at?: string;
@@ -78,154 +73,132 @@ interface Shul {
   listing_type?: string;
 }
 
-// Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (limit: number, params?: string) => {
+// Mock API function for mikvah - will be replaced with actual API
+const fetchMikvah = async (limit: number, params?: string) => {
   // For now, return mock data
-  const mockShuls: Shul[] = [
+  const mockMikvah: Mikvah[] = [
     {
       id: 1,
-      name: "Young Israel of Miami",
-      description: "Modern Orthodox synagogue with daily minyan and vibrant community",
+      name: "Community Mikvah Center",
+      description: "Beautiful and well-maintained mikvah facility for the community",
       city: "Miami",
-      shul_type: "orthodox",
-      shul_category: "ashkenazi",
-      denomination: "orthodox",
-      rating: 4.7,
-      review_count: 234,
-      distance: "0.8 mi",
+      mikvah_type: "women's",
+      mikvah_category: "community",
+      rating: 4.8,
+      review_count: 203,
+      distance: "1.2 mi",
       image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
+      requires_appointment: true,
+      appointment_phone: "305-555-0123",
+      walk_in_available: false,
+      has_changing_rooms: true,
+      has_shower_facilities: true,
+      has_towels_provided: true,
+      has_soap_provided: true,
+      has_hair_dryers: true,
       has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi David Cohen",
-      rabbi_phone: "305-555-0123",
-      religious_authority: "OU",
-      accepts_visitors: true,
-      membership_required: false,
+      rabbinical_supervision: "Rabbi Cohen",
+      kosher_certification: "OU",
+      fee_amount: 25.00,
+      accepts_cash: true,
+      accepts_checks: true,
       is_active: true,
       is_verified: true
     },
     {
       id: 2,
-      name: "Temple Beth Sholom",
-      description: "Conservative synagogue with warm community and excellent programming",
+      name: "Private Mikvah Suite",
+      description: "Luxury private mikvah with premium amenities",
       city: "Miami",
-      shul_type: "conservative",
-      shul_category: "ashkenazi",
-      denomination: "conservative",
-      rating: 4.5,
-      review_count: 189,
-      distance: "1.5 mi",
+      mikvah_type: "women's",
+      mikvah_category: "private",
+      rating: 4.9,
+      review_count: 156,
+      distance: "2.8 mi",
       image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
+      requires_appointment: true,
+      appointment_phone: "305-555-0456",
+      walk_in_available: false,
+      advance_booking_days: 7,
+      has_changing_rooms: true,
+      has_shower_facilities: true,
+      has_towels_provided: true,
+      has_soap_provided: true,
+      has_hair_dryers: true,
+      has_private_entrance: true,
       has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Sarah Goldstein",
-      rabbi_phone: "305-555-0456",
-      religious_authority: "USCJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1200.00,
+      rabbinical_supervision: "Rabbi Goldstein",
+      kosher_certification: "OU",
+      fee_amount: 50.00,
+      accepts_credit_cards: true,
+      accepts_cash: true,
       is_active: true,
       is_verified: true
     },
     {
       id: 3,
-      name: "Chabad of Miami Beach",
-      description: "Chabad house with daily services and community outreach",
-      city: "Miami Beach",
-      shul_type: "chabad",
-      shul_category: "chabad",
-      denomination: "orthodox",
-      rating: 4.8,
-      review_count: 156,
-      distance: "2.3 mi",
+      name: "Hotel Mikvah",
+      description: "Convenient mikvah located within the hotel complex",
+      city: "Miami",
+      mikvah_type: "women's",
+      mikvah_category: "hotel",
+      rating: 4.3,
+      review_count: 89,
+      distance: "3.5 mi",
       image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
-      has_parking: false,
-      has_kiddush_facilities: true,
-      has_social_hall: false,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi Menachem Mendel",
-      rabbi_phone: "305-555-0789",
-      religious_authority: "Chabad",
-      accepts_visitors: true,
-      membership_required: false,
+      requires_appointment: false,
+      walk_in_available: true,
+      has_changing_rooms: true,
+      has_shower_facilities: true,
+      has_towels_provided: false,
+      has_soap_provided: false,
+      has_hair_dryers: true,
+      has_parking: true,
+      rabbinical_supervision: "Hotel Rabbi",
+      kosher_certification: "OU",
+      fee_amount: 35.00,
+      accepts_credit_cards: true,
+      accepts_cash: true,
       is_active: true,
       is_verified: true
     },
     {
       id: 4,
-      name: "Temple Emanu-El",
-      description: "Reform synagogue with progressive values and inclusive community",
+      name: "Men's Mikvah",
+      description: "Traditional men's mikvah for daily use",
       city: "Miami",
-      shul_type: "reform",
-      shul_category: "ashkenazi",
-      denomination: "reform",
-      rating: 4.3,
-      review_count: 98,
-      distance: "3.1 mi",
+      mikvah_type: "men's",
+      mikvah_category: "community",
+      rating: 4.5,
+      review_count: 67,
+      distance: "1.8 mi",
       image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Rachel Green",
-      rabbi_phone: "305-555-0321",
-      religious_authority: "URJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1000.00,
+      requires_appointment: false,
+      walk_in_available: true,
+      has_changing_rooms: true,
+      has_shower_facilities: true,
+      has_towels_provided: false,
+      has_soap_provided: false,
+      has_parking: false,
+      rabbinical_supervision: "Rabbi Schwartz",
+      kosher_certification: "OU",
+      fee_amount: 15.00,
+      accepts_cash: true,
       is_active: true,
       is_verified: true
     }
   ];
 
   return {
-    shuls: mockShuls,
-    total: mockShuls.length,
+    mikvah: mockMikvah,
+    total: mockMikvah.length,
     page: 1,
     limit: limit
   };
 };
 
 // Loading component for Suspense fallback
-function ShulsPageLoading() {
+function MikvahPageLoading() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -234,14 +207,14 @@ function ShulsPageLoading() {
 }
 
 // Main component that uses useSearchParams
-function ShulsPageContent() {
+function MikvahPageContent() {
   const router = useRouter();
-  const [shuls, setShuls] = useState<Shul[]>([]);
+  const [mikvah, setMikvah] = useState<Mikvah[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalShuls, setTotalShuls] = useState(0);
+  const [totalMikvah, setTotalMikvah] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Mobile optimization hooks
@@ -321,33 +294,33 @@ function ShulsPageContent() {
     }
   }, [isMobile, isMobileDevice, viewportWidth]);
 
-  // Memoize shul transformation to prevent unnecessary re-renders
-  const transformShulToCardData = useCallback((shul: Shul) => {
+  // Memoize mikvah transformation to prevent unnecessary re-renders
+  const transformMikvahToCardData = useCallback((mikvah: Mikvah) => {
     // Enhanced rating logic with better fallbacks
-    const rating = shul.rating || shul.star_rating || shul.google_rating;
+    const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     
     // Enhanced distance logic - ensure we have a valid distance string
-    const distanceText = shul.distance && shul.distance.trim() !== '' ? shul.distance : '';
+    const distanceText = mikvah.distance && mikvah.distance.trim() !== '' ? mikvah.distance : '';
     
-    // Shul type as subtitle
-    const shulType = shul.shul_type && shul.shul_type.trim() !== '' ? shul.shul_type : '';
+    // Mikvah type as subtitle
+    const mikvahType = mikvah.mikvah_type && mikvah.mikvah_type.trim() !== '' ? mikvah.mikvah_type : '';
     
     return {
-      id: shul.id,
-      imageUrl: shul.image_url,
-      imageTag: shul.denomination,
-      title: shul.name,
+      id: mikvah.id,
+      imageUrl: mikvah.image_url,
+      imageTag: mikvah.kosher_certification,
+      title: mikvah.name,
       badge: ratingText, // Use the enhanced rating text
-      subtitle: shulType,
+      subtitle: mikvahType,
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
-      kosherCategory: shul.denomination,
+      kosherCategory: mikvah.kosher_certification,
       rating,
-      reviewCount: shul.review_count,
-      city: shul.city,
-      distance: shul.distance,
+      reviewCount: mikvah.review_count,
+      city: mikvah.city,
+      distance: mikvah.distance,
     };
   }, []); // Empty dependency array to prevent recreation
 
@@ -382,13 +355,13 @@ function ShulsPageContent() {
     setCurrentPage(1);
     // Trigger data fetch with search query
     startTransition(() => {
-      fetchShulsData();
+      fetchMikvahData();
     });
   }, [setSearchQuery, setCurrentPage]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => fetchMoreShuls(),
+    () => fetchMoreMikvah(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
       rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
@@ -426,9 +399,9 @@ function ShulsPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString());
       
-      setShuls(response.shuls);
+      setMikvah(response.mikvah);
       setCurrentPage(page);
     } catch (err) {
       console.error('Error fetching page:', err);
@@ -484,8 +457,8 @@ function ShulsPageContent() {
     }
   }, [showLocationPrompt, userLocation]);
 
-  // Fetch shuls with mobile optimization
-  const fetchShulsData = async (filters: Filters = activeFilters) => {
+  // Fetch mikvah with mobile optimization
+  const fetchMikvahData = async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -517,34 +490,34 @@ function ShulsPageContent() {
         params.append('slow_connection', 'true');
       }
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString());
       
-      setShuls(response.shuls);
+      setMikvah(response.mikvah);
       setCurrentPage(1);
       
       // Update pagination state
-      const total = response.total || response.shuls.length;
-      setTotalShuls(total);
+      const total = response.total || response.mikvah.length;
+      setTotalMikvah(total);
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
       // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
+      const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching shuls:', err);
+      console.error('Error fetching mikvah:', err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Unable to load synagogues. Please try again later.');
+        setError('Unable to load mikvah facilities. Please try again later.');
       }
-      setShuls([]); // Clear any existing shuls
+      setMikvah([]); // Clear any existing mikvah
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMoreShuls = async () => {
+  const fetchMoreMikvah = async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -569,40 +542,40 @@ function ShulsPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString());
       
-      setShuls(prev => [...prev, ...response.shuls]);
+      setMikvah(prev => [...prev, ...response.mikvah]);
       setCurrentPage(nextPage);
       
       // Update hasMore state
-      const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
+      const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching more shuls:', err);
+      console.error('Error fetching more mikvah:', err);
     }
   };
 
   // Subscribe to real-time updates
   useEffect(() => {
     if (isConnected) {
-      // Subscribe to shul updates
+      // Subscribe to mikvah updates
       sendMessage({
         type: 'subscribe',
-        data: { room_id: 'shul_updates' }
+        data: { room_id: 'mikvah_updates' }
       });
     }
   }, [isConnected, sendMessage]);
 
   // Initial data fetch
   useEffect(() => {
-    fetchShulsData();
+    fetchMikvahData();
   }, []);
 
   // Mobile-optimized filter changes
   useEffect(() => {
     if (hasActiveFilters) {
       startTransition(() => {
-        fetchShulsData();
+        fetchMikvahData();
       });
     }
   }, [activeFilters]);
@@ -651,14 +624,14 @@ function ShulsPageContent() {
       <div style={responsiveStyles.container}>
         <Header 
           onSearch={handleSearch}
-          placeholder="Search synagogues..."
+          placeholder="Search mikvah facilities..."
           showFilters={true}
           onShowFilters={() => setShowFilters(!showFilters)}
         />
         
         {/* Navigation Tabs - Always visible */}
         <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-          <CategoryTabs activeTab="shuls" />
+          <CategoryTabs activeTab="mikvah" />
         </div>
         
         <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
@@ -672,7 +645,7 @@ function ShulsPageContent() {
           <button
             onClick={() => {
               setError(null);
-              fetchShulsData();
+              fetchMikvahData();
             }}
             className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
           >
@@ -691,25 +664,25 @@ function ShulsPageContent() {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       role="main"
-      aria-label="Synagogue listings"
+      aria-label="Mikvah facility listings"
     >
       <Header 
         onSearch={handleSearch}
-        placeholder="Search synagogues..."
+        placeholder="Search mikvah facilities..."
         showFilters={true}
         onShowFilters={() => setShowFilters(!showFilters)}
       />
       
       {/* Navigation Tabs - Always visible */}
       <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab="shuls" />
+        <CategoryTabs activeTab="mikvah" />
       </div>
       
       {/* Action buttons */}
       <ActionButtons 
         onShowFilters={() => setShowFilters(!showFilters)}
         onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-shul')}
+        onAddEatery={() => router.push('/add-mikvah')}
       />
       
       {/* Filters Modal/Overlay */}
@@ -775,20 +748,20 @@ function ShulsPageContent() {
         </>
       )}
 
-      {/* Shul grid with consistent responsive spacing */}
-      {shuls.length === 0 && !loading ? (
+      {/* Mikvah grid with consistent responsive spacing */}
+      {mikvah.length === 0 && !loading ? (
         <div className="text-center py-10 px-5" role="status" aria-live="polite">
-          <div className="text-5xl mb-4" aria-hidden="true">🕍</div>
-          <p className="text-lg text-gray-600 mb-2">No synagogues found</p>
+          <div className="text-5xl mb-4" aria-hidden="true">🕊️</div>
+          <p className="text-lg text-gray-600 mb-2">No mikvah facilities found</p>
           <p className="text-sm text-gray-500">
             Try adjusting your filters or check back later
           </p>
         </div>
       ) : (
         <div 
-          className="shul-grid px-4 sm:px-6 lg:px-8"
+          className="mikvah-grid px-4 sm:px-6 lg:px-8"
           role="grid"
-          aria-label="Synagogue listings"
+          aria-label="Mikvah facility listings"
           style={{ 
             contain: 'layout style paint',
             willChange: 'auto',
@@ -797,9 +770,9 @@ function ShulsPageContent() {
             perspective: '1000px'
           }}
         >
-          {shuls.map((shul, index) => (
+          {mikvah.map((mikvahFacility, index) => (
             <div 
-              key={shul.id} 
+              key={mikvahFacility.id} 
               className="w-full" 
               role="gridcell"
               style={{
@@ -810,11 +783,11 @@ function ShulsPageContent() {
               }}
             >
               <UnifiedCard
-                data={transformShulToCardData(shul)}
+                data={transformMikvahToCardData(mikvahFacility)}
                 variant="default"
                 showStarInBadge={true}
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
-                onCardClick={() => router.push(`/shul/${shul.id}`)}
+                onCardClick={() => router.push(`/mikvah/${mikvahFacility.id}`)}
                 className="w-full h-full"
               />
             </div>
@@ -825,7 +798,7 @@ function ShulsPageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading synagogues...</p>
+          <p>Loading mikvah facilities...</p>
         </div>
       )}
 
@@ -856,7 +829,7 @@ function ShulsPageContent() {
             className="mb-4"
           />
           <div className="text-center text-sm text-gray-600">
-            Showing {shuls.length} of {totalShuls} synagogues
+            Showing {mikvah.length} of {totalMikvah} mikvah facilities
           </div>
         </div>
       )}
@@ -885,10 +858,10 @@ function ShulsPageContent() {
   );
 }
 
-export default function ShulsPage() {
+export default function MikvahPage() {
   return (
-    <Suspense fallback={<ShulsPageLoading />}>
-      <ShulsPageContent />
+    <Suspense fallback={<MikvahPageLoading />}>
+      <MikvahPageContent />
     </Suspense>
   );
 }

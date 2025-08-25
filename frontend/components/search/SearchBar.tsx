@@ -65,7 +65,7 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [query]); // Removed onSearch from dependencies since it should be stable
+  }, [query, onSearch]); // Added onSearch to dependencies to fix React Error #310
 
   const fetchPlaceSuggestions = useCallback(async (searchQuery: string) => {
     setIsLoadingPlaces(true);

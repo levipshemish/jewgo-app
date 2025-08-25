@@ -441,7 +441,7 @@ function EateryPageContent() {
   // Initial data fetch
   useEffect(() => {
     fetchRestaurantsData();
-  }, []);
+  }, [fetchRestaurantsData]);
 
   // Mobile-optimized filter changes
   useEffect(() => {
@@ -450,7 +450,7 @@ function EateryPageContent() {
         fetchRestaurantsData();
       });
     }
-  }, [activeFilters]);
+  }, [activeFilters, hasActiveFilters, startTransition, fetchRestaurantsData]);
 
   // Mobile-specific effects
   useEffect(() => {

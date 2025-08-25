@@ -866,7 +866,7 @@ function MarketplacePageContent() {
     } else {
       fetchMarketplaceData();
     }
-  }, []);
+  }, [fetchMarketplaceData, mobileOptimizedItemsPerPage]);
 
   // Mobile-specific effects
   useEffect(() => {

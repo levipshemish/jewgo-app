@@ -89,7 +89,7 @@ export default function HomePage() {
     );
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, supabaseClient]);
 
   // Show loading while checking authentication and redirecting
   return (
