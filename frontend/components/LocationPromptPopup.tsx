@@ -14,6 +14,11 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
   onClose,
   onLocationGranted,
 }) => {
+  // Early return to prevent hooks violation - must be before any hooks
+  if (!isOpen) {
+    return null;
+  }
+
   const { requestLocation, permissionStatus, isLoading, error } = useLocation();
   const [hasRequested, setHasRequested] = useState(false);
 
@@ -65,8 +70,6 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
     // Reload the page to reset the location context
     window.location.reload();
   };
-
-  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

@@ -14,7 +14,7 @@ export async function POST(
     }
 
     // Fetch hours data via backend API
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}/fetch-hours`;
     
     if (process.env.NODE_ENV === 'development') {

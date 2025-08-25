@@ -1,6 +1,49 @@
 #!/usr/bin/env node
 
 /**
+ * update-hours-cron
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category utility
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage * - Manual: node scripts/update-hours-cron.js
+ * - CRON: 0 2 * * 0 node scripts/update-hours-cron.js (every Sunday at 2 AM)
+ */
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node update-hours-cron.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
+
+#!/usr/bin/env node
+
+/**
  * CRON Job: Update Restaurant Hours
  * 
  * This script updates restaurant hours for records that haven't been updated
@@ -51,20 +94,20 @@ async function updateStaleHours() {
         
       } catch (error) {
         errorCount++;
-        // // console.error(`❌ Error updating restaurant ${restaurant.id}:`, error.message);
+        // // defaultLogger.error(`❌ Error updating restaurant ${restaurant.id}:`, error.message);
       }
     }
 
     } catch (error) {
-    // // console.error('💥 Fatal error during hours update:', error);
-    process.exit(1);
+    // // defaultLogger.error('💥 Fatal error during hours update:', error);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
   }
 }
 
 // Run the update
 updateStaleHours().then(() => {
-  process.exit(0);
+  wrapSyncWithErrorHandling(() => process.exit)(0);
 }).catch((error) => {
-  // // console.error('💥 Script failed:', error);
-  process.exit(1);
+  // // defaultLogger.error('💥 Script failed:', error);
+  wrapSyncWithErrorHandling(() => process.exit)(1);
 }); 

@@ -30,9 +30,9 @@ export const config = {
     '/api/restaurants/:path*',
     '/api/reviews/:path*',
     '/api/feedback/:path*',
-    // Auth endpoints (for rate limiting)
-    '/api/auth/:path*',
-    '/auth/:path*'
+    // Auth API endpoints (for rate limiting only)
+    '/api/auth/:path*'
+    // Note: /auth/:path* removed to prevent middleware from processing auth pages
   ]
 };
 
@@ -40,6 +40,8 @@ export const config = {
  * Enhanced security middleware with authentication checks
  * Applies security headers, rate limiting, CSRF protection, and auth checks
  * Redirects unauthenticated users to sign-in page for protected routes
+ * 
+ * Note: Auth pages (/auth/*) are excluded from middleware processing to prevent redirect loops
  */
 export async function middleware(request: NextRequest) {
   try {
@@ -101,6 +103,12 @@ export async function middleware(request: NextRequest) {
 
     // Get authenticated user from Supabase Auth server (secure)
     const { data: { user }, error } = await supabase.auth.getUser();
+    
+    // Allow anonymous access to certain pages without requiring authentication
+    if (isAnonymousAllowedPath(path)) {
+      return response;
+    }
+    
     if (error || !user) {
       console.error('Middleware auth error:', error);
       // Redirect to signin when auth fails or missing user
@@ -168,6 +176,16 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
  * Local matcher to mirror Next.js config in unit tests
  */
 function isProtectedPath(pathname: string): boolean {
+  // Allow filter-options endpoint without authentication
+  if (pathname === '/api/restaurants/filter-options') {
+    return false;
+  }
+  
+  // Exclude auth pages from protection to prevent redirect loops
+  if (pathname.startsWith('/auth/')) {
+    return false;
+  }
+  
   const protectedPrefixes = [
     '/admin/', '/messages/', '/eatery/', '/restaurant/', '/marketplace/', '/profile/', '/settings/',
     '/favorites/', '/live-map/', '/location-access/', '/notifications/', '/add-eatery/', '/mikva/', '/shuls/', '/stores/',
@@ -181,6 +199,11 @@ function isProtectedPath(pathname: string): boolean {
  * Allow list for routes that anonymous users can access
  */
 function isAnonymousAllowedPath(pathname: string): boolean {
+  // Auth pages should always be accessible
+  if (pathname.startsWith('/auth/')) {
+    return true;
+  }
+  
   // Guest users can access only the following app sections
   const allowedPrefixes = [
     '/eatery/', '/shuls/', '/stores/', '/mikva/', '/live-map/',

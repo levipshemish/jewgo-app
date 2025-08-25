@@ -1,7 +1,43 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+/**
+ * cleanup-remaining-vars
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category maintenance
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node cleanup-remaining-vars.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node cleanup-remaining-vars.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 // Enhanced patterns to fix remaining unused variables
 const patterns = [
@@ -109,7 +145,7 @@ const patterns = [
 
 function processFile(_filePath) {
   try {
-    let content = fs.readFileSync(filePath, 'utf8');
+    let content = wrapSyncWithErrorHandling(() => fs.readFileSync)(filePath, 'utf8');
     let originalContent = content;
     let changes = 0;
     
@@ -122,14 +158,14 @@ function processFile(_filePath) {
     });
     
     if (content !== originalContent) {
-      fs.writeFileSync(filePath, content, 'utf8');
-      console.log(`✅ Fixed ${changes} issues in ${filePath}`);
+      wrapSyncWithErrorHandling(() => fs.writeFileSync)(filePath, content, 'utf8');
+      defaultLogger.info(`✅ Fixed ${changes} issues in ${filePath}`);
       return changes;
     }
     
     return 0;
   } catch (error) {
-    console.error(`❌ Error processing ${filePath}:`, error.message);
+    defaultLogger.error(`❌ Error processing ${filePath}:`, error.message);
     return 0;
   }
 }
@@ -138,11 +174,11 @@ function findTypeScriptFiles(_dir) {
   const files = [];
   
   function traverse(_currentDir) {
-    const items = fs.readdirSync(currentDir);
+    const items = wrapSyncWithErrorHandling(() => fs.readdirSync)(currentDir);
     
     for (const item of items) {
       const fullPath = path.join(currentDir, item);
-      const stat = fs.statSync(fullPath);
+      const stat = wrapSyncWithErrorHandling(() => fs.statSync)(fullPath);
       
       if (stat.isDirectory()) {
         // Skip node_modules, .next, and other build directories
@@ -160,7 +196,7 @@ function findTypeScriptFiles(_dir) {
 }
 
 function main() {
-  console.log('🧹 Starting enhanced cleanup of remaining unused variables...\n');
+  defaultLogger.info('🧹 Starting enhanced cleanup of remaining unused variables...\n');
   
   const files = findTypeScriptFiles('.');
   let totalChanges = 0;
@@ -174,14 +210,26 @@ function main() {
     }
   }
   
-  console.log(`\n🎉 Cleanup complete!`);
-  console.log(`📊 Files modified: ${filesChanged}`);
-  console.log(`🔧 Total changes: ${totalChanges}`);
-  console.log(`\n💡 Run 'npm run lint' to see the remaining warnings.`);
+  defaultLogger.info(`\n🎉 Cleanup complete!`);
+  defaultLogger.info(`📊 Files modified: ${filesChanged}`);
+  defaultLogger.info(`🔧 Total changes: ${totalChanges}`);
+  defaultLogger.info(`\n💡 Run 'npm run lint' to see the remaining warnings.`);
 }
 
+
+// Wrap main function with error handling
+const mainWithErrorHandling = wrapWithErrorHandling(main, {
+  script: __filename,
+  operation: 'main'
+});
+
+// Execute with error handling
 if (require.main === module) {
-  main();
+  mainWithErrorHandling().catch(error => {
+    defaultLogger.error('Script failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
+  });
 }
+
 
 module.exports = { processFile, patterns };

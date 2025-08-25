@@ -43,7 +43,7 @@ const ENV_TEMPLATES = {
     GOOGLE_CLIENT_SECRET: 'your-google-client-secret',
     
     // Backend URL
-    NEXT_PUBLIC_BACKEND_URL: 'https://jewgo.onrender.com',
+    NEXT_PUBLIC_BACKEND_URL: 'https://jewgo-app-oyoh.onrender.com',
     
     // Google Maps
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'your-google-maps-api-key',
@@ -71,7 +71,7 @@ const ENV_TEMPLATES = {
     
     // Application URLs
     FRONTEND_URL: 'https://jewgo-app.vercel.app',
-    BACKEND_URL: 'https://jewgo.onrender.com',
+    BACKEND_URL: 'https://jewgo-app-oyoh.onrender.com',
     
     // Redis Configuration
     REDIS_URL: 'redis://user:password@host:6379',

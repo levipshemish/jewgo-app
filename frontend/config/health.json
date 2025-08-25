@@ -4,7 +4,7 @@
     "https://jewgo-app.netlify.app/health",
     "https://jewgo-app.vercel.app",
     "https://jewgo-app.vercel.app/health",
-    "https://jewgo.onrender.com/health"
+    "backend": "https://jewgo-app-oyoh.onrender.com/health"
   ],
   "interval": 300,
   "timeout": 10000,

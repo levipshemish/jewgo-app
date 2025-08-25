@@ -1,4 +1,47 @@
-const fs = require('fs')
+#!/usr/bin/env node
+
+/**
+ * deploy-validate
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category validation
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node deploy-validate.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node deploy-validate.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+const fs = require(
+const { defaultErrorHandler } = require('./utils/errorHandler');
+const { defaultLogger } = require('./utils/logger');
+
+'fs')
 const path = require('path')
 
 function validateEnvironment() {
@@ -50,8 +93,8 @@ function validateEnvironment() {
   
   filesToCheck.forEach(file => {
     const filePath = path.join(__dirname, '..', file)
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf8')
+    if (wrapSyncWithErrorHandling(() => fs.existsSync)(filePath)) {
+      const content = wrapSyncWithErrorHandling(() => fs.readFileSync)(filePath, 'utf8')
       const suspiciousPatterns = [
         /your-smtp-password/,
         /your-smtp-user@example\.com/,
@@ -68,11 +111,11 @@ function validateEnvironment() {
   
   // Report results
   if (missing.length > 0) {
-    // console.error('❌ Missing required environment variables:')
+    // defaultLogger.error('❌ Missing required environment variables:')
     missing.forEach(varName => {
-      // console.error(`   - ${varName}`)
+      // defaultLogger.error(`   - ${varName}`)
     })
-    // console.error('')
+    // defaultLogger.error('')
   }
   
   if (warnings.length > 0) {
@@ -81,11 +124,11 @@ function validateEnvironment() {
     }
   
   if (hardcodedSecrets.length > 0) {
-    // console.error('❌ Potential hardcoded secrets found:')
+    // defaultLogger.error('❌ Potential hardcoded secrets found:')
     hardcodedSecrets.forEach(secret => {
-      // console.error(`   - ${secret}`)
+      // defaultLogger.error(`   - ${secret}`)
     })
-    // console.error('')
+    // defaultLogger.error('')
   }
   
   // Check file structure
@@ -106,26 +149,26 @@ function validateEnvironment() {
   
   requiredFiles.forEach(file => {
     const filePath = path.join(__dirname, '..', file)
-    if (!fs.existsSync(filePath)) {
+    if (!wrapSyncWithErrorHandling(() => fs.existsSync)(filePath)) {
       missingFiles.push(file)
     }
   })
   
   if (missingFiles.length > 0) {
-    // console.error('❌ Missing required files:')
+    // defaultLogger.error('❌ Missing required files:')
     missingFiles.forEach(file => {
-      // console.error(`   - ${file}`)
+      // defaultLogger.error(`   - ${file}`)
     })
-    // console.error('')
+    // defaultLogger.error('')
   }
   
   // Summary
   const hasErrors = missing.length > 0 || hardcodedSecrets.length > 0 || missingFiles.length > 0
   
   if (hasErrors) {
-    // console.error('❌ Deployment validation failed!')
-    // console.error('Please fix the issues above before deploying.')
-    process.exit(1)
+    // defaultLogger.error('❌ Deployment validation failed!')
+    // defaultLogger.error('Please fix the issues above before deploying.')
+    wrapSyncWithErrorHandling(() => process.exit)(1)
   } else {
     }
 }
@@ -134,13 +177,13 @@ function validateDatabase() {
   const databaseUrl = process.env.DATABASE_URL
   
   if (!databaseUrl) {
-    // console.error('❌ DATABASE_URL is not set')
+    // defaultLogger.error('❌ DATABASE_URL is not set')
     return false
   }
   
   // Check if it's a valid PostgreSQL URL
   if (!databaseUrl.startsWith('postgresql://')) {
-    // console.error('❌ DATABASE_URL should be a PostgreSQL connection string')
+    // defaultLogger.error('❌ DATABASE_URL should be a PostgreSQL connection string')
     return false
   }
   
@@ -152,9 +195,9 @@ function validateEmail() {
   const missing = required.filter(varName => !process.env[varName])
   
   if (missing.length > 0) {
-    // console.error('❌ Missing email configuration:')
+    // defaultLogger.error('❌ Missing email configuration:')
     missing.forEach(varName => {
-      // console.error(`   - ${varName}`)
+      // defaultLogger.error(`   - ${varName}`)
     })
     return false
   }

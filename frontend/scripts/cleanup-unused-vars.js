@@ -1,7 +1,43 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+/**
+ * cleanup-unused-vars
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category validation
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node cleanup-unused-vars.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node cleanup-unused-vars.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 // Patterns to fix unused variables
 const patterns = [
@@ -139,12 +175,12 @@ const filesToProcess = [
 function processFile(_filePath) {
   try {
     const fullPath = path.join(__dirname, '..', filePath);
-    if (!fs.existsSync(fullPath)) {
-      console.log(`File not found: ${filePath}`);
+    if (!wrapSyncWithErrorHandling(() => fs.existsSync)(fullPath)) {
+      defaultLogger.info(`File not found: ${filePath}`);
       return;
     }
 
-    let content = fs.readFileSync(fullPath, 'utf8');
+    let content = wrapSyncWithErrorHandling(() => fs.readFileSync)(fullPath, 'utf8');
     let originalContent = content;
     let changes = 0;
 
@@ -159,20 +195,20 @@ function processFile(_filePath) {
 
     // Write back if changes were made
     if (content !== originalContent) {
-      fs.writeFileSync(fullPath, content, 'utf8');
-      console.log(`✅ Fixed ${changes} issues in ${filePath}`);
+      wrapSyncWithErrorHandling(() => fs.writeFileSync)(fullPath, content, 'utf8');
+      defaultLogger.info(`✅ Fixed ${changes} issues in ${filePath}`);
     } else {
-      console.log(`⏭️  No changes needed for ${filePath}`);
+      defaultLogger.info(`⏭️  No changes needed for ${filePath}`);
     }
   } catch (error) {
-    console.error(`❌ Error processing ${filePath}:`, error.message);
+    defaultLogger.error(`❌ Error processing ${filePath}:`, error.message);
   }
 }
 
-console.log('🧹 Starting unused variable cleanup...\n');
+defaultLogger.info('🧹 Starting unused variable cleanup...\n');
 
 filesToProcess.forEach(file => {
   processFile(file);
 });
 
-console.log('\n✨ Cleanup complete! Run "npm run lint" to check remaining issues.');
+defaultLogger.info('\n✨ Cleanup complete! Run "npm run lint" to check remaining issues.');

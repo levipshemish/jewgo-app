@@ -1,6 +1,43 @@
 #!/usr/bin/env node
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+
+/**
+ * setup-supabase-storage
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category setup
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node setup-supabase-storage.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node setup-supabase-storage.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 async function setupSupabaseStorage() {
   // Validate environment variables
@@ -8,33 +45,33 @@ async function setupSupabaseStorage() {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('❌ Missing required environment variables:');
-    console.error('   NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl);
-    console.error('   SUPABASE_SERVICE_ROLE_KEY:', !!supabaseServiceKey);
-    process.exit(1);
+    defaultLogger.error('❌ Missing required environment variables:');
+    defaultLogger.error('   NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl);
+    defaultLogger.error('   SUPABASE_SERVICE_ROLE_KEY:', !!supabaseServiceKey);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
   }
 
-  console.log('🔗 Connecting to Supabase...');
+  defaultLogger.info('🔗 Connecting to Supabase...');
   
   // Create Supabase client with service role key for admin operations
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     // Check if avatars bucket already exists
-    console.log('📋 Checking if avatars bucket exists...');
+    defaultLogger.info('📋 Checking if avatars bucket exists...');
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
     if (listError) {
-      console.error('❌ Error listing buckets:', listError);
+      defaultLogger.error('❌ Error listing buckets:', listError);
       return false;
     }
 
     const avatarsBucket = buckets.find(bucket => bucket.name === 'avatars');
     
     if (avatarsBucket) {
-      console.log('✅ Avatars bucket already exists');
+      defaultLogger.info('✅ Avatars bucket already exists');
     } else {
-      console.log('📦 Creating avatars bucket...');
+      defaultLogger.info('📦 Creating avatars bucket...');
       
       // Create the avatars bucket
       const { data: bucket, error: createError } = await supabase.storage.createBucket('avatars', {
@@ -44,15 +81,15 @@ async function setupSupabaseStorage() {
       });
 
       if (createError) {
-        console.error('❌ Error creating bucket:', createError);
+        defaultLogger.error('❌ Error creating bucket:', createError);
         return false;
       }
 
-      console.log('✅ Avatars bucket created successfully');
+      defaultLogger.info('✅ Avatars bucket created successfully');
     }
 
     // Set up RLS policies for the avatars bucket
-    console.log('🔒 Setting up RLS policies...');
+    defaultLogger.info('🔒 Setting up RLS policies...');
 
     // Policy 1: Allow public read access to all avatars
     const { error: publicReadError } = await supabase.rpc('exec_sql', {
@@ -63,9 +100,9 @@ async function setupSupabaseStorage() {
     });
 
     if (publicReadError && !publicReadError.message.includes('already exists')) {
-      console.error('❌ Error creating public read policy:', publicReadError);
+      defaultLogger.error('❌ Error creating public read policy:', publicReadError);
     } else {
-      console.log('✅ Public read policy created/verified');
+      defaultLogger.info('✅ Public read policy created/verified');
     }
 
     // Policy 2: Allow authenticated users to upload to their own prefix
@@ -80,9 +117,9 @@ async function setupSupabaseStorage() {
     });
 
     if (uploadError && !uploadError.message.includes('already exists')) {
-      console.error('❌ Error creating upload policy:', uploadError);
+      defaultLogger.error('❌ Error creating upload policy:', uploadError);
     } else {
-      console.log('✅ Upload policy created/verified');
+      defaultLogger.info('✅ Upload policy created/verified');
     }
 
     // Policy 3: Allow users to update their own avatars
@@ -97,9 +134,9 @@ async function setupSupabaseStorage() {
     });
 
     if (updateError && !updateError.message.includes('already exists')) {
-      console.error('❌ Error creating update policy:', updateError);
+      defaultLogger.error('❌ Error creating update policy:', updateError);
     } else {
-      console.log('✅ Update policy created/verified');
+      defaultLogger.info('✅ Update policy created/verified');
     }
 
     // Policy 4: Allow users to delete their own avatars
@@ -114,24 +151,24 @@ async function setupSupabaseStorage() {
     });
 
     if (deleteError && !deleteError.message.includes('already exists')) {
-      console.error('❌ Error creating delete policy:', deleteError);
+      defaultLogger.error('❌ Error creating delete policy:', deleteError);
     } else {
-      console.log('✅ Delete policy created/verified');
+      defaultLogger.info('✅ Delete policy created/verified');
     }
 
-    console.log('\n🎉 Supabase Storage setup completed successfully!');
-    console.log('\n📋 Summary:');
-    console.log('   ✅ Avatars bucket: Ready');
-    console.log('   ✅ Public read access: Enabled');
-    console.log('   ✅ User upload access: Enabled (own folder)');
-    console.log('   ✅ User update access: Enabled (own files)');
-    console.log('   ✅ User delete access: Enabled (own files)');
-    console.log('\n🔗 Bucket URL: https://your-project.supabase.co/storage/v1/object/public/avatars/');
+    defaultLogger.info('\n🎉 Supabase Storage setup completed successfully!');
+    defaultLogger.info('\n📋 Summary:');
+    defaultLogger.info('   ✅ Avatars bucket: Ready');
+    defaultLogger.info('   ✅ Public read access: Enabled');
+    defaultLogger.info('   ✅ User upload access: Enabled (own folder)');
+    defaultLogger.info('   ✅ User update access: Enabled (own files)');
+    defaultLogger.info('   ✅ User delete access: Enabled (own files)');
+    defaultLogger.info('\n🔗 Bucket URL: https://your-project.supabase.co/storage/v1/object/public/avatars/');
     
     return true;
 
   } catch (error) {
-    console.error('❌ Unexpected error:', error);
+    defaultLogger.error('❌ Unexpected error:', error);
     return false;
   }
 }
@@ -140,14 +177,14 @@ async function setupSupabaseStorage() {
 setupSupabaseStorage()
   .then(success => {
     if (success) {
-      console.log('\n✅ Setup completed successfully!');
-      process.exit(0);
+      defaultLogger.info('\n✅ Setup completed successfully!');
+      wrapSyncWithErrorHandling(() => process.exit)(0);
     } else {
-      console.log('\n❌ Setup failed!');
-      process.exit(1);
+      defaultLogger.info('\n❌ Setup failed!');
+      wrapSyncWithErrorHandling(() => process.exit)(1);
     }
   })
   .catch(error => {
-    console.error('❌ Setup failed with error:', error);
-    process.exit(1);
+    defaultLogger.error('❌ Setup failed with error:', error);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
   });

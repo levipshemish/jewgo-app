@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Build backend API URL with filters
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     const backendParams = new URLSearchParams();
 
     // Add filters to backend request

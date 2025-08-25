@@ -11,6 +11,11 @@ interface EmailUpgradeModalProps {
 }
 
 export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailUpgradeModalProps) {
+  // Early return to prevent hooks violation - must be before any hooks
+  if (!isOpen) {
+    return null;
+  }
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -113,8 +118,6 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
   const handleSignInRedirect = () => {
     window.location.href = '/auth/signin?merge=true';
   };
-
-  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

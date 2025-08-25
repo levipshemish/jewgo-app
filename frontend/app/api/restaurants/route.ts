@@ -98,18 +98,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Get backend URL from environment
-    const backendUrl = getBackendUrl();
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     
     // Build query parameters for backend API
     const queryParams = new URLSearchParams();
     
-    // Pagination
+    // Pagination - use page-based pagination
     if (filters.page) {
-      const limit = filters.limit || 50;
-      const offset = (filters.page - 1) * limit;
-      queryParams.append('limit', limit.toString());
-      queryParams.append('offset', offset.toString());
-    } else if (filters.limit) {
+      queryParams.append('page', filters.page.toString());
+    }
+    if (filters.limit) {
       queryParams.append('limit', filters.limit.toString());
     }
     
@@ -173,6 +171,10 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    // Debug logging for backend request
+    console.log('Backend request URL:', `${backendUrl}/api/restaurants?${queryParams.toString()}`);
+    console.log('Query params sent to backend:', Object.fromEntries(queryParams.entries()));
+
     // Check if response is JSON
     const contentType = backendResponse.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -187,14 +189,25 @@ export async function GET(request: NextRequest) {
 
     const data = await backendResponse.json();
 
+    // Debug logging for pagination
+    console.log('Backend response data:', {
+      success: data.success,
+      page: data.page,
+      limit: data.limit,
+      offset: data.offset,
+      count: data.count,
+      dataLength: data.data?.length
+    });
+
     // Transform backend response format to match frontend expectations
     if (data.success && data.data) {
-      // Backend returns: {success: true, data: [...], count: ...}
+      // Backend returns: {success: true, data: [...], total: ...}
       // Frontend expects: {restaurants: [...], total: ...}
       const transformedData = {
         success: data.success,
         restaurants: data.data,
-        total: data.count || data.data.length,
+        total: data.total || data.count || data.data.length,
+        page: data.page,
         limit: data.limit,
         offset: data.offset,
         performance: data.performance,

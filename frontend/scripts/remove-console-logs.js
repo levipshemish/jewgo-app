@@ -1,8 +1,43 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+/**
+ * remove-console-logs
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category deployment
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node remove-console-logs.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node remove-console-logs.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 /**
  * Script to remove all console.log statements from TypeScript/React files
@@ -40,7 +75,7 @@ const CONSOLE_PATTERNS = [
   // Keep console.error for production debugging, just comment them
   {
     pattern: /(\s*)console\.error\(/g,
-    replacement: '$1// // console.error(',
+    replacement: '$1// // defaultLogger.error(',
     description: 'Comment out console.error statements'
   }
 ];
@@ -57,11 +92,15 @@ function shouldExcludeDirectory(dirPath) {
 
 function processFile(filePath) {
   try {
-    let content = fs.readFileSync(filePath, 'utf8');
+    let content = wrapSyncWithErrorHandling(() => fs.readFileSync)(filePath, 'utf8');
     let originalContent = content;
     let changesCount = 0;
 
-    CONSOLE_PATTERNS.forEach(({ pattern, replacement, description }) => {
+    defaultLogger.startProgress(CONSOLE_PATTERNS.length, 'Processing CONSOLE_PATTERNS');
+let progressCounter = 0;
+CONSOLE_PATTERNS.forEach((item, index) => {
+  progressCounter++;
+  defaultLogger.updateProgress(progressCounter, `Processing item ${index + 1}`);
       const matches = content.match(pattern);
       if (matches) {
         content = content.replace(pattern, replacement);
@@ -70,24 +109,24 @@ function processFile(filePath) {
     });
 
     if (content !== originalContent) {
-      fs.writeFileSync(filePath, content, 'utf8');
+      wrapSyncWithErrorHandling(() => fs.writeFileSync)(filePath, content, 'utf8');
       return changesCount;
     }
 
     return 0;
   } catch (error) {
-    console.error(`❌ Error processing ${filePath}:`, error.message);
+    defaultLogger.error(`❌ Error processing ${filePath}:`, error.message);
     return 0;
   }
 }
 
 function walkDirectory(dir) {
-  const files = fs.readdirSync(dir);
+  const files = wrapSyncWithErrorHandling(() => fs.readdirSync)(dir);
   let totalChanges = 0;
 
   for (const file of files) {
     const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
+    const stat = wrapSyncWithErrorHandling(() => fs.statSync)(fullPath);
 
     if (stat.isDirectory()) {
       if (!shouldExcludeDirectory(fullPath)) {
@@ -111,7 +150,7 @@ function main() {
     ).trim();
     beforeCount = parseInt(result) || 0;
   } catch (e) {
-    console.log('Could not count console statements before processing');
+    defaultLogger.info('Could not count console statements before processing');
   }
 
   const startDir = process.cwd();
@@ -126,17 +165,29 @@ function main() {
     ).trim();
     afterCount = parseInt(result) || 0;
   } catch (e) {
-    console.log('Could not count console statements after processing');
+    defaultLogger.info('Could not count console statements after processing');
   }
 
-  console.log(`✅ Console log removal complete!`);
-  console.log(`📊 Before: ${beforeCount} console statements`);
-  console.log(`📊 After: ${afterCount} console statements`);
-  console.log(`📊 Removed: ${beforeCount - afterCount} console statements`);
+  defaultLogger.info(`✅ Console log removal complete!`);
+  defaultLogger.info(`📊 Before: ${beforeCount} console statements`);
+  defaultLogger.info(`📊 After: ${afterCount} console statements`);
+  defaultLogger.info(`📊 Removed: ${beforeCount - afterCount} console statements`);
 }
 
+
+// Wrap main function with error handling
+const mainWithErrorHandling = wrapWithErrorHandling(main, {
+  script: __filename,
+  operation: 'main'
+});
+
+// Execute with error handling
 if (require.main === module) {
-  main();
+  mainWithErrorHandling().catch(error => {
+    defaultLogger.error('Script failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
+  });
 }
+
 
 module.exports = { processFile, walkDirectory };

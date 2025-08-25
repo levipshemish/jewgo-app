@@ -12,8 +12,8 @@ const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
 const isCI = process.env.CI === 'true' || isVercel || process.env.NODE_ENV === 'production';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Import webpack optimization utilities
-const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
+// Webpack optimization utilities (commented out due to missing file)
+// const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
 
 const nextConfig = {
   // Enable modern features for better performance
@@ -35,7 +35,50 @@ const nextConfig = {
   },
   // Image optimization - disable in Docker to prevent issues
   images: {
-    domains: ['res.cloudinary.com', 'maps.googleapis.com', 'lh3.googleusercontent.com', 'images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      },
+    ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],

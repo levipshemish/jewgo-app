@@ -5,6 +5,33 @@ This changelog summarizes recent documentation and script alignment for ports, h
 Date: 2025-08-25
 
 Highlights
+- **Local Backend Server Setup**: Created comprehensive guide for running backend server locally on port 8082
+- **Health Endpoints**: Updated all documentation to reflect correct health endpoints (`/healthz`, `/api/health/basic`)
+- **Troubleshooting**: Added backend server troubleshooting section with common issues and solutions
+- **Port Configuration**: Updated all references from port 5001 to 8082 for local development
+- **App Factory Configuration**: Documented the use of `app_factory.py` vs `app_factory_full.py` to avoid Sentry SDK issues
+- **Virtual Environment**: Updated setup instructions to reflect existing `.venv` directory
+- **Database Warnings**: Documented expected database connection warnings in local development
+
+Key Changes
+- **`docs/setup/LOCAL_BACKEND_SERVER.md`**: New comprehensive guide for local backend development
+- **`docs/setup/QUICK_START.md`**: Updated port references and health endpoints
+- **`docs/TROUBLESHOOTING_GUIDE.md`**: Added backend server troubleshooting section
+- **`docs/README.md`**: Added link to new local backend server documentation
+- **`backend/app_factory.py`**: Added health endpoints directly to avoid routing issues
+
+Technical Details
+- Backend server runs on port 8082 to avoid conflicts
+- Health endpoints: `/healthz`, `/api/health/basic`, `/api/v4/direct-test`
+- Uses `app_factory.py` instead of `app_factory_full.py` to avoid Sentry SDK circular import
+- Virtual environment already exists in `backend/.venv`
+- Database warnings are expected in local development without local database
+
+---
+
+Date: 2025-08-25
+
+Highlights
 - Updated root README: Node.js 22.x prerequisite; link to docs/CONTRIBUTING.md.
 - Updated frontend README to use npm (aligns with package-lock.json) and correct env variable list.
 - Updated docs index last updated date to August 2025.

@@ -1,0 +1,82 @@
+{
+  "backup_enabled": true,
+  "dry_run_default": false,
+  "auto_verify": true,
+  "parallel_execution": false,
+  "migration_timeout": 300,
+  "rollback_enabled": true,
+  "environments": {
+    "development": {
+      "database_url": "${DATABASE_URL}",
+      "backup_path": "backups/dev",
+      "safe_mode": true,
+      "auto_backup": true,
+      "verify_after_migration": true
+    },
+    "staging": {
+      "database_url": "${DATABASE_URL}",
+      "backup_path": "backups/staging",
+      "safe_mode": true,
+      "auto_backup": true,
+      "verify_after_migration": true
+    },
+    "production": {
+      "database_url": "${DATABASE_URL}",
+      "backup_path": "backups/production",
+      "safe_mode": false,
+      "auto_backup": true,
+      "verify_after_migration": true
+    }
+  },
+  "migration_categories": {
+    "backend": {
+      "enabled": true,
+      "priority": 1,
+      "description": "Backend Python migrations",
+      "path": "backend/database/migrations"
+    },
+    "supabase": {
+      "enabled": true,
+      "priority": 2,
+      "description": "Supabase SQL migrations",
+      "path": "supabase/migrations"
+    },
+    "prisma": {
+      "enabled": true,
+      "priority": 3,
+      "description": "Prisma migrations",
+      "path": "frontend/prisma/migrations"
+    },
+    "deployment": {
+      "enabled": true,
+      "priority": 4,
+      "description": "Deployment scripts",
+      "path": "scripts/deployment"
+    },
+    "maintenance": {
+      "enabled": true,
+      "priority": 5,
+      "description": "Database maintenance scripts",
+      "path": "scripts/database"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/migration_orchestrator.log",
+    "max_size": "10MB",
+    "backup_count": 5
+  },
+  "notifications": {
+    "enabled": false,
+    "slack_webhook": "${SLACK_WEBHOOK_URL}",
+    "email": {
+      "enabled": false,
+      "smtp_server": "${SMTP_SERVER}",
+      "smtp_port": "${SMTP_PORT}",
+      "username": "${SMTP_USERNAME}",
+      "password": "${SMTP_PASSWORD}",
+      "from_email": "${FROM_EMAIL}",
+      "to_emails": ["${ADMIN_EMAIL}"]
+    }
+  }
+}

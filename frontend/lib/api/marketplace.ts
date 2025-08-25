@@ -31,11 +31,6 @@ export async function fetchMarketplaceListings(
   params: MarketplaceSearchParams = {}
 ): Promise<MarketplaceSearchResponse> {
   try {
-    // Debug logging to help identify URL issues
-    if (process.env.NODE_ENV === 'development') {
-
-    }
-    
     const searchParams = new URLSearchParams();
     
     // Add all parameters to search params
@@ -47,8 +42,13 @@ export async function fetchMarketplaceListings(
 
     const apiUrl = `${BACKEND_URL}/api/v4/marketplace/listings?${searchParams.toString()}`;
     
+    // Debug logging to help identify URL issues
     if (process.env.NODE_ENV === 'development') {
-
+      console.log('Fetching marketplace listings from:', apiUrl);
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Using backend URL:', BACKEND_URL);
     }
 
     const response = await fetch(apiUrl, {
@@ -57,6 +57,8 @@ export async function fetchMarketplaceListings(
         'Content-Type': 'application/json',
       },
       signal: AbortSignal.timeout(30000), // 30 second timeout to handle cold starts
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit', // Don't send credentials for cross-origin requests
     });
 
     if (!response.ok) {
@@ -75,6 +77,8 @@ export async function fetchMarketplaceListings(
         errorMessage = 'Network error: Unable to connect to marketplace server';
       } else if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
         errorMessage = 'Server error: Invalid backend URL configuration';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout: Server is taking too long to respond';
       } else {
         errorMessage = error.message;
       }

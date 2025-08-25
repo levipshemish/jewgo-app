@@ -1,14 +1,52 @@
 #!/usr/bin/env node
 
 /**
+ * check-environment
  * Environment Variables Check Script
  * 
- * This script checks if all required environment variables are properly configured.
- * Run this script to verify your setup before starting the application.
+ * This script provides environment variables check script for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category setup
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node check-environment.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node check-environment.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
  */
-
 const fs = require('fs');
+const { defaultLogger } = require('./utils/logger');
+
+const { defaultErrorHandler } = require('./utils/errorHandler');
+
 const path = require('path');
+/**
+ * Wrap function with error handling
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 // Required environment variables
 const requiredEnvVars = {
@@ -20,14 +58,14 @@ const requiredEnvVars = {
 
 // Check if .env.local exists
 const envPath = path.join(process.cwd(), '.env.local');
-const envExists = fs.existsSync(envPath);
+const envExists = wrapSyncWithErrorHandling(() => fs.existsSync)(envPath);
 
 if (!envExists) {
-  console.log('❌ .env.local file not found');
-  console.log('Please create a .env.local file with the following variables:');
+  defaultLogger.info('❌ .env.local file not found');
+  defaultLogger.info('Please create a .env.local file with the following variables:');
 } else {
   // Load and parse .env.local
-  const envContent = fs.readFileSync(envPath, 'utf8');
+  const envContent = wrapSyncWithErrorHandling(() => fs.readFileSync)(envPath, 'utf8');
   const envVars = {};
   
   envContent.split('\n').forEach(line => {
@@ -44,22 +82,22 @@ if (!envExists) {
     const hasValue = value && value !== '';
     
     if (hasValue) {
-      console.log(`✅ ${key}: ${description}`);
+      defaultLogger.info(`✅ ${key}: ${description}`);
     } else {
-      console.log(`❌ ${key}: ${description} - NOT SET`);
+      defaultLogger.info(`❌ ${key}: ${description} - NOT SET`);
       allGood = false;
     }
   });
   
   if (allGood) {
-    console.log('\n🎉 All required environment variables are configured!');
-    process.exit(0);
+    defaultLogger.info('\n🎉 All required environment variables are configured!');
+    wrapSyncWithErrorHandling(() => process.exit)(0);
   } else {
-    console.log('\n⚠️  Some required environment variables are missing.');
+    defaultLogger.info('\n⚠️  Some required environment variables are missing.');
   }
 }
 
 Object.entries(requiredEnvVars).forEach(([key, description]) => {
-  console.log(`${key}=your_${key.toLowerCase().replace(/next_public_/g, '').replace(/_/g, '_')}_here`);
+  defaultLogger.info(`${key}=your_${key.toLowerCase().replace(/next_public_/g, '').replace(/_/g, '_')}_here`);
 });
-process.exit(1); 
+wrapSyncWithErrorHandling(() => process.exit)(1); 

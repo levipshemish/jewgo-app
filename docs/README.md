@@ -58,8 +58,9 @@
 ### 🚀 Getting Started
 1. **[README.md](../README.md)** - Project overview
 2. **[setup/QUICK_START.md](setup/QUICK_START.md)** - Quick start guide
-3. **[setup/SUPABASE_SETUP.md](setup/SUPABASE_SETUP.md)** - Database setup
-4. **[deployment/DOCKER_SETUP.md](deployment/DOCKER_SETUP.md)** - Docker setup
+3. **[setup/LOCAL_BACKEND_SERVER.md](setup/LOCAL_BACKEND_SERVER.md)** - Local backend server setup
+4. **[setup/SUPABASE_SETUP.md](setup/SUPABASE_SETUP.md)** - Database setup
+5. **[deployment/DOCKER_SETUP.md](deployment/DOCKER_SETUP.md)** - Docker setup
 
 ### 🔧 Development Workflow
 1. **[development/DEVELOPMENT_WORKFLOW.md](development/DEVELOPMENT_WORKFLOW.md)** - Development process

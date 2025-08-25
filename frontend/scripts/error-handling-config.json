@@ -1,0 +1,36 @@
+{
+  "enabled": true,
+  "logLevel": "INFO",
+  "logToFile": true,
+  "logFile": "logs/errors.log",
+  "maxRetries": 3,
+  "retryDelay": 1000,
+  "enableMetrics": true,
+  "enableRecovery": true,
+  "recoveryStrategies": {
+    "network": {
+      "strategy": "retry",
+      "maxRetries": 3,
+      "backoffMultiplier": 2,
+      "baseDelay": 1000
+    },
+    "file_system": {
+      "strategy": "fallback",
+      "fallbackActions": [
+        "tryAlternativePath",
+        "createDirectory",
+        "skip"
+      ]
+    },
+    "configuration": {
+      "strategy": "exit",
+      "exitCode": 1,
+      "message": "Configuration error - cannot continue"
+    },
+    "permission": {
+      "strategy": "exit",
+      "exitCode": 13,
+      "message": "Permission denied - check file/directory permissions"
+    }
+  }
+}

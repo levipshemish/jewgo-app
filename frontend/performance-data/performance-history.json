@@ -1,0 +1,3210 @@
+[
+  {
+    "scriptName": "validate-test-demo-files.js",
+    "timestamp": "2025-08-25T18:15:44.863Z",
+    "performance": {
+      "executionTime": {
+        "value": 127,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 589824,
+        "unit": "bytes",
+        "formatted": "576 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.3755,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "validate-env-unified.js",
+    "timestamp": "2025-08-25T18:15:44.938Z",
+    "performance": {
+      "executionTime": {
+        "value": 75,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 114688,
+        "unit": "bytes",
+        "formatted": "112 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1643,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "validate-css.js",
+    "timestamp": "2025-08-25T18:15:44.995Z",
+    "performance": {
+      "executionTime": {
+        "value": 56,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 81920,
+        "unit": "bytes",
+        "formatted": "80 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1614,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "update-hours-cron.js",
+    "timestamp": "2025-08-25T18:15:45.049Z",
+    "performance": {
+      "executionTime": {
+        "value": 54,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 81920,
+        "unit": "bytes",
+        "formatted": "80 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.13090000000000002,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "update-documentation.js",
+    "timestamp": "2025-08-25T18:15:45.106Z",
+    "performance": {
+      "executionTime": {
+        "value": 57,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 131072,
+        "unit": "bytes",
+        "formatted": "128 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1801,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "unused-files-detector.js",
+    "timestamp": "2025-08-25T18:15:45.274Z",
+    "performance": {
+      "executionTime": {
+        "value": 167,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 294912,
+        "unit": "bytes",
+        "formatted": "288 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.3757,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "test-framework.js",
+    "timestamp": "2025-08-25T18:16:45.276Z",
+    "success": false
+  },
+  {
+    "scriptName": "start-with-polyfill.js",
+    "timestamp": "2025-08-25T18:16:45.393Z",
+    "performance": {
+      "executionTime": {
+        "value": 117,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 98304,
+        "unit": "bytes",
+        "formatted": "96 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.13879999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "simple-profile-test.js",
+    "timestamp": "2025-08-25T18:16:45.512Z",
+    "performance": {
+      "executionTime": {
+        "value": 119,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 131072,
+        "unit": "bytes",
+        "formatted": "128 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.21189999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-supabase-storage.js",
+    "timestamp": "2025-08-25T18:16:45.631Z",
+    "performance": {
+      "executionTime": {
+        "value": 119,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 98304,
+        "unit": "bytes",
+        "formatted": "96 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.10790000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-monitoring.js",
+    "timestamp": "2025-08-25T18:16:45.755Z",
+    "performance": {
+      "executionTime": {
+        "value": 123,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12819999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-env.js",
+    "timestamp": "2025-08-25T18:16:45.874Z",
+    "performance": {
+      "executionTime": {
+        "value": 118,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1057,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "rotate-logs.js",
+    "timestamp": "2025-08-25T18:16:45.991Z",
+    "performance": {
+      "executionTime": {
+        "value": 117,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 147456,
+        "unit": "bytes",
+        "formatted": "144 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.17329999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "replace-original-images.js",
+    "timestamp": "2025-08-25T18:16:46.107Z",
+    "performance": {
+      "executionTime": {
+        "value": 116,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 32768,
+        "unit": "bytes",
+        "formatted": "32 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.09749999999999999,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "remove-console-logs.js",
+    "timestamp": "2025-08-25T18:16:46.226Z",
+    "performance": {
+      "executionTime": {
+        "value": 118,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.10790000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "periodic-cleanup-scheduler.js",
+    "timestamp": "2025-08-25T18:16:46.502Z",
+    "performance": {
+      "executionTime": {
+        "value": 276,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 81920,
+        "unit": "bytes",
+        "formatted": "80 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.172,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "performance-monitor.js",
+    "timestamp": "2025-08-25T18:16:47.089Z",
+    "performance": {
+      "executionTime": {
+        "value": 587,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 147456,
+        "unit": "bytes",
+        "formatted": "144 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.19469999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "monitoring",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "optimize-unified.js",
+    "timestamp": "2025-08-25T18:16:47.184Z",
+    "performance": {
+      "executionTime": {
+        "value": 94,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 262144,
+        "unit": "bytes",
+        "formatted": "256 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1926,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "health-monitor.js",
+    "timestamp": "2025-08-25T18:16:47.279Z",
+    "performance": {
+      "executionTime": {
+        "value": 95,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.14150000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "monitoring",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "fix-unified.js",
+    "timestamp": "2025-08-25T18:16:47.339Z",
+    "performance": {
+      "executionTime": {
+        "value": 60,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.14100000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "fix-font-css.js",
+    "timestamp": "2025-08-25T18:16:47.447Z",
+    "performance": {
+      "executionTime": {
+        "value": 108,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11410000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "deploy-validate.js",
+    "timestamp": "2025-08-25T18:16:47.559Z",
+    "performance": {
+      "executionTime": {
+        "value": 111,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12210000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "deployment",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "deploy-setup.js",
+    "timestamp": "2025-08-25T18:16:47.649Z",
+    "performance": {
+      "executionTime": {
+        "value": 90,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12090000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "deployment",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "comprehensive-cleanup.js",
+    "timestamp": "2025-08-25T18:16:47.743Z",
+    "performance": {
+      "executionTime": {
+        "value": 94,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1026,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "clear-rate-limit.js",
+    "timestamp": "2025-08-25T18:16:47.833Z",
+    "performance": {
+      "executionTime": {
+        "value": 89,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.0979,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "clear-cache.js",
+    "timestamp": "2025-08-25T18:16:47.928Z",
+    "performance": {
+      "executionTime": {
+        "value": 95,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1548,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-unused-vars.js",
+    "timestamp": "2025-08-25T18:16:47.990Z",
+    "performance": {
+      "executionTime": {
+        "value": 62,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 131072,
+        "unit": "bytes",
+        "formatted": "128 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1729,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-unused-files.js",
+    "timestamp": "2025-08-25T18:16:48.080Z",
+    "performance": {
+      "executionTime": {
+        "value": 90,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.106,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-temp-files.js",
+    "timestamp": "2025-08-25T18:16:48.200Z",
+    "performance": {
+      "executionTime": {
+        "value": 120,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 98304,
+        "unit": "bytes",
+        "formatted": "96 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1302,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-remaining-vars.js",
+    "timestamp": "2025-08-25T18:16:48.319Z",
+    "performance": {
+      "executionTime": {
+        "value": 119,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1628,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-dependencies.js",
+    "timestamp": "2025-08-25T18:16:48.410Z",
+    "performance": {
+      "executionTime": {
+        "value": 91,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11449999999999999,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-build-artifacts.js",
+    "timestamp": "2025-08-25T18:16:48.500Z",
+    "performance": {
+      "executionTime": {
+        "value": 90,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1178,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-environment.js",
+    "timestamp": "2025-08-25T18:16:48.620Z",
+    "performance": {
+      "executionTime": {
+        "value": 120,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1351,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-auth.js",
+    "timestamp": "2025-08-25T18:16:48.712Z",
+    "performance": {
+      "executionTime": {
+        "value": 92,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1093,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-logging-standards.js",
+    "timestamp": "2025-08-25T18:16:48.811Z",
+    "performance": {
+      "executionTime": {
+        "value": 99,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.20209999999999997,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-error-handling.js",
+    "timestamp": "2025-08-25T18:16:48.929Z",
+    "performance": {
+      "executionTime": {
+        "value": 117,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1569,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-documentation-template.js",
+    "timestamp": "2025-08-25T18:16:49.051Z",
+    "performance": {
+      "executionTime": {
+        "value": 122,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 32768,
+        "unit": "bytes",
+        "formatted": "32 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.22769999999999999,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "aggregate-metrics.js",
+    "timestamp": "2025-08-25T18:16:49.140Z",
+    "performance": {
+      "executionTime": {
+        "value": 89,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 49152,
+        "unit": "bytes",
+        "formatted": "48 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1161,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "generate-secret.ts",
+    "timestamp": "2025-08-25T18:16:49.247Z",
+    "performance": {
+      "executionTime": {
+        "value": 107,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 32768,
+        "unit": "bytes",
+        "formatted": "32 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.10540000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-env-setup.ts",
+    "timestamp": "2025-08-25T18:16:49.367Z",
+    "performance": {
+      "executionTime": {
+        "value": 119,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1148,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "validate-test-demo-files.js",
+    "timestamp": "2025-08-25T18:16:49.508Z",
+    "performance": {
+      "executionTime": {
+        "value": 141,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1661,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "validate-env-unified.js",
+    "timestamp": "2025-08-25T18:16:49.600Z",
+    "performance": {
+      "executionTime": {
+        "value": 91,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11080000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "validate-css.js",
+    "timestamp": "2025-08-25T18:16:49.716Z",
+    "performance": {
+      "executionTime": {
+        "value": 116,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1156,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "validation",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "update-hours-cron.js",
+    "timestamp": "2025-08-25T18:16:49.829Z",
+    "performance": {
+      "executionTime": {
+        "value": 113,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12589999999999998,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "update-documentation.js",
+    "timestamp": "2025-08-25T18:16:49.944Z",
+    "performance": {
+      "executionTime": {
+        "value": 115,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1201,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "unused-files-detector.js",
+    "timestamp": "2025-08-25T18:16:50.166Z",
+    "performance": {
+      "executionTime": {
+        "value": 222,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 16384,
+        "unit": "bytes",
+        "formatted": "16 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.3274,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "test-framework.js",
+    "timestamp": "2025-08-25T18:17:50.168Z",
+    "success": false
+  },
+  {
+    "scriptName": "start-with-polyfill.js",
+    "timestamp": "2025-08-25T18:17:50.387Z",
+    "performance": {
+      "executionTime": {
+        "value": 219,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 81920,
+        "unit": "bytes",
+        "formatted": "80 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.261,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "simple-profile-test.js",
+    "timestamp": "2025-08-25T18:17:50.611Z",
+    "performance": {
+      "executionTime": {
+        "value": 224,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.2585,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-supabase-storage.js",
+    "timestamp": "2025-08-25T18:17:50.819Z",
+    "performance": {
+      "executionTime": {
+        "value": 208,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.0988,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-monitoring.js",
+    "timestamp": "2025-08-25T18:17:51.037Z",
+    "performance": {
+      "executionTime": {
+        "value": 218,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 802816,
+        "unit": "bytes",
+        "formatted": "784 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.22430000000000003,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "setup-env.js",
+    "timestamp": "2025-08-25T18:17:51.257Z",
+    "performance": {
+      "executionTime": {
+        "value": 220,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 409600,
+        "unit": "bytes",
+        "formatted": "400 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.26689999999999997,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "rotate-logs.js",
+    "timestamp": "2025-08-25T18:17:51.469Z",
+    "performance": {
+      "executionTime": {
+        "value": 211,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1046,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "replace-original-images.js",
+    "timestamp": "2025-08-25T18:17:51.681Z",
+    "performance": {
+      "executionTime": {
+        "value": 212,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.10540000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "remove-console-logs.js",
+    "timestamp": "2025-08-25T18:17:51.890Z",
+    "performance": {
+      "executionTime": {
+        "value": 208,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1451,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "periodic-cleanup-scheduler.js",
+    "timestamp": "2025-08-25T18:17:52.122Z",
+    "performance": {
+      "executionTime": {
+        "value": 232,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11770000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "performance-monitor.js",
+    "timestamp": "2025-08-25T18:17:52.762Z",
+    "performance": {
+      "executionTime": {
+        "value": 640,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1553,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "monitoring",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "optimize-unified.js",
+    "timestamp": "2025-08-25T18:17:52.998Z",
+    "performance": {
+      "executionTime": {
+        "value": 235,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1198,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "health-monitor.js",
+    "timestamp": "2025-08-25T18:17:53.219Z",
+    "performance": {
+      "executionTime": {
+        "value": 221,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12179999999999999,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "monitoring",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "fix-unified.js",
+    "timestamp": "2025-08-25T18:17:53.467Z",
+    "performance": {
+      "executionTime": {
+        "value": 248,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 65536,
+        "unit": "bytes",
+        "formatted": "64 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1689,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "fix-font-css.js",
+    "timestamp": "2025-08-25T18:17:53.694Z",
+    "performance": {
+      "executionTime": {
+        "value": 227,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1154,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "deploy-validate.js",
+    "timestamp": "2025-08-25T18:17:53.921Z",
+    "performance": {
+      "executionTime": {
+        "value": 226,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1289,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "deployment",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "deploy-setup.js",
+    "timestamp": "2025-08-25T18:17:54.129Z",
+    "performance": {
+      "executionTime": {
+        "value": 208,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.12310000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "deployment",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "comprehensive-cleanup.js",
+    "timestamp": "2025-08-25T18:17:54.296Z",
+    "performance": {
+      "executionTime": {
+        "value": 167,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1325,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "clear-rate-limit.js",
+    "timestamp": "2025-08-25T18:17:54.536Z",
+    "performance": {
+      "executionTime": {
+        "value": 240,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1378,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "clear-cache.js",
+    "timestamp": "2025-08-25T18:17:54.736Z",
+    "performance": {
+      "executionTime": {
+        "value": 200,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1792,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-unused-vars.js",
+    "timestamp": "2025-08-25T18:17:54.931Z",
+    "performance": {
+      "executionTime": {
+        "value": 195,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1396,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-unused-files.js",
+    "timestamp": "2025-08-25T18:17:55.133Z",
+    "performance": {
+      "executionTime": {
+        "value": 202,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1089,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-temp-files.js",
+    "timestamp": "2025-08-25T18:17:55.407Z",
+    "performance": {
+      "executionTime": {
+        "value": 274,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11180000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-remaining-vars.js",
+    "timestamp": "2025-08-25T18:17:55.664Z",
+    "performance": {
+      "executionTime": {
+        "value": 257,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.11230000000000001,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-dependencies.js",
+    "timestamp": "2025-08-25T18:17:55.891Z",
+    "performance": {
+      "executionTime": {
+        "value": 227,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1514,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "cleanup",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "cleanup-build-artifacts.js",
+    "timestamp": "2025-08-25T18:17:56.107Z",
+    "performance": {
+      "executionTime": {
+        "value": 215,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 81920,
+        "unit": "bytes",
+        "formatted": "80 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1286,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-environment.js",
+    "timestamp": "2025-08-25T18:17:56.328Z",
+    "performance": {
+      "executionTime": {
+        "value": 221,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1377,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-auth.js",
+    "timestamp": "2025-08-25T18:17:56.517Z",
+    "performance": {
+      "executionTime": {
+        "value": 189,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1461,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-logging-standards.js",
+    "timestamp": "2025-08-25T18:17:56.757Z",
+    "performance": {
+      "executionTime": {
+        "value": 239,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 16384,
+        "unit": "bytes",
+        "formatted": "16 KB",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.28709999999999997,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-error-handling.js",
+    "timestamp": "2025-08-25T18:17:57.018Z",
+    "performance": {
+      "executionTime": {
+        "value": 261,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1926,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "apply-documentation-template.js",
+    "timestamp": "2025-08-25T18:17:57.250Z",
+    "performance": {
+      "executionTime": {
+        "value": 232,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.2224,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "aggregate-metrics.js",
+    "timestamp": "2025-08-25T18:17:57.494Z",
+    "performance": {
+      "executionTime": {
+        "value": 244,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1122,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "generate-secret.ts",
+    "timestamp": "2025-08-25T18:17:57.723Z",
+    "performance": {
+      "executionTime": {
+        "value": 229,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1075,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  },
+  {
+    "scriptName": "check-env-setup.ts",
+    "timestamp": "2025-08-25T18:17:57.947Z",
+    "performance": {
+      "executionTime": {
+        "value": 224,
+        "unit": "ms",
+        "status": "good"
+      },
+      "memoryUsage": {
+        "value": 0,
+        "unit": "bytes",
+        "formatted": "0 Bytes",
+        "status": "good"
+      },
+      "cpuUsage": {
+        "value": 0.1377,
+        "unit": "%",
+        "status": "good"
+      },
+      "fileOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      },
+      "networkOperations": {
+        "value": 0,
+        "unit": "count",
+        "status": "info"
+      }
+    },
+    "score": 100,
+    "category": "unknown",
+    "recommendations": [
+      {
+        "type": "general",
+        "priority": "low",
+        "message": "Performance is within acceptable ranges. Continue monitoring for trends."
+      }
+    ]
+  }
+]

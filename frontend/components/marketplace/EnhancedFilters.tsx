@@ -42,6 +42,11 @@ export default function EnhancedFilters({
   onClose,
   isOpen
 }: EnhancedFiltersProps) {
+  // Early return to prevent hooks violation - must be before any hooks
+  if (!isOpen) {
+    return null;
+  }
+
   const [localFilters, setLocalFilters] = useState<MarketplaceFilters>(filters);
   const [activeTab, setActiveTab] = useState<'category' | 'price' | 'condition' | 'location'>('category');
 
@@ -91,8 +96,6 @@ export default function EnhancedFilters({
   const isFilterActive = (key: keyof MarketplaceFilters) => {
     return localFilters[key] !== '';
   };
-
-  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">

@@ -1,14 +1,53 @@
+
+const { defaultLogger } = require('./utils/logger');
+
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+/**
+ * aggregate-metrics
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category utility
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node aggregate-metrics.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node aggregate-metrics.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 function aggregateMetrics() {
   const metricsFile = path.join(__dirname, '../logs/metrics.json');
   const aggregatedFile = path.join(__dirname, '../logs/aggregated-metrics.json');
   
-  if (fs.existsSync(metricsFile)) {
-    const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
+  if (wrapSyncWithErrorHandling(() => fs.existsSync)(metricsFile)) {
+    const metrics = JSON.parse(wrapSyncWithErrorHandling(() => fs.readFileSync)(metricsFile, 'utf8'));
     
     const aggregated = {
       timestamp: new Date().toISOString(),
@@ -29,7 +68,7 @@ function aggregateMetrics() {
       },
     };
     
-    fs.writeFileSync(aggregatedFile, JSON.stringify(aggregated, null, 2));
+    wrapSyncWithErrorHandling(() => fs.writeFileSync)(aggregatedFile, JSON.stringify(aggregated, null, 2));
     }
 }
 

@@ -8,6 +8,9 @@ const API_BASE_URL = '';
 interface RestaurantsResponse {
   restaurants: Restaurant[];
   total: number;
+  page?: number;
+  offset?: number;
+  limit?: number;
 }
 
 interface ApiError {
@@ -18,6 +21,8 @@ interface ApiError {
 
 export class RestaurantsAPI {
   private static pendingRequests = new Map<string, Promise<any>>();
+  private static cache = new Map<string, { ts: number; data: RestaurantsResponse }>();
+  private static CACHE_TTL_MS = 30_000; // 30 seconds
   
   private static async checkNetworkConnectivity(): Promise<boolean> {
     try {
@@ -157,10 +162,15 @@ export class RestaurantsAPI {
 
   static async fetchRestaurants(limit: number = 1000, queryParams?: string): Promise<RestaurantsResponse> {
     const requestKey = `restaurants_${limit}_${queryParams || ''}`;
-    
+
+    // Serve from cache if fresh to prevent UI flicker and redundant re-renders
+    const cached = this.cache.get(requestKey);
+    if (cached && (Date.now() - cached.ts) < this.CACHE_TTL_MS) {
+      return cached.data;
+    }
+
     // Check if there's already a pending request
     if (this.pendingRequests.has(requestKey)) {
-
       return this.pendingRequests.get(requestKey)!;
     }
     
@@ -171,6 +181,8 @@ export class RestaurantsAPI {
     try {
       // Try to fetch real data first, regardless of connectivity check
       const result = await requestPromise;
+      // Cache successful result
+      this.cache.set(requestKey, { ts: Date.now(), data: result });
       return result;
     } catch (error) {
       // console.error('Error in fetchRestaurants:', error);

@@ -25,12 +25,14 @@ lsof -i :3000  # Frontend (standard)
 lsof -i :3001  # Frontend (optimized compose)
 lsof -i :5000  # Backend (container/internal or non-optimized)
 lsof -i :5001  # Backend (optimized compose)
+lsof -i :8082  # Backend (local development)
 lsof -i :5432  # Database port
 ```
 
 ### Check Application Health
 ```bash
 # Backend health check (try whichever applies)
+curl http://localhost:8082/healthz  # local development
 curl http://localhost:5001/health   # optimized compose
 curl http://localhost:5000/health   # non-optimized/full compose or direct run
 curl https://jewgo-app-oyoh.onrender.com/health
@@ -577,6 +579,142 @@ Build failed: npm run build failed
    free -h
    top -p $(pgrep -f "python.*app.py")
    ```
+
+## Backend Server Issues
+
+### Problem: Backend Server Won't Start
+
+#### Issue: Sentry SDK Import Error
+```
+ImportError: cannot import name 'Client' from partially initialized module 'sentry_sdk'
+```
+
+**Solution:**
+- The server uses `app_factory.py` instead of `app_factory_full.py` to avoid this issue
+- This is already configured in the current setup
+- If you encounter this, ensure you're using the correct app factory
+
+#### Issue: Port Already in Use
+```
+Address already in use
+Port 8082 is in use by another program
+```
+
+**Solutions:**
+```bash
+# Check what's using port 8082
+lsof -i :8082
+
+# Kill the process if needed
+pkill -f "python app.py"
+
+# Or use a different port by modifying app.py
+```
+
+#### Issue: Database Connection Warning
+```
+Failed to initialize database manager: DATABASE_URL environment variable is required
+```
+
+**Solution:**
+- This is expected in local development without a local database
+- The server will still run and serve endpoints
+- For full functionality, configure a local PostgreSQL database
+
+### Problem: Health Endpoints Not Working
+
+#### Issue: 404 Not Found on Health Endpoints
+```
+{
+  "error": "Not found",
+  "message": "The requested resource was not found",
+  "success": false
+}
+```
+
+**Solutions:**
+1. **Verify correct endpoints:**
+   ```bash
+   # Use these endpoints:
+   curl http://localhost:8082/healthz
+   curl http://localhost:8082/api/health/basic
+   curl http://localhost:8082/api/v4/direct-test
+   ```
+
+2. **Check server is running:**
+   ```bash
+   ps aux | grep python | grep app.py
+   ```
+
+3. **Restart server:**
+   ```bash
+   cd backend
+   source .venv/bin/activate
+   python app.py
+   ```
+
+### Problem: Virtual Environment Issues
+
+#### Issue: Virtual Environment Not Found
+```
+-bash: .venv/bin/activate: No such file or directory
+```
+
+**Solutions:**
+```bash
+# Check if virtual environment exists
+ls -la backend/.venv
+
+# If missing, create it
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+#### Issue: Dependencies Missing
+```
+ModuleNotFoundError: No module named 'flask'
+```
+
+**Solutions:**
+```bash
+# Activate virtual environment
+cd backend
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Or upgrade specific packages
+pip install --upgrade flask sentry-sdk
+```
+
+### Backend Server Health Check
+
+#### Quick Diagnostic Commands
+```bash
+# Check if server is running
+ps aux | grep python | grep app.py
+
+# Test health endpoints
+curl -s http://localhost:8082/healthz | jq .
+curl -s http://localhost:8082/api/health/basic | jq .
+curl -s http://localhost:8082/api/v4/direct-test | jq .
+
+# Check server logs
+tail -f backend/logs/app.log  # if logging is configured
+```
+
+#### Expected Health Response
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "message": "JewGo Backend is running",
+  "timestamp": "2025-08-25T15:37:35.910879+00:00"
+}
+```
 
 ## Emergency Procedures
 

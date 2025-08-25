@@ -10,7 +10,7 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/hours`, {
       headers: {
         'Content-Type': 'application/json',

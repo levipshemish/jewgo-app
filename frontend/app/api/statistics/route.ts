@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     
     // Forward the request to the backend
     const backendResponse = await fetch(

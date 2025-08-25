@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-08-25T20:00:28.803Z",
+  "complianceRate": 0,
+  "totalFiles": 5,
+  "compliantFiles": 0,
+  "nonCompliantFiles": 5,
+  "errors": [],
+  "warnings": [
+    {
+      "file": "test-server-init.js",
+      "type": "WARNING",
+      "message": "Temporary file not in temp directory: test-server-init.js",
+      "recommendation": "Consider moving to temp/ directory or cleaning up"
+    },
+    {
+      "file": "test-server-init.js",
+      "type": "WARNING",
+      "message": "Temporary file without date: test-server-init.js",
+      "recommendation": "Add date to filename (e.g., temp-script-20250825.js)"
+    },
+    {
+      "file": "scripts/test-framework.js",
+      "type": "WARNING",
+      "message": "Temporary file not in temp directory: scripts/test-framework.js",
+      "recommendation": "Consider moving to temp/ directory or cleaning up"
+    },
+    {
+      "file": "scripts/test-framework.js",
+      "type": "WARNING",
+      "message": "Temporary file without date: scripts/test-framework.js",
+      "recommendation": "Add date to filename (e.g., temp-script-20250825.js)"
+    },
+    {
+      "file": "scripts/setup-supabase-storage.js",
+      "type": "WARNING",
+      "message": "Temporary file not in temp directory: scripts/setup-supabase-storage.js",
+      "recommendation": "Consider moving to temp/ directory or cleaning up"
+    },
+    {
+      "file": "scripts/setup-supabase-storage.js",
+      "type": "WARNING",
+      "message": "Temporary file without date: scripts/setup-supabase-storage.js",
+      "recommendation": "Add date to filename (e.g., temp-script-20250825.js)"
+    },
+    {
+      "file": "scripts/setup-monitoring.js",
+      "type": "WARNING",
+      "message": "Temporary file not in temp directory: scripts/setup-monitoring.js",
+      "recommendation": "Consider moving to temp/ directory or cleaning up"
+    },
+    {
+      "file": "scripts/setup-monitoring.js",
+      "type": "WARNING",
+      "message": "Temporary file without date: scripts/setup-monitoring.js",
+      "recommendation": "Add date to filename (e.g., temp-script-20250825.js)"
+    },
+    {
+      "file": "scripts/setup-env.js",
+      "type": "WARNING",
+      "message": "Temporary file not in temp directory: scripts/setup-env.js",
+      "recommendation": "Consider moving to temp/ directory or cleaning up"
+    },
+    {
+      "file": "scripts/setup-env.js",
+      "type": "WARNING",
+      "message": "Temporary file without date: scripts/setup-env.js",
+      "recommendation": "Add date to filename (e.g., temp-script-20250825.js)"
+    }
+  ],
+  "recommendations": [
+    "Review and reorganize test/demo files according to guidelines",
+    "Consider running automated cleanup scripts",
+    "Update team documentation on file organization"
+  ]
+}

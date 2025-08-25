@@ -59,7 +59,7 @@ export default function AdvancedSearchBox({
     const fetchSuggestions = async () => {
       setIsLoading(true);
       try {
-        const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+        const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
         const response = await fetch(
           `${backendUrl}/api/restaurants/autocomplete?q=${encodeURIComponent(debouncedQuery)}&limit=8`
         );

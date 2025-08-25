@@ -17,7 +17,7 @@ export async function PUT(
     const { status } = body;
 
     // Update restaurant status in database via backend API
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}/approve`;
     
     if (process.env.NODE_ENV === 'development') {

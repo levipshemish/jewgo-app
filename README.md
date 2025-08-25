@@ -37,8 +37,7 @@ npm run docker:logs          # logs
 Backend (Flask):
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+source .venv/bin/activate   # Virtual environment already exists
 python app.py               # binds 0.0.0.0:8082
 ```
 
@@ -66,8 +65,8 @@ cd frontend && npm test
 
 ## Ports & Health
 - Docker (optimized compose): frontend http://localhost:3001, backend http://localhost:5001 (health: `/health`)
-- Manual backend dev: http://localhost:8082 (health: `/health`)
-- Additional API health (when enabled): `/api/health/basic`, `/api/health/full`
+- Manual backend dev: http://localhost:8082 (health: `/healthz`)
+- Additional API health: `/api/health/basic`, `/api/v4/direct-test`
 
 ## Docs & Guides
 - Full documentation index: `docs/README.md`

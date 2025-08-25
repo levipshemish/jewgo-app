@@ -1462,8 +1462,35 @@ def create_app(config_class=None):
             lat = request.args.get('lat', type=float)
             lng = request.args.get('lng', type=float)
             max_distance_mi = request.args.get('max_distance_mi', type=float)
-            limit = request.args.get('limit', type=int)  # Get limit from request
-            offset = request.args.get('offset', type=int, default=0)  # Get offset from request
+            
+            # Parse pagination parameters with explicit type conversion
+            try:
+                limit = int(request.args.get('limit', 50))
+            except (ValueError, TypeError):
+                limit = 50
+                
+            try:
+                page = int(request.args.get('page', 1))
+            except (ValueError, TypeError):
+                page = 1
+                
+            try:
+                offset = int(request.args.get('offset', 0))
+            except (ValueError, TypeError):
+                offset = 0
+            
+            # Calculate offset from page if page is provided
+            if page and page > 1:
+                offset = (page - 1) * limit
+            
+            # Build cache key
+            cache_key = f"restaurants:{request.query_string.decode()}"
+            
+            # Debug logging for pagination
+            logger.info(f"Pagination debug - page: {page}, limit: {limit}, offset: {offset}")
+            logger.info(f"Cache key: {cache_key}")
+            logger.info(f"Request args: {dict(request.args)}")
+            logger.info(f"Query string: {request.query_string.decode()}")
             
             # Parse boolean parameters properly (Flask's type=bool doesn't work with 'true'/'false' strings)
             open_now = request.args.get('open_now', '').lower() in ['true', '1', 'yes', 'on']
@@ -1471,23 +1498,23 @@ def create_app(config_class=None):
             low_power_mode = request.args.get('low_power_mode', '').lower() in ['true', '1', 'yes', 'on']
             slow_connection = request.args.get('slow_connection', '').lower() in ['true', '1', 'yes', 'on']
             
-            # Build cache key
-            cache_key = f"restaurants:{request.query_string.decode()}"
-
             # Try to get from cache first (skip if redis_cache not available)
-            if 'redis_cache' in locals():
-                cached_result = redis_cache.get(cache_key)
-                if cached_result:
-                    if 'performance_monitor' in locals():
-                        performance_monitor.record_cache_hit('restaurants')
-                    return jsonify(cached_result)
-                
-                if 'performance_monitor' in locals():
-                    performance_monitor.record_cache_miss('restaurants')
+            # Temporarily disable cache to debug pagination issue
+            # if 'redis_cache' in locals():
+            #     cached_result = redis_cache.get(cache_key)
+            #     if cached_result:
+            #         if 'performance_monitor' in locals():
+            #             performance_monitor.record_cache_hit('restaurants')
+            #         return jsonify(cached_result)
+            #     
+            #     if 'performance_monitor' in locals():
+            #         performance_monitor.record_cache_miss('restaurants')
             
             # Build base query
             query = "SELECT * FROM restaurants WHERE 1=1"
+            count_query = "SELECT COUNT(*) FROM restaurants WHERE 1=1"
             params = []
+            count_params = []
             
             # Apply distance filtering if coordinates provided
             if lat is not None and lng is not None and max_distance_mi:
@@ -1502,6 +1529,10 @@ def create_app(config_class=None):
                 query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
                 params.extend([lat, lng, max_distance_meters])
                 
+                # Apply same filter to count query
+                count_query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
+                count_params.extend([lat, lng, max_distance_meters])
+                
                 # Log distance filtering for monitoring
                 if hasattr(locals(), 'performance_monitor'):
                     performance_monitor.record_distance_filtering(lat, lng, max_distance_mi)
@@ -1515,39 +1546,53 @@ def create_app(config_class=None):
             # Apply additional filters from request
             search_term = request.args.get('search')
             if search_term:
-                query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
                 search_pattern = f"%{search_term}%"
+                query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
                 params.extend([search_pattern, search_pattern, search_pattern])
+                count_query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                count_params.extend([search_pattern, search_pattern, search_pattern])
             
             certifying_agency = request.args.get('certifying_agency')
             if certifying_agency:
                 query += " AND certifying_agency = %s"
                 params.append(certifying_agency)
+                count_query += " AND certifying_agency = %s"
+                count_params.append(certifying_agency)
             
             kosher_category = request.args.get('kosher_category')
             if kosher_category:
                 query += " AND kosher_category = %s"
                 params.append(kosher_category)
+                count_query += " AND kosher_category = %s"
+                count_params.append(kosher_category)
             
             listing_type = request.args.get('listing_type')
             if listing_type:
                 query += " AND listing_type = %s"
                 params.append(listing_type)
+                count_query += " AND listing_type = %s"
+                count_params.append(listing_type)
             
             min_rating = request.args.get('min_rating', type=float)
             if min_rating:
                 query += " AND rating >= %s"
                 params.append(min_rating)
+                count_query += " AND rating >= %s"
+                count_params.append(min_rating)
             
             price_min = request.args.get('price_min', type=int)
             if price_min:
                 query += " AND min_avg_meal_cost >= %s"
                 params.append(price_min)
+                count_query += " AND min_avg_meal_cost >= %s"
+                count_params.append(price_min)
             
             price_max = request.args.get('price_max', type=int)
             if price_max:
                 query += " AND max_avg_meal_cost <= %s"
                 params.append(price_max)
+                count_query += " AND max_avg_meal_cost <= %s"
+                count_params.append(price_max)
             
             # Add ordering BEFORE limit (correct SQL syntax)
             if lat is not None and lng is not None:
@@ -1590,11 +1635,17 @@ def create_app(config_class=None):
                     # Debug logging
                     logger.info(f"Executing query: {query}")
                     logger.info(f"With params: {params}")
+                    logger.info(f"Final SQL with LIMIT/OFFSET: {query}")
                     
+                    # Execute count query first to get total
+                    cursor.execute(count_query, count_params)
+                    total_count = cursor.fetchone()[0]
+                    
+                    # Execute main query
                     cursor.execute(query, params)
                     restaurants = cursor.fetchall()
                     
-                    logger.info(f"Query returned {len(restaurants)} restaurants")
+                    logger.info(f"Query returned {len(restaurants)} restaurants out of {total_count} total")
                     
                     # Convert to list of dictionaries
                     columns = [desc[0] for desc in cursor.description]
@@ -1624,6 +1675,10 @@ def create_app(config_class=None):
                 'success': True,
                 'data': restaurants_data,
                 'count': len(restaurants_data),
+                'total': total_count,  # Add total count for pagination
+                'page': page,
+                'limit': limit or 50,
+                'offset': offset,
                 'filters_applied': {
                     'distance_filtering': lat is not None and lng is not None and max_distance_mi,
                     'open_now': open_now,
@@ -1638,10 +1693,12 @@ def create_app(config_class=None):
             }
             
             logger.info(f"Returning {len(restaurants_data)} restaurants to frontend")
+            logger.info(f"Response data keys: {list(response_data.keys())}")
+            logger.info(f"Response page: {response_data.get('page')}, limit: {response_data.get('limit')}, offset: {response_data.get('offset')}")
             
             # Cache the result (skip if redis_cache not available)
-            if 'redis_cache' in locals():
-                redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
+            # if 'redis_cache' in locals():
+            #     redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
             
             # Send real-time update via WebSocket (skip if service not available)
             if 'websocket_service' in locals():

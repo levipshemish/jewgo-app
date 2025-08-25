@@ -45,7 +45,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock environment variables
-process.env.NEXT_PUBLIC_BACKEND_URL = 'https://jewgo.onrender.com'
+process.env.NEXT_PUBLIC_BACKEND_URL = 'https://jewgo-app-oyoh.onrender.com'
 process.env.NEXT_PUBLIC_ADMIN_TOKEN = 'test-admin-token'
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'

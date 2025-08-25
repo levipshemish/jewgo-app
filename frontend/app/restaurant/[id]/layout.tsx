@@ -12,11 +12,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const { id } = await params;
     
     // Fetch restaurant data for metadata
-    const apiUrl = process.env['NEXT_PUBLIC_BACKEND_URL']
-? `${process.env['NEXT_PUBLIC_BACKEND_URL']}/api/restaurants`
-: process.env['NODE_ENV'] === 'production'
-      ? 'https://jewgo.onrender.com/api/restaurants'
-      : 'http://127.0.0.1:8081/api/restaurants'
+    const apiUrl = process.env.NODE_ENV === 'production'
+    ? 'https://jewgo-app-oyoh.onrender.com/api/restaurants'
+    : 'http://localhost:8082/api/restaurants';
     
     const response = await fetch(`${apiUrl}/${id}`, {
       method: 'GET',

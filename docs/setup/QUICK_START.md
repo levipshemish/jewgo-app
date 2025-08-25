@@ -14,8 +14,8 @@
 
 ### 3. Access the Application
 - **Frontend**: http://localhost:3001
-- **Backend API**: http://localhost:5001
-- **Health Check**: http://localhost:5001/health
+- **Backend API**: http://localhost:8082
+- **Health Check**: http://localhost:8082/healthz
 
 ## 🛠️ Manual Setup (Alternative)
 
@@ -73,7 +73,7 @@ docker-compose -f docker-compose.optimized.yml logs -f [service-name]
 
 ### Ports
 - **Frontend**: 3001
-- **Backend**: 5001
+- **Backend**: 8082
 - **Database**: 5433
 - **Redis**: 6380
 
@@ -82,7 +82,7 @@ docker-compose -f docker-compose.optimized.yml logs -f [service-name]
 ### Quick Health Check
 ```bash
 # Test backend
-curl http://localhost:5001/health
+curl http://localhost:8082/healthz
 
 # Test frontend
 curl http://localhost:3001
@@ -115,7 +115,7 @@ docker info
 ```bash
 # Check what's using the ports
 lsof -i :3001
-lsof -i :5001
+lsof -i :8082
 lsof -i :5433
 lsof -i :6380
 ```
@@ -147,9 +147,8 @@ docker-compose -f docker-compose.optimized.yml logs -f redis
 ```bash
 # Backend development (Flask)
 cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python app.py   # serves on http://localhost:8082 (health: /health)
+source .venv/bin/activate  # Virtual environment already exists
+python app.py   # serves on http://localhost:8082 (health: /healthz)
 
 # Frontend development
 cd frontend

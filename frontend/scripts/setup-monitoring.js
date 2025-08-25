@@ -1,11 +1,37 @@
 #!/usr/bin/env node
 
 /**
+ * setup-monitoring
  * Monitoring Setup Script for JewGo Frontend
- * Configures monitoring tools and alerts
+ * 
+ * This script provides monitoring setup script for jewgo frontend for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category monitoring
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node setup-monitoring.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node setup-monitoring.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
  */
-
 const fs = require('fs');
+const { defaultLogger } = require('./utils/logger');
+
+const { defaultErrorHandler } = require('./utils/errorHandler');
+
 const path = require('path');
 
 // Configuration
@@ -23,7 +49,7 @@ const CONFIG = {
       endpoints: [
         'https://jewgo-app.vercel.app',
         'https://jewgo-app.vercel.app/health',
-        'https://jewgo.onrender.com/health',
+        'https://jewgo-app-oyoh.onrender.com/health',
       ],
     },
     
@@ -72,8 +98,8 @@ function createDirectories() {
   ];
   
   dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (!wrapSyncWithErrorHandling(() => fs.existsSync)(dir)) {
+      wrapSyncWithErrorHandling(() => fs.mkdirSync)(dir, { recursive: true });
       } else {
       }
   });
@@ -91,7 +117,7 @@ function createConfigFiles() {
     alerts: CONFIG.alerts,
   };
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(CONFIG.configDir, 'monitoring.json'),
     JSON.stringify(monitoringConfig, null, 2)
   );
@@ -103,7 +129,7 @@ function createConfigFiles() {
     retries: 3,
   };
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(CONFIG.configDir, 'health.json'),
     JSON.stringify(healthConfig, null, 2)
   );
@@ -118,7 +144,7 @@ function createConfigFiles() {
     },
   };
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(CONFIG.configDir, 'performance.json'),
     JSON.stringify(performanceConfig, null, 2)
   );
@@ -151,7 +177,7 @@ function createLogRotation() {
     ],
   };
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(CONFIG.configDir, 'log-rotation.json'),
     JSON.stringify(logRotationConfig, null, 2)
   );
@@ -192,7 +218,7 @@ function createDashboardConfig() {
     ],
   };
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(CONFIG.configDir, 'dashboard.json'),
     JSON.stringify(dashboardConfig, null, 2)
   );
@@ -214,9 +240,9 @@ function createEnvironmentConfigs() {
           ? 'https://staging.jewgo-app.vercel.app'
           : 'http://localhost:3000',
         backend: env === 'production'
-          ? 'https://jewgo.onrender.com'
+          ? 'https://jewgo-app-oyoh.onrender.com'
           : env === 'staging'
-          ? 'https://staging.jewgo.onrender.com'
+          ? 'https://staging.jewgo-app-oyoh.onrender.com'
           : 'http://localhost:5000',
       },
       monitoring: {
@@ -226,7 +252,7 @@ function createEnvironmentConfigs() {
       },
     };
     
-    fs.writeFileSync(
+    wrapSyncWithErrorHandling(() => fs.writeFileSync)(
       path.join(CONFIG.configDir, `${env}.json`),
       JSON.stringify(envConfig, null, 2)
     );
@@ -249,8 +275,8 @@ function rotateLogs() {
   const config = require('../config/log-rotation.json');
   
   config.logs.forEach(logConfig => {
-    if (fs.existsSync(logConfig.path)) {
-      const stats = fs.statSync(logConfig.path);
+    if (wrapSyncWithErrorHandling(() => fs.existsSync)(logConfig.path)) {
+      const stats = wrapSyncWithErrorHandling(() => fs.statSync)(logConfig.path);
       const sizeInMB = stats.size / (1024 * 1024);
       
       if (sizeInMB > parseInt(logConfig.maxSize)) {
@@ -267,7 +293,7 @@ function rotateLogs() {
 rotateLogs();
 `;
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(__dirname, 'rotate-logs.js'),
     logRotationScript
   );
@@ -277,13 +303,27 @@ rotateLogs();
 
 const fs = require('fs');
 const path = require('path');
+/**
+ * Wrap function with error handling
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 function aggregateMetrics() {
   const metricsFile = path.join(__dirname, '../logs/metrics.json');
   const aggregatedFile = path.join(__dirname, '../logs/aggregated-metrics.json');
   
-  if (fs.existsSync(metricsFile)) {
-    const metrics = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
+  if (wrapSyncWithErrorHandling(() => fs.existsSync)(metricsFile)) {
+    const metrics = JSON.parse(wrapSyncWithErrorHandling(() => fs.readFileSync)(metricsFile, 'utf8'));
     
     const aggregated = {
       timestamp: new Date().toISOString(),
@@ -304,14 +344,14 @@ function aggregateMetrics() {
       },
     };
     
-    fs.writeFileSync(aggregatedFile, JSON.stringify(aggregated, null, 2));
+    wrapSyncWithErrorHandling(() => fs.writeFileSync)(aggregatedFile, JSON.stringify(aggregated, null, 2));
     }
 }
 
 aggregateMetrics();
 `;
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(__dirname, 'aggregate-metrics.js'),
     metricsScript
   );
@@ -324,8 +364,8 @@ aggregateMetrics();
 function updatePackageScripts() {
   const packagePath = path.join(__dirname, '../package.json');
   
-  if (fs.existsSync(packagePath)) {
-    const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  if (wrapSyncWithErrorHandling(() => fs.existsSync)(packagePath)) {
+    const packageJson = JSON.parse(wrapSyncWithErrorHandling(() => fs.readFileSync)(packagePath, 'utf8'));
     
     const newScripts = {
       ...packageJson.scripts,
@@ -340,7 +380,7 @@ function updatePackageScripts() {
     
     packageJson.scripts = newScripts;
     
-    fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
+    wrapSyncWithErrorHandling(() => fs.writeFileSync)(packagePath, JSON.stringify(packageJson, null, 2));
     }
 }
 
@@ -416,7 +456,7 @@ A monitoring dashboard is available at \`/monitoring\` (if implemented in the fr
 - \`ALERT_WEBHOOK_URL\` - Custom webhook for alerts
 `;
   
-  fs.writeFileSync(
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(
     path.join(__dirname, 'MONITORING_README.md'),
     readme
   );
@@ -436,15 +476,29 @@ function setup() {
     updatePackageScripts();
     createMonitoringReadme();
     } catch (error) {
-    // // console.error('❌ Setup failed:', error.message);
-    process.exit(1);
+  defaultLogger.error(`Script failed: ${error.message}`, { error: error });
+  throw error;
+    // // defaultLogger.error('❌ Setup failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
   }
 }
 
 // Run if called directly
+
+// Wrap main function with error handling
+const mainWithErrorHandling = wrapWithErrorHandling(main, {
+  script: __filename,
+  operation: 'main'
+});
+
+// Execute with error handling
 if (require.main === module) {
-  setup();
+  mainWithErrorHandling().catch(error => {
+    defaultLogger.error('Script failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
+  });
 }
+
 
 module.exports = {
   setup,

@@ -1,16 +1,50 @@
+
+const { defaultLogger } = require('./utils/logger');
+
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+/**
+ * rotate-logs
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category utility
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node rotate-logs.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node rotate-logs.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
 
-// Simple log rotation
-function rotateLogs() {
-  const logsDir = path.join(__dirname, '../logs');
-  const config = require('../config/log-rotation.json');
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
   
   config.logs.forEach(logConfig => {
-    if (fs.existsSync(logConfig.path)) {
-      const stats = fs.statSync(logConfig.path);
+    if (wrapSyncWithErrorHandling(() => fs.existsSync)(logConfig.path)) {
+      const stats = wrapSyncWithErrorHandling(() => fs.statSync)(logConfig.path);
       const sizeInMB = stats.size / (1024 * 1024);
       
       if (sizeInMB > parseInt(logConfig.maxSize)) {

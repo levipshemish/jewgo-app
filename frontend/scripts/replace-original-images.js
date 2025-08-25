@@ -1,13 +1,53 @@
 #!/usr/bin/env node
 
 /**
+ * replace-original-images
  * Replace Original Images with Optimized Versions
- * Automatically replaces original images with their optimized WebP counterparts
+ * 
+ * This script provides replace original images with optimized versions for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category optimization
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node replace-original-images.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node replace-original-images.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
  */
-
 const fs = require('fs');
+const { defaultLogger } = require('./utils/logger');
+
+const { defaultErrorHandler } = require('./utils/errorHandler');
+
 const path = require('path');
 const { execSync } = require('child_process');
+/**
+ * Wrap function with error handling
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 // Color codes for console output
 const colors = {
@@ -38,9 +78,11 @@ function logSubsection(_title) {
 
 function getFileSize(_filePath) {
   try {
-    const stats = fs.statSync(filePath);
+    const stats = wrapSyncWithErrorHandling(() => fs.statSync)(filePath);
     return stats.size;
   } catch (error) {
+  defaultLogger.error(`Script failed: ${error.message}`, { error: error });
+  throw error;
     return 0;
   }
 }
@@ -84,8 +126,8 @@ const imageReplacements = [
 
 function backupOriginalImage(_filePath) {
   const backupPath = filePath + '.backup';
-  if (fs.existsSync(filePath) && !fs.existsSync(backupPath)) {
-    fs.copyFileSync(filePath, backupPath);
+  if (wrapSyncWithErrorHandling(() => fs.existsSync)(filePath) && !wrapSyncWithErrorHandling(() => fs.existsSync)(backupPath)) {
+    wrapSyncWithErrorHandling(() => fs.copyFileSync)(filePath, backupPath);
     log(`✅ Backed up: ${filePath}`, 'green');
     return true;
   }
@@ -97,20 +139,20 @@ function replaceImage(_replacement) {
   
   try {
     // Check if optimized version exists
-    if (!fs.existsSync(optimized)) {
+    if (!wrapSyncWithErrorHandling(() => fs.existsSync)(optimized)) {
       log(`❌ Optimized image not found: ${optimized}`, 'red');
       return false;
     }
 
     // Backup original if it exists
-    if (fs.existsSync(original)) {
+    if (wrapSyncWithErrorHandling(() => fs.existsSync)(original)) {
       backupOriginalImage(original);
     }
 
     // Copy optimized version to target location
-    fs.copyFileSync(optimized, target);
+    wrapSyncWithErrorHandling(() => fs.copyFileSync)(optimized, target);
     
-    const originalSize = fs.existsSync(original) ? getFileSize(original) : 0;
+    const originalSize = wrapSyncWithErrorHandling(() => fs.existsSync)(original) ? getFileSize(original) : 0;
     const optimizedSize = getFileSize(target);
     const savings = originalSize - optimizedSize;
     const savingsPercent = originalSize > 0 ? ((savings / originalSize) * 100).toFixed(1) : 0;
@@ -141,12 +183,12 @@ function updateImageReferences() {
   filesToUpdate.forEach(filePath => {
     try {
       const fullPath = path.join(process.cwd(), filePath);
-      if (!fs.existsSync(fullPath)) {
+      if (!wrapSyncWithErrorHandling(() => fs.existsSync)(fullPath)) {
         log(`⚠️  File not found: ${filePath}`, 'yellow');
         return;
       }
       
-      let content = fs.readFileSync(fullPath, 'utf8');
+      let content = wrapSyncWithErrorHandling(() => fs.readFileSync)(fullPath, 'utf8');
       let fileUpdated = false;
       
       // Update image references
@@ -158,7 +200,11 @@ function updateImageReferences() {
         { from: '/images/default-restaurant.jpg', to: '/images/default-restaurant.webp' }
       ];
       
-      replacements.forEach(({ from, to }) => {
+      defaultLogger.startProgress(replacements.length, 'Processing replacements');
+let progressCounter = 0;
+replacements.forEach((item, index) => {
+  progressCounter++;
+  defaultLogger.updateProgress(progressCounter, `Processing item ${index + 1}`);
         if (content.includes(from)) {
           content = content.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), to);
           fileUpdated = true;
@@ -166,7 +212,7 @@ function updateImageReferences() {
       });
       
       if (fileUpdated) {
-        fs.writeFileSync(fullPath, content);
+        wrapSyncWithErrorHandling(() => fs.writeFileSync)(fullPath, content);
         log(`✅ Updated: ${filePath}`, 'green');
         updatedCount++;
       }
@@ -192,8 +238,8 @@ function createImageOptimizationReport() {
   imageReplacements.forEach(replacement => {
     const { original, target } = replacement;
     
-    const originalSize = fs.existsSync(original) ? getFileSize(original) : 0;
-    const optimizedSize = fs.existsSync(target) ? getFileSize(target) : 0;
+    const originalSize = wrapSyncWithErrorHandling(() => fs.existsSync)(original) ? getFileSize(original) : 0;
+    const optimizedSize = wrapSyncWithErrorHandling(() => fs.existsSync)(target) ? getFileSize(target) : 0;
     const savings = originalSize - optimizedSize;
     
     report.replacements.push({
@@ -215,7 +261,7 @@ function createImageOptimizationReport() {
   
   // Save report
   const reportPath = './image-replacement-report.json';
-  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(reportPath, JSON.stringify(report, null, 2));
   
   // Display summary
   log(`📊 Replacement Summary:`, 'blue');
@@ -260,14 +306,26 @@ function main() {
     
   } catch (error) {
     log(`\n❌ Error: ${error.message}`, 'red');
-    process.exit(1);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
   }
 }
 
 // Run the script
+
+// Wrap main function with error handling
+const mainWithErrorHandling = wrapWithErrorHandling(main, {
+  script: __filename,
+  operation: 'main'
+});
+
+// Execute with error handling
 if (require.main === module) {
-  main();
+  mainWithErrorHandling().catch(error => {
+    defaultLogger.error('Script failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
+  });
 }
+
 
 module.exports = {
   replaceImage,

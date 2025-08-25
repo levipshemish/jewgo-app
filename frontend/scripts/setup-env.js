@@ -1,4 +1,47 @@
-const fs = require('fs')
+#!/usr/bin/env node
+
+/**
+ * setup-env
+ * Wrap function with error handling
+ * 
+ * This script provides wrap function with error handling for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category setup
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node setup-env.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node setup-env.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+const fs = require(
+const { defaultErrorHandler } = require('./utils/errorHandler');
+const { defaultLogger } = require('./utils/logger');
+
+'fs')
 const path = require('path')
 const readline = require('readline')
 
@@ -25,8 +68,8 @@ async function setupEnvironment() {
     const appUrl = await question('Application URL (default: http://localhost:3000): ') || 'http://localhost:3000'
     
     if (!smtpUser || !smtpPass) {
-      // console.error('❌ SMTP username and password are required!')
-      process.exit(1)
+      // defaultLogger.error('❌ SMTP username and password are required!')
+      wrapSyncWithErrorHandling(() => process.exit)(1)
     }
     
     // Create .env content
@@ -47,10 +90,10 @@ NEXT_PUBLIC_URL="${appUrl}"
     
     // Write to .env file
     const envPath = path.join(__dirname, '..', '.env')
-    fs.writeFileSync(envPath, envContent)
+    wrapSyncWithErrorHandling(() => fs.writeFileSync)(envPath, envContent)
     
     } catch (error) {
-    // console.error('❌ Setup failed:', error.message)
+    // defaultLogger.error('❌ Setup failed:', error.message)
   } finally {
     rl.close()
   }

@@ -486,6 +486,28 @@ def create_app():
             'timestamp': datetime.now(timezone.utc).isoformat()
         })
     
+    # Add a simple health endpoint
+    @app.route('/api/health/basic', methods=['GET'])
+    def health_basic():
+        """Basic health check endpoint"""
+        return jsonify({
+            'success': True,
+            'status': 'healthy',
+            'message': 'JewGo Backend is running',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+    
+    # Add a root health endpoint
+    @app.route('/healthz', methods=['GET'])
+    def healthz():
+        """Root health check endpoint"""
+        return jsonify({
+            'success': True,
+            'status': 'healthy',
+            'message': 'JewGo Backend is running',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+    
     logger.info("JewGo Backend application created successfully")
     return app
 

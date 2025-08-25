@@ -25,7 +25,7 @@ export async function GET(
     }
 
     // Fetch restaurant data from backend
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {
@@ -233,7 +233,7 @@ export async function PUT(
     }
 
     // Update restaurant data via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {
@@ -293,7 +293,7 @@ export async function DELETE(
     }
 
     // Delete restaurant via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {
@@ -358,7 +358,7 @@ export async function PATCH(
     }
 
     // Partial update restaurant data via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {

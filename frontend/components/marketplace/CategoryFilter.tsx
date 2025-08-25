@@ -21,6 +21,11 @@ export default function CategoryFilter({
   onClose,
   isOpen
 }: CategoryFilterProps) {
+  // Early return to prevent hooks violation - must be before any hooks
+  if (!isOpen) {
+    return null;
+  }
+
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,8 +99,6 @@ export default function CategoryFilter({
   const selectedSubcategoryData = selectedCategoryData?.subcategories?.find(
     sub => sub.slug === selectedSubcategory
   );
-
-  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">

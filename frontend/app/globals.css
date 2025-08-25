@@ -49,6 +49,25 @@
   backdrop-filter: blur(8px) !important;
 }
 
+/* Ensure tag and heart are correctly positioned inside UnifiedCard */
+.unified-card .unified-card-tag {
+  position: absolute !important;
+  top: 8px !important;
+  left: 8px !important;
+  width: 80px !important;
+  max-width: 80px !important;
+  min-width: 80px !important;
+  height: 24px !important;
+  max-height: 24px !important;
+  min-height: 24px !important;
+  overflow: hidden !important;
+  padding: 0 8px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  font-weight: 500 !important;
+  z-index: 10 !important;
+}
+
 .unified-card-tag:hover {
   background-color: rgba(17, 24, 39, 0.85) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
@@ -91,6 +110,18 @@
   touch-action: manipulation !important;
   z-index: 10 !important;
   transition: all 0.2s ease-out !important;
+}
+
+.unified-card .unified-card-heart {
+  position: absolute !important;
+  top: 4px !important;
+  right: 8px !important;
+  width: 28px !important;
+  max-width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  max-height: 28px !important;
+  min-height: 28px !important;
 }
 
 .unified-card-heart:hover { 
@@ -330,9 +361,15 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 
 .unified-card:hover {
   border-color: rgb(209 213 219) !important;
-  transform: translateY(-4px) !important;
+  transform: none !important; /* avoid hover lift to prevent flicker */
   /* Override restaurant-card hover conflicts */
   scale: none !important; /* Override restaurant-card scale-[1.02] */
+}
+
+@media (hover: none) {
+  .unified-card:hover {
+    transform: none !important;
+  }
 }
 
 /* Override restaurant-card rules that might affect UnifiedCard */
@@ -3624,5 +3661,3 @@ Last updated: Added debugging logs to track styling conflicts
   background: white !important;
   background-image: none !important;
 }
-
-

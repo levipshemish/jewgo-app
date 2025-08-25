@@ -1,14 +1,54 @@
 #!/usr/bin/env node
 
 /**
+ * health-monitor
  * Health Monitoring Script for JewGo Frontend
- * Monitors application health, performance, and availability
+ * 
+ * This script provides health monitoring script for jewgo frontend for the JewGo application.
+ * 
+ * @author Development Team
+ * @version 1.0.0
+ * @created 2025-08-25
+ * @lastModified 2025-08-25
+ * @category monitoring
+ * 
+ * @dependencies Node.js, required npm packages
+ * @requires Environment variables, configuration files
+ * 
+ * @usage node health-monitor.js [options]
+ * @options --help, --verbose, --config
+ * 
+ * @example
+ * node health-monitor.js --verbose --config=production
+ * 
+ * @returns Exit code 0 for success, non-zero for errors
+ * @throws Common error conditions and their meanings
+ * 
+ * @see Related scripts in the project
+ * @see Links to relevant documentation
  */
-
 const https = require('https');
+const { defaultLogger } = require('./utils/logger');
+
+const { defaultErrorHandler } = require('./utils/errorHandler');
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+/**
+ * Wrap function with error handling
+ */
+function wrapWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapFunction(fn, context);
+}
+
+/**
+ * Wrap synchronous function with error handling
+ */
+function wrapSyncWithErrorHandling(fn, context = {}) {
+  return defaultErrorHandler.wrapSyncFunction(fn, context);
+}
+
 
 // Configuration
 const CONFIG = {
@@ -16,7 +56,7 @@ const CONFIG = {
   urls: {
     production: 'https://jewgo-app.vercel.app',
     health: 'https://jewgo-app.vercel.app/health',
-    api: 'https://jewgo.onrender.com/health',
+    api: 'https://jewgo-app-oyoh.onrender.com/health',
   },
   // Monitoring intervals (in milliseconds)
   intervals: {
@@ -49,8 +89,8 @@ let metrics = {
 
 // Ensure logs directory exists
 const logsDir = path.dirname(CONFIG.logFile);
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
+if (!wrapSyncWithErrorHandling(() => fs.existsSync)(logsDir)) {
+  wrapSyncWithErrorHandling(() => fs.mkdirSync)(logsDir, { recursive: true });
 }
 
 /**
@@ -65,7 +105,7 @@ function log(level, message, data = {}) {
     ...data,
   };
   
-  console.log(`${timestamp} [${level.toUpperCase()}]: ${message}`);
+  defaultLogger.info(`${timestamp} [${level.toUpperCase()}]: ${message}`);
   
   // Write to file
   fs.appendFileSync(CONFIG.logFile, JSON.stringify(logEntry) + '\n');
@@ -212,7 +252,7 @@ function updateMetrics(_checkResult) {
   metrics.availability = (metrics.checks - metrics.failures) / metrics.checks;
   
   // Save metrics to file
-  fs.writeFileSync(CONFIG.metricsFile, JSON.stringify(metrics, null, 2));
+  wrapSyncWithErrorHandling(() => fs.writeFileSync)(CONFIG.metricsFile, JSON.stringify(metrics, null, 2));
 }
 
 /**
@@ -361,21 +401,33 @@ function main() {
       runPerformanceCheck();
       break;
     case 'report':
-      console.log(JSON.stringify(generateReport(), null, 2));
+      defaultLogger.info(JSON.stringify(generateReport(), null, 2));
       break;
     case 'metrics':
-      console.log(JSON.stringify(metrics, null, 2));
+      defaultLogger.info(JSON.stringify(metrics, null, 2));
       break;
     default:
-      console.log('Usage: node health-monitor.js [start|check|performance|report|metrics]');
+      defaultLogger.info('Usage: node health-monitor.js [start|check|performance|report|metrics]');
       break;
   }
 }
 
 // Run if called directly
+
+// Wrap main function with error handling
+const mainWithErrorHandling = wrapWithErrorHandling(main, {
+  script: __filename,
+  operation: 'main'
+});
+
+// Execute with error handling
 if (require.main === module) {
-  main();
+  mainWithErrorHandling().catch(error => {
+    defaultLogger.error('Script failed:', error.message);
+    wrapSyncWithErrorHandling(() => process.exit)(1);
+  });
 }
+
 
 module.exports = {
   healthCheck,

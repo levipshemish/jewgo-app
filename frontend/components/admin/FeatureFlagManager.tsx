@@ -77,7 +77,7 @@ export default function FeatureFlagManager() {
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
 const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get from auth context
 
       if (!adminToken) {
@@ -122,7 +122,7 @@ const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
       const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN'];
 
       if (!adminToken) {
@@ -156,7 +156,7 @@ const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo.onrender.com';
+      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
       const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN'];
 
       if (!adminToken) {

@@ -25,9 +25,15 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 export const isMobileDevice = (): boolean => {
   if (typeof window === 'undefined') {return false;}
   
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  // Check for mobile user agent first
+  const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
     navigator.userAgent
-  ) || window.innerWidth <= 768;
+  );
+  
+  // Only use screen width as secondary check for very small screens
+  const isSmallScreen = window.innerWidth <= 480; // More reasonable breakpoint
+  
+  return isMobileUserAgent || isSmallScreen;
 };
 
 export const isTouchDevice = (): boolean => {
