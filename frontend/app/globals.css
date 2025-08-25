@@ -3535,4 +3535,23 @@ Last updated: Added debugging logs to track styling conflicts
 
 /* Reset and base styles */
 
+/* Location Popup Modal - Ensure white background */
+.location-popup-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+.location-popup-modal * {
+  background-color: inherit !important;
+}
+
+/* Override any marketplace page transparency rules for location popup */
+.marketplace-page .location-popup-modal,
+.restaurant-grid .location-popup-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
 
