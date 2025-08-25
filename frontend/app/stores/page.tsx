@@ -9,7 +9,6 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
-import { Filters } from '@/lib/filters/schema';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
@@ -17,6 +16,139 @@ import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+
+import { Filters } from '@/lib/filters/schema';
+
+// Mock store type for now - will be replaced with actual API
+interface Store {
+  id: number;
+  name: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone_number?: string;
+  website?: string;
+  email?: string;
+  store_type?: string;
+  store_category?: string;
+  business_hours?: string;
+  distance?: string;
+  distance_miles?: number;
+  rating?: number;
+  review_count?: number;
+  star_rating?: number;
+  google_rating?: number;
+  image_url?: string;
+  logo_url?: string;
+  has_parking?: boolean;
+  has_delivery?: boolean;
+  has_pickup?: boolean;
+  accepts_credit_cards?: boolean;
+  accepts_cash?: boolean;
+  kosher_certification?: string;
+  kosher_category?: string;
+  is_cholov_yisroel?: boolean;
+  is_pas_yisroel?: boolean;
+  is_active?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  tags?: string[];
+  admin_notes?: string;
+  specials?: string;
+  listing_type?: string;
+}
+
+// Mock API function for stores - will be replaced with actual API
+const fetchStores = async (limit: number, params?: string) => {
+  // For now, return mock data
+  const mockStores: Store[] = [
+    {
+      id: 1,
+      name: "Kosher Market Plus",
+      description: "Your one-stop shop for all kosher groceries",
+      city: "Miami",
+      store_type: "grocery",
+      store_category: "kosher",
+      rating: 4.5,
+      review_count: 127,
+      distance: "2.3 mi",
+      image_url: "/api/placeholder/300/200",
+      kosher_category: "Glatt Kosher",
+      has_parking: true,
+      has_delivery: true,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
+    },
+    {
+      id: 2,
+      name: "Jewish Book Center",
+      description: "Specialized bookstore with religious texts and literature",
+      city: "Miami",
+      store_type: "bookstore",
+      store_category: "specialty",
+      rating: 4.2,
+      review_count: 89,
+      distance: "1.8 mi",
+      image_url: "/api/placeholder/300/200",
+      kosher_category: "General",
+      has_parking: false,
+      has_delivery: false,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
+    },
+    {
+      id: 3,
+      name: "Judaica World",
+      description: "Complete selection of Judaica items and gifts",
+      city: "Miami",
+      store_type: "judaica",
+      store_category: "specialty",
+      rating: 4.7,
+      review_count: 156,
+      distance: "3.1 mi",
+      image_url: "/api/placeholder/300/200",
+      kosher_category: "General",
+      has_parking: true,
+      has_delivery: true,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
+    },
+    {
+      id: 4,
+      name: "Kosher Deli Express",
+      description: "Fresh kosher deli meats and prepared foods",
+      city: "Miami",
+      store_type: "deli",
+      store_category: "kosher",
+      rating: 4.3,
+      review_count: 94,
+      distance: "2.7 mi",
+      image_url: "/api/placeholder/300/200",
+      kosher_category: "Glatt Kosher",
+      has_parking: false,
+      has_delivery: true,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
+    }
+  ];
+
+  return {
+    stores: mockStores,
+    total: mockStores.length,
+    page: 1,
+    limit: limit
+  };
+};
 
 // Loading component for Suspense fallback
 function StoresPageLoading() {
@@ -30,7 +162,7 @@ function StoresPageLoading() {
 // Main component that uses useSearchParams
 function StoresPageContent() {
   const router = useRouter();
-  const [stores, setStores] = useState<any[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,7 +248,7 @@ function StoresPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize store transformation to prevent unnecessary re-renders
-  const transformStoreToCardData = useCallback((store: any) => {
+  const transformStoreToCardData = useCallback((store: Store) => {
     // Enhanced rating logic with better fallbacks
     const rating = store.rating || store.star_rating || store.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -124,21 +256,20 @@ function StoresPageContent() {
     // Enhanced distance logic - ensure we have a valid distance string
     const distanceText = store.distance && store.distance.trim() !== '' ? store.distance : '';
     
-    // Enhanced store type logic
+    // Store type as subtitle
     const storeType = store.store_type && store.store_type.trim() !== '' ? store.store_type : '';
     
     return {
       id: store.id,
       imageUrl: store.image_url,
-      imageTag: store.store_type,
+      imageTag: store.kosher_category,
       title: store.name,
       badge: ratingText, // Use the enhanced rating text
       subtitle: storeType,
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
-      storeType: store.store_type,
-      storeCategory: store.store_category,
+      kosherCategory: store.kosher_category,
       rating,
       reviewCount: store.review_count,
       city: store.city,
@@ -149,7 +280,7 @@ function StoresPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((filterType: keyof Filters, value: any) => {
+  const handleFilterChange = useCallback((filterType: keyof Filters, value: Filters[keyof Filters]) => {
     setFilter(filterType, value);
     
     // Send real-time filter update via WebSocket (currently disabled)
@@ -177,14 +308,15 @@ function StoresPageContent() {
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
-    // TODO: Trigger data fetch with search query
+    // Trigger data fetch with search query
+    startTransition(() => {
+      fetchStoresData();
+    });
   }, [setSearchQuery, setCurrentPage]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => {
-      // TODO: Implement fetch more stores
-    },
+    () => fetchMoreStores(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
       rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
@@ -192,107 +324,285 @@ function StoresPageContent() {
     }
   );
 
-  // Scroll detection for mobile optimization
-  const { isScrolling, scrollDirection } = useScrollDetection();
+  // Mobile-optimized state
+  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
+  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
-  // Handle location prompt
+  // Handle page changes for desktop pagination
+  const handlePageChange = async (page: number) => {
+    if (page === currentPage || loading) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+      
+      // Add current filters
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      params.append('page', page.toString());
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      
+      setStores(response.stores);
+      setCurrentPage(page);
+    } catch (err) {
+      console.error('Error fetching page:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mobile-optimized location handling with context
+  const handleRequestLocation = async () => {
+    // Use the context's requestLocation
+    requestLocation();
+  };
+
+  // Handle location changes and update filters
   useEffect(() => {
-    if (!userLocation && !locationLoading && !hasShownLocationPrompt) {
+    if (userLocation) {
+      // Update filters with location
+      setFilter('lat', userLocation.latitude);
+      setFilter('lng', userLocation.longitude);
+      setFilter('nearMe', true);
+      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
+      
+      // Send location update via WebSocket
+      if (isConnected) {
+        sendMessage({
+          type: 'location_update',
+          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
+        });
+      }
+    } else {
+      // Clear distance-related filters when no location is available
+      clearFilter('lat');
+      clearFilter('lng');
+      clearFilter('nearMe');
+      clearFilter('maxDistanceMi');
+    }
+  }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
+
+  // Show location prompt when page loads and user doesn't have location
+  useEffect(() => {
+    // Only show prompt if we haven't shown it before and user doesn't have location
+    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
       setShowLocationPrompt(true);
       setHasShownLocationPrompt(true);
     }
-  }, [userLocation, locationLoading, hasShownLocationPrompt]);
+  }, [hasShownLocationPrompt, userLocation, locationLoading]);
 
-  // Mock data for now - replace with actual API call
+  // Close location prompt when user gets location
   useEffect(() => {
-    const fetchStores = async () => {
+    if (showLocationPrompt && userLocation) {
+      setShowLocationPrompt(false);
+    }
+  }, [showLocationPrompt, userLocation]);
+
+  // Fetch stores with mobile optimization
+  const fetchStoresData = async (filters: Filters = activeFilters) => {
+    try {
       setLoading(true);
-      try {
-        // TODO: Replace with actual API call
-        const mockStores = [
-          {
-            id: 1,
-            name: "Kosher Market",
-            store_type: "Grocery",
-            store_category: "Kosher",
-            rating: 4.5,
-            review_count: 25,
-            city: "Miami",
-            distance: "0.5 mi",
-            image_url: "/api/placeholder/300/200",
-            is_cholov_yisroel: true,
-            is_pas_yisroel: false,
-          },
-          {
-            id: 2,
-            name: "Jewish Bookstore",
-            store_type: "Books",
-            store_category: "Religious",
-            rating: 4.2,
-            review_count: 18,
-            city: "Miami",
-            distance: "1.2 mi",
-            image_url: "/api/placeholder/300/200",
-            is_cholov_yisroel: false,
-            is_pas_yisroel: false,
-          },
-        ];
-        
-        setStores(mockStores);
-        setTotalStores(mockStores.length);
-        setTotalPages(1);
-      } catch (err) {
-        setError('Failed to load stores');
-      } finally {
-        setLoading(false);
+      setError(null);
+
+      // Mobile-optimized parameters
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+
+      // Add filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      // Mobile-specific optimizations
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+      
+      if (isLowPowerMode) {
+        params.append('low_power_mode', 'true');
+      }
+      
+      if (isSlowConnection) {
+        params.append('slow_connection', 'true');
+      }
+
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      
+      setStores(response.stores);
+      setCurrentPage(1);
+      
+      // Update pagination state
+      const total = response.total || response.stores.length;
+      setTotalStores(total);
+      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+      setTotalPages(calculatedTotalPages);
+      
+      // Update hasMore state for infinite scroll (mobile only)
+      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    } catch (err) {
+      console.error('Error fetching stores:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unable to load stores. Please try again later.');
+      }
+      setStores([]); // Clear any existing stores
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMoreStores = async () => {
+    if (isLoadingMore || !hasMore) {
+      return;
+    }
+
+    try {
+      const nextPage = currentPage + 1;
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+      
+      // Add current filters
+      Object.entries(activeFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      params.append('page', nextPage.toString());
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      
+      setStores(prev => [...prev, ...response.stores]);
+      setCurrentPage(nextPage);
+      
+      // Update hasMore state
+      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    } catch (err) {
+      console.error('Error fetching more stores:', err);
+    }
+  };
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (isConnected) {
+      // Subscribe to store updates
+      sendMessage({
+        type: 'subscribe',
+        data: { room_id: 'store_updates' }
+      });
+    }
+  }, [isConnected, sendMessage]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchStoresData();
+  }, []);
+
+  // Mobile-optimized filter changes
+  useEffect(() => {
+    if (hasActiveFilters) {
+      startTransition(() => {
+        fetchStoresData();
+      });
+    }
+  }, [activeFilters]);
+
+  // Mobile-specific effects
+  useEffect(() => {
+    // Auto-hide filters on mobile when scrolling
+    if ((isMobile || isMobileDevice) && isScrolling) {
+      setShowFilters(false);
+    }
+  }, [isMobile, isMobileDevice, isScrolling]);
+
+  // Consistent responsive styles
+  const responsiveStyles = useMemo(() => {
+    const isMobileView = isMobile || isMobileDevice;
+    const styles = {
+      container: {
+        minHeight: isMobileView ? viewportHeight : 'auto',
+      },
+      filtersContainer: {
+        position: isMobileView ? 'fixed' as const : 'relative' as const,
+        top: isMobileView ? 'auto' : '0',
+        bottom: isMobileView ? '0' : 'auto',
+        left: isMobileView ? '0' : 'auto',
+        right: isMobileView ? '0' : 'auto',
+        zIndex: isMobileView ? 50 : 'auto',
+        backgroundColor: isMobileView ? 'white' : 'transparent',
+        borderTop: isMobileView ? '1px solid #e5e7eb' : 'none',
+        borderRadius: isMobileView ? '16px 16px 0 0' : '0',
+        boxShadow: isMobileView ? '0 -4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+        maxHeight: isMobileView ? '80vh' : 'auto',
+        overflowY: isMobileView ? 'auto' as const : 'visible' as const,
+      },
+      loadMoreButton: {
+        ...mobileStyles.touchButton,
+        width: isMobileView ? '100%' : 'auto',
+        margin: isMobileView ? '16px 8px' : '16px',
       }
     };
 
-    fetchStores();
-  }, []);
-
-  // Transform stores to card data
-  const storeCards = useMemo(() => {
-    return stores.map(transformStoreToCardData);
-  }, [stores, transformStoreToCardData]);
-
-  // Handle pagination
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-    scrollToTop();
-  }, [setCurrentPage]);
-
-  // Handle add store action
-  const handleAddStore = useCallback(() => {
-    router.push('/add-store');
-  }, [router]);
-
-  // Handle filters action
-  const handleFilters = useCallback(() => {
-    // TODO: Implement filters modal
-    console.log('Open filters for stores');
-  }, []);
-
-  // Handle search action
-  const handleSearchAction = useCallback(() => {
-    // TODO: Implement search modal
-    console.log('Open search for stores');
-  }, []);
-
-  if (loading) {
-    return <StoresPageLoading />;
-  }
+    return styles;
+  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Stores</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+      <div style={responsiveStyles.container}>
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search stores..."
+          showFilters={true}
+          onShowFilters={() => setShowFilters(!showFilters)}
+        />
+        
+        {/* Navigation Tabs - Always visible */}
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+          <CategoryTabs activeTab="stores" />
+        </div>
+        
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
+          <div className="text-red-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
           <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => {
+              setError(null);
+              fetchStoresData();
+            }}
+            className="px-6 py-3 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors font-medium"
           >
             Try Again
           </button>
@@ -303,123 +613,200 @@ function StoresPageContent() {
 
   return (
     <div 
-      className={`min-h-screen bg-gray-50 ${mobileStyles.container}`}
+      className="min-h-screen bg-[#f4f4f4] pb-20"
+      style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      role="main"
+      aria-label="Store listings"
     >
-      {/* Header */}
       <Header 
-        title="Stores"
-        showSearch={true}
         onSearch={handleSearch}
-        searchQuery={searchQuery}
-        showFilters={hasActiveFilters}
-        onClearFilters={handleClearAllFilters}
+        placeholder="Search stores..."
+        showFilters={true}
+        onShowFilters={() => setShowFilters(!showFilters)}
       />
-
-      {/* Main Content */}
-      <main className={`${mobileStyles.main} pb-20`}>
-        {/* Category Tabs */}
-        <CategoryTabs 
-          activeCategory="stores"
-          onCategoryChange={(category) => {
-            if (category !== 'stores') {
-              router.push(`/${category}`);
-            }
-          }}
-        />
-
-        {/* Stores Grid */}
-        <div className="container mx-auto px-4 py-6">
-          {storeCards.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">🏪</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Stores Found</h3>
-              <p className="text-gray-600 mb-6">
-                {hasActiveFilters 
-                  ? "Try adjusting your filters to find more stores."
-                  : "No stores are available in your area yet."
-                }
-              </p>
-              {hasActiveFilters && (
+      
+      {/* Navigation Tabs - Always visible */}
+      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
+        <CategoryTabs activeTab="stores" />
+      </div>
+      
+      {/* Action buttons */}
+      <ActionButtons 
+        onShowFilters={() => setShowFilters(!showFilters)}
+        onShowMap={() => router.push('/live-map')}
+        onAddEatery={() => router.push('/add-store')}
+      />
+      
+      {/* Filters Modal/Overlay */}
+      {showFilters && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setShowFilters(false)}
+            aria-hidden="true"
+          />
+          
+          {/* Filters Panel */}
+          <div 
+            className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-xl z-50 max-h-[80vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="filters-title"
+          >
+            <div className="p-4 sm:p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 id="filters-title" className="text-lg font-semibold">Filters</h3>
                 <button
-                  onClick={handleClearAllFilters}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Close filters"
                 >
-                  Clear Filters
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Stores Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {storeCards.map((store) => (
-                  <UnifiedCard
-                    key={store.id}
-                    {...store}
-                    onClick={() => router.push(`/store/${store.id}`)}
-                  />
-                ))}
               </div>
+              
+              {/* Filters */}
+              <AdvancedFilters
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                onToggleFilter={handleToggleFilter}
+                onClearAll={handleClearAllFilters}
+                userLocation={userLocation}
+                locationLoading={locationLoading}
+                onRequestLocation={handleRequestLocation}
+              />
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="px-6 py-2 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
-              {/* Pagination (Desktop) */}
-              {!isMobile && !isMobileDevice && totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
-
-              {/* Infinite Scroll Loading (Mobile) */}
-              {(isMobile || isMobileDevice) && hasMore && (
-                <div ref={loadingRef} className="mt-8 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-            </>
-          )}
+      {/* Store grid with consistent responsive spacing */}
+      {stores.length === 0 && !loading ? (
+        <div className="text-center py-10 px-5" role="status" aria-live="polite">
+          <div className="text-5xl mb-4" aria-hidden="true">🛒</div>
+          <p className="text-lg text-gray-600 mb-2">No stores found</p>
+          <p className="text-sm text-gray-500">
+            Try adjusting your filters or check back later
+          </p>
         </div>
-      </main>
+      ) : (
+        <div 
+          className="store-grid px-4 sm:px-6 lg:px-8"
+          role="grid"
+          aria-label="Store listings"
+          style={{ 
+            contain: 'layout style paint',
+            willChange: 'auto',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
+        >
+          {stores.map((store, index) => (
+            <div 
+              key={store.id} 
+              className="w-full" 
+              role="gridcell"
+              style={{
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden'
+              }}
+            >
+              <UnifiedCard
+                data={transformStoreToCardData(store)}
+                variant="default"
+                showStarInBadge={true}
+                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                onCardClick={() => router.push(`/store/${store.id}`)}
+                className="w-full h-full"
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Action Buttons */}
-      <ActionButtons
-        onAdd={handleAddStore}
-        onFilters={handleFilters}
-        onSearch={handleSearchAction}
-        addLabel="Add Store"
-        filtersLabel="Store Filters"
-        searchLabel="Search Stores"
-      />
+      {/* Loading states with consistent spacing */}
+      {loading && (
+        <div className="text-center py-5" role="status" aria-live="polite">
+          <p>Loading stores...</p>
+        </div>
+      )}
 
-      {/* Bottom Navigation */}
-      <BottomNavigation activePage="stores" />
+      {/* Infinite scroll loading indicator - only show on mobile */}
+      {(isMobile || isMobileDevice) && isLoadingMore && (
+        <div className="text-center py-5" role="status" aria-live="polite">
+          <p>Loading more...</p>
+        </div>
+      )}
+
+      {/* Infinite scroll trigger element - only on mobile */}
+      {(isMobile || isMobileDevice) && hasMore && (
+        <div 
+          ref={loadingRef}
+          className="h-5 w-full my-5"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Desktop pagination - only show on desktop */}
+      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+            className="mb-4"
+          />
+          <div className="text-center text-sm text-gray-600">
+            Showing {stores.length} of {totalStores} stores
+          </div>
+        </div>
+      )}
+
+      {/* Mobile infinite scroll trigger - only on mobile */}
+      {(isMobile || isMobileDevice) && hasMore && (
+        <div 
+          ref={loadingRef}
+          className="h-5 w-full my-5"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Bottom navigation - visible on all screen sizes */}
+      <BottomNavigation />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onAllow={requestLocation}
-      />
-
-      {/* Advanced Filters Modal */}
-      <AdvancedFilters
-        isOpen={false} // TODO: Implement filters modal state
-        onClose={() => {}} // TODO: Implement close handler
-        activeFilters={activeFilters}
-        onFilterChange={handleFilterChange}
-        onToggleFilter={handleToggleFilter}
-        onClearAllFilters={handleClearAllFilters}
-        filterOptions={{
-          // TODO: Add store-specific filter options
-          store_type: ['Grocery', 'Books', 'Clothing', 'Electronics', 'Other'],
-          store_category: ['Kosher', 'General', 'Specialty'],
-          rating: ['4+ Stars', '3+ Stars', '2+ Stars'],
-          distance: ['Within 1 mile', 'Within 5 miles', 'Within 10 miles'],
+        onLocationGranted={() => {
+          setShowLocationPrompt(false);
         }}
       />
     </div>
