@@ -1,8 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Filters } from '@/lib/filters/schema';
+
+interface FilterOptions {
+  cities: string[];
+  states: string[];
+  agencies: string[];
+  listingTypes: string[];
+  priceRanges: string[];
+  kosherCategories: string[];
+  counts: {
+    cities: Record<string, number>;
+    states: Record<string, number>;
+    agencies: Record<string, number>;
+    listingTypes: Record<string, number>;
+    priceRanges: Record<string, number>;
+    kosherCategories: Record<string, number>;
+    total: number;
+  };
+}
 
 interface EateryFiltersProps {
   isOpen: boolean;
@@ -18,6 +36,30 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
   currentFilters,
 }) => {
   const [filters, setFilters] = useState<Partial<Filters>>(currentFilters);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch filter options from database
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/restaurants/filter-options');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            setFilterOptions(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching filter options:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFilterOptions();
+  }, []);
 
   const handleFilterChange = (filterType: keyof Filters, value: any) => {
     setFilters(prev => ({
@@ -68,6 +110,12 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
 
         {/* Content */}
         <div className="max-h-[calc(90vh-140px)] overflow-y-auto p-4 space-y-6">
+          {loading && (
+            <div className="flex items-center justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading filter options...</span>
+            </div>
+          )}
           {/* Kosher Agency Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -77,14 +125,14 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               value={filters.agency || ''}
               onChange={(e) => handleFilterChange('agency', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading}
             >
               <option value="">All Agencies</option>
-              <option value="ou">OU Kosher</option>
-              <option value="ok">OK Kosher</option>
-              <option value="star-k">Star-K</option>
-              <option value="crc">Chicago Rabbinical Council</option>
-              <option value="kof-k">KOF-K</option>
-              <option value="other">Other</option>
+              {filterOptions?.agencies.map((agency) => (
+                <option key={agency} value={agency}>
+                  {agency} ({filterOptions.counts.agencies[agency] || 0})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -97,11 +145,14 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               value={filters.dietary || ''}
               onChange={(e) => handleFilterChange('dietary', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading}
             >
               <option value="">All Types</option>
-              <option value="meat">Meat</option>
-              <option value="dairy">Dairy</option>
-              <option value="pareve">Pareve</option>
+              {filterOptions?.kosherCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)} ({filterOptions.counts.kosherCategories[category] || 0})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -114,15 +165,14 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               value={filters.category || ''}
               onChange={(e) => handleFilterChange('category', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={loading}
             >
               <option value="">All Types</option>
-              <option value="restaurant">Restaurant</option>
-              <option value="cafe">Cafe</option>
-              <option value="bakery">Bakery</option>
-              <option value="pizzeria">Pizzeria</option>
-              <option value="deli">Deli</option>
-              <option value="ice_cream">Ice Cream</option>
-              <option value="grocery">Grocery Store</option>
+              {filterOptions?.listingTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} ({filterOptions.counts.listingTypes[type] || 0})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -155,12 +205,17 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
                   value={filters.priceMin || ''}
                   onChange={(e) => handleFilterChange('priceMin', e.target.value ? Number(e.target.value) : undefined)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={loading}
                 >
                   <option value="">Min Price</option>
-                  <option value="1">$ (Inexpensive)</option>
-                  <option value="2">$$ (Moderate)</option>
-                  <option value="3">$$$ (Expensive)</option>
-                  <option value="4">$$$$ (Very Expensive)</option>
+                  {filterOptions?.priceRanges.map((price) => {
+                    const priceValue = price.length; // Convert $ to 1, $$ to 2, etc.
+                    return (
+                      <option key={price} value={priceValue}>
+                        {price} ({filterOptions.counts.priceRanges[price] || 0})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>
@@ -168,12 +223,17 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
                   value={filters.priceMax || ''}
                   onChange={(e) => handleFilterChange('priceMax', e.target.value ? Number(e.target.value) : undefined)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={loading}
                 >
                   <option value="">Max Price</option>
-                  <option value="1">$ (Inexpensive)</option>
-                  <option value="2">$$ (Moderate)</option>
-                  <option value="3">$$$ (Expensive)</option>
-                  <option value="4">$$$$ (Very Expensive)</option>
+                  {filterOptions?.priceRanges.map((price) => {
+                    const priceValue = price.length; // Convert $ to 1, $$ to 2, etc.
+                    return (
+                      <option key={price} value={priceValue}>
+                        {price} ({filterOptions.counts.priceRanges[price] || 0})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
