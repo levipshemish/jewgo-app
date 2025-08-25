@@ -38,7 +38,17 @@ export async function POST(request: NextRequest) {
   }
 
   // CSRF and origin checks
-  if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+  const csrfValid = validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken);
+  if (!csrfValid) {
+    // Log CSRF validation failure for debugging
+    console.error('CSRF validation failed:', {
+      origin,
+      referer,
+      csrfToken: csrfToken ? 'present' : 'missing',
+      allowedOrigins: ALLOWED_ORIGINS,
+      isProduction: process.env.NODE_ENV === 'production'
+    });
+    
     return NextResponse.json(
       { error: 'CSRF' },
       { status: 403, headers: baseHeaders }

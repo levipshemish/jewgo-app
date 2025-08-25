@@ -37,6 +37,13 @@ export async function GET(request: NextRequest) {
     // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      // Log authentication failure for debugging
+      console.error('Authentication failed in sync-user:', {
+        error: userError?.message,
+        hasUser: !!user,
+        isProduction: process.env.NODE_ENV === 'production'
+      });
+      
       return NextResponse.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401, headers: baseHeaders });
     }
 
