@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 // import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
-import ActionButtons from '@/components/layout/ActionButtons';
+
 import { BottomNavigation } from '@/components/navigation/ui';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -56,13 +56,7 @@ function FavoritesPageContent() {
     setShowFilters(true);
   };
 
-  const handleShowMap = () => {
-    router.push('/live-map');
-  };
 
-  const handleAddEatery = () => {
-    router.push('/add-eatery');
-  };
 
   const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
@@ -289,11 +283,7 @@ function FavoritesPageContent() {
             </div>
           )}
 
-          <ActionButtons
-            onShowFilters={handleShowFilters}
-            onShowMap={handleShowMap}
-            onAddEatery={handleAddEatery}
-          />
+
 
           <BottomNavigation />
         </div>
