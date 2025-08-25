@@ -7,7 +7,7 @@ import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
-import AdvancedFilters from '@/components/search/AdvancedFilters';
+import { MikvahFilters } from '@/components/mikvah/MikvahFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
@@ -325,21 +325,25 @@ function MikvahPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((filterType: keyof Filters, value: Filters[keyof Filters]) => {
-    setFilter(filterType, value);
+  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
+    // Apply all the new filters
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (key in activeFilters || value !== undefined) {
+        setFilter(key as keyof Filters, value);
+      }
+    });
     
     // Send real-time filter update via WebSocket (currently disabled)
     if (isConnected) {
-      sendMessage({
-        type: 'filter_update',
-        data: {
-          filter_type: filterType,
-          filter_value: value,
-          location: userLocation
-        }
-      });
+                   sendMessage({
+               type: 'filter_update',
+               data: {
+                 filters: newFilters,
+                 location: userLocation
+               }
+             });
     }
-  }, [setFilter, isConnected, sendMessage, userLocation]);
+  }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
   const handleToggleFilter = useCallback((filterType: keyof Filters) => {
     toggleFilter(filterType);
@@ -686,68 +690,13 @@ function MikvahPageContent() {
             addButtonText="Add Mikvah"
           />
       
-      {/* Filters Modal/Overlay */}
-      {showFilters && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setShowFilters(false)}
-            aria-hidden="true"
-          />
-          
-          {/* Filters Panel */}
-          <div 
-            className="fixed inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-xl z-50 max-h-[80vh] overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="filters-title"
-          >
-            <div className="p-4 sm:p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 id="filters-title" className="text-lg font-semibold">Filters</h3>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  aria-label="Close filters"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              {/* Filters */}
-              <AdvancedFilters
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onToggleFilter={handleToggleFilter}
-                onClearAll={handleClearAllFilters}
-                userLocation={userLocation}
-                locationLoading={locationLoading}
-                onRequestLocation={handleRequestLocation}
-              />
-              
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowFilters(false)}
-                  className="px-6 py-2 bg-[#4ade80] text-white rounded-lg hover:bg-[#22c55e] transition-colors"
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Mikvah Filters */}
+      <MikvahFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onApplyFilters={handleFilterChange}
+        currentFilters={activeFilters}
+      />
 
       {/* Mikvah grid with consistent responsive spacing */}
       {mikvah.length === 0 && !loading ? (

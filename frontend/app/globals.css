@@ -3580,4 +3580,49 @@ Last updated: Added debugging logs to track styling conflicts
   background-image: none !important;
 }
 
+/* Mikvah Filters Modal - Ensure white background */
+.mikvah-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Override any mikvah page transparency rules for filters modal */
+.mikvah-page .mikvah-filters-modal,
+.restaurant-grid .mikvah-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Store Filters Modal - Ensure white background */
+.store-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Override any store page transparency rules for filters modal */
+.store-page .store-filters-modal,
+.restaurant-grid .store-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Shul Filters Modal - Ensure white background */
+.shul-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Override any shul page transparency rules for filters modal */
+.shul-page .shul-filters-modal,
+.restaurant-grid .shul-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
 

@@ -1,0 +1,217 @@
+{
+  "metadata": {
+    "total_files": 1362,
+    "scan_date": "2025-01-27",
+    "excluded_patterns": ["node_modules", ".next", ".venv", "__pycache__", ".git", ".DS_Store"]
+  },
+  "files": [
+    {
+      "path": ".cursor/memories.json",
+      "lines": 135,
+      "language": "json",
+      "last_modified": "2025-08-22",
+      "purpose": "Cursor IDE memory storage",
+      "used_in_prod": "No",
+      "risk_score": 1,
+      "risk_class": "L"
+    },
+    {
+      "path": ".cursor/commands/mendel-mode-v4.json",
+      "lines": 57,
+      "language": "json",
+      "last_modified": "2025-08-12",
+      "purpose": "Cursor IDE command configuration",
+      "used_in_prod": "No",
+      "risk_score": 1,
+      "risk_class": "L"
+    },
+    {
+      "path": ".cursor/commands/codebase-clean.json",
+      "lines": 15,
+      "language": "json",
+      "last_modified": "2025-08-24",
+      "purpose": "Codebase cleanup command definition",
+      "used_in_prod": "No",
+      "risk_score": 1,
+      "risk_class": "L"
+    },
+    {
+      "path": "ENVIRONMENT.md",
+      "lines": 43,
+      "language": "md",
+      "last_modified": "2025-08-25",
+      "purpose": "Environment setup documentation",
+      "used_in_prod": "No",
+      "risk_score": 0,
+      "risk_class": "L"
+    },
+    {
+      "path": "render.yaml",
+      "lines": 52,
+      "language": "yaml",
+      "last_modified": "2025-08-25",
+      "purpose": "Render deployment configuration",
+      "used_in_prod": "Yes",
+      "risk_score": 6,
+      "risk_class": "M"
+    },
+    {
+      "path": "frontend/middleware.ts",
+      "lines": 191,
+      "language": "ts",
+      "last_modified": "2025-08-24",
+      "purpose": "Next.js middleware for auth and routing",
+      "used_in_prod": "Yes",
+      "risk_score": 12,
+      "risk_class": "H"
+    },
+    {
+      "path": "frontend/types/index.ts",
+      "lines": 176,
+      "language": "ts",
+      "last_modified": "2025-08-19",
+      "purpose": "Shared TypeScript type definitions",
+      "used_in_prod": "Yes",
+      "risk_score": 8,
+      "risk_class": "M"
+    },
+    {
+      "path": "frontend/app/restaurant/[id]/page.tsx",
+      "lines": 705,
+      "language": "tsx",
+      "last_modified": "2025-08-24",
+      "purpose": "Restaurant detail page component",
+      "used_in_prod": "Yes",
+      "risk_score": 10,
+      "risk_class": "H"
+    },
+    {
+      "path": "frontend/app/auth/signin/page.tsx",
+      "lines": 432,
+      "language": "tsx",
+      "last_modified": "2025-08-25",
+      "purpose": "User sign-in page",
+      "used_in_prod": "Yes",
+      "risk_score": 15,
+      "risk_class": "H"
+    },
+    {
+      "path": "frontend/app/api/restaurants/route.ts",
+      "lines": 150,
+      "language": "ts",
+      "last_modified": "2025-08-20",
+      "purpose": "Restaurants API endpoint",
+      "used_in_prod": "Yes",
+      "risk_score": 12,
+      "risk_class": "H"
+    },
+    {
+      "path": "backend/app_factory.py",
+      "lines": 496,
+      "language": "py",
+      "last_modified": "2025-08-18",
+      "purpose": "Flask application factory",
+      "used_in_prod": "Yes",
+      "risk_score": 14,
+      "risk_class": "H"
+    },
+    {
+      "path": "backend/app_factory_full.py",
+      "lines": 2070,
+      "language": "py",
+      "last_modified": "2025-08-18",
+      "purpose": "Full Flask application with all features",
+      "used_in_prod": "Yes",
+      "risk_score": 16,
+      "risk_class": "H"
+    },
+    {
+      "path": "backend/database/models.py",
+      "lines": 300,
+      "language": "py",
+      "last_modified": "2025-08-18",
+      "purpose": "Database models and schemas",
+      "used_in_prod": "Yes",
+      "risk_score": 15,
+      "risk_class": "H"
+    },
+    {
+      "path": "supabase/migrations/001_initial.sql",
+      "lines": 200,
+      "language": "sql",
+      "last_modified": "2025-08-15",
+      "purpose": "Initial database migration",
+      "used_in_prod": "Yes",
+      "risk_score": 18,
+      "risk_class": "H"
+    },
+    {
+      "path": "tools/ci-guard-mcp/src/index.ts",
+      "lines": 107,
+      "language": "ts",
+      "last_modified": "2025-08-22",
+      "purpose": "CI guard tool for deployment safety",
+      "used_in_prod": "No",
+      "risk_score": 3,
+      "risk_class": "L"
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "lines": 80,
+      "language": "sh",
+      "last_modified": "2025-08-20",
+      "purpose": "Deployment automation script",
+      "used_in_prod": "Yes",
+      "risk_score": 9,
+      "risk_class": "M"
+    },
+    {
+      "path": "frontend/test-server-init.js",
+      "lines": 68,
+      "language": "js",
+      "last_modified": "2025-08-18",
+      "purpose": "Test server initialization",
+      "used_in_prod": "No",
+      "risk_score": 2,
+      "risk_class": "L"
+    },
+    {
+      "path": "frontend/middleware.ts.disabled",
+      "lines": 46,
+      "language": "ts",
+      "last_modified": "2025-08-18",
+      "purpose": "Disabled middleware file",
+      "used_in_prod": "No",
+      "risk_score": 1,
+      "risk_class": "L"
+    },
+    {
+      "path": "frontend/sentry.client.config.ts.disabled",
+      "lines": 26,
+      "language": "ts",
+      "last_modified": "2025-08-18",
+      "purpose": "Disabled Sentry client config",
+      "used_in_prod": "No",
+      "risk_score": 1,
+      "risk_class": "L"
+    },
+    {
+      "path": "archive/old-auth-system/",
+      "lines": 0,
+      "language": "directory",
+      "last_modified": "2025-08-10",
+      "purpose": "Archived old authentication system",
+      "used_in_prod": "No",
+      "risk_score": 0,
+      "risk_class": "L"
+    }
+  ],
+  "summary": {
+    "high_risk_files": 8,
+    "medium_risk_files": 3,
+    "low_risk_files": 9,
+    "total_analyzed": 20,
+    "production_critical": 12,
+    "development_only": 8
+  }
+}
