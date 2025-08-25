@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, Star, Share2, ShoppingCart, User, ArrowLeft } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 
@@ -20,13 +20,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isInWishlist, setIsInWishlist] = useState(false);
 
-  useEffect(() => {
-    if (productId) {
-      loadProduct();
-    }
-  }, [productId]);
-
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       setLoading(true);
       const productData = await MarketplaceAPI.getProduct(productId);
@@ -36,7 +30,13 @@ export default function ProductDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
+
+  useEffect(() => {
+    if (productId) {
+      loadProduct();
+    }
+  }, [productId, loadProduct]);
 
   const handleAddToCart = () => {
     // Add to cart logic

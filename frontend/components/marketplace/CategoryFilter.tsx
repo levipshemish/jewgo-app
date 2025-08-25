@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, Search, X, Check } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { MarketplaceAPI } from '@/lib/api/marketplace';
 import { MarketplaceCategory } from '@/lib/types/marketplace';
@@ -27,12 +27,30 @@ export default function CategoryFilter({
   const [error, setError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await MarketplaceAPI.fetchCategories();
+      if (response.success && response.data) {
+        setCategories(response.data);
+      } else {
+        setError('Failed to load categories');
+      }
+    } catch (err) {
+      setError('Failed to load categories');
+      console.error('Error loading categories:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Load categories on mount
   useEffect(() => {
     if (isOpen && categories.length === 0) {
       loadCategories();
     }
-  }, [isOpen, categories.length]);
+  }, [isOpen, categories.length, loadCategories]);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -52,24 +70,6 @@ export default function CategoryFilter({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
-
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await MarketplaceAPI.fetchCategories();
-      if (response.success && response.data) {
-        setCategories(response.data);
-      } else {
-        setError('Failed to load categories');
-      }
-    } catch (err) {
-      setError('Failed to load categories');
-      console.error('Error loading categories:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCategorySelect = (category: MarketplaceCategory, subcategory?: string) => {
     onCategoryChange(category.slug, subcategory);

@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { fetchMarketplaceCategories } from '@/lib/api/marketplace';
 import { MarketplaceCategory } from '@/lib/types/marketplace';
@@ -24,12 +24,36 @@ export default function MarketplaceCategoriesDropdown({
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetchMarketplaceCategories();
+      
+      if (response.success && response.data) {
+        setCategories(response.data);
+      } else {
+        setError(response.error || 'Failed to load categories');
+        // Set empty array to prevent undefined errors
+        setCategories([]);
+      }
+    } catch (err) {
+      setError('Failed to load categories');
+      console.error('Error loading categories:', err);
+      // Set empty array to prevent undefined errors
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Load categories when component mounts
   useEffect(() => {
     if (isOpen && categories.length === 0) {
       loadCategories();
     }
-  }, [isOpen, categories.length]);
+  }, [isOpen, categories.length, loadCategories]);
 
   // Add error boundary to prevent component from crashing
   if (!isOpen) {
@@ -52,30 +76,6 @@ export default function MarketplaceCategoriesDropdown({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
-
-  const loadCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetchMarketplaceCategories();
-      
-      if (response.success && response.data) {
-        setCategories(response.data);
-      } else {
-        setError(response.error || 'Failed to load categories');
-        // Set empty array to prevent undefined errors
-        setCategories([]);
-      }
-    } catch (err) {
-      setError('Failed to load categories');
-      console.error('Error loading categories:', err);
-      // Set empty array to prevent undefined errors
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCategoryClick = (category: MarketplaceCategory) => {
     onCategorySelect(category);
