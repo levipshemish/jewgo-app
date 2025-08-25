@@ -5,9 +5,9 @@ Flask-SocketIO==5.5.1
 python-socketio==5.13.0
 python-engineio==4.12.2
 
-# Database dependencies
+# Database dependencies - PostgreSQL
 psycopg2-binary==2.9.10
-SQLAlchemy==2.0.23
+SQLAlchemy==2.0.43
 
 # Redis dependencies
 redis==5.0.1

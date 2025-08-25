@@ -445,6 +445,11 @@ class EnhancedDatabaseManager:
     def connect(self) -> bool:
         """Connect to the database and create tables if they don't exist."""
         try:
+            # Fix database URL format if needed (postgres:// -> postgresql://)
+            if self.database_url.startswith("postgres://"):
+                self.database_url = self.database_url.replace("postgres://", "postgresql://")
+                logger.info("Fixed database URL format from postgres:// to postgresql://")
+
             # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
             try:
                 parsed = urlparse(self.database_url)
