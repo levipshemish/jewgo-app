@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useGuestProtection } from '@/lib/utils/guest-protection';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -1195,6 +1196,25 @@ function MarketplacePageContent() {
 }
 
 export default function MarketplacePage() {
+  const { isLoading, isGuest } = useGuestProtection('/marketplace');
+
+  if (isLoading) {
+    return <MarketplacePageLoading />;
+  }
+
+  if (isGuest) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600 mb-4">Guest users must sign in to access the marketplace.</p>
+          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={<MarketplacePageLoading />}>
       <MarketplacePageContent />

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useGuestProtection } from '@/lib/utils/guest-protection';
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { createMarketplaceListing, fetchMarketplaceCategories } from '@/lib/api/marketplace';
@@ -21,7 +22,29 @@ interface Category {
 type ListingKind = 'regular' | 'vehicle' | 'appliance';
 
 export default function AddListingPage() {
+  const { isLoading, isGuest } = useGuestProtection('/marketplace/add');
   const router = useRouter();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600 mb-4">Guest users must sign in to add marketplace listings.</p>
+          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Form state
   const [kind, setKind] = useState<ListingKind>('regular');

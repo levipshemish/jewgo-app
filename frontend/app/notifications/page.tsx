@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useGuestProtection } from '@/lib/utils/guest-protection';
 
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
@@ -18,8 +19,30 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
+  const { isLoading, isGuest } = useGuestProtection('/notifications');
   const { notifications, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [activeFilter, setActiveFilter] = useState('all');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600 mb-4">Guest users must sign in to access notifications.</p>
+          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredNotifications = activeFilter === 'all' 
     ? notifications 

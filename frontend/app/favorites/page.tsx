@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { useFavorites } from '@/lib/utils/favorites';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
+import { useGuestProtection } from '@/lib/utils/guest-protection';
 
 // Dynamically import Supabase client to prevent SSR issues
 const getSupabaseClient = async () => {
@@ -31,9 +32,7 @@ function FavoritesPageContent() {
   // const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('favorites');
   const [showFilters, setShowFilters] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [clientLoaded, setClientLoaded] = useState(false);
+  const { isLoading, isGuest } = useGuestProtection('/favorites');
 
   // Use the shared advanced filters hook
   const {
@@ -43,50 +42,7 @@ function FavoritesPageContent() {
     clearAllFilters
   } = useAdvancedFilters();
 
-  // Check authentication status using centralized approach
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Wait for client to be loaded
-        if (!clientLoaded) {
-          setClientLoaded(true);
-          return;
-        }
 
-        // Use centralized configuration check
-        if (!isSupabaseConfigured()) {
-
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
-        }
-
-        const supabase = await getSupabaseClient();
-        if (!supabase) {
-
-          setIsAuthenticated(false);
-          setLoading(false);
-          return;
-        }
-
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          // Redirect to sign in if not authenticated
-          router.push('/auth/signin?redirectTo=/favorites');
-          return;
-        }
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        handleUserLoadError(error, router);
-        router.push('/auth/signin?redirectTo=/favorites');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [router, clientLoaded]);
 
   const handleSearch = (_query: string) => {
     // Search disabled on this page; no-op to satisfy types
@@ -147,7 +103,7 @@ function FavoritesPageContent() {
   // };
 
   // Show loading state while checking authentication
-  if (loading || !clientLoaded) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <LoadingState />
@@ -155,8 +111,8 @@ function FavoritesPageContent() {
     );
   }
 
-  // Show error state if not authenticated
-  if (isAuthenticated === false) {
+  // Show error state if guest user
+  if (isGuest) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

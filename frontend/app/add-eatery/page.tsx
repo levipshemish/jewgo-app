@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronDown, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useGuestProtection } from '@/lib/utils/guest-protection';
 
 interface Restaurant {
   id: string;
@@ -57,25 +58,30 @@ interface FilterOptions {
 }
 
 export default function AddEateryPage() {
-  // Client-side auth guard: if unauthenticated, redirect to signin with redirectTo
-  useEffect(() => {
-    let isMounted = true;
-    const check = async () => {
-      try {
-        const { supabaseBrowser } = await import('@/lib/supabase/client');
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        if (isMounted && !user) {
-          window.location.replace(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
-        }
-      } catch {
-        // no-op: middleware also protects
-      }
-    };
-    check();
-    return () => { isMounted = false; };
-  }, []);
+  const { isLoading, isGuest } = useGuestProtection('/add-eatery');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600 mb-4">Guest users must sign in to add eateries.</p>
+          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
+        </div>
+      </div>
+    );
+  }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
