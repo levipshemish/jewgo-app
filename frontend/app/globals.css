@@ -3554,4 +3554,23 @@ Last updated: Added debugging logs to track styling conflicts
   background-image: none !important;
 }
 
+/* Marketplace Filters Modal - Ensure white background */
+.marketplace-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+.marketplace-filters-modal * {
+  background-color: inherit !important;
+}
+
+/* Override any marketplace page transparency rules for filters modal */
+.marketplace-page .marketplace-filters-modal,
+.restaurant-grid .marketplace-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
 

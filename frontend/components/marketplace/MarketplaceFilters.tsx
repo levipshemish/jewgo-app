@@ -69,7 +69,13 @@ export default function MarketplaceFilters({
       />
       
       {/* Filters Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+      <div 
+        className="marketplace-filters-modal relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden"
+        style={{
+          backgroundColor: 'white',
+          background: 'white',
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
