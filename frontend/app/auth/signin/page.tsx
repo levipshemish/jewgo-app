@@ -346,7 +346,7 @@ function SignInForm() {
             <button
               type="button"
               onClick={() => handleOAuthSignIn('google')}
-              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-white hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
               aria-label="Continue with Google"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 533.5 544.3" aria-hidden="true">
@@ -360,7 +360,7 @@ function SignInForm() {
             <button
               type="button"
               onClick={() => handleOAuthSignIn('apple')}
-              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              className="w-full inline-flex items-center justify-center py-3.5 px-6 border border-neutral-600 rounded-full bg-neutral-800 text-sm font-medium text-white hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
               aria-label="Continue with Apple"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -375,7 +375,7 @@ function SignInForm() {
             <button
               type="submit"
               disabled={anonLoading}
-              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
+              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-white hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50 disabled:text-neutral-500"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -394,7 +394,7 @@ function SignInForm() {
               type="button"
               onClick={handleSendMagicLink}
               disabled={magicLinkCooldown > 0}
-              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
+              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-white hover:bg-neutral-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50 disabled:text-neutral-500"
             >
               {magicLinkCooldown > 0 
                 ? `Wait ${magicLinkCooldown}s before retry` 
