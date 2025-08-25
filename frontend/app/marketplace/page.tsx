@@ -632,7 +632,7 @@ function MarketplacePageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch marketplace listings with mobile optimization and distance sorting
-  const fetchMarketplaceData = async (page = 1, append = false) => {
+  const fetchMarketplaceData = useCallback(async (page = 1, append = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -758,9 +758,9 @@ function MarketplacePageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mobileOptimizedItemsPerPage, searchQuery, filters, setInfiniteScrollHasMore]);
 
-  const fetchMoreListings = async () => {
+  const fetchMoreListings = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -771,7 +771,7 @@ function MarketplacePageContent() {
     } catch (err) {
       appLogger.error('Error fetching more listings', { error: String(err) });
     }
-  };
+  }, [isLoadingMore, hasMore, currentPage, fetchMarketplaceData]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
