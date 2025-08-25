@@ -3565,4 +3565,19 @@ Last updated: Added debugging logs to track styling conflicts
   background-image: none !important;
 }
 
+/* Eatery Filters Modal - Ensure white background */
+.eatery-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
+/* Override any eatery page transparency rules for filters modal */
+.eatery-page .eatery-filters-modal,
+.restaurant-grid .eatery-filters-modal {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+}
+
 
