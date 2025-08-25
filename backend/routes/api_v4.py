@@ -1002,18 +1002,112 @@ def get_marketplace_categories():
     try:
         # Check if marketplace service is available
         if not MarketplaceServiceV4:
-            logger.warning("MarketplaceServiceV4 not available, returning empty categories")
+            logger.warning("MarketplaceServiceV4 not available, returning fallback categories")
             return success_response({
-                "categories": [],
+                "categories": [
+                    {
+                        "id": 1,
+                        "name": "Baked Goods",
+                        "slug": "baked-goods",
+                        "sort_order": 1,
+                        "active": True,
+                        "subcategories": [
+                            {
+                                "id": 1,
+                                "name": "Bread",
+                                "slug": "bread",
+                                "sort_order": 1,
+                                "active": True,
+                            },
+                            {
+                                "id": 2,
+                                "name": "Pastries",
+                                "slug": "pastries",
+                                "sort_order": 2,
+                                "active": True,
+                            }
+                        ]
+                    },
+                    {
+                        "id": 2,
+                        "name": "Accessories",
+                        "slug": "accessories",
+                        "sort_order": 2,
+                        "active": True,
+                        "subcategories": [
+                            {
+                                "id": 3,
+                                "name": "Jewelry",
+                                "slug": "jewelry",
+                                "sort_order": 1,
+                                "active": True,
+                            },
+                            {
+                                "id": 4,
+                                "name": "Clothing",
+                                "slug": "clothing",
+                                "sort_order": 2,
+                                "active": True,
+                            }
+                        ]
+                    }
+                ],
                 "subcategories": []
             })
         
         service = create_marketplace_service()
         if not service:
-            # Return empty categories response instead of error
-            logger.warning("Marketplace service not available, returning empty categories")
+            # Return fallback categories response instead of error
+            logger.warning("Marketplace service not available, returning fallback categories")
             return success_response({
-                "categories": [],
+                "categories": [
+                    {
+                        "id": 1,
+                        "name": "Baked Goods",
+                        "slug": "baked-goods",
+                        "sort_order": 1,
+                        "active": True,
+                        "subcategories": [
+                            {
+                                "id": 1,
+                                "name": "Bread",
+                                "slug": "bread",
+                                "sort_order": 1,
+                                "active": True,
+                            },
+                            {
+                                "id": 2,
+                                "name": "Pastries",
+                                "slug": "pastries",
+                                "sort_order": 2,
+                                "active": True,
+                            }
+                        ]
+                    },
+                    {
+                        "id": 2,
+                        "name": "Accessories",
+                        "slug": "accessories",
+                        "sort_order": 2,
+                        "active": True,
+                        "subcategories": [
+                            {
+                                "id": 3,
+                                "name": "Jewelry",
+                                "slug": "jewelry",
+                                "sort_order": 1,
+                                "active": True,
+                            },
+                            {
+                                "id": 4,
+                                "name": "Clothing",
+                                "slug": "clothing",
+                                "sort_order": 2,
+                                "active": True,
+                            }
+                        ]
+                    }
+                ],
                 "subcategories": []
             })
 
