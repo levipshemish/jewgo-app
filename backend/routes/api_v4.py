@@ -1038,7 +1038,7 @@ def migrate_marketplace_tables():
     """Run marketplace migration to create necessary tables."""
     try:
         # Import the migration function
-        from database.migrations.create_marketplace_schema import run_migration
+        from database.migrations.create_marketplace_unified import run_migration
         
         logger.info("Starting marketplace migration via API v4")
         
@@ -1130,7 +1130,7 @@ def run_marketplace_migration():
             return jsonify({"error": "Invalid admin token"}), 401
         
         # Import and run the migration
-        from database.migrations.create_marketplace_schema import run_migration
+        from database.migrations.create_marketplace_unified import run_migration
         
         success = run_migration()
         

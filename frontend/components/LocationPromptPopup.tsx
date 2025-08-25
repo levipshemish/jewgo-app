@@ -14,11 +14,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
   onClose,
   onLocationGranted,
 }) => {
-  // Early return to prevent hooks violation - must be before any hooks
-  if (!isOpen) {
-    return null;
-  }
-
+  // All hooks must be called before any conditional returns
   const { requestLocation, permissionStatus, isLoading, error } = useLocation();
   const [hasRequested, setHasRequested] = useState(false);
 
@@ -27,6 +23,11 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
       setHasRequested(true);
     }
   }, [isOpen, hasRequested]);
+
+  // Early return to prevent rendering - must be after all hooks
+  if (!isOpen) {
+    return null;
+  }
 
   // Don't auto-close just because permission is granted
   // Only close when user actually gets location or manually closes

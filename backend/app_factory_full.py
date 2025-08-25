@@ -1985,7 +1985,7 @@ def create_app(config_class=None):
                 return jsonify({"error": "Invalid admin token"}), 401
             
             # Import and run the migration
-            from database.migrations.create_marketplace_schema import run_migration
+            from database.migrations.create_marketplace_unified import run_migration
             
             success = run_migration()
             
@@ -2051,7 +2051,7 @@ def create_app(config_class=None):
         """Simple endpoint to fix marketplace tables."""
         try:
             # Import and run the migration directly
-            from database.migrations.create_marketplace_schema import run_migration
+            from database.migrations.create_marketplace_unified import run_migration
             
             success = run_migration()
             
@@ -2078,7 +2078,7 @@ def create_app(config_class=None):
         """Simple endpoint to create marketplace tables."""
         try:
             # Import and run the migration directly
-            from database.migrations.create_marketplace_schema import run_migration
+            from database.migrations.create_marketplace_unified import run_migration
             
             success = run_migration()
             

@@ -34,7 +34,7 @@ def setup_marketplace_system():
     
     try:
         # Import the migration function
-        from database.migrations.create_marketplace_schema import run_migration
+        from database.migrations.create_marketplace_unified import run_migration
         
         # Step 1: Run Database Migration
         print("\n1️⃣ Running Marketplace Database Migration...")

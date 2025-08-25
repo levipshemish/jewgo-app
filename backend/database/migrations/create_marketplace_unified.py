@@ -449,3 +449,9 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
+
+
+def run_migration() -> bool:
+    """Run migration function for API compatibility."""
+    migration = MarketplaceMigration()
+    return migration.run_migration()
