@@ -1,6 +1,6 @@
 # 📚 JewGo Documentation
 
-**Last Updated**: January 2025  
+**Last Updated**: August 2025  
 **Status**: Active Documentation Hub
 
 ---
@@ -97,6 +97,12 @@
 - Archive outdated content to `archive/`
 - Keep current documentation in appropriate subdirectories
 - Regular review and cleanup of documentation
+
+### Environment Variables Policy
+- Never publish real values in documentation or examples.
+- Use placeholders only (e.g., `https://<PROJECT_ID>.supabase.co`, `<YOUR_ADMIN_TOKEN>`).
+- Store real values only in environment files: root `.env` (backend) and `frontend/.env.local` (frontend), or in your hosting provider’s secret manager.
+- Reference example templates like `frontend/.env.example` for the list of supported keys.
 
 ---
 

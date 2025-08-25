@@ -6,7 +6,7 @@ The build is failing with the following error:
 
 ```
 TypeError: Invalid URL
-input: 'NEXT_PUBLIC_SUPABASE_URL=postgresql://postgres:Fah4DQ10g6ogLkzL@db.lgsfyrxkqpipaumngvfi.supabase.co:5432/postgres/'
+input: 'NEXT_PUBLIC_SUPABASE_URL=postgresql://postgres:<PASSWORD>@db.<PROJECT_ID>.supabase.co:5432/postgres/'
 ```
 
 ## Root Cause
@@ -15,8 +15,8 @@ The `NEXT_PUBLIC_SUPABASE_URL` environment variable is incorrectly set to a **da
 
 ### What's Wrong
 
-- **Current (Incorrect)**: `postgresql://postgres:Fah4DQ10g6ogLkzL@db.lgsfyrxkqpipaumngvfi.supabase.co:5432/postgres/`
-- **Should Be**: `https://lgsfyrxkqpipaumngvfi.supabase.co`
+- **Current (Incorrect)**: `postgresql://postgres:<PASSWORD>@db.<PROJECT_ID>.supabase.co:5432/postgres/`
+- **Should Be**: `https://<PROJECT_ID>.supabase.co`
 
 ## The Problem
 
@@ -29,13 +29,13 @@ The `NEXT_PUBLIC_SUPABASE_URL` is being used by the Supabase client to connect t
 1. Go to your Vercel dashboard: https://vercel.com/dashboard
 2. Select your project: `jewgo-app`
 3. Go to **Settings** > **Environment Variables**
-4. Find `NEXT_PUBLIC_SUPABASE_URL` and update it to:
+4. Find `NEXT_PUBLIC_SUPABASE_URL` and update it to your project URL:
    ```
-   https://lgsfyrxkqpipaumngvfi.supabase.co
+   https://<PROJECT_ID>.supabase.co
    ```
-5. Make sure `NEXT_PUBLIC_SUPABASE_ANON_KEY` is set to:
+5. Make sure `NEXT_PUBLIC_SUPABASE_ANON_KEY` is set to your anon key:
    ```
-   sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n
+   <YOUR_SUPABASE_ANON_KEY>
    ```
 
 ### Step 2: Alternative - Use Vercel CLI
@@ -45,11 +45,11 @@ If you prefer using the command line:
 ```bash
 # Set the correct Supabase URL
 vercel env add NEXT_PUBLIC_SUPABASE_URL production
-# Enter: https://lgsfyrxkqpipaumngvfi.supabase.co
+# Enter: https://<PROJECT_ID>.supabase.co
 
 # Set the correct Supabase anon key
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
-# Enter: sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n
+# Enter: <YOUR_SUPABASE_ANON_KEY>
 ```
 
 ### Step 3: Redeploy
@@ -62,15 +62,15 @@ vercel --prod
 
 ## Environment Variables Reference
 
-### Correct Configuration
+### Correct Configuration (Placeholders Only)
 
 ```bash
 # Supabase Configuration (for frontend)
-NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n
+NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_ID>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
 
 # Database Configuration (for backend/database operations)
-DATABASE_URL=postgresql://postgres:Fah4DQ10g6ogLkzL@db.lgsfyrxkqpipaumngvfi.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres:<PASSWORD>@db.<PROJECT_ID>.supabase.co:5432/postgres
 ```
 
 ### What Each Variable Is For
@@ -82,6 +82,8 @@ DATABASE_URL=postgresql://postgres:Fah4DQ10g6ogLkzL@db.lgsfyrxkqpipaumngvfi.supa
 | `DATABASE_URL` | Direct database connection | Prisma, backend services |
 
 ## Prevention Measures
+
+> Environment variable values must never be published in documentation. Use `.env` (root) and `.env.local` (frontend) to define real values locally or via your deployment provider’s secrets manager.
 
 ### 1. Environment Validation
 

@@ -20,7 +20,7 @@ Failed to fetch restaurants: SyntaxError: Unexpected token '<', "<!DOCTYPE "... 
 
 ### 1. **Fixed Admin Token Configuration**
 
-Updated all admin-proxy endpoints to include a fallback admin token:
+Updated admin-proxy endpoints to rely solely on the `ADMIN_TOKEN` environment variable. Do not hardcode fallback tokens in code.
 
 **Files Modified:**
 - `frontend/app/api/admin-proxy/restaurants/route.ts`
@@ -28,13 +28,13 @@ Updated all admin-proxy endpoints to include a fallback admin token:
 - `frontend/app/api/admin-proxy/reviews/route.ts`
 - `frontend/app/api/admin-proxy/restaurants/[id]/route.ts`
 
-**Change Applied:**
+**Change Applied (example):**
 ```typescript
-// Before
+// Use environment variable only
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN
-
-// After
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25'
+if (!ADMIN_TOKEN) {
+  throw new Error('ADMIN_TOKEN is not configured');
+}
 ```
 
 ### 2. **Fixed Syntax Error**
@@ -113,13 +113,13 @@ curl -X GET "https://jewgo.app/api/admin-proxy/restaurants?limit=1"
 5. If valid, returns restaurant data; if invalid, returns 401
 
 ### **Environment Variables:**
-- **Backend**: `ADMIN_TOKEN` must be set in Render environment
-- **Frontend**: `ADMIN_TOKEN` should be set in Vercel environment (now has fallback)
+- **Backend**: `ADMIN_TOKEN` must be set via your deployment provider (e.g., Render) and locally in `.env`
+- **Frontend**: `ADMIN_TOKEN` should be set via your deployment provider (e.g., Vercel) and never hardcoded
 
 ### **Security Considerations:**
-- Admin tokens are cryptographically secure (32-byte random)
+- Admin tokens must be cryptographically secure (32-byte random)
 - Tokens are stored in environment variables, not in code
-- Fallback token is from production environment
+- Never commit fallback tokens or real values in code or docs
 - All admin endpoints require authentication
 
 ## 📋 **Next Steps**

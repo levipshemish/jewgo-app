@@ -15,20 +15,20 @@ The Supabase email confirmation URLs are not properly configured in the Supabase
    ```
 
 2. **Select Your Project**
-   - Project: `lgsfyrxkqpipaumngvfi`
+   - Project: `<PROJECT_ID>`
 
 3. **Navigate to Authentication Settings**
    - Go to: **Authentication** → **URL Configuration**
 
 4. **Configure Site URLs**
    ```
-   Site URL: https://jewgo-app.vercel.app
+   Site URL: https://<YOUR_VERCEL_APP>.vercel.app
    ```
 
 5. **Add Redirect URLs**
    ```
    Redirect URLs:
-   - https://jewgo-app.vercel.app/auth/callback
+   - https://<YOUR_VERCEL_APP>.vercel.app/auth/callback
    - http://localhost:3000/auth/callback
    - http://localhost:3001/auth/callback
    ```
@@ -44,27 +44,27 @@ The Supabase email confirmation URLs are not properly configured in the Supabase
    - Template: **Confirm signup**
    - Update the confirmation URL to use your domain:
    ```
-   https://jewgo-app.vercel.app/auth/callback
+   https://<YOUR_VERCEL_APP>.vercel.app/auth/callback
    ```
 
 3. **Configure Magic Link Email**
    - Template: **Magic Link**
    - Update the magic link URL:
    ```
-   https://jewgo-app.vercel.app/auth/callback
+   https://<YOUR_VERCEL_APP>.vercel.app/auth/callback
    ```
 
 ### **Step 3: Test the Fix**
 
 1. **Create a Test Account**
    ```
-   https://jewgo-app.vercel.app/auth/supabase-signup
+   https://<YOUR_VERCEL_APP>.vercel.app/auth/supabase-signup
    ```
 
 2. **Check Email**
    - Look for confirmation email
    - Click the confirmation link
-   - Should redirect to: `https://jewgo-app.vercel.app/auth/callback`
+   - Should redirect to: `https://<YOUR_VERCEL_APP>.vercel.app/auth/callback`
 
 3. **Verify Success**
    - Should be redirected to home page
@@ -101,22 +101,22 @@ The Supabase email confirmation URLs are not properly configured in the Supabase
 
 1. **Check Supabase Project URL**
    ```
-   https://lgsfyrxkqpipaumngvfi.supabase.co
+   https://<PROJECT_ID>.supabase.co
    ```
 
 2. **Verify Environment Variables**
    ```bash
-   NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+   NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_ID>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
    ```
 
 3. **Check Callback Route**
-   - Visit: `https://jewgo-app.vercel.app/auth/callback`
+   - Visit: `https://<YOUR_VERCEL_APP>.vercel.app/auth/callback`
    - Should redirect to error page (not 404)
 
 4. **Test with Query Parameters**
    ```
-   https://jewgo-app.vercel.app/auth/callback?code=test&next=/
+   https://<YOUR_VERCEL_APP>.vercel.app/auth/callback?code=test&next=/
    ```
 
 ### **Common Issues:**

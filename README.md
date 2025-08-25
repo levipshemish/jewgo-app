@@ -14,8 +14,8 @@ jewgo-app/
 
 ## Getting Started
 
-- Prerequisites: Node.js 18+, Python 3.11+, Docker
-- Environment: Root `.env` is the source of truth. Example files use placeholders only.
+- Prerequisites: Node.js 22.x, Python 3.11+, Docker
+- Environment: Root `.env` (backend) and `frontend/.env.local` are the sources of truth. Example files use placeholders only. Never include real values in documentation.
 
 ```bash
 # Validate environment keys
@@ -75,11 +75,11 @@ cd frontend && npm test
 
 ## Contributing
 - Conventional Commits required; follow Python (Black/Flake8/isort/mypy) and TypeScript (ESLint/Prettier) standards.
-- See `CONTRIBUTING.md` for details.
+- See `docs/CONTRIBUTING.md` for details.
 
 ## License
 Proprietary — All rights reserved.
 
-Last updated: 2025-08-22
+Last updated: 2025-08-25
 
 See `docs/DOCS_CHANGELOG.md` for recent documentation/script alignment.

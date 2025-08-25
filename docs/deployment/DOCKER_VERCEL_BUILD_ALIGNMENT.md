@@ -87,20 +87,20 @@ docker-compose -f docker-compose.frontend.dev.yml up --build
 
 ## Environment Variables Required
 
-### Production (Matching Vercel)
+### Production (Matching Vercel) — placeholders only
 ```bash
 NODE_ENV=production
 CI=true
 VERCEL=1
-NEXTAUTH_SECRET=your-secret
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-key
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
-NEXTAUTH_URL=https://jewgo-app.vercel.app
-DATABASE_URL=your-database-url
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-ADMIN_TOKEN=your-admin-token
+NEXTAUTH_SECRET=<YOUR_NEXTAUTH_SECRET>
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<YOUR_GOOGLE_MAPS_API_KEY>
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
+NEXTAUTH_URL=https://<YOUR_VERCEL_APP>.vercel.app
+DATABASE_URL=<YOUR_DATABASE_URL>
+NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_ID>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
+SUPABASE_SERVICE_ROLE_KEY=<YOUR_SUPABASE_SERVICE_ROLE_KEY>
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
 ```
 
 ### Development

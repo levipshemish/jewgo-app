@@ -5,22 +5,22 @@
 You have **3 out of 7** environment variables configured correctly:
 
 ✅ **Working**:
-- `NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_0iwWwM0kEGMnDApN5BYfZg_lIXWnD_n`
-- `NEXTAUTH_URL=https://jewgo-app.vercel.app`
+- `NEXT_PUBLIC_SUPABASE_URL=https://<PROJECT_ID>.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>`
+- `NEXTAUTH_URL=https://<YOUR_VERCEL_APP>.vercel.app`
 
 ## What You Need to Configure 🔧
 
 ### 1. Supabase Service Role Key (5 minutes)
 
 1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Select your project: `lgsfyrxkqpipaumngvfi`
+2. Select your project: `<PROJECT_ID>`
 3. Go to **Settings** → **API**
 4. Copy the **service_role** key (starts with `eyJ...`)
 5. Update your `.env.local`:
 
 ```bash
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...your-actual-key-here
+SUPABASE_SERVICE_ROLE_KEY=<YOUR_SUPABASE_SERVICE_ROLE_KEY>
 ```
 
 ### 2. NextAuth Secret (2 minutes)
@@ -46,7 +46,7 @@ openssl rand -base64 32
 5. Choose **Web application**
 6. Add these **Authorized redirect URIs**:
    ```
-   https://lgsfyrxkqpipaumngvfi.supabase.co/auth/v1/callback
+   https://<PROJECT_ID>.supabase.co/auth/v1/callback
    http://localhost:3000/auth/callback
    http://localhost:3001/auth/callback
    https://jewgo-app.vercel.app/auth/callback
@@ -57,8 +57,8 @@ openssl rand -base64 32
 2. Update your `.env.local`:
 
 ```bash
-GOOGLE_CLIENT_ID=your-actual-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-actual-google-client-secret
+GOOGLE_CLIENT_ID=<YOUR_GOOGLE_CLIENT_ID>
+GOOGLE_CLIENT_SECRET=<YOUR_GOOGLE_CLIENT_SECRET>
 ```
 
 #### 3.3 Configure in Supabase

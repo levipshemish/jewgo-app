@@ -86,10 +86,10 @@ cd monitoring && npm start
 Test the health endpoints manually:
 ```bash
 # Health check
-curl https://jewgo.onrender.com/health
+curl https://<YOUR_BACKEND_DOMAIN>/health
 
 # API test
-curl https://jewgo.onrender.com/api/restaurants?limit=1
+curl https://<YOUR_BACKEND_DOMAIN>/api/restaurants?limit=1
 ```
 
 ### 2. External Monitoring
@@ -118,14 +118,14 @@ For continuous monitoring, set up a cron job:
 
 ## Environment Variables
 
-### Frontend Configuration:
+### Frontend Configuration (in `.env.local`):
 ```env
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 ```
 
-### Monitoring Configuration:
+### Monitoring Configuration (in `.env`):
 ```env
-API_URL=https://jewgo.onrender.com
+API_URL=https://<YOUR_BACKEND_DOMAIN>
 KEEP_ALIVE_INTERVAL=600000  # 10 minutes
 KEEP_ALIVE_TIMEOUT=30000    # 30 seconds
 ```
@@ -164,10 +164,10 @@ KEEP_ALIVE_TIMEOUT=30000    # 30 seconds
 ### Debug Commands:
 ```bash
 # Test backend health
-curl -v https://jewgo.onrender.com/health
+curl -v https://<YOUR_BACKEND_DOMAIN>/health
 
 # Test API endpoint
-curl -v https://jewgo.onrender.com/api/restaurants?limit=1
+curl -v https://<YOUR_BACKEND_DOMAIN>/api/restaurants?limit=1
 
 # Check monitoring logs
 cd monitoring && npm run once

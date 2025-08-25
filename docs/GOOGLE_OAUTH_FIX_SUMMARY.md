@@ -38,7 +38,7 @@ The Google login button was redirecting to a placeholder Supabase page instead o
    https://console.cloud.google.com/
    ```
 
-2. **Select Project**: `jewgo-app`
+2. **Select Project**: `<YOUR_GOOGLE_CLOUD_PROJECT>`
 
 3. **OAuth Consent Screen**
    - Navigate to: **APIs & Services** → **OAuth consent screen**
@@ -50,13 +50,13 @@ The Google login button was redirecting to a placeholder Supabase page instead o
    - Find your OAuth 2.0 Client ID and click **Edit**
    - Add these **Authorized Redirect URIs**:
      ```
-     https://jewgo-app.vercel.app/auth/callback
+     https://<YOUR_VERCEL_APP>.vercel.app/auth/callback
      http://localhost:3000/auth/callback
-     https://lgsfyrxkqpipaumngvfi.supabase.co/auth/v1/callback
+     https://<PROJECT_ID>.supabase.co/auth/v1/callback
      ```
    - Add these **Authorized JavaScript Origins**:
      ```
-     https://jewgo-app.vercel.app
+     https://<YOUR_VERCEL_APP>.vercel.app
      http://localhost:3000
      ```
    - **Save changes**
@@ -68,14 +68,14 @@ The Google login button was redirecting to a placeholder Supabase page instead o
    https://supabase.com/dashboard
    ```
 
-2. **Select Project**: `lgsfyrxkqpipaumngvfi`
+2. **Select Project**: `<PROJECT_ID>`
 
 3. **URL Configuration**
    - Navigate to: **Authentication** → **URL Configuration**
-   - Set **Site URL** to: `https://jewgo-app.vercel.app`
+   - Set **Site URL** to: `https://<YOUR_VERCEL_APP>.vercel.app`
    - Add **Redirect URLs**:
            ```
-      https://jewgo-app.vercel.app/auth/callback
+      https://<YOUR_VERCEL_APP>.vercel.app/auth/callback
       http://localhost:3000/auth/callback
       ```
    - **Save changes**

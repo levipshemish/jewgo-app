@@ -15,9 +15,9 @@ Set these environment variables in your Netlify dashboard:
 
 ### Core Application Variables
 ```
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=5060e374c6d88aacf8fea324
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<YOUR_GOOGLE_MAPS_API_KEY>
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=<YOUR_GOOGLE_MAPS_MAP_ID>
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 NEXT_PUBLIC_APP_VERSION=1.0.0
 ```
 

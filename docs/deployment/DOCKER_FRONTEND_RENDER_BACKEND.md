@@ -40,13 +40,13 @@ The frontend is configured to connect to your Render backend:
 ```yaml
 # docker-compose.frontend-only.yml
 environment:
-  - NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+  - NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 ```
 
 ### Port Configuration
 
 - **Frontend**: http://localhost:3001
-- **Backend**: https://jewgo-app-oyoh.onrender.com (Render)
+- **Backend**: https://<YOUR_BACKEND_DOMAIN> (Render)
 
 ## Architecture
 

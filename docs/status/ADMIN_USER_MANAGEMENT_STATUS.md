@@ -33,8 +33,8 @@ The only issue is that the **ADMIN_TOKEN environment variable is not set on the 
 
 ### Error Evidence
 ```bash
-curl -X GET "https://jewgo-app-oyoh.onrender.com/api/admin/users?limit=1" \
-  -H "Authorization: Bearer 9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25"
+curl -X GET "https://<YOUR_BACKEND_DOMAIN>/api/admin/users?limit=1" \
+  -H "Authorization: Bearer <YOUR_ADMIN_TOKEN>"
 # Response: {"error":"Invalid or expired token"}
 ```
 
@@ -51,15 +51,15 @@ Found 2 users:
 ### Step 1: Set Admin Token on Render Backend
 1. Go to Render dashboard
 2. Find your backend service
-3. Add environment variable: `ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25`
+3. Add environment variable: `ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>`
 4. Redeploy the service
 
 ### Step 2: Set Admin Token on Vercel Frontend
 1. Go to Vercel dashboard  
 2. Find your frontend project
 3. Add environment variables:
-   - `ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25`
-   - `ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com`
+   - `ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>`
+   - `ADMIN_API_URL=https://<YOUR_BACKEND_DOMAIN>`
 4. Redeploy the project
 
 ## 🧪 Expected Results After Deployment

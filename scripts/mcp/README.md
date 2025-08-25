@@ -150,11 +150,11 @@ You can now commit your changes safely.
 pnpm mcp:pre-merge
 ```
 
-**Environment Variables**:
+**Environment Variables** (placeholders only; set real values in `.env` / `frontend/.env.local` or CI secrets):
 ```bash
-export FE_HEALTH_URL="https://jewgo-app.vercel.app/health"
-export BE_HEALTH_URL="https://jewgo-app-oyoh.onrender.com/health"
-export DATABASE_URL="postgresql+psycopg://user:pass@host:5432/db"
+export FE_HEALTH_URL="https://<YOUR_VERCEL_APP>.vercel.app/health"
+export BE_HEALTH_URL="https://<YOUR_BACKEND_DOMAIN>/health"
+export DATABASE_URL="postgresql+psycopg://<USER>:<PASSWORD>@<HOST>:5432/<DB>"
 ```
 
 **Output**:

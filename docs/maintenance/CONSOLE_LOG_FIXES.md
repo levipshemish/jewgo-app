@@ -127,8 +127,8 @@ python scripts/monitoring/backend_health_monitor.py --interval 300
 ### 1. Environment Variables
 Ensure these are set in your deployment environment:
 ```bash
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
-BACKEND_URL=https://jewgo.onrender.com  # For monitoring script
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
+BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>  # For monitoring script
 ```
 
 ### 2. Monitoring Setup

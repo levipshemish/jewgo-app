@@ -82,7 +82,7 @@ Error: access_denied
 
 1. **Go to Supabase Dashboard**
    ```
-   https://supabase.com/dashboard/project/lgsfyrxkqpipaumngvfi
+   https://supabase.com/dashboard/project/<PROJECT_ID>
    ```
 
 2. **Navigate to**: Authentication → Providers

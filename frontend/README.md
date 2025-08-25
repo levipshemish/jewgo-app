@@ -6,53 +6,50 @@ A Next.js 13+ application for finding kosher restaurants and marketplace functio
 
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Set up environment variables
 cp .env.example .env.local
 # Edit .env.local with your configuration
 
 # Run development server
-pnpm dev
+npm run dev
 
 # Build for production
-pnpm build
+npm run build
 
 # Start production server
-pnpm start
+npm run start
 ```
 
 ## Development
 
 ### Prerequisites
 - Node.js 22.x
-- pnpm package manager
+- npm (project uses package-lock.json)
 - Environment variables configured
 
 ### Available Scripts
 
 ```bash
 # Development
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm start        # Start production server
+npm run dev            # Start development server
+npm run build          # Build for production
+npm run start          # Start production server
 
 # Testing
-pnpm test         # Run tests
-pnpm test:watch   # Run tests in watch mode
-pnpm test:coverage # Run tests with coverage
+npm test               # Run tests
+npm run test:watch     # Run tests in watch mode
 
 # Code Quality
-pnpm lint         # Run ESLint
-pnpm lint:fix     # Fix ESLint issues
-pnpm type-check   # Run TypeScript type checking
-pnpm format       # Format code with Prettier
+npm run lint           # Run ESLint
+npm run type-check     # Run TypeScript type checking
 
-# Analysis
-pnpm analyze:dup  # Find code duplication
-pnpm analyze:dead # Find unused code
-pnpm analyze:deps # Find unused dependencies
-pnpm analyze:cycles # Find circular dependencies
+# CI helpers
+npm run ci:build       # Build in CI
+npm run ci:test        # Test in CI
+npm run ci:lint        # Lint in CI
+npm run ci:type-check  # Type-check in CI
 ```
 
 ### Project Structure
@@ -88,12 +85,14 @@ frontend/
 
 ### Environment Variables
 
-Required environment variables (see `.env.example`):
-- `DATABASE_URL` - Database connection string
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `GOOGLE_MAPS_API_KEY` - Google Maps API key
-- `SUPABASE_URL` - Supabase project URL
-- `SUPABASE_ANON_KEY` - Supabase anonymous key
+Required variables (see `.env.example`):
+- `NEXT_PUBLIC_URL`
+- `NEXT_PUBLIC_APP_HOSTNAME`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-side only)
+- `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
+- Optional: `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `SENTRY_DSN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
 
 ## Deployment
 
@@ -119,9 +118,9 @@ pnpm start
 
 ### Getting Help
 
-- Check the [docs/](./docs/) directory for detailed documentation
-- Review [architecture/file-structure.md](./docs/architecture/file-structure.md) for project structure
-- See [conventions.md](./docs/conventions.md) for coding standards
+- Check the `docs/` directory for detailed documentation
+- Review `docs/architecture/file-structure.md` for project structure
+- See `docs/conventions.md` for coding standards
 
 ## Contributing
 

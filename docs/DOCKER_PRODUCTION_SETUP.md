@@ -53,7 +53,7 @@ docker-compose -f docker-compose.production.yml ps
 curl -f http://localhost:3000
 
 # Test backend connection
-curl -f https://jewgo-app-oyoh.onrender.com/health
+curl -f https://<YOUR_BACKEND_DOMAIN>/health
 ```
 
 ## Environment Variables Reference
@@ -171,13 +171,13 @@ docker-compose -f docker-compose.production.yml exec frontend npm run validate-e
 curl -f https://jewgo-app-oyoh.onrender.com/health
 
 # Check CORS settings
-curl -H "Origin: http://localhost:3000" https://jewgo-app-oyoh.onrender.com/health
+curl -H "Origin: http://localhost:3000" https://<YOUR_BACKEND_DOMAIN>/health
 ```
 
 ### Database Connection Issues
 ```bash
 # Test Supabase connection
-curl -f https://lgsfyrxkqpipaumngvfi.supabase.co/rest/v1/
+curl -f https://<PROJECT_ID>.supabase.co/rest/v1/
 
 # Check environment variables
 docker-compose -f docker-compose.production.yml exec frontend env | grep SUPABASE

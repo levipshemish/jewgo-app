@@ -77,7 +77,8 @@ npm run build
 NODE_ENV=production
 CI=true
 VERCEL=1
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
+# Use your actual domain in your environment settings
 # Plus all your custom environment variables
 ```
 

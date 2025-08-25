@@ -64,15 +64,17 @@ Create a `.env.local` file in the `frontend/` directory (replace placeholders wi
 
 ```bash
 # Next.js Configuration
-NEXTAUTH_URL=https://jewgo-app.vercel.app
-NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=https://<YOUR_VERCEL_APP>.vercel.app
+NEXTAUTH_SECRET=<YOUR_NEXTAUTH_SECRET>
 
 # API Configuration
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<YOUR_GOOGLE_MAPS_API_KEY>
 
 # Environment
 NODE_ENV=production
+
+Note: Real values must be stored only in `.env` (backend) and `.env.local` (frontend) or your hosting provider’s environment settings. Do not include real environment values in documentation.
 ```
 
 ## Local Development Deployment

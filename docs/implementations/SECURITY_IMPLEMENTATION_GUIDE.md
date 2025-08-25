@@ -526,15 +526,15 @@ export async function resetFailedAttempts(email: string): Promise<void> {
    # Email Service
    EMAIL_HOST=smtp.example.com
    EMAIL_PORT=587
-   EMAIL_USER=noreply@jewgo.com
-   EMAIL_PASSWORD=secure_password
+   EMAIL_USER=noreply@yourdomain.com
+   EMAIL_PASSWORD=<YOUR_EMAIL_PASSWORD>
    
    # Security
-   NEXTAUTH_SECRET=generate-secure-secret
-   JWT_SECRET=another-secure-secret
+   NEXTAUTH_SECRET=<YOUR_NEXTAUTH_SECRET>
+   JWT_SECRET=<YOUR_JWT_SECRET>
    
    # Redis
-   REDIS_URL=redis://user:password@host:6379
+   REDIS_URL=redis://<USER>:<PASSWORD>@<HOST>:6379
    
    # Rate Limiting
    AUTH_RATE_LIMIT_WINDOW=900000

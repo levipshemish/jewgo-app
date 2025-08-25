@@ -178,13 +178,13 @@ crontab -e
 # Recommended: UptimeRobot with 5-minute intervals
 ```
 
-### 3. Environment Variables:
+### 3. Environment Variables (placeholders only):
 ```env
-# Frontend
-NEXT_PUBLIC_BACKEND_URL=https://jewgo.onrender.com
+# Frontend (.env.local)
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 
-# Monitoring
-API_URL=https://jewgo.onrender.com
+# Monitoring (.env)
+API_URL=https://<YOUR_BACKEND_DOMAIN>
 KEEP_ALIVE_INTERVAL=600000  # 10 minutes
 KEEP_ALIVE_TIMEOUT=30000    # 30 seconds
 ```

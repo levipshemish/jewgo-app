@@ -55,10 +55,10 @@ app, socketio = create_app()
 
 ### 2. **WebSocket Configuration**
 
-#### Updated `frontend/vercel.env.production`:
+#### Updated `frontend/vercel.env.production` (placeholders only):
 ```bash
 # Added WebSocket URL for production
-NEXT_PUBLIC_WEBSOCKET_URL=wss://jewgo-app-oyoh.onrender.com/ws
+NEXT_PUBLIC_WEBSOCKET_URL=wss://<YOUR_BACKEND_DOMAIN>/ws
 ```
 
 #### Updated `frontend/lib/hooks/useWebSocket.ts`:
@@ -67,7 +67,7 @@ NEXT_PUBLIC_WEBSOCKET_URL=wss://jewgo-app-oyoh.onrender.com/ws
 url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:8000/ws',
 
 // After
-url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://jewgo-app-oyoh.onrender.com/ws',
+url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://<YOUR_BACKEND_DOMAIN>/ws',
 ```
 
 #### Added WebSocket resilience:
@@ -78,7 +78,7 @@ url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://jewgo-app-oyoh.onrender.com
 ### 3. **Environment Configuration**
 
 #### Production WebSocket URL:
-- Configured to use `wss://jewgo-app-oyoh.onrender.com/ws`
+- Configured to use `wss://<YOUR_BACKEND_DOMAIN>/ws`
 - Updated fallback URL in WebSocket hook
 - Added environment variable for WebSocket enable/disable
 

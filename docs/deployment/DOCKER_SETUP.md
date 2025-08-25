@@ -111,8 +111,8 @@ docker-compose -f docker-compose.production.yml up -d --build
 ```
 
 ### ✅ What's Configured
-- **Real Production Backend**: `https://jewgo-app-oyoh.onrender.com`
-- **Real Production Database**: Supabase (`https://lgsfyrxkqpipaumngvfi.supabase.co`)
+- **Real Production Backend**: `https://<YOUR_BACKEND_DOMAIN>`
+- **Real Production Database**: Supabase (`https://<PROJECT_ID>.supabase.co`)
 - **Real Production Environment**: All production environment variables
 - **Real Production Authentication**: Supabase Auth with real credentials
 - **Real Production Services**: Google Maps, etc.
@@ -126,7 +126,7 @@ The production environment file (`config/environment/frontend.production.env`) c
 ### 📋 Testing Checklist
 Before deploying, test these in Docker:
 - [ ] Application loads at http://localhost:3000
-- [ ] Backend connection works (https://jewgo-app-oyoh.onrender.com/health)
+- [ ] Backend connection works (https://<YOUR_BACKEND_DOMAIN>/health)
 - [ ] Authentication flows work
 - [ ] Database operations work
 - [ ] All features function correctly

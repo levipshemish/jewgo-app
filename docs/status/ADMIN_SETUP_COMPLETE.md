@@ -2,7 +2,7 @@
 
 ## Generated Admin Token
 ```
-ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
 ```
 
 ## Environment Variables to Set
@@ -11,15 +11,15 @@ ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25
 Set these environment variables in your Render backend service:
 
 ```
-ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
 ```
 
 ### Frontend (Vercel)
 Set these environment variables in your Vercel frontend service:
 
 ```
-ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25
-ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
+ADMIN_API_URL=https://<YOUR_BACKEND_DOMAIN>
 ```
 
 ## Admin Functionality Implemented
@@ -59,15 +59,15 @@ ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com
 1. **Deploy to Render Backend:**
    - Go to Render dashboard
    - Find your backend service
-   - Add environment variable: `ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25`
+   - Add environment variable: `ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>`
    - Redeploy the service
 
 2. **Deploy to Vercel Frontend:**
    - Go to Vercel dashboard
    - Find your frontend project
    - Add environment variables:
-     - `ADMIN_TOKEN=9e7ca8004763f06536ae4e34bf7a1c3abda3e6971508fd867f9296b7f2f23c25`
-     - `ADMIN_API_URL=https://jewgo-app-oyoh.onrender.com`
+     - `ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>`
+     - `ADMIN_API_URL=https://<YOUR_BACKEND_DOMAIN>`
    - Redeploy the project
 
 3. **Test Admin Flow:**

@@ -2,6 +2,21 @@
 
 This changelog summarizes recent documentation and script alignment for ports, health endpoints, and compose files.
 
+Date: 2025-08-25
+
+Highlights
+- Updated root README: Node.js 22.x prerequisite; link to docs/CONTRIBUTING.md.
+- Updated frontend README to use npm (aligns with package-lock.json) and correct env variable list.
+- Updated docs index last updated date to August 2025.
+- Standardized environment variable docs to use placeholders only and reference `.env` / `.env.local`.
+- Added root `ENVIRONMENT.md` consolidating env variables and where to define them.
+
+Notes
+- Frontend engine is Node 22.x (`frontend/package.json`); keep npm as package manager across docs.
+ - Sanitized sensitive examples in multiple docs (Supabase, admin token, backend URLs) to remove real-looking values.
+
+---
+
 Date: 2025-08-22
 
 Highlights
@@ -28,4 +43,3 @@ Key docs updated
 Notes
 - Historical reports (e.g., `CLEANUP_SUMMARY.md`) retain legacy filenames for context.
 - Internal container checks in Dockerfiles and healthchecks still target `http://localhost:5000/health` (inside container).
-

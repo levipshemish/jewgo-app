@@ -19,10 +19,10 @@ The JewGo application implements a comprehensive analytics and user feedback sys
 ##### **Environment Variables**
 ```bash
 # Frontend
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 
 # Backend
-ADMIN_TOKEN=your_admin_token
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
 ```
 
 #### **Event Tracking**
@@ -323,11 +323,13 @@ Authorization: Bearer <admin_token>
 #### **1. Environment Configuration**
 ```bash
 # Frontend (.env.local)
-NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com
+NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
 
 # Backend (.env)
-ADMIN_TOKEN=your_admin_token
+ADMIN_TOKEN=<YOUR_ADMIN_TOKEN>
 ```
+
+Note: Store real values only in `.env` (backend) and `.env.local` (frontend) or your hosting provider’s environment settings. Do not commit real secrets or domains to documentation.
 
 #### **2. Database Migration**
 ```bash

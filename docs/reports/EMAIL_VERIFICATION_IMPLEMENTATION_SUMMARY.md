@@ -81,14 +81,14 @@ Successfully implemented comprehensive email verification and password reset fun
 
 ```env
 # Email Configuration
-EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
+EMAIL_USER=noreply@yourdomain.com
 EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=noreply@jewgo.com
+EMAIL_FROM=noreply@yourdomain.com
 
 # Application URLs
-NEXT_PUBLIC_URL=https://your-domain.com
+NEXT_PUBLIC_URL=https://<YOUR_FRONTEND_DOMAIN>
 
 # Database (already configured)
 DATABASE_URL=your-database-url
@@ -155,14 +155,14 @@ curl -X POST http://localhost:3000/api/auth/reset-password/confirm \
 ### 1. Environment Setup
 ```bash
 # Set up email service (Gmail example)
-EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
+EMAIL_USER=noreply@yourdomain.com
 EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=noreply@jewgo.com
+EMAIL_FROM=noreply@yourdomain.com
 
 # Set application URL
-NEXT_PUBLIC_URL=https://your-domain.com
+NEXT_PUBLIC_URL=https://<YOUR_FRONTEND_DOMAIN>
 ```
 
 ### 2. Database Migration
