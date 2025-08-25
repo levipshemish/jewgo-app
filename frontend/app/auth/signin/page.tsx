@@ -136,12 +136,35 @@ function SignInForm() {
 
   // Magic link (passwordless) sign-in via Supabase
   const [magicStatus, setMagicStatus] = useState<string | null>(null);
+  const [magicLinkCooldown, setMagicLinkCooldown] = useState<number>(0);
+  
+  // Rate limiting for magic link requests
+  useEffect(() => {
+    if (magicLinkCooldown > 0) {
+      const timer = setTimeout(() => {
+        setMagicLinkCooldown(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [magicLinkCooldown]);
+
   const handleSendMagicLink = useCallback(async () => {
     setMagicStatus(null);
+    
+    // Check rate limiting
+    if (magicLinkCooldown > 0) {
+      setMagicStatus(`Please wait ${magicLinkCooldown} seconds before requesting another magic link.`);
+      return;
+    }
+    
     if (!email) {
       setMagicStatus('Please enter your email first.');
       return;
     }
+    
+    // Set cooldown (60 seconds)
+    setMagicLinkCooldown(60);
+    
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const nextUrl = redirectTo || '/eatery';
@@ -153,15 +176,26 @@ function SignInForm() {
           emailRedirectTo,
         },
       });
+      
       if (error) {
-        setMagicStatus(error.message || 'Failed to send magic link.');
+        if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+          setMagicStatus('Too many requests. Please wait 60 seconds before trying again.');
+          setMagicLinkCooldown(60);
+        } else {
+          setMagicStatus(error.message || 'Failed to send magic link.');
+          // Reset cooldown on non-rate-limit errors
+          setMagicLinkCooldown(0);
+        }
         return;
       }
+      
       setMagicStatus('Check your email for a sign-in link.');
     } catch (_err) {
       setMagicStatus('Failed to send magic link.');
+      // Reset cooldown on errors
+      setMagicLinkCooldown(0);
     }
-  }, [email, redirectTo]);
+  }, [email, redirectTo, magicLinkCooldown]);
 
   const handleAnonymousSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -359,12 +393,16 @@ function SignInForm() {
             <button
               type="button"
               onClick={handleSendMagicLink}
-              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors"
+              disabled={magicLinkCooldown > 0}
+              className="w-full inline-flex justify-center py-3.5 px-6 border border-neutral-600 rounded-full shadow-sm bg-neutral-800 text-sm font-medium text-neutral-300 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-jewgo-400 focus:ring-offset-2 focus:ring-offset-neutral-900 transition-colors disabled:opacity-50"
             >
-              Send me a magic link
+              {magicLinkCooldown > 0 
+                ? `Wait ${magicLinkCooldown}s before retry` 
+                : 'Send me a magic link'
+              }
             </button>
             {magicStatus && (
-              <div className="text-sm text-center mt-2 {magicStatus.includes('Check') ? 'text-green-400' : 'text-red-400'}">
+              <div className={`text-sm text-center mt-2 ${magicStatus.includes('Check') ? 'text-green-400' : 'text-red-400'}`}>
                 {magicStatus}
               </div>
             )}

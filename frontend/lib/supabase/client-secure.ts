@@ -57,5 +57,36 @@ export function createClientSupabaseClient() {
   );
 }
 
+// Singleton pattern to prevent multiple instances
+let supabaseClientInstance: ReturnType<typeof createClientSupabaseClient> | null = null;
+
 // Export a singleton instance for client components
-export const supabaseClient = createClientSupabaseClient();
+export const supabaseClient = (() => {
+  // Only create client on the client side
+  if (typeof window === 'undefined') {
+    // Return a mock client for SSR
+    return {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        signOut: async () => ({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithOAuth: async () => ({ data: null, error: null }),
+        signInWithOtp: async () => ({ data: null, error: null }),
+      },
+      from: () => ({
+        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
+        insert: () => ({ select: async () => ({ data: null, error: null }) }),
+        delete: () => ({ eq: async () => ({ data: null, error: null }) }),
+      }),
+    } as any;
+  }
+
+  // Return existing instance if already created
+  if (supabaseClientInstance) {
+    return supabaseClientInstance;
+  }
+
+  // Create new instance
+  supabaseClientInstance = createClientSupabaseClient();
+  return supabaseClientInstance;
+})();
