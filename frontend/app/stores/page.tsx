@@ -260,7 +260,7 @@ function StoresPageContent() {
     const storeType = store.store_type && store.store_type.trim() !== '' ? store.store_type : '';
     
     return {
-      id: store.id,
+      id: String(store.id),
       imageUrl: store.image_url,
       imageTag: store.kosher_category,
       title: store.name,
