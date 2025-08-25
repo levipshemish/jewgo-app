@@ -42,8 +42,23 @@ export async function GET() {
 
     const data = await backendResponse.json();
 
-    // Return the same status and data from the backend
-    return NextResponse.json(data, { status: backendResponse.status });
+    // Transform the response structure to match frontend expectations
+    // Backend returns: {data: {categories: [...]}} 
+    // Frontend expects: {data: [...]}
+    if (data.success && data.data && data.data.categories) {
+      // Transform old structure to new structure
+      const transformedData = {
+        ...data,
+        data: data.data.categories
+      };
+      return NextResponse.json(transformedData, { status: backendResponse.status });
+    } else if (data.success && data.data && Array.isArray(data.data)) {
+      // Already in correct structure
+      return NextResponse.json(data, { status: backendResponse.status });
+    } else {
+      // Fallback: return data as-is
+      return NextResponse.json(data, { status: backendResponse.status });
+    }
 
   } catch (error) {
     console.error('Error in marketplace categories API route:', error);
