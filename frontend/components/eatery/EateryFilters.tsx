@@ -133,9 +133,9 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Agencies</option>
-              {filterOptions?.agencies.map((agency) => (
+              {filterOptions?.agencies?.map((agency) => (
                 <option key={agency} value={agency}>
-                  {agency} ({filterOptions.counts.agencies[agency] || 0})
+                  {agency} ({filterOptions?.counts?.agencies?.[agency] || 0})
                 </option>
               ))}
             </select>
@@ -153,9 +153,9 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Types</option>
-              {filterOptions?.kosherCategories.map((category) => (
+              {filterOptions?.kosherCategories?.map((category) => (
                 <option key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)} ({filterOptions.counts.kosherCategories[category] || 0})
+                  {category.charAt(0).toUpperCase() + category.slice(1)} ({filterOptions?.counts?.kosherCategories?.[category] || 0})
                 </option>
               ))}
             </select>
@@ -173,9 +173,9 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Types</option>
-              {filterOptions?.listingTypes.map((type) => (
+              {filterOptions?.listingTypes?.map((type) => (
                 <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} ({filterOptions.counts.listingTypes[type] || 0})
+                  {type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ')} ({filterOptions?.counts?.listingTypes?.[type] || 0})
                 </option>
               ))}
             </select>
@@ -213,11 +213,11 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
                   disabled={loading}
                 >
                   <option value="">Min Price</option>
-                  {filterOptions?.priceRanges.map((price) => {
+                  {filterOptions?.priceRanges?.map((price) => {
                     const priceValue = price.length; // Convert $ to 1, $$ to 2, etc.
                     return (
                       <option key={price} value={priceValue}>
-                        {price} ({filterOptions.counts.priceRanges[price] || 0})
+                        {price} ({filterOptions?.counts?.priceRanges?.[price] || 0})
                       </option>
                     );
                   })}
@@ -231,11 +231,11 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
                   disabled={loading}
                 >
                   <option value="">Max Price</option>
-                  {filterOptions?.priceRanges.map((price) => {
+                  {filterOptions?.priceRanges?.map((price) => {
                     const priceValue = price.length; // Convert $ to 1, $$ to 2, etc.
                     return (
                       <option key={price} value={priceValue}>
-                        {price} ({filterOptions.counts.priceRanges[price] || 0})
+                        {price} ({filterOptions?.counts?.priceRanges?.[price] || 0})
                       </option>
                     );
                   })}
