@@ -92,9 +92,29 @@ export async function POST(request: NextRequest) {
 
   // Create SSR Supabase client bound to response cookies
   const cookieStore = await cookies();
+  
+  // Debug Supabase configuration
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  console.log('Supabase configuration:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlLength: supabaseUrl?.length,
+    keyLength: supabaseKey?.length
+  });
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase configuration');
+    return NextResponse.json(
+      { error: 'CONFIGURATION_ERROR' },
+      { status: 500, headers: baseHeaders }
+    );
+  }
+  
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         get(name: string) {
