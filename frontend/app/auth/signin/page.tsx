@@ -30,10 +30,20 @@ function SignInForm() {
         if (response.ok) {
           const userData = await response.json();
           if (userData.user) {
-            // User is authenticated, redirect to eatery (or the intended destination)
-            console.log('User is already authenticated, redirecting to:', redirectTo);
-            router.push(redirectTo);
-            return;
+            // Check if user is a guest user (no email, provider unknown)
+            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
+            
+            if (isGuest) {
+              // Guest users should be allowed to sign in to upgrade their account
+              console.log('Guest user detected, allowing sign-in to upgrade account');
+              setIsCheckingAuth(false);
+              return;
+            } else {
+              // User is authenticated with email, redirect to intended destination
+              console.log('User is already authenticated with email, redirecting to:', redirectTo);
+              router.push(redirectTo);
+              return;
+            }
           }
         }
         
