@@ -30,6 +30,7 @@ export const restaurantFormSchema = z.object({
   // Step 3: Business Details
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
+  hours_of_operation: z.string().max(1000, 'Hours of operation must be 1000 characters or less').optional().or(z.literal('')),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,
@@ -122,6 +123,7 @@ export const step2Schema = z.object({
 export const step3Schema = z.object({
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
+  hours_of_operation: z.string().max(1000, 'Hours of operation must be 1000 characters or less').optional().or(z.literal('')),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,

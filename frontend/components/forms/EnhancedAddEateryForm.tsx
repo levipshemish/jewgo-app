@@ -67,18 +67,18 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         const response = await fetch('/api/restaurants/filter-options');
         const data = await response.json();
         if (data.success) {
-          setFilterOptions({
-            agencies: data.data.agencies || ['ORB', 'OU', 'Star-K', 'CRC', 'Kof-K', 'OK Kosher', 'Other'],
-            kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
-            listingTypes: data.data.listingTypes || ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
-            priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
-          });
+                  setFilterOptions({
+          agencies: data.data.agencies || ['Kosher Miami', 'ORB'],
+          kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
+          listingTypes: data.data.listingTypes || ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
+          priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
+        });
         }
       } catch (error) {
         console.error('Error fetching filter options:', error);
         // Set default options
         setFilterOptions({
-          agencies: ['ORB', 'OU', 'Star-K', 'CRC', 'Kof-K', 'OK Kosher', 'Other'],
+          agencies: ['Kosher Miami', 'ORB'],
           kosherCategories: ['Dairy', 'Meat', 'Pareve'],
           listingTypes: ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
           priceRanges: ['$', '$$', '$$$', '$$$$']
@@ -103,7 +103,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
       case 2:
         return ['kosher_category', 'certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel'];
       case 3:
-        return ['short_description', 'description', 'google_listing_url', 'instagram_link', 'facebook_link', 'tiktok_link'];
+        return ['short_description', 'description', 'hours_of_operation', 'google_listing_url', 'instagram_link', 'facebook_link', 'tiktok_link'];
       case 4:
         return ['business_images'];
       case 5:
@@ -818,6 +818,52 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     )}
                   </div>
 
+                  {/* Hours of Operation */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hours of Operation (optional)
+                    </label>
+                    <Controller
+                      name="hours_of_operation"
+                      control={control}
+                      render={({ field }) => (
+                        <select
+                          {...field}
+                          className={cn(
+                            "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                            errors.hours_of_operation ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                          )}
+                        >
+                          <option value="">Select hours of operation</option>
+                          <option value="Monday: 10:00 AM – 10:00 PM\nTuesday: 10:00 AM – 10:00 PM\nWednesday: 10:00 AM – 10:00 PM\nThursday: 10:00 AM – 10:00 PM\nFriday: 10:00 AM – 3:00 PM\nSaturday: Closed\nSunday: 10:00 AM – 9:00 PM">Standard Kosher Hours (Mon-Thu 10AM-10PM, Fri 10AM-3PM, Sat Closed, Sun 10AM-9PM)</option>
+                          <option value="Monday: 10:00 AM – 11:00 PM\nTuesday: 10:00 AM – 11:00 PM\nWednesday: 10:00 AM – 11:00 PM\nThursday: 10:00 AM – 11:00 PM\nFriday: 10:00 AM – 4:00 PM\nSaturday: 9:00 PM – 1:00 AM\nSunday: 10:00 AM – 11:00 PM">Extended Hours (Mon-Thu 10AM-11PM, Fri 10AM-4PM, Sat 9PM-1AM, Sun 10AM-11PM)</option>
+                          <option value="Monday: 10:00 AM – 7:00 PM\nTuesday: 10:00 AM – 7:00 PM\nWednesday: 10:00 AM – 7:00 PM\nThursday: 10:00 AM – 7:00 PM\nFriday: Closed\nSaturday: Closed\nSunday: 10:00 AM – 7:00 PM">Weekday Only (Mon-Thu 10AM-7PM, Fri-Sat Closed, Sun 10AM-7PM)</option>
+                          <option value="Monday: 10:00 AM – 8:00 PM\nTuesday: 10:00 AM – 8:00 PM\nWednesday: 10:00 AM – 8:00 PM\nThursday: 10:00 AM – 8:00 PM\nFriday: 10:00 AM – 4:00 PM\nSaturday: Closed\nSunday: 10:00 AM – 8:00 PM">Moderate Hours (Mon-Thu 10AM-8PM, Fri 10AM-4PM, Sat Closed, Sun 10AM-8PM)</option>
+                          <option value="Monday: 10:00 AM – 9:00 PM\nTuesday: 10:00 AM – 9:00 PM\nWednesday: 10:00 AM – 9:00 PM\nThursday: 10:00 AM – 9:00 PM\nFriday: 10:00 AM – 3:30 PM\nSaturday: Closed\nSunday: 10:00 AM – 9:00 PM">Evening Hours (Mon-Thu 10AM-9PM, Fri 10AM-3:30PM, Sat Closed, Sun 10AM-9PM)</option>
+                          <option value="Monday: 10:30 AM – 10:30 PM\nTuesday: 10:30 AM – 10:30 PM\nWednesday: 10:30 AM – 10:30 PM\nThursday: 10:30 AM – 10:30 PM\nFriday: 10:30 AM – 3:00 PM\nSaturday: Closed\nSunday: 10:30 AM – 10:30 PM">Late Start Hours (Mon-Thu 10:30AM-10:30PM, Fri 10:30AM-3PM, Sat Closed, Sun 10:30AM-10:30PM)</option>
+                          <option value="custom">Custom Hours (I'll enter manually)</option>
+                        </select>
+                      )}
+                    />
+                    {watchedValues.hours_of_operation === 'custom' && (
+                      <div className="mt-3">
+                        <textarea
+                          rows={7}
+                          maxLength={1000}
+                          className={cn(
+                            "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                            errors.hours_of_operation ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                          )}
+                          placeholder="Enter your custom hours of operation...&#10;Example:&#10;Monday: 10:00 AM – 10:00 PM&#10;Tuesday: 10:00 AM – 10:00 PM&#10;Wednesday: 10:00 AM – 10:00 PM&#10;Thursday: 10:00 AM – 10:00 PM&#10;Friday: 10:00 AM – 3:00 PM&#10;Saturday: Closed&#10;Sunday: 10:00 AM – 9:00 PM"
+                          onChange={(e) => setValue('hours_of_operation', e.target.value)}
+                        />
+                      </div>
+                    )}
+                    {errors.hours_of_operation && (
+                      <p className="text-red-500 text-sm mt-1">{errors.hours_of_operation.message}</p>
+                    )}
+                  </div>
+
                   {/* Social Media Links */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Social Media Links</h3>
@@ -1040,6 +1086,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                           <div>
                             <span className="font-medium">Long Description:</span>
                             <p className="mt-1">{watchedValues.description}</p>
+                          </div>
+                        )}
+                        {watchedValues.hours_of_operation && (
+                          <div>
+                            <span className="font-medium">Hours of Operation:</span>
+                            <pre className="mt-1 text-xs whitespace-pre-wrap">{watchedValues.hours_of_operation}</pre>
                           </div>
                         )}
                       </div>
