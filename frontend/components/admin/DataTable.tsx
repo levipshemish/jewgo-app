@@ -43,6 +43,7 @@ export interface DataTableProps<T> {
   onSearch?: (query: string) => void;
   onExport?: () => void;
   onBulkAction?: (action: string, selectedIds: string[]) => void;
+  bulkActions?: { key: string; label: string; variant?: 'default' | 'destructive' | 'success' }[];
   searchPlaceholder?: string;
   loading?: boolean;
   selectable?: boolean;
@@ -72,6 +73,7 @@ export default function DataTable<T extends { id: string | number }>({
   onSearch,
   onExport,
   onBulkAction,
+  bulkActions = [],
   searchPlaceholder = 'Search...',
   loading = false,
   selectable = false,
@@ -241,13 +243,28 @@ export default function DataTable<T extends { id: string | number }>({
       {/* Bulk Actions */}
       {selectedCount > 0 && onBulkAction && (
         <div className="p-6 border-b border-gray-200 flex items-center space-x-2">
-          <button
-            onClick={() => handleBulkAction('delete')}
-            className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span>Delete Selected</span>
-          </button>
+          {(Array.isArray(bulkActions) && bulkActions.length > 0) ? (
+            bulkActions.map((ba, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleBulkAction(ba.key)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm ${
+                  ba.variant === 'destructive' ? 'bg-red-600 text-white hover:bg-red-700' : ba.variant === 'success' ? 'bg-green-600 text-white hover:bg-green-700' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {ba.key === 'delete' ? <Trash2 className="h-4 w-4" /> : null}
+                <span>{ba.label}</span>
+              </button>
+            ))
+          ) : (
+            <button
+              onClick={() => handleBulkAction('delete')}
+              className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete Selected</span>
+            </button>
+          )}
         </div>
       )}
 

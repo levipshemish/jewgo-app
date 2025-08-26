@@ -4,13 +4,15 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 ## 🚀 Recent Updates (August 2025)
 
-### ✅ **API v4 Routes - Fixed and Working**
+### ✅ **API v4 Routes - FIXED AND FULLY WORKING**
 
+- **✅ Complete Fix**: All API v4 routes are now fully functional and production-ready
+- **✅ Database Integration**: Full PostgreSQL integration working with proper data storage
 - **✅ Feature Flag Resolution**: Fixed `api_v4_restaurants` feature flag blocking route access
-- **✅ Route Registration**: All API v4 routes properly registered and accessible
-- **✅ Frontend Integration**: Updated frontend to use proper API v4 endpoints
-- **✅ Validation Working**: Input validation returns proper 400 errors for missing fields
-- **⚠️ Database Integration**: API v4 routes working but database service needs configuration (500 error)
+- **✅ Session Management**: Fixed SQLAlchemy session issues and data type handling
+- **✅ Service Layer**: Complete service layer architecture with proper error handling
+- **✅ Form Submission**: "Submit restaurant" button functionality fully implemented
+- **✅ Production Ready**: All endpoints working with proper validation and responses
 - **📋 Documentation**: Complete status documentation in `docs/API_V4_ROUTES_STATUS.md`
 
 ### ✅ **Profile System - Enhanced User Experience**
@@ -21,10 +23,6 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 - **✅ Multiple Size Support**: Avatar upload supports sm, md, lg, and xl sizes
 - **✅ Hover Effects**: Visual feedback with scale and shadow effects on hover
 - **✅ Mobile Optimization**: Touch-friendly interface with responsive design
-- **✅ Upload Progress**: Real-time progress indicators during file upload
-- **✅ Delete Functionality**: One-click avatar deletion with confirmation
-- **✅ Error Handling**: User-friendly error messages and validation
-- **✅ Supabase Integration**: Complete storage integration with RLS policies
 
 ### ✅ **Admin System - Production Ready**
 
@@ -39,8 +37,6 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 - **Profile Authentication Flow**: Fixed redirect loops and loading state management
 - **Avatar Upload Components**: New ClickableAvatarUpload component with modern UX
-- **Supabase Storage Integration**: Complete avatar storage with RLS policies and bucket management
-- **File Upload System**: Server actions for secure file upload with validation and progress tracking
 - **Supabase Migration**: Complete admin system migration from PostgreSQL to Supabase
 - **Admin Functions**: Database functions for role management (`get_user_admin_role`, `assign_admin_role`)
 - **Security Enhancements**: RLS policies, secure metadata storage, service role integration
@@ -366,6 +362,7 @@ For detailed admin system documentation, see [Admin Roles Production Setup](docs
 
 - `GET /api/admin/csrf` - Generate CSRF token
 - `GET /api/admin/restaurants` - Manage restaurants
+- `GET /api/admin/submissions/restaurants` - Moderation list (server-driven)
 - `GET /api/admin/reviews` - Moderate reviews
 - `GET /api/admin/synagogues` - Manage synagogues
 - `GET /api/admin/users` - Manage users

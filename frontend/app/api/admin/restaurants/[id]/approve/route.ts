@@ -5,7 +5,7 @@ import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const restaurantId = Number(id);
     if (!Number.isInteger(restaurantId)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });

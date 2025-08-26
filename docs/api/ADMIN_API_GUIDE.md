@@ -77,6 +77,13 @@ All routes live under `/api/admin/*`. All state-changing routes require `x-csrf-
   - Requires CSRF header
   - Handler signature: `export async function POST(request, { params }: { params: { id: string } })`
 
+### Submissions (Moderation Feed)
+
+- `GET /api/admin/submissions/restaurants`
+  - Purpose: Server-driven moderation list for restaurant submissions
+  - Query: `page`, `pageSize`, `search`, `status` (pending_approval|approved|rejected|all), `sortBy` (e.g., `submission_date`), `sortOrder`
+  - Permission: `RESTAURANT_VIEW`
+
 ### Data Export (Summary)
 
 All export endpoints return CSV (`text/csv`) and enforce:
@@ -124,4 +131,4 @@ All export endpoints return CSV (`text/csv`) and enforce:
 ## Client Usage
 
 - Always include `x-csrf-token: window.__CSRF_TOKEN__` for state-changing requests.
-- Admin submissions page now lists via `GET /api/admin/restaurants` and moderates via the approve/reject endpoints above.
+- Admin submissions page now lists via `GET /api/admin/submissions/restaurants` and moderates via the approve/reject endpoints above.

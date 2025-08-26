@@ -29,7 +29,7 @@ export async function testStorage() {
       avatarsBucket: {
         name: avatarsBucket.name,
         public: avatarsBucket.public,
-        fileSizeLimit: avatarsBucket.fileSizeLimit
+        fileSizeLimit: avatarsBucket.file_size_limit
       }
     };
     

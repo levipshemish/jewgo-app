@@ -113,6 +113,9 @@ export async function POST(request: NextRequest) {
     const backendUrl = 'http://localhost:8082';
     console.log(`[API] Using API v4 endpoint: ${backendUrl}/api/v4/restaurants`);
     
+    let backendResponse: Response | undefined;
+    let lastError: Error | undefined;
+    
     try {
       backendResponse = await fetch(`${backendUrl}/api/v4/restaurants`, {
         method: 'POST',
@@ -125,7 +128,7 @@ export async function POST(request: NextRequest) {
       console.log(`[API] Backend response status: ${backendResponse.status}`);
     } catch (error) {
       console.log(`[API] Failed to connect to ${backendUrl}:`, error);
-      lastError = error;
+      lastError = error as Error;
     }
     
     if (!backendResponse || !backendResponse.ok) {

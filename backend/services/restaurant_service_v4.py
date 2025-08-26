@@ -625,9 +625,32 @@ class RestaurantServiceV4(BaseService):
         # Search for the restaurant by name and address to get the full record with ID
         restaurants = self.db_manager.get_restaurants()
         for restaurant in restaurants:
-            if (restaurant.get('name') == data.get('name') and 
-                restaurant.get('address') == data.get('address')):
-                return restaurant
+            # Handle both dict and object types
+            restaurant_name = restaurant.get('name') if isinstance(restaurant, dict) else getattr(restaurant, 'name', None)
+            restaurant_address = restaurant.get('address') if isinstance(restaurant, dict) else getattr(restaurant, 'address', None)
+            
+            if (restaurant_name == data.get('name') and 
+                restaurant_address == data.get('address')):
+                # Convert to dict if it's an object
+                if isinstance(restaurant, dict):
+                    return restaurant
+                else:
+                    # Convert object to dict
+                    return {
+                        'id': getattr(restaurant, 'id', None),
+                        'name': getattr(restaurant, 'name', None),
+                        'address': getattr(restaurant, 'address', None),
+                        'city': getattr(restaurant, 'city', None),
+                        'state': getattr(restaurant, 'state', None),
+                        'zip_code': getattr(restaurant, 'zip_code', None),
+                        'phone_number': getattr(restaurant, 'phone_number', None),
+                        'kosher_category': getattr(restaurant, 'kosher_category', None),
+                        'listing_type': getattr(restaurant, 'listing_type', None),
+                        'certifying_agency': getattr(restaurant, 'certifying_agency', None),
+                        'created_at': getattr(restaurant, 'created_at', None),
+                        'updated_at': getattr(restaurant, 'updated_at', None),
+                        'hours_parsed': getattr(restaurant, 'hours_parsed', None),
+                    }
         
         # If not found, return the original data
         return data
