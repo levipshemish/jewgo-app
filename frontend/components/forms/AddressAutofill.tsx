@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
+import { loadMaps } from '@/lib/maps/loader';
 
 interface AddressAutofillProps {
   value: string;
@@ -43,16 +44,16 @@ export default function AddressAutofill({
 
   // Load Google Places API
   useEffect(() => {
-    const loadGooglePlacesAPI = () => {
+    const loadGooglePlacesAPI = async () => {
       if (window.google && window.google.maps) {
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+      try {
+        await loadMaps();
+      } catch (error) {
+        console.error('Failed to load Google Maps API:', error);
+      }
     };
 
     loadGooglePlacesAPI();
