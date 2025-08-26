@@ -1,0 +1,365 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  ChevronUp, 
+  ChevronDown,
+  Search,
+  Filter,
+  Download,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Eye
+} from 'lucide-react';
+
+export interface Column<T> {
+  key: string;
+  title: string;
+  render?: (value: any, row: T) => React.ReactNode;
+  sortable?: boolean;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface DataTableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  onSort?: (key: string, order: 'asc' | 'desc') => void;
+  onSearch?: (query: string) => void;
+  onExport?: () => void;
+  onBulkAction?: (action: string, selectedIds: string[]) => void;
+  searchPlaceholder?: string;
+  loading?: boolean;
+  selectable?: boolean;
+  actions?: {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    onClick: (row: T) => void;
+    variant?: 'default' | 'destructive';
+  }[];
+}
+
+export default function DataTable<T extends { id: string | number }>({
+  data,
+  columns,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  onSort,
+  onSearch,
+  onExport,
+  onBulkAction,
+  searchPlaceholder = 'Search...',
+  loading = false,
+  selectable = false,
+  actions = []
+}: DataTableProps<T>) {
+  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortKey, setSortKey] = useState<string>('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Handle row selection
+  const handleSelectRow = (id: string | number) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedRows.size === data.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(data.map(row => row.id)));
+    }
+  };
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch?.(searchQuery);
+  };
+
+  // Handle sort
+  const handleSort = (key: string) => {
+    const newOrder = sortKey === key && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortKey(key);
+    setSortOrder(newOrder);
+    onSort?.(key, newOrder);
+  };
+
+  // Handle bulk action
+  const handleBulkAction = (action: string) => {
+    const selectedIds = Array.from(selectedRows).map(id => id.toString());
+    onBulkAction?.(action, selectedIds);
+    setSelectedRows(new Set()); // Clear selection after action
+  };
+
+  // Get selected count
+  const selectedCount = selectedRows.size;
+
+  return (
+    <div className="bg-white rounded-lg shadow">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {pagination ? `${pagination.total.toLocaleString()} items` : `${data.length} items`}
+            </h3>
+            
+            {selectedCount > 0 && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">
+                  {selectedCount} selected
+                </span>
+                <button
+                  onClick={() => setSelectedRows(new Set())}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Search */}
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+              />
+            </form>
+
+            {/* Export */}
+            {onExport && (
+              <button
+                onClick={onExport}
+                className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedCount > 0 && onBulkAction && (
+          <div className="mt-4 flex items-center space-x-2">
+            <button
+              onClick={() => handleBulkAction('delete')}
+              className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete Selected</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {selectable && (
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.size === data.length && data.length > 0}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+              )}
+              
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                    column.width ? `w-${column.width}` : ''
+                  } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>{column.title}</span>
+                    {column.sortable && onSort && (
+                      <button
+                        onClick={() => handleSort(column.key)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        {sortKey === column.key ? (
+                          sortOrder === 'asc' ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )
+                        ) : (
+                          <div className="flex flex-col">
+                            <ChevronUp className="h-3 w-3 -mb-1" />
+                            <ChevronDown className="h-3 w-3 -mt-1" />
+                          </div>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </th>
+              ))}
+              
+              {actions.length > 0 && (
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+          
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={columns.length + (selectable ? 1 : 0) + (actions.length > 0 ? 1 : 0)}
+                  className="px-6 py-4 text-center text-gray-500"
+                >
+                  Loading...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length + (selectable ? 1 : 0) + (actions.length > 0 ? 1 : 0)}
+                  className="px-6 py-4 text-center text-gray-500"
+                >
+                  No data found
+                </td>
+              </tr>
+            ) : (
+              data.map((row, index) => (
+                <tr
+                  key={row.id}
+                  className={`hover:bg-gray-50 ${selectedRows.has(row.id) ? 'bg-blue-50' : ''}`}
+                >
+                  {selectable && (
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.has(row.id)}
+                        onChange={() => handleSelectRow(row.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                  )}
+                  
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${
+                        column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {column.render
+                        ? column.render((row as any)[column.key], row)
+                        : (row as any)[column.key] || '-'}
+                    </td>
+                  ))}
+                  
+                  {actions.length > 0 && (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        {actions.map((action, actionIndex) => (
+                          <button
+                            key={actionIndex}
+                            onClick={() => action.onClick(row)}
+                            className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
+                              action.variant === 'destructive'
+                                ? 'text-red-600 hover:bg-red-50'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            <action.icon className="h-3 w-3" />
+                            <span>{action.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {pagination && (
+        <div className="px-6 py-3 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">
+                Showing {((pagination.page - 1) * pagination.pageSize) + 1} to{' '}
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
+                {pagination.total.toLocaleString()} results
+              </span>
+              
+              <select
+                value={pagination.pageSize}
+                onChange={(e) => onPageSizeChange?.(parseInt(e.target.value))}
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => onPageChange?.(pagination.page - 1)}
+                disabled={!pagination.hasPrev}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              
+              <span className="text-sm text-gray-700">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              
+              <button
+                onClick={() => onPageChange?.(pagination.page + 1)}
+                disabled={!pagination.hasNext}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

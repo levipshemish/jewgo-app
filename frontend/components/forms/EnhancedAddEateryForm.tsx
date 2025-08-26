@@ -93,18 +93,18 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         const response = await fetch('/api/restaurants/filter-options');
         const data = await response.json();
         if (data.success) {
-                  setFilterOptions({
-          agencies: data.data.agencies || ['Kosher Miami', 'ORB'],
-          kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
-          listingTypes: data.data.listingTypes || ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
-          priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
-        });
+                            setFilterOptions({
+            agencies: data.data.agencies || ['ORB', 'Kosher Miami', 'KM'],
+            kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
+            listingTypes: data.data.listingTypes || ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
+            priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
+          });
         }
       } catch (error) {
         console.error('Error fetching filter options:', error);
         // Set default options
         setFilterOptions({
-          agencies: ['Kosher Miami', 'ORB'],
+          agencies: ['ORB', 'Kosher Miami', 'KM'],
           kosherCategories: ['Dairy', 'Meat', 'Pareve'],
           listingTypes: ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
           priceRanges: ['$', '$$', '$$$', '$$$$']

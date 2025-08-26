@@ -192,11 +192,62 @@ model FloridaSynagogue {
   @@schema("public")
 }
 
+// User model for admin operations and audit logging
+model User {
+  id        String   @id @db.VarChar(50)
+  email     String   @unique @db.VarChar(255)
+  name      String?  @db.VarChar(255)
+  avatar_url String? @db.VarChar(500)
+  provider  String   @default("unknown") @db.VarChar(50)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+
+  // Relationships
+  auditLogs AuditLog[]
+
+  @@map("users")
+  @@schema("public")
+}
+
 model RestaurantTodayHours {
   id           Int     @id @default(autoincrement())
   todays_hours String? @db.Text
 
   @@map("restaurant_today_hours")
+  @@schema("public")
+}
+
+// Audit logging model for admin operations
+model AuditLog {
+  id           String    @id @default(cuid())
+  userId       String    @db.VarChar(50)
+  action       String    @db.VarChar(100)
+  entityType   String    @db.VarChar(50)
+  entityId     String?   @db.VarChar(50)
+  oldData      String?   @db.Text // JSON string
+  newData      String?   @db.Text // JSON string
+  timestamp    DateTime  @default(now()) @db.Timestamp(6)
+  ipAddress    String?   @db.VarChar(45)
+  userAgent    String?   @db.Text
+  sessionId    String?   @db.VarChar(100)
+  correlationId String?  @db.VarChar(100)
+  auditLevel   String    @default("info") @db.VarChar(20)
+  metadata     String?   @db.Text // JSON string
+  deletedAt    DateTime? @db.Timestamp(6)
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for efficient querying
+  @@index([userId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([timestamp])
+  @@index([auditLevel])
+  @@index([correlationId])
+  @@index([deletedAt])
+
+  @@map("audit_logs")
   @@schema("public")
 }
 

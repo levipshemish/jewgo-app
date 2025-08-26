@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { securityMiddleware, corsHeaders } from '@/middleware-security';
+import { requireAdmin } from '@/lib/admin/auth';
 
 // Enhanced middleware with security hardening and private route protection
 export const config = {
@@ -123,6 +124,31 @@ export async function middleware(request: NextRequest) {
         return redirectToSignin(request, response);
       }
       return response;
+    }
+
+    // Check admin access for admin routes
+    if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
+      try {
+        const adminUser = await requireAdmin(request);
+        if (!adminUser) {
+          // Redirect non-admin users to home with error message
+          const redirectUrl = new URL('/', request.url);
+          redirectUrl.searchParams.set('error', 'admin_access_denied');
+          return NextResponse.redirect(redirectUrl, 302);
+        }
+        
+        // Add admin security headers
+        response.headers.set('X-Admin-Access', 'true');
+        response.headers.set('X-Content-Type-Options', 'nosniff');
+        response.headers.set('X-Frame-Options', 'DENY');
+        response.headers.set('X-XSS-Protection', '1; mode=block');
+        
+        // Log admin access for security monitoring
+        console.log(`[ADMIN] Admin access: ${adminUser.email} -> ${path}`);
+      } catch (error) {
+        console.error('[ADMIN] Admin access check failed:', error);
+        return redirectToSignin(request, response);
+      }
     }
 
     // Authenticated, non-anonymous user - allow access and return response with persisted cookies

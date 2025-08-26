@@ -72,7 +72,19 @@ export default function AddressAutofill({
 
     setIsLoading(true);
     try {
-      const service = new window.google.maps.places.AutocompleteService();
+      // Try the newer API first, fallback to deprecated API
+      let service;
+      try {
+        // Check if newer API is available
+        if (window.google.maps.places.AutocompleteSuggestion) {
+          service = new window.google.maps.places.AutocompleteSuggestion();
+        } else {
+          service = new window.google.maps.places.AutocompleteService();
+        }
+      } catch (e) {
+        // Fallback to deprecated API
+        service = new window.google.maps.places.AutocompleteService();
+      }
       
       // Use callback-based API instead of async/await
       service.getPlacePredictions({
@@ -115,9 +127,26 @@ export default function AddressAutofill({
     }
 
     try {
-      const service = new window.google.maps.places.PlacesService(
-        document.createElement('div')
-      );
+      // Try the newer API first, fallback to deprecated API
+      let service;
+      try {
+        // Check if newer API is available
+        if (window.google.maps.places.Place) {
+          // For now, we'll still use PlacesService as Place API might not be fully implemented
+          service = new window.google.maps.places.PlacesService(
+            document.createElement('div')
+          );
+        } else {
+          service = new window.google.maps.places.PlacesService(
+            document.createElement('div')
+          );
+        }
+      } catch (e) {
+        // Fallback to deprecated API
+        service = new window.google.maps.places.PlacesService(
+          document.createElement('div')
+        );
+      }
 
       service.getDetails(
         {

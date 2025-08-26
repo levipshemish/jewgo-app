@@ -1,0 +1,77 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin/auth';
+import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Authenticate admin user
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '50');
+    const userId = searchParams.get('userId') || undefined;
+    const action = searchParams.get('action') || undefined;
+    const entityType = searchParams.get('entityType') || undefined;
+    const entityId = searchParams.get('entityId') || undefined;
+    const auditLevel = searchParams.get('auditLevel') as 'info' | 'warning' | 'critical' || undefined;
+    const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
+    const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
+    const correlationId = searchParams.get('correlationId') || undefined;
+
+    // Query audit logs
+    const result = await queryAuditLogs({
+      userId,
+      action,
+      entityType,
+      entityId,
+      auditLevel,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+      correlationId,
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('[ADMIN] Audit log query error:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch audit logs' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate admin user
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { format = 'csv', ...options } = body;
+
+    // Export audit logs
+    const csvContent = await exportAuditLogs(options);
+
+    return new NextResponse(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,
+      },
+    });
+  } catch (error) {
+    console.error('[ADMIN] Audit log export error:', error);
+    return NextResponse.json(
+      { error: 'Failed to export audit logs' },
+      { status: 500 }
+    );
+  }
+}

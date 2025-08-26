@@ -27,10 +27,12 @@ export default function ActionButtons({
         window.location.href = `/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`;
         return;
       }
+      // User is authenticated, proceed to add eatery
+      onAddEatery();
     } catch {
       // If check fails, fall back to parent handler
+      onAddEatery();
     }
-    onAddEatery();
   };
 
   const handleFiltersClick = () => {

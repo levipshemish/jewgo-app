@@ -41,8 +41,12 @@ const SubNav: React.FC<SubNavProps> = ({
                     router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                     return;
                   }
-                } catch {}
-                router.push('/add-eatery');
+                  // User is authenticated, proceed to add eatery
+                  router.push('/add-eatery');
+                } catch {
+                  // If check fails, proceed anyway
+                  router.push('/add-eatery');
+                }
               })}
               className="flex items-center space-x-1 sm:space-x-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-transparent text-gray-600 rounded-full border border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 hover:shadow-sm transition-all duration-200 flex-1 justify-center text-xs sm:text-sm font-medium group"
             >
@@ -87,8 +91,12 @@ const SubNav: React.FC<SubNavProps> = ({
               router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
               return;
             }
-          } catch {}
-          router.push('/add-eatery');
+            // User is authenticated, proceed to add eatery
+            router.push('/add-eatery');
+          } catch {
+            // If check fails, proceed anyway
+            router.push('/add-eatery');
+          }
         },
       },
       {

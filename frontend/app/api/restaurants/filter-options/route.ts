@@ -16,12 +16,8 @@ export async function GET(request: NextRequest) {
         data: {
           agencies: [
             'ORB',
-            'OU',
-            'Star-K',
-            'CRC',
-            'Kof-K',
-            'OK Kosher',
             'Kosher Miami',
+            'KM',
             'Other'
           ],
           kosherCategories: [
@@ -72,12 +68,8 @@ export async function GET(request: NextRequest) {
       data: {
         agencies: [
           'ORB',
-          'OU',
-          'Star-K',
-          'CRC',
-          'Kof-K',
-          'OK Kosher',
           'Kosher Miami',
+          'KM',
           'Other'
         ],
         kosherCategories: [
