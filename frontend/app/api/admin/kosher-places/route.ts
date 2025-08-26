@@ -22,19 +22,17 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+    const category = searchParams.get('category') || undefined;
     const status = searchParams.get('status') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
-    const restaurantId = searchParams.get('restaurantId') ? parseInt(searchParams.get('restaurantId')!) : undefined;
 
     // Build filters
     const filters: any = {};
+    if (category) filters.category = category;
     if (status) filters.status = status;
-    if (rating) filters.rating = rating;
-    if (restaurantId) filters.restaurant_id = restaurantId;
 
-    // Get paginated data with restaurant information
+    // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
-      prisma.review,
+      prisma.kosherPlace,
       {
         page,
         pageSize,
@@ -42,29 +40,19 @@ export async function GET(request: NextRequest) {
         filters,
         sortBy,
         sortOrder,
-      },
-      {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-          },
-        },
       }
     );
 
     // Log the action
-    await logAdminAction(adminUser, 'review_list_view', 'review', {
+    await logAdminAction(adminUser, 'kosher_place_list_view', 'kosher_place', {
       metadata: { page, pageSize, search, filters },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Review list error:', error);
+    console.error('[ADMIN] Kosher place list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
+      { error: 'Failed to fetch kosher places' },
       { status: 500 }
     );
   }
@@ -82,32 +70,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate data
-    const validatedData = validationUtils.validateReview(body);
+    const validatedData = validationUtils.validateKosherPlace(body);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Create review
-    const review = await AdminDatabaseService.createRecord(
-      prisma.review,
+    // Create kosher place
+    const kosherPlace = await AdminDatabaseService.createRecord(
+      prisma.kosherPlace,
       sanitizedData,
       adminUser,
-      'review'
+      'kosher_place'
     );
 
-    return NextResponse.json({ data: review }, { status: 201 });
+    return NextResponse.json({ data: kosherPlace }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] Review create error:', error);
+    console.error('[ADMIN] Kosher place create error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to create review' },
+      { error: 'Failed to create kosher place' },
       { status: 500 }
     );
   }
@@ -126,37 +114,37 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Kosher place ID is required' }, { status: 400 });
     }
 
     // Validate data
-    const validatedData = validationUtils.validateReview(data);
+    const validatedData = validationUtils.validateKosherPlace(data);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Update review
-    const review = await AdminDatabaseService.updateRecord(
-      prisma.review,
+    // Update kosher place
+    const kosherPlace = await AdminDatabaseService.updateRecord(
+      prisma.kosherPlace,
       id,
       sanitizedData,
       adminUser,
-      'review'
+      'kosher_place'
     );
 
-    return NextResponse.json({ data: review });
+    return NextResponse.json({ data: kosherPlace });
   } catch (error) {
-    console.error('[ADMIN] Review update error:', error);
+    console.error('[ADMIN] Kosher place update error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to update review' },
+      { error: 'Failed to update kosher place' },
       { status: 500 }
     );
   }
@@ -170,28 +158,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get review ID from query params
+    // Get kosher place ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Kosher place ID is required' }, { status: 400 });
     }
 
-    // Delete review (soft delete)
+    // Delete kosher place (soft delete)
     await AdminDatabaseService.deleteRecord(
-      prisma.review,
+      prisma.kosherPlace,
       id,
       adminUser,
-      'review',
+      'kosher_place',
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Review deleted successfully' });
+    return NextResponse.json({ message: 'Kosher place deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] Review delete error:', error);
+    console.error('[ADMIN] Kosher place delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete review' },
+      { error: 'Failed to delete kosher place' },
       { status: 500 }
     );
   }

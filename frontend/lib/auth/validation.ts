@@ -9,7 +9,19 @@ import { z } from 'zod';
  * Email validation schema
  */
 export const EmailSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string()
+    .email('Invalid email address')
+    .refine((email) => {
+      // Check for common disposable email domains and example domains
+      const blockedDomains = [
+        'tempmail.org', '10minutemail.com', 'guerrillamail.com', 'mailinator.com',
+        'yopmail.com', 'throwaway.email', 'temp-mail.org', 'fakeinbox.com',
+        'example.com', 'example.org', 'example.net', 'test.com', 'test.org',
+        'sample.com', 'sample.org', 'demo.com', 'demo.org', 'placeholder.com'
+      ];
+      const domain = email.split('@')[1]?.toLowerCase();
+      return !blockedDomains.includes(domain);
+    }, 'Please use a valid email address (example/test domains not allowed)'),
 });
 
 /**

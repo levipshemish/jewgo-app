@@ -1,11 +1,7 @@
-// Prisma schema for Supabase Auth + application data
-// Database: PostgreSQL
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
-  // Enable better performance with binary targets
-  binaryTargets = ["native", "linux-musl"]
+  binaryTargets   = ["native", "linux-musl"]
 }
 
 datasource db {
@@ -14,69 +10,92 @@ datasource db {
   schemas  = ["public"]
 }
 
-// Restaurant data model - matches existing table structure
 model Restaurant {
-  id                    Int       @id @default(autoincrement())
-  name                  String
-  address               String
-  city                  String
-  state                 String
-  zip_code              String
-  website               String?
-  price_range           String?
-  image_url             String?
-  is_cholov_yisroel     Boolean?
-  is_pas_yisroel        Boolean?
-  is_bishul_yisroel     Boolean?
-  created_at            DateTime?
-  updated_at            DateTime?
-  short_description     String?
-  google_listing_url    String?
-  status                String?
-  description           String?
-  latitude              Float?
-  longitude             Float?
-  rating                Float?
-  review_count          Int?
-  google_rating         Float?
-  google_review_count   Int?
-  google_reviews        String?
-  certifying_agency     String
-  timezone              String?
-  phone_number          String    @map("phone_number")
-  listing_type          String
-  hours_of_operation    String?
-  specials              String?
-  hours_json            Json?
-  hours_last_updated    DateTime?
-  kosher_category       String
-  cholov_stam           Boolean?
-  user_email            String?
-  current_time_local    DateTime?
-  hours_parsed          Boolean?
-  
+  id                       Int       @id @default(autoincrement())
+  created_at               DateTime  @db.Timestamp(6)
+  updated_at               DateTime  @db.Timestamp(6)
+  current_time_local       DateTime? @db.Timestamp(6)
+  hours_parsed             Boolean?
+  name                     String    @db.VarChar(255)
+  address                  String    @db.VarChar(500)
+  city                     String    @db.VarChar(100)
+  state                    String    @db.VarChar(50)
+  zip_code                 String    @db.VarChar(20)
+  phone_number             String    @map("phone_number") @db.VarChar(50)
+  website                  String?   @db.VarChar(500)
+  certifying_agency        String    @db.VarChar(100)
+  kosher_category          String    @db.VarChar(20)
+  listing_type             String    @db.VarChar(100)
+  google_listing_url       String?   @db.VarChar(500)
+  price_range              String?   @db.VarChar(20)
+  short_description        String?
+  hours_of_operation       String?
+  hours_json               String?
+  hours_last_updated       DateTime? @db.Timestamp(6)
+  timezone                 String?   @db.VarChar(50)
+  latitude                 Float?
+  longitude                Float?
+  is_cholov_yisroel        Boolean?
+  is_pas_yisroel           Boolean?
+  cholov_stam              Boolean?
+  image_url                String?   @db.VarChar(2000)
+  specials                 String?
+  status                   String?   @db.VarChar(20)
+  google_rating            Float?
+  google_review_count      Int?
+  google_reviews           String?
+  user_email               String?   @db.VarChar(255)
+  owner_name               String?
+  owner_email              String?
+  owner_phone              String?
+  is_owner_submission      Boolean?  @default(false)
+  business_email           String?
+  instagram_link           String?
+  facebook_link            String?
+  tiktok_link              String?
+  business_images          String[]
+  submission_status        String?   @default("pending_approval")
+  submission_date          DateTime? @db.Timestamp(6)
+  approval_date            DateTime? @db.Timestamp(6)
+  approved_by              String?
+  rejection_reason         String?
+  business_license         String?
+  tax_id                   String?
+  years_in_business        Int?
+  seating_capacity         Int?
+  delivery_available       Boolean?  @default(false)
+  takeout_available        Boolean?  @default(false)
+  catering_available       Boolean?  @default(false)
+  preferred_contact_method String?
+  preferred_contact_time   String?
+  contact_notes            String?
+
+  @@index([business_email], map: "idx_restaurants_business_email")
+  @@index([is_owner_submission], map: "idx_restaurants_is_owner_submission")
+  @@index([owner_email], map: "idx_restaurants_owner_email")
+  @@index([submission_date], map: "idx_restaurants_submission_date")
+  @@index([submission_status], map: "idx_restaurants_submission_status")
   @@map("restaurants")
   @@schema("public")
 }
 
-// Review system models
 model Review {
-  id                String    @id @db.VarChar(50)
+  id                String   @id @db.VarChar(50)
   restaurant_id     Int
-  user_id           String    @db.VarChar(50)
-  user_name         String    @db.VarChar(255)
-  user_email        String?   @db.VarChar(255)
+  user_id           String   @db.VarChar(50)
+  user_name         String   @db.VarChar(255)
+  user_email        String?  @db.VarChar(255)
   rating            Int
-  title             String?   @db.VarChar(255)
-  content           String    @db.Text
-  images            String?   @db.Text // JSON array of image URLs
-  status            String    @default("pending") @db.VarChar(20)
-  created_at        DateTime  @default(now()) @db.Timestamp(6)
-  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamp(6)
-  moderator_notes   String?   @db.Text
-  verified_purchase Boolean   @default(false)
-  helpful_count     Int       @default(0)
-  report_count      Int       @default(0)
+  title             String?  @db.VarChar(255)
+  content           String
+  images            String?
+  status            String   @db.VarChar(20)
+  created_at        DateTime @db.Timestamp(6)
+  updated_at        DateTime @updatedAt @db.Timestamp(6)
+  moderator_notes   String?
+  verified_purchase Boolean
+  helpful_count     Int
+  report_count      Int
 
   @@map("reviews")
   @@schema("public")
@@ -86,75 +105,34 @@ model ReviewFlag {
   id               String    @id @db.VarChar(50)
   review_id        String    @db.VarChar(50)
   reason           String    @db.VarChar(50)
-  description      String?   @db.Text
+  description      String?
   reported_by      String    @db.VarChar(50)
-  reported_at      DateTime  @default(now()) @db.Timestamp(6)
-  status           String    @default("pending") @db.VarChar(20)
+  reported_at      DateTime  @db.Timestamp(6)
+  status           String    @db.VarChar(20)
   resolved_by      String?   @db.VarChar(50)
   resolved_at      DateTime? @db.Timestamp(6)
-  resolution_notes String?   @db.Text
+  resolution_notes String?
 
   @@map("review_flags")
   @@schema("public")
 }
 
 model RestaurantImage {
-  id                    Int       @id @default(autoincrement())
-  restaurant_id         Int?
-  image_url             String?   @db.VarChar
-  image_order           Int?
-  cloudinary_public_id  String?   @db.VarChar
-  created_at            DateTime? @db.Timestamp(6)
-  updated_at            DateTime? @db.Timestamp(6)
+  id                   Int       @id @default(autoincrement())
+  restaurant_id        Int?
+  image_url            String?   @db.VarChar
+  image_order          Int?
+  cloudinary_public_id String?   @db.VarChar
+  created_at           DateTime? @db.Timestamp(6)
+  updated_at           DateTime? @db.Timestamp(6)
 
-  @@unique([restaurant_id, image_order])
   @@map("restaurant_images")
   @@schema("public")
 }
 
-model RestaurantOwner {
-  id            Int       @id @default(autoincrement())
-  restaurant_id Int
-  owner_name    String?   @db.VarChar(255)
-  email         String?   @db.VarChar(255)
-  phone         String?   @db.VarChar(50)
-  role          String?   @db.VarChar(100)
-  verified      Boolean?  @default(false)
-  created_at    DateTime? @default(now()) @db.Timestamp(6)
-  updated_at    DateTime? @updatedAt @db.Timestamp(6)
-
-  @@map("restaurant_owners")
-  @@schema("public")
-}
-
-model KosherPlace {
-  id                 Int       @id @default(autoincrement())
-  name               String?   @db.Text
-  detail_url         String?   @unique @db.Text
-  category           String?   @db.Text
-  photo              String?   @db.Text
-  address            String?   @db.Text
-  phone              String?   @db.Text
-  website            String?   @db.Text
-  kosher_cert_link   String?   @db.Text
-  kosher_type        String?   @db.Text
-  extra_kosher_info  String?   @db.Text
-  created_at         DateTime? @db.Timestamptz(6)
-  short_description  String?   @db.Text
-  email              String?   @db.Text
-  google_listing_url String?   @db.Text
-  status             String?   @db.Text
-  is_cholov_yisroel  Boolean?
-  is_pas_yisroel     Boolean?
-  hours_open         String?   @db.Text
-  price_range        String?   @db.Text
-
-  @@map("kosher_places")
-  @@schema("public")
-}
-
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model FloridaSynagogue {
-  id                 Int       @id @default(autoincrement())
+  id                 Int
   created_at         DateTime? @db.Timestamp(6)
   updated_at         DateTime? @db.Timestamp(6)
   name               String?   @db.VarChar
@@ -167,17 +145,17 @@ model FloridaSynagogue {
   phone              String?   @db.VarChar
   email              String?   @db.VarChar
   website            String?   @db.VarChar
-  social_media       String?   @db.Text
-  shacharit          String?   @db.Text
-  mincha             String?   @db.Text
-  maariv             String?   @db.Text
-  shabbat            String?   @db.Text
-  sunday             String?   @db.Text
-  weekday            String?   @db.Text
-  kosher_info        String?   @db.Text
-  parking            String?   @db.Text
-  accessibility      String?   @db.Text
-  additional_info    String?   @db.Text
+  social_media       String?
+  shacharit          String?
+  mincha             String?
+  maariv             String?
+  shabbat            String?
+  sunday             String?
+  weekday            String?
+  kosher_info        String?
+  parking            String?
+  accessibility      String?
+  additional_info    String?
   url                String?   @db.VarChar
   data_quality_score Int?
   is_chabad          Boolean?
@@ -189,18 +167,20 @@ model FloridaSynagogue {
   longitude          Float?
 
   @@map("florida_synagogues")
+  @@ignore
   @@schema("public")
 }
 
-// User model for admin operations and audit logging
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model User {
-  id        String   @id @db.VarChar(50)
-  email     String   @unique @db.VarChar(255)
-  name      String?  @db.VarChar(255)
-  avatar_url String? @db.VarChar(500)
-  provider  String   @default("unknown") @db.VarChar(50)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
+  id            String    @id @db.VarChar(50)
+  name          String?   @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  emailverified DateTime? @db.Timestamp(6)
+  image         String?   @db.VarChar(500)
+  issuperadmin  Boolean
+  createdat     DateTime  @db.Timestamp(6)
+  updatedat     DateTime  @db.Timestamp(6)
 
   // Relationships
   auditLogs AuditLog[]
@@ -209,15 +189,160 @@ model User {
   @@schema("public")
 }
 
-model RestaurantTodayHours {
-  id           Int     @id @default(autoincrement())
-  todays_hours String? @db.Text
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model accounts {
+  id                String  @db.VarChar(50)
+  userid            String  @db.VarChar(50)
+  type              String  @db.VarChar(50)
+  provider          String  @db.VarChar(50)
+  provideraccountid String  @db.VarChar(50)
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String? @db.VarChar(50)
+  scope             String? @db.VarChar(255)
+  id_token          String?
+  session_state     String? @db.VarChar(255)
 
-  @@map("restaurant_today_hours")
+  @@ignore
   @@schema("public")
 }
 
-// Audit logging model for admin operations
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model google_places_data {
+  id                     Int
+  restaurant_id          Int
+  google_place_id        String?   @db.VarChar(255)
+  name                   String?   @db.VarChar(255)
+  formatted_address      String?   @db.VarChar(500)
+  phone_number           String?   @db.VarChar(50)
+  website                String?   @db.VarChar(500)
+  rating                 Float?
+  user_ratings_total     Int?
+  price_level            Int?
+  latitude               Float?
+  longitude              Float?
+  hours_json             Json?     @db.Json
+  hours_text             String?
+  timezone               String?   @db.VarChar(50)
+  photos_json            Json?     @db.Json
+  primary_photo_url      String?   @db.VarChar(500)
+  types_json             Json?     @db.Json
+  opening_hours_json     Json?     @db.Json
+  reviews_json           Json?     @db.Json
+  last_updated           DateTime  @db.Timestamp(6)
+  next_update            DateTime  @db.Timestamp(6)
+  update_frequency_hours Int?
+  is_active              Boolean?
+  error_count            Int?
+  last_error             String?
+  created_at             DateTime  @db.Timestamp(6)
+  updated_at             DateTime? @db.Timestamp(6)
+
+  @@ignore
+  @@schema("public")
+}
+
+model marketplace {
+  id                        Int       @id @default(autoincrement())
+  created_at                DateTime  @db.Timestamp(6)
+  updated_at                DateTime  @db.Timestamp(6)
+  name                      String    @db.VarChar(255)
+  title                     String    @db.VarChar(500)
+  price                     Decimal   @db.Decimal(10, 2)
+  category                  String    @db.VarChar(100)
+  location                  String    @db.VarChar(500)
+  vendor_name               String    @db.VarChar(255)
+  city                      String    @db.VarChar(100)
+  state                     String    @db.VarChar(50)
+  zip_code                  String    @db.VarChar(20)
+  latitude                  Float?
+  longitude                 Float?
+  product_image             String?   @db.VarChar(2000)
+  additional_images         String[]  @db.VarChar
+  thumbnail                 String?   @db.VarChar(2000)
+  subcategory               String?   @db.VarChar(100)
+  description               String?
+  original_price            Decimal?  @db.Decimal(10, 2)
+  currency                  String    @db.VarChar(10)
+  stock                     Int
+  is_available              Boolean
+  is_featured               Boolean
+  is_on_sale                Boolean
+  discount_percentage       Int?
+  vendor_id                 String?   @db.VarChar(100)
+  vendor_logo               String?   @db.VarChar(2000)
+  vendor_address            String?   @db.VarChar(500)
+  vendor_phone              String?   @db.VarChar(50)
+  vendor_email              String?   @db.VarChar(255)
+  vendor_website            String?   @db.VarChar(500)
+  vendor_rating             Float?
+  vendor_review_count       Int
+  vendor_is_verified        Boolean
+  vendor_is_premium         Boolean
+  kosher_agency             String?   @db.VarChar(100)
+  kosher_level              String?   @db.VarChar(50)
+  kosher_certificate_number String?   @db.VarChar(100)
+  kosher_expiry_date        DateTime? @db.Date
+  kosher_is_verified        Boolean
+  is_gluten_free            Boolean
+  is_dairy_free             Boolean
+  is_nut_free               Boolean
+  is_vegan                  Boolean
+  is_vegetarian             Boolean
+  allergens                 String[]  @db.VarChar
+  tags                      String[]  @db.VarChar
+  specifications            Json?
+  shipping_info             Json?
+  rating                    Float
+  review_count              Int
+  status                    String    @db.VarChar(20)
+  priority                  Int
+  expiry_date               DateTime? @db.Date
+  created_by                String?   @db.VarChar(100)
+  approved_by               String?   @db.VarChar(100)
+  approved_at               DateTime? @db.Timestamp(6)
+  notes                     String?
+  external_id               String?   @db.VarChar(100)
+  source                    String    @db.VarChar(50)
+
+  @@schema("public")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model marketplace_subcategories {
+  id          Int
+  category_id Int
+  name        String
+  slug        String
+  sort_order  Int
+  active      Boolean
+
+  @@ignore
+  @@schema("public")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model sessions {
+  id           String   @db.VarChar(50)
+  sessiontoken String   @db.VarChar(255)
+  userid       String   @db.VarChar(50)
+  expires      DateTime @db.Timestamp(6)
+
+  @@ignore
+  @@schema("public")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model verification_tokens {
+  identifier String   @db.VarChar(255)
+  token      String   @db.VarChar(255)
+  expires    DateTime @db.Timestamp(6)
+
+  @@ignore
+  @@schema("public")
+}
+
 model AuditLog {
   id           String    @id @default(cuid())
   userId       String    @db.VarChar(50)
@@ -250,4 +375,3 @@ model AuditLog {
   @@map("audit_logs")
   @@schema("public")
 }
-

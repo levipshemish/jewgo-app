@@ -22,19 +22,19 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-    const status = searchParams.get('status') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
-    const restaurantId = searchParams.get('restaurantId') ? parseInt(searchParams.get('restaurantId')!) : undefined;
+    const city = searchParams.get('city') || undefined;
+    const state = searchParams.get('state') || undefined;
+    const affiliation = searchParams.get('affiliation') || undefined;
 
     // Build filters
     const filters: any = {};
-    if (status) filters.status = status;
-    if (rating) filters.rating = rating;
-    if (restaurantId) filters.restaurant_id = restaurantId;
+    if (city) filters.city = city;
+    if (state) filters.state = state;
+    if (affiliation) filters.affiliation = affiliation;
 
-    // Get paginated data with restaurant information
+    // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
-      prisma.review,
+      prisma.floridaSynagogue,
       {
         page,
         pageSize,
@@ -42,29 +42,19 @@ export async function GET(request: NextRequest) {
         filters,
         sortBy,
         sortOrder,
-      },
-      {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-          },
-        },
       }
     );
 
     // Log the action
-    await logAdminAction(adminUser, 'review_list_view', 'review', {
+    await logAdminAction(adminUser, 'synagogue_list_view', 'florida_synagogue', {
       metadata: { page, pageSize, search, filters },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Review list error:', error);
+    console.error('[ADMIN] Synagogue list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
+      { error: 'Failed to fetch synagogues' },
       { status: 500 }
     );
   }
@@ -82,32 +72,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate data
-    const validatedData = validationUtils.validateReview(body);
+    const validatedData = validationUtils.validateFloridaSynagogue(body);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Create review
-    const review = await AdminDatabaseService.createRecord(
-      prisma.review,
+    // Create synagogue
+    const synagogue = await AdminDatabaseService.createRecord(
+      prisma.floridaSynagogue,
       sanitizedData,
       adminUser,
-      'review'
+      'florida_synagogue'
     );
 
-    return NextResponse.json({ data: review }, { status: 201 });
+    return NextResponse.json({ data: synagogue }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] Review create error:', error);
+    console.error('[ADMIN] Synagogue create error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to create review' },
+      { error: 'Failed to create synagogue' },
       { status: 500 }
     );
   }
@@ -126,37 +116,37 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Synagogue ID is required' }, { status: 400 });
     }
 
     // Validate data
-    const validatedData = validationUtils.validateReview(data);
+    const validatedData = validationUtils.validateFloridaSynagogue(data);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Update review
-    const review = await AdminDatabaseService.updateRecord(
-      prisma.review,
+    // Update synagogue
+    const synagogue = await AdminDatabaseService.updateRecord(
+      prisma.floridaSynagogue,
       id,
       sanitizedData,
       adminUser,
-      'review'
+      'florida_synagogue'
     );
 
-    return NextResponse.json({ data: review });
+    return NextResponse.json({ data: synagogue });
   } catch (error) {
-    console.error('[ADMIN] Review update error:', error);
+    console.error('[ADMIN] Synagogue update error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to update review' },
+      { error: 'Failed to update synagogue' },
       { status: 500 }
     );
   }
@@ -170,28 +160,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get review ID from query params
+    // Get synagogue ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Synagogue ID is required' }, { status: 400 });
     }
 
-    // Delete review (soft delete)
+    // Delete synagogue (soft delete)
     await AdminDatabaseService.deleteRecord(
-      prisma.review,
+      prisma.floridaSynagogue,
       id,
       adminUser,
-      'review',
+      'florida_synagogue',
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Review deleted successfully' });
+    return NextResponse.json({ message: 'Synagogue deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] Review delete error:', error);
+    console.error('[ADMIN] Synagogue delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete review' },
+      { error: 'Failed to delete synagogue' },
       { status: 500 }
     );
   }

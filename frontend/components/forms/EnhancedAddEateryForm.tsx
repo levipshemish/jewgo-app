@@ -814,7 +814,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     {watchedValues.hours_of_operation === 'custom' && (
                       <div className="mt-3">
                         <CustomHoursSelector
-                          value={watchedValues.hours_of_operation}
+                          value={getValues('hours_of_operation') || ''}
                           onChange={(value) => setValue('hours_of_operation', value)}
                           error={errors.hours_of_operation?.message}
                         />

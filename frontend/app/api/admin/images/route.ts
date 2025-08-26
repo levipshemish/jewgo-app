@@ -22,19 +22,15 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-    const status = searchParams.get('status') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
     const restaurantId = searchParams.get('restaurantId') ? parseInt(searchParams.get('restaurantId')!) : undefined;
 
     // Build filters
     const filters: any = {};
-    if (status) filters.status = status;
-    if (rating) filters.rating = rating;
     if (restaurantId) filters.restaurant_id = restaurantId;
 
     // Get paginated data with restaurant information
     const result = await AdminDatabaseService.getPaginatedData(
-      prisma.review,
+      prisma.restaurantImage,
       {
         page,
         pageSize,
@@ -56,15 +52,15 @@ export async function GET(request: NextRequest) {
     );
 
     // Log the action
-    await logAdminAction(adminUser, 'review_list_view', 'review', {
+    await logAdminAction(adminUser, 'image_list_view', 'restaurant_image', {
       metadata: { page, pageSize, search, filters },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Review list error:', error);
+    console.error('[ADMIN] Image list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
+      { error: 'Failed to fetch images' },
       { status: 500 }
     );
   }
@@ -82,32 +78,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate data
-    const validatedData = validationUtils.validateReview(body);
+    const validatedData = validationUtils.validateRestaurantImage(body);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Create review
-    const review = await AdminDatabaseService.createRecord(
-      prisma.review,
+    // Create image record
+    const image = await AdminDatabaseService.createRecord(
+      prisma.restaurantImage,
       sanitizedData,
       adminUser,
-      'review'
+      'restaurant_image'
     );
 
-    return NextResponse.json({ data: review }, { status: 201 });
+    return NextResponse.json({ data: image }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] Review create error:', error);
+    console.error('[ADMIN] Image create error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to create review' },
+      { error: 'Failed to create image record' },
       { status: 500 }
     );
   }
@@ -126,37 +122,37 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
     }
 
     // Validate data
-    const validatedData = validationUtils.validateReview(data);
+    const validatedData = validationUtils.validateRestaurantImage(data);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Update review
-    const review = await AdminDatabaseService.updateRecord(
-      prisma.review,
+    // Update image record
+    const image = await AdminDatabaseService.updateRecord(
+      prisma.restaurantImage,
       id,
       sanitizedData,
       adminUser,
-      'review'
+      'restaurant_image'
     );
 
-    return NextResponse.json({ data: review });
+    return NextResponse.json({ data: image });
   } catch (error) {
-    console.error('[ADMIN] Review update error:', error);
+    console.error('[ADMIN] Image update error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to update review' },
+      { error: 'Failed to update image record' },
       { status: 500 }
     );
   }
@@ -170,28 +166,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get review ID from query params
+    // Get image ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
     }
 
-    // Delete review (soft delete)
+    // Delete image record (soft delete)
     await AdminDatabaseService.deleteRecord(
-      prisma.review,
+      prisma.restaurantImage,
       id,
       adminUser,
-      'review',
+      'restaurant_image',
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Review deleted successfully' });
+    return NextResponse.json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] Review delete error:', error);
+    console.error('[ADMIN] Image delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete review' },
+      { error: 'Failed to delete image' },
       { status: 500 }
     );
   }

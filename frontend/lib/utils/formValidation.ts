@@ -4,7 +4,18 @@ import { z } from 'zod';
 export const emailSchema = z
   .string()
   .email('Please enter a valid email address')
-  .min(1, 'Email is required');
+  .min(1, 'Email is required')
+  .refine((email) => {
+    // Check for common disposable email domains and example domains
+    const blockedDomains = [
+      'tempmail.org', '10minutemail.com', 'guerrillamail.com', 'mailinator.com',
+      'yopmail.com', 'throwaway.email', 'temp-mail.org', 'fakeinbox.com',
+      'example.com', 'example.org', 'example.net', 'test.com', 'test.org',
+      'sample.com', 'sample.org', 'demo.com', 'demo.org', 'placeholder.com'
+    ];
+    const domain = email.split('@')[1]?.toLowerCase();
+    return !blockedDomains.includes(domain);
+  }, 'Please use a valid email address (example/test domains not allowed)');
 
 export const passwordSchema = z
   .string()

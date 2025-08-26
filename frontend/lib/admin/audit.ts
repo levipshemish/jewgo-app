@@ -101,24 +101,23 @@ export async function logAdminAction(
     const sanitizedNewData = sanitizeData(newData);
 
     // Create audit log entry
-    // TODO: Add auditLog model to Prisma schema
-    // await prisma.auditLog.create({
-    //   data: {
-    //     userId: user.id,
-    //     action,
-    //     entityType,
-    //     entityId,
-    //     oldData: sanitizedOldData ? JSON.stringify(sanitizedOldData) : null,
-    //     newData: sanitizedNewData ? JSON.stringify(sanitizedNewData) : null,
-    //     timestamp: new Date(),
-    //     ipAddress,
-    //     userAgent,
-    //     sessionId,
-    //     correlationId,
-    //     auditLevel,
-    //     metadata: metadata ? JSON.stringify(metadata) : null,
-    //   },
-    // });
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action,
+        entityType,
+        entityId,
+        oldData: sanitizedOldData ? JSON.stringify(sanitizedOldData) : null,
+        newData: sanitizedNewData ? JSON.stringify(sanitizedNewData) : null,
+        timestamp: new Date(),
+        ipAddress,
+        userAgent,
+        sessionId,
+        correlationId,
+        auditLevel,
+        metadata: metadata ? JSON.stringify(metadata) : null,
+      },
+    });
 
     // Log to console for development/debugging
     console.log(`[AUDIT] ${action} by ${user.email} on ${entityType}${entityId ? ` (${entityId})` : ''}`);
@@ -156,7 +155,6 @@ function sanitizeData(data: any): any {
 
 /**
  * Query audit logs with filtering and pagination
- * TODO: Add auditLog model to Prisma schema
  */
 export async function queryAuditLogs(options: {
   userId?: string;
@@ -175,18 +173,69 @@ export async function queryAuditLogs(options: {
   page: number;
   pageSize: number;
 }> {
-  // TODO: Implement when auditLog model is added to Prisma schema
+  const {
+    userId,
+    action,
+    entityType,
+    entityId,
+    auditLevel,
+    startDate,
+    endDate,
+    page = 1,
+    pageSize = 50,
+    correlationId,
+  } = options;
+
+  // Build where clause
+  const where: any = {};
+  
+  if (userId) where.userId = userId;
+  if (action) where.action = action;
+  if (entityType) where.entityType = entityType;
+  if (entityId) where.entityId = entityId;
+  if (auditLevel) where.auditLevel = auditLevel;
+  if (correlationId) where.correlationId = correlationId;
+  
+  if (startDate || endDate) {
+    where.timestamp = {};
+    if (startDate) where.timestamp.gte = startDate;
+    if (endDate) where.timestamp.lte = endDate;
+  }
+
+  // Get total count
+  const total = await prisma.auditLog.count({ where });
+
+  // Get paginated results
+  const logs = await prisma.auditLog.findMany({
+    where,
+    orderBy: { timestamp: 'desc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    include: {
+      user: {
+        select: {
+          email: true,
+          name: true,
+        },
+      },
+    },
+  });
+
   return {
-    logs: [],
-    total: 0,
-    page: 1,
-    pageSize: 50,
+    logs: logs.map(log => ({
+      ...log,
+      oldData: log.oldData ? JSON.parse(log.oldData) : null,
+      newData: log.newData ? JSON.parse(log.newData) : null,
+      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+    })),
+    total,
+    page,
+    pageSize,
   };
 }
 
 /**
  * Get audit log statistics
- * TODO: Add auditLog model to Prisma schema
  */
 export async function getAuditStats(options: {
   startDate?: Date;
@@ -199,13 +248,73 @@ export async function getAuditStats(options: {
   logsByUser: Record<string, number>;
   recentActivity: AuditLog[];
 }> {
-  // TODO: Implement when auditLog model is added to Prisma schema
+  const { startDate, endDate, userId } = options;
+
+  // Build where clause
+  const where: any = {};
+  if (userId) where.userId = userId;
+  if (startDate || endDate) {
+    where.timestamp = {};
+    if (startDate) where.timestamp.gte = startDate;
+    if (endDate) where.timestamp.lte = endDate;
+  }
+
+  // Get total count
+  const totalLogs = await prisma.auditLog.count({ where });
+
+  // Get logs by level
+  const logsByLevel = await prisma.auditLog.groupBy({
+    by: ['auditLevel'],
+    where,
+    _count: { auditLevel: true },
+  });
+
+  // Get logs by action
+  const logsByAction = await prisma.auditLog.groupBy({
+    by: ['action'],
+    where,
+    _count: { action: true },
+  });
+
+  // Get logs by user
+  const logsByUser = await prisma.auditLog.groupBy({
+    by: ['userId'],
+    where,
+    _count: { userId: true },
+  });
+
+  // Get recent activity
+  const recentActivity = await prisma.auditLog.findMany({
+    where,
+    orderBy: { timestamp: 'desc' },
+    take: 10,
+    include: {
+      user: {
+        select: {
+          email: true,
+          name: true,
+        },
+      },
+    },
+  });
+
   return {
-    totalLogs: 0,
-    logsByLevel: {},
-    logsByAction: {},
-    logsByUser: {},
-    recentActivity: [],
+    totalLogs,
+    logsByLevel: Object.fromEntries(
+      logsByLevel.map(item => [item.auditLevel, item._count.auditLevel])
+    ),
+    logsByAction: Object.fromEntries(
+      logsByAction.map(item => [item.action, item._count.action])
+    ),
+    logsByUser: Object.fromEntries(
+      logsByUser.map(item => [item.userId, item._count.userId])
+    ),
+    recentActivity: recentActivity.map(log => ({
+      ...log,
+      oldData: log.oldData ? JSON.parse(log.oldData) : null,
+      newData: log.newData ? JSON.parse(log.newData) : null,
+      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+    })),
   };
 }
 

@@ -20,21 +20,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
     const search = searchParams.get('search') || undefined;
-    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-    const status = searchParams.get('status') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
-    const restaurantId = searchParams.get('restaurantId') ? parseInt(searchParams.get('restaurantId')!) : undefined;
+    const provider = searchParams.get('provider') || undefined;
 
     // Build filters
     const filters: any = {};
-    if (status) filters.status = status;
-    if (rating) filters.rating = rating;
-    if (restaurantId) filters.restaurant_id = restaurantId;
+    if (provider) filters.provider = provider;
 
-    // Get paginated data with restaurant information
+    // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
-      prisma.review,
+      prisma.user,
       {
         page,
         pageSize,
@@ -42,29 +38,19 @@ export async function GET(request: NextRequest) {
         filters,
         sortBy,
         sortOrder,
-      },
-      {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-          },
-        },
       }
     );
 
     // Log the action
-    await logAdminAction(adminUser, 'review_list_view', 'review', {
+    await logAdminAction(adminUser, 'user_list_view', 'user', {
       metadata: { page, pageSize, search, filters },
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Review list error:', error);
+    console.error('[ADMIN] User list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
+      { error: 'Failed to fetch users' },
       { status: 500 }
     );
   }
@@ -82,32 +68,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate data
-    const validatedData = validationUtils.validateReview(body);
+    const validatedData = validationUtils.validateUser(body);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Create review
-    const review = await AdminDatabaseService.createRecord(
-      prisma.review,
+    // Create user
+    const user = await AdminDatabaseService.createRecord(
+      prisma.user,
       sanitizedData,
       adminUser,
-      'review'
+      'user'
     );
 
-    return NextResponse.json({ data: review }, { status: 201 });
+    return NextResponse.json({ data: user }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] Review create error:', error);
+    console.error('[ADMIN] User create error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to create review' },
+      { error: 'Failed to create user' },
       { status: 500 }
     );
   }
@@ -126,37 +112,37 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
     // Validate data
-    const validatedData = validationUtils.validateReview(data);
+    const validatedData = validationUtils.validateUser(data);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
-    // Update review
-    const review = await AdminDatabaseService.updateRecord(
-      prisma.review,
+    // Update user
+    const user = await AdminDatabaseService.updateRecord(
+      prisma.user,
       id,
       sanitizedData,
       adminUser,
-      'review'
+      'user'
     );
 
-    return NextResponse.json({ data: review });
+    return NextResponse.json({ data: user });
   } catch (error) {
-    console.error('[ADMIN] Review update error:', error);
+    console.error('[ADMIN] User update error:', error);
     
-    if ((error as any).name === 'ZodError') {
+    if (error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Failed to update review' },
+      { error: 'Failed to update user' },
       { status: 500 }
     );
   }
@@ -170,28 +156,36 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get review ID from query params
+    // Get user ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Delete review (soft delete)
+    // Prevent self-deletion
+    if (id === adminUser.id) {
+      return NextResponse.json(
+        { error: 'Cannot delete your own account' },
+        { status: 400 }
+      );
+    }
+
+    // Delete user (soft delete)
     await AdminDatabaseService.deleteRecord(
-      prisma.review,
+      prisma.user,
       id,
       adminUser,
-      'review',
+      'user',
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Review deleted successfully' });
+    return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] Review delete error:', error);
+    console.error('[ADMIN] User delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete review' },
+      { error: 'Failed to delete user' },
       { status: 500 }
     );
   }
