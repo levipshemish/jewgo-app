@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { cn } from '@/lib/utils/classNames';
-import { Filters } from '@/lib/filters/schema';
+import { Filters, hasActiveFilters as hasAnyFilters, getFilterCount as countActiveFilters } from '@/lib/filters/schema';
 
 interface AdvancedFiltersProps {
   activeFilters: Filters;
@@ -59,9 +59,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     fetchFilterOptions();
   }, []);
 
-  const hasActiveFilters = Object.values(activeFilters).some(filter => 
-    filter !== undefined && filter !== false && filter !== '' && filter !== null
-  );
+  const hasActive = hasAnyFilters(activeFilters);
 
   // Normalize kosher category for display
   const normalizeKosherCategory = (category: string) => {
@@ -150,7 +148,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
         </div>
         <div className="flex items-center space-x-2">
-          {hasActiveFilters && (
+          {hasActive && (
             <button
               type="button"
               onClick={onClearAll}
@@ -176,6 +174,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               type="button"
               onClick={() => onToggleFilter('openNow')}
               disabled={locationLoading}
+              aria-pressed={!!activeFilters.openNow}
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-2",
                 "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
@@ -189,9 +188,16 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onToggleFilter('nearMe')}
+              onClick={() => {
+                // If disabling near me, clear distance filter
+                if (activeFilters.nearMe) {
+                  onFilterChange('maxDistanceMi', undefined as any);
+                }
+                onToggleFilter('nearMe');
+              }}
               disabled={!userLocation || locationLoading}
               title={!userLocation ? 'Enable location to use this filter' : ''}
+              aria-pressed={!!activeFilters.nearMe}
               className={cn(
                 "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-2",
                 "hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-jewgo-primary/20",
@@ -211,7 +217,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         </div>
 
         {/* Distance Slider */}
-        {userLocation ? (
+        {userLocation && activeFilters.nearMe ? (
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
               <svg className="w-4 h-4 mr-2 text-jewgo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,13 +409,11 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         )}
 
         {/* Active Filters Summary */}
-        {hasActiveFilters && (
+        {hasActive && (
           <div className="pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">
-                {Object.values(activeFilters).filter(f => 
-                  f !== undefined && f !== false && f !== '' && f !== null
-                ).length} active filter(s)
+                {countActiveFilters(activeFilters)} active filter(s)
               </span>
               <button
                 type="button"
