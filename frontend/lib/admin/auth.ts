@@ -1,98 +1,18 @@
 import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
-import { PrismaClient } from '@prisma/client';
+import { transformSupabaseUser } from '@/lib/utils/auth-utils';
+import { AdminUser, AdminRole, ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
 import { prisma } from '@/lib/db/prisma';
 
-// Admin permission levels
-export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
-
-export interface AdminUser extends TransformedUser {
-  isSuperAdmin: boolean;
-  adminRole?: AdminRole;
-  permissions: string[];
-}
-
-// Permission definitions
-export const ADMIN_PERMISSIONS = {
-  // Restaurant management
-  RESTAURANT_VIEW: 'restaurant:view',
-  RESTAURANT_EDIT: 'restaurant:edit',
-  RESTAURANT_DELETE: 'restaurant:delete',
-  RESTAURANT_APPROVE: 'restaurant:approve',
-  
-  // Review management
-  REVIEW_VIEW: 'review:view',
-  REVIEW_MODERATE: 'review:moderate',
-  REVIEW_DELETE: 'review:delete',
-  
-  // User management
-  USER_VIEW: 'user:view',
-  USER_EDIT: 'user:edit',
-  USER_DELETE: 'user:delete',
-  
-  // Image management
-  IMAGE_VIEW: 'image:view',
-  IMAGE_EDIT: 'image:edit',
-  IMAGE_DELETE: 'image:delete',
-  
-  // System administration
-  SYSTEM_SETTINGS: 'system:settings',
-  AUDIT_VIEW: 'audit:view',
-  AUDIT_DELETE: 'audit:delete',
-  
-  // Bulk operations
-  BULK_OPERATIONS: 'bulk:operations',
-  
-  // Data export
-  DATA_EXPORT: 'data:export',
-} as const;
-
-// Role-based permission mapping
-const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
-  moderator: [
-    ADMIN_PERMISSIONS.RESTAURANT_VIEW,
-    ADMIN_PERMISSIONS.RESTAURANT_APPROVE,
-    ADMIN_PERMISSIONS.REVIEW_VIEW,
-    ADMIN_PERMISSIONS.REVIEW_MODERATE,
-  ],
-  data_admin: [
-    ADMIN_PERMISSIONS.RESTAURANT_VIEW,
-    ADMIN_PERMISSIONS.RESTAURANT_EDIT,
-    ADMIN_PERMISSIONS.RESTAURANT_APPROVE,
-    ADMIN_PERMISSIONS.REVIEW_VIEW,
-    ADMIN_PERMISSIONS.REVIEW_MODERATE,
-    ADMIN_PERMISSIONS.USER_VIEW,
-    ADMIN_PERMISSIONS.BULK_OPERATIONS,
-    ADMIN_PERMISSIONS.DATA_EXPORT,
-  ],
-  system_admin: [
-    ADMIN_PERMISSIONS.RESTAURANT_VIEW,
-    ADMIN_PERMISSIONS.RESTAURANT_EDIT,
-    ADMIN_PERMISSIONS.RESTAURANT_DELETE,
-    ADMIN_PERMISSIONS.RESTAURANT_APPROVE,
-    ADMIN_PERMISSIONS.REVIEW_VIEW,
-    ADMIN_PERMISSIONS.REVIEW_MODERATE,
-    ADMIN_PERMISSIONS.REVIEW_DELETE,
-    ADMIN_PERMISSIONS.USER_VIEW,
-    ADMIN_PERMISSIONS.USER_EDIT,
-    ADMIN_PERMISSIONS.SYSTEM_SETTINGS,
-    ADMIN_PERMISSIONS.AUDIT_VIEW,
-    ADMIN_PERMISSIONS.BULK_OPERATIONS,
-    ADMIN_PERMISSIONS.DATA_EXPORT,
-  ],
-  super_admin: Object.values(ADMIN_PERMISSIONS),
-};
-
 /**
- * Get user's admin role from database
+ * Get user's admin role from PostgreSQL database using Prisma
  */
 async function getUserAdminRole(userId: string): Promise<AdminRole> {
   try {
     // First check if user is super admin in users table
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { issuperadmin: true },
+      select: { issuperadmin: true }
     });
 
     if (user?.issuperadmin) {
@@ -100,18 +20,50 @@ async function getUserAdminRole(userId: string): Promise<AdminRole> {
     }
 
     // Then check admin_roles table for active role
-    const adminRole = await prisma.$queryRaw<[{ role: string }]>`
-      SELECT get_user_admin_role(${userId}::VARCHAR(50)) as role
+    const roles = await prisma.$queryRaw<any[]>`
+      SELECT role FROM admin_roles 
+      WHERE user_id = ${userId} 
+      AND is_active = true 
+      AND (expires_at IS NULL OR expires_at > NOW())
     `;
 
-    if (adminRole && adminRole[0]?.role) {
-      return adminRole[0].role as AdminRole;
+    if (roles && roles.length > 0) {
+      const rolePriority: Record<AdminRole, number> = {
+        super_admin: 4,
+        system_admin: 3,
+        data_admin: 2,
+        moderator: 1,
+      };
+      
+      const top = roles
+        .map((r: any) => r.role as AdminRole)
+        .filter((r: any): r is AdminRole => ['moderator','data_admin','system_admin','super_admin'].includes(r))
+        .sort((a: AdminRole, b: AdminRole) => rolePriority[b] - rolePriority[a])[0];
+      
+      if (top) { return top; }
     }
 
+    // Fallback to DB function if present (for backward compatibility)
+    try {
+      const functionResult = await prisma.$queryRaw<any[]>`
+        SELECT get_user_admin_role(${userId}) as role
+      `;
+      
+      if (functionResult && functionResult[0]?.role) {
+        return functionResult[0].role as AdminRole;
+      }
+    } catch (e) {
+      // Function doesn't exist, continue to default
+    }
     // Default to moderator if no role found
     return 'moderator';
-  } catch (error) {
+  } catch (error: any) {
     console.error('[ADMIN] Error getting user admin role:', error);
+    
+    // Fail-closed option for staging if desired
+    if (process.env.ADMIN_RBAC_FAIL_CLOSED === 'true') {
+      throw new Error('Admin RBAC lookup failed; access denied');
+    }
     return 'moderator';
   }
 }
@@ -160,8 +112,29 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     }
 
     // Get admin role from database (source of truth)
-    const adminRole = await getUserAdminRole(user.id);
-    
+    let adminRole = await getUserAdminRole(user.id);
+
+    // Development overrides to ease local testing
+    // These overrides only apply in NODE_ENV=development and are ignored in production
+    if (process.env.NODE_ENV === 'development') {
+      // ADMIN_DEFAULT_ROLE: Override the database role for testing specific permission levels
+      const defaultRole = (process.env.ADMIN_DEFAULT_ROLE || '').trim();
+      if (defaultRole && ['moderator','data_admin','system_admin','super_admin'].includes(defaultRole)) {
+        adminRole = defaultRole as AdminRole;
+      }
+      
+      // ADMIN_BYPASS_PERMS: Give full super admin access for testing all features
+      if (process.env.ADMIN_BYPASS_PERMS === 'true') {
+        // Full super admin in development when explicitly enabled
+        return {
+          ...transformedUser,
+          isSuperAdmin: true,
+          adminRole: 'super_admin',
+          permissions: Object.values(ADMIN_PERMISSIONS),
+        };
+      }
+    }
+
     // Check if user is super admin
     const isSuperAdmin = adminRole === 'super_admin';
 
@@ -183,24 +156,17 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
 }
 
 /**
- * Check if user has specific permission
- */
-export function hasPermission(user: AdminUser, permission: string): boolean {
-  return user.permissions.includes(permission) || user.isSuperAdmin;
-}
-
-/**
  * Check if user has any of the specified permissions
  */
 export function hasAnyPermission(user: AdminUser, permissions: string[]): boolean {
-  return permissions.some(permission => hasPermission(user, permission)) || user.isSuperAdmin;
+  return permissions.some(permission => user.permissions.includes(permission)) || user.isSuperAdmin;
 }
 
 /**
  * Check if user has all of the specified permissions
  */
 export function hasAllPermissions(user: AdminUser, permissions: string[]): boolean {
-  return permissions.every(permission => hasPermission(user, permission)) || user.isSuperAdmin;
+  return permissions.every(permission => user.permissions.includes(permission)) || user.isSuperAdmin;
 }
 
 /**

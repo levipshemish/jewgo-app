@@ -93,6 +93,7 @@ cd frontend && npm test
 - Repository & Agent Guide (standards, workflows, scripts): `AGENTS.md`
 - Security improvements: `docs/security/SECURITY_IMPROVEMENTS_SUMMARY.md`
 - Deployment guide: `docs/deployment/SECURITY_DEPLOYMENT_GUIDE.md`
+- Admin development: `docs/development/ADMIN_ROLE_DEVELOPMENT.md` (role testing & permissions)
 
 ## Contributing
 - Conventional Commits required; follow Python (Black/Flake8/isort/mypy) and TypeScript (ESLint/Prettier) standards.
