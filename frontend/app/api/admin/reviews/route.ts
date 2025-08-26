@@ -6,6 +6,7 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,11 +105,20 @@ export async function POST(request: NextRequest) {
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
+    // Prepare required fields
+    const now = new Date();
+    const toCreate = {
+      id: uuidv4(),
+      ...sanitizedData,
+      created_at: sanitizedData.created_at ?? now,
+      updated_at: sanitizedData.updated_at ?? now,
+    };
+
     // Create review
     const review = await AdminDatabaseService.createRecord(
       prisma.review,
       'review',
-      sanitizedData,
+      toCreate,
       adminUser,
       'review'
     );
@@ -219,14 +229,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
     }
 
-    // Delete review (soft delete)
+    // Delete review (hard delete)
     await AdminDatabaseService.deleteRecord(
       prisma.review,
       'review',
       id,
       adminUser,
       'review',
-      true // soft delete
+      false // hard delete
     );
 
     return NextResponse.json({ message: 'Review deleted successfully' });

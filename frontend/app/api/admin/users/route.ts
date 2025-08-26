@@ -6,6 +6,7 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { v4 as uuidv4 } from 'uuid';
 import { mapUsersToApiResponse, mapApiRequestToUser } from '@/lib/admin/dto/user';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
@@ -105,6 +106,14 @@ export async function POST(request: NextRequest) {
 
     // Map API request to Prisma format
     const userData = mapApiRequestToUser(sanitizedData);
+
+    // Ensure required id and timestamps
+    const now = new Date();
+    if (!userData.id) {
+      userData.id = uuidv4();
+    }
+    userData.createdat = userData.createdat || now;
+    userData.updatedat = userData.updatedat || now;
 
     // Ensure email is unique
     const existing = await prisma.user.findUnique({ where: { email: userData.email } as any });

@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       review: prisma.review,
       user: prisma.user,
       restaurantImage: prisma.restaurantImage,
+      marketplace: prisma.marketplace,
     };
 
     const model = modelMap[validatedData.entityType];
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     const result = await AdminDatabaseService.bulkOperation({
       operation: validatedData.operation,
       delegate: model,
-      modelKey: validatedData.entityType as 'restaurant' | 'review' | 'user' | 'restaurantImage',
+      modelKey: validatedData.entityType as 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
       data: validatedData.data,
       user: adminUser,
       entityType: validatedData.entityType,

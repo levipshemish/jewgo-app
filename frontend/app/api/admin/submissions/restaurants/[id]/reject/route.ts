@@ -4,7 +4,7 @@ import { logAdminAction } from '@/lib/admin/audit';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate admin user
@@ -18,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
     const restaurantId = id;
     const body = await request.json();
     const { reason } = body;

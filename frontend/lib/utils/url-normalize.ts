@@ -44,7 +44,7 @@ export function normalizeUrl(input: string, opts: NormalizeOptions = {}): string
   }
 
   // Restrict protocols
-  if (!o.allowedProtocols.includes(u.protocol)) {
+  if (!o.allowedProtocols.includes(u.protocol as "http:" | "https:")) {
     throw new Error(`Unsupported protocol: ${u.protocol}`);
   }
 

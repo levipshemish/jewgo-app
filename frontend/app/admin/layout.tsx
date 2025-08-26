@@ -24,11 +24,10 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   let signedToken = '';
   try {
     const headersList = await headers();
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://jewgo-app.vercel.app';
-    const csrfRes = await fetch(`${baseUrl}/api/admin/csrf`, { 
+    const csrfRes = await fetch('/api/admin/csrf', { 
       cache: 'no-store',
       headers: {
-        'Cookie': headersList.get('cookie') || '',
+        Cookie: headersList.get('cookie') || '',
       }
     });
     

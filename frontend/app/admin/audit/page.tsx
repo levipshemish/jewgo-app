@@ -104,34 +104,20 @@ export default function AuditLogPage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams();
-      if (searchParams.get('userId')) {
-        params.set('userId', searchParams.get('userId')!);
-      }
-      if (searchParams.get('action')) {
-        params.set('action', searchParams.get('action')!);
-      }
-      if (searchParams.get('entityType')) {
-        params.set('entityType', searchParams.get('entityType')!);
-      }
-      if (searchParams.get('startDate')) {
-        params.set('startDate', searchParams.get('startDate')!);
-      }
-      if (searchParams.get('endDate')) {
-        params.set('endDate', searchParams.get('endDate')!);
-      }
-      if (searchParams.get('sortBy')) {
-        params.set('sortBy', searchParams.get('sortBy')!);
-      }
-      if (searchParams.get('sortOrder')) {
-        params.set('sortOrder', searchParams.get('sortOrder')!);
-      }
+      const payload: any = { format: 'csv' };
+      if (searchParams.get('userId')) payload.userId = searchParams.get('userId');
+      if (searchParams.get('action')) payload.action = searchParams.get('action');
+      if (searchParams.get('entityType')) payload.entityType = searchParams.get('entityType');
+      if (searchParams.get('startDate')) payload.startDate = searchParams.get('startDate');
+      if (searchParams.get('endDate')) payload.endDate = searchParams.get('endDate');
 
-      const response = await fetch(`/api/admin/audit/export?${params.toString()}`, {
-        method: 'GET',
+      const response = await fetch('/api/admin/audit', {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {

@@ -8,6 +8,8 @@ interface DayHours {
   open: string;
   close: string;
   isClosed: boolean;
+  isShabbatRelative?: boolean;
+  shabbatOffset?: number; // minutes after shabbat ends
 }
 
 interface CustomHoursSelectorProps {
@@ -34,6 +36,17 @@ const TIME_OPTIONS = [
   '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM',
   '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM',
   '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM',
+];
+
+const SHABBAT_OFFSET_OPTIONS = [
+  { value: 0, label: 'Immediately after Shabbat' },
+  { value: 15, label: '15 minutes after Shabbat' },
+  { value: 30, label: '30 minutes after Shabbat' },
+  { value: 45, label: '45 minutes after Shabbat' },
+  { value: 60, label: '1 hour after Shabbat' },
+  { value: 90, label: '1.5 hours after Shabbat' },
+  { value: 120, label: '2 hours after Shabbat' },
+  { value: 180, label: '3 hours after Shabbat' },
 ];
 
 export default function CustomHoursSelector({ value, onChange, error, testMode = false }: CustomHoursSelectorProps) {
@@ -83,7 +96,9 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
         day: day.label,
         open: '10:00 AM',
         close: '10:00 PM',
-        isClosed: day.key === 'saturday' // Default to closed on Saturday
+        isClosed: day.key === 'saturday', // Default to closed on Saturday
+        isShabbatRelative: day.key === 'saturday',
+        shabbatOffset: day.key === 'saturday' ? 30 : undefined // Default to 30 minutes after Shabbat
       }));
       const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
       const newFormatted = formatHoursString(defaultHours);
@@ -205,6 +220,14 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
       if (day.isClosed) {
         return `${day.day}: Closed`;
       }
+      
+      // Special formatting for Saturday with Shabbat relative timing
+      if (day.day === 'Saturday' && day.isShabbatRelative && day.shabbatOffset !== undefined) {
+        const offsetLabel = SHABBAT_OFFSET_OPTIONS.find(opt => opt.value === day.shabbatOffset)?.label || 
+                           `${day.shabbatOffset} minutes after Shabbat`;
+        return `${day.day}: ${offsetLabel} – ${day.close}`;
+      }
+      
       return `${day.day}: ${day.open} – ${day.close}`;
     }).join('\n');
   };
@@ -263,6 +286,13 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
     }
   };
 
+  const handleShabbatOffsetChange = (index: number, offset: number) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Shabbat offset change:', { index, offset });
+    }
+    updateDayHours(index, { shabbatOffset: offset });
+  };
+
   // Test mode wrapper
   if (testMode) {
     return (
@@ -314,41 +344,76 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
                   <span className="text-sm text-gray-600">Closed</span>
                 </label>
 
-                {/* Time Selectors */}
-                {!day.isClosed && (
-                  <>
+                            {/* Time Selectors */}
+            {!day.isClosed && (
+              <>
+                {day.day === 'Saturday' && day.isShabbatRelative ? (
+                  // Special Saturday interface with Shabbat relative timing
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
                     <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">Open</span>
                       <select
-                        value={day.open}
-                        onChange={(e) => handleSelectChange(index, 'open', e.target.value)}
-                        onFocus={() => handleSelectFocus(index, 'open')}
-                        onBlur={() => handleSelectBlur(index, 'open')}
-                        onClick={() => handleSelectClick(index, 'open')}
+                        value={day.shabbatOffset || 30}
+                        onChange={(e) => handleShabbatOffsetChange(index, parseInt(e.target.value))}
                         className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
                         style={{ zIndex: 9999, position: 'relative' }}
                       >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                      <span className="text-gray-500">to</span>
-                      <select
-                        value={day.close}
-                        onChange={(e) => handleSelectChange(index, 'close', e.target.value)}
-                        onFocus={() => handleSelectFocus(index, 'close')}
-                        onBlur={() => handleSelectBlur(index, 'close')}
-                        onClick={() => handleSelectClick(index, 'close')}
-                        className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
-                        style={{ zIndex: 9999, position: 'relative' }}
-                      >
-                        {TIME_OPTIONS.map(time => (
-                          <option key={time} value={time}>{time}</option>
+                        {SHABBAT_OFFSET_OPTIONS.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
                     </div>
-                  </>
+                    <span className="text-gray-500">to</span>
+                    <select
+                      value={day.close}
+                      onChange={(e) => handleSelectChange(index, 'close', e.target.value)}
+                      onFocus={() => handleSelectFocus(index, 'close')}
+                      onBlur={() => handleSelectBlur(index, 'close')}
+                      onClick={() => handleSelectClick(index, 'close')}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                      style={{ zIndex: 9999, position: 'relative' }}
+                    >
+                      {TIME_OPTIONS.map(time => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  // Regular time selectors for other days
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    <select
+                      value={day.open}
+                      onChange={(e) => handleSelectChange(index, 'open', e.target.value)}
+                      onFocus={() => handleSelectFocus(index, 'open')}
+                      onBlur={() => handleSelectBlur(index, 'open')}
+                      onClick={() => handleSelectClick(index, 'open')}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                      style={{ zIndex: 9999, position: 'relative' }}
+                    >
+                      {TIME_OPTIONS.map(time => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-500">to</span>
+                    <select
+                      value={day.close}
+                      onChange={(e) => handleSelectChange(index, 'close', e.target.value)}
+                      onFocus={() => handleSelectFocus(index, 'close')}
+                      onBlur={() => handleSelectBlur(index, 'close')}
+                      onClick={() => handleSelectClick(index, 'close')}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                      style={{ zIndex: 9999, position: 'relative' }}
+                    >
+                      {TIME_OPTIONS.map(time => (
+                        <option key={time} value={time}>{time}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
+              </>
+            )}
 
                 {/* Display Hours */}
                 {day.isClosed && (

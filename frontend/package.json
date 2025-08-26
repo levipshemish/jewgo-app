@@ -88,7 +88,13 @@
     "cicd:status": "node scripts/cicd-integration.js --status",
     "cicd:cleanup": "node scripts/cicd-integration.js --cleanup",
     "cicd:deploy:staging": "node scripts/cicd-integration.js --deploy --env=staging",
-    "cicd:deploy:production": "node scripts/cicd-integration.js --deploy --env=production"
+    "cicd:deploy:production": "node scripts/cicd-integration.js --deploy --env=production",
+    "admin:verify": "tsx scripts/setup-admin-production.ts verify",
+    "admin:list": "tsx scripts/setup-admin-production.ts list",
+    "admin:create-super-admin": "tsx scripts/setup-admin-production.ts create-super-admin",
+    "admin:assign-role": "tsx scripts/setup-admin-production.ts assign-role",
+    "admin:get-role": "tsx scripts/setup-admin-production.ts get-role",
+    "admin:create-tables": "tsx scripts/create-admin-tables.ts"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",

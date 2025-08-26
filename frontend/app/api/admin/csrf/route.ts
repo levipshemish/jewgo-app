@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import { generateCSRFToken } from '@/lib/admin/auth';
+import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Generate CSRF token
-    const token = generateCSRFToken();
+    // Generate signed CSRF token bound to the admin user's ID
+    const token = generateSignedCSRFToken(adminUser.id);
 
     // Return the token
     return NextResponse.json({ token });

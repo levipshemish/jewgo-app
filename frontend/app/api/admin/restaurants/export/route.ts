@@ -104,3 +104,61 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_VIEW)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const search = body.search as string | undefined;
+    const status = body.status as string | undefined;
+    const city = body.city as string | undefined;
+    const state = body.state as string | undefined;
+    const sortBy = (body.sortBy as string) || 'created_at';
+    const sortOrder = (body.sortOrder as 'asc' | 'desc') || 'desc';
+
+    const filters: any = {};
+    if (status) { filters.status = status; }
+    if (city) { filters.city = city; }
+    if (state) { filters.state = state; }
+
+    const exportFields = [
+      'id','name','address','city','state','phone_number','kosher_category','certifying_agency','status','submission_status','rating','review_count','created_at','updated_at'
+    ];
+
+    const result = await AdminDatabaseService.exportToCSV(
+      prisma.restaurant,
+      'restaurant',
+      { search, filters, sortBy, sortOrder },
+      exportFields,
+      10000
+    );
+
+    await logAdminAction(adminUser, 'restaurant_export', 'restaurant', {
+      metadata: { search, filters, totalCount: result.totalCount, exportedCount: result.exportedCount, limited: result.limited },
+    });
+
+    return new NextResponse(result.csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="restaurants_export_${new Date().toISOString().split('T')[0]}.csv"`,
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    console.error('[ADMIN] Restaurant export (POST) error:', error);
+    return NextResponse.json({ error: 'Failed to export restaurants' }, { status: 500 });
+  }
+}

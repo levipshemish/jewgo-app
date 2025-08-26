@@ -9,7 +9,6 @@ export const config = {
   matcher: [
     // Admin routes only
     '/admin/:path*',
-    '/api/admin/:path*',
   ]
 };
 
@@ -39,6 +38,11 @@ export async function middleware(request: NextRequest) {
     // Only process protected paths. In Next.js runtime, matcher limits execution,
     // but unit tests call this function directly for any path.
     const path = request.nextUrl.pathname;
+    
+    // Special-case API: return JSON Unauthorized instead of redirecting
+    if (path.startsWith('/api/admin')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
+    }
     if (!isProtectedPath(path)) {
       return NextResponse.next();
     }
@@ -166,10 +170,9 @@ function isProtectedPath(pathname: string): boolean {
     return false;
   }
   
-  // Only protect admin routes
+  // Only protect admin UI routes
   const protectedPrefixes = [
     '/admin/',
-    '/api/admin/'
   ];
   const exactMatches = ['/admin'];
   return protectedPrefixes.some(p => pathname.startsWith(p)) || exactMatches.includes(pathname);

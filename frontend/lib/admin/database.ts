@@ -59,6 +59,12 @@ const ENTITY_CONFIG = {
     defaultSortBy: 'created_at',
     searchFields: ['image_url', 'cloudinary_public_id'],
   },
+  marketplace: {
+    softDelete: false,
+    softDeleteField: 'deleted_at',
+    defaultSortBy: 'created_at',
+    searchFields: ['name', 'title', 'vendor_name', 'location', 'category', 'status'],
+  },
 } as const;
 
 // Generic CRUD operations
@@ -66,21 +72,21 @@ export class AdminDatabaseService {
   /**
    * Get search fields for a model
    */
-  static getSearchFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string[] {
+  static getSearchFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace'): string[] {
     return [...ENTITY_CONFIG[modelKey].searchFields];
   }
 
   /**
    * Get default sort field for a model
    */
-  static getDefaultSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string {
+  static getDefaultSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace'): string {
     return ENTITY_CONFIG[modelKey].defaultSortBy;
   }
 
   /**
    * Get valid sort fields for a model
    */
-  static getValidSortFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string[] {
+  static getValidSortFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace'): string[] {
     const validFields: Record<string, string[]> = {
       restaurant: [
         'id', 'name', 'address', 'city', 'state', 'created_at', 'updated_at', 
@@ -100,6 +106,9 @@ export class AdminDatabaseService {
         'id', 'image_order', 'created_at', 'updated_at', 'restaurant_id',
         'image_url', 'cloudinary_public_id'
       ],
+      marketplace: [
+        'id','created_at','updated_at','name','title','price','category','location','vendor_name','city','state','zip_code','rating','review_count','status','priority'
+      ],
     };
     return validFields[modelKey] || [];
   }
@@ -107,7 +116,7 @@ export class AdminDatabaseService {
   /**
    * Validate sort field for a model
    */
-  static validateSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage', sortBy: string): boolean {
+  static validateSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace', sortBy: string): boolean {
     const validFields = this.getValidSortFields(modelKey);
     return validFields.includes(sortBy);
   }
@@ -115,14 +124,14 @@ export class AdminDatabaseService {
   /**
    * Check if model supports soft delete
    */
-  static supportsSoftDelete(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): boolean {
+  static supportsSoftDelete(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace'): boolean {
     return ENTITY_CONFIG[modelKey].softDelete;
   }
 
   /**
    * Get soft delete field for a model
    */
-  static getSoftDeleteField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string | null {
+  static getSoftDeleteField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace'): string | null {
     const config = ENTITY_CONFIG[modelKey];
     return config.softDelete ? config.softDeleteField : null;
   }
@@ -132,7 +141,7 @@ export class AdminDatabaseService {
    */
   static async getPaginatedData<T>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
@@ -232,7 +241,7 @@ export class AdminDatabaseService {
    */
   static async createRecord<T>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
     data: any,
     user: AdminUser,
     entityType: string
@@ -260,7 +269,7 @@ export class AdminDatabaseService {
    */
   static async updateRecord<T>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
     id: string | number,
     data: any,
     user: AdminUser,
@@ -296,7 +305,7 @@ export class AdminDatabaseService {
    */
   static async deleteRecord<T>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
     id: string | number,
     user: AdminUser,
     entityType: string,
@@ -351,7 +360,7 @@ export class AdminDatabaseService {
   static async bulkOperation<T>(params: {
     operation: 'create' | 'update' | 'delete';
     delegate: any;
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage';
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace';
     data: any[];
     user: AdminUser;
     entityType: string;
@@ -449,7 +458,7 @@ export class AdminDatabaseService {
    */
   static async exportToCSV<T extends Record<string, any>>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
     options: SearchOptions = {},
     fields: string[] = [],
     maxRows: number = 10000

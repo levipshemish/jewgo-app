@@ -92,19 +92,19 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
           title: 'Images', 
           href: '/admin/database/images', 
           icon: Image,
-          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+          permission: ADMIN_PERMISSIONS.IMAGE_VIEW
         },
         { 
           title: 'Synagogues', 
           href: '/admin/database/synagogues', 
           icon: MapPin,
-          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+          permission: ADMIN_PERMISSIONS.SYNAGOGUE_VIEW
         },
         { 
           title: 'Kosher Places', 
           href: '/admin/database/kosher-places', 
           icon: Star,
-          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+          permission: ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW
         }
       ]
     },

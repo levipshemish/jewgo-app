@@ -6,32 +6,70 @@ import { AdminUser, AdminRole, ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './typ
 export type { AdminUser, AdminRole };
 export { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
 export { hasPermission } from './types';
-import { prisma } from '@/lib/db/prisma';
 
 /**
- * Get user's admin role from PostgreSQL database using Prisma
+ * Get user's admin role from Supabase using the get_user_admin_role function
  */
 async function getUserAdminRole(userId: string): Promise<AdminRole> {
   try {
-    // First check if user is super admin in users table
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { issuperadmin: true }
+    const supabase = await createServerSupabaseClient();
+    
+    // Use the Supabase function to get admin role
+    const { data, error } = await supabase.rpc('get_user_admin_role', {
+      user_id_param: userId
     });
+    
+    if (error) {
+      console.error('[ADMIN] Error calling get_user_admin_role:', error);
+      // Fallback to direct query if function doesn't exist
+      return await getUserAdminRoleFallback(userId);
+    }
+    
+    if (data && typeof data === 'string') {
+      return data as AdminRole;
+    }
+    
+    // Fallback to direct query
+    return await getUserAdminRoleFallback(userId);
+  } catch (error: any) {
+    console.error('[ADMIN] Error getting user admin role:', error);
+    
+    // Fail-closed option for staging if desired
+    if (process.env.ADMIN_RBAC_FAIL_CLOSED === 'true') {
+      throw new Error('Admin RBAC lookup failed; access denied');
+    }
+    return 'moderator';
+  }
+}
 
-    if (user?.issuperadmin) {
+/**
+ * Fallback method to get admin role directly from Supabase tables
+ */
+async function getUserAdminRoleFallback(userId: string): Promise<AdminRole> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // First check if user is super admin in users table
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('issuperadmin')
+      .eq('id', userId)
+      .single();
+    
+    if (!userError && user?.issuperadmin) {
       return 'super_admin';
     }
-
+    
     // Then check admin_roles table for active role
-    const roles = await prisma.$queryRaw<any[]>`
-      SELECT role FROM admin_roles 
-      WHERE user_id = ${userId} 
-      AND is_active = true 
-      AND (expires_at IS NULL OR expires_at > NOW())
-    `;
-
-    if (roles && roles.length > 0) {
+    const { data: roles, error: rolesError } = await supabase
+      .from('admin_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .is('expires_at', null)
+      .or('expires_at.gt.now()');
+    
+    if (!rolesError && roles && roles.length > 0) {
       const rolePriority: Record<AdminRole, number> = {
         super_admin: 4,
         system_admin: 3,
@@ -44,30 +82,15 @@ async function getUserAdminRole(userId: string): Promise<AdminRole> {
         .filter((r: any): r is AdminRole => ['moderator','data_admin','system_admin','super_admin'].includes(r))
         .sort((a: AdminRole, b: AdminRole) => rolePriority[b] - rolePriority[a])[0];
       
-      if (top) { return top; }
-    }
-
-    // Fallback to DB function if present (for backward compatibility)
-    try {
-      const functionResult = await prisma.$queryRaw<any[]>`
-        SELECT get_user_admin_role(${userId}) as role
-      `;
-      
-      if (functionResult && functionResult[0]?.role) {
-        return functionResult[0].role as AdminRole;
+      if (top) { 
+        return top; 
       }
-    } catch (e) {
-      // Function doesn't exist, continue to default
     }
+    
     // Default to moderator if no role found
     return 'moderator';
   } catch (error: any) {
-    console.error('[ADMIN] Error getting user admin role:', error);
-    
-    // Fail-closed option for staging if desired
-    if (process.env.ADMIN_RBAC_FAIL_CLOSED === 'true') {
-      throw new Error('Admin RBAC lookup failed; access denied');
-    }
+    console.error('[ADMIN] Error in getUserAdminRoleFallback:', error);
     return 'moderator';
   }
 }
@@ -104,6 +127,32 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
+    // Development bypass: If no user is authenticated and we're in development,
+    // create a mock admin user for testing
+    if ((error || !user) && process.env.NODE_ENV === 'development') {
+      console.log('[ADMIN DEV] No authenticated user found, creating mock admin user for development');
+      
+      // Create a mock admin user for development
+      const mockUser: AdminUser = {
+        id: 'dev-admin-user',
+        email: 'dev-admin@jewgo.com',
+        name: 'Development Admin',
+        username: 'dev-admin',
+        provider: 'unknown',
+        avatar_url: null,
+        providerInfo: {
+          name: 'Development',
+          icon: '👤',
+          color: '#6B7280'
+        },
+        isSuperAdmin: true,
+        adminRole: 'super_admin',
+        permissions: Object.values(ADMIN_PERMISSIONS),
+      };
+      
+      return mockUser;
+    }
+    
     if (error || !user) {
       console.error('[ADMIN] Auth error:', error);
       return null;
@@ -115,7 +164,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
       return null;
     }
 
-    // Get admin role from database (source of truth)
+    // Get admin role from Supabase (source of truth)
     let adminRole = await getUserAdminRole(user.id);
 
     // Development overrides to ease local testing
@@ -210,6 +259,32 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
+    // Development bypass: If no user is authenticated and we're in development,
+    // create a mock admin user for testing
+    if ((error || !user) && process.env.NODE_ENV === 'development') {
+      console.log('[ADMIN DEV] No authenticated user found, creating mock admin user for development');
+      
+      // Create a mock admin user for development
+      const mockUser: AdminUser = {
+        id: 'dev-admin-user',
+        email: 'dev-admin@jewgo.com',
+        name: 'Development Admin',
+        username: 'dev-admin',
+        provider: 'unknown',
+        avatar_url: null,
+        providerInfo: {
+          name: 'Development',
+          icon: '👤',
+          color: '#6B7280'
+        },
+        isSuperAdmin: true,
+        adminRole: 'super_admin',
+        permissions: Object.values(ADMIN_PERMISSIONS),
+      };
+      
+      return mockUser;
+    }
+    
     if (error || !user) {
       return null;
     }
@@ -219,7 +294,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       return null;
     }
 
-    // Get admin role from database (source of truth)
+    // Get admin role from Supabase (source of truth)
     const adminRole = await getUserAdminRole(user.id);
     const isSuperAdmin = adminRole === 'super_admin';
 

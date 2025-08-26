@@ -99,3 +99,61 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_VIEW)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const search = body.search as string | undefined;
+    const status = body.status as string | undefined;
+    const rating = body.rating ? parseInt(body.rating) : undefined;
+    const restaurantId = body.restaurantId ? parseInt(body.restaurantId) : undefined;
+    const sortBy = (body.sortBy as string) || 'created_at';
+    const sortOrder = (body.sortOrder as 'asc' | 'desc') || 'desc';
+
+    const filters: any = {};
+    if (status) { filters.status = status; }
+    if (rating) { filters.rating = rating; }
+    if (restaurantId) { filters.restaurant_id = restaurantId; }
+
+    const exportFields = [
+      'id','restaurant_id','user_id','user_name','rating','title','content','status','helpful_count','created_at','updated_at'
+    ];
+
+    const result = await AdminDatabaseService.exportToCSV(
+      prisma.review,
+      'review',
+      { search, filters, sortBy, sortOrder },
+      exportFields,
+      10000
+    );
+
+    await logAdminAction(adminUser, 'review_export', 'review', {
+      metadata: { search, filters, totalCount: result.totalCount, exportedCount: result.exportedCount, limited: result.limited },
+    });
+
+    return new NextResponse(result.csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="reviews_export_${new Date().toISOString().split('T')[0]}.csv"`,
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    console.error('[ADMIN] Review export (POST) error:', error);
+    return NextResponse.json({ error: 'Failed to export reviews' }, { status: 500 });
+  }
+}

@@ -183,14 +183,16 @@ export default function KosherPlaceDatabasePage() {
       }
 
       try {
-        const response = await fetch('/api/admin/kosher-places/bulk', {
+        const response = await fetch('/api/admin/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-csrf-token': window.__CSRF_TOKEN__ || '',
           },
           body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
+            operation: 'delete',
+            entityType: 'marketplace',
+            data: selectedIds.map((id) => ({ id })),
           }),
         });
 

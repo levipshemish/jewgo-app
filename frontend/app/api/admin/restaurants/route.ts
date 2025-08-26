@@ -101,11 +101,20 @@ export async function POST(request: NextRequest) {
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
+    // Ensure required timestamps
+    const now = new Date();
+    const toCreate = {
+      ...sanitizedData,
+      created_at: sanitizedData.created_at ?? now,
+      updated_at: sanitizedData.updated_at ?? now,
+      submission_date: sanitizedData.submission_date ?? now,
+    };
+
     // Create restaurant
     const restaurant = await AdminDatabaseService.createRecord(
       prisma.restaurant,
       'restaurant',
-      sanitizedData,
+      toCreate,
       adminUser,
       'restaurant'
     );
