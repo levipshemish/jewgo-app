@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const { phone, ...restaurantDataWithoutPhone } = restaurantData;
     
     // Submit to backend API
-    const backendResponse = await fetch(`${process.env.BACKEND_URL}/api/v4/restaurants`, {
+    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch from backend API
-    const backendResponse = await fetch(`${process.env.BACKEND_URL}/api/v4/restaurants?${queryParams}`, {
+    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants?${queryParams}`, {
       headers: {
         'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
       },
@@ -209,7 +209,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   try {
     // Fetch existing restaurants
-    const response = await fetch(`${process.env.BACKEND_URL}/api/v4/restaurants?limit=1000`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants?limit=1000`, {
       headers: {
         'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
       },

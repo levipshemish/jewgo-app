@@ -124,7 +124,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const getStepFields = (step: number): (keyof RestaurantFormData)[] => {
     switch (step) {
       case 1:
-        return ['is_owner_submission', 'name', 'address', 'city', 'state', 'zip_code', 'phone', 'business_email', 'website', 'listing_type', 'owner_name', 'owner_email', 'owner_phone'];
+        return ['is_owner_submission', 'name', 'address', 'phone', 'business_email', 'website', 'listing_type', 'owner_name', 'owner_email', 'owner_phone'];
       case 2:
         return ['kosher_category', 'certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel'];
       case 3:
@@ -349,99 +349,26 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   </div>
 
                   {/* Address Fields */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Address *
-                      </label>
-                      <Controller
-                        name="address"
-                        control={control}
-                        render={({ field }) => (
-                          <AddressAutofill
-                            value={field.value}
-                            onChange={field.onChange}
-                            onAddressSelect={handleAddressSelect}
-                            placeholder="Start typing your address..."
-                            error={errors.address?.message}
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          City *
-                        </label>
-                        <Controller
-                          name="city"
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              {...field}
-                              type="text"
-                              className={cn(
-                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                                errors.city ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                              )}
-                              placeholder="City"
-                            />
-                          )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address *
+                    </label>
+                    <Controller
+                      name="address"
+                      control={control}
+                      render={({ field }) => (
+                        <AddressAutofill
+                          value={field.value}
+                          onChange={field.onChange}
+                          onAddressSelect={handleAddressSelect}
+                          placeholder="Start typing your address to auto-fill city, state, and ZIP code..."
+                          error={errors.address?.message}
                         />
-                        {errors.city && (
-                          <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          State *
-                        </label>
-                        <Controller
-                          name="state"
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              {...field}
-                              type="text"
-                              className={cn(
-                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                                errors.state ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                              )}
-                              placeholder="State"
-                            />
-                          )}
-                        />
-                        {errors.state && (
-                          <p className="text-red-500 text-sm mt-1">{errors.state.message}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          ZIP Code *
-                        </label>
-                        <Controller
-                          name="zip_code"
-                          control={control}
-                          render={({ field }) => (
-                            <input
-                              {...field}
-                              type="text"
-                              className={cn(
-                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                                errors.zip_code ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                              )}
-                              placeholder="ZIP code"
-                            />
-                          )}
-                        />
-                        {errors.zip_code && (
-                          <p className="text-red-500 text-sm mt-1">{errors.zip_code.message}</p>
-                        )}
-                      </div>
-                    </div>
+                      )}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select an address from the dropdown to automatically fill city, state, and ZIP code.
+                    </p>
                   </div>
 
                   {/* Contact Information */}
@@ -1081,7 +1008,13 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                           <span className="font-medium">Phone:</span> {watchedValues.phone}
                         </div>
                         <div>
-                          <span className="font-medium">City:</span> {watchedValues.city}, {watchedValues.state} {watchedValues.zip_code}
+                          <span className="font-medium">Location:</span> {
+                            watchedValues.city && watchedValues.state && watchedValues.zip_code 
+                              ? `${watchedValues.city}, ${watchedValues.state} ${watchedValues.zip_code}`
+                              : watchedValues.city && watchedValues.state
+                                ? `${watchedValues.city}, ${watchedValues.state}`
+                                : watchedValues.city || watchedValues.state || watchedValues.zip_code || 'Not provided'
+                          }
                         </div>
                         <div>
                           <span className="font-medium">Email:</span> {watchedValues.business_email || 'Not provided'}
