@@ -65,7 +65,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string | undefined) => {
-    if (!value) return '';
+    if (!value) {return '';}
     
     // Remove all non-digits
     const phoneNumber = value.replace(/\D/g, '');
@@ -788,7 +788,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   {/* Hours of Operation */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hours of Operation (optional)
+                      Hours of Operation *
                     </label>
                     <Controller
                       name="hours_of_operation"
@@ -813,9 +813,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       )}
                     />
                     {watchedValues.hours_of_operation === 'custom' && (
-                      <div className="mt-3">
+                      <div className="mt-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
                         <CustomHoursSelector
-                          value={getValues('hours_of_operation') || ''}
+                          value={watchedValues.hours_of_operation === 'custom' ? '' : getValues('hours_of_operation') || ''}
                           onChange={(value) => setValue('hours_of_operation', value)}
                           error={errors.hours_of_operation?.message}
                         />

@@ -60,6 +60,7 @@ export default function CustomHoursSelector({ value, onChange, error }: CustomHo
   useEffect(() => {
     if (daysHours.length > 0) {
       const hoursString = formatHoursString(daysHours);
+      // Update parent form with the formatted hours string
       onChange(hoursString);
     }
   }, [daysHours, onChange]);

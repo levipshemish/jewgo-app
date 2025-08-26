@@ -4,7 +4,7 @@ import { z } from 'zod';
 const emailSchema = z.string()
   .email('Please enter a valid email address')
   .refine((email) => {
-    if (!email) return true; // Allow empty
+    if (!email) {return true;} // Allow empty
     // Check for common disposable email domains and example domains
     const blockedDomains = [
       'tempmail.org', '10minutemail.com', 'guerrillamail.com', 'mailinator.com',
@@ -39,7 +39,7 @@ const phoneSchema = z.string()
 const urlSchema = z.string()
   .url('Please enter a valid URL')
   .refine((url) => {
-    if (!url) return true; // Allow empty
+    if (!url) {return true;} // Allow empty
     // Check for common fake URL patterns
     const fakePatterns = ['example.com', 'test.com', 'fake.com', 'placeholder.com'];
     return !fakePatterns.some(pattern => url.toLowerCase().includes(pattern));
@@ -52,7 +52,7 @@ const addressSchema = z.string()
   .min(5, 'Address must be at least 5 characters')
   .max(200, 'Address must be less than 200 characters')
   .refine((address) => {
-    if (!address) return false;
+    if (!address) {return false;}
     // Check for common fake address patterns
     const fakePatterns = [
       '123 fake street', 'test address', 'sample address', 'placeholder address',
@@ -62,7 +62,7 @@ const addressSchema = z.string()
     return !fakePatterns.some(pattern => lowerAddress.includes(pattern));
   }, 'Please enter a real address')
   .refine((address) => {
-    if (!address) return false;
+    if (!address) {return false;}
     // Must contain at least one number and one letter
     const hasNumber = /\d/.test(address);
     const hasLetter = /[a-zA-Z]/.test(address);
@@ -94,7 +94,7 @@ export const restaurantFormSchema = z.object({
   // Step 3: Business Details
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
-  hours_of_operation: z.string().max(1000, 'Hours of operation must be 1000 characters or less').optional().or(z.literal('')),
+  hours_of_operation: z.string().min(1, 'Hours of operation are required').max(1000, 'Hours of operation must be 1000 characters or less'),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,
@@ -187,7 +187,7 @@ export const step2Schema = z.object({
 export const step3Schema = z.object({
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
-  hours_of_operation: z.string().max(1000, 'Hours of operation must be 1000 characters or less').optional().or(z.literal('')),
+  hours_of_operation: z.string().min(1, 'Hours of operation are required').max(1000, 'Hours of operation must be 1000 characters or less'),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,
@@ -287,6 +287,7 @@ export const defaultFormData: RestaurantFormData = {
   // Step 3
   short_description: '',
   description: '',
+  hours_of_operation: '',
   google_listing_url: '',
   instagram_link: '',
   facebook_link: '',
