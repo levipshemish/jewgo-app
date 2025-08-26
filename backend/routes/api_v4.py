@@ -506,11 +506,13 @@ def delete_restaurant(restaurant_id: int):
 
         if success:
             return success_response(
-                {"id": restaurant_id}, "Restaurant deleted successfully"
+                {"restaurant_id": restaurant_id}, "Restaurant deleted successfully"
             )
         else:
             return error_response("Failed to delete restaurant", 500)
 
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
         return not_found_response(str(e), "restaurant")
     except DatabaseError as e:
@@ -520,6 +522,129 @@ def delete_restaurant(restaurant_id: int):
             "Error deleting restaurant", restaurant_id=restaurant_id, error=str(e)
         )
         return error_response("Failed to delete restaurant", 500)
+
+
+@safe_route("/restaurants/filter-options", methods=["GET"])
+@require_api_v4_flag("api_v4_restaurants")
+def get_restaurant_filter_options():
+    """Get filter options for restaurants using v4 service."""
+    try:
+        service = create_restaurant_service()
+        
+        # Get all restaurants to extract filter options
+        restaurants = service.get_all_restaurants()
+        
+        # Extract unique values for each filter category
+        agencies = sorted(list(set(
+            r.get("certifying_agency") for r in restaurants 
+            if r.get("certifying_agency")
+        )))
+        
+        kosher_categories = sorted(list(set(
+            r.get("kosher_category") for r in restaurants 
+            if r.get("kosher_category")
+        )))
+        
+        listing_types = sorted(list(set(
+            r.get("listing_type") for r in restaurants 
+            if r.get("listing_type")
+        )))
+        
+        price_ranges = sorted(list(set(
+            r.get("price_range") for r in restaurants 
+            if r.get("price_range")
+        )))
+        
+        cities = sorted(list(set(
+            r.get("city") for r in restaurants 
+            if r.get("city")
+        )))
+        
+        states = sorted(list(set(
+            r.get("state") for r in restaurants 
+            if r.get("state")
+        )))
+
+        return success_response({
+            "agencies": agencies,
+            "kosherCategories": kosher_categories,
+            "listingTypes": listing_types,
+            "priceRanges": price_ranges,
+            "cities": cities,
+            "states": states
+        })
+
+    except Exception as e:
+        logger.exception("Error fetching filter options", error=str(e))
+        return error_response("Failed to fetch filter options", 500)
+
+
+# Restaurant Approval/Rejection Routes
+@safe_route("/restaurants/<int:restaurant_id>/approve", methods=["PUT"])
+@require_api_v4_flag("api_v4_restaurants")
+def approve_restaurant(restaurant_id: int):
+    """Approve a restaurant submission using v4 service."""
+    try:
+        data = request.get_json(silent=True) or {}
+        status = data.get("status", "approved")
+        
+        service = create_restaurant_service()
+        success = service.update_restaurant_status(restaurant_id, status, "approved")
+
+        if success:
+            # Get the updated restaurant
+            restaurant = service.get_restaurant_by_id(restaurant_id)
+            return success_response(
+                {"restaurant": restaurant, "status": status}, "Restaurant approved successfully"
+            )
+        else:
+            return error_response("Failed to approve restaurant", 500)
+
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except NotFoundError as e:
+        return not_found_response(str(e), "restaurant")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception(
+            "Error approving restaurant", restaurant_id=restaurant_id, error=str(e)
+        )
+        return error_response("Failed to approve restaurant", 500)
+
+
+@safe_route("/restaurants/<int:restaurant_id>/reject", methods=["PUT"])
+@require_api_v4_flag("api_v4_restaurants")
+def reject_restaurant(restaurant_id: int):
+    """Reject a restaurant submission using v4 service."""
+    try:
+        data = request.get_json(silent=True) or {}
+        status = data.get("status", "rejected")
+        reason = data.get("reason", "Rejected by admin")
+        
+        service = create_restaurant_service()
+        success = service.update_restaurant_status(restaurant_id, status, "rejected", reason)
+
+        if success:
+            # Get the updated restaurant
+            restaurant = service.get_restaurant_by_id(restaurant_id)
+            return success_response(
+                {"restaurant": restaurant, "status": status, "reason": reason}, "Restaurant rejected successfully"
+            )
+        else:
+            return error_response("Failed to reject restaurant", 500)
+
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except NotFoundError as e:
+        return not_found_response(str(e), "restaurant")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception(
+            "Error rejecting restaurant", restaurant_id=restaurant_id, error=str(e)
+        )
+        return error_response("Failed to reject restaurant", 500)
 
 
 # Review Routes

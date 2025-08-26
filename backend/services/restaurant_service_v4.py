@@ -395,19 +395,23 @@ class RestaurantServiceV4(BaseService):
         self,
         restaurant_id: int,
         image_url: str,
-        image_order: Optional[int] = None,
-        cloudinary_public_id: Optional[str] = None,
+        image_order: int | None = None,
+        cloudinary_public_id: str | None = None,
     ) -> dict[str, Any]:
         """Add an image to a restaurant.
 
         Args:
-            restaurant_id: Restaurant ID
-            image_url: Image URL
-            image_order: Image order (optional)
-            cloudinary_public_id: Cloudinary public ID (optional)
+            restaurant_id: The restaurant ID
+            image_url: The image URL
+            image_order: Optional image order
+            cloudinary_public_id: Optional Cloudinary public ID
 
         Returns:
-            Created image dictionary
+            Image data dictionary
+
+        Raises:
+            NotFoundError: If restaurant doesn't exist
+            ValidationError: If data is invalid
 
         """
         if (
@@ -442,6 +446,97 @@ class RestaurantServiceV4(BaseService):
         except Exception as e:
             self.logger.exception("Error adding restaurant image", error=str(e))
             raise
+
+    def update_restaurant_status(
+        self,
+        restaurant_id: int,
+        status: str,
+        action: str,
+        reason: str | None = None,
+    ) -> bool:
+        """Update restaurant submission status (approve/reject).
+
+        Args:
+            restaurant_id: The restaurant ID
+            status: New status ('approved', 'rejected', 'pending_approval')
+            action: Action taken ('approved', 'rejected')
+            reason: Optional reason for rejection
+
+        Returns:
+            True if successful, False otherwise
+
+        Raises:
+            NotFoundError: If restaurant doesn't exist
+            ValidationError: If data is invalid
+
+        """
+        if (
+            not restaurant_id
+            or not isinstance(restaurant_id, int)
+            or restaurant_id <= 0
+        ):
+            raise ValidationError("Invalid restaurant ID")
+
+        if not status or status not in ["approved", "rejected", "pending_approval"]:
+            raise ValidationError("Invalid status")
+
+        if not action or action not in ["approved", "rejected"]:
+            raise ValidationError("Invalid action")
+
+        self.log_operation(
+            "update_restaurant_status",
+            restaurant_id=restaurant_id,
+            status=status,
+            action=action,
+            reason=reason,
+        )
+
+        try:
+            # Check if restaurant exists
+            restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+            if not restaurant:
+                raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
+
+            # Prepare update data
+            update_data = {
+                "submission_status": status,
+                "approval_date": self._get_current_timestamp(),
+                "approved_by": "admin",  # TODO: Get actual admin user
+            }
+
+            # Add rejection reason if provided
+            if action == "rejected" and reason:
+                update_data["rejection_reason"] = reason
+
+            # Update the restaurant
+            success = self.db_manager.update_restaurant(restaurant_id, update_data)
+
+            if success:
+                self.logger.info(
+                    "Successfully updated restaurant status",
+                    restaurant_id=restaurant_id,
+                    status=status,
+                    action=action,
+                )
+            else:
+                self.logger.error(
+                    "Failed to update restaurant status",
+                    restaurant_id=restaurant_id,
+                    status=status,
+                )
+
+            return success
+
+        except (NotFoundError, ValidationError):
+            raise
+        except Exception as e:
+            self.logger.exception("Error updating restaurant status", error=str(e))
+            raise
+
+    def _get_current_timestamp(self) -> str:
+        """Get current timestamp in ISO format."""
+        from datetime import datetime
+        return datetime.utcnow().isoformat()
 
     # Helper methods
     def _process_restaurant_filters(self, filters: dict[str, Any]) -> dict[str, Any]:

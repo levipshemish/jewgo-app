@@ -2,132 +2,260 @@
 
 ## Overview
 
-This guide documents all the key features of the JewGo application, including how they work and how to use them.
+This guide documents all the key features of the JewGo application, organized by category for easy navigation and reference.
 
-## 🔍 Restaurant Discovery
+## 📁 **Directory Structure**
 
-### Advanced Filtering System
-The application provides comprehensive filtering options to help users find exactly what they're looking for:
+```
+docs/features/
+├── README.md                           # This file - Main features overview
+├── auth/                               # Authentication & Authorization
+├── user-management/                    # User profiles, settings, avatars
+├── restaurant-management/              # Restaurant CRUD, admin tools
+├── data-integration/                   # External data sources & APIs
+├── performance/                        # Performance optimizations
+├── monitoring/                         # Monitoring, analytics, health checks
+└── archive/                           # Archived/consolidated documents
+```
 
-#### Filter Categories
-- **Location**: Distance-based search, city, state
-- **Kosher Type**: Dairy, Meat, Pareve
-- **Certifying Agency**: ORB, KM, Star-K, CRC, KOF-K, Diamond K, OU, OK, Chabad, Local Rabbi
-- **Kosher Features**: Chalav Yisroel, Pas Yisroel, Glatt Kosher, Mehadrin, Bishul Yisroel
-- **Category**: Restaurant, Bakery, Catering, Grocery Store, Market, Deli, Pizza, Ice Cream, Coffee Shop, Food Truck, Synagogue
-- **Price Range**: $, $$, $$$, $$$$
-- **General Features**: Delivery, Takeout, Dine-in, Outdoor Seating, Parking, WiFi, Wheelchair Accessible, Family Friendly
+---
 
-#### Filter Interface
-- **Modal-based**: Clean, mobile-friendly filter interface
-- **Real-time Updates**: Results update as filters are applied
-- **Filter Count**: Shows number of active filters
-- **Clear All**: Easy way to reset all filters
+## 🔐 **Authentication & Authorization** (`auth/`)
 
-### Search Functionality
-- **Text Search**: Search by restaurant name, address, city, state
-- **Real-time Results**: Instant search results as you type
-- **Fuzzy Matching**: Handles typos and partial matches
+### **Anonymous Authentication**
+- **File**: `auth/ANONYMOUS_AUTH_IMPLEMENTATION_COMPLETE.md`
+- **Status**: ✅ Complete
+- **Features**: Anonymous user support, account merging, rate limiting
 
-### Location-Based Features
-- **Near Me**: Find restaurants within specified distance
-- **Distance Calculation**: Accurate distance calculations using coordinates
-- **Location Permissions**: Graceful handling of location access
+### **Apple OAuth Integration**
+- **File**: `auth/APPLE_OAUTH_IMPLEMENTATION_COMPLETE.md`
+- **Status**: ✅ Complete
+- **Features**: Apple Sign-In, identity linking, re-authentication
 
-## 🗺️ Map Integration
+### **NextAuth to Supabase Migration**
+- **File**: `auth/nextauth-to-supabase-migration-plan.md`
+- **Status**: 📋 Planning
+- **Features**: Migration strategy, implementation plan
 
-### Interactive Map
-- **Google Maps Integration**: Full-featured map interface
-- **Restaurant Markers**: Clickable markers for each restaurant
-- **Info Windows**: Detailed restaurant information on map
-- **Directions**: Get directions to selected restaurants
+---
 
-### Map Features
-- **Toggle View**: Switch between list and map view
-- **Cluster Markers**: Groups nearby restaurants for better performance
-- **Custom Styling**: Branded map appearance
-- **Mobile Optimized**: Touch-friendly map controls
+## 👤 **User Management** (`user-management/`)
 
-## 📱 User Experience
+### **Profile Management System**
+- **File**: `user-management/PROFILE_MANAGEMENT_SYSTEM.md`
+- **Status**: ✅ Complete
+- **Features**: User profiles, settings, security, notifications
 
-### Mobile-First Design
-- **Responsive Layout**: Optimized for all screen sizes
-- **Touch-Friendly**: Large touch targets and gestures
-- **Bottom Navigation**: Easy thumb navigation
-- **Progressive Web App**: Installable on mobile devices
+### **Avatar Upload**
+- **File**: `user-management/avatar-upload.md`
+- **Status**: ✅ Complete
+- **Features**: Image upload, Supabase Storage, RLS policies
 
-### Navigation
-- **Bottom Navigation**: Explore, Map, Favorites, Profile
-- **Category Tabs**: Eatery, Mikvahs, Shuls, Stores
-- **Breadcrumbs**: Clear navigation hierarchy
-- **Back Navigation**: Intuitive back button behavior
+### **Public Profiles**
+- **File**: `user-management/public-profile.md`
+- **Status**: ✅ Complete
+- **Features**: Public user profiles, privacy controls
 
-### Restaurant Cards
-- **Rich Information**: Name, rating, price range, kosher type
-- **Visual Elements**: Restaurant images, kosher badges
-- **Quick Actions**: View details, add to favorites
-- **Status Indicators**: Open/closed status, special offers
+### **Profile Editing**
+- **File**: `user-management/profile-edit.md`
+- **Status**: ✅ Complete
+- **Features**: Profile editing, validation, real-time updates
 
-## 🔐 Authentication & User Management
+---
 
-### Authentication System
+## 🏪 **Restaurant Management** (`restaurant-management/`)
+
+### **Enhanced Add Eatery Form**
+- **File**: `restaurant-management/enhanced-add-eatery-form.md`
+- **Status**: ✅ Core Complete (85%)
+- **Features**: 5-step form, owner management, conditional validation
+
+### **Admin Restaurant Management**
+- **File**: `restaurant-management/ADMIN_RESTAURANT_MANAGEMENT.md`
+- **Status**: ✅ Complete
+- **Features**: Admin dashboard, CRUD operations, approval workflow
+
+### **Admin Dashboard Plan**
+- **File**: `restaurant-management/admin-dashboard-plan.md`
+- **Status**: 📋 Planning
+- **Features**: Dashboard architecture, task breakdown
+
+### **Specials Constraint Implementation**
+- **File**: `restaurant-management/SPECIALS_CONSTRAINT_IMPLEMENTATION.md`
+- **Status**: ✅ Complete
+- **Features**: 3-specials limit, database constraints, validation
+
+### **Marketplace Implementation**
+- **File**: `restaurant-management/MARKETPLACE_IMPLEMENTATION.md`
+- **Status**: ✅ Complete
+- **Features**: E-commerce platform, product management, vendor system
+
+---
+
+## 🔄 **Data Integration** (`data-integration/`)
+
+### **Google Reviews Integration**
+- **File**: `data-integration/google-reviews-integration.md`
+- **Status**: ✅ Complete
+- **Features**: Google Places API, review fetching, display components
+
+### **ORB Scraper**
+- **File**: `data-integration/orb-scraper.md`
+- **Status**: ✅ Complete
+- **Features**: Automated data collection, validation, scheduling
+
+### **ORB Scraping Process**
+- **File**: `data-integration/orb-scraping-process.md`
+- **Status**: ✅ Complete
+- **Features**: Detailed scraping workflow, error handling
+
+### **Google Places Image Scraping**
+- **File**: `data-integration/google-places-image-scraping.md`
+- **Status**: ✅ Complete
+- **Features**: Image fetching, Cloudinary integration, optimization
+
+### **Google Places Setup**
+- **File**: `data-integration/google-places-setup.md`
+- **Status**: ✅ Complete
+- **Features**: API setup, configuration, best practices
+
+### **Google Places Validator**
+- **File**: `data-integration/google-places-validator.md`
+- **Status**: ✅ Complete
+- **Features**: Data validation, quality checks, error handling
+
+### **Coordinate Population**
+- **File**: `data-integration/coordinate-population-implementation.md`
+- **Status**: ✅ Complete
+- **Features**: Geocoding, coordinate storage, map integration
+
+### **Website Data Management**
+- **File**: `data-integration/website-data-management.md`
+- **Status**: ✅ Complete
+- **Features**: Website scraping, data management, validation
+
+---
+
+## ⚡ **Performance** (`performance/`)
+
+### **Map Performance Implementation**
+- **File**: `performance/map-performance-implementation-guide.md`
+- **Status**: ✅ Complete
+- **Features**: Map optimization, clustering, lazy loading
+
+### **Map Performance Optimization**
+- **File**: `performance/map-performance-optimization-todo.md`
+- **Status**: 📋 Planning
+- **Features**: Performance improvements, optimization strategies
+
+### **Map Improvements**
+- **File**: `performance/map-improvements-todo.md`
+- **Status**: 📋 Planning
+- **Features**: Map enhancements, new features
+
+### **Image Optimization Implementation**
+- **File**: `performance/image-optimization-implementation.md`
+- **Status**: ✅ Complete
+- **Features**: Image compression, formats, lazy loading
+
+### **Image Optimization Setup**
+- **File**: `performance/image-optimization-setup.md`
+- **Status**: ✅ Complete
+- **Features**: Setup guide, configuration, best practices
+
+### **Search UX Improvements**
+- **File**: `performance/SEARCH_UX_IMPROVEMENTS.md`
+- **Status**: ✅ Complete
+- **Features**: Advanced search, fuzzy matching, relevance scoring
+
+### **Pagination Improvements**
+- **File**: `performance/PAGINATION_IMPROVEMENTS.md`
+- **Status**: ✅ Complete
+- **Features**: Scroll to top, infinite scroll, mobile optimization
+
+### **Hours Handling Improvements**
+- **File**: `performance/HOURS_HANDLING_IMPROVEMENTS.md`
+- **Status**: ✅ Complete
+- **Features**: Hours normalization, timezone support, real-time status
+
+### **Dynamic Restaurant Status**
+- **File**: `performance/dynamic-restaurant-status.md`
+- **Status**: ✅ Complete
+- **Features**: Real-time open/closed status, timezone handling
+
+### **Restaurant Hours Integration**
+- **File**: `performance/restaurant-hours-integration.md`
+- **Status**: ✅ Complete
+- **Features**: Hours display, integration, user experience
+
+---
+
+## 📊 **Monitoring** (`monitoring/`)
+
+### **Monitoring System**
+- **File**: `monitoring/monitoring.md`
+- **Status**: ✅ Complete
+- **Features**: Health checks, performance monitoring, alerting
+
+### **Redis Integration**
+- **File**: `monitoring/redis-integration.md`
+- **Status**: ✅ Complete
+- **Features**: Caching, rate limiting, session storage
+
+### **Feature Flags System**
+- **File**: `monitoring/FEATURE_FLAGS_SYSTEM.md`
+- **Status**: ✅ Complete
+- **Features**: Feature toggles, gradual rollouts, A/B testing
+
+---
+
+## 🔍 **Core Features Overview**
+
+### **Restaurant Discovery**
+- **Advanced Filtering**: Location, kosher type, certifying agency, features
+- **Search Functionality**: Text search, fuzzy matching, real-time results
+- **Location-Based Features**: Distance calculation, "Near Me" functionality
+
+### **Map Integration**
+- **Interactive Maps**: Google Maps integration with custom styling
+- **Restaurant Markers**: Clickable markers with info windows
+- **Toggle Views**: Switch between list and map view
+- **Mobile Optimization**: Touch-friendly controls
+
+### **User Experience**
+- **Mobile-First Design**: Responsive layout, touch-friendly interface
+- **Navigation**: Bottom navigation, category tabs, breadcrumbs
+- **Restaurant Cards**: Rich information display with visual elements
+
+### **Authentication & User Management**
 - **Supabase Auth**: Secure authentication framework
 - **Google OAuth**: Sign in with Google account
 - **Session Management**: Persistent login sessions
 - **Protected Routes**: Secure access to user-specific features
 
-### User Features
-- **Favorites**: Save and manage favorite restaurants
-- **Profile Management**: Update user information
-- **Privacy Settings**: Control data sharing preferences
-- **Account Security**: Secure password management
-
-## 🏪 Restaurant Management
-
-### Add Restaurant
-- **Submission Form**: Comprehensive restaurant submission
-- **Validation**: Real-time form validation
-- **Image Upload**: Support for restaurant photos
+### **Restaurant Management**
+- **Add Restaurant**: Comprehensive submission form with validation
 - **Admin Review**: Pending approval workflow
+- **Restaurant Details**: Complete information display
+- **Hours & Status**: Real-time open/closed information
 
-### Restaurant Details
-- **Comprehensive Information**: Full restaurant details
-- **Kosher Information**: Detailed kosher supervision details
-- **Contact Information**: Phone, website, address
-- **Hours of Operation**: Current and weekly hours
-- **Reviews & Ratings**: User-generated reviews
+### **Data Integration**
+- **ORB Integration**: Automated data collection and updates
+- **Google Places**: Reviews, images, and place information
+- **Data Validation**: Quality checks and error handling
+- **Synchronization**: Keep data up-to-date
 
-## 🔄 ORB Integration
+### **Performance & Monitoring**
+- **Health Checks**: Frontend and backend status monitoring
+- **Performance Metrics**: Response time tracking and optimization
+- **Error Tracking**: Comprehensive error monitoring and alerting
+- **Analytics**: Usage pattern analysis and insights
 
-### Data Scraping
-- **ORB Scraper**: Automated data collection from ORB
-- **Regular Updates**: Scheduled data updates
-- **Data Validation**: Quality checks and validation
-- **Error Handling**: Robust error recovery
+---
 
-### Data Management
-- **Database Integration**: Seamless data storage
-- **Data Synchronization**: Keep data up-to-date
-- **Backup Procedures**: Regular data backups
-- **Data Integrity**: Maintain data consistency
+## 🎨 **Design System**
 
-## 📊 Monitoring & Health
-
-### Health Checks
-- **Frontend Health**: `/health` endpoint for frontend status
-- **Backend Health**: `/health` endpoint for backend status
-- **Database Health**: Connection and data integrity checks
-- **API Health**: Endpoint availability monitoring
-
-### Performance Monitoring
-- **Uptime Monitoring**: UptimeRobot integration
-- **Performance Metrics**: Response time tracking
-- **Error Tracking**: Error rate monitoring
-- **User Analytics**: Usage pattern analysis
-
-## 🎨 Design System
-
-### Color Scheme
+### **Color Scheme**
 - **Primary**: `#4ade80` (Light mint green)
 - **Secondary**: `#374151` (Dark grey)
 - **Accent**: `#10b981` (Darker green)
@@ -137,47 +265,23 @@ The application provides comprehensive filtering options to help users find exac
   - Pareve: `#f59e0b` (Yellow)
   - Unknown: `#6b7280` (Grey)
 
-### Typography
+### **Typography**
 - **Font Family**: System fonts for optimal performance
 - **Font Sizes**: Responsive typography scale
 - **Font Weights**: Consistent weight hierarchy
 - **Line Heights**: Optimized for readability
 
-### Components
+### **Components**
 - **Consistent Design**: Reusable component library
 - **Accessibility**: WCAG compliant design
 - **Loading States**: Skeleton screens and spinners
 - **Error States**: User-friendly error messages
 
-## 📁 Detailed Feature Guides
+---
 
-### [ORB Scraper](./orb-scraper.md)
-- Scraping process and configuration
-- Data validation and quality control
-- Error handling and recovery
-- Update scheduling and automation
+## 🚀 **Future Features**
 
-### [Filtering System](./filters.md)
-- Filter implementation details
-- Database query optimization
-- User interface design
-- Performance considerations
-
-### [Authentication](./authentication.md)
-- Authentication flow and security
-- User session management
-- Protected route implementation
-- OAuth integration details
-
-### [Monitoring](./monitoring.md)
-- Health check implementation
-- Performance monitoring setup
-- Error tracking and alerting
-- Analytics and reporting
-
-## 🚀 Future Features
-
-### Planned Enhancements
+### **Planned Enhancements**
 - **Push Notifications**: Real-time updates and alerts
 - **Social Features**: User reviews and recommendations
 - **Advanced Search**: AI-powered search recommendations
@@ -185,7 +289,7 @@ The application provides comprehensive filtering options to help users find exac
 - **Offline Support**: Offline data access
 - **Advanced Analytics**: Detailed usage analytics
 
-### Technical Improvements
+### **Technical Improvements**
 - **Performance Optimization**: Faster loading times
 - **Caching Strategy**: Improved data caching
 - **API Optimization**: Better API performance
@@ -193,4 +297,28 @@ The application provides comprehensive filtering options to help users find exac
 
 ---
 
-*For detailed implementation guides, see individual feature documentation files.* 
+## 📋 **Status Legend**
+
+- ✅ **Complete**: Feature fully implemented and deployed
+- 🔄 **In Progress**: Feature under active development
+- 📋 **Planning**: Feature planned but not started
+- 🧪 **Testing**: Feature in testing phase
+- 🚀 **Ready for Deployment**: Feature complete, ready for production
+
+---
+
+## 📞 **Support & Resources**
+
+### **Documentation**
+- **API Documentation**: See `docs/api/API_ENDPOINTS_SUMMARY.md`
+- **Database Schema**: See `backend/database/database_manager_v3.py`
+- **Deployment Guide**: See `docs/deployment/BUILD_AND_DEPLOY_QUICK_REFERENCE.md`
+
+### **Archived Documents**
+- **Archive Directory**: `docs/features/archive/`
+- **Consolidated Files**: Old versions and duplicate content
+- **Historical Reference**: Previous implementations and plans
+
+---
+
+*For detailed implementation guides, see individual feature documentation files in their respective subdirectories.* 

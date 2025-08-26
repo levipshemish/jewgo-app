@@ -56,7 +56,14 @@ backend/
 │   ├── base_repository.py
 │   ├── connection_manager.py
 │   ├── database_manager_v3.py # Oracle Cloud database manager
+│   ├── database_manager_v4.py # Latest database manager
+│   ├── google_places_manager.py # Manages Google Places API interactions
+│   ├── init_database.py # Initializes the database
 │   ├── models.py        # SQLAlchemy models
+│   ├── performance_indexes.sql # SQL for performance indexes
+│   ├── search_manager.py # Manages search functionality
+│   ├── setup_database.py # Sets up the database
+│   ├── setup_neon.py    # Sets up Neon database
 │   ├── repositories/    # Data access layer
 │   ├── migrations/      # Database migrations
 │   └── init.sql/        # SQL initialization scripts
@@ -64,25 +71,73 @@ backend/
 ├── routes/              # API routes
 │   ├── api_v4.py        # Main API v4 routes
 │   ├── api_v4_simple.py # Simplified API routes
+│   ├── health_routes.py # Health check routes
+│   ├── redis_health.py  # Redis health check routes
+│   ├── restaurants.py   # Restaurant-related routes
 │   └── __init__.py
 │
 ├── services/            # Business logic layer
 │   ├── base_service.py
-│   ├── restaurant_service.py
-│   ├── search_service.py
-│   └── ...
+│   ├── distance_filtering_service.py # Filters by distance
+│   ├── google_places_service.py # Interacts with Google Places API
+│   ├── health_service.py  # Provides health check logic
+│   ├── hours_compute.py   # Computes business hours
+│   ├── hours_normalizer.py # Normalizes business hours
+│   ├── hours_sources.py   # Defines sources for business hours
+│   ├── marketplace_service_v4.py # Marketplace-related business logic
+│   ├── open_now_service.py # Checks if a business is open
+│   ├── redis_cache_service.py # Manages Redis caching
+│   ├── restaurant_service_v4.py # Restaurant-related business logic
+│   ├── restaurant_service.py # Older restaurant service
+│   ├── restaurant_status_service.py # Manages restaurant status
+│   ├── review_service_v4.py # Review-related business logic
+│   ├── scraper_service.py # Web scraping services
+│   ├── service_manager.py # Manages services
+│   ├── user_service_v4.py # User-related business logic
+│   └── websocket_service.py # Manages websockets
 │
 ├── utils/               # Utility functions
-│   ├── api_response.py
-│   ├── cache_manager_v4.py
+│   ├── api_response.py  # Standardized API responses
+│   ├── cache_manager_v4.py # Manages caching
+│   ├── cache_manager.py # Older cache manager
+│   ├── cloudinary_uploader.py # Uploads to Cloudinary
+│   ├── config_manager.py # Manages configuration
+│   ├── data_validator.py # Validates data
+│   ├── database_column_manager.py # Manages database columns
+│   ├── database_connection_manager.py # Manages database connections
+│   ├── error_handler.py # Handles errors
+│   ├── feature_flags_v4.py # Manages feature flags
+│   ├── feature_flags.py # Older feature flag manager
+│   ├── feedback_manager.py # Manages feedback
+│   ├── google_places_helper.py # Google Places helper functions
+│   ├── google_places_image_scraper.py # Scrapes images from Google Places
+│   ├── google_places_manager.py # Manages Google Places API
+│   ├── google_places_searcher.py # Searches Google Places
+│   ├── google_places_validator.py # Validates Google Places data
+│   ├── hours_formatter.py # Formats business hours
+│   ├── hours_manager.py # Manages business hours
+│   ├── hours_parser.py  # Parses business hours
+│   ├── hours.py         # Business hours utilities
+│   ├── image_optimizer.py # Optimizes images
+│   ├── logging_config.py # Configures logging
+│   ├── restaurant_status.py # Manages restaurant status
+│   ├── security.py      # Security-related utilities
 │   ├── unified_database_config.py # Oracle Cloud config
-│   └── ...
+│   ├── unified_hours_formatter.py # Formats business hours
+│   ├── unified_search_service.py # Unified search service
+│   ├── validation.py    # Validation utilities
+│   ├── validators.py    # Validators
+│   ├── ai/              # AI-related utilities
+│   ├── kosher_miami/    # Utilities for Kosher Miami data
+│   ├── ml/              # Machine learning utilities
+│   └── search/          # Search-related utilities
 │
 ├── search/              # Search functionality
 │   ├── core/
 │   ├── embeddings/
 │   ├── indexes/
 │   ├── providers/
+│   ├── __init__.py
 │   └── search_service.py
 │
 ├── ai/                  # AI and ML components
@@ -102,12 +157,18 @@ backend/
 │   └── restaurant.py
 │
 ├── scripts/             # Utility scripts
+│   ├── maintenance/     # Maintenance scripts
+│   ├── migration/       # Migration scripts
 │   ├── setup/           # Setup scripts
-│   │   ├── create_tables.py
-│   │   └── add_categories.py
+│   ├── add_unified_marketplace_data.py # Adds marketplace data
+│   ├── add_username_index.py # Adds a username index to the database
 │   ├── build.sh         # Build script
+│   ├── check_existing_tables.py # Checks for existing tables
+│   ├── check_tables_psycopg.py # Checks tables using psycopg
+│   ├── check_tables_simple.py # Simple table check
+│   ├── create_profiles_table_psycopg.py # Creates profiles table using psycopg
 │   ├── startup.sh       # Startup script
-│   └── ...
+│   └── update_restaurant_status.py # Updates restaurant status
 │
 └── docs/                # Backend documentation
     └── SERVICE_LAYER_ARCHITECTURE.md
@@ -116,27 +177,70 @@ backend/
 ## ⚛️ **Frontend Structure**
 
 ```
-frontend/
-├── app/                 # Next.js 15 app directory
-│   ├── api/             # API routes
-│   ├── auth/            # Authentication pages
-│   ├── marketplace/     # Marketplace pages
-│   ├── restaurant/      # Restaurant pages
-│   ├── profile/         # User profile pages
-│   └── ...
-│
+│   ├── app/                 # Next.js 15 app directory
+│   │   ├── account/         # User account pages
+│   │   ├── actions/         # Server-side actions
+│   │   ├── add-eatery/      # Page for adding a new eatery
+│   │   ├── admin/           # Admin pages
+│   │   ├── api/             # API routes
+│   │   ├── auth/            # Authentication pages
+│   │   ├── eatery/          # Eatery pages
+│   │   ├── favorites/       # User favorites
+│   │   ├── live-map/        # Live map page
+│   │   ├── marketplace/     # Marketplace pages
+│   │   ├── mikva/           # Mikva pages
+│   │   ├── notifications/   # Notification pages
+│   │   ├── privacy/         # Privacy policy page
+│   │   ├── profile/         # User profile pages
+│   │   ├── restaurant/      # Restaurant pages
+│   │   ├── shuls/           # Shul pages
+│   │   ├── stores/          # Store pages
+│   │   ├── terms/           # Terms of service page
+│   │   ├── error.tsx        # Error page
+│   │   ├── layout.tsx       # Root layout
+│   │   └── page.tsx         # Root page
+│   │
 ├── components/          # React components
-│   ├── ui/              # UI components
+│   ├── admin/           # Admin components
+│   ├── analytics/       # Analytics components
+│   ├── auth/            # Authentication components
+│   ├── eatery/          # Eatery components
+│   ├── feedback/        # Feedback components
+│   ├── filters/         # Filter components
 │   ├── forms/           # Form components
 │   ├── layout/          # Layout components
+│   ├── location/        # Location components
+│   ├── map/             # Map components
 │   ├── marketplace/     # Marketplace components
-│   └── ...
+│   ├── mikvah/          # Mikvah components
+│   ├── navigation/      # Navigation components
+│   ├── newsletter/      # Newsletter components
+│   ├── pages/           # Page components
+│   ├── products/        # Product components
+│   ├── profile/         # Profile components
+│   ├── restaurant/      # Restaurant components
+│   ├── reviews/         # Review components
+│   ├── search/          # Search components
+│   ├── shuls/           # Shul components
+│   ├── specials/        # Specials components
+│   ├── stores/          # Store components
+│   └── ui/              # UI components
 │
 ├── lib/                 # Utility libraries
+│   ├── ai/              # AI-related libraries
+│   ├── analytics/       # Analytics libraries
+│   ├── api/             # API-related libraries
+│   ├── auth/            # Authentication libraries
+│   ├── config/          # Configuration libraries
+│   ├── database/        # Database libraries
+│   ├── google/          # Google API libraries
+│   ├── maps/            # Map libraries
+│   ├── search/          # Search libraries
+│   ├── supabase/        # Supabase libraries
+│   ├── utils/           # Utility libraries
 │   ├── auth.ts          # Authentication utilities
-│   ├── database.ts      # Database utilities
-│   ├── utils.ts         # General utilities
-│   └── ...
+│   ├── email.ts         # Email utilities
+│   └── index.ts         # Index file
 │
 ├── hooks/               # Custom React hooks
 ├── types/               # TypeScript type definitions
@@ -145,60 +249,66 @@ frontend/
 ├── public/              # Static assets
 ├── prisma/              # Prisma schema
 ├── supabase/            # Supabase configuration
-└── package.json         # Node.js dependencies
+├── config/              # Frontend configuration
+├── db/                  # Database-related files
+├── docs/                # Frontend-specific documentation
+├── filters/             # Filter components
+├── logs/                # Log files
+├── sandbox/             # Sandbox environment
+├── scripts/             # Frontend-specific scripts
+├── .dockerignore        # Docker ignore file
+├── .eslintrc.json       # ESLint configuration
+├── .gitignore           # Git ignore file
+├── .lighthouserc.json   # Lighthouse configuration
+├── .npmrc               # npm configuration
+├── .nvmrc               # Node Version Manager configuration
+├── .prettierrc          # Prettier configuration
+├── .vercelignore        # Vercel ignore file
+├── Dockerfile           # Production Dockerfile
+├── Dockerfile.dev       # Development Dockerfile
+├── Dockerfile.optimized # Optimized Dockerfile
+├── jest.config.js       # Jest configuration
+├── next.config.js       # Next.js configuration
+├── package.json         # Node.js dependencies
+├── postcss.config.js    # PostCSS configuration
+├── README.md            # Frontend README
+├── tailwind.config.js   # Tailwind CSS configuration
+└── tsconfig.json        # TypeScript configuration
 ```
 
 ## 📚 **Documentation Structure**
 
 ```
 docs/
-├── DATABASE_MIGRATION_SUMMARY.md      # Complete migration summary
-├── ORACLE_CLOUD_BACKUP_AND_OPTIMIZATION.md # Backup and optimization guide
-├── PROJECT_ORGANIZATION.md            # This file
-├── PROJECT_STATUS_AND_TODOS.md        # Project status
-├── CONTRIBUTING.md                    # Contribution guidelines
-│
 ├── api/                               # API documentation
-│   ├── API_ENDPOINTS_SUMMARY.md
-│   ├── API_V4_MIGRATION_GUIDE.md
-│   └── DATABASE_V4_API_DOCUMENTATION.md
-│
+├── analytics/                         # Analytics documentation
+├── authentication/                    # Authentication documentation
+├── business/                          # Business logic documentation
+├── cleanup-reports/                   # Cleanup reports
 ├── database/                          # Database documentation
-│   ├── README.md                      # Database overview
-│   ├── schema.md                      # Database schema
-│   ├── postgresql-setup.md            # PostgreSQL setup
-│   └── DATABASE_REFACTORING_GUIDE.md
-│
 ├── deployment/                        # Deployment guides
-│   ├── BUILD_AND_DEPLOY_QUICK_REFERENCE.md
-│   ├── BUILD_AND_DEPLOY_SYSTEM_SUMMARY.md
-│   ├── CLOUD_DEPLOYMENT_GUIDE.md
-│   └── ...
-│
+├── design/                            # Design documents
+├── development/                       # Development guides
 ├── features/                          # Feature documentation
-│   ├── PROFILE_MANAGEMENT_SYSTEM.md
-│   ├── website-data-management.md
-│   ├── orb-scraper.md
-│   └── ...
-│
-├── setup/                             # Setup guides
-│   ├── ENVIRONMENT_CONSOLIDATION.md
-│   ├── env-variables-setup.md
-│   └── ...
-│
-├── migration/                         # Migration reference files
-│   ├── CLEANUP_SUMMARY.md            # Cleanup summary
-│   ├── DATABASE_FIX_SUMMARY.md       # Database fix documentation
-│   ├── install_backup_system.sh      # Backup system installer
-│   └── setup_oracle_backups.sh       # Alternative backup setup
-│
+├── frontend/                          # Frontend documentation
+├── implementation-reports/            # Implementation reports
+├── implementations/                   # Implementation guides
 ├── maintenance/                       # Maintenance guides
+├── marketplace/                       # Marketplace documentation
+├── migration/                         # Migration reference files
 ├── monitoring/                        # Monitoring guides
 ├── performance/                       # Performance guides
-├── reports/                           # Implementation reports
+├── reports/                           # General reports
 ├── security/                          # Security documentation
+├── setup/                             # Setup guides
 ├── status/                            # Status reports
-└── team/                              # Team documentation
+├── team/                              # Team documentation
+├── testing/                           # Testing documentation
+├── CONTRIBUTING.md                    # Contribution guidelines
+├── DEPLOYMENT_GUIDE.md                # Deployment guide
+├── DEVELOPMENT_WORKFLOW.md            # Development workflow
+├── README.md                          # Docs README
+└── ...                                # Other documentation files
 ```
 
 ## 🔧 **Configuration Structure**

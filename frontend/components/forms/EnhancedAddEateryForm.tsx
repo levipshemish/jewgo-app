@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle } from 'lucide-react';
+import MultipleImageUpload from './MultipleImageUpload';
 
 import { 
   restaurantFormSchema, 
@@ -169,16 +170,8 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   };
 
   // Image upload handler
-  const handleImageUpload = (imageUrl: string) => {
-    const currentImages = watchedValues.business_images || [];
-    if (currentImages.length < 5) {
-      setValue('business_images', [...currentImages, imageUrl]);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    const currentImages = watchedValues.business_images || [];
-    setValue('business_images', currentImages.filter((_, i) => i !== index));
+  const handleImagesUpload = (imageUrls: string[]) => {
+    setValue('business_images', imageUrls);
   };
 
   // Progress calculation
@@ -953,39 +946,18 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         We recommend 3 images of the location (inside & outside) and 2 images of the food
                       </p>
                       
-                      {/* Image upload component would go here */}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                        <Plus className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload images</p>
-                        <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB each</p>
-                      </div>
+                      {/* Multiple image upload component */}
+                      <MultipleImageUpload
+                        onImagesUpload={handleImagesUpload}
+                        currentImageUrls={watchedValues.business_images || []}
+                        maxImages={5}
+                        minImages={2}
+                      />
+
+                      {errors.business_images && (
+                        <p className="text-red-500 text-sm">{errors.business_images.message}</p>
+                      )}
                     </div>
-
-                    {/* Image preview */}
-                    {watchedValues.business_images && watchedValues.business_images.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {watchedValues.business_images.map((image, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={image}
-                              alt={`Restaurant image ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {errors.business_images && (
-                      <p className="text-red-500 text-sm">{errors.business_images.message}</p>
-                    )}
                   </div>
                 </div>
               </motion.div>

@@ -226,6 +226,43 @@ class Restaurant(Base):
     google_reviews = Column(Text)  # JSONB for recent reviews (limited)
     user_email = Column(String(255))  # Optional — for contact form
 
+    # 🏢 Enhanced Add Eatery Workflow Fields
+    # Owner management
+    owner_name = Column(Text)  # Restaurant owner name
+    owner_email = Column(Text)  # Restaurant owner email
+    owner_phone = Column(Text)  # Restaurant owner phone
+    is_owner_submission = Column(Boolean, default=False)  # Whether submitted by owner
+    
+    # Additional business fields
+    business_email = Column(Text)  # Business contact email
+    instagram_link = Column(Text)  # Instagram profile link
+    facebook_link = Column(Text)  # Facebook page link
+    tiktok_link = Column(Text)  # TikTok profile link
+    
+    # Multiple images support
+    business_images = Column(ARRAY(String))  # Array of image URLs
+    
+    # Enhanced status tracking
+    submission_status = Column(String(20), default='pending_approval')  # pending_approval, approved, rejected, draft
+    submission_date = Column(DateTime)  # When submitted
+    approval_date = Column(DateTime)  # When approved/rejected
+    approved_by = Column(Text)  # Who approved/rejected
+    rejection_reason = Column(Text)  # Reason for rejection
+    
+    # Additional business details
+    business_license = Column(Text)  # Business license number
+    tax_id = Column(Text)  # Tax ID number
+    years_in_business = Column(Integer)  # Years in business
+    seating_capacity = Column(Integer)  # Restaurant seating capacity
+    delivery_available = Column(Boolean, default=False)  # Delivery service available
+    takeout_available = Column(Boolean, default=False)  # Takeout service available
+    catering_available = Column(Boolean, default=False)  # Catering service available
+    
+    # Contact preferences
+    preferred_contact_method = Column(Text)  # email, phone, text, any
+    preferred_contact_time = Column(Text)  # morning, afternoon, evening
+    contact_notes = Column(Text)  # Additional contact notes
+
 
 class Review(Base):
     """Review model for user reviews of restaurants.
@@ -1844,6 +1881,115 @@ class EnhancedDatabaseManager:
                     if hasattr(restaurant, field):
                         old_value = getattr(restaurant, field)
                         new_value = restaurant_data[field]
+
+                        # Only update if value is different
+                        if old_value != new_value:
+                            setattr(restaurant, field, new_value)
+                            updated = True
+                            logger.info(
+                                "Updated field for restaurant",
+                                field=field,
+                                restaurant_id=restaurant_id,
+                                old_value=old_value,
+                                new_value=new_value,
+                            )
+
+            if updated:
+                restaurant.updated_at = datetime.utcnow()
+                session.commit()
+                logger.info(
+                    "Successfully updated restaurant", restaurant_id=restaurant_id
+                )
+                return True
+            logger.info("No changes needed for restaurant", restaurant_id=restaurant_id)
+            return True
+
+        except Exception as e:
+            logger.exception(
+                "Error updating restaurant", restaurant_id=restaurant_id, error=str(e)
+            )
+            if session:
+                session.rollback()
+            return False
+        finally:
+            if session:
+                session.close()
+
+    def update_restaurant(
+        self,
+        restaurant_id: int,
+        update_data: dict[str, Any],
+    ) -> bool:
+        """Update restaurant with any fields including enhanced add eatery workflow fields."""
+        try:
+            session = self.get_session()
+            restaurant = (
+                session.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+            )
+
+            if not restaurant:
+                logger.error(
+                    "Restaurant with ID not found", restaurant_id=restaurant_id
+                )
+                return False
+
+            # All updateable fields including enhanced add eatery workflow fields
+            updateable_fields = [
+                # Core fields
+                "address",
+                "city",
+                "state",
+                "zip_code",
+                "phone_number",
+                "kosher_category",
+                "listing_type",
+                "certifying_agency",
+                "is_cholov_yisroel",
+                "is_pas_yisroel",
+                "cholov_stam",
+                "latitude",
+                "longitude",
+                "website",
+                "image_url",
+                "short_description",
+                "price_range",
+                "hours_open",
+                "hours_of_operation",
+                "google_listing_url",
+                "business_email",
+                
+                # Enhanced add eatery workflow fields
+                "owner_name",
+                "owner_email",
+                "owner_phone",
+                "is_owner_submission",
+                "business_license",
+                "tax_id",
+                "years_in_business",
+                "seating_capacity",
+                "delivery_available",
+                "takeout_available",
+                "catering_available",
+                "preferred_contact_method",
+                "preferred_contact_time",
+                "contact_notes",
+                "instagram_link",
+                "facebook_link",
+                "tiktok_link",
+                "business_images",
+                "submission_status",
+                "submission_date",
+                "approval_date",
+                "approved_by",
+                "rejection_reason",
+            ]
+
+            updated = False
+            for field in updateable_fields:
+                if field in update_data and update_data[field] is not None:
+                    if hasattr(restaurant, field):
+                        old_value = getattr(restaurant, field)
+                        new_value = update_data[field]
 
                         # Only update if value is different
                         if old_value != new_value:
