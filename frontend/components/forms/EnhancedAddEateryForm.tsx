@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle, Phone } from 'lucide-react';
 import MultipleImageUpload from './MultipleImageUpload';
+import AddressAutofill from './AddressAutofill';
 
 import { 
   restaurantFormSchema, 
@@ -59,6 +60,30 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   });
 
   const watchedValues = watch();
+
+  // Phone number formatting function
+  const formatPhoneNumber = (value: string | undefined) => {
+    if (!value) return '';
+    
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '');
+    
+    // Format based on length
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  // Handle address selection from autofill
+  const handleAddressSelect = (address: { street: string; city: string; state: string; zipCode: string }) => {
+    setValue('city', address.city);
+    setValue('state', address.state);
+    setValue('zip_code', address.zipCode);
+  };
 
   // Fetch filter options
   useEffect(() => {
@@ -333,20 +358,15 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         name="address"
                         control={control}
                         render={({ field }) => (
-                          <input
-                            {...field}
-                            type="text"
-                            className={cn(
-                              "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                              errors.address ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                            )}
-                            placeholder="Street address"
+                          <AddressAutofill
+                            value={field.value}
+                            onChange={field.onChange}
+                            onAddressSelect={handleAddressSelect}
+                            placeholder="Start typing your address..."
+                            error={errors.address?.message}
                           />
                         )}
                       />
-                      {errors.address && (
-                        <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -434,15 +454,24 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         name="phone"
                         control={control}
                         render={({ field }) => (
-                          <input
-                            {...field}
-                            type="tel"
-                            className={cn(
-                              "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                              errors.phone ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                            )}
-                            placeholder="(555) 123-4567"
-                          />
+                          <div className="relative">
+                            <input
+                              {...field}
+                              type="tel"
+                              value={formatPhoneNumber(field.value)}
+                              onChange={(e) => {
+                                const formatted = formatPhoneNumber(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                              className={cn(
+                                "w-full px-3 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2",
+                                errors.phone ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                              placeholder="(555) 123-4567"
+                              maxLength={14}
+                            />
+                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          </div>
                         )}
                       />
                       {errors.phone && (
@@ -560,15 +589,24 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             name="owner_phone"
                             control={control}
                             render={({ field }) => (
-                              <input
-                                {...field}
-                                type="tel"
-                                className={cn(
-                                  "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                                  errors.owner_phone ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                                )}
-                                placeholder="(555) 123-4567"
-                              />
+                              <div className="relative">
+                                <input
+                                  {...field}
+                                  type="tel"
+                                  value={formatPhoneNumber(field.value)}
+                                  onChange={(e) => {
+                                    const formatted = formatPhoneNumber(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                  className={cn(
+                                    "w-full px-3 py-2 pl-10 border rounded-md focus:outline-none focus:ring-2",
+                                    errors.owner_phone ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                                  )}
+                                  placeholder="(555) 123-4567"
+                                  maxLength={14}
+                                />
+                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              </div>
                             )}
                           />
                           {errors.owner_phone && (

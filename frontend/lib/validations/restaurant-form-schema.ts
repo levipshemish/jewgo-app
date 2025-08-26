@@ -1,16 +1,78 @@
 import { z } from 'zod';
 
 // Base validation schemas
-const emailSchema = z.string().email('Please enter a valid email address').optional().or(z.literal(''));
-const phoneSchema = z.string().min(1, 'Phone number is required').regex(/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number');
-const urlSchema = z.string().url('Please enter a valid URL').optional().or(z.literal(''));
+const emailSchema = z.string()
+  .email('Please enter a valid email address')
+  .refine((email) => {
+    if (!email) return true; // Allow empty
+    // Check for common disposable email domains
+    const disposableDomains = [
+      'tempmail.org', '10minutemail.com', 'guerrillamail.com', 'mailinator.com',
+      'yopmail.com', 'throwaway.email', 'temp-mail.org', 'fakeinbox.com'
+    ];
+    const domain = email.split('@')[1]?.toLowerCase();
+    return !disposableDomains.includes(domain);
+  }, 'Please use a valid email address (disposable emails not allowed)')
+  .optional()
+  .or(z.literal(''));
+
+const phoneSchema = z.string()
+  .min(1, 'Phone number is required')
+  .refine((phone) => {
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, '');
+    // Must be 10-15 digits (US and international)
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+  }, 'Please enter a valid phone number (10-15 digits)')
+  .refine((phone) => {
+    // Check for common fake patterns
+    const digitsOnly = phone.replace(/\D/g, '');
+    const fakePatterns = [
+      '1234567890', '1111111111', '0000000000', '9999999999',
+      '5555555555', '1231231234', '9876543210'
+    ];
+    return !fakePatterns.includes(digitsOnly);
+  }, 'Please enter a real phone number');
+
+const urlSchema = z.string()
+  .url('Please enter a valid URL')
+  .refine((url) => {
+    if (!url) return true; // Allow empty
+    // Check for common fake URL patterns
+    const fakePatterns = ['example.com', 'test.com', 'fake.com', 'placeholder.com'];
+    return !fakePatterns.some(pattern => url.toLowerCase().includes(pattern));
+  }, 'Please enter a real website URL')
+  .optional()
+  .or(z.literal(''));
+
+// Address validation
+const addressSchema = z.string()
+  .min(5, 'Address must be at least 5 characters')
+  .max(200, 'Address must be less than 200 characters')
+  .refine((address) => {
+    if (!address) return false;
+    // Check for common fake address patterns
+    const fakePatterns = [
+      '123 fake street', 'test address', 'sample address', 'placeholder address',
+      'fake address', 'example address', 'dummy address'
+    ];
+    const lowerAddress = address.toLowerCase();
+    return !fakePatterns.some(pattern => lowerAddress.includes(pattern));
+  }, 'Please enter a real address')
+  .refine((address) => {
+    if (!address) return false;
+    // Must contain at least one number and one letter
+    const hasNumber = /\d/.test(address);
+    const hasLetter = /[a-zA-Z]/.test(address);
+    return hasNumber && hasLetter;
+  }, 'Address must contain both numbers and letters');
 
 // Enhanced restaurant form schema with conditional validation
 export const restaurantFormSchema = z.object({
   // Step 1: Business Ownership & Basic Info
   is_owner_submission: z.boolean(),
   name: z.string().min(1, 'Business name is required').max(255, 'Business name must be 255 characters or less'),
-  address: z.string().min(1, 'Address is required').max(500, 'Address must be 500 characters or less'),
+  address: addressSchema,
   city: z.string().min(1, 'City is required').max(100, 'City must be 100 characters or less'),
   state: z.string().min(1, 'State is required').max(50, 'State must be 50 characters or less'),
   zip_code: z.string().min(1, 'ZIP code is required').max(20, 'ZIP code must be 20 characters or less'),
@@ -86,7 +148,7 @@ export const restaurantFormSchema = z.object({
 export const step1Schema = z.object({
   is_owner_submission: z.boolean(),
   name: z.string().min(1, 'Business name is required').max(255, 'Business name must be 255 characters or less'),
-  address: z.string().min(1, 'Address is required').max(500, 'Address must be 500 characters or less'),
+  address: addressSchema,
   city: z.string().min(1, 'City is required').max(100, 'City must be 100 characters or less'),
   state: z.string().min(1, 'State is required').max(50, 'State must be 50 characters or less'),
   zip_code: z.string().min(1, 'ZIP code is required').max(20, 'ZIP code must be 20 characters or less'),
