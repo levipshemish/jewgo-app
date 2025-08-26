@@ -61,7 +61,7 @@ export const restaurantFormSchema = z.object({
   if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === undefined) {
     return false;
   }
-  if (['meat', 'pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
+  if (['meat', 'pareve', 'dairy'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
     return false;
   }
   return true;
@@ -110,7 +110,7 @@ export const step2Schema = z.object({
   if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === undefined) {
     return false;
   }
-  if (['meat', 'pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
+  if (['meat', 'pareve', 'dairy'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
     return false;
   }
   return true;
@@ -192,6 +192,7 @@ export const validateField = (field: string, value: any, step: number, formData:
 // Helper functions for conditional validation
 export const isDairyCategory = (category: string): boolean => category === 'dairy';
 export const isMeatOrPareveCategory = (category: string): boolean => ['meat', 'pareve'].includes(category);
+export const isPasYisroelCategory = (category: string): boolean => ['meat', 'pareve', 'dairy'].includes(category);
 export const isOwnerSubmission = (isOwner: boolean): boolean => isOwner;
 
 // Default form data

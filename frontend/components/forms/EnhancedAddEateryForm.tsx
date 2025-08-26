@@ -15,6 +15,7 @@ import {
   validateStep,
   isDairyCategory,
   isMeatOrPareveCategory,
+  isPasYisroelCategory,
   isOwnerSubmission
 } from '@/lib/validations/restaurant-form-schema';
 import { cn } from '@/lib/utils/classNames';
@@ -694,7 +695,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     </div>
                   )}
 
-                  {isMeatOrPareveCategory(watchedValues.kosher_category) && (
+                  {isPasYisroelCategory(watchedValues.kosher_category) && (
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <h3 className="text-sm font-medium text-blue-900 mb-3">Pas Yisroel Status *</h3>
                       <Controller
@@ -1019,11 +1020,11 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <span className="font-medium">Dairy Status:</span> {watchedValues.is_cholov_yisroel ? 'Cholov Yisroel' : 'Cholov Stam'}
                           </div>
                         )}
-                        {isMeatOrPareveCategory(watchedValues.kosher_category) && (
-                          <div>
-                            <span className="font-medium">Pas Yisroel:</span> {watchedValues.is_pas_yisroel ? 'Yes' : 'No'}
-                          </div>
-                        )}
+                                            {isPasYisroelCategory(watchedValues.kosher_category) && (
+                      <div>
+                        <span className="font-medium">Pas Yisroel:</span> {watchedValues.is_pas_yisroel ? 'Yes' : 'No'}
+                      </div>
+                    )}
                       </div>
                     </div>
 
