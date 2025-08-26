@@ -5,20 +5,13 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "NEXT_PUBLIC_WEBSOCKET_URL": "@websocket-url",
-    "NEXT_PUBLIC_VERCEL_URL": "@vercel-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://lgsfyrxkqpipaumngvfi.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc2Z5cnhrcXBpcGF1bW5ndmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0ODcwMDgsImV4cCI6MjA3MTA2MzAwOH0.ppXAiXHEgEz1zOANin2HnGzznln4HZhVia-F6WX_P2c",
     "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com",
-    "MERGE_COOKIE_HMAC_KEY_CURRENT": "@merge-cookie-hmac-key-current",
-    "MERGE_COOKIE_HMAC_KEY_PREVIOUS": "@merge-cookie-hmac-key-previous",
-    "CLEANUP_CRON_SECRET": "@cleanup-cron-secret",
-    "REDIS_URL": "@redis-url",
-
-    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google-maps-api-key",
-    "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "@google-maps-map-id",
-    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "@ga-measurement-id",
-    "NEXT_PUBLIC_ADMIN_EMAIL": "@admin-email",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCl7ryK-cp9EtGoYMJ960P1jZO-nnTCCqM",
+    "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "5060e374c6d88aacf8fea324",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-CGMV8EBX9C",
+    "NEXT_PUBLIC_ADMIN_EMAIL": "admin@jewgo.com",
     "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcpuqbnrm"
   },
   "functions": {
