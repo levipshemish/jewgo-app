@@ -17,6 +17,10 @@ export interface AuditLog {
   correlationId?: string;
   auditLevel: 'info' | 'warning' | 'critical';
   metadata?: Record<string, any>;
+  user?: {
+    email: string;
+    name?: string;
+  };
 }
 
 // Audit levels

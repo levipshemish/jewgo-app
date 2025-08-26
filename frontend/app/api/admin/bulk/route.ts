@@ -33,8 +33,6 @@ export async function POST(request: NextRequest) {
       review: prisma.review,
       user: prisma.user,
       restaurantImage: prisma.restaurantImage,
-      floridaSynagogue: prisma.floridaSynagogue,
-      kosherPlace: prisma.kosherPlace,
     };
 
     const model = modelMap[entityType];
@@ -57,6 +55,7 @@ export async function POST(request: NextRequest) {
     const result = await AdminDatabaseService.bulkOperation(
       operation,
       model,
+      entityType,
       data,
       adminUser,
       entityType,
@@ -76,9 +75,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] Bulk operation error:', error);
     
-    if (error.name === 'ZodError') {
+    if ((error as any).name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }

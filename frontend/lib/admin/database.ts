@@ -1,9 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db/prisma';
 import { AdminUser } from './auth';
 import { logAdminAction } from './audit';
-
-// Prisma client instance
-const prisma = new PrismaClient();
 
 // Pagination interface
 export interface PaginationOptions {
@@ -33,13 +30,82 @@ export interface SearchOptions {
   sortOrder?: 'asc' | 'desc';
 }
 
+// Entity configuration
+const ENTITY_CONFIG = {
+  restaurant: {
+    softDelete: false,
+    defaultSortBy: 'created_at',
+    searchFields: ['name', 'address', 'city', 'state', 'phone_number'],
+  },
+  review: {
+    softDelete: true,
+    softDeleteField: 'deleted_at',
+    defaultSortBy: 'created_at',
+    searchFields: ['content', 'title', 'user_name'],
+  },
+  user: {
+    softDelete: true,
+    softDeleteField: 'deletedAt',
+    defaultSortBy: 'createdat',
+    searchFields: ['email', 'name'],
+  },
+  restaurantImage: {
+    softDelete: true,
+    softDeleteField: 'deleted_at',
+    defaultSortBy: 'created_at',
+    searchFields: ['image_url', 'cloudinary_public_id'],
+  },
+  floridaSynagogue: {
+    softDelete: true,
+    softDeleteField: 'deleted_at',
+    defaultSortBy: 'created_at',
+    searchFields: ['name', 'address', 'city', 'rabbi'],
+  },
+  kosherPlace: {
+    softDelete: true,
+    softDeleteField: 'deleted_at',
+    defaultSortBy: 'created_at',
+    searchFields: ['name', 'address', 'category'],
+  },
+} as const;
+
 // Generic CRUD operations
 export class AdminDatabaseService {
+  /**
+   * Get search fields for a model
+   */
+  static getSearchFields(modelKey: keyof typeof ENTITY_CONFIG): string[] {
+    return ENTITY_CONFIG[modelKey].searchFields;
+  }
+
+  /**
+   * Get default sort field for a model
+   */
+  static getDefaultSortField(modelKey: keyof typeof ENTITY_CONFIG): string {
+    return ENTITY_CONFIG[modelKey].defaultSortBy;
+  }
+
+  /**
+   * Check if model supports soft delete
+   */
+  static supportsSoftDelete(modelKey: keyof typeof ENTITY_CONFIG): boolean {
+    return ENTITY_CONFIG[modelKey].softDelete;
+  }
+
+  /**
+   * Get soft delete field for a model
+   */
+  static getSoftDeleteField(modelKey: keyof typeof ENTITY_CONFIG): string | null {
+    const config = ENTITY_CONFIG[modelKey];
+    return config.softDelete ? config.softDeleteField : null;
+  }
+
   /**
    * Get paginated data with search and filtering
    */
   static async getPaginatedData<T>(
-    model: any,
+    delegate: any,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'floridaSynagogue' | 'kosherPlace',
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
@@ -54,7 +120,7 @@ export class AdminDatabaseService {
 
     if (search) {
       // Add search conditions based on model
-      const searchFields = this.getSearchFields(model);
+      const searchFields = this.getSearchFields(modelKey);
       if (searchFields.length > 0) {
         where.OR = searchFields.map(field => ({
           [field]: {
@@ -70,14 +136,16 @@ export class AdminDatabaseService {
     if (sortBy) {
       orderBy[sortBy] = sortOrder || 'desc';
     } else {
-      orderBy.created_at = 'desc';
+      // Use default sort field based on model
+      const defaultSortField = this.getDefaultSortField(modelKey);
+      orderBy[defaultSortField] = 'desc';
     }
 
     // Get total count
-    const total = await model.count({ where });
+    const total = await delegate.count({ where });
 
     // Get paginated data
-    const data = await model.findMany({
+    const data = await delegate.findMany({
       where,
       orderBy,
       skip: cursor ? undefined : (page - 1) * pageSize,
@@ -104,34 +172,20 @@ export class AdminDatabaseService {
     };
   }
 
-  /**
-   * Get search fields for a model
-   */
-  private static getSearchFields(model: any): string[] {
-    const modelSearchFields: Record<string, string[]> = {
-      Restaurant: ['name', 'address', 'city', 'state', 'phone_number'],
-      Review: ['title', 'content', 'user_name', 'user_email'],
-      User: ['email', 'name'],
-      RestaurantImage: ['image_url'],
-      FloridaSynagogue: ['name', 'address', 'city', 'state'],
-      KosherPlace: ['name', 'address', 'category'],
-    };
 
-    const modelName = model.name || 'Unknown';
-    return modelSearchFields[modelName] || [];
-  }
 
   /**
    * Create a new record
    */
   static async createRecord<T>(
-    model: any,
+    delegate: any,
+    modelKey: keyof typeof ENTITY_CONFIG,
     data: any,
     user: AdminUser,
     entityType: string
   ): Promise<T> {
     try {
-      const result = await model.create({
+      const result = await delegate.create({
         data,
       });
 
@@ -152,7 +206,8 @@ export class AdminDatabaseService {
    * Update a record
    */
   static async updateRecord<T>(
-    model: any,
+    delegate: any,
+    modelKey: keyof typeof ENTITY_CONFIG,
     id: string | number,
     data: any,
     user: AdminUser,
@@ -160,11 +215,11 @@ export class AdminDatabaseService {
   ): Promise<T> {
     try {
       // Get old data for audit
-      const oldData = await model.findUnique({
+      const oldData = await delegate.findUnique({
         where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
       });
 
-      const result = await model.update({
+      const result = await delegate.update({
         where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
         data,
       });
@@ -187,7 +242,8 @@ export class AdminDatabaseService {
    * Delete a record (soft delete if supported)
    */
   static async deleteRecord<T>(
-    model: any,
+    delegate: any,
+    modelKey: keyof typeof ENTITY_CONFIG,
     id: string | number,
     user: AdminUser,
     entityType: string,
@@ -195,21 +251,29 @@ export class AdminDatabaseService {
   ): Promise<T> {
     try {
       // Get old data for audit
-      const oldData = await model.findUnique({
+      const oldData = await delegate.findUnique({
         where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
       });
 
       let result: T;
 
-      if (softDelete && this.supportsSoftDelete(model)) {
+      if (softDelete && this.supportsSoftDelete(modelKey)) {
         // Soft delete
-        result = await model.update({
-          where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
-          data: { deletedAt: new Date() },
-        });
+        const softDeleteField = this.getSoftDeleteField(modelKey);
+        if (softDeleteField) {
+          result = await delegate.update({
+            where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
+            data: { [softDeleteField]: new Date() },
+          });
+        } else {
+          // Fallback to hard delete if soft delete field not configured
+          result = await delegate.delete({
+            where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
+          });
+        }
       } else {
         // Hard delete
-        result = await model.delete({
+        result = await delegate.delete({
           where: { id: typeof id === 'string' ? id : parseInt(id.toString()) },
         });
       }
@@ -228,21 +292,15 @@ export class AdminDatabaseService {
     }
   }
 
-  /**
-   * Check if model supports soft delete
-   */
-  private static supportsSoftDelete(model: any): boolean {
-    // Check if model has deletedAt field
-    const modelFields = Object.keys(model.fields || {});
-    return modelFields.includes('deletedAt');
-  }
+
 
   /**
    * Bulk operations with transaction support
    */
   static async bulkOperation<T>(
     operation: 'create' | 'update' | 'delete',
-    model: any,
+    delegate: any,
+    modelKey: keyof typeof ENTITY_CONFIG,
     data: any[],
     user: AdminUser,
     entityType: string,
@@ -270,22 +328,29 @@ export class AdminDatabaseService {
             try {
               switch (operation) {
                 case 'create':
-                  await tx[model.name.toLowerCase()].create({ data: item });
+                  await tx[modelKey].create({ data: item });
                   break;
                 case 'update':
-                  await tx[model.name.toLowerCase()].update({
+                  await tx[modelKey].update({
                     where: { id: item.id },
                     data: item,
                   });
                   break;
                 case 'delete':
-                  if (this.supportsSoftDelete(model)) {
-                    await tx[model.name.toLowerCase()].update({
-                      where: { id: item.id },
-                      data: { deletedAt: new Date() },
-                    });
+                  if (this.supportsSoftDelete(modelKey)) {
+                    const softDeleteField = this.getSoftDeleteField(modelKey);
+                    if (softDeleteField) {
+                      await tx[modelKey].update({
+                        where: { id: item.id },
+                        data: { [softDeleteField]: new Date() },
+                      });
+                    } else {
+                      await tx[modelKey].delete({
+                        where: { id: item.id },
+                      });
+                    }
                   } else {
-                    await tx[model.name.toLowerCase()].delete({
+                    await tx[modelKey].delete({
                       where: { id: item.id },
                     });
                   }
@@ -328,7 +393,8 @@ export class AdminDatabaseService {
    * Export data to CSV
    */
   static async exportToCSV<T>(
-    model: any,
+    delegate: any,
+    modelKey: keyof typeof ENTITY_CONFIG,
     options: SearchOptions = {},
     fields: string[] = []
   ): Promise<string> {
@@ -341,7 +407,7 @@ export class AdminDatabaseService {
     }
 
     if (search) {
-      const searchFields = this.getSearchFields(model);
+      const searchFields = this.getSearchFields(modelKey);
       if (searchFields.length > 0) {
         where.OR = searchFields.map(field => ({
           [field]: {
@@ -357,11 +423,12 @@ export class AdminDatabaseService {
     if (sortBy) {
       orderBy[sortBy] = sortOrder || 'desc';
     } else {
-      orderBy.created_at = 'desc';
+      const defaultSortField = this.getDefaultSortField(modelKey);
+      orderBy[defaultSortField] = 'desc';
     }
 
     // Get all data
-    const data = await model.findMany({
+    const data = await delegate.findMany({
       where,
       orderBy,
     });
