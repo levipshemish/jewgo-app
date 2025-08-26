@@ -38,7 +38,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCustomHours, setShowCustomHours] = useState(false);
+
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
     kosherCategories: [],
@@ -858,52 +858,16 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Hours of Operation *
                     </label>
-                    <Controller
-                      name="hours_of_operation"
-                      control={control}
-                      render={({ field }) => (
-                        <select
-                          {...field}
-                          value={showCustomHours ? 'custom' : (field.value || '')}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === 'custom') {
-                              setShowCustomHours(true);
-                              field.onChange('custom');
-                            } else {
-                              setShowCustomHours(false);
-                              field.onChange(val);
-                            }
-                          }}
-                          className={cn(
-                            "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                            errors.hours_of_operation ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                          )}
-                        >
-                          <option value="">Select hours of operation</option>
-                          <option value="Monday: 10:00 AM – 10:00 PM\nTuesday: 10:00 AM – 10:00 PM\nWednesday: 10:00 AM – 10:00 PM\nThursday: 10:00 AM – 10:00 PM\nFriday: 10:00 AM – 3:00 PM\nSaturday: Closed\nSunday: 10:00 AM – 9:00 PM">Standard Kosher Hours (Mon-Thu 10AM-10PM, Fri 10AM-3PM, Sat Closed, Sun 10AM-9PM)</option>
-                          <option value="Monday: 10:00 AM – 11:00 PM\nTuesday: 10:00 AM – 11:00 PM\nWednesday: 10:00 AM – 11:00 PM\nThursday: 10:00 AM – 11:00 PM\nFriday: 10:00 AM – 4:00 PM\nSaturday: 9:00 PM – 1:00 AM\nSunday: 10:00 AM – 11:00 PM">Extended Hours (Mon-Thu 10AM-11PM, Fri 10AM-4PM, Sat 9PM-1AM, Sun 10AM-11PM)</option>
-                          <option value="Monday: 10:00 AM – 7:00 PM\nTuesday: 10:00 AM – 7:00 PM\nWednesday: 10:00 AM – 7:00 PM\nThursday: 10:00 AM – 7:00 PM\nFriday: Closed\nSaturday: Closed\nSunday: 10:00 AM – 7:00 PM">Weekday Only (Mon-Thu 10AM-7PM, Fri-Sat Closed, Sun 10AM-7PM)</option>
-                          <option value="Monday: 10:00 AM – 8:00 PM\nTuesday: 10:00 AM – 8:00 PM\nWednesday: 10:00 AM – 8:00 PM\nThursday: 10:00 AM – 8:00 PM\nFriday: 10:00 AM – 4:00 PM\nSaturday: Closed\nSunday: 10:00 AM – 8:00 PM">Moderate Hours (Mon-Thu 10AM-8PM, Fri 10AM-4PM, Sat Closed, Sun 10AM-8PM)</option>
-                          <option value="Monday: 10:00 AM – 9:00 PM\nTuesday: 10:00 AM – 9:00 PM\nWednesday: 10:00 AM – 9:00 PM\nThursday: 10:00 AM – 9:00 PM\nFriday: 10:00 AM – 3:30 PM\nSaturday: Closed\nSunday: 10:00 AM – 9:00 PM">Evening Hours (Mon-Thu 10AM-9PM, Fri 10AM-3:30PM, Sat Closed, Sun 10AM-9PM)</option>
-                          <option value="Monday: 10:30 AM – 10:30 PM\nTuesday: 10:30 AM – 10:30 PM\nWednesday: 10:30 AM – 10:30 PM\nThursday: 10:30 AM – 10:30 PM\nFriday: 10:30 AM – 3:00 PM\nSaturday: Closed\nSunday: 10:30 AM – 10:30 PM">Late Start Hours (Mon-Thu 10:30AM-10:30PM, Fri 10:30AM-3PM, Sat Closed, Sun 10:30AM-10:30PM)</option>
-                          <option value="custom">Custom Hours (I'll enter manually)</option>
-                        </select>
-                      )}
-                    />
-                    {showCustomHours && (
-                      <div className="mt-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        {/* Debug log removed */}
-                        <CustomHoursSelector
-                          key="custom-hours-selector" // Add key to prevent unnecessary re-renders
-                          value={getValues('hours_of_operation') || ''}
-                          onChange={(value) => {
-                            setValue('hours_of_operation', value);
-                          }}
-                          error={errors.hours_of_operation?.message}
-                        />
-                      </div>
-                    )}
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                      <CustomHoursSelector
+                        key="custom-hours-selector"
+                        value={getValues('hours_of_operation') || ''}
+                        onChange={(value) => {
+                          setValue('hours_of_operation', value);
+                        }}
+                        error={errors.hours_of_operation?.message}
+                      />
+                    </div>
                     {errors.hours_of_operation && (
                       <p className="text-red-500 text-sm mt-1">{errors.hours_of_operation.message}</p>
                     )}

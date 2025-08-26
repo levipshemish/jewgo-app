@@ -1,414 +1,641 @@
-# JewGo Deployment Guide
+# Deployment Guide
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
+3. [Backend Deployment (Render)](#backend-deployment-render)
+4. [Database Setup](#database-setup)
+5. [Admin System Deployment](#admin-system-deployment)
+6. [Environment Configuration](#environment-configuration)
+7. [Monitoring & Health Checks](#monitoring--health-checks)
+8. [Troubleshooting](#troubleshooting)
 
 ## Overview
 
-This guide covers deploying the JewGo application to various platforms including Render, Vercel, and local development environments.
+This guide covers the complete deployment process for the JewGo application, including the frontend (Next.js), backend (Flask), database (PostgreSQL), and admin system.
 
-## Prerequisites
+## Frontend Deployment (Vercel)
 
-- Python 3.11.8+
-- Node.js 22.x
-- PostgreSQL database (Neon recommended)
-- Git
-- API keys for external services
+### Prerequisites
 
-## Environment Variables
+- Vercel account
+- GitHub repository connected to Vercel
+- Environment variables configured
 
-### Backend Environment Variables
+### Deployment Steps
 
-Create a `.env` file in the `backend/` directory:
+1. **Connect Repository**
+   ```bash
+   # Connect your GitHub repository to Vercel
+   # Go to Vercel Dashboard > New Project > Import Git Repository
+   ```
 
-```bash
-# Database Configuration
-DATABASE_URL=postgresql://username:password@host:port/database_name
+2. **Configure Build Settings**
+   ```json
+   {
+     "buildCommand": "npm run build",
+     "outputDirectory": ".next",
+     "framework": "nextjs",
+     "installCommand": "npm install",
+     "devCommand": "npm run dev"
+   }
+   ```
 
-# Flask Configuration
-FLASK_ENV=production
-FLASK_SECRET_KEY=your-secure-secret-key
-SECRET_KEY=your-secure-secret-key
-
-# API Keys
-GOOGLE_PLACES_API_KEY=your-google-places-api-key
-GOOGLE_MAPS_API_KEY=your-google-maps-api-key
-CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
-CLOUDINARY_API_KEY=your-cloudinary-api-key
-CLOUDINARY_API_SECRET=your-cloudinary-api-secret
-
-# Monitoring
-SENTRY_DSN=your-sentry-dsn
-
-# Security
-ADMIN_TOKEN=your-secure-admin-token
-SCRAPER_TOKEN=your-secure-scraper-token
-ALLOWED_IPS=your-server-ip,127.0.0.1
-
-# Environment
-ENVIRONMENT=production
-DEBUG=False
-LOG_LEVEL=INFO
-
-# CORS
-CORS_ORIGINS=https://your-frontend-domain.com
-
-# Rate Limiting
-SCRAPER_RATE_LIMIT_HOUR=100
-ADMIN_RATE_LIMIT_HOUR=50
-
-# Monitoring
-SENTRY_DSN=your-sentry-dsn
-```
-
-### Frontend Environment Variables
-
-Create a `.env.local` file in the `frontend/` directory (replace placeholders with real secrets in your environment, never commit real credentials):
-
-```bash
-# Next.js Configuration
-NEXTAUTH_URL=https://<YOUR_VERCEL_APP>.vercel.app
-NEXTAUTH_SECRET=<YOUR_NEXTAUTH_SECRET>
-
-# API Configuration
-NEXT_PUBLIC_BACKEND_URL=https://<YOUR_BACKEND_DOMAIN>
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=<YOUR_GOOGLE_MAPS_API_KEY>
-
-# Environment
-NODE_ENV=production
-
-Note: Real values must be stored only in `.env` (backend) and `.env.local` (frontend) or your hosting provider’s environment settings. Do not include real environment values in documentation.
-```
-
-## Local Development Deployment
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/jewgo-app.git
-cd jewgo-app
-```
-
-### 2. Setup Development Environment
-
-```bash
-# Run the setup script
-./scripts/setup-dev-environment.sh
-```
-
-### 3. Start Development Servers
-
-```bash
-# Start both backend and frontend
-./start-dev.sh
-```
-
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-
-## Render Deployment
-
-### Backend Deployment
-
-1. **Create a new Web Service on Render**
-
-2. **Connect your GitHub repository**
-
-3. **Configure the service:**
-   - **Name:** jewgo-backend
-   - **Environment:** Python
-   - **Build Command:** `cd backend && pip install -r requirements.txt`
-   - **Start Command:** `cd backend && gunicorn --config config/gunicorn.conf.py app:app`
-
-4. **Set Environment Variables:**
-   - Go to the "Environment" tab
-   - Add all backend environment variables listed above
-
-5. **Deploy**
-
-### Frontend Deployment
-
-1. **Create a new Static Site on Render**
-
-2. **Configure the service:**
-   - **Name:** jewgo-frontend
-   - **Build Command:** `cd frontend && npm install && npm run build`
-   - **Publish Directory:** `frontend/.next`
-
-3. **Set Environment Variables:**
-   - Add all frontend environment variables
+3. **Set Environment Variables**
+   ```bash
+   # Required environment variables
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-key
+   NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=your-map-id
+   NEXT_PUBLIC_GA_MEASUREMENT_ID=your-ga-id
+   DATABASE_URL=postgresql://...
+   NEXTAUTH_SECRET=your-secret-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ```
 
 4. **Deploy**
-
-## Vercel Deployment
-
-### Frontend Deployment
-
-1. **Install Vercel CLI:**
    ```bash
-   npm i -g vercel
+   # Deploy to production
+   git push origin main
    ```
 
-2. **Deploy:**
+### Vercel Configuration
+
+Create `vercel.json` in the frontend directory:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://lgsfyrxkqpipaumngvfi.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc2Z5cnhrcXBpcGF1bW5ndmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0ODcwMDgsImV4cCI6MjA3MTA2MzAwOH0.ppXAiXHEgEz1zOANin2HnGzznln4HZhVia-F6WX_P2c",
+    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCl7ryK-cp9EtGoYMJ960P1jZO-nnTCCqM",
+    "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "5060e374c6d88aacf8fea324",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-CXXXXXXXXX",
+    "DATABASE_URL": "postgresql://...",
+    "NEXTAUTH_SECRET": "your-secret-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key"
+  }
+}
+```
+
+## Backend Deployment (Render)
+
+### Prerequisites
+
+- Render account
+- GitHub repository connected to Render
+- Environment variables configured
+
+### Deployment Steps
+
+1. **Create Web Service**
    ```bash
-   cd frontend
-   vercel
+   # Go to Render Dashboard > New > Web Service
+   # Connect your GitHub repository
    ```
 
-3. **Configure Environment Variables:**
-   - Go to your Vercel dashboard
-   - Navigate to Settings > Environment Variables
-   - Add all frontend environment variables
+2. **Configure Service**
+   ```bash
+   # Build Command
+   pip install -r requirements.txt
+   
+   # Start Command
+   python wsgi.py
+   
+   # Environment
+   Python 3.9+
+   ```
 
-### Backend Deployment
+3. **Set Environment Variables**
+   ```bash
+   # Required environment variables
+   DATABASE_URL=postgresql://...
+   FLASK_ENV=production
+   SECRET_KEY=your-secret-key
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ```
 
-Vercel is primarily for frontend applications. For the backend, use Render or another platform.
+4. **Deploy**
+   ```bash
+   # Deploy to production
+   git push origin main
+   ```
 
 ## Database Setup
 
-### PostgreSQL on Render
+### PostgreSQL Database
 
-1. **Create a new PostgreSQL service on Render**
-
-2. **Configure the database:**
-   - Choose your plan
-   - Set database name: `jewgo_db`
-
-3. **Get connection details:**
-   - Copy the external database URL
-   - Update your backend environment variables
-
-4. **Run migrations:**
+1. **Create Database**
    ```bash
+   # Using Supabase or external PostgreSQL provider
+   # Create new database instance
+   ```
+
+2. **Run Migrations**
+   ```bash
+   # Apply database schema
    cd backend
-   source venv_py311/bin/activate
-   python -m alembic upgrade head
+   python -m database.migrations.run_migrations
    ```
 
-### Local PostgreSQL
-
-1. **Install PostgreSQL:**
+3. **Seed Data**
    ```bash
-   # macOS
-   brew install postgresql
-   
-   # Ubuntu
-   sudo apt-get install postgresql postgresql-contrib
+   # Add initial data if needed
+   python -m database.seed_data
    ```
 
-2. **Create database:**
+### Supabase Setup
+
+1. **Create Project**
    ```bash
-   createdb jewgo_db
+   # Go to Supabase Dashboard > New Project
+   # Choose region and plan
    ```
 
-3. **Run migrations:**
+2. **Configure Authentication**
    ```bash
-   cd backend
-   source venv_py311/bin/activate
-   python -m alembic upgrade head
+   # Set up authentication providers
+   # Configure OAuth settings
    ```
 
-## SSL and Domain Configuration
-
-### Custom Domain Setup
-
-1. **Purchase a domain** (e.g., from Namecheap, GoDaddy)
-
-2. **Configure DNS:**
-   - Point to your Render/Vercel services
-   - Add CNAME records for subdomains
-
-3. **Enable SSL:**
-   - Render and Vercel provide automatic SSL certificates
-   - Update CORS origins to use HTTPS
-
-## Monitoring and Logging
-
-### Sentry Integration
-
-1. **Create a Sentry account**
-
-2. **Get your DSN**
-
-3. **Add to environment variables:**
-   ```bash
-   SENTRY_DSN=your-sentry-dsn
-   ```
-
-### Health Checks
-
-The backend includes a health check endpoint at `/health`. Configure your deployment platform to use this endpoint.
-
-## Performance Optimization
-
-### Backend Optimization
-
-1. **Database Indexing:**
+3. **Set Up Tables**
    ```sql
-   CREATE INDEX idx_restaurants_city ON restaurants(city);
-   CREATE INDEX idx_restaurants_category ON restaurants(kosher_category);
-   CREATE INDEX idx_restaurants_status ON restaurants(status);
+   -- Run SQL scripts to create tables
+   -- See database/schema.sql for details
    ```
 
-2. **Caching:**
-   - Consider implementing Redis for caching
-   - Cache frequently accessed data
+## Admin System Deployment
 
-3. **CDN:**
-   - Use Cloudinary for image optimization
-   - Configure proper cache headers
+### Overview
 
-### Frontend Optimization
+The admin system requires specific configuration and environment variables to function properly in production. This section covers the complete admin system deployment process.
 
-1. **Bundle Optimization:**
+### Prerequisites
+
+- Admin system code deployed to frontend
+- Database with admin tables created
+- Admin users configured
+- Environment variables set
+
+### Admin System Requirements
+
+#### Required Environment Variables
+
+```bash
+# Database Configuration
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Authentication
+NEXTAUTH_SECRET=your-secret-key-min-32-chars
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Backend Configuration
+NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+```
+
+#### Database Tables
+
+The admin system requires these tables in Supabase:
+
+```sql
+-- Admin roles table
+CREATE TABLE admin_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  role VARCHAR(50) NOT NULL,
+  permissions JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Admin configuration table
+CREATE TABLE admin_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key VARCHAR(100) UNIQUE NOT NULL,
+  value JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Audit logs table
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id),
+  action VARCHAR(100) NOT NULL,
+  resource_type VARCHAR(50),
+  resource_id UUID,
+  details JSONB,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Admin System Deployment Steps
+
+#### 1. Frontend Admin Deployment
+
+1. **Verify Admin Code**
    ```bash
-   npm run analyze
+   # Check admin pages exist
+   ls frontend/app/admin/
+   ls frontend/app/api/admin/
    ```
 
-2. **Image Optimization:**
-   - Use Next.js Image component
-   - Implement lazy loading
+2. **Build Admin System**
+   ```bash
+   cd frontend
+   npm run build
+   ```
 
-3. **Code Splitting:**
-   - Implement dynamic imports
-   - Use React.lazy for components
+3. **Deploy to Vercel**
+   ```bash
+   # Push changes to trigger deployment
+   git add .
+   git commit -m "Deploy admin system"
+   git push origin main
+   ```
 
-## Security Considerations
+#### 2. Admin User Setup
 
-### API Security
+1. **Create Admin User**
+   ```sql
+   -- Insert admin role for existing user
+   INSERT INTO admin_roles (user_id, role, permissions)
+   VALUES (
+     'user-uuid-from-supabase',
+     'super_admin',
+     '{"restaurant_manage": true, "user_manage": true, "review_moderate": true}'
+   );
+   ```
 
-1. **Rate Limiting:**
-   - Configure appropriate rate limits
-   - Monitor for abuse
+2. **Verify Admin Access**
+   ```bash
+   # Test admin login
+   curl -X GET "https://your-domain.com/admin" \
+        -H "Cookie: your-session-cookie"
+   ```
 
-2. **CORS:**
-   - Restrict CORS origins in production
-   - Use specific domains, not wildcards
+#### 3. Admin API Routes
 
-3. **Authentication:**
-   - Use secure tokens
-   - Implement token rotation
-   - Monitor for suspicious activity
+Ensure all admin API routes are deployed:
 
-### Database Security
+```bash
+# Required admin API routes
+frontend/app/api/admin/
+├── csrf/route.ts           # CSRF token generation
+├── restaurants/route.ts    # Restaurant management
+├── reviews/route.ts        # Review moderation
+├── synagogues/route.ts     # Synagogue management
+└── users/route.ts          # User management
+```
 
-1. **Connection Security:**
-   - Use SSL connections
-   - Restrict database access
+#### 4. Environment Validation
 
-2. **Backup Strategy:**
-   - Implement regular backups
-   - Test restore procedures
+1. **Check Environment Variables**
+   ```bash
+   # Run environment check
+   npm run env:check
+   ```
+
+2. **Test Admin Functionality**
+   ```bash
+   # Test admin dashboard
+   curl -X GET "https://your-domain.com/admin"
+   
+   # Test CSRF token generation
+   curl -X GET "https://your-domain.com/api/admin/csrf"
+   ```
+
+### Admin System Configuration
+
+#### Vercel Configuration for Admin
+
+Update `frontend/vercel.json` to include admin-specific settings:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://lgsfyrxkqpipaumngvfi.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc2Z5cnhrcXBpcGF1bW5ndmZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0ODcwMDgsImV4cCI6MjA3MTA2MzAwOH0.ppXAiXHEgEz1zOANin2HnGzznln4HZhVia-F6WX_P2c",
+    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyCl7ryK-cp9EtGoYMJ960P1jZO-nnTCCqM",
+    "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "5060e374c6d88aacf8fea324",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-CXXXXXXXXX",
+    "DATABASE_URL": "postgresql://...",
+    "NEXTAUTH_SECRET": "your-secret-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key"
+  }
+}
+```
+
+#### Next.js Configuration for Admin
+
+Update `frontend/next.config.js` for admin system compatibility:
+
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Disable webpack build worker to prevent admin build issues
+  webpackBuildWorker: false,
+  
+  // External packages for server components
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client']
+  },
+  
+  // Environment variables
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+  
+  // Image optimization
+  images: {
+    domains: ['your-domain.com'],
+  },
+  
+  // Redirects for admin
+  async redirects() {
+    return [
+      {
+        source: '/admin',
+        destination: '/admin/dashboard',
+        permanent: false,
+      },
+    ]
+  },
+}
+
+module.exports = nextConfig
+```
+
+### Admin System Testing
+
+#### Pre-Deployment Testing
+
+1. **Local Testing**
+   ```bash
+   # Test admin system locally
+   cd frontend
+   npm run dev
+   
+   # Visit http://localhost:3000/admin
+   # Test all admin functionality
+   ```
+
+2. **Build Testing**
+   ```bash
+   # Test admin build
+   npm run build
+   
+   # Check for build errors
+   npm run type-check
+   ```
+
+3. **Environment Testing**
+   ```bash
+   # Test environment configuration
+   npm run env:check
+   ```
+
+#### Post-Deployment Testing
+
+1. **Admin Dashboard Test**
+   ```bash
+   # Test admin dashboard loads
+   curl -X GET "https://your-domain.com/admin"
+   ```
+
+2. **CSRF Token Test**
+   ```bash
+   # Test CSRF token generation
+   curl -X GET "https://your-domain.com/api/admin/csrf"
+   ```
+
+3. **Admin API Tests**
+   ```bash
+   # Test admin API endpoints
+   curl -X GET "https://your-domain.com/api/admin/users"
+   curl -X GET "https://your-domain.com/api/admin/restaurants"
+   curl -X GET "https://your-domain.com/api/admin/reviews"
+   curl -X GET "https://your-domain.com/api/admin/synagogues"
+   ```
+
+### Admin System Monitoring
+
+#### Health Checks
+
+1. **Admin System Health**
+   ```bash
+   # Check admin system status
+   curl -X GET "https://your-domain.com/api/admin/health"
+   ```
+
+2. **Database Connectivity**
+   ```bash
+   # Test database connection
+   curl -X GET "https://your-domain.com/api/admin/db-status"
+   ```
+
+3. **Authentication Status**
+   ```bash
+   # Test admin authentication
+   curl -X GET "https://your-domain.com/api/admin/auth-status"
+   ```
+
+#### Logging and Monitoring
+
+1. **Admin Action Logging**
+   ```sql
+   -- Monitor admin actions
+   SELECT * FROM audit_logs 
+   ORDER BY created_at DESC 
+   LIMIT 10;
+   ```
+
+2. **Error Monitoring**
+   ```bash
+   # Check for admin errors in logs
+   tail -f /var/log/admin-errors.log
+   ```
+
+## Environment Configuration
+
+### Environment Variables Checklist
+
+#### Frontend (Vercel)
+- [ ] `NEXT_PUBLIC_SUPABASE_URL`
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `NEXT_PUBLIC_BACKEND_URL`
+- [ ] `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- [ ] `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`
+- [ ] `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+- [ ] `DATABASE_URL`
+- [ ] `NEXTAUTH_SECRET`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY`
+
+#### Backend (Render)
+- [ ] `DATABASE_URL`
+- [ ] `FLASK_ENV`
+- [ ] `SECRET_KEY`
+- [ ] `SUPABASE_URL`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY`
+
+### Environment Validation
+
+```bash
+# Validate environment configuration
+npm run env:check
+
+# Check for missing variables
+npm run env:validate
+```
+
+## Monitoring & Health Checks
+
+### Health Check Endpoints
+
+1. **Frontend Health**
+   ```bash
+   curl -X GET "https://your-domain.com/healthz"
+   ```
+
+2. **Backend Health**
+   ```bash
+   curl -X GET "https://your-backend.onrender.com/health"
+   ```
+
+3. **Database Health**
+   ```bash
+   curl -X GET "https://your-backend.onrender.com/health/db"
+   ```
+
+### Monitoring Setup
+
+1. **Error Monitoring**
+   - Set up Sentry for error tracking
+   - Configure error alerts
+   - Monitor performance metrics
+
+2. **Uptime Monitoring**
+   - Set up uptime monitoring
+   - Configure alert notifications
+   - Monitor response times
+
+3. **Database Monitoring**
+   - Monitor database performance
+   - Set up query alerts
+   - Track connection usage
 
 ## Troubleshooting
 
-### Common Issues
+### Common Deployment Issues
 
-1. **Database Connection Errors:**
-   - Check DATABASE_URL format
-   - Verify database is accessible
-   - Check firewall settings
+#### Frontend Deployment Issues
 
-2. **CORS Errors:**
-   - Verify CORS_ORIGINS configuration
-   - Check frontend URL matches
+1. **Build Failures**
+   ```bash
+   # Clear build cache
+   rm -rf .next
+   npm run build
+   ```
 
-3. **API Key Issues:**
-   - Verify all API keys are set
-   - Check key permissions
-   - Monitor API usage limits
+2. **Environment Variable Issues**
+   ```bash
+   # Check environment variables
+   npm run env:check
+   ```
 
-### Debug Mode
+3. **Admin System Issues**
+   ```bash
+   # Check admin configuration
+   npm run admin:check
+   ```
 
-For debugging, temporarily enable debug mode:
+#### Backend Deployment Issues
+
+1. **Startup Failures**
+   ```bash
+   # Check logs
+   tail -f /var/log/app.log
+   ```
+
+2. **Database Connection Issues**
+   ```bash
+   # Test database connection
+   python -c "from database.connection import test_connection; test_connection()"
+   ```
+
+#### Admin System Issues
+
+1. **500 Internal Server Error**
+   ```bash
+   # Check admin logs
+   tail -f /var/log/admin.log
+   
+   # Verify CSRF route
+   curl -X GET "https://your-domain.com/api/admin/csrf"
+   ```
+
+2. **Authentication Issues**
+   ```bash
+   # Check admin user setup
+   psql $DATABASE_URL -c "SELECT * FROM admin_roles;"
+   ```
+
+3. **Database Query Issues**
+   ```bash
+   # Test database queries
+   npm run db:test
+   ```
+
+### Emergency Procedures
+
+#### Rollback Deployment
 
 ```bash
-DEBUG=True
-LOG_LEVEL=DEBUG
+# Rollback to previous version
+git revert HEAD
+git push origin main
 ```
 
-### Logs
-
-Check logs in your deployment platform:
-- Render: Dashboard > Your Service > Logs
-- Vercel: Dashboard > Your Project > Functions > Logs
-
-## Backup and Recovery
-
-### Database Backup
+#### Database Recovery
 
 ```bash
-# Create backup
-pg_dump $DATABASE_URL > backup.sql
-
-# Restore backup
-psql $DATABASE_URL < backup.sql
+# Restore from backup
+pg_restore -d $DATABASE_URL backup.sql
 ```
 
-### Automated Backups
+#### Admin System Recovery
 
-Set up automated backups using your database provider's tools or cron jobs.
+```bash
+# Reset admin configuration
+npm run admin:reset
 
-## Scaling Considerations
+# Recreate admin users
+npm run admin:setup
+```
 
-### Horizontal Scaling
+---
 
-1. **Load Balancing:**
-   - Use multiple backend instances
-   - Configure load balancer
-
-2. **Database Scaling:**
-   - Consider read replicas
-   - Implement connection pooling
-
-3. **CDN:**
-   - Use CDN for static assets
-   - Configure proper cache headers
-
-### Performance Monitoring
-
-1. **Set up monitoring:**
-   - Response time monitoring
-   - Error rate tracking
-   - Database performance monitoring
-
-2. **Alerting:**
-   - Configure alerts for high error rates
-   - Monitor API usage
-
-## Maintenance
-
-### Regular Tasks
-
-1. **Security Updates:**
-   - Keep dependencies updated
-   - Monitor security advisories
-
-2. **Database Maintenance:**
-   - Regular backups
-   - Performance optimization
-
-3. **Monitoring:**
-   - Review logs regularly
-   - Monitor performance metrics
-
-### Update Procedures
-
-1. **Backup database**
-2. **Deploy new version**
-3. **Run migrations**
-4. **Verify functionality**
-5. **Monitor for issues**
-
-## Support
-
-For deployment issues:
-- Check the troubleshooting section
-- Review platform-specific documentation
-- Contact platform support if needed
-
-## Additional Resources
-
-- [Render Documentation](https://render.com/docs)
-- [Vercel Documentation](https://vercel.com/docs)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Flask Documentation](https://flask.palletsprojects.com/) 
+**Last Updated**: January 2025  
+**Version**: 2.0.0 

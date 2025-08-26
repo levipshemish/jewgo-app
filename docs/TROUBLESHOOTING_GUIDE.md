@@ -1,557 +1,557 @@
 # Troubleshooting Guide
 
-## Overview
+## Table of Contents
 
-This guide provides solutions for common issues encountered during development and deployment of the Jewgo application.
+1. [General Issues](#general-issues)
+2. [Frontend Issues](#frontend-issues)
+3. [Backend Issues](#backend-issues)
+4. [Database Issues](#database-issues)
+5. [Deployment Issues](#deployment-issues)
+6. [Admin System Issues](#admin-system-issues)
+7. [Authentication Issues](#authentication-issues)
+8. [Performance Issues](#performance-issues)
 
-## Recent Critical Issues (August 2025)
+## General Issues
 
-### Webpack Cache Corruption Issues ✅ RESOLVED
+### Environment Variables
 
-**Problem**: Critical development server failures due to webpack cache corruption
-
-**Symptoms**:
-```
-⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '.next/cache/webpack/client-development/7.pack.gz']
-⨯ [Error: ENOENT: no such file or directory, open '.next/routes-manifest.json']
-⨯ Error: Cannot find module './4985.js'
-⨯ Error [ReferenceError]: exports is not defined at <unknown> (.next/server/vendors.js:9)
-```
-
-**Root Cause**: Filesystem cache corruption in development mode with complex chunk splitting
-
-**Solution**: 
-1. **Immediate Fix**:
-   ```bash
-   # Stop development server
-   pkill -f "next dev" || true
-   
-   # Clean all caches
-   rm -rf .next node_modules/.cache
-   
-   # Restart development server
-   npm run dev
-   ```
-
-2. **Prevention**: Updated `frontend/next.config.js` to disable cache in development:
-   ```javascript
-   // Disable filesystem cache in development to prevent corruption
-   if (dev) {
-     config.cache = false;
-   }
-   
-   // Simplified optimization without complex chunk splitting
-   config.optimization = {
-     ...config.optimization,
-     minimize: isProduction,
-     minimizer: config.optimization?.minimizer || [],
-   };
-   ```
-
-**Result**: 
-- ✅ Development server starts reliably
-- ✅ No more cache corruption errors
-- ✅ All API endpoints working correctly
-- ✅ Pages load without module resolution errors
-
-### Marketplace Categories Loading Issue ✅ RESOLVED
-
-**Problem**: "Failed to load categories" error on marketplace page
-
-**Symptoms**:
-- Categories dropdown shows "Failed to load categories"
-- API endpoint returns 500 errors
-- Data structure mismatch between frontend and backend
-
-**Solution**:
-1. **Backend Fix**: Updated `backend/routes/api_v4.py` to return categories in correct format
-2. **Frontend API Route**: Created `frontend/app/api/marketplace/categories/route.ts` to proxy and transform requests
-3. **Frontend Update**: Modified `frontend/lib/api/marketplace.ts` to use local API route
-
-**Result**: 
-- ✅ Categories load correctly
-- ✅ Marketplace page functions properly
-- ✅ Data transformation handles both old and new backend formats
-
-### Categories Popup Transparency Issue ✅ RESOLVED
-
-**Problem**: Categories popup was transparent and hard to read
-
-**Solution**: Updated `frontend/components/marketplace/MarketplaceCategoriesDropdown.tsx`:
-```tsx
-// Added white background and improved visibility
-<div 
-  ref={dropdownRef}
-  className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-96 overflow-hidden border border-gray-200"
-  style={{ backgroundColor: 'white' }}
->
-  <div className="max-h-80 overflow-y-auto bg-white">
-    {/* Content */}
-  </div>
-</div>
-```
-
-**Result**: 
-- ✅ Popup has solid white background
-- ✅ Better visibility and readability
-- ✅ Improved user experience
-
-### Layout.js Syntax Error ✅ RESOLVED
-
-**Problem**: `layout.js:73 Uncaught SyntaxError: Invalid or unexpected token`
-
-**Root Cause**: Problematic emoji character in `frontend/components/ui/RelayEmailBanner.tsx`
-
-**Solution**: Replaced emoji with simple text icon:
-```tsx
-// Before: <span role="img" aria-label="info">🔒</span>
-// After: <span className="text-lg font-bold" aria-label="info">!</span>
-```
-
-**Result**: 
-- ✅ No more syntax errors
-- ✅ Clean compilation
-- ✅ Successful builds
-
-### Restaurant Filter Options 500 Error ✅ RESOLVED
-
-**Problem**: `GET http://localhost:3000/api/restaurants/filter-options 500 (Internal Server Error)`
-
-**Root Cause**: Build cache corruption and webpack module resolution issues
-
-**Solution**: 
-1. **Cache Cleanup**: Removed corrupted cache files
-2. **Webpack Configuration**: Simplified webpack config for development
-3. **Module Resolution**: Fixed webpack cache and chunk splitting
-
-**Result**: 
-- ✅ Filter options API works correctly
-- ✅ No more 500 errors
-- ✅ Reliable development server
-
-## Common Issues
-
-### Development Server Issues
-
-#### Server Won't Start
-
-**Symptoms**:
-- `npm run dev` fails to start
-- Port already in use errors
-- Module resolution errors
+**Problem**: Application fails to start or function properly
+**Symptoms**: 
+- Database connection errors
+- Authentication failures
+- Missing configuration
 
 **Solutions**:
-```bash
-# Kill existing processes
-pkill -f "next dev" || true
-pkill -f "node" || true
+1. Check environment file: `cat .env`
+2. Validate environment: `npm run env:check`
+3. Verify production variables in deployment platform
+4. Restart application after environment changes
 
-# Clean cache
-rm -rf .next node_modules/.cache
+### Build Failures
 
-# Reinstall dependencies (if needed)
-rm -rf node_modules package-lock.json
-npm install
-
-# Start server
-npm run dev
-```
-
-#### Hot Reload Not Working
-
+**Problem**: Application fails to build
 **Symptoms**:
-- Changes not reflected in browser
-- Manual refresh required
-- Fast Refresh errors
-
-**Solutions**:
-```bash
-# Restart development server
-pkill -f "next dev" || true
-npm run dev
-
-# Check for syntax errors in console
-# Ensure all imports are correct
-```
-
-### Build Issues
-
-#### Build Fails
-
-**Symptoms**:
-- `npm run build` fails
 - TypeScript errors
-- Webpack compilation errors
+- Missing dependencies
+- Webpack module errors
 
 **Solutions**:
-```bash
-# Clean build cache
-rm -rf .next
+1. Clear build cache: `rm -rf .next && npm run build`
+2. Reinstall dependencies: `rm -rf node_modules && npm install`
+3. Check for missing files or imports
+4. Verify TypeScript configuration
 
-# Check TypeScript errors
-npm run typecheck
+## Frontend Issues
 
-# Fix linting issues
-npm run lint
+### Next.js Build Issues
 
-# Rebuild
-npm run build
-```
-
-#### Large Bundle Size
-
+**Problem**: Frontend build fails
 **Symptoms**:
-- Build warnings about large chunks
-- Slow page loads
-- Performance issues
+- Module resolution errors
+- TypeScript compilation failures
+- Missing route files
 
 **Solutions**:
-1. **Analyze Bundle**:
-   ```bash
-   npm run analyze
-   ```
+1. Clear Next.js cache: `rm -rf .next`
+2. Check for missing page files
+3. Verify import statements
+4. Run type check: `npm run type-check`
 
-2. **Optimize Imports**:
-   - Use dynamic imports for large components
-   - Split large files into smaller modules
-   - Remove unused dependencies
+### React Component Errors
 
-3. **Code Splitting**:
-   - Implement route-based code splitting
-   - Use React.lazy for component lazy loading
-
-### API Issues
-
-#### API Endpoints Return 500
-
+**Problem**: Components fail to render
 **Symptoms**:
-- Frontend API calls fail
+- White screen
+- JavaScript errors in console
+- Missing component imports
+
+**Solutions**:
+1. Check browser console for errors
+2. Verify component imports
+3. Check for missing dependencies
+4. Validate component props
+
+## Backend Issues
+
+### Flask Application Errors
+
+**Problem**: Backend API fails
+**Symptoms**:
 - 500 Internal Server Error
-- Network errors
-
-**Solutions**:
-1. **Check Backend Status**:
-   ```bash
-   curl -s "https://jewgo-app-oyoh.onrender.com/health" | jq .
-   ```
-
-2. **Check Environment Variables**:
-   ```bash
-   # Verify backend URL is correct
-   echo $NEXT_PUBLIC_BACKEND_URL
-   ```
-
-3. **Check API Route Implementation**:
-   - Verify route handlers are correct
-   - Check for syntax errors
-   - Ensure proper error handling
-
-#### CORS Issues
-
-**Symptoms**:
-- CORS errors in browser console
-- API calls blocked by browser
-
-**Solutions**:
-1. **Check Backend CORS Configuration**:
-   - Verify allowed origins
-   - Check CORS middleware setup
-
-2. **Frontend Configuration**:
-   - Ensure correct backend URL
-   - Check for mixed content issues
-
-### Database Issues
-
-#### Connection Errors
-
-**Symptoms**:
 - Database connection failures
-- Timeout errors
-- Connection pool exhaustion
+- Missing routes
 
 **Solutions**:
-1. **Check Database Status**:
-   ```bash
-   # Test database connection
-   python -c "from backend.database.connection_manager import get_connection; print('Connected')"
-   ```
+1. Check Flask logs
+2. Verify database connection
+3. Check route definitions
+4. Validate request data
 
-2. **Check Environment Variables**:
-   ```bash
-   # Verify database URL
-   echo $DATABASE_URL
-   ```
+### API Endpoint Issues
 
-3. **Connection Pool Management**:
-   - Increase connection pool size
-   - Implement connection retry logic
-   - Add connection health checks
-
-#### Migration Issues
-
+**Problem**: API endpoints return errors
 **Symptoms**:
-- Database schema out of sync
-- Migration errors
-- Data integrity issues
+- 404 Not Found
+- 500 Internal Server Error
+- Invalid response format
 
 **Solutions**:
-1. **Check Migration Status**:
-   ```bash
-   # Run migrations
-   python backend/database/migrations/run_migrations.py
-   ```
+1. Check route definitions
+2. Verify request methods
+3. Validate request data
+4. Check authentication
 
-2. **Backup Before Changes**:
-   ```bash
-   # Create backup
-   pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
-   ```
+## Database Issues
 
-3. **Reset Database (Development Only)**:
-   ```bash
-   # Drop and recreate database
-   python backend/database/migrations/reset_database.py
-   ```
+### Connection Problems
 
-### Authentication Issues
-
-#### Login Problems
-
+**Problem**: Database connection fails
 **Symptoms**:
-- Users can't log in
+- Connection timeout errors
+- Authentication failures
+- Schema errors
+
+**Solutions**:
+1. Check database URL
+2. Verify database credentials
+3. Check network connectivity
+4. Validate database schema
+
+### Migration Issues
+
+**Problem**: Database migrations fail
+**Symptoms**:
+- Schema mismatch errors
+- Migration conflicts
+- Data loss
+
+**Solutions**:
+1. Backup database before migrations
+2. Check migration files
+3. Verify schema compatibility
+4. Rollback if necessary
+
+## Deployment Issues
+
+### Vercel Deployment
+
+**Problem**: Frontend deployment fails
+**Symptoms**:
+- Build failures
+- Environment variable issues
+- Runtime errors
+
+**Solutions**:
+1. Check build logs in Vercel dashboard
+2. Verify environment variables
+3. Check for missing dependencies
+4. Validate build configuration
+
+### Render Deployment
+
+**Problem**: Backend deployment fails
+**Symptoms**:
+- Application startup failures
+- Environment variable issues
+- Port binding errors
+
+**Solutions**:
+1. Check Render logs
+2. Verify environment variables
+3. Check application configuration
+4. Validate dependencies
+
+## Admin System Issues
+
+### 500 Internal Server Error on Admin Page
+
+**Problem**: Admin dashboard returns 500 error
+**Symptoms**:
+- Admin page fails to load
+- Server-side rendering errors
+- Missing API routes
+
+**Causes**:
+- Missing environment variables
+- Database connection issues
+- Missing CSRF API route
+- Webpack build issues
+
+**Solutions**:
+
+1. **Check Environment Variables**
+   ```bash
+   # Verify all required variables are set
+   npm run env:check
+   
+   # Required variables for admin:
+   # - DATABASE_URL
+   # - NEXTAUTH_SECRET
+   # - SUPABASE_SERVICE_ROLE_KEY
+   # - NEXT_PUBLIC_SUPABASE_URL
+   # - NEXT_PUBLIC_SUPABASE_ANON_KEY
+   ```
+
+2. **Verify CSRF API Route**
+   ```bash
+   # Check if CSRF route exists
+   ls frontend/app/api/admin/csrf/route.ts
+   
+   # If missing, create the route
+   ```
+
+3. **Clear Build Cache**
+   ```bash
+   cd frontend
+   rm -rf .next
+   npm run build
+   ```
+
+4. **Check Database Connection**
+   ```bash
+   # Test database connectivity
+   npm run db:test
+   ```
+
+### CSRF Token Errors
+
+**Problem**: Admin actions fail with CSRF token errors
+**Symptoms**:
+- "Invalid CSRF token" errors
+- Admin actions rejected
+- Token generation failures
+
+**Solutions**:
+
+1. **Verify CSRF Route**
+   ```bash
+   # Check CSRF route implementation
+   cat frontend/app/api/admin/csrf/route.ts
+   ```
+
+2. **Check Token Generation**
+   ```typescript
+   // Verify token generation in admin layout
+   const response = await fetch('/api/admin/csrf');
+   const { token } = await response.json();
+   ```
+
+3. **Validate Token Storage**
+   ```typescript
+   // Check token is properly stored
+   console.log('CSRF Token:', csrfToken);
+   ```
+
+### Database Query Errors
+
+**Problem**: Admin pages fail to load data
+**Symptoms**:
+- Empty admin dashboard
+- Database connection errors
+- Prisma model issues
+
+**Solutions**:
+
+1. **Check Prisma Models**
+   ```bash
+   # For ignored models, use raw SQL
+   # Example: florida_synagogues table
+   ```
+
+2. **Verify Database Schema**
+   ```bash
+   # Check if tables exist
+   npm run db:check
+   ```
+
+3. **Test Raw SQL Queries**
+   ```typescript
+   // For ignored models, use raw SQL
+   const result = await prisma.$queryRawUnsafe(`
+     SELECT * FROM florida_synagogues LIMIT 10
+   `);
+   ```
+
+### Build Failures with Admin Pages
+
+**Problem**: Build fails when including admin pages
+**Symptoms**:
+- Webpack module errors
+- Missing dependencies
+- Import resolution failures
+
+**Solutions**:
+
+1. **Clear All Caches**
+   ```bash
+   cd frontend
+   rm -rf .next node_modules/.cache
+   npm install
+   ```
+
+2. **Check Webpack Configuration**
+   ```javascript
+   // next.config.js
+   module.exports = {
+     webpackBuildWorker: false,
+     experimental: {
+       serverComponentsExternalPackages: ['@prisma/client']
+     }
+   }
+   ```
+
+3. **Verify Admin Dependencies**
+   ```bash
+   # Check if all admin dependencies are installed
+   npm list @prisma/client
+   npm list @supabase/supabase-js
+   ```
+
+### Admin Authentication Issues
+
+**Problem**: Admin users cannot access admin pages
+**Symptoms**:
+- Redirected to signin page
+- "Unauthorized" errors
+- Missing admin roles
+
+**Solutions**:
+
+1. **Check Admin Role Assignment**
+   ```sql
+   -- Verify admin role exists
+   SELECT * FROM admin_roles WHERE user_id = 'user-uuid';
+   ```
+
+2. **Verify Supabase Authentication**
+   ```typescript
+   // Check user session
+   const { data: { session } } = await supabase.auth.getSession();
+   console.log('Session:', session);
+   ```
+
+3. **Check Admin Permissions**
+   ```typescript
+   // Verify admin permissions
+   const adminUser = await getAdminUser();
+   console.log('Admin User:', adminUser);
+   ```
+
+### Admin API Route Issues
+
+**Problem**: Admin API endpoints return errors
+**Symptoms**:
+- 404 Not Found for admin routes
+- 500 Internal Server Error
+- Authentication failures
+
+**Solutions**:
+
+1. **Verify Route Files**
+   ```bash
+   # Check all admin API routes exist
+   ls frontend/app/api/admin/
+   ```
+
+2. **Check Route Implementation**
+   ```typescript
+   // Verify route handlers
+   export async function GET(request: NextRequest) {
+     // Check authentication
+     const adminUser = await requireAdmin(request);
+     if (!adminUser) {
+       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+     }
+   }
+   ```
+
+3. **Test API Endpoints**
+   ```bash
+   # Test admin endpoints
+   curl -H "Authorization: Bearer $ADMIN_TOKEN" \
+        https://your-domain.com/api/admin/users
+   ```
+
+## Authentication Issues
+
+### Supabase Authentication
+
+**Problem**: Authentication fails
+**Symptoms**:
+- Login failures
+- Session errors
+- Missing user data
+
+**Solutions**:
+1. Check Supabase configuration
+2. Verify environment variables
+3. Check user account status
+4. Validate authentication flow
+
+### NextAuth Issues
+
+**Problem**: Legacy NextAuth problems
+**Symptoms**:
 - Authentication errors
-- Session issues
+- Session management issues
+- Provider configuration problems
 
 **Solutions**:
-1. **Check Auth Configuration**:
-   - Verify Supabase configuration
-   - Check environment variables
-   - Test auth endpoints
+1. Check NextAuth configuration
+2. Verify provider settings
+3. Check session handling
+4. Validate callback URLs
 
-2. **Clear Browser Data**:
-   - Clear cookies and local storage
-   - Try incognito mode
-   - Check browser console for errors
+## Performance Issues
 
-3. **Check User Database**:
-   ```bash
-   # Verify user exists
-   python -c "from backend.database.repositories.user_repository import UserRepository; print(UserRepository().get_by_email('test@example.com'))"
-   ```
+### Slow Page Loads
 
-#### OAuth Issues
-
+**Problem**: Pages load slowly
 **Symptoms**:
-- OAuth providers not working
-- Redirect errors
-- Provider configuration issues
-
-**Solutions**:
-1. **Check Provider Configuration**:
-   - Verify OAuth app settings
-   - Check redirect URIs
-   - Test provider endpoints
-
-2. **Environment Variables**:
-   ```bash
-   # Check OAuth configuration
-   echo $GOOGLE_CLIENT_ID
-   echo $GOOGLE_CLIENT_SECRET
-   ```
-
-### Performance Issues
-
-#### Slow Page Loads
-
-**Symptoms**:
-- Pages take long to load
-- Slow API responses
+- Long loading times
+- Timeout errors
 - Poor user experience
 
 **Solutions**:
-1. **Optimize Images**:
-   - Use Next.js Image component
-   - Implement proper image sizing
-   - Enable image optimization
+1. Check database query performance
+2. Optimize images and assets
+3. Implement caching
+4. Monitor server resources
 
-2. **Code Splitting**:
-   - Implement route-based splitting
-   - Use dynamic imports
-   - Optimize bundle size
+### Database Performance
 
-3. **API Optimization**:
-   - Implement caching
-   - Optimize database queries
-   - Use pagination for large datasets
-
-#### Memory Issues
-
+**Problem**: Database queries are slow
 **Symptoms**:
-- High memory usage
-- Out of memory errors
-- Slow performance
+- Slow admin operations
+- Timeout errors
+- High resource usage
 
 **Solutions**:
-1. **Monitor Memory Usage**:
-   ```bash
-   # Check memory usage
-   top -p $(pgrep -f "next dev")
-   ```
+1. Add database indexes
+2. Optimize query patterns
+3. Implement query caching
+4. Monitor query performance
 
-2. **Optimize Code**:
-   - Remove memory leaks
-   - Implement proper cleanup
-   - Use efficient data structures
+## Debugging Tools
 
-### Deployment Issues
+### Frontend Debugging
 
-#### Build Failures
+```bash
+# Enable debug mode
+NODE_ENV=development npm run dev
 
-**Symptoms**:
-- CI/CD pipeline fails
-- Build errors in production
-- Deployment timeouts
+# Check browser console for errors
+# Use React Developer Tools
+# Monitor network requests
+```
 
-**Solutions**:
-1. **Check Build Logs**:
-   - Review CI/CD logs
-   - Identify specific errors
-   - Fix build issues locally first
+### Backend Debugging
 
-2. **Environment Variables**:
-   - Verify all required variables are set
-   - Check for missing secrets
-   - Test build locally
+```bash
+# Enable Flask debug mode
+export FLASK_DEBUG=1
+python app.py
 
-3. **Dependencies**:
-   - Update outdated packages
-   - Fix security vulnerabilities
-   - Ensure compatibility
+# Check application logs
+# Monitor database queries
+# Use logging statements
+```
 
-#### Production Issues
+### Database Debugging
 
-**Symptoms**:
-- Production site not working
-- 500 errors in production
-- Performance degradation
+```bash
+# Connect to database
+psql $DATABASE_URL
 
-**Solutions**:
-1. **Check Production Logs**:
-   - Review application logs
-   - Check error monitoring
-   - Identify root cause
+# Check table structure
+\d table_name
 
-2. **Rollback if Needed**:
-   ```bash
-   # Rollback to previous version
-   git revert HEAD
-   git push origin main
-   ```
+# Monitor slow queries
+# Check query execution plans
+```
 
-3. **Health Checks**:
-   ```bash
-   # Test production endpoints
-   curl -s "https://jewgo-app.vercel.app/healthz" | jq .
-   ```
+## Common Commands
 
-## Prevention Strategies
+### Environment Management
 
-### Development Best Practices
+```bash
+# Check environment variables
+npm run env:check
 
-1. **Regular Testing**:
-   - Run tests before committing
-   - Test locally before pushing
-   - Use staging environment
+# Validate environment
+npm run env:validate
 
-2. **Code Quality**:
-   - Follow linting rules
-   - Use TypeScript properly
-   - Implement proper error handling
+# Set up development environment
+npm run setup:dev
+```
 
-3. **Monitoring**:
-   - Watch for console errors
-   - Monitor performance
-   - Check for memory leaks
+### Build and Deployment
 
-### Deployment Best Practices
+```bash
+# Build frontend
+cd frontend && npm run build
 
-1. **Staging Environment**:
-   - Test changes in staging first
-   - Use feature flags
-   - Implement gradual rollouts
+# Build backend
+cd backend && python -m pip install -r requirements.txt
 
-2. **Backup Strategy**:
-   - Regular database backups
-   - Version control for all changes
-   - Document rollback procedures
+# Deploy to production
+npm run deploy
+```
 
-3. **Monitoring**:
-   - Set up error monitoring
-   - Monitor performance metrics
-   - Implement health checks
+### Database Management
+
+```bash
+# Run migrations
+npm run db:migrate
+
+# Reset database
+npm run db:reset
+
+# Backup database
+npm run db:backup
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run frontend tests
+cd frontend && npm test
+
+# Run backend tests
+cd backend && pytest
+```
 
 ## Getting Help
 
-### Internal Resources
+### Documentation Resources
 
-1. **Documentation**:
-   - Check relevant documentation files
-   - Review recent changes
-   - Look for similar issues
+1. **Project Documentation**: Check `/docs` directory
+2. **API Documentation**: Review API endpoint documentation
+3. **Deployment Guides**: Check deployment-specific guides
+4. **Security Documentation**: Review security best practices
 
-2. **Team Communication**:
-   - Ask team members
-   - Check recent discussions
-   - Review pull requests
+### Support Channels
 
-### External Resources
+1. **GitHub Issues**: Create detailed issue reports
+2. **Development Team**: Contact team with specific error details
+3. **Community Forums**: Check community resources
+4. **Stack Overflow**: Search for similar issues
 
-1. **Next.js Documentation**:
-   - [Next.js Troubleshooting](https://nextjs.org/docs/advanced-features/debugging)
-   - [Next.js Error Reference](https://nextjs.org/docs/advanced-features/error-handling)
+### Issue Reporting
 
-2. **React Documentation**:
-   - [React Error Boundaries](https://reactjs.org/docs/error-boundaries.html)
-   - [React Performance](https://reactjs.org/docs/optimizing-performance.html)
+When reporting issues, include:
 
-3. **Community Resources**:
-   - Stack Overflow
-   - GitHub Issues
-   - Discord/Slack communities
+1. **Error Details**: Full error messages and stack traces
+2. **Environment**: OS, Node.js version, database version
+3. **Steps to Reproduce**: Detailed reproduction steps
+4. **Expected vs Actual**: What you expected vs what happened
+5. **Screenshots**: Visual evidence of the issue
+6. **Logs**: Relevant application and system logs
 
-## Emergency Procedures
+---
 
-### Critical Issues
-
-1. **Site Down**:
-   - Check deployment status
-   - Verify environment variables
-   - Rollback to stable version
-
-2. **Data Loss**:
-   - Stop all writes immediately
-   - Restore from backup
-   - Investigate root cause
-
-3. **Security Issues**:
-   - Assess impact
-   - Implement immediate fixes
-   - Notify stakeholders
-
-### Contact Information
-
-- **Development Team**: Check team communication channels
-- **Infrastructure**: Contact hosting provider support
-- **Security**: Follow security incident procedures
-
-## Conclusion
-
-This troubleshooting guide covers the most common issues and their solutions. For issues not covered here:
-
-1. **Document the Problem**: Record symptoms, error messages, and steps to reproduce
-2. **Check Recent Changes**: Look for recent commits or deployments that might have caused the issue
-3. **Search Documentation**: Check project documentation and external resources
-4. **Ask for Help**: Reach out to the team or community for assistance
-
-Remember to always test solutions in a safe environment before applying them to production. 
+**Last Updated**: January 2025  
+**Version**: 2.0.0 
