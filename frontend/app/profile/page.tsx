@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth";
+import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
@@ -161,6 +162,20 @@ export default function ProfilePage() {
             {user.avatar_url && (
               <img src={user.avatar_url} alt={user.name || user.email || 'Profile avatar'} className="h-12 w-12 rounded-full object-cover" />
             )}
+          </div>
+
+          {/* Avatar Upload Section */}
+          <div className="px-6 py-6 border-b border-gray-200">
+            <div className="flex justify-center">
+              <ClickableAvatarUpload 
+                currentAvatarUrl={user.avatar_url}
+                onAvatarChange={(avatarUrl) => {
+                  // Handle avatar change - you might want to update the user state here
+                  console.log('Avatar changed:', avatarUrl);
+                }}
+                size="xl"
+              />
+            </div>
           </div>
 
           {/* Profile Content */}

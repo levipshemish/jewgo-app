@@ -20,6 +20,7 @@ import {
   Crown
 } from 'lucide-react';
 import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { useToast, ToastContainer } from '@/lib/ui/toast';
 
 interface SystemStats {
   totalUsers: number;
@@ -88,7 +89,7 @@ export default function SystemSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { toast, showSuccess, showError, clear } = useToast();
 
   // Fetch system data
   const fetchSystemData = async () => {
@@ -153,16 +154,15 @@ export default function SystemSettingsPage() {
       });
 
       if (response.ok) {
-        setToast({ message: 'Configuration saved successfully', type: 'success' });
+        showSuccess('Configuration saved successfully');
       } else {
-        setToast({ message: 'Failed to save configuration', type: 'error' });
+        showError('Failed to save configuration');
       }
     } catch (error) {
       console.error('Error saving configuration:', error);
-      setToast({ message: 'An error occurred while saving', type: 'error' });
+      showError('An error occurred while saving');
     } finally {
       setSaving(false);
-      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -190,9 +190,13 @@ export default function SystemSettingsPage() {
           const rolesData = await rolesResponse.json();
           setAdminRoles(rolesData);
         }
+        showSuccess('Role assigned successfully');
+      } else {
+        showError('Failed to assign role');
       }
     } catch (error) {
       console.error('Error assigning role:', error);
+      showError('An error occurred while assigning role');
     }
   };
 
@@ -213,9 +217,13 @@ export default function SystemSettingsPage() {
           const rolesData = await rolesResponse.json();
           setAdminRoles(rolesData);
         }
+        showSuccess('Role removed successfully');
+      } else {
+        showError('Failed to remove role');
       }
     } catch (error) {
       console.error('Error removing role:', error);
+      showError('An error occurred while removing role');
     }
   };
 
@@ -244,9 +252,13 @@ export default function SystemSettingsPage() {
           // Clear edits for this row
           setRoleEdits((prev) => ({ ...prev, [id]: {} }));
         }
+        showSuccess('Role updated successfully');
+      } else {
+        showError('Failed to update role');
       }
     } catch (error) {
       console.error('Error updating role:', error);
+      showError('An error occurred while updating role');
     }
   };
 
@@ -260,19 +272,7 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div
-          className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-3 shadow-lg border ${
-            toast.type === 'success'
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}
-          role="status"
-          aria-live="polite"
-        >
-          {toast.message}
-        </div>
-      )}
+      <ToastContainer toast={toast} onDismiss={clear} />
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>

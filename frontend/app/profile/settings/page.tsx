@@ -11,7 +11,7 @@ import {
   createMockUser,
   type TransformedUser 
 } from "@/lib/utils/auth-utils-client";
-import AvatarUpload from "@/components/profile/AvatarUpload";
+import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SignOutButton } from "@/components/auth";
@@ -241,9 +241,10 @@ function AccountSettings({ user }: { user: TransformedUser }) {
       {/* Avatar Upload Section */}
       <div>
         <h4 className="text-md font-medium text-gray-900 mb-4">Profile Picture</h4>
-        <AvatarUpload
+        <ClickableAvatarUpload
           currentAvatarUrl={currentUser.avatar_url}
           onAvatarChange={handleAvatarChange}
+          size="lg"
         />
       </div>
 
@@ -312,12 +313,13 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
       {/* Avatar Upload Section */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h4 className="text-sm font-medium text-gray-900 mb-4">Profile Picture</h4>
-        <AvatarUpload 
+        <ClickableAvatarUpload 
           currentAvatarUrl={user.avatar_url}
           onAvatarChange={(avatarUrl) => {
             // Handle avatar change - you might want to update the user state here
             console.log('Avatar changed:', avatarUrl);
           }}
+          size="lg"
         />
       </div>
       
