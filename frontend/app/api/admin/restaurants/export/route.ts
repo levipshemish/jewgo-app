@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
       'certifying_agency',
       'status',
       'submission_status',
-      'rating',
-      'review_count',
+      'google_rating',
+      'google_review_count',
       'created_at',
       'updated_at',
     ];
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     if (state) { filters.state = state; }
 
     const exportFields = [
-      'id','name','address','city','state','phone_number','kosher_category','certifying_agency','status','submission_status','rating','review_count','created_at','updated_at'
+      'id','name','address','city','state','phone_number','kosher_category','certifying_agency','status','submission_status','google_rating','google_review_count','created_at','updated_at'
     ];
 
     const result = await AdminDatabaseService.exportToCSV(

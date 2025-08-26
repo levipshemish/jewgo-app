@@ -7,6 +7,34 @@ import { logBulkOperation, logBulkProgress } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 
+// Simple in-memory token bucket per-user for dev and edge environments
+const BULK_RATE_BUCKET: Map<string, { tokens: number; lastRefill: number }> = new Map();
+const BULK_RATE_LIMIT = Number(process.env.ADMIN_BULK_RATE_LIMIT || 5); // ops per minute
+const BULK_REFILL_MS = 60_000; // 1 minute
+
+function checkBulkRateLimit(userId: string): boolean {
+  // If external rate limiting is configured (e.g., Redis via another layer), skip
+  // Here we use a local token bucket to provide minimal protection
+  const now = Date.now();
+  let bucket = BULK_RATE_BUCKET.get(userId);
+  if (!bucket) {
+    bucket = { tokens: BULK_RATE_LIMIT, lastRefill: now };
+    BULK_RATE_BUCKET.set(userId, bucket);
+  }
+  // Refill
+  const elapsed = now - bucket.lastRefill;
+  if (elapsed >= BULK_REFILL_MS) {
+    const refills = Math.floor(elapsed / BULK_REFILL_MS);
+    bucket.tokens = Math.min(BULK_RATE_LIMIT, bucket.tokens + refills * BULK_RATE_LIMIT);
+    bucket.lastRefill = now;
+  }
+  if (bucket.tokens <= 0) {
+    return false;
+  }
+  bucket.tokens -= 1;
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate admin user
@@ -60,6 +88,11 @@ export async function POST(request: NextRequest) {
         { error: `Unsupported entity type: ${validatedData.entityType}` },
         { status: 400 }
       );
+    }
+
+    // Rate limiting (best-effort)
+    if (!checkBulkRateLimit(adminUser.id)) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
     }
 
     // Log bulk operation start
@@ -128,9 +161,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Not implemented: hook into background job status store.
-    // TODO: Implement bulk_jobs table and read progress by correlationId.
-    return NextResponse.json({ error: 'Not Implemented' }, { status: 501 });
+    // Read progress from audit logs metadata as a lightweight status store
+    const log = await prisma.auditLog.findFirst({
+      where: { correlationId },
+      orderBy: { timestamp: 'desc' },
+      select: { metadata: true, action: true, entityType: true, timestamp: true },
+    });
+
+    if (!log) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    let meta: any = {};
+    try { meta = log.metadata ? JSON.parse(log.metadata as any) : {}; } catch {}
+    const progress = typeof meta.progress === 'number' ? meta.progress : undefined;
+    const processedItems = typeof meta.processedItems === 'number' ? meta.processedItems : undefined;
+    const totalItems = typeof meta.totalItems === 'number' ? meta.totalItems : undefined;
+    const errors: string[] = Array.isArray(meta.errors) ? meta.errors : [];
+
+    return NextResponse.json({
+      correlationId,
+      action: log.action,
+      entityType: log.entityType,
+      timestamp: log.timestamp,
+      progress,
+      processedItems,
+      totalItems,
+      errors,
+    });
   } catch (error) {
     console.error('[ADMIN] Bulk operation status error:', error);
     return NextResponse.json(

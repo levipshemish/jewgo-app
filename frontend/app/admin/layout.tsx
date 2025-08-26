@@ -1,41 +1,32 @@
 import { redirect } from 'next/navigation';
-import { getAdminUser } from '@/lib/admin/auth';
+import { requireAdminUser } from '@/lib/admin/auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { headers } from 'next/headers';
+import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-  // Server-side authentication check
-  const adminUser = await getAdminUser();
-  
-  if (!adminUser) {
-    redirect('/auth/signin?redirectTo=/admin');
+  // Server-side authentication + RBAC check
+  let adminUser;
+  try {
+    adminUser = await requireAdminUser();
+  } catch {
+    redirect('/auth/signin?redirectTo=/admin&message=admin_access_required');
   }
 
-  // CSRF token provisioning: fetch a signed CSRF token server-side and inject it.
+  // CSRF token provisioning with safe fallback to avoid SSR crash on missing secret
   let signedToken = '';
-  try {
-    const headersList = await headers();
-    const csrfRes = await fetch('/api/admin/csrf', { 
-      cache: 'no-store',
-      headers: {
-        Cookie: headersList.get('cookie') || '',
-      }
-    });
-    
-    if (csrfRes.ok) {
-      const csrfJson = await csrfRes.json();
-      signedToken = csrfJson.token || '';
-    } else {
-      console.warn('[ADMIN] CSRF token fetch failed:', csrfRes.status);
+  if (adminUser) {
+    try {
+      signedToken = generateSignedCSRFToken(adminUser.id);
+    } catch (e) {
+      // In production missing CSRF_SECRET should not crash SSR; show warning in UI
+      console.error('[ADMIN] CSRF token generation failed:', e);
+      signedToken = '';
     }
-  } catch (error) {
-    console.error('[ADMIN] Error fetching CSRF token:', error);
-    // Continue without CSRF token - the admin pages will handle this gracefully
   }
 
   return (

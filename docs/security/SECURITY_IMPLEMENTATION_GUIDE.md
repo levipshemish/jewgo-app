@@ -405,6 +405,32 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
+
+### 5.1 SQL Injection Safe Ordering (Admin)
+
+When raw SQL is necessary (e.g., listing Synagogues or Kosher Places), never interpolate user input directly into `ORDER BY`. Instead:
+
+```ts
+import { Prisma } from '@prisma/client'
+
+const allowed = ['created_at','name','city','state','address','phone'] as const
+const sortBy = allowed.includes(userSortBy as any) ? userSortBy : 'created_at'
+const sortOrder = ['asc','desc'].includes(userSortOrder?.toLowerCase()) ? userSortOrder.toUpperCase() : 'DESC'
+
+const whereParts: Prisma.Sql[] = []
+if (search) whereParts.push(Prisma.sql`name ILIKE ${`%${search}%`}`)
+// ...
+const whereClause = whereParts.length ? Prisma.sql`WHERE ${whereParts.reduce((acc, p, i) => i===0 ? p : Prisma.sql`${acc} AND ${p}`)}` : Prisma.sql``
+const orderExpr = Prisma.raw(`${sortBy} ${sortOrder}`)
+
+const rows = await prisma.$queryRaw`SELECT * FROM florida_synagogues ${whereClause} ORDER BY ${orderExpr} LIMIT ${pageSize} OFFSET ${offset}`
+```
+
+This pattern ensures only whitelisted columns are used in `ORDER BY` and all filter values are parameterized.
+
+> Implementation Notes (Admin Middleware)
+> - The admin middleware is intentionally lightweight: it applies security headers and verifies authentication but does not enforce role checks or any `admin_role` cookie. Rely on server-side RBAC via `requireAdmin()` within API routes and admin pages.
+> - For CSRF in admin flows, use the signed token generated in `app/admin/layout.tsx` (or fetched via `/api/admin/csrf`) and include it as `x-csrf-token` for all writes.
 ```
 
 ### 6. Account Lockout Implementation

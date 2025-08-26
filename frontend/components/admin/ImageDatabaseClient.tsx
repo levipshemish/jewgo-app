@@ -45,15 +45,15 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
       const params = new URLSearchParams();
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('restaurantId')) params.set('restaurantId', searchParams.get('restaurantId')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('restaurantId')) {params.set('restaurantId', searchParams.get('restaurantId')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
 
       const response = await fetch(`/api/admin/images?${params.toString()}`, {
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
       });
-      if (!response.ok) throw new Error('Failed to fetch images');
+      if (!response.ok) {throw new Error('Failed to fetch images');}
       const data = await response.json();
       setImages(data.data || []);
       setPagination(data.pagination);
@@ -83,7 +83,7 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
   const handleSearchQueryChange = (query: string) => setSearchQuery(query);
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set('search', query); else params.delete('search');
+    if (query) {params.set('search', query);} else {params.delete('search');}
     params.set('page', '1');
     router.push(`/admin/database/images?${params.toString()}`);
   };
@@ -97,10 +97,10 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
   const handleExport = async () => {
     try {
       const payload: any = {};
-      if (searchQuery) payload.search = searchQuery;
-      if (searchParams.get('restaurantId')) payload.restaurantId = searchParams.get('restaurantId');
-      if (sortKey) payload.sortBy = sortKey;
-      if (sortOrder) payload.sortOrder = sortOrder;
+      if (searchQuery) {payload.search = searchQuery;}
+      if (searchParams.get('restaurantId')) {payload.restaurantId = searchParams.get('restaurantId');}
+      if (sortKey) {payload.sortBy = sortKey;}
+      if (sortOrder) {payload.sortOrder = sortOrder;}
       const response = await fetch(`/api/admin/images/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },

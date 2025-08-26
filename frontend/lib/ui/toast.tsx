@@ -23,7 +23,7 @@ export function useToast(options: { autoHideMs?: number } = {}) {
   const clear = useCallback(() => setToast(null), []);
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast) {return;}
     const t = setTimeout(() => setToast(null), autoHideMs);
     return () => clearTimeout(t);
   }, [toast, autoHideMs]);
@@ -32,7 +32,7 @@ export function useToast(options: { autoHideMs?: number } = {}) {
 }
 
 export function ToastContainer({ toast, onDismiss }: { toast: ToastState | null; onDismiss?: () => void }) {
-  if (!toast) return null;
+  if (!toast) {return null;}
   const base = 'fixed bottom-4 right-4 z-50 rounded-md px-4 py-3 shadow-lg border';
   const styles = toast.type === 'success'
     ? 'bg-green-50 border-green-200 text-green-800'

@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
     const keys = ['userId','action','entityType','entityId','auditLevel','startDate','endDate','correlationId'];
     keys.forEach((k) => {
       const v = searchParams.get(k);
-      if (v) options[k] = v;
+      if (v) {options[k] = v;}
     });
-    if (options.startDate) options.startDate = new Date(options.startDate);
-    if (options.endDate) options.endDate = new Date(options.endDate);
+    if (options.startDate) {options.startDate = new Date(options.startDate);}
+    if (options.endDate) {options.endDate = new Date(options.endDate);}
 
     const csvContent = await exportAuditLogs(options);
 

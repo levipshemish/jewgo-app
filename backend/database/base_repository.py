@@ -53,8 +53,14 @@ class BaseRepository(Generic[T]):
                 session.add(instance)
                 session.flush()  # Get the ID without committing
                 session.refresh(instance)
-                self.logger.info("Created record", id=getattr(instance, "id", None))
-                return instance
+                record_id = getattr(instance, "id", None)
+                self.logger.info("Created record", id=record_id)
+                # Return a dict with the ID and basic info instead of the instance
+                return {
+                    "id": record_id,
+                    "name": getattr(instance, "name", None),
+                    "created": True
+                }
         except Exception as e:
             self.logger.exception("Failed to create record", error=str(e), data=data)
             return None

@@ -91,7 +91,8 @@ export default function ClickableAvatarUpload({
         setError(result.error || "Upload failed");
         setPreviewUrl(currentAvatarUrl || null);
       }
-    } catch {
+    } catch (error) {
+      console.error('Upload error:', error);
       setError("Upload failed. Please try again.");
       setPreviewUrl(currentAvatarUrl || null);
     } finally {
@@ -115,27 +116,37 @@ export default function ClickableAvatarUpload({
       return;
     }
 
+    console.log('Delete avatar clicked');
     setIsDeleting(true);
     setError(null);
 
     try {
+      console.log('Calling deleteAvatar server action...');
       const result = await deleteAvatar();
+      console.log('Delete result:', result);
       
       if (result.success) {
+        console.log('Delete successful, updating UI...');
         setPreviewUrl(null);
         onAvatarChange?.("");
       } else {
+        console.log('Delete failed:', result.error);
         setError(result.error || "Failed to delete avatar");
       }
-    } catch {
+    } catch (error) {
+      console.error('Delete error:', error);
       setError("Failed to delete avatar. Please try again.");
     } finally {
+      console.log('Setting isDeleting to false');
       setIsDeleting(false);
     }
   };
 
   // Handle avatar click
-  const handleAvatarClick = () => {
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!isUploading && !isDeleting) {
       fileInputRef.current?.click();
     }
@@ -152,6 +163,16 @@ export default function ClickableAvatarUpload({
               isUploading || isDeleting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             onClick={handleAvatarClick}
+
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleAvatarClick(e as any);
+              }
+            }}
+            style={{ position: 'relative', zIndex: 10 }}
           >
             {previewUrl ? (
               <Image
@@ -159,7 +180,7 @@ export default function ClickableAvatarUpload({
                 alt="Profile avatar"
                 width={size === "sm" ? 64 : size === "md" ? 96 : size === "lg" ? 128 : 160}
                 height={size === "sm" ? 64 : size === "md" ? 96 : size === "lg" ? 128 : 160}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover pointer-events-none"
                 priority
                 onError={() => {
                   setPreviewUrl(null);
@@ -239,6 +260,8 @@ export default function ClickableAvatarUpload({
           <p className={`${config.text} text-gray-400 mt-1`}>
             PNG, JPG, WebP, or GIF up to 5MB
           </p>
+          
+
         </div>
 
         {/* Hidden File Input */}
@@ -249,6 +272,7 @@ export default function ClickableAvatarUpload({
           onChange={handleFileInputChange}
           className="hidden"
           disabled={isUploading || isDeleting}
+          style={{ display: 'none' }}
         />
       </div>
 

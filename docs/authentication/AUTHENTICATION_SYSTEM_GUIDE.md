@@ -36,7 +36,7 @@ export async function getUserProfile() // Get user profile data
 ## 🛡️ **Route Protection**
 
 ### **Middleware Protection** (`frontend/middleware.ts`)
-The middleware automatically protects routes and handles authentication:
+The middleware applies security headers and verifies authentication for protected routes. Role checks are not performed here; they are enforced in route handlers.
 
 ```typescript
 // Protected routes (require authentication)
@@ -322,6 +322,10 @@ npx prisma generate
 #### **2. Protected Routes Not Working**
 - Check middleware configuration
 - Verify route paths in middleware
+
+> Implementation Notes (Admin Flows)
+> - CSRF: Admin layout generates a signed CSRF token on the server and exposes it via `window.__CSRF_TOKEN__`. Include it as `x-csrf-token` for POST/PUT/PATCH/DELETE to `/api/admin/*`. Alternatively, fetch from `/api/admin/csrf`.
+> - RBAC: Do not rely on cookies in middleware for RBAC. Use `requireAdmin()` in route handlers; permissions derive from `ROLE_PERMISSIONS`.
 - Check authentication status in browser
 
 #### **3. Admin Access Issues**

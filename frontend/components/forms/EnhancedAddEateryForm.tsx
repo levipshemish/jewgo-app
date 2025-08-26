@@ -38,6 +38,10 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Debug logging
+  console.log('[EnhancedAddEateryForm] Component rendered, currentStep:', currentStep);
 
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
@@ -174,8 +178,14 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const handleNext = async () => {
     if (currentStep < 5) {
       const isValid = await validateCurrentStep();
+      console.log(`[EnhancedAddEateryForm] Step ${currentStep} validation result:`, isValid);
       if (isValid) {
         setCurrentStep(currentStep + 1);
+        console.log(`[EnhancedAddEateryForm] Moving to step ${currentStep + 1}`);
+      } else {
+        console.log(`[EnhancedAddEateryForm] Step ${currentStep} validation failed`);
+        // Show validation errors more prominently
+        alert(`Please fix the errors on step ${currentStep} before proceeding.`);
       }
     }
   };
@@ -194,8 +204,25 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     }
   };
 
+  // Debug function to check form state
+  const debugFormState = () => {
+    const values = getValues();
+    const stepFields = getStepFields(currentStep);
+    console.log('[EnhancedAddEateryForm] Current form state:', {
+      currentStep,
+      totalSteps: 5,
+      isOnLastStep: currentStep === 5,
+      stepFields,
+      formValues: values,
+      errors,
+      isValid,
+      isDirty
+    });
+  };
+
   // Form submission
   const onSubmit = async (data: RestaurantFormData) => {
+    console.log('[EnhancedAddEateryForm] Form submission started:', data);
     setIsSubmitting(true);
     try {
       // Handle custom certifying agency
@@ -204,34 +231,60 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         finalCertifyingAgency = data.custom_certifying_agency;
       }
       
-      const response = await fetch('/api/restaurants', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+              // Prepare the submission data with proper field mapping
+        const submissionData = {
           ...data,
           certifying_agency: finalCertifyingAgency,
           submission_status: 'pending_approval',
           submission_date: new Date().toISOString(),
-        }),
-      });
+          // Map fields to match backend schema
+          phone_number: data.phone,
+          image_url: data.business_images[0] || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        console.log('[EnhancedAddEateryForm] Submitting to API:', submissionData);
+        
+        const response = await fetch('/api/restaurants', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(submissionData),
+        });
+
+        console.log('[EnhancedAddEateryForm] API response status:', response.status);
 
       const result = await response.json();
       
-      if (result.success) {
-        // Show success message and redirect
-        alert('Thank you! Your restaurant submission has been received and is pending approval. We will review it and get back to you soon.');
-        router.push('/');
+      if (response.ok && result.success) {
+        // Show success modal
+        setShowSuccessModal(true);
       } else {
-        throw new Error(result.message || 'Failed to submit restaurant');
+        // Handle API errors
+        const errorMessage = result.message || result.error || 'Failed to submit restaurant';
+        console.error('[EnhancedAddEateryForm] API error:', result);
+        
+        if (result.errors && Array.isArray(result.errors)) {
+          const validationErrors = result.errors.map((err: any) => `${err.field}: ${err.message}`).join('\n');
+          alert(`Validation errors:\n${validationErrors}\n\nPlease fix these errors and try again.`);
+        } else {
+          alert(`Error: ${errorMessage}\n\nPlease try again or contact support if the problem persists.`);
+        }
       }
-    } catch (error) {
-      console.error('Error submitting restaurant:', error);
-      alert('Failed to submit restaurant. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+          } catch (error) {
+        console.error('[EnhancedAddEateryForm] Network or other error:', error);
+        
+        // Check if it's a network error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          alert('Network error: Unable to connect to the server. Please check your internet connection and try again.');
+        } else {
+          alert('An unexpected error occurred. Please try again or contact support if the problem persists.');
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
   };
 
   // Image upload handler (memoized to prevent effect loops in child)
@@ -250,14 +303,75 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900">Add Your Restaurant</h1>
-              <p className="text-sm text-gray-600">Step {currentStep} of 5</p>
+              <p className="text-sm text-gray-600">
+                Step {currentStep} of 5 - {currentStep === 1 ? 'Basic Info' : currentStep === 2 ? 'Kosher Details' : currentStep === 3 ? 'Business Details' : currentStep === 4 ? 'Images' : 'Review & Submit'}
+              </p>
             </div>
-            <button
-              onClick={handleCancel}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="flex items-center gap-2">
+              {process.env.NODE_ENV === 'development' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={debugFormState}
+                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  >
+                    Debug
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('[EnhancedAddEateryForm] Test submission');
+                      const testData = {
+                        name: 'Test Restaurant',
+                        address: '123 Test St',
+                        city: 'Test City',
+                        state: 'FL',
+                        zip_code: '12345',
+                        phone: '555-1234',
+                        business_email: 'test@test.com',
+                        website: 'https://test.com',
+                        listing_type: 'Restaurant',
+                        kosher_category: 'meat',
+                        certifying_agency: 'Test Agency',
+                        is_cholov_yisroel: false,
+                        is_pas_yisroel: true,
+                        short_description: 'Test description',
+                        description: 'Test long description',
+                        business_images: ['https://test.com/image1.jpg', 'https://test.com/image2.jpg'],
+                        is_owner_submission: false,
+                        owner_name: '',
+                        owner_email: '',
+                        owner_phone: '',
+                        business_license: '',
+                        tax_id: '',
+                        years_in_business: 1,
+                        seating_capacity: 50,
+                        delivery_available: false,
+                        takeout_available: true,
+                        catering_available: false,
+                        preferred_contact_method: 'email',
+                        preferred_contact_time: 'afternoon',
+                        contact_notes: '',
+                        submission_status: 'pending_approval',
+                        submission_date: new Date().toISOString(),
+                        phone_number: '555-1234',
+                        image_url: 'https://test.com/image1.jpg',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      };
+                      onSubmit(testData);
+                    }}
+                    className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                  >
+                    Test Submit
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleCancel}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
           
           {/* Progress bar */}
@@ -288,6 +402,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Business Information</h2>
                   <p className="text-gray-600">Tell us about your business and ownership</p>
+                  <div className="mt-2 text-sm text-blue-600">
+                    Step {currentStep} of 5 - {currentStep === 1 ? 'Basic Info' : currentStep === 2 ? 'Kosher Details' : currentStep === 3 ? 'Business Details' : currentStep === 4 ? 'Images' : 'Review & Submit'}
+                  </div>
                 </div>
 
                 {/* Owner/Manager Selection */}
@@ -319,7 +436,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                               onChange={() => field.onChange(false)}
                               className="mr-2"
                             />
-                            <span>No, I'm submitting for someone else</span>
+                            <span>No, I&apos;m submitting for someone else</span>
                           </label>
                         </>
                       )}
@@ -1032,8 +1149,13 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                 className="space-y-6"
               >
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Review Your Submission</h2>
-                  <p className="text-gray-600">Please review all information before submitting</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Submit</h2>
+                  <p className="text-gray-600">Please review your information before submitting</p>
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm">
+                      ✅ All information looks good! Click &quot;Submit Restaurant&quot; below to complete your submission.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-lg p-6 border">
@@ -1161,6 +1283,19 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
 
           {/* Navigation */}
           <div className="flex justify-between items-center pt-6">
+            {currentStep < 5 && (
+              <div className="text-center w-full mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  📝 Complete step {currentStep} and click &quot;Next&quot; to continue. The submit button will appear on step 5.
+                </p>
+                <div className="mt-2 text-xs text-blue-600">
+                  {currentStep === 1 && "Required: Business name, address, phone, listing type, owner info (if owner submission)"}
+                  {currentStep === 2 && "Required: Kosher category, certifying agency"}
+                  {currentStep === 3 && "Required: Short description, hours of operation"}
+                  {currentStep === 4 && "Required: At least 2 business images"}
+                </div>
+              </div>
+            )}
             <button
               type="button"
               onClick={handleBack}
@@ -1182,12 +1317,22 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   onClick={handleNext}
                   className="px-6 py-2 bg-green-500 text-white rounded-md font-medium hover:bg-green-600 transition-colors"
                 >
-                  Next
+                  Next (Step {currentStep + 1})
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
                   disabled={isSubmitting}
+                  onClick={() => {
+                    console.log('[EnhancedAddEateryForm] Submit button clicked');
+                    console.log('[EnhancedAddEateryForm] Form state:', getValues());
+                    console.log('[EnhancedAddEateryForm] Form is valid:', isValid);
+                    console.log('[EnhancedAddEateryForm] Form errors:', errors);
+                    console.log('[EnhancedAddEateryForm] Current step:', currentStep);
+                    
+                    // Manually trigger form submission
+                    handleSubmit(onSubmit)();
+                  }}
                   className="px-6 py-2 bg-green-500 text-white rounded-md font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Restaurant'}
@@ -1197,6 +1342,40 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
           </div>
         </form>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+            <div className="text-6xl mb-4">✅</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Submission Successful!</h2>
+            <p className="text-gray-600 mb-6">
+              Thank you! Your restaurant submission has been received and is pending approval. 
+              We will review it and get back to you soon.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/eatery');
+                }}
+                className="px-6 py-2 bg-green-500 text-white rounded-md font-medium hover:bg-green-600 transition-colors"
+              >
+                Go to Eatery Page
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/');
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-md font-medium hover:bg-gray-600 transition-colors"
+              >
+                Go Home
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

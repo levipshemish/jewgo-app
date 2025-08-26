@@ -11,32 +11,13 @@ export { hasPermission } from './types';
 const DEV_AUTH_RATE_LIMIT_STORE: Map<string, { count: number; resetTime: number }> = new Map();
 
 /**
- * Get user's admin role from Supabase using the get_user_admin_role function
+ * Get user's admin role by querying tables directly (no RPC dependency)
  */
 async function getUserAdminRole(userId: string): Promise<AdminRole> {
   try {
-    const supabase = await createServerSupabaseClient();
-    
-    // Use the Supabase function to get admin role
-    const { data, error } = await supabase.rpc('get_user_admin_role', {
-      user_id_param: userId
-    });
-    
-    if (error) {
-      console.error('[ADMIN] Error calling get_user_admin_role:', error);
-      // Fallback to direct query if function doesn't exist
-      return await getUserAdminRoleFallback(userId);
-    }
-    
-    if (data && typeof data === 'string') {
-      return data as AdminRole;
-    }
-    
-    // Fallback to direct query
     return await getUserAdminRoleFallback(userId);
   } catch (error: any) {
     console.error('[ADMIN] Error getting user admin role:', error);
-    // Fail-closed by default; allow opt-in fail-open only for explicit environments
     if (process.env.ADMIN_RBAC_FAIL_OPEN === 'true') {
       return 'moderator';
     }

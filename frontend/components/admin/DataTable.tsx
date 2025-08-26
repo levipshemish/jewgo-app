@@ -267,37 +267,43 @@ export default function DataTable<T extends { id: string | number }>({
                 </th>
               )}
               
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                    column.width ? `w-${column.width}` : ''
-                  } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>{column.title}</span>
-                    {column.sortable && onSort && (
-                      <button
-                        onClick={() => handleSort(column.key)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        {sortKey === column.key ? (
-                          sortOrder === 'asc' ? (
-                            <ChevronUp className="h-4 w-4" />
+              {columns.map((column) => {
+                const isSorted = sortKey === column.key;
+                const ariaSort = column.sortable ? (isSorted ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined;
+                return (
+                  <th
+                    key={column.key}
+                    aria-sort={ariaSort as any}
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                      column.width ? `w-${column.width}` : ''
+                    } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>{column.title}</span>
+                      {column.sortable && onSort && (
+                        <button
+                          onClick={() => handleSort(column.key)}
+                          aria-label={`Sort by ${column.title} ${isSorted ? (sortOrder === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+                        >
+                          {isSorted ? (
+                            sortOrder === 'asc' ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )
                           ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )
-                        ) : (
-                          <div className="flex flex-col">
-                            <ChevronUp className="h-3 w-3 -mb-1" />
-                            <ChevronDown className="h-3 w-3 -mt-1" />
-                          </div>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </th>
-              ))}
+                            <div className="flex flex-col">
+                              <ChevronUp className="h-3 w-3 -mb-1" />
+                              <ChevronDown className="h-3 w-3 -mt-1" />
+                            </div>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
               
               {actions.length > 0 && (
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -402,7 +408,6 @@ export default function DataTable<T extends { id: string | number }>({
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
-                <option value={100}>100</option>
               </select>
             </div>
             

@@ -12,11 +12,29 @@ export function useAdminCsrf(): string {
   const [token, setToken] = useState<string>('');
 
   useEffect(() => {
+    let mounted = true;
+    let refreshTimer: any;
+
     // Grab any token already injected by the layout
     const existing = (typeof window !== 'undefined' && (window as any).__CSRF_TOKEN__) || '';
     if (existing) {
       setToken(existing);
-      return;
+      // Schedule periodic refresh at ~50 minutes to avoid TTL expiry (1h)
+      refreshTimer = setInterval(async () => {
+        try {
+          const res = await fetch('/api/admin/csrf', { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            const t = json?.token || '';
+            (window as any).__CSRF_TOKEN__ = t;
+            if (mounted) setToken(t);
+          }
+        } catch {}
+      }, 50 * 60 * 1000);
+      return () => {
+        mounted = false;
+        if (refreshTimer) clearInterval(refreshTimer);
+      };
     }
 
     // Otherwise fetch a new token for this session
@@ -27,7 +45,19 @@ export function useAdminCsrf(): string {
           const json = await res.json();
           const t = json?.token || '';
           (window as any).__CSRF_TOKEN__ = t;
-          setToken(t);
+          if (mounted) setToken(t);
+          // Schedule periodic refresh
+          refreshTimer = setInterval(async () => {
+            try {
+              const res2 = await fetch('/api/admin/csrf', { cache: 'no-store' });
+              if (res2.ok) {
+                const json2 = await res2.json();
+                const t2 = json2?.token || '';
+                (window as any).__CSRF_TOKEN__ = t2;
+                if (mounted) setToken(t2);
+              }
+            } catch {}
+          }, 50 * 60 * 1000);
         } else {
           console.warn('[ADMIN] Failed to fetch CSRF token:', res.status);
         }
@@ -36,8 +66,11 @@ export function useAdminCsrf(): string {
       }
     };
     fetchToken();
+    return () => {
+      mounted = false;
+      if (refreshTimer) clearInterval(refreshTimer);
+    };
   }, []);
 
   return token;
 }
-

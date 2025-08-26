@@ -18,12 +18,14 @@ export async function uploadAvatar(formData: FormData) {
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
     if (userError || !user) {
       return { success: false, error: "User not authenticated" };
     }
 
     // Get the file from form data
     const file = formData.get("avatar") as File;
+    
     if (!file) {
       return { success: false, error: "No file provided" };
     }
@@ -56,7 +58,7 @@ export async function uploadAvatar(formData: FormData) {
       .from("avatars")
       .upload(filePath, file, {
         cacheControl: "3600",
-        upsert: false // Don't overwrite existing files
+        upsert: true // Allow overwriting existing files
       });
 
     if (uploadError) {

@@ -197,10 +197,30 @@ def get_service_dependencies():
 
 def create_restaurant_service():
     """Create and return a RestaurantServiceV4 instance."""
-    db_manager, cache_manager, config = get_service_dependencies()
-    return RestaurantServiceV4(
-        db_manager=db_manager, cache_manager=cache_manager, config=config
-    )
+    try:
+        db_manager, cache_manager, config = get_service_dependencies()
+        return RestaurantServiceV4(
+            db_manager=db_manager, cache_manager=cache_manager, config=config
+        )
+    except Exception as e:
+        logger.error(f"Failed to create restaurant service: {e}")
+        # Fallback: create service directly with database manager
+        try:
+            from database.database_manager_v4 import DatabaseManager
+            from utils.cache_manager_v4 import CacheManagerV4
+            from utils.config_manager import ConfigManager
+            
+            db_manager = DatabaseManager()
+            db_manager.connect()
+            cache_manager = CacheManagerV4(enable_cache=False)
+            config = ConfigManager()
+            
+            return RestaurantServiceV4(
+                db_manager=db_manager, cache_manager=cache_manager, config=config
+            )
+        except Exception as fallback_error:
+            logger.error(f"Fallback service creation also failed: {fallback_error}")
+            raise
 
 
 def create_review_service():
@@ -440,15 +460,17 @@ def create_restaurant():
     """Create a new restaurant using v4 service."""
     try:
         data = request.get_json(silent=True) or {}
+        logger.info("Received restaurant creation request", data=data)
 
         service = create_restaurant_service()
-        restaurant_id = service.create_restaurant(data)
+        logger.info("Restaurant service created successfully")
+        
+        restaurant_data = service.create_restaurant(data)
+        logger.info("Restaurant creation result", result=restaurant_data)
 
-        if restaurant_id:
-            # Get the created restaurant
-            restaurant = service.get_restaurant_by_id(restaurant_id)
+        if restaurant_data:
             return success_response(
-                {"restaurant": restaurant, "id": restaurant_id},
+                {"restaurant": restaurant_data},
                 "Restaurant created successfully",
                 201,
             )
@@ -456,8 +478,10 @@ def create_restaurant():
             return error_response("Failed to create restaurant", 500)
 
     except ValidationError as e:
+        logger.error("Validation error", error=str(e))
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
+        logger.error("Database error", error=str(e))
         return error_response(str(e), 503)
     except Exception as e:
         logger.exception("Error creating restaurant", error=str(e))

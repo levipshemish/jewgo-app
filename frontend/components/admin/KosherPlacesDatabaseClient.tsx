@@ -52,16 +52,16 @@ export default function KosherPlacesDatabaseClient({ initialData, initialPaginat
       const params = new URLSearchParams();
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('category')) params.set('category', searchParams.get('category')!);
-      if (searchParams.get('status')) params.set('status', searchParams.get('status')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('category')) {params.set('category', searchParams.get('category')!);}
+      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
 
       const response = await fetch(`/api/admin/kosher-places?${params.toString()}`, {
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
       });
-      if (!response.ok) throw new Error('Failed to fetch kosher places');
+      if (!response.ok) {throw new Error('Failed to fetch kosher places');}
       const data = await response.json();
       setItems(data.data || []);
       setPagination(data.pagination);
@@ -91,7 +91,7 @@ export default function KosherPlacesDatabaseClient({ initialData, initialPaginat
   const handleSearchQueryChange = (query: string) => setSearchQuery(query);
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set('search', query); else params.delete('search');
+    if (query) {params.set('search', query);} else {params.delete('search');}
     params.set('page', '1');
     router.push(`/admin/database/kosher-places?${params.toString()}`);
   };
@@ -105,11 +105,11 @@ export default function KosherPlacesDatabaseClient({ initialData, initialPaginat
   const handleExport = async () => {
     try {
       const params = new URLSearchParams();
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('category')) params.set('category', searchParams.get('category')!);
-      if (searchParams.get('status')) params.set('status', searchParams.get('status')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('category')) {params.set('category', searchParams.get('category')!);}
+      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
       const response = await fetch(`/api/admin/kosher-places/export?${params.toString()}`, {
         method: 'GET',
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
@@ -132,7 +132,7 @@ export default function KosherPlacesDatabaseClient({ initialData, initialPaginat
 
   const handleBulkAction = async (action: string, selectedIds: string[]) => {
     if (action === 'delete') {
-      if (!confirm(`Are you sure you want to delete ${selectedIds.length} kosher places?`)) return;
+      if (!confirm(`Are you sure you want to delete ${selectedIds.length} kosher places?`)) {return;}
       try {
         const response = await fetch('/api/admin/bulk', {
           method: 'POST',
@@ -143,7 +143,7 @@ export default function KosherPlacesDatabaseClient({ initialData, initialPaginat
             data: selectedIds.map((id) => ({ id })),
           }),
         });
-        if (response.ok) fetchItems();
+        if (response.ok) {fetchItems();}
       } catch (error) {
         console.error('Bulk delete failed:', error);
       }

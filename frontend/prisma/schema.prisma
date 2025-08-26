@@ -71,6 +71,10 @@ model Restaurant {
   contact_notes            String?
   deleted_at               DateTime? @db.Timestamp(6)
 
+  // Relations
+  reviews Review[]
+  images  RestaurantImage[]
+
   @@index([business_email], map: "idx_restaurants_business_email")
   @@index([is_owner_submission], map: "idx_restaurants_is_owner_submission")
   @@index([owner_email], map: "idx_restaurants_owner_email")
@@ -83,6 +87,7 @@ model Restaurant {
 model Review {
   id                String   @id @db.VarChar(50)
   restaurant_id     Int
+  restaurant        Restaurant @relation(fields: [restaurant_id], references: [id])
   user_id           String   @db.VarChar(50)
   user_name         String   @db.VarChar(255)
   user_email        String?  @db.VarChar(255)
@@ -121,6 +126,7 @@ model ReviewFlag {
 model RestaurantImage {
   id                   Int       @id @default(autoincrement())
   restaurant_id        Int?
+  restaurant           Restaurant? @relation(fields: [restaurant_id], references: [id])
   image_url            String?   @db.VarChar
   image_order          Int?
   cloudinary_public_id String?   @db.VarChar

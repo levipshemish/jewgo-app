@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const asDate = z.preprocess((v) => {
-  if (v == null || v instanceof Date) return v;
+  if (v == null || v instanceof Date) {return v;}
   if (typeof v === 'string' || typeof v === 'number') {
     const d = new Date(v);
     return isNaN(d.getTime()) ? undefined : d;

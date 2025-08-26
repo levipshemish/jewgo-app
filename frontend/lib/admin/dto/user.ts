@@ -20,9 +20,9 @@ export function mapUsersToApiResponse(dbUsers: DbUser[]) {
 
 export function mapApiRequestToUser(dto: any) {
   const payload: Record<string, any> = {};
-  if (dto.email) payload.email = String(dto.email);
-  if (dto.name !== undefined) payload.name = dto.name === null ? null : String(dto.name);
-  if (dto.isSuperAdmin !== undefined) payload.issuperadmin = Boolean(dto.isSuperAdmin);
+  if (dto.email) {payload.email = String(dto.email);}
+  if (dto.name !== undefined) {payload.name = dto.name === null ? null : String(dto.name);}
+  if (dto.isSuperAdmin !== undefined) {payload.issuperadmin = Boolean(dto.isSuperAdmin);}
   return payload;
 }
 

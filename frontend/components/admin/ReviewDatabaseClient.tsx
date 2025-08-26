@@ -54,17 +54,17 @@ export default function ReviewDatabaseClient({ initialData, initialPagination, i
       const params = new URLSearchParams();
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('status')) params.set('status', searchParams.get('status')!);
-      if (searchParams.get('rating')) params.set('rating', searchParams.get('rating')!);
-      if (searchParams.get('restaurantId')) params.set('restaurantId', searchParams.get('restaurantId')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
+      if (searchParams.get('rating')) {params.set('rating', searchParams.get('rating')!);}
+      if (searchParams.get('restaurantId')) {params.set('restaurantId', searchParams.get('restaurantId')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
 
       const response = await fetch(`/api/admin/reviews?${params.toString()}`, {
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
       });
-      if (!response.ok) throw new Error('Failed to fetch reviews');
+      if (!response.ok) {throw new Error('Failed to fetch reviews');}
       const data = await response.json();
       setReviews(data.data || []);
       setPagination(data.pagination);
@@ -96,7 +96,7 @@ export default function ReviewDatabaseClient({ initialData, initialPagination, i
   const handleSearchQueryChange = (query: string) => setSearchQuery(query);
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set('search', query); else params.delete('search');
+    if (query) {params.set('search', query);} else {params.delete('search');}
     params.set('page', '1');
     router.push(`/admin/database/reviews?${params.toString()}`);
   };
@@ -112,12 +112,12 @@ export default function ReviewDatabaseClient({ initialData, initialPagination, i
   const handleExport = async () => {
     try {
       const payload: any = {};
-      if (searchParams.get('search')) payload.search = searchParams.get('search');
-      if (searchParams.get('status')) payload.status = searchParams.get('status');
-      if (searchParams.get('rating')) payload.rating = searchParams.get('rating');
-      if (searchParams.get('restaurantId')) payload.restaurantId = searchParams.get('restaurantId');
-      if (searchParams.get('sortBy')) payload.sortBy = searchParams.get('sortBy');
-      if (searchParams.get('sortOrder')) payload.sortOrder = searchParams.get('sortOrder');
+      if (searchParams.get('search')) {payload.search = searchParams.get('search');}
+      if (searchParams.get('status')) {payload.status = searchParams.get('status');}
+      if (searchParams.get('rating')) {payload.rating = searchParams.get('rating');}
+      if (searchParams.get('restaurantId')) {payload.restaurantId = searchParams.get('restaurantId');}
+      if (searchParams.get('sortBy')) {payload.sortBy = searchParams.get('sortBy');}
+      if (searchParams.get('sortOrder')) {payload.sortOrder = searchParams.get('sortOrder');}
       const response = await fetch(`/api/admin/reviews/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
@@ -168,18 +168,13 @@ export default function ReviewDatabaseClient({ initialData, initialPagination, i
         </div>
       ),
     },
-    {
-      key: 'rating',
-      title: 'Rating',
-      align: 'center',
-      render: (value) => (
+    { key: 'status', title: 'Status', sortable: true },
+    { key: 'rating', title: 'Rating', align: 'center', render: (value) => (
         <div className="flex items-center justify-center space-x-1">
           <Star className="h-4 w-4 text-yellow-400 fill-current" />
           <span className="font-medium">{value}</span>
         </div>
-      ),
-    },
-    { key: 'status', title: 'Status' },
+      ), sortable: true },
     { key: 'created_at', title: 'Created', sortable: true },
   ];
 
@@ -202,4 +197,3 @@ export default function ReviewDatabaseClient({ initialData, initialPagination, i
     />
   );
 }
-

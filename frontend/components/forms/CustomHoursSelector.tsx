@@ -75,7 +75,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
       console.log('[CustomHoursSelector] Value changed:', value);
     }
     // Prevent reprocessing the same incoming value repeatedly
-    if (prevValueRef.current === value) return;
+    if (prevValueRef.current === value) {return;}
     prevValueRef.current = value;
 
     if (value && value !== 'custom') {
@@ -128,7 +128,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
   // Global event listeners for debugging (only in test mode)
   useEffect(() => {
-    if (!testMode || process.env.NODE_ENV !== 'development') return;
+    if (!testMode || process.env.NODE_ENV !== 'development') {return;}
 
     const handleGlobalClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;

@@ -15,7 +15,7 @@ function signToken(raw: string): string {
 
 function verifySignature(signed: string): { raw: string; valid: boolean } {
   const idx = signed.lastIndexOf('.');
-  if (idx === -1) return { raw: signed, valid: false };
+  if (idx === -1) {return { raw: signed, valid: false };}
   const raw = signed.slice(0, idx);
   const expected = signToken(raw);
   return { raw, valid: expected === signed };
@@ -29,11 +29,11 @@ export function generateSignedCSRFToken(userId: string): string {
 export function validateSignedCSRFToken(token: string, userId: string): boolean {
   try {
     const { raw, valid } = verifySignature(token);
-    if (!valid) return false;
+    if (!valid) {return false;}
     const json = Buffer.from(raw, 'base64url').toString();
     const { uid, ts } = JSON.parse(json || '{}');
-    if (uid !== userId) return false;
-    if (typeof ts !== 'number') return false;
+    if (uid !== userId) {return false;}
+    if (typeof ts !== 'number') {return false;}
     return (Date.now() - ts) < CSRF_TTL_MS;
   } catch {
     return false;

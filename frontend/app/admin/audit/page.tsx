@@ -108,11 +108,11 @@ export default function AuditLogPage() {
   const handleExport = async () => {
     try {
       const payload: any = { format: 'csv' };
-      if (searchParams.get('userId')) payload.userId = searchParams.get('userId');
-      if (searchParams.get('action')) payload.action = searchParams.get('action');
-      if (searchParams.get('entityType')) payload.entityType = searchParams.get('entityType');
-      if (searchParams.get('startDate')) payload.startDate = searchParams.get('startDate');
-      if (searchParams.get('endDate')) payload.endDate = searchParams.get('endDate');
+      if (searchParams.get('userId')) {payload.userId = searchParams.get('userId');}
+      if (searchParams.get('action')) {payload.action = searchParams.get('action');}
+      if (searchParams.get('entityType')) {payload.entityType = searchParams.get('entityType');}
+      if (searchParams.get('startDate')) {payload.startDate = searchParams.get('startDate');}
+      if (searchParams.get('endDate')) {payload.endDate = searchParams.get('endDate');}
 
       const response = await fetch('/api/admin/audit', {
         method: 'POST',
@@ -234,7 +234,7 @@ export default function AuditLogPage() {
         const pretty = (obj: any) => {
           try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
         };
-        const truncate = (s: string, n = 600) => (s.length > n ? s.slice(0, n) + '... (show more)' : s);
+        const truncate = (s: string, n = 600) => (s.length > n ? `${s.slice(0, n)  }... (show more)` : s);
         const oldStr = pretty(row.oldData || {});
         const newStr = pretty(row.newData || {});
         return (

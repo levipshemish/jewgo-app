@@ -33,7 +33,7 @@ export function normalizeUrl(input: string, opts: NormalizeOptions = {}): string
 
   // If it has no scheme, assume https
   if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw)) {
-    raw = 'https://' + raw;
+    raw = `https://${  raw}`;
   }
 
   let u: URL;
@@ -73,7 +73,7 @@ export function normalizeUrl(input: string, opts: NormalizeOptions = {}): string
   // Optional trailing slash removal for non-root
   if (o.stripTrailingSlash && u.pathname.length > 1) {
     u.pathname = u.pathname.replace(/\/+$/g, '');
-    if (u.pathname === '') u.pathname = '/';
+    if (u.pathname === '') {u.pathname = '/';}
   }
 
   // Clean & sort query params
@@ -94,11 +94,11 @@ export function normalizeUrl(input: string, opts: NormalizeOptions = {}): string
     a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0])
   );
   const sorted = new URLSearchParams();
-  for (const [k, v] of entries) sorted.append(k, v);
+  for (const [k, v] of entries) {sorted.append(k, v);}
   u.search = sorted.toString() ? `?${sorted.toString()}` : '';
 
   // Final sanity: must have a hostname (URL already rejects most bad hosts)
-  if (!u.hostname) throw new Error('Missing hostname.');
+  if (!u.hostname) {throw new Error('Missing hostname.');}
 
   // Serialize: WHATWG URL serializes IDNs to punycode, which is ideal for DB uniqueness.
   return u.toString();

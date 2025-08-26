@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW) ||
+        !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -99,7 +100,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW) ||
+        !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

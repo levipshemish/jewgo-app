@@ -27,7 +27,7 @@ export default function SignOutButton({
   const router = useRouter();
 
   const handleClick = async () => {
-    if (loading) return;
+    if (loading) {return;}
     setLoading(true);
     try {
       await fetch("/api/auth/signout", { method: "POST", credentials: "include" });

@@ -229,9 +229,8 @@ class RestaurantServiceV4(BaseService):
             if not success:
                 raise Exception("Failed to create restaurant")
 
-            # Get the created restaurant (assuming it has an ID)
-            # This is a simplified approach - in practice, you'd want to return the ID
-            # and then fetch the restaurant
+            # Get the created restaurant by searching for it
+            # Since we don't have the ID, we'll search by name and address
             created_restaurant = self._get_created_restaurant(processed_data)
 
             self.logger.info("Successfully created restaurant")
@@ -623,6 +622,12 @@ class RestaurantServiceV4(BaseService):
 
     def _get_created_restaurant(self, data: dict[str, Any]) -> dict[str, Any]:
         """Get the created restaurant data."""
-        # This is a simplified approach - in practice, you'd want to return the ID
-        # and then fetch the restaurant
+        # Search for the restaurant by name and address to get the full record with ID
+        restaurants = self.db_manager.get_restaurants()
+        for restaurant in restaurants:
+            if (restaurant.get('name') == data.get('name') and 
+                restaurant.get('address') == data.get('address')):
+                return restaurant
+        
+        # If not found, return the original data
         return data

@@ -40,15 +40,15 @@ export default function UserDatabaseClient({ initialData, initialPagination, ini
       const params = new URLSearchParams();
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('provider')) params.set('provider', searchParams.get('provider')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('provider')) {params.set('provider', searchParams.get('provider')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
 
       const response = await fetch(`/api/admin/users?${params.toString()}`, {
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
       });
-      if (!response.ok) throw new Error('Failed to fetch users');
+      if (!response.ok) {throw new Error('Failed to fetch users');}
       const data = await response.json();
       setUsers(data.data || []);
       setPagination(data.pagination);
@@ -80,7 +80,7 @@ export default function UserDatabaseClient({ initialData, initialPagination, ini
   const handleSearchQueryChange = (query: string) => setSearchQuery(query);
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set('search', query); else params.delete('search');
+    if (query) {params.set('search', query);} else {params.delete('search');}
     params.set('page', '1');
     router.push(`/admin/database/users?${params.toString()}`);
   };
@@ -96,10 +96,10 @@ export default function UserDatabaseClient({ initialData, initialPagination, ini
   const handleExport = async () => {
     try {
       const payload: any = {};
-      if (searchQuery) payload.search = searchQuery;
-      if (searchParams.get('provider')) payload.provider = searchParams.get('provider');
-      if (sortKey) payload.sortBy = sortKey;
-      if (sortOrder) payload.sortOrder = sortOrder;
+      if (searchQuery) {payload.search = searchQuery;}
+      if (searchParams.get('provider')) {payload.provider = searchParams.get('provider');}
+      if (sortKey) {payload.sortBy = sortKey;}
+      if (sortOrder) {payload.sortOrder = sortOrder;}
       const response = await fetch(`/api/admin/users/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },

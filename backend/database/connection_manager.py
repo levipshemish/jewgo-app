@@ -242,6 +242,10 @@ class DatabaseConnectionManager:
 
         return SessionContextManager(self._session_factory)
 
+    def session_scope(self):
+        """Get a session context manager (alias for get_session_context)."""
+        return self.get_session_context()
+
     def close(self):
         """Close database connection and cleanup resources."""
         if self.engine:

@@ -163,12 +163,12 @@ class DatabaseManager:
         ):
             restaurant_data["specials"] = json.dumps(restaurant_data["specials"])
 
-        instance = self.restaurant_repo.create(restaurant_data)
-        if instance:
+        result = self.restaurant_repo.create(restaurant_data)
+        if result and result.get("created"):
             logger.info(
                 "Restaurant added successfully",
-                restaurant_id=instance.id,
-                name=instance.name,
+                restaurant_id=result.get("id"),
+                name=result.get("name", "Unknown"),
             )
             return True
         return False

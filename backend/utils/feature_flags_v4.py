@@ -42,9 +42,9 @@ class APIV4FeatureFlags:
                 "stage": MigrationStage.DISABLED,
             },
             "api_v4_restaurants": {
-                "default": False,
+                "default": True,
                 "description": "Enable v4 restaurant endpoints",
-                "stage": MigrationStage.DISABLED,
+                "stage": MigrationStage.TESTING,
             },
             "api_v4_reviews": {
                 "default": False,

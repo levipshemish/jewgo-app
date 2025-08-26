@@ -231,10 +231,10 @@ export default function SystemSettingsPage() {
   const updateRole = async (id: number) => {
     try {
       const edits = roleEdits[id];
-      if (!edits) return;
+      if (!edits) {return;}
       const payload: any = { id };
-      if (typeof edits.is_active === 'boolean') payload.isActive = edits.is_active;
-      if (edits.expires_at) payload.expiresAt = edits.expires_at;
+      if (typeof edits.is_active === 'boolean') {payload.isActive = edits.is_active;}
+      if (edits.expires_at) {payload.expiresAt = edits.expires_at;}
       const response = await fetch('/api/admin/roles', {
         method: 'PUT',
         headers: {

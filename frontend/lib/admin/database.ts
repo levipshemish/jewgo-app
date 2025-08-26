@@ -98,7 +98,7 @@ export class AdminDatabaseService {
       restaurant: [
         'id', 'name', 'address', 'city', 'state', 'created_at', 'updated_at', 
         'status', 'submission_status', 'approval_date', 'submission_date',
-        'phone_number', 'kosher_category', 'certifying_agency', 'rating', 
+        'phone_number', 'kosher_category', 'certifying_agency',
         'google_rating', 'google_review_count'
       ],
       review: [

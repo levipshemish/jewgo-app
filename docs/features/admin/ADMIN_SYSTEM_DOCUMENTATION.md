@@ -57,6 +57,23 @@ frontend/lib/admin/
 3. **CSRF Protection**: Generates and validates CSRF tokens for admin actions
 4. **Permission Checking**: Validates specific permissions for each operation
 
+> Implementation Notes
+> - CSRF: The admin layout (`app/admin/layout.tsx`) can generate an HMAC-signed CSRF token bound to the admin user id and expose it as `window.__CSRF_TOKEN__`. Clients must send it via `x-csrf-token` on all state-changing requests. Alternatively, `GET /api/admin/csrf` can be used to fetch a token. Tokens are stateless with a 1-hour TTL, and `useAdminCsrf()` auto-refreshes them every ~50 minutes.
+> - Middleware: `frontend/middleware.ts` enforces security headers and authentication only; it does not depend on an `admin_role` cookie and does not perform RBAC. RBAC checks occur in each route handler via `requireAdmin()` and permissions.
+> - Prisma: Relations were added between `Restaurant`, `Review`, and `RestaurantImage`. After any schema edits in `frontend/prisma/schema.prisma`, run `cd frontend && npx prisma generate` to sync the client.
+
+### Route Param Conventions
+
+- Next.js route handlers for moderation endpoints use `params` directly, e.g.: `export async function POST(request, { params }: { params: { id: string } })`.
+
+### SQL Safety for Raw Queries
+
+- For resources using raw SQL (Synagogues, Kosher Places), `ORDER BY` is constructed from whitelisted columns and directions via `Prisma.raw`, with all filters parameterized using `Prisma.sql` to prevent injection.
+
+### Admin Tables Pagination
+
+- Admin data tables limit page sizes to 10/20/50 to avoid client rendering bottlenecks; use CSV export endpoints for bulk data.
+
 ### Security Features
 
 - **CSRF Token Protection**: All admin actions require valid CSRF tokens

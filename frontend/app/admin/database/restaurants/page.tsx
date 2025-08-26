@@ -10,12 +10,12 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
   const urlParams = new URLSearchParams();
   urlParams.set('page', String(page));
   urlParams.set('pageSize', String(pageSize));
-  if (search) urlParams.set('search', search);
-  if (params.status) urlParams.set('status', String(params.status));
-  if (params.city) urlParams.set('city', String(params.city));
-  if (params.state) urlParams.set('state', String(params.state));
-  if (sortBy) urlParams.set('sortBy', sortBy);
-  if (sortOrder) urlParams.set('sortOrder', sortOrder);
+  if (search) {urlParams.set('search', search);}
+  if (params.status) {urlParams.set('status', String(params.status));}
+  if (params.city) {urlParams.set('city', String(params.city));}
+  if (params.state) {urlParams.set('state', String(params.state));}
+  if (sortBy) {urlParams.set('sortBy', sortBy);}
+  if (sortOrder) {urlParams.set('sortOrder', sortOrder);}
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };

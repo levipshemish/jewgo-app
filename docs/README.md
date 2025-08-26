@@ -80,12 +80,21 @@
 
 ### 🛠️ Troubleshooting
 1. **[TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)** - Common issues and solutions
-2. **[development/WEBPACK_OPTIMIZATION_GUIDE.md](development/WEBPACK_OPTIMIZATION_GUIDE.md)** - Webpack optimization and cache fixes
-3. **[development/BUILD_TESTING.md](development/BUILD_TESTING.md)** - Build and testing issues
+2. **[API_V4_ROUTES_STATUS.md](API_V4_ROUTES_STATUS.md)** - API v4 routes status and next steps
+3. **[NEXT_AGENT_QUICK_REFERENCE.md](NEXT_AGENT_QUICK_REFERENCE.md)** - Quick reference for next agent
+4. **[development/WEBPACK_OPTIMIZATION_GUIDE.md](development/WEBPACK_OPTIMIZATION_GUIDE.md)** - Webpack optimization and cache fixes
+5. **[development/BUILD_TESTING.md](development/BUILD_TESTING.md)** - Build and testing issues
 
 ---
 
 ## 🆕 Recent Critical Fixes (August 2025)
+
+### ✅ API v4 Routes - FIXED AND WORKING
+- **Problem**: API v4 routes were blocked by feature flags, causing 404 errors
+- **Solution**: Enabled `api_v4_restaurants` feature flag and fixed route registration
+- **Result**: All API v4 endpoints accessible, validation working, frontend integration complete
+- **Status**: Routes working but database service needs configuration (500 error on creation)
+- **Documentation**: [API v4 Routes Status](API_V4_ROUTES_STATUS.md) | [Next Agent Quick Reference](NEXT_AGENT_QUICK_REFERENCE.md)
 
 ### ✅ URL Validation and Normalization System - NEW
 - **Feature**: Flexible URL input with automatic normalization

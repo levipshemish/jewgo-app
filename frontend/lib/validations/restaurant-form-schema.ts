@@ -39,7 +39,7 @@ const phoneSchema = z.string()
 
 const urlSchema = z.string()
   .refine((url) => {
-    if (!url) return true; // Allow empty
+    if (!url) {return true;} // Allow empty
     try {
       normalizeUrl(url);
       return true;
@@ -48,7 +48,7 @@ const urlSchema = z.string()
     }
   }, 'Please enter a valid website URL')
   .transform((url) => {
-    if (!url) return url;
+    if (!url) {return url;}
     try {
       return normalizeUrl(url);
     } catch {
@@ -56,7 +56,7 @@ const urlSchema = z.string()
     }
   })
   .refine((url) => {
-    if (!url) return true; // Allow empty
+    if (!url) {return true;} // Allow empty
     // Check for common fake URL patterns
     const fakePatterns = ['example.com', 'test.com', 'fake.com', 'placeholder.com'];
     return !fakePatterns.some(pattern => url.toLowerCase().includes(pattern));

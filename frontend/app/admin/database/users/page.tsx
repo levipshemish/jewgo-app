@@ -10,10 +10,10 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
   const urlParams = new URLSearchParams();
   urlParams.set('page', String(page));
   urlParams.set('pageSize', String(pageSize));
-  if (search) urlParams.set('search', search);
-  if (params.provider) urlParams.set('provider', String(params.provider));
-  if (sortBy) urlParams.set('sortBy', sortBy);
-  if (sortOrder) urlParams.set('sortOrder', sortOrder);
+  if (search) {urlParams.set('search', search);}
+  if (params.provider) {urlParams.set('provider', String(params.provider));}
+  if (sortBy) {urlParams.set('sortBy', sortBy);}
+  if (sortOrder) {urlParams.set('sortOrder', sortOrder);}
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };

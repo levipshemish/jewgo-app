@@ -4,17 +4,15 @@ This document covers the Admin API endpoints implemented in the Next.js frontend
 
 ## CSRF Model
 
-- `app/admin/layout.tsx` sets a signed CSRF token bound to the admin user session and exposes it to the client:
-  - httpOnly cookie: `admin_csrf` (signed, not readable)
-  - readable cookie: `XSRF-TOKEN` (same signed value)
-  - window variable: `window.__CSRF_TOKEN__` (same signed value)
-- Clients must send the header `x-csrf-token: window.__CSRF_TOKEN__` on state-changing requests (POST/PUT/PATCH/DELETE). The server validates it with `validateSignedCSRFToken`.
+- Admin CSRF token is either generated in `app/admin/layout.tsx` and exposed via `window.__CSRF_TOKEN__`, or fetched from `GET /api/admin/csrf`.
+- Clients must include `x-csrf-token: window.__CSRF_TOKEN__` on all state-changing requests (POST/PUT/PATCH/DELETE). The server validates with `validateSignedCSRFToken(adminUser.id)`.
+- Tokens are stateless (HMAC) with a 1-hour TTL. The hook `useAdminCsrf()` schedules an automatic refresh every ~50 minutes to avoid expiry. Consider a central fetch wrapper to auto-retry once on HTTP 419 by first refreshing `/api/admin/csrf`.
 
 ## RBAC Summary
 
 - Server enforces RBAC via `requireAdmin(request)` which loads the admin role from Supabase and grants permissions via `ROLE_PERMISSIONS`.
 - Admin roles are stored in Supabase `admin_roles` table with Row Level Security (RLS) policies.
-- Middleware no longer infers RBAC from `user.app_metadata`; it only verifies authentication. All RBAC checks happen in the route handlers.
+- Middleware verifies authentication and applies security headers only; it does not require any `admin_role` cookie. All RBAC checks happen in the route handlers via `requireAdmin()`. Admin layout redirects unauthenticated users to `/auth/signin?redirectTo=/admin&message=admin_access_required` to reduce flicker.
 
 ## Endpoints
 
@@ -57,19 +55,39 @@ All routes live under `/api/admin/*`. All state-changing routes require `x-csrf-
 
 - CRUD analogous to restaurants with permissions `USER_VIEW`, `USER_EDIT`, `USER_DELETE`.
   - Create: client-supplied `id` ignored; unique email enforced.
-- Export: `POST /api/admin/users/export`.
+- Export: `POST /api/admin/users/export` (Permission: `DATA_EXPORT`).
 
 ### Images (Restaurant Images)
 
 - CRUD analogous to restaurants with permissions `IMAGE_VIEW`, `IMAGE_EDIT`, `IMAGE_DELETE`.
-- Export: `POST /api/admin/images/export`.
+- Export: `POST /api/admin/images/export` (Permission: `DATA_EXPORT`).
 
 ### Kosher Places and Synagogues
 
-- Listing endpoints exist for admin browsing. SQL is parameterized using Prisma `sql` templates with strict ORDER BY allowlists.
+- Listing endpoints exist for admin browsing. SQL is parameterized using Prisma `sql` templates with strict ORDER BY allowlists; `ORDER BY` uses `Prisma.raw` fed by a whitelisted column and direction.
 - Exports:
-  - `POST /api/admin/kosher-places/export`
-  - `POST /api/admin/synagogues/export`
+  - `POST /api/admin/kosher-places/export` (Permission: `DATA_EXPORT`)
+  - `POST /api/admin/synagogues/export` (Permission: `DATA_EXPORT`)
+
+### Restaurants Moderation
+
+- `POST /api/admin/restaurants/[id]/approve`
+- `POST /api/admin/restaurants/[id]/reject` (body: `{ reason?: string }`)
+  - Permission: `RESTAURANT_APPROVE`
+  - Requires CSRF header
+  - Handler signature: `export async function POST(request, { params }: { params: { id: string } })`
+
+### Data Export (Summary)
+
+All export endpoints return CSV (`text/csv`) and enforce:
+- Authentication via `requireAdmin()`
+- Permission: `DATA_EXPORT` plus the entity read permission when applicable
+- CSRF header: `x-csrf-token`
+- Optional filters via query or JSON body: `search`, entity-specific filters (e.g., `status`, `city`, `state`, `restaurantId`), `sortBy`, `sortOrder`
+
+## UI Tables and Pagination
+
+- Admin data tables default to server-driven pagination. Page size options are limited to 10, 20, and 50 for performance. Use CSV exports for large datasets.
 
 ### Bulk Operations
 
@@ -107,4 +125,3 @@ All routes live under `/api/admin/*`. All state-changing routes require `x-csrf-
 
 - Always include `x-csrf-token: window.__CSRF_TOKEN__` for state-changing requests.
 - Admin submissions page now lists via `GET /api/admin/restaurants` and moderates via the approve/reject endpoints above.
-

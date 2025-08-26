@@ -45,17 +45,17 @@ export default function RestaurantDatabaseClient({ initialData, initialPaginatio
       const params = new URLSearchParams();
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('status')) params.set('status', searchParams.get('status')!);
-      if (searchParams.get('city')) params.set('city', searchParams.get('city')!);
-      if (searchParams.get('state')) params.set('state', searchParams.get('state')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (searchQuery) {params.set('search', searchQuery);}
+      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
+      if (searchParams.get('city')) {params.set('city', searchParams.get('city')!);}
+      if (searchParams.get('state')) {params.set('state', searchParams.get('state')!);}
+      if (sortKey) {params.set('sortBy', sortKey);}
+      if (sortOrder) {params.set('sortOrder', sortOrder);}
 
       const response = await fetch(`/api/admin/restaurants?${params.toString()}`, {
         headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
       });
-      if (!response.ok) throw new Error('Failed to fetch restaurants');
+      if (!response.ok) {throw new Error('Failed to fetch restaurants');}
       const data = await response.json();
       setRestaurants(data.data || []);
       setPagination(data.pagination);
@@ -89,7 +89,7 @@ export default function RestaurantDatabaseClient({ initialData, initialPaginatio
 
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (query) params.set('search', query); else params.delete('search');
+    if (query) {params.set('search', query);} else {params.delete('search');}
     params.set('page', '1');
     router.push(`/admin/database/restaurants?${params.toString()}`);
   };
@@ -105,12 +105,12 @@ export default function RestaurantDatabaseClient({ initialData, initialPaginatio
   const handleExport = async () => {
     try {
       const payload: any = {};
-      if (searchQuery) payload.search = searchQuery;
-      if (searchParams.get('status')) payload.status = searchParams.get('status');
-      if (searchParams.get('city')) payload.city = searchParams.get('city');
-      if (searchParams.get('state')) payload.state = searchParams.get('state');
-      if (sortKey) payload.sortBy = sortKey;
-      if (sortOrder) payload.sortOrder = sortOrder;
+      if (searchQuery) {payload.search = searchQuery;}
+      if (searchParams.get('status')) {payload.status = searchParams.get('status');}
+      if (searchParams.get('city')) {payload.city = searchParams.get('city');}
+      if (searchParams.get('state')) {payload.state = searchParams.get('state');}
+      if (sortKey) {payload.sortBy = sortKey;}
+      if (sortOrder) {payload.sortOrder = sortOrder;}
       const response = await fetch(`/api/admin/restaurants/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
@@ -155,6 +155,7 @@ export default function RestaurantDatabaseClient({ initialData, initialPaginatio
     { key: 'certifying_agency', title: 'Agency' },
     { key: 'status', title: 'Status', sortable: true },
     { key: 'created_at', title: 'Created', sortable: true },
+    { key: 'updated_at', title: 'Updated', sortable: true },
   ];
 
   return (
@@ -178,4 +179,3 @@ export default function RestaurantDatabaseClient({ initialData, initialPaginatio
     </div>
   );
 }
-

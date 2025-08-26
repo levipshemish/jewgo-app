@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW) ||
+        !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

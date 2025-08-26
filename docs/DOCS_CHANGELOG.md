@@ -21,6 +21,30 @@
 
 ### 📝 Documentation Updates
 
+#### Admin CSRF, RBAC, and Performance Notes
+- **Date**: August 2025
+- **Updates**:
+  - Documented admin CSRF token lifecycle, including periodic auto-refresh via `useAdminCsrf()` and optional 419 auto-retry strategy.
+  - Clarified middleware behavior (auth + headers only) and admin layout redirect with message to reduce flicker.
+  - Added guidance on safe ORDER BY using Prisma for Synagogues/Kosher Places.
+  - Documented server-driven pagination limits (10/20/50) for admin tables.
+  - Noted Next.js route handler param signature for moderation endpoints.
+- **Files Updated**:
+  - `docs/api/ADMIN_API_GUIDE.md`
+  - `docs/features/admin/ADMIN_SYSTEM_DOCUMENTATION.md`
+  - `docs/security/SECURITY_IMPLEMENTATION_GUIDE.md`
+
+#### Admin API and Security Notes
+- **Date**: August 2025
+- **Updates**:
+  - Updated CSRF model to reflect direct token generation in `app/admin/layout.tsx` and documented alternate `/api/admin/csrf` flow.
+  - Clarified middleware behavior: authentication + security headers only; no `admin_role` cookie requirement; RBAC enforced in route handlers.
+  - Documented CSV export endpoints for Users, Images, and Synagogues, including `DATA_EXPORT` permission and CSRF header requirements.
+  - Added reminder to run `npx prisma generate` after editing `frontend/prisma/schema.prisma`.
+- **Files Updated**:
+  - `docs/api/ADMIN_API_GUIDE.md`
+  - `README.md`
+
 #### Enhanced Form Documentation
 - **Date**: August 2025
 - **Updates**:

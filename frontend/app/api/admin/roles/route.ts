@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
+import { logAdminAction } from '@/lib/admin/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'userId and role are required' }, { status: 400 });
   }
 
-  await prisma.adminRole.create({
+  const created = await prisma.adminRole.create({
     data: {
       userId,
       role: String(role),
@@ -92,6 +93,18 @@ export async function POST(request: NextRequest) {
       isActive: true,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       notes: notes ? String(notes) : null,
+    },
+  });
+
+  await logAdminAction(adminUser, 'role_assign', 'admin_role', {
+    entityId: String(userId),
+    metadata: {
+      actorId: adminUser.id,
+      targetUserId: String(userId),
+      role: String(role),
+      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      notes: notes ? String(notes) : undefined,
+      assignmentId: String(created.id),
     },
   });
 
@@ -119,15 +132,26 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  await prisma.adminRole.update({
+  const updated = await prisma.adminRole.update({
     where: { id: Number(id) },
     data: {
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
       expiresAt: expiresAt ? new Date(expiresAt) : undefined,
     },
   });
+  await logAdminAction(adminUser, 'role_update', 'admin_role', {
+    entityId: String(id),
+    metadata: {
+      actorId: adminUser.id,
+      roleId: String(id),
+      changes: {
+        isActive: typeof isActive === 'boolean' ? isActive : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
+      },
+    },
+  });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, updated });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -153,10 +177,19 @@ export async function DELETE(request: NextRequest) {
   }
 
   // Deactivate any active matching role assignments
-  await prisma.adminRole.updateMany({
+  const result = await prisma.adminRole.updateMany({
     where: { userId, role, isActive: true },
     data: { isActive: false },
   });
+  await logAdminAction(adminUser, 'role_remove', 'admin_role', {
+    entityId: String(userId),
+    metadata: {
+      actorId: adminUser.id,
+      targetUserId: String(userId),
+      role: String(role),
+      affectedCount: result.count,
+    },
+  });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, deactivated: result.count });
 }

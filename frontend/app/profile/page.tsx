@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 
+
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectStatus, setRedirectStatus] = useState<string>('');
+
   const router = useRouter();
 
   // Load user data
@@ -35,14 +37,14 @@ export default function ProfilePage() {
 
         if (response.ok) {
           const userData = await response.json();
-          console.log('Profile page: User data received:', userData);
+          // console.log('Profile page: User data received:', userData);
           
           if (userData.user) {
-            console.log('Profile page: User exists, checking if guest...');
+            // console.log('Profile page: User exists, checking if guest...');
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
             const isGuest = !userData.user.email && userData.user.provider === 'unknown';
-            console.log('Profile page: Is guest?', isGuest);
+            // console.log('Profile page: Is guest?', isGuest);
             
             if (isGuest) {
               console.log('Profile page: Redirecting guest user');
@@ -53,7 +55,7 @@ export default function ProfilePage() {
             }
             
             // User is authenticated with email (not a guest)
-            console.log('Profile page: Setting user data and stopping loading');
+            // console.log('Profile page: Setting user data and stopping loading');
             if (isMounted) {
               setUser(userData.user);
               setIsLoading(false);
@@ -86,7 +88,7 @@ export default function ProfilePage() {
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');
       } finally {
-        console.log('Profile page: Finally block - redirected:', redirected, 'userAuthenticated:', userAuthenticated, 'setting loading to:', !redirected && !userAuthenticated);
+        // console.log('Profile page: Finally block - redirected:', redirected, 'userAuthenticated:', userAuthenticated, 'setting loading to:', !redirected && !userAuthenticated);
         // Only set loading to false if we're not redirecting AND user is not authenticated
         if (isMounted && !userAuthenticated) {
           setIsLoading(!redirected);
@@ -170,8 +172,8 @@ export default function ProfilePage() {
               <ClickableAvatarUpload 
                 currentAvatarUrl={user.avatar_url}
                 onAvatarChange={(avatarUrl) => {
-                  // Handle avatar change - you might want to update the user state here
-                  console.log('Avatar changed:', avatarUrl);
+                  // Update the user state with the new avatar URL
+                  setUser(prevUser => prevUser ? { ...prevUser, avatar_url: avatarUrl } : null);
                 }}
                 size="xl"
               />
@@ -226,6 +228,8 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+
 
             {/* Action Buttons */}
             <div className="mt-8 pt-6 border-t border-gray-200">

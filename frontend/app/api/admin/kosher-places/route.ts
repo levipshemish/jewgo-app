@@ -4,6 +4,7 @@ import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import { safeOrderExpr } from '@/lib/admin/sql';
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,8 +33,6 @@ export async function GET(request: NextRequest) {
 
     // Validate sort parameters to prevent SQL injection
     const allowedColumns = ['created_at', 'name', 'title', 'vendor_name', 'location', 'category', 'status'];
-    const validSortBy = allowedColumns.includes(sortBy) ? sortBy : 'created_at';
-    const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
     // Build WHERE clause safely
     const conditions: Prisma.Sql[] = [];
@@ -65,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Get paginated data
     // Order by validated columns only via CASE mapping to avoid injection
-    const orderExpr = Prisma.raw(`${validSortBy} ${validSortOrder}`);
+    const orderExpr = safeOrderExpr(allowedColumns, sortBy, sortOrder);
     const dataResult = await prisma.$queryRaw<any[]>`
       SELECT * FROM marketplace
       ${whereClause}

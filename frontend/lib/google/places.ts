@@ -393,13 +393,13 @@ export class ModernGooglePlacesAPI {
           if (result) {
             // Map modern field names back to legacy format for compatibility
             const legacyResult = { ...result };
-            if (result.displayName) legacyResult.name = result.displayName;
-            if (result.formattedAddress) legacyResult.formatted_address = result.formattedAddress;
-            if (result.formattedPhoneNumber) legacyResult.formatted_phone_number = result.formattedPhoneNumber;
-            if (result.openingHours) legacyResult.opening_hours = result.openingHours;
-            if (result.priceLevel) legacyResult.price_level = result.priceLevel;
-            if (result.userRatingCount) legacyResult.user_ratings_total = result.userRatingCount;
-            if (result.location) legacyResult.geometry = result.location;
+            if (result.displayName) {legacyResult.name = result.displayName;}
+            if (result.formattedAddress) {legacyResult.formatted_address = result.formattedAddress;}
+            if (result.formattedPhoneNumber) {legacyResult.formatted_phone_number = result.formattedPhoneNumber;}
+            if (result.openingHours) {legacyResult.opening_hours = result.openingHours;}
+            if (result.priceLevel) {legacyResult.price_level = result.priceLevel;}
+            if (result.userRatingCount) {legacyResult.user_ratings_total = result.userRatingCount;}
+            if (result.location) {legacyResult.geometry = result.location;}
             
             return legacyResult;
           }

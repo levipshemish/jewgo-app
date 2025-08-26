@@ -4,6 +4,15 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 ## 🚀 Recent Updates (August 2025)
 
+### ✅ **API v4 Routes - Fixed and Working**
+
+- **✅ Feature Flag Resolution**: Fixed `api_v4_restaurants` feature flag blocking route access
+- **✅ Route Registration**: All API v4 routes properly registered and accessible
+- **✅ Frontend Integration**: Updated frontend to use proper API v4 endpoints
+- **✅ Validation Working**: Input validation returns proper 400 errors for missing fields
+- **⚠️ Database Integration**: API v4 routes working but database service needs configuration (500 error)
+- **📋 Documentation**: Complete status documentation in `docs/API_V4_ROUTES_STATUS.md`
+
 ### ✅ **Profile System - Enhanced User Experience**
 
 - **✅ Clickable Avatar Upload**: Redesigned avatar upload with clickable avatar circle (no separate upload area)
@@ -12,6 +21,10 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 - **✅ Multiple Size Support**: Avatar upload supports sm, md, lg, and xl sizes
 - **✅ Hover Effects**: Visual feedback with scale and shadow effects on hover
 - **✅ Mobile Optimization**: Touch-friendly interface with responsive design
+- **✅ Upload Progress**: Real-time progress indicators during file upload
+- **✅ Delete Functionality**: One-click avatar deletion with confirmation
+- **✅ Error Handling**: User-friendly error messages and validation
+- **✅ Supabase Integration**: Complete storage integration with RLS policies
 
 ### ✅ **Admin System - Production Ready**
 
@@ -26,6 +39,8 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 
 - **Profile Authentication Flow**: Fixed redirect loops and loading state management
 - **Avatar Upload Components**: New ClickableAvatarUpload component with modern UX
+- **Supabase Storage Integration**: Complete avatar storage with RLS policies and bucket management
+- **File Upload System**: Server actions for secure file upload with validation and progress tracking
 - **Supabase Migration**: Complete admin system migration from PostgreSQL to Supabase
 - **Admin Functions**: Database functions for role management (`get_user_admin_role`, `assign_admin_role`)
 - **Security Enhancements**: RLS policies, secure metadata storage, service role integration
@@ -187,6 +202,9 @@ npm run build        # Build for production
 npm run test         # Run tests
 npm run lint         # Run ESLint
 npm run type-check   # Run TypeScript check
+
+# Prisma client (run after editing frontend/prisma/schema.prisma)
+npx prisma generate
 
 # Backend development
 cd backend
@@ -445,6 +463,18 @@ For detailed contributing guidelines, see [Contributing Guide](docs/CONTRIBUTING
    ```
 
 For comprehensive troubleshooting, see [Troubleshooting Guide](docs/TROUBLESHOOTING_GUIDE.md).
+
+### API v4 Issues
+
+If you're experiencing issues with the API v4 routes (restaurant submissions, form submissions), see the detailed status and troubleshooting guide:
+
+**📋 [API v4 Routes Status & Next Steps](docs/API_V4_ROUTES_STATUS.md)**
+
+This document includes:
+- Current working status of all API v4 endpoints
+- Known issues and their solutions
+- Debugging commands and environment setup
+- Next steps for fixing remaining problems
 
 ## 📊 Monitoring & Analytics
 

@@ -109,24 +109,33 @@ export async function POST(request: NextRequest) {
     // Remove fields that don't match database schema
     const { phone, ...restaurantDataWithoutPhone } = restaurantData;
     
-    // Submit to backend API
-    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(restaurantDataWithoutPhone),
-    });
+    // Use API v4 endpoint
+    const backendUrl = 'http://localhost:8082';
+    console.log(`[API] Using API v4 endpoint: ${backendUrl}/api/v4/restaurants`);
     
-    if (!backendResponse.ok) {
-      const errorData = await backendResponse.json();
-      console.error('Backend API error:', errorData);
+    try {
+      backendResponse = await fetch(`${backendUrl}/api/v4/restaurants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(restaurantDataWithoutPhone),
+      });
+      
+      console.log(`[API] Backend response status: ${backendResponse.status}`);
+    } catch (error) {
+      console.log(`[API] Failed to connect to ${backendUrl}:`, error);
+      lastError = error;
+    }
+    
+    if (!backendResponse || !backendResponse.ok) {
+      console.error('[API] All backend URLs failed. Last error:', lastError);
       
       return NextResponse.json({
         success: false,
-        message: 'Failed to submit restaurant to backend',
-        error: errorData
-      }, { status: backendResponse.status });
+        message: 'Unable to connect to backend server. Please try again later.',
+        error: lastError?.message || 'Backend connection failed'
+      }, { status: 503 });
     }
     
     const result = await backendResponse.json();

@@ -486,6 +486,112 @@ def create_app():
             'timestamp': datetime.now(timezone.utc).isoformat()
         })
     
+    # Add a debug endpoint to list all routes
+    @app.route('/debug/routes', methods=['GET'])
+    def debug_routes():
+        """Debug endpoint to list all registered routes"""
+        routes = []
+        for rule in app.url_map.iter_rules():
+            routes.append({
+                'endpoint': rule.endpoint,
+                'methods': list(rule.methods),
+                'rule': rule.rule
+            })
+        return jsonify({
+            'success': True,
+            'routes': routes,
+            'total_routes': len(routes)
+        })
+    
+    # Add a debug endpoint to test database connection
+    @app.route('/debug/db-test', methods=['GET'])
+    def debug_db_test():
+        """Debug endpoint to test database connection"""
+        try:
+            # Test the database manager v4
+            db_manager = get_db_manager_v4()
+            if db_manager:
+                # Test connection
+                connected = db_manager.connect()
+                return jsonify({
+                    'success': True,
+                    'database_manager': 'available',
+                    'connected': connected,
+                    'message': 'Database manager v4 is working'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'database_manager': 'not_available',
+                    'message': 'Database manager v4 not available'
+                })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Database test failed'
+            })
+    
+    # Add a debug endpoint to test restaurant service creation
+    @app.route('/debug/service-test', methods=['GET'])
+    def debug_service_test():
+        """Debug endpoint to test restaurant service creation"""
+        try:
+            from routes.api_v4 import create_restaurant_service
+            service = create_restaurant_service()
+            if service:
+                return jsonify({
+                    'success': True,
+                    'service': 'created',
+                    'message': 'Restaurant service created successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'service': 'not_created',
+                    'message': 'Restaurant service creation failed'
+                })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Service creation test failed'
+            })
+    
+    # Add a debug endpoint to test restaurant creation
+    @app.route('/debug/restaurant-test', methods=['POST'])
+    def debug_restaurant_test():
+        """Debug endpoint to test restaurant creation"""
+        try:
+            from routes.api_v4 import create_restaurant_service
+            service = create_restaurant_service()
+            
+            data = {
+                'name': 'Test Restaurant Debug',
+                'address': '789 Test St',
+                'city': 'Test City',
+                'state': 'FL',
+                'zip_code': '12345',
+                'phone_number': '555-1234',
+                'kosher_category': 'dairy',
+                'listing_type': 'restaurant'
+            }
+            
+            result = service.create_restaurant(data)
+            return jsonify({
+                'success': True,
+                'result': result,
+                'message': 'Restaurant creation test completed'
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Restaurant creation test failed'
+            })
+    
+
+    
     # Add a simple health endpoint
     @app.route('/api/health/basic', methods=['GET'])
     def health_basic():

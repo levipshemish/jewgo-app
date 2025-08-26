@@ -41,6 +41,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [processingAction, setProcessingAction] = useState<number | null>(null);
   const [adminUser, setAdminUser] = useState<{ permissions: string[] } | null>(null);
+  const [accessRestricted, setAccessRestricted] = useState(false);
   const csrfToken = useAdminCsrf();
 
   // Statistics
@@ -64,6 +65,9 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
         const res = await fetch('/api/admin/user');
         if (res.ok) {
           setAdminUser(await res.json());
+        } else if (res.status === 401 || res.status === 403) {
+          setAccessRestricted(true);
+          setAdminUser(null);
         }
       } catch {}
     };
@@ -73,7 +77,10 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/restaurants?status=${filterStatus}&pageSize=100`);
+      const qs = new URLSearchParams();
+      if (filterStatus && filterStatus !== 'all') qs.set('status', filterStatus);
+      qs.set('pageSize', '100');
+      const response = await fetch(`/api/admin/restaurants?${qs.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch restaurants');
@@ -239,6 +246,11 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow p-6">
+        {accessRestricted && (
+          <div className="mb-4 p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-800">
+            You do not have permission to moderate submissions. Viewing is allowed, actions are hidden.
+          </div>
+        )}
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Filter className="h-5 w-5" />
           Filters & Search

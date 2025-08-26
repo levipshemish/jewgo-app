@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYNAGOGUE_VIEW)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYNAGOGUE_VIEW) ||
+        !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -119,7 +120,7 @@ export async function GET(request: NextRequest) {
     const csv = [csvHeaders, ...csvRows].join('\n');
 
     // Log the export action
-    await logAdminAction(adminUser, 'synagogue_export', 'synagogue', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'synagogue', {
       metadata: {
         search,
         city,
@@ -149,4 +150,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

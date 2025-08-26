@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
-import { securityMiddleware, corsHeaders } from '@/lib/middleware/security';
+import { securityMiddleware, corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
@@ -41,13 +41,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // Fast-path redirect for admin UI if role cookie missing
-    if (!isApi && (path === '/admin' || path.startsWith('/admin/'))) {
-      const roleCookie = request.cookies.get('admin_role')?.value;
-      if (!roleCookie) {
-        return NextResponse.redirect(new URL('/', request.url), 302);
-      }
-    }
+    // Rely on server-side RBAC (requireAdmin/role checks) in routes/layout
     
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
@@ -113,13 +107,45 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Add basic security headers for admin/API paths
+    // Admin RBAC gate: block non-admins for /admin and /api/admin paths
     if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
-      response.headers.set('X-Content-Type-Options', 'nosniff');
-      response.headers.set('X-Frame-Options', 'DENY');
-      response.headers.set('X-XSS-Protection', '1; mode=block');
-      // Relax admin check: rely on server-side requireAdmin() for RBAC
+      try {
+        // Check admin role via database tables (no RPC dependency)
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('issuperadmin')
+          .eq('id', user.id)
+          .single();
+
+        let isAdmin = Boolean(userRow?.issuperadmin);
+        if (!isAdmin) {
+          const { data: roles } = await supabase
+            .from('admin_roles')
+            .select('role,is_active,expires_at')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .or('expires_at.is.null,expires_at.gt.now()');
+          isAdmin = Array.isArray(roles) && roles.length > 0;
+        }
+
+        if (!isAdmin) {
+          if (isApi) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
+          }
+          return redirectToSignin(request, response);
+        }
+      } catch (rbacError) {
+        console.error('Middleware RBAC check error:', rbacError);
+        if (isApi) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
+        }
+        return redirectToSignin(request, response);
+      }
     }
+
+    // Add strict security headers and CORS reflection on the base response
+    const sec = buildSecurityHeaders(request);
+    Object.entries(sec).forEach(([k, v]) => response.headers.set(k, v));
 
     // Authenticated, non-anonymous user - allow access and return response with persisted cookies
     return response;

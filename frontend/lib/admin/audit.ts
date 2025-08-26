@@ -100,6 +100,7 @@ export async function logAdminAction(
     // Sanitize sensitive data
     const sanitizedOldData = truncateForAudit(sanitizeData(oldData));
     const sanitizedNewData = truncateForAudit(sanitizeData(newData));
+    const sanitizedMetadata = truncateForAudit(sanitizeData(metadata));
 
     // Create audit log entry
     await prisma.auditLog.create({
@@ -116,7 +117,7 @@ export async function logAdminAction(
         sessionId,
         correlationId,
         auditLevel,
-        metadata: metadata ? JSON.stringify(metadata) : null,
+        metadata: sanitizedMetadata ? JSON.stringify(sanitizedMetadata) : null,
       },
     });
 
@@ -131,12 +132,14 @@ export async function logAdminAction(
 /**
  * Sanitize sensitive data for audit logs
  */
-function sanitizeData(data: any): any {
+export function sanitizeData(data: any): any {
   if (!data) {return data;}
 
   const sensitiveFields = [
     'password', 'token', 'refresh_token', 'access_token', 'secret',
-    'api_key', 'private_key', 'credit_card', 'ssn', 'social_security'
+    'api_key', 'private_key', 'credit_card', 'ssn', 'social_security',
+    // Common PII fields (extendable)
+    'email', 'user_email', 'owner_email', 'business_email', 'phone', 'owner_phone', 'phone_number'
   ];
 
   if (typeof data === 'object') {
@@ -468,12 +471,12 @@ export async function logBulkProgress(
 }
 
 
-function truncateForAudit(obj: any, maxLen = 4000): any {
+export function truncateForAudit(obj: any, maxLen = 4000): any {
   try {
-    if (!obj) return obj;
+    if (!obj) {return obj;}
     const str = typeof obj === 'string' ? obj : JSON.stringify(obj);
-    if (str.length <= maxLen) return obj;
-    if (typeof obj === 'string') return str.slice(0, maxLen) + '...';
+    if (str.length <= maxLen) {return obj;}
+    if (typeof obj === 'string') {return `${str.slice(0, maxLen)  }...`;}
     return { truncated: true, preview: str.slice(0, maxLen) };
   } catch {
     return obj;
