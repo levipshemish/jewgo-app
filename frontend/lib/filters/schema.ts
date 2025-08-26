@@ -7,7 +7,27 @@ export const FiltersSchema = z.object({
   
   // Kosher filters
   agency: z.string().optional(),
-  dietary: z.enum(["meat", "dairy", "pareve"]).optional(),
+  dietary: z.string().optional().transform((val) => {
+    // Handle multiple dietary values by taking the first one
+    if (typeof val === 'string') {
+      // If it's a JSON array string, parse and take the first one (check this first)
+      if (val.startsWith('[') && val.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(val);
+          return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : val;
+        } catch {
+          // If JSON parsing fails, try to extract the first value using regex
+          const match = val.match(/"([^"]+)"/);
+          return match ? match[1] : val;
+        }
+      }
+      // If it's a comma-separated list (but not a JSON array), take the first one
+      if (val.includes(',')) {
+        return val.split(',')[0].trim();
+      }
+    }
+    return val;
+  }),
   category: z.string().optional(),
   
   // Location filters
@@ -68,6 +88,21 @@ export const toSearchParams = (filters: Filters): URLSearchParams => {
     // Handle boolean values as 1/0 for compactness
     if (typeof value === "boolean") {
       params.set(String(key), value ? "1" : "0");
+    } else if (Array.isArray(value)) {
+      // Handle arrays by adding multiple parameters (except dietary)
+      if (key === 'dietary') {
+        // For dietary, only use the first value
+        const firstValue = value[0];
+        if (firstValue !== undefined && firstValue !== null && String(firstValue).trim() !== "") {
+          params.set(String(key), String(firstValue));
+        }
+      } else {
+        value.forEach(item => {
+          if (item !== undefined && item !== null && String(item).trim() !== "") {
+            params.append(String(key), String(item));
+          }
+        });
+      }
     } else {
       params.set(String(key), String(value));
     }
@@ -100,6 +135,21 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
 
   // Convert URLSearchParams to object, with safe boolean conversion only for boolean keys
   searchParams.forEach((value, key) => {
+    // For dietary parameter, only take the first value to avoid array issues
+    if (key === 'dietary' && obj[key] !== undefined) {
+      return; // Skip additional dietary values
+    }
+
+    // Handle multiple values for the same parameter (except dietary)
+    if (obj[key] !== undefined) {
+      if (Array.isArray(obj[key])) {
+        (obj[key] as unknown[]).push(value);
+      } else {
+        obj[key] = [obj[key], value];
+      }
+      return;
+    }
+
     if (booleanKeys.has(key)) {
       if (value === '1') {
         obj[key] = true;
@@ -121,6 +171,7 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
 export const DEFAULT_FILTERS: Filters = {
   page: 1,
   limit: 50,
+  dietary: undefined,
 };
 
 // Validation helpers
