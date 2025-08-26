@@ -34,7 +34,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 /**
  * Check current admin setup status
  */
-async function checkAdminSetup(): Promise<void> {
+async function checkAdminSetup(): Promise<{ hasAdminRolesTable: boolean; hasAdminConfigTable: boolean; hasGetUserAdminRoleFunction: boolean; hasAssignAdminRoleFunction: boolean }> {
   console.log('🔍 Checking Admin Setup Status');
   console.log('==============================\n');
   
@@ -146,7 +146,11 @@ function provideSetupInstructions(status: any): void {
   console.log('   This approach is the safest and gives you full control:');
   console.log('');
   console.log('   1. Go to your Supabase Dashboard:');
-  console.log(`      https://supabase.com/dashboard/project/${SUPABASE_URL.split('//')[1].split('.')[0]}/sql`);
+  if (SUPABASE_URL) {
+    console.log(`      https://supabase.com/dashboard/project/${SUPABASE_URL.split('//')[1].split('.')[0]}/sql`);
+  } else {
+    console.log('      https://supabase.com/dashboard/project/[YOUR_PROJECT_REF]/sql');
+  }
   console.log('');
   console.log('   2. Open the SQL Editor');
   console.log('');
