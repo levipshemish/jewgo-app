@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { SignOutButton } from "@/components/auth";
 
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
@@ -223,19 +224,10 @@ export default function ProfilePage() {
                     View Public Profile
                   </Link>
                 )}
-                <button
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
-                      router.push('/');
-                    } catch (e) {
-                      console.error('Sign out failed', e);
-                    }
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Sign Out
-                </button>
+                <SignOutButton
+                  redirectTo="/"
+                  className="inline-flex items-center"
+                />
                 <Link
                   href="/"
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

@@ -14,6 +14,7 @@ import {
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
+import { SignOutButton } from "@/components/auth";
 import { LoadingState } from "@/components/ui/LoadingState";
 
 // Force dynamic rendering to avoid SSR issues
@@ -118,19 +119,7 @@ export default function SettingsPage() {
               <p className="text-gray-600">Manage your account preferences and security</p>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
-                    router.push('/');
-                  } catch (e) {
-                    console.error('Sign out failed', e);
-                  }
-                }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Sign Out
-              </button>
+              <SignOutButton className="inline-flex items-center" redirectTo="/" />
               <Link
                 href="/profile"
                 className="text-blue-600 hover:text-blue-700 font-medium"

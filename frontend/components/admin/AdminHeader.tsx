@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import Clock from './Clock';
 import { AdminUser } from '@/lib/admin/types';
+import { SignOutButton } from '@/components/auth';
 
 interface AdminHeaderProps {
   adminUser: AdminUser;
@@ -64,19 +65,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
     console.log('Search query:', searchQuery);
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        window.location.href = '/auth/signin';
-      }
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
+  // SignOut handled by SignOutButton
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -164,12 +153,13 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
                   </button>
                   
                   <div className="border-t border-gray-100">
-                    <button
-                      onClick={handleLogout}
+                    <SignOutButton
+                      redirectTo="/auth/signin"
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      variant="link"
                     >
                       Sign Out
-                    </button>
+                    </SignOutButton>
                   </div>
                 </div>
               )}

@@ -19,6 +19,7 @@ import {
   User
 } from 'lucide-react';
 import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { SignOutButton } from '@/components/auth';
 
 interface AdminSidebarProps {
   adminUser: AdminUser;
@@ -143,19 +144,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
     return pathname.startsWith(href);
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        window.location.href = '/auth/signin';
-      }
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
+  // SignOut handled by SignOutButton
 
   return (
     <div className="w-64 bg-white shadow-lg min-h-screen">
@@ -232,13 +221,12 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
 
       {/* Footer */}
       <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200">
-        <button
-          onClick={handleLogout}
+        <SignOutButton
+          redirectTo="/auth/signin"
           className="w-full flex items-center space-x-2 p-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
         >
-          <LogOut className="h-4 w-4" />
-          <span>Sign Out</span>
-        </button>
+          <span className="flex items-center gap-2"><LogOut className="h-4 w-4" /> Sign Out</span>
+        </SignOutButton>
       </div>
     </div>
   );
