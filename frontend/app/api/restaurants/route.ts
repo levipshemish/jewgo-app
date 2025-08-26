@@ -114,7 +114,6 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
       },
       body: JSON.stringify(restaurantDataWithoutPhone),
     });

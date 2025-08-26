@@ -12,7 +12,14 @@
     "NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID": "5060e374c6d88aacf8fea324",
     "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-CGMV8EBX9C",
     "NEXT_PUBLIC_ADMIN_EMAIL": "admin@jewgo.com",
-    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcpuqbnrm"
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcpuqbnrm",
+    "DATABASE_URL": "postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require",
+    "NEXTAUTH_SECRET": "BoIzVFtI8CYLAYFpygltlBAsWDNSPxFAP/gvaKhfIww=",
+    "NEXTAUTH_URL": "https://jewgo-app.vercel.app",
+    "GOOGLE_CLIENT_ID": "711684218354-j9f6p0oherm63g73017ni4fmvlb4t0s0.apps.googleusercontent.com",
+    "GOOGLE_CLIENT_SECRET": "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",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxnc2Z5cnhrcXBpcGF1bW5ndmZpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTQ4NzAwOCwiZXhwIjoyMDcxMDYzMDA4fQ.LObTdFHWkRoiSkW-GhAvQPUvOp2AxS4S0XIae8Id0X8",
+    "NODE_ENV": "production"
   },
   "functions": {
     "app/api/**/*.ts": {

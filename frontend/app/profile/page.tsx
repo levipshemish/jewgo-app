@@ -7,15 +7,10 @@ import Link from "next/link";
 // Force dynamic rendering to avoid SSR issues with Supabase client
 export const dynamic = 'force-dynamic';
 
-import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
-  isSupabaseConfigured, 
-  transformSupabaseUser, 
   handleUserLoadError,
-  extractIsAnonymous,
   type TransformedUser 
 } from "@/lib/utils/auth-utils-client";
-import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<TransformedUser | null>(null);
@@ -60,11 +55,6 @@ export default function ProfilePage() {
             
             // User is authenticated with email (not a guest)
             console.log('Profile page: User is authenticated with email, setting user data');
-            setUser(userData.user);
-            setIsLoading(false);
-            return;
-            
-            console.log('Profile page: User is not anonymous, setting user data');
             setUser(userData.user);
             setIsLoading(false);
             return;
@@ -206,6 +196,19 @@ export default function ProfilePage() {
                 >
                   Edit Profile Settings
                 </Link>
+                <button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
+                      router.push('/');
+                    } catch (e) {
+                      console.error('Sign out failed', e);
+                    }
+                  }}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Sign Out
+                </button>
                 <Link
                   href="/"
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
