@@ -3,11 +3,11 @@ CREATE TABLE IF NOT EXISTS public.admin_config (
     key VARCHAR(100) PRIMARY KEY,
     value JSONB NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_by VARCHAR(50) REFERENCES public.users(id),
-    
-    -- Index for performance
-    INDEX idx_admin_config_key (key)
+    updated_by UUID REFERENCES auth.users(id)
 );
+
+-- Create index for performance
+CREATE INDEX IF NOT EXISTS idx_admin_config_key ON public.admin_config(key);
 
 -- Add audit logging for config changes
 CREATE OR REPLACE FUNCTION log_admin_config_change()

@@ -7,39 +7,28 @@ ALTER TABLE public.admin_roles ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view own admin roles" ON public.admin_roles;
 DROP POLICY IF EXISTS "Super admins can manage admin roles" ON public.admin_roles;
+DROP POLICY IF EXISTS "Allow all operations" ON public.admin_roles;
 
--- Create simplified policies that work without auth schema
--- Note: In a regular PostgreSQL setup, we'll rely on application-level authentication
+-- Create policies for Supabase auth
+-- Policy: Users can only see their own roles
+CREATE POLICY "Users can view own admin roles" ON public.admin_roles
+    FOR SELECT USING (auth.uid() = user_id);
 
--- Policy: Allow all operations (application will handle auth)
-CREATE POLICY "Allow all operations" ON public.admin_roles
-    FOR ALL USING (true);
+-- Policy: Only super admins can manage admin roles
+CREATE POLICY "Super admins can manage admin roles" ON public.admin_roles
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM auth.users 
+            WHERE id = auth.uid() 
+            AND issuperadmin = true
+        )
+    );
 
--- Alternative: If you want to restrict access, you can use a more specific policy
--- CREATE POLICY "Users can view own admin roles" ON public.admin_roles
---     FOR SELECT USING (
---         user_id = current_setting('app.current_user_id', true)::text
---         OR EXISTS (
---             SELECT 1 FROM public.users 
---             WHERE id = current_setting('app.current_user_id', true)::text 
---             AND issuperadmin = true
---         )
---     );
-
--- CREATE POLICY "Super admins can manage admin roles" ON public.admin_roles
---     FOR ALL USING (
---         EXISTS (
---             SELECT 1 FROM public.users 
---             WHERE id = current_setting('app.current_user_id', true)::text 
---             AND issuperadmin = true
---         )
---     );
-
--- Update the assign_admin_role function to work without auth schema
+-- Update the assign_admin_role function to work with UUID
 CREATE OR REPLACE FUNCTION assign_admin_role(
-    target_user_id VARCHAR(50),
+    target_user_id UUID,
     role_param VARCHAR(50),
-    assigned_by_param VARCHAR(50),
+    assigned_by_param UUID,
     expires_at_param TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     notes_param TEXT DEFAULT NULL
 )
@@ -47,7 +36,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     -- Check if assigner is super admin
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = assigned_by_param 
         AND issuperadmin = true
     ) THEN
@@ -56,7 +45,7 @@ BEGIN
     
     -- Check if target user exists
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = target_user_id
     ) THEN
         RAISE EXCEPTION 'Target user does not exist';
@@ -88,17 +77,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Update the remove_admin_role function to work without auth schema
+-- Update the remove_admin_role function to work with UUID
 CREATE OR REPLACE FUNCTION remove_admin_role(
-    target_user_id VARCHAR(50),
+    target_user_id UUID,
     role_param VARCHAR(50),
-    removed_by_param VARCHAR(50)
+    removed_by_param UUID
 )
 RETURNS BOOLEAN AS $$
 BEGIN
     -- Check if remover is super admin
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = removed_by_param 
         AND issuperadmin = true
     ) THEN

@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+const asDate = z.preprocess((v) => {
+  if (v == null || v instanceof Date) return v;
+  if (typeof v === 'string' || typeof v === 'number') {
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  }
+  return undefined;
+}, z.date());
+
 // Base validation schemas for common fields
 export const baseSchemas = {
   id: z.union([z.string(), z.number()]).optional(),
@@ -38,12 +47,12 @@ export const restaurantCreateSchema = z.object({
   listing_type: z.string().min(1, 'Listing type is required').max(100),
   hours_of_operation: z.string().max(1000).optional(),
   specials: z.string().max(1000).optional(),
-  hours_json: z.record(z.string(), z.unknown()).optional(),
-  hours_last_updated: z.date().optional(),
+  hours_json: z.string().optional(),
+  hours_last_updated: asDate.optional(),
   kosher_category: z.string().min(1, 'Kosher category is required').max(100),
   cholov_stam: z.boolean().optional(),
   user_email: z.string().email().optional().or(z.literal('')),
-  current_time_local: z.date().optional(),
+  current_time_local: asDate.optional(),
   hours_parsed: z.boolean().optional(),
 });
 

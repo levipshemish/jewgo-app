@@ -67,6 +67,13 @@ const ENTITY_CONFIG = {
   },
 } as const;
 
+function applySoftDeleteFilter(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace', where: any) {
+  const config = (ENTITY_CONFIG as any)[modelKey];
+  if (config?.softDelete && config.softDeleteField) {
+    where[config.softDeleteField] = null;
+  }
+}
+
 // Generic CRUD operations
 export class AdminDatabaseService {
   /**
@@ -153,6 +160,9 @@ export class AdminDatabaseService {
     if (filters) {
       Object.assign(where, filters);
     }
+
+    // Exclude soft-deleted rows by default
+    applySoftDeleteFilter(modelKey, where);
 
     if (search) {
       // Add search conditions based on model
@@ -471,6 +481,9 @@ export class AdminDatabaseService {
       Object.assign(where, filters);
     }
 
+    // Exclude soft-deleted rows by default
+    applySoftDeleteFilter(modelKey, where);
+
     if (search) {
       const searchFields = this.getSearchFields(modelKey);
       if (searchFields.length > 0) {
@@ -582,9 +595,9 @@ export class AdminDatabaseService {
       ]);
 
       return {
-        totalRestaurants,
+        totalRestaurants: await prisma.restaurant.count({ where: { deleted_at: null } }),
         totalReviews,
-        totalUsers,
+        totalUsers: await prisma.user.count({ where: { deletedAt: null } }),
         totalImages,
         pendingSubmissions,
       };

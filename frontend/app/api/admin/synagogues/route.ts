@@ -14,14 +14,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_VIEW)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYNAGOGUE_VIEW)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    // Validate pagination
+    const rawPage = parseInt(searchParams.get('page') || '1');
+    const rawPageSize = parseInt(searchParams.get('pageSize') || '20');
+    const { page, pageSize } = (await import('@/lib/admin/validation')).validationUtils.validatePagination({ page: rawPage, pageSize: rawPageSize });
     const search = searchParams.get('search') || '';
     const city = searchParams.get('city') || '';
     const state = searchParams.get('state') || '';

@@ -9,6 +9,7 @@ export const config = {
   matcher: [
     // Admin routes only
     '/admin/:path*',
+    '/api/admin/:path*',
   ]
 };
 
@@ -27,21 +28,14 @@ export async function middleware(request: NextRequest) {
       return securityResponse;
     }
 
-    // Handle CORS preflight requests
-    if (request.method === 'OPTIONS') {
-      return new NextResponse(null, { 
-        status: 200, 
-        headers: corsHeaders(request) 
-      });
-    }
-    
     // Only process protected paths. In Next.js runtime, matcher limits execution,
     // but unit tests call this function directly for any path.
     const path = request.nextUrl.pathname;
+    const isApi = path.startsWith('/api/admin');
     
-    // Special-case API: return JSON Unauthorized instead of redirecting
-    if (path.startsWith('/api/admin')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
+    // Handle CORS preflight requests for API only
+    if (isApi && request.method === 'OPTIONS') {
+      return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
     }
     if (!isProtectedPath(path)) {
       return NextResponse.next();
@@ -92,14 +86,19 @@ export async function middleware(request: NextRequest) {
     
     if (error || !user) {
       console.error('Middleware auth error:', error);
-      // Redirect to signin when auth fails or missing user
+      // Unauthenticated: return 401 JSON for API, redirect for UI
+      if (isApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
+      }
       return redirectToSignin(request, response);
     }
 
     // Check if user is anonymous using shared extractor
     const isAnonymous = extractIsAnonymous(user);
     if (isAnonymous) {
-      // Allow only specific pages for anonymous guest users
+      if (isApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
+      }
       if (!isAnonymousAllowedPath(path)) {
         return redirectToSignin(request, response);
       }

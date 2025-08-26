@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
-import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
+import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
 
 export async function GET(request: NextRequest) {
@@ -78,10 +78,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Validate CSRF token
-    const csrfToken = await getCSRFTokenFromCookie();
+    // Validate CSRF token via header only
     const headerToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 

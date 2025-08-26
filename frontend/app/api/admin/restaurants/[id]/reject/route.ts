@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       },
     });
 
-    await logAdminAction(adminUser, 'RESTAURANT_REJECT', 'restaurant', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_REJECT, 'restaurant', {
       entityId: String(restaurantId),
       newData: { submission_status: 'rejected', rejection_reason: updated.rejection_reason },
       auditLevel: 'warning',
@@ -52,4 +52,3 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ error: 'Failed to reject restaurant' }, { status: 500 });
   }
 }
-

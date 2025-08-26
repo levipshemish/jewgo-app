@@ -33,12 +33,11 @@ async function getUserAdminRole(userId: string): Promise<AdminRole> {
     return await getUserAdminRoleFallback(userId);
   } catch (error: any) {
     console.error('[ADMIN] Error getting user admin role:', error);
-    
-    // Fail-closed option for staging if desired
-    if (process.env.ADMIN_RBAC_FAIL_CLOSED === 'true') {
-      throw new Error('Admin RBAC lookup failed; access denied');
+    // Fail-closed by default; allow opt-in fail-open only for explicit environments
+    if (process.env.ADMIN_RBAC_FAIL_OPEN === 'true') {
+      return 'moderator';
     }
-    return 'moderator';
+    throw new Error('Admin RBAC lookup failed; access denied');
   }
 }
 
@@ -91,7 +90,10 @@ async function getUserAdminRoleFallback(userId: string): Promise<AdminRole> {
     return 'moderator';
   } catch (error: any) {
     console.error('[ADMIN] Error in getUserAdminRoleFallback:', error);
-    return 'moderator';
+    if (process.env.ADMIN_RBAC_FAIL_OPEN === 'true') {
+      return 'moderator';
+    }
+    throw error;
   }
 }
 
@@ -127,12 +129,9 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
-    // Development bypass: If no user is authenticated and we're in development,
-    // create a mock admin user for testing
-    if ((error || !user) && process.env.NODE_ENV === 'development') {
-      console.log('[ADMIN DEV] No authenticated user found, creating mock admin user for development');
-      
-      // Create a mock admin user for development
+    // Development bypass only when explicitly enabled
+    if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
+      console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
         email: 'dev-admin@jewgo.com',
@@ -140,16 +139,11 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
         username: 'dev-admin',
         provider: 'unknown',
         avatar_url: null,
-        providerInfo: {
-          name: 'Development',
-          icon: '👤',
-          color: '#6B7280'
-        },
+        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280' },
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
       };
-      
       return mockUser;
     }
     
@@ -259,12 +253,9 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
     
-    // Development bypass: If no user is authenticated and we're in development,
-    // create a mock admin user for testing
-    if ((error || !user) && process.env.NODE_ENV === 'development') {
-      console.log('[ADMIN DEV] No authenticated user found, creating mock admin user for development');
-      
-      // Create a mock admin user for development
+    // Development bypass only when explicitly enabled
+    if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
+      console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
         email: 'dev-admin@jewgo.com',
@@ -272,16 +263,11 @@ export async function getAdminUser(): Promise<AdminUser | null> {
         username: 'dev-admin',
         provider: 'unknown',
         avatar_url: null,
-        providerInfo: {
-          name: 'Development',
-          icon: '👤',
-          color: '#6B7280'
-        },
+        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280' },
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
       };
-      
       return mockUser;
     }
     

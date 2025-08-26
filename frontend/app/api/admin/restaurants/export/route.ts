@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Log the export action
-    await logAdminAction(adminUser, 'restaurant_export', 'restaurant', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'restaurant', {
       metadata: {
         search,
         filters,
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       10000
     );
 
-    await logAdminAction(adminUser, 'restaurant_export', 'restaurant', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'restaurant', {
       metadata: { search, filters, totalCount: result.totalCount, exportedCount: result.exportedCount, limited: result.limited },
     });
 

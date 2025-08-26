@@ -25,6 +25,8 @@ export interface Column<T> {
 }
 
 export interface DataTableProps<T> {
+  title?: string;
+  exportHint?: string;
   data: T[];
   columns: Column<T>[];
   pagination?: {
@@ -59,6 +61,8 @@ export interface DataTableProps<T> {
 }
 
 export default function DataTable<T extends { id: string | number }>({
+  title,
+  exportHint,
   data,
   columns,
   pagination,
@@ -217,8 +221,21 @@ export default function DataTable<T extends { id: string | number }>({
                 <span>Export</span>
               </button>
             )}
-          </div>
         </div>
+
+        {(title || exportHint) && (
+          <div className="mt-2 flex items-center justify-between">
+            {title ? (
+              <div className="text-sm font-medium text-gray-900">{title}</div>
+            ) : (
+              <div />
+            )}
+            {exportHint && (
+              <div className="text-xs text-gray-500">{exportHint}</div>
+            )}
+          </div>
+        )}
+      </div>
 
         {/* Bulk Actions */}
         {selectedCount > 0 && onBulkAction && (

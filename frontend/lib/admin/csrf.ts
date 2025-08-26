@@ -1,7 +1,5 @@
 import crypto from 'crypto';
-import { cookies } from 'next/headers';
 
-const CSRF_COOKIE = 'XSRF-TOKEN';
 const CSRF_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function signToken(raw: string): string {
@@ -42,7 +40,4 @@ export function validateSignedCSRFToken(token: string, userId: string): boolean 
   }
 }
 
-export async function getCSRFTokenFromCookie(): Promise<string | undefined> {
-  const jar = await cookies();
-  return jar.get(CSRF_COOKIE)?.value;
-}
+// Stateless CSRF: no cookies utility exported

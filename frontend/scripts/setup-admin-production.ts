@@ -46,59 +46,38 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
  */
 async function createSuperAdmin(email: string, name?: string): Promise<void> {
   try {
-    console.log(`🔧 Creating super admin user: ${email}`);
+    console.log(`🔧 Setting up super admin user: ${email}`);
     
-    // First, check if user exists
-    const { data: existingUser, error: userError } = await supabase
-      .from('users')
-      .select('id, email, issuperadmin')
-      .eq('email', email)
-      .single();
+    console.log(`\n📋 Manual Setup Required:`);
+    console.log(`Since we can't directly access auth.users from the client, please follow these steps:`);
+    console.log(``);
+    console.log(`1. Go to your Supabase Dashboard:`);
+    console.log(`   https://supabase.com/dashboard/project/lgsfyrxkqpipaumngvfi/auth/users`);
+    console.log(``);
+    console.log(`2. Find the user with email: ${email}`);
+    console.log(`   (If the user doesn't exist, have them sign up through your app first)`);
+    console.log(``);
+    console.log(`3. Click on the user to edit their profile`);
+    console.log(``);
+    console.log(`4. In the "User Metadata" section, add:`);
+    console.log(`   {`);
+    console.log(`     "is_super_admin": true,`);
+    console.log(`     "name": "${name || 'Super Admin'}"`);
+    console.log(`   }`);
+    console.log(``);
+    console.log(`5. Save the changes`);
+    console.log(``);
+    console.log(`6. Run this command again to verify:`);
+    console.log(`   npm run admin:verify`);
+    console.log(``);
+    console.log(`💡 Alternative: You can also run this SQL in the Supabase SQL Editor:`);
+    console.log(`   UPDATE auth.users SET raw_user_meta_data = jsonb_set(`);
+    console.log(`     COALESCE(raw_user_meta_data, '{}'::jsonb),`);
+    console.log(`     '{is_super_admin}', 'true'::jsonb`);
+    console.log(`   ) WHERE email = '${email}';`);
     
-    if (userError && userError.code !== 'PGRST116') {
-      throw userError;
-    }
-    
-    if (existingUser) {
-      if (existingUser.issuperadmin) {
-        console.log(`✅ User ${email} is already a super admin`);
-        return;
-      }
-      
-      // Update existing user to be super admin
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ issuperadmin: true })
-        .eq('id', existingUser.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      console.log(`✅ Updated user ${email} to super admin`);
-      return;
-    }
-    
-    // Create new user with super admin privileges
-    const { data: newUser, error: createError } = await supabase
-      .from('users')
-      .insert({
-        email,
-        name: name || 'Super Admin',
-        issuperadmin: true,
-        createdat: new Date().toISOString(),
-        updatedat: new Date().toISOString()
-      })
-      .select()
-      .single();
-    
-    if (createError) {
-      throw createError;
-    }
-    
-    console.log(`✅ Created super admin user: ${email} (ID: ${newUser.id})`);
   } catch (error) {
-    console.error(`❌ Error creating super admin:`, error);
+    console.error(`❌ Error in createSuperAdmin:`, error);
     throw error;
   }
 }

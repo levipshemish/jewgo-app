@@ -95,7 +95,8 @@
     "admin:assign-role": "tsx scripts/setup-admin-production.ts assign-role",
     "admin:get-role": "tsx scripts/setup-admin-production.ts get-role",
     "admin:create-tables": "tsx scripts/create-admin-tables.ts",
-    "admin:setup-guide": "tsx scripts/admin-setup-guide.ts"
+    "admin:setup-guide": "tsx scripts/admin-setup-guide.ts",
+    "admin:test": "tsx scripts/test-admin-access.ts"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",

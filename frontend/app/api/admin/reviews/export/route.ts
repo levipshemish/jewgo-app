@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Log the export action
-    await logAdminAction(adminUser, 'review_export', 'review', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'review', {
       metadata: {
         search,
         filters,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       10000
     );
 
-    await logAdminAction(adminUser, 'review_export', 'review', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'review', {
       metadata: { search, filters, totalCount: result.totalCount, exportedCount: result.exportedCount, limited: result.limited },
     });
 

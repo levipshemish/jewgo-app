@@ -1,22 +1,22 @@
 -- Create admin_roles table for RBAC management
 CREATE TABLE IF NOT EXISTS public.admin_roles (
     id SERIAL PRIMARY KEY,
-    user_id VARCHAR(50) NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL CHECK (role IN ('moderator', 'data_admin', 'system_admin', 'super_admin')),
-    assigned_by VARCHAR(50) REFERENCES public.users(id),
+    assigned_by UUID REFERENCES auth.users(id),
     assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     expires_at TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT true,
     notes TEXT,
     
     -- Ensure one active role per user
-    UNIQUE(user_id, role),
-    
-    -- Index for performance
-    INDEX idx_admin_roles_user_id (user_id),
-    INDEX idx_admin_roles_role (role),
-    INDEX idx_admin_roles_active (is_active)
+    UNIQUE(user_id, role)
 );
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_admin_roles_user_id ON public.admin_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_roles_role ON public.admin_roles(role);
+CREATE INDEX IF NOT EXISTS idx_admin_roles_active ON public.admin_roles(is_active);
 
 -- Add audit logging for role changes
 CREATE OR REPLACE FUNCTION log_admin_role_change()
@@ -136,21 +136,21 @@ CREATE POLICY "Users can view own admin roles" ON public.admin_roles
 CREATE POLICY "Super admins can manage admin roles" ON public.admin_roles
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM public.users 
+            SELECT 1 FROM auth.users 
             WHERE id = auth.uid()::text 
             AND issuperadmin = true
         )
     );
 
 -- Function to get user's active admin role
-CREATE OR REPLACE FUNCTION get_user_admin_role(user_id_param VARCHAR(50))
+CREATE OR REPLACE FUNCTION get_user_admin_role(user_id_param UUID)
 RETURNS VARCHAR(50) AS $$
 DECLARE
     user_role VARCHAR(50);
 BEGIN
     -- First check if user is super admin
     IF EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = user_id_param 
         AND issuperadmin = true
     ) THEN
@@ -179,9 +179,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to assign admin role
 CREATE OR REPLACE FUNCTION assign_admin_role(
-    target_user_id VARCHAR(50),
+    target_user_id UUID,
     role_param VARCHAR(50),
-    assigned_by_param VARCHAR(50),
+    assigned_by_param UUID,
     expires_at_param TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     notes_param TEXT DEFAULT NULL
 )
@@ -189,7 +189,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     -- Check if assigner is super admin
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = assigned_by_param 
         AND issuperadmin = true
     ) THEN
@@ -198,7 +198,7 @@ BEGIN
     
     -- Check if target user exists
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = target_user_id
     ) THEN
         RAISE EXCEPTION 'Target user does not exist';
@@ -232,15 +232,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to remove admin role
 CREATE OR REPLACE FUNCTION remove_admin_role(
-    target_user_id VARCHAR(50),
+    target_user_id UUID,
     role_param VARCHAR(50),
-    removed_by_param VARCHAR(50)
+    removed_by_param UUID
 )
 RETURNS BOOLEAN AS $$
 BEGIN
     -- Check if remover is super admin
     IF NOT EXISTS (
-        SELECT 1 FROM public.users 
+        SELECT 1 FROM auth.users 
         WHERE id = removed_by_param 
         AND issuperadmin = true
     ) THEN

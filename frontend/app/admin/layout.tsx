@@ -16,11 +16,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     redirect('/auth/signin?redirectTo=/admin');
   }
 
-  // CSRF token provisioning with error handling:
-  // We request a signed CSRF token from the server route. Note that because this
-  // fetch runs server-side during SSR, any cookie set by that route will NOT be
-  // persisted to the user's browser. The admin UI relies on the injected
-  // window.__CSRF_TOKEN__ value below for mutating requests via the x-csrf-token header.
+  // CSRF token provisioning: fetch a signed CSRF token server-side and inject it.
   let signedToken = '';
   try {
     const headersList = await headers();

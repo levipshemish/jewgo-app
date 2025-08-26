@@ -96,14 +96,15 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
   };
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.set('search', searchQuery);
-      if (searchParams.get('restaurantId')) params.set('restaurantId', searchParams.get('restaurantId')!);
-      if (sortKey) params.set('sortBy', sortKey);
-      if (sortOrder) params.set('sortOrder', sortOrder);
-      const response = await fetch(`/api/admin/images/export?${params.toString()}`, {
-        method: 'GET',
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
+      const payload: any = {};
+      if (searchQuery) payload.search = searchQuery;
+      if (searchParams.get('restaurantId')) payload.restaurantId = searchParams.get('restaurantId');
+      if (sortKey) payload.sortBy = sortKey;
+      if (sortOrder) payload.sortOrder = sortOrder;
+      const response = await fetch(`/api/admin/images/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
+        body: JSON.stringify(payload),
       });
       if (response.ok) {
         const blob = await response.blob();
@@ -183,6 +184,7 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
       onSort={handleSort}
       onSearch={handleSearch}
       onExport={handleExport}
+      exportHint="Exports up to 10,000 rows"
       searchPlaceholder="Search images by restaurant or Cloudinary ID..."
       selectable={true}
       searchQuery={searchQuery}
@@ -193,4 +195,3 @@ export default function ImageDatabaseClient({ initialData, initialPagination, in
     />
   );
 }
-
