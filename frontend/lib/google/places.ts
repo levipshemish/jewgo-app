@@ -234,11 +234,11 @@ export class ModernGooglePlacesAPI {
         if (window.google.maps.places.Place) {
           // Modern approach - use Place API
           const placeService = new window.google.maps.places.Place(dummyDiv);
-          placeService.textSearch(request, (results, status) => {
+          placeService.textSearch(request, (results: any, status: any) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
               const convertedResults: GooglePlacesResult[] = results
-                .filter(result => result.place_id) // Filter out results without place_id
-                .map(result => ({
+                .filter((result: any) => result.place_id) // Filter out results without place_id
+                .map((result: any) => ({
                   place_id: result.place_id!,
                   name: result.name || '',
                   formatted_address: result.formatted_address || '',
@@ -265,11 +265,11 @@ export class ModernGooglePlacesAPI {
         } else {
           // Fallback to PlacesService (deprecated but still works)
           const placesService = new window.google.maps.places.PlacesService(dummyDiv);
-          placesService.textSearch(request, (results, status) => {
+          placesService.textSearch(request, (results: any, status: any) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
               const convertedResults: GooglePlacesResult[] = results
-                .filter(result => result.place_id) // Filter out results without place_id
-                .map(result => ({
+                .filter((result: any) => result.place_id) // Filter out results without place_id
+                .map((result: any) => ({
                   place_id: result.place_id!,
                   name: result.name || '',
                   formatted_address: result.formatted_address || '',
@@ -332,17 +332,17 @@ export class ModernGooglePlacesAPI {
         if (window.google.maps.places.AutocompleteSuggestion) {
           const autocompleteService = new window.google.maps.places.AutocompleteSuggestion();
           autocompleteService.getPlacePredictions(request)
-            .then((response) => {
+            .then((response: any) => {
               resolve(response.predictions || []);
             })
-            .catch((_error) => {
+            .catch((_error: any) => {
               // console.error('AutocompleteSuggestion error:', _error);
               resolve([]);
             });
         } else if (window.google.maps.places.AutocompleteService) {
           // Fallback to AutocompleteService
           const autocompleteService = new window.google.maps.places.AutocompleteService();
-          autocompleteService.getPlacePredictions(request, (predictions, status) => {
+          autocompleteService.getPlacePredictions(request, (predictions: any, status: any) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
               resolve(predictions);
             } else {
@@ -379,7 +379,7 @@ export class ModernGooglePlacesAPI {
         // Use Place API if available, fallback to PlacesService
         if (window.google.maps.places.Place) {
           const placeService = new window.google.maps.places.Place(dummyDiv);
-          placeService.getDetails(request, (result, status) => {
+          placeService.getDetails(request, (result: any, status: any) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
               resolve(result);
             } else {
@@ -388,7 +388,7 @@ export class ModernGooglePlacesAPI {
           });
         } else {
           const placesService = new window.google.maps.places.PlacesService(dummyDiv);
-          placesService.getDetails(request, (result, status) => {
+          placesService.getDetails(request, (result: any, status: any) => {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
               resolve(result);
             } else {

@@ -46,7 +46,7 @@ export function useDirections({ userLocation, onNotification }: UseDirectionsPro
         destination,
         travelMode: window.google.maps.TravelMode.DRIVING
       }
-    ).then((result) => {
+    ).then((result: any) => {
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setDirections(result);
         onNotification('success', `Directions to ${restaurant.name} loaded successfully!`);

@@ -78,7 +78,7 @@ export default function AddressAutofill({
         input,
         types: ['address'],
         componentRestrictions: { country: 'us' }, // Restrict to US addresses
-      }, (predictions, status) => {
+      }, (predictions: any, status: any) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           setSuggestions(predictions);
         } else {
@@ -123,7 +123,7 @@ export default function AddressAutofill({
           placeId: suggestion.place_id,
           fields: ['address_components', 'formatted_address'],
         },
-        (place, status) => {
+        (place: any, status: any) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
             const addressComponents = place.address_components || [];
             let street = '';
@@ -131,7 +131,7 @@ export default function AddressAutofill({
             let state = '';
             let zipCode = '';
 
-            addressComponents.forEach((component) => {
+            addressComponents.forEach((component: any) => {
               const types = component.types;
               if (types.includes('street_number') || types.includes('route')) {
                 street += component.long_name + ' ';

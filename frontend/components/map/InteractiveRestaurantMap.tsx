@@ -937,7 +937,7 @@ export default function InteractiveRestaurantMap({
         destination,
         travelMode: window.google.maps.TravelMode.DRIVING
       }
-    ).then((result) => {
+    ).then((result: any) => {
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setDirections(result);
         setShowDirections(true);
