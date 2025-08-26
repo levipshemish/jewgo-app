@@ -61,22 +61,43 @@ export default function MultipleImageUpload({
   const uploadToCloudinary = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'jewgo_restaurants');
     
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env['NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME']}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
+    const cloudName = process.env['NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME'];
+    if (!cloudName) {
+      throw new Error('Cloudinary cloud name not configured');
     }
+    
+    console.log('Uploading to Cloudinary:', { cloudName, fileSize: file.size, fileName: file.name });
+    
+    // Try different upload presets
+    const uploadPresets = ['jewgo_restaurants', 'ml_default', 'jewgo'];
+    
+    for (const preset of uploadPresets) {
+      try {
+        formData.set('upload_preset', preset);
+        
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
 
-    const data = await response.json();
-    return data.secure_url;
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Upload successful with preset:', preset, data.secure_url);
+          return data.secure_url;
+        } else {
+          const errorText = await response.text();
+          console.warn(`Upload failed with preset ${preset}:`, response.status, errorText);
+        }
+      } catch (error) {
+        console.warn(`Upload failed with preset ${preset}:`, error);
+      }
+    }
+    
+    throw new Error('Failed to upload image with all available presets');
   };
 
   const validateFile = (file: File): string | null => {
@@ -153,9 +174,13 @@ export default function MultipleImageUpload({
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
+    console.log('File selected:', files);
     if (files && files.length > 0) {
+      console.log('Processing files:', files.length);
       addImages(files);
     }
+    // Reset the input value so the same file can be selected again
+    event.target.value = '';
   }, [addImages]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -304,11 +329,13 @@ export default function MultipleImageUpload({
       {/* Upload Area */}
       {images.length < maxImages && (
         <div
-          ref={fileInputRef}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            console.log('Upload area clicked, triggering file input');
+            fileInputRef.current?.click();
+          }}
           className={cn(
             "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
             isDragOver
