@@ -7,6 +7,13 @@ from services import hours_compute, hours_normalizer, hours_sources
 from services.base_service import BaseService
 from utils.cloudinary_uploader import CloudinaryUploader
 from utils.error_handler import NotFoundError, ValidationError
+from utils.error_handler_v2 import (
+    handle_database_operation,
+    handle_validation_operation,
+    create_error_context,
+    DatabaseServiceError,
+    ValidationServiceError,
+)
 
 #!/usr/bin/env python3
 """Restaurant service v4 - handles all restaurant-related business logic using DatabaseManager v4."""
@@ -30,29 +37,30 @@ class RestaurantServiceV4(BaseService):
         """
         self.log_operation("get_all_restaurants", filters=filters)
 
-        try:
-            # Apply any business logic for filtering
-            processed_filters = self._process_restaurant_filters(filters or {})
-
-            # Use the database manager v4's get_restaurants method
-            restaurants = self.db_manager.get_restaurants(
+        context = create_error_context(filters=filters)
+        
+        # Handle database operation with specific error handling
+        restaurants = handle_database_operation(
+            operation=lambda: self.db_manager.get_restaurants(
                 limit=1000,  # Get all restaurants
                 as_dict=True,
-                filters=processed_filters,
-            )
+                filters=self._process_restaurant_filters(filters or {}),
+            ),
+            operation_name="get_all_restaurants",
+            context=context,
+        )
+        
+        if restaurants is None:
+            return []
+        
+        # Apply any post-processing (e.g., add computed fields, format data)
+        processed_restaurants = self._process_restaurant_list(restaurants)
 
-            # Apply any post-processing (e.g., add computed fields, format data)
-            processed_restaurants = self._process_restaurant_list(restaurants)
-
-            self.logger.info(
-                "Successfully retrieved restaurants",
-                count=len(processed_restaurants),
-            )
-            return processed_restaurants
-
-        except Exception as e:
-            self.logger.exception("Error retrieving restaurants", error=str(e))
-            raise
+        self.logger.info(
+            "Successfully retrieved restaurants",
+            count=len(processed_restaurants),
+        )
+        return processed_restaurants
 
     def get_restaurant_by_id(self, restaurant_id: int) -> dict[str, Any]:
         """Get a single restaurant by ID.
@@ -68,34 +76,37 @@ class RestaurantServiceV4(BaseService):
             ValidationError: If ID is invalid
 
         """
-        if (
-            not restaurant_id
-            or not isinstance(restaurant_id, int)
-            or restaurant_id <= 0
-        ):
+        # Validate input with specific error handling
+        validation_result = handle_validation_operation(
+            operation=lambda: self._validate_restaurant_id(restaurant_id),
+            operation_name="validate_restaurant_id",
+            context=create_error_context(restaurant_id=restaurant_id),
+        )
+        
+        if validation_result is False:
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("get_restaurant_by_id", restaurant_id=restaurant_id)
 
-        try:
-            restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+        context = create_error_context(restaurant_id=restaurant_id)
+        
+        # Handle database operation with specific error handling
+        restaurant = handle_database_operation(
+            operation=lambda: self.db_manager.get_restaurant_by_id(restaurant_id),
+            operation_name="get_restaurant_by_id",
+            context=context,
+        )
 
-            if not restaurant:
-                raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
+        if not restaurant:
+            raise NotFoundError(f"Restaurant with ID {restaurant_id} not found")
 
-            # Apply any post-processing
-            processed_restaurant = self._process_restaurant_data(restaurant)
+        # Apply any post-processing
+        processed_restaurant = self._process_restaurant_data(restaurant)
 
-            self.logger.info(
-                "Successfully retrieved restaurant", restaurant_id=restaurant_id
-            )
-            return processed_restaurant
-
-        except (NotFoundError, ValidationError):
-            raise
-        except Exception as e:
-            self.logger.exception("Error retrieving restaurant", error=str(e))
-            raise
+        self.logger.info(
+            "Successfully retrieved restaurant", restaurant_id=restaurant_id
+        )
+        return processed_restaurant
 
     def search_restaurants(
         self,
@@ -562,6 +573,14 @@ class RestaurantServiceV4(BaseService):
             processed_restaurant = self._process_restaurant_data(restaurant)
             processed_restaurants.append(processed_restaurant)
         return processed_restaurants
+
+    def _validate_restaurant_id(self, restaurant_id: int) -> bool:
+        """Validate restaurant ID."""
+        return (
+            restaurant_id is not None
+            and isinstance(restaurant_id, int)
+            and restaurant_id > 0
+        )
 
     def _process_restaurant_data(self, restaurant: dict[str, Any]) -> dict[str, Any]:
         """Process individual restaurant data."""

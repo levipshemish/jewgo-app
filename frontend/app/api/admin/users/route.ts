@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db/prisma';
+import { mapUsersToApiResponse, mapApiRequestToUser } from '@/lib/admin/dto/user';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +12,11 @@ export async function GET(request: NextRequest) {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_VIEW)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Get query parameters
@@ -31,6 +35,7 @@ export async function GET(request: NextRequest) {
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.user,
+      'user',
       {
         page,
         pageSize,
@@ -41,12 +46,18 @@ export async function GET(request: NextRequest) {
       }
     );
 
+    // Map users to API response format
+    const mappedData = {
+      ...result,
+      data: mapUsersToApiResponse(result.data as any[]),
+    };
+
     // Log the action
     await logAdminAction(adminUser, 'user_list_view', 'user', {
       metadata: { page, pageSize, search, filters },
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json(mappedData);
   } catch (error) {
     console.error('[ADMIN] User list error:', error);
     return NextResponse.json(
@@ -64,6 +75,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_EDIT)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
 
@@ -73,10 +95,14 @@ export async function POST(request: NextRequest) {
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
+    // Map API request to Prisma format
+    const userData = mapApiRequestToUser(sanitizedData);
+
     // Create user
     const user = await AdminDatabaseService.createRecord(
       prisma.user,
-      sanitizedData,
+      'user',
+      userData,
       adminUser,
       'user'
     );
@@ -85,9 +111,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] User create error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }
@@ -107,6 +133,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_EDIT)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
     const { id, ...data } = body;
@@ -121,11 +158,15 @@ export async function PUT(request: NextRequest) {
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
 
+    // Map API request to Prisma format
+    const userData = mapApiRequestToUser(sanitizedData);
+
     // Update user
     const user = await AdminDatabaseService.updateRecord(
       prisma.user,
+      'user',
       id,
-      sanitizedData,
+      userData,
       adminUser,
       'user'
     );
@@ -134,9 +175,9 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] User update error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }
@@ -154,6 +195,17 @@ export async function DELETE(request: NextRequest) {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_DELETE)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
     // Get user ID from query params
@@ -175,6 +227,7 @@ export async function DELETE(request: NextRequest) {
     // Delete user (soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.user,
+      'user',
       id,
       adminUser,
       'user',

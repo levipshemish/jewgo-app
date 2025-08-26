@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +11,11 @@ export async function GET(request: NextRequest) {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_VIEW)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Get query parameters
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest) {
     // Get paginated data with restaurant information
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.review,
+      'review',
       {
         page,
         pageSize,
@@ -78,11 +82,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_MODERATE)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
 
-    // Validate data
-    const validatedData = validationUtils.validateReview(body);
+    // Validate data (create operation)
+    const validatedData = validationUtils.validateReview(body, false);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
@@ -90,6 +105,7 @@ export async function POST(request: NextRequest) {
     // Create review
     const review = await AdminDatabaseService.createRecord(
       prisma.review,
+      'review',
       sanitizedData,
       adminUser,
       'review'
@@ -121,6 +137,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_MODERATE)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
     const { id, ...data } = body;
@@ -129,8 +156,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
     }
 
-    // Validate data
-    const validatedData = validationUtils.validateReview(data);
+    // Validate data (update operation)
+    const validatedData = validationUtils.validateReview(data, true);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);
@@ -138,6 +165,7 @@ export async function PUT(request: NextRequest) {
     // Update review
     const review = await AdminDatabaseService.updateRecord(
       prisma.review,
+      'review',
       id,
       sanitizedData,
       adminUser,
@@ -170,6 +198,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_DELETE)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Get review ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -181,6 +220,7 @@ export async function DELETE(request: NextRequest) {
     // Delete review (soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.review,
+      'review',
       id,
       adminUser,
       'review',

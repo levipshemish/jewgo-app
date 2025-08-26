@@ -4,13 +4,17 @@ Enhanced Google Reviews Fetcher
 Fetches restaurant reviews and ratings from Google Places API with review text
 """
 
-import requests
 import sqlite3
 import time
 import json
 import os
+import sys
 from typing import Dict, Optional, List
 import logging
+
+# Add backend to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+from utils.http_client import get_http_client
 
 # Set up logging
 logging.basicConfig(
@@ -43,8 +47,8 @@ class EnhancedGoogleReviewsFetcher:
         params = {"query": search_query, "key": self.api_key, "type": "restaurant"}
 
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            http_client = get_http_client()
+            response = http_client.get(url, params=params)
             data = response.json()
 
             if data["status"] == "OK" and data["results"]:
@@ -71,7 +75,7 @@ class EnhancedGoogleReviewsFetcher:
 
             return None
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"Error searching for place {name}: {e}")
             return None
 
@@ -87,8 +91,8 @@ class EnhancedGoogleReviewsFetcher:
         }
 
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            http_client = get_http_client()
+            response = http_client.get(url, params=params)
             data = response.json()
 
             if data["status"] == "OK":
@@ -96,7 +100,7 @@ class EnhancedGoogleReviewsFetcher:
 
             return None
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"Error getting place details for {place_id}: {e}")
             return None
 

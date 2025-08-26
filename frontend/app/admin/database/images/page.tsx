@@ -35,6 +35,13 @@ export default function ImageDatabasePage() {
     hasPrev: false,
   });
 
+  // Initialize controlled state from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [sortKey, setSortKey] = useState(searchParams.get('sortBy') || '');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+  );
+
   // Fetch images
   const fetchImages = async () => {
     try {
@@ -43,17 +50,17 @@ export default function ImageDatabasePage() {
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
       
-      if (searchParams.get('search')) {
-        params.set('search', searchParams.get('search')!);
+      if (searchQuery) {
+        params.set('search', searchQuery);
       }
       if (searchParams.get('restaurantId')) {
         params.set('restaurantId', searchParams.get('restaurantId')!);
       }
-      if (searchParams.get('sortBy')) {
-        params.set('sortBy', searchParams.get('sortBy')!);
+      if (sortKey) {
+        params.set('sortBy', sortKey);
       }
-      if (searchParams.get('sortOrder')) {
-        params.set('sortOrder', searchParams.get('sortOrder')!);
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/admin/images?${params.toString()}`);
@@ -74,7 +81,7 @@ export default function ImageDatabasePage() {
 
   useEffect(() => {
     fetchImages();
-  }, [pagination.page, pagination.pageSize, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {
@@ -90,7 +97,12 @@ export default function ImageDatabasePage() {
     router.push(`/admin/database/images?${params.toString()}`);
   };
 
-  // Handle search
+  // Handle search query change (controlled)
+  const handleSearchQueryChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Handle search (debounced)
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query) {
@@ -102,7 +114,13 @@ export default function ImageDatabasePage() {
     router.push(`/admin/database/images?${params.toString()}`);
   };
 
-  // Handle sort
+  // Handle sort change (controlled)
+  const handleSortChange = (key: string, order: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortOrder(order);
+  };
+
+  // Handle sort (immediate)
   const handleSort = (key: string, order: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sortBy', key);
@@ -272,7 +290,7 @@ export default function ImageDatabasePage() {
       icon: Edit,
       onClick: (row: RestaurantImage) => {
         // Open edit modal or navigate to edit page
-        console.log('Edit image:', row.id);
+        // console.log('Edit image:', row.id);
       },
     },
     {
@@ -281,7 +299,7 @@ export default function ImageDatabasePage() {
       onClick: (row: RestaurantImage) => {
         if (confirm(`Are you sure you want to delete this image?`)) {
           // Handle delete
-          console.log('Delete image:', row.id);
+          // console.log('Delete image:', row.id);
         }
       },
       variant: 'destructive' as const,
@@ -313,6 +331,11 @@ export default function ImageDatabasePage() {
         loading={loading}
         selectable={true}
         actions={actions}
+        searchQuery={searchQuery}
+        onSearchQueryChange={handleSearchQueryChange}
+        sortKey={sortKey}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
       />
     </div>
   );

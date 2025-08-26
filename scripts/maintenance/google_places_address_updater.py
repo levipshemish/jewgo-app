@@ -5,12 +5,16 @@ Uses Google Places API to verify and update missing zip codes and address inform
 """
 
 import sqlite3
-import requests
 import time
 import json
 import os
+import sys
 from typing import Dict, Optional, Tuple
 import logging
+
+# Add backend to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
+from utils.http_client import get_http_client
 
 # Set up logging
 logging.basicConfig(
@@ -63,8 +67,8 @@ class GooglePlacesAddressUpdater:
         params = {"query": search_query, "key": self.api_key, "type": "restaurant"}
 
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            http_client = get_http_client()
+            response = http_client.get(url, params=params)
             data = response.json()
 
             if data["status"] == "OK" and data["results"]:
@@ -94,7 +98,7 @@ class GooglePlacesAddressUpdater:
 
             return None
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"Error searching for place {name}: {e}")
             return None
 
@@ -110,8 +114,8 @@ class GooglePlacesAddressUpdater:
         }
 
         try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            http_client = get_http_client()
+            response = http_client.get(url, params=params)
             data = response.json()
 
             if data["status"] == "OK":
@@ -119,7 +123,7 @@ class GooglePlacesAddressUpdater:
 
             return None
 
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             logger.error(f"Error getting place details for {place_id}: {e}")
             return None
 

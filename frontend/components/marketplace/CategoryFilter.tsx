@@ -21,11 +21,6 @@ export default function CategoryFilter({
   onClose,
   isOpen
 }: CategoryFilterProps) {
-  // Early return to prevent hooks violation - must be before any hooks
-  if (!isOpen) {
-    return null;
-  }
-
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,6 +70,11 @@ export default function CategoryFilter({
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  // Early return after all hooks
+  if (!isOpen) {
+    return null;
+  }
 
   const handleCategorySelect = (category: MarketplaceCategory, subcategory?: string) => {
     onCategoryChange(category.slug, subcategory);

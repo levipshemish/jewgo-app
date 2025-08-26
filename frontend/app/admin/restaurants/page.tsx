@@ -92,12 +92,11 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const handleApprove = async (restaurantId: number) => {
     try {
       setProcessingAction(restaurantId);
-      const response = await fetch(`/api/restaurants/${restaurantId}/approve`, {
-        method: 'PUT',
+      const response = await fetch(`/api/admin/restaurants/${restaurantId}/approve`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: 'approved' }),
       });
 
       if (!response.ok) {
@@ -116,13 +115,12 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const handleReject = async (restaurantId: number) => {
     try {
       setProcessingAction(restaurantId);
-      const response = await fetch(`/api/restaurants/${restaurantId}/reject`, {
-        method: 'PUT',
+      const response = await fetch(`/api/admin/restaurants/${restaurantId}/reject`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          status: 'rejected',
           reason: rejectionReason || 'Rejected by admin'
         }),
       });

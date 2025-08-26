@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useCSRF } from '@/hooks/useCSRF';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -50,6 +51,12 @@ export interface DataTableProps<T> {
     onClick: (row: T) => void;
     variant?: 'default' | 'destructive';
   }[];
+  // New controlled props
+  searchQuery?: string;
+  sortKey?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSearchQueryChange?: (query: string) => void;
+  onSortChange?: (key: string, order: 'asc' | 'desc') => void;
 }
 
 export default function DataTable<T extends { id: string | number }>({
@@ -65,12 +72,35 @@ export default function DataTable<T extends { id: string | number }>({
   searchPlaceholder = 'Search...',
   loading = false,
   selectable = false,
-  actions = []
+  actions = [],
+  // New controlled props with defaults
+  searchQuery: controlledSearchQuery,
+  sortKey: controlledSortKey,
+  sortOrder: controlledSortOrder,
+  onSearchQueryChange,
+  onSortChange,
 }: DataTableProps<T>) {
   const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortKey, setSortKey] = useState<string>('');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // Use controlled props if provided, otherwise use internal state
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
+  const [internalSortKey, setInternalSortKey] = useState<string>('');
+  const [internalSortOrder, setInternalSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  const searchQuery = controlledSearchQuery !== undefined ? controlledSearchQuery : internalSearchQuery;
+  const sortKey = controlledSortKey !== undefined ? controlledSortKey : internalSortKey;
+  const sortOrder = controlledSortOrder !== undefined ? controlledSortOrder : internalSortOrder;
+
+  // Debounced search function
+  const debouncedSearch = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (query: string) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        onSearch?.(query);
+      }, 300);
+    };
+  }, [onSearch]);
 
   // Handle row selection
   const handleSelectRow = (id: string | number) => {
@@ -92,7 +122,23 @@ export default function DataTable<T extends { id: string | number }>({
     }
   };
 
-  // Handle search
+  // Handle search input change
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    
+    if (onSearchQueryChange) {
+      // Controlled mode
+      onSearchQueryChange(query);
+    } else {
+      // Uncontrolled mode
+      setInternalSearchQuery(query);
+    }
+    
+    // Always trigger debounced search
+    debouncedSearch(query);
+  };
+
+  // Handle search form submit
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(searchQuery);
@@ -101,8 +147,16 @@ export default function DataTable<T extends { id: string | number }>({
   // Handle sort
   const handleSort = (key: string) => {
     const newOrder = sortKey === key && sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortKey(key);
-    setSortOrder(newOrder);
+    
+    if (onSortChange) {
+      // Controlled mode
+      onSortChange(key, newOrder);
+    } else {
+      // Uncontrolled mode
+      setInternalSortKey(key);
+      setInternalSortOrder(newOrder);
+    }
+    
     onSort?.(key, newOrder);
   };
 
@@ -149,7 +203,7 @@ export default function DataTable<T extends { id: string | number }>({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchInputChange}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
               />
             </form>

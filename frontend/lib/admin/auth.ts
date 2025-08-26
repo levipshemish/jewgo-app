@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db/prisma';
 
 // Admin permission levels
 export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
@@ -29,6 +30,11 @@ export const ADMIN_PERMISSIONS = {
   USER_VIEW: 'user:view',
   USER_EDIT: 'user:edit',
   USER_DELETE: 'user:delete',
+  
+  // Image management
+  IMAGE_VIEW: 'image:view',
+  IMAGE_EDIT: 'image:edit',
+  IMAGE_DELETE: 'image:delete',
   
   // System administration
   SYSTEM_SETTINGS: 'system:settings',
@@ -78,28 +84,64 @@ const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
   super_admin: Object.values(ADMIN_PERMISSIONS),
 };
 
-// Rate limiting store (in-memory for now, can be moved to Redis)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+/**
+ * Get user's admin role from database
+ */
+async function getUserAdminRole(userId: string): Promise<AdminRole> {
+  try {
+    // First check if user is super admin in users table
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { issuperadmin: true },
+    });
+
+    if (user?.issuperadmin) {
+      return 'super_admin';
+    }
+
+    // Then check admin_roles table for active role
+    const adminRole = await prisma.$queryRaw<[{ role: string }]>`
+      SELECT get_user_admin_role(${userId}::VARCHAR(50)) as role
+    `;
+
+    if (adminRole && adminRole[0]?.role) {
+      return adminRole[0].role as AdminRole;
+    }
+
+    // Default to moderator if no role found
+    return 'moderator';
+  } catch (error) {
+    console.error('[ADMIN] Error getting user admin role:', error);
+    return 'moderator';
+  }
+}
 
 /**
  * Require admin authentication for API routes
  */
 export async function requireAdmin(request: NextRequest): Promise<AdminUser | null> {
   try {
-    // Rate limiting check
-    const clientIP = (request as any).ip || 'unknown';
-    const rateLimitKey = `admin_auth:${clientIP}`;
-    const now = Date.now();
-    
-    const rateLimit = rateLimitStore.get(rateLimitKey);
-    if (rateLimit && now < rateLimit.resetTime) {
-      if (rateLimit.count >= 10) { // 10 attempts per minute
-        console.warn(`[ADMIN] Rate limit exceeded for IP: ${clientIP}`);
-        return null;
+    // Rate limiting is handled by middleware-security.ts using Upstash Redis
+    // Only use in-memory rate limiting in development for testing
+    if (process.env.NODE_ENV === 'development') {
+      // Simple in-memory rate limiting for development only
+      const clientIP = (request as any).ip || 'unknown';
+      const rateLimitKey = `admin_auth_dev:${clientIP}`;
+      const now = Date.now();
+      
+      // Use a simple Map for development rate limiting
+      const devRateLimitStore = new Map<string, { count: number; resetTime: number }>();
+      const rateLimit = devRateLimitStore.get(rateLimitKey);
+      
+      if (rateLimit && now < rateLimit.resetTime) {
+        if (rateLimit.count >= 10) { // 10 attempts per minute in dev
+          console.warn(`[ADMIN DEV] Rate limit exceeded for IP: ${clientIP}`);
+          return null;
+        }
+        rateLimit.count++;
+      } else {
+        devRateLimitStore.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
       }
-      rateLimit.count++;
-    } else {
-      rateLimitStore.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
     }
 
     // Get user from Supabase
@@ -117,13 +159,11 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
       return null;
     }
 
-    // Check if user is super admin
-    const isSuperAdmin = user.app_metadata?.isSuperAdmin === true;
+    // Get admin role from database (source of truth)
+    const adminRole = await getUserAdminRole(user.id);
     
-    // Get admin role from metadata or default to super_admin for super admins
-    const adminRole: AdminRole = isSuperAdmin 
-      ? 'super_admin' 
-      : (user.app_metadata?.adminRole as AdminRole) || 'moderator';
+    // Check if user is super admin
+    const isSuperAdmin = adminRole === 'super_admin';
 
     // Get permissions for role
     const permissions = ROLE_PERMISSIONS[adminRole] || [];
@@ -209,10 +249,9 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       return null;
     }
 
-    const isSuperAdmin = user.app_metadata?.isSuperAdmin === true;
-    const adminRole: AdminRole = isSuperAdmin 
-      ? 'super_admin' 
-      : (user.app_metadata?.adminRole as AdminRole) || 'moderator';
+    // Get admin role from database (source of truth)
+    const adminRole = await getUserAdminRole(user.id);
+    const isSuperAdmin = adminRole === 'super_admin';
 
     const permissions = ROLE_PERMISSIONS[adminRole] || [];
 
@@ -238,15 +277,3 @@ export async function requireAdminUser(): Promise<AdminUser> {
   }
   return adminUser;
 }
-
-/**
- * Clean up rate limiting store periodically
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (now >= value.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000); // Clean up every minute

@@ -55,6 +55,13 @@ export default function SynagogueDatabasePage() {
     hasPrev: false,
   });
 
+  // Initialize controlled state from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [sortKey, setSortKey] = useState(searchParams.get('sortBy') || '');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+  );
+
   // Fetch synagogues
   const fetchSynagogues = async () => {
     try {
@@ -63,8 +70,8 @@ export default function SynagogueDatabasePage() {
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
       
-      if (searchParams.get('search')) {
-        params.set('search', searchParams.get('search')!);
+      if (searchQuery) {
+        params.set('search', searchQuery);
       }
       if (searchParams.get('city')) {
         params.set('city', searchParams.get('city')!);
@@ -75,11 +82,11 @@ export default function SynagogueDatabasePage() {
       if (searchParams.get('affiliation')) {
         params.set('affiliation', searchParams.get('affiliation')!);
       }
-      if (searchParams.get('sortBy')) {
-        params.set('sortBy', searchParams.get('sortBy')!);
+      if (sortKey) {
+        params.set('sortBy', sortKey);
       }
-      if (searchParams.get('sortOrder')) {
-        params.set('sortOrder', searchParams.get('sortOrder')!);
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/admin/synagogues?${params.toString()}`);
@@ -100,7 +107,7 @@ export default function SynagogueDatabasePage() {
 
   useEffect(() => {
     fetchSynagogues();
-  }, [pagination.page, pagination.pageSize, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {
@@ -116,7 +123,12 @@ export default function SynagogueDatabasePage() {
     router.push(`/admin/database/synagogues?${params.toString()}`);
   };
 
-  // Handle search
+  // Handle search query change (controlled)
+  const handleSearchQueryChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Handle search (debounced)
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query) {
@@ -128,7 +140,13 @@ export default function SynagogueDatabasePage() {
     router.push(`/admin/database/synagogues?${params.toString()}`);
   };
 
-  // Handle sort
+  // Handle sort change (controlled)
+  const handleSortChange = (key: string, order: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortOrder(order);
+  };
+
+  // Handle sort (immediate)
   const handleSort = (key: string, order: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sortBy', key);
@@ -170,32 +188,10 @@ export default function SynagogueDatabasePage() {
     }
   };
 
-  // Handle bulk actions
+  // Handle bulk actions (read-only - disabled)
   const handleBulkAction = async (action: string, selectedIds: string[]) => {
-    if (action === 'delete') {
-      if (!confirm(`Are you sure you want to delete ${selectedIds.length} synagogues?`)) {
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/admin/synagogues/bulk', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
-          }),
-        });
-
-        if (response.ok) {
-          fetchSynagogues();
-        }
-      } catch (error) {
-        console.error('Bulk delete failed:', error);
-      }
-    }
+    // Synagogues are read-only due to database schema constraints
+    console.warn('Bulk actions are disabled for synagogues (read-only data)');
   };
 
   // Table columns
@@ -315,7 +311,7 @@ export default function SynagogueDatabasePage() {
     },
   ];
 
-  // Table actions
+  // Table actions (read-only)
   const actions = [
     {
       label: 'View',
@@ -325,25 +321,6 @@ export default function SynagogueDatabasePage() {
         console.log('View synagogue:', row.id);
       },
     },
-    {
-      label: 'Edit',
-      icon: Edit,
-      onClick: (row: FloridaSynagogue) => {
-        // Open edit modal or navigate to edit page
-        console.log('Edit synagogue:', row.id);
-      },
-    },
-    {
-      label: 'Delete',
-      icon: Trash2,
-      onClick: (row: FloridaSynagogue) => {
-        if (confirm(`Are you sure you want to delete ${row.name || 'this synagogue'}?`)) {
-          // Handle delete
-          console.log('Delete synagogue:', row.id);
-        }
-      },
-      variant: 'destructive' as const,
-    },
   ];
 
   return (
@@ -352,7 +329,8 @@ export default function SynagogueDatabasePage() {
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">Florida Synagogues</h1>
         <p className="text-gray-600">
-          Manage synagogue data with comprehensive religious institution information and community details.
+          View synagogue data with comprehensive religious institution information and community details.
+          <span className="text-orange-600 font-medium"> (Read-only due to database schema constraints)</span>
         </p>
       </div>
 
@@ -369,8 +347,13 @@ export default function SynagogueDatabasePage() {
         onBulkAction={handleBulkAction}
         searchPlaceholder="Search synagogues by name, rabbi, or location..."
         loading={loading}
-        selectable={true}
+        selectable={false}
         actions={actions}
+        searchQuery={searchQuery}
+        onSearchQueryChange={handleSearchQueryChange}
+        sortKey={sortKey}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
       />
     </div>
   );

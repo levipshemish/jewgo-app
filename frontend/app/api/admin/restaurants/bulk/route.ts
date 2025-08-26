@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('BULK_OPERATIONS')) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.BULK_OPERATIONS)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     const result = await AdminDatabaseService.bulkOperation(
       validatedData.operation,
       prisma.restaurant,
+      'restaurant',
       validatedData.data,
       adminUser,
       'restaurant',
@@ -56,9 +57,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] Restaurant bulk operation error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }

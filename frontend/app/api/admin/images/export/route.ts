@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!adminUser.permissions.includes('DATA_EXPORT')) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       metadata: { search, filters },
     });
 
-    const csvData = await AdminDatabaseService.exportToCSV(
+    const csvResult = await AdminDatabaseService.exportToCSV(
       prisma.restaurantImage,
       'restaurantImage',
       {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    return new NextResponse(csvData, {
+    return new NextResponse(csvResult.csv, {
       headers: {
         'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="restaurant_images_${new Date().toISOString().split('T')[0]}.csv"`,
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] Image export error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }

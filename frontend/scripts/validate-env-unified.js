@@ -23,13 +23,6 @@
  *   --supabase-only  Only validate Supabase configuration
  *   --verbose        Show detailed validation information
  *   --strict         Exit on any validation failure (including warnings)
- */
- * @options *   --build-only     Only validate build-time requirements
- *   --redis-only     Only validate Redis configuration
- *   --supabase-only  Only validate Supabase configuration
- *   --verbose        Show detailed validation information
- *   --strict         Exit on any validation failure (including warnings)
- */
  * 
  * @example
  * node validate-env-unified.js --verbose --config=production

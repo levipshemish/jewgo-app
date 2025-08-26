@@ -42,17 +42,17 @@ export default function EnhancedFilters({
   onClose,
   isOpen
 }: EnhancedFiltersProps) {
-  // Early return to prevent hooks violation - must be before any hooks
-  if (!isOpen) {
-    return null;
-  }
-
   const [localFilters, setLocalFilters] = useState<MarketplaceFilters>(filters);
   const [activeTab, setActiveTab] = useState<'category' | 'price' | 'condition' | 'location'>('category');
 
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
+
+  // Early return after all hooks
+  if (!isOpen) {
+    return null;
+  }
 
   const handleFilterChange = (key: keyof MarketplaceFilters, value: string) => {
     const newFilters = { ...localFilters, [key]: value };

@@ -5,7 +5,6 @@ Fetches images from Google Places API and updates restaurant database.
 """
 
 import os
-import requests
 import time
 import json
 import sys
@@ -16,6 +15,7 @@ import logging
 # Add backend to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 from utils.google_places_searcher import GooglePlacesSearcher
+from utils.http_client import get_http_client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,9 +58,8 @@ class GooglePlacesImageUpdater:
                 "key": self.api_key,
             }
 
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-
+            http_client = get_http_client()
+            response = http_client.get(url, params=params)
             data = response.json()
 
             if data["status"] == "OK":

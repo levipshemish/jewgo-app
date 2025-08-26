@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +11,11 @@ export async function GET(request: NextRequest) {
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_VIEW)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Get query parameters
@@ -26,11 +29,14 @@ export async function GET(request: NextRequest) {
 
     // Build filters
     const filters: any = {};
-    if (restaurantId) filters.restaurant_id = restaurantId;
+    if (restaurantId) {
+      filters.restaurant_id = restaurantId;
+    }
 
     // Get paginated data with restaurant information
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.restaurantImage,
+      'restaurantImage',
       {
         page,
         pageSize,
@@ -74,6 +80,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_EDIT)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
 
@@ -86,6 +103,7 @@ export async function POST(request: NextRequest) {
     // Create image record
     const image = await AdminDatabaseService.createRecord(
       prisma.restaurantImage,
+      'restaurantImage',
       sanitizedData,
       adminUser,
       'restaurant_image'
@@ -95,9 +113,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] Image create error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }
@@ -117,6 +135,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_EDIT)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Parse request body
     const body = await request.json();
     const { id, ...data } = body;
@@ -134,6 +163,7 @@ export async function PUT(request: NextRequest) {
     // Update image record
     const image = await AdminDatabaseService.updateRecord(
       prisma.restaurantImage,
+      'restaurantImage',
       id,
       sanitizedData,
       adminUser,
@@ -144,9 +174,9 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] Image update error:', error);
     
-    if (error.name === 'ZodError') {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
         { status: 400 }
       );
     }
@@ -166,6 +196,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.IMAGE_DELETE)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
     // Get image ID from query params
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -177,6 +218,7 @@ export async function DELETE(request: NextRequest) {
     // Delete image record (soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.restaurantImage,
+      'restaurantImage',
       id,
       adminUser,
       'restaurant_image',

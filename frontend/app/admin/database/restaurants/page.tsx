@@ -35,6 +35,13 @@ export default function RestaurantDatabasePage() {
     hasPrev: false,
   });
 
+  // Initialize controlled state from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [sortKey, setSortKey] = useState(searchParams.get('sortBy') || '');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+  );
+
   // Fetch restaurants
   const fetchRestaurants = async () => {
     try {
@@ -43,8 +50,8 @@ export default function RestaurantDatabasePage() {
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
       
-      if (searchParams.get('search')) {
-        params.set('search', searchParams.get('search')!);
+      if (searchQuery) {
+        params.set('search', searchQuery);
       }
       if (searchParams.get('status')) {
         params.set('status', searchParams.get('status')!);
@@ -55,11 +62,11 @@ export default function RestaurantDatabasePage() {
       if (searchParams.get('state')) {
         params.set('state', searchParams.get('state')!);
       }
-      if (searchParams.get('sortBy')) {
-        params.set('sortBy', searchParams.get('sortBy')!);
+      if (sortKey) {
+        params.set('sortBy', sortKey);
       }
-      if (searchParams.get('sortOrder')) {
-        params.set('sortOrder', searchParams.get('sortOrder')!);
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/admin/restaurants?${params.toString()}`);
@@ -80,7 +87,7 @@ export default function RestaurantDatabasePage() {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [pagination.page, pagination.pageSize, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {
@@ -96,7 +103,12 @@ export default function RestaurantDatabasePage() {
     router.push(`/admin/database/restaurants?${params.toString()}`);
   };
 
-  // Handle search
+  // Handle search query change (controlled)
+  const handleSearchQueryChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Handle search (debounced)
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query) {
@@ -108,7 +120,13 @@ export default function RestaurantDatabasePage() {
     router.push(`/admin/database/restaurants?${params.toString()}`);
   };
 
-  // Handle sort
+  // Handle sort change (controlled)
+  const handleSortChange = (key: string, order: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortOrder(order);
+  };
+
+  // Handle sort (immediate)
   const handleSort = (key: string, order: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sortBy', key);
@@ -125,7 +143,7 @@ export default function RestaurantDatabasePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          search: searchParams.get('search'),
+          search: searchQuery,
           filters: {
             status: searchParams.get('status'),
             city: searchParams.get('city'),
@@ -321,6 +339,12 @@ export default function RestaurantDatabasePage() {
         loading={loading}
         selectable={true}
         actions={actions}
+        // Controlled props
+        searchQuery={searchQuery}
+        sortKey={sortKey}
+        sortOrder={sortOrder}
+        onSearchQueryChange={handleSearchQueryChange}
+        onSortChange={handleSortChange}
       />
     </div>
   );

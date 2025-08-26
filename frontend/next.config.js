@@ -2,15 +2,21 @@
 // Ensure backend URL used in rewrites/redirects is always valid
 const rawBackend = process.env["NEXT_PUBLIC_BACKEND_URL"] || '';
 const normalizedBackend = rawBackend.replace(/\/+$/, '');
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Validate backend URL configuration
+if (isProduction && !normalizedBackend) {
+  console.warn('⚠️  NEXT_PUBLIC_BACKEND_URL is required in production environment');
+}
+
 const BACKEND_URL = normalizedBackend
   ? normalizedBackend
-  : (process.env.NODE_ENV === 'production' ? 'https://jewgo-app-oyoh.onrender.com' : 'http://127.0.0.1:8082');
+  : (isProduction ? null : 'http://127.0.0.1:8082'); // Only allow local fallback in development
 
 // Improved environment detection
 const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
-const isCI = process.env.CI === 'true' || isVercel || process.env.NODE_ENV === 'production';
-const isProduction = process.env.NODE_ENV === 'production';
+const isCI = process.env.CI === 'true' || isVercel || isProduction;
 
 // Webpack optimization utilities (commented out due to missing file)
 // const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
@@ -218,6 +224,12 @@ const nextConfig = {
 
   // Redirects configuration
   async redirects() {
+    // Only configure redirects if BACKEND_URL is available
+    if (!BACKEND_URL) {
+      console.warn('⚠️  Skipping API redirects - BACKEND_URL not configured');
+      return [];
+    }
+
     return [
       // Only redirect non-Next.js API routes to backend
       { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*`, permanent: false },
@@ -236,6 +248,12 @@ const nextConfig = {
   },
   // Rewrites configuration
   async rewrites() {
+    // Only configure rewrites if BACKEND_URL is available
+    if (!BACKEND_URL) {
+      console.warn('⚠️  Skipping API rewrites - BACKEND_URL not configured');
+      return [];
+    }
+
     return [
       // Only rewrite non-Next.js API routes to backend
       { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*` },

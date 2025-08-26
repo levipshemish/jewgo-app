@@ -61,22 +61,7 @@ export default async function AdminDashboardPage() {
       bgColor: 'bg-orange-50',
       link: '/admin/database/images'
     },
-    {
-      title: 'Florida Synagogues',
-      value: dbStats.totalSynagogues.toLocaleString(),
-      icon: MapPin,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      link: '/admin/database/synagogues'
-    },
-    {
-      title: 'Kosher Places',
-      value: dbStats.totalKosherPlaces.toLocaleString(),
-      icon: Star,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-      link: '/admin/database/kosher-places'
-    }
+
   ];
 
   const pendingItems = [
@@ -88,14 +73,7 @@ export default async function AdminDashboardPage() {
       bgColor: 'bg-red-50',
       link: '/admin/restaurants'
     },
-    {
-      title: 'Flagged Reviews',
-      value: dbStats.flaggedReviews,
-      icon: AlertTriangle,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      link: '/admin/database/reviews?status=flagged'
-    }
+
   ];
 
   const quickActions = [

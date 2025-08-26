@@ -11,11 +11,6 @@ interface EmailUpgradeModalProps {
 }
 
 export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailUpgradeModalProps) {
-  // Early return to prevent hooks violation - must be before any hooks
-  if (!isOpen) {
-    return null;
-  }
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,6 +31,11 @@ export default function EmailUpgradeModal({ isOpen, onClose, onSuccess }: EmailU
       setMergeMessage(null);
     }
   }, [isOpen]);
+
+  // Early return after all hooks
+  if (!isOpen) {
+    return null;
+  }
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

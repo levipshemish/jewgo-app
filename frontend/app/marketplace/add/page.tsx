@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useGuestProtection } from '@/lib/utils/guest-protection';
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
@@ -21,32 +21,13 @@ interface Category {
 
 type ListingKind = 'regular' | 'vehicle' | 'appliance';
 
-export default function AddListingPage() {
+function AddListingPageContent() {
   const { isLoading, isGuest } = useGuestProtection('/marketplace/add');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const categoryId = searchParams.get('category');
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (isGuest) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-4xl mb-4">🔒</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
-          <p className="text-gray-600 mb-4">Guest users must sign in to add marketplace listings.</p>
-          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Form state
+  // Form state - moved all hooks to top
   const [kind, setKind] = useState<ListingKind>('regular');
   const [formData, setFormData] = useState<CreateListingRequest>({
     title: '',
@@ -114,6 +95,28 @@ export default function AddListingPage() {
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // Early return after all hooks
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isGuest) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600 mb-4">Guest users must sign in to add marketplace listings.</p>
+          <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
+        </div>
+      </div>
+    );
+  }
 
   const loadCategories = async () => {
     try {
@@ -659,5 +662,17 @@ export default function AddListingPage() {
 
       <BottomNavigation />
     </div>
+  );
+}
+
+export default function AddListingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <AddListingPageContent />
+    </Suspense>
   );
 }

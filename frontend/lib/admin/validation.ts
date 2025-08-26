@@ -8,8 +8,8 @@ export const baseSchemas = {
   deletedAt: z.date().optional(),
 };
 
-// Restaurant validation schema
-export const restaurantSchema = z.object({
+// Restaurant validation schemas
+export const restaurantCreateSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
   address: z.string().min(1, 'Address is required').max(500, 'Address too long'),
   city: z.string().min(1, 'City is required').max(100, 'City too long'),
@@ -38,7 +38,7 @@ export const restaurantSchema = z.object({
   listing_type: z.string().min(1, 'Listing type is required').max(100),
   hours_of_operation: z.string().max(1000).optional(),
   specials: z.string().max(1000).optional(),
-  hours_json: z.record(z.any()).optional(),
+  hours_json: z.record(z.string(), z.unknown()).optional(),
   hours_last_updated: z.date().optional(),
   kosher_category: z.string().min(1, 'Kosher category is required').max(100),
   cholov_stam: z.boolean().optional(),
@@ -47,9 +47,15 @@ export const restaurantSchema = z.object({
   hours_parsed: z.boolean().optional(),
 });
 
-// Review validation schema
-export const reviewSchema = z.object({
-  id: z.string().min(1, 'Review ID is required').max(50),
+export const restaurantUpdateSchema = restaurantCreateSchema.extend({
+  id: z.number(),
+});
+
+// Legacy schema for backward compatibility
+export const restaurantSchema = restaurantCreateSchema;
+
+// Review validation schemas
+export const reviewCreateSchema = z.object({
   restaurant_id: z.number().int().positive('Restaurant ID must be positive'),
   user_id: z.string().min(1, 'User ID is required').max(50),
   user_name: z.string().min(1, 'User name is required').max(255),
@@ -64,6 +70,13 @@ export const reviewSchema = z.object({
   helpful_count: z.number().int().min(0).default(0),
   report_count: z.number().int().min(0).default(0),
 });
+
+export const reviewUpdateSchema = reviewCreateSchema.extend({
+  id: z.string().min(1, 'Review ID is required').max(50),
+});
+
+// Legacy schema for backward compatibility
+export const reviewSchema = reviewCreateSchema;
 
 // Review flag validation schema
 export const reviewFlagSchema = z.object({
@@ -151,15 +164,26 @@ export const floridaSynagogueSchema = z.object({
   longitude: z.number().min(-180).max(180).optional(),
 });
 
-// User validation schema (privacy-aware)
+// User validation schema (privacy-aware) - API format
 export const userSchema = z.object({
-  id: z.string().min(1, 'User ID is required'),
+  id: z.string().min(1, 'User ID is required').optional(),
   email: z.string().email('Invalid email address'),
   name: z.string().max(255).optional(),
   avatar_url: z.string().url().optional().or(z.literal('')),
   provider: z.enum(['apple', 'google', 'unknown']).optional(),
   isSuperAdmin: z.boolean().optional(),
   adminRole: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']).optional(),
+});
+
+// User validation schema for database operations - matches Prisma schema
+export const userDbSchema = z.object({
+  id: z.string().min(1, 'User ID is required').optional(),
+  email: z.string().email('Invalid email address'),
+  name: z.string().max(255).optional(),
+  image: z.string().url().optional().or(z.literal('')),
+  issuperadmin: z.boolean().optional(),
+  createdat: z.date().optional(),
+  updatedat: z.date().optional(),
 });
 
 // Pagination validation schema
@@ -172,7 +196,7 @@ export const paginationSchema = z.object({
 // Search and filter validation schema
 export const searchFilterSchema = z.object({
   search: z.string().max(255).optional(),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
   sortBy: z.string().max(100).optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -181,7 +205,7 @@ export const searchFilterSchema = z.object({
 export const bulkOperationSchema = z.object({
   operation: z.enum(['create', 'update', 'delete']),
   entityType: z.string().min(1, 'Entity type is required'),
-  data: z.array(z.record(z.any())).min(1, 'At least one item required').max(1000, 'Too many items'),
+  data: z.array(z.record(z.string(), z.any())).min(1, 'At least one item required').max(1000, 'Too many items'),
   batchSize: z.number().int().min(1).max(100).default(100),
 });
 
@@ -189,7 +213,7 @@ export const bulkOperationSchema = z.object({
 export const exportSchema = z.object({
   format: z.enum(['csv', 'json']).default('csv'),
   fields: z.array(z.string()).optional(),
-  filters: z.record(z.any()).optional(),
+  filters: z.record(z.string(), z.any()).optional(),
   search: z.string().max(255).optional(),
 });
 
@@ -198,15 +222,17 @@ export const validationUtils = {
   /**
    * Validate restaurant data
    */
-  validateRestaurant: (data: any) => {
-    return restaurantSchema.parse(data);
+  validateRestaurant: (data: any, isUpdate: boolean = false) => {
+    const schema = isUpdate ? restaurantUpdateSchema : restaurantCreateSchema;
+    return schema.parse(data);
   },
 
   /**
    * Validate review data
    */
-  validateReview: (data: any) => {
-    return reviewSchema.parse(data);
+  validateReview: (data: any, isUpdate: boolean = false) => {
+    const schema = isUpdate ? reviewUpdateSchema : reviewCreateSchema;
+    return schema.parse(data);
   },
 
   /**
@@ -373,8 +399,8 @@ export const validationUtils = {
   /**
    * Format validation errors for user display
    */
-  formatValidationErrors: (errors: z.ZodError): string[] => {
-    return errors.errors.map(error => {
+  formatValidationErrors: (errors: z.ZodError<any>): string[] => {
+    return errors.issues.map(error => {
       const field = error.path.join('.');
       return `${field}: ${error.message}`;
     });

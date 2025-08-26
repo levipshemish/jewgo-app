@@ -2,12 +2,16 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import requests
 from utils.config_manager import ConfigManager
 from utils.google_places_searcher import GooglePlacesSearcher
 from utils.google_places_validator import GooglePlacesValidator
 from utils.logging_config import get_logger
 from utils.validators import validate_website_url as unified_validate_website_url
+from utils.error_handler_v2 import (
+    handle_external_api_call,
+    create_error_context,
+    ExternalAPIError,
+)
 
 from .base_service import BaseService
 
@@ -94,59 +98,71 @@ class GooglePlacesService(BaseService):
             List of review dictionaries or None if error
 
         """
-        try:
-            url = f"{self.base_url}/details/json"
-            params = {
-                "place_id": place_id,
-                "key": self.api_key,
-                "fields": "reviews",
-            }
+        context = create_error_context(place_id=place_id, max_reviews=max_reviews)
+        
+        self.log_operation(
+            "fetch_reviews", place_id=place_id, max_reviews=max_reviews
+        )
 
-            self.log_operation(
-                "fetch_reviews", place_id=place_id, max_reviews=max_reviews
-            )
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
+        # Use external API call handler with timeout
+        data = handle_external_api_call(
+            operation=lambda: self._make_places_api_call(place_id),
+            operation_name="fetch_google_reviews",
+            context=context,
+            default_return=None,
+        )
 
-            data = response.json()
-
-            if data["status"] == "OK" and "reviews" in data["result"]:
-                reviews = data["result"]["reviews"][:max_reviews]
-
-                # Convert reviews to our format
-                formatted_reviews = []
-                for review in reviews:
-                    formatted_review = {
-                        "author_name": review.get("author_name"),
-                        "rating": review.get("rating"),
-                        "text": review.get("text"),
-                        "time": self._convert_timestamp_to_date(review.get("time", 0)),
-                        "profile_photo_url": review.get("profile_photo_url"),
-                        "relative_time_description": review.get(
-                            "relative_time_description"
-                        ),
-                    }
-                    formatted_reviews.append(formatted_review)
-
-                self.log_operation(
-                    "reviews_fetched", place_id=place_id, count=len(formatted_reviews)
-                )
-                return formatted_reviews
-
-            self.log_operation(
-                "reviews_error", place_id=place_id, status=data.get("status")
-            )
+        if data is None:
             return None
 
-        except Exception as e:
-            self.log_operation("reviews_error", place_id=place_id, error=str(e))
-            return None
+        if data["status"] == "OK" and "reviews" in data["result"]:
+            reviews = data["result"]["reviews"][:max_reviews]
+
+            # Convert reviews to our format
+            formatted_reviews = []
+            for review in reviews:
+                formatted_review = {
+                    "author_name": review.get("author_name"),
+                    "rating": review.get("rating"),
+                    "text": review.get("text"),
+                    "time": self._convert_timestamp_to_date(review.get("time", 0)),
+                    "profile_photo_url": review.get("profile_photo_url"),
+                    "relative_time_description": review.get(
+                        "relative_time_description"
+                    ),
+                }
+                formatted_reviews.append(formatted_review)
+
+            self.log_operation(
+                "reviews_fetched", place_id=place_id, count=len(formatted_reviews)
+            )
+            return formatted_reviews
+
+        self.log_operation(
+            "reviews_error", place_id=place_id, status=data.get("status")
+        )
+        return None
+
+    def _make_places_api_call(self, place_id: str) -> dict[str, Any]:
+        """Make Google Places API call with proper timeout."""
+        from utils.http_client import get_http_client
+        
+        url = f"{self.base_url}/details/json"
+        params = {
+            "place_id": place_id,
+            "key": self.api_key,
+            "fields": "reviews",
+        }
+
+        http_client = get_http_client()
+        response = http_client.get(url, params=params)
+        return response.json()
 
     def _convert_timestamp_to_date(self, timestamp: int) -> str:
         """Convert Google Places timestamp to date string."""
         try:
             return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
-        except Exception:
+        except (ValueError, OSError):
             return "Unknown"
 
     def update_restaurant_google_reviews(
@@ -164,57 +180,52 @@ class GooglePlacesService(BaseService):
             True if successful, False otherwise
 
         """
-        try:
-            if not place_id:
-                # Get restaurant info to search for place
-                if not self.db_manager:
-                    self.log_operation(
-                        "update_reviews_error",
-                        restaurant_id=restaurant_id,
-                        error="No DB manager",
-                    )
-                    return False
-
-                restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
-                if not restaurant:
-                    self.log_operation(
-                        "update_reviews_error",
-                        restaurant_id=restaurant_id,
-                        error="Restaurant not found",
-                    )
-                    return False
-
-                place_id = self.search_place(restaurant["name"], restaurant["address"])
-                if not place_id:
-                    self.log_operation(
-                        "update_reviews_error",
-                        restaurant_id=restaurant_id,
-                        error="Place not found",
-                    )
-                    return False
-
-            # Fetch reviews
-            reviews = self.fetch_google_reviews(place_id)
-            if not reviews:
+        context = create_error_context(restaurant_id=restaurant_id, place_id=place_id)
+        
+        if not place_id:
+            # Get restaurant info to search for place
+            if not self.db_manager:
+                self.log_operation(
+                    "update_reviews_error",
+                    restaurant_id=restaurant_id,
+                    error="No DB manager",
+                )
                 return False
 
-            # Update database with reviews
-            if self.db_manager:
-                success = self.db_manager.update_restaurant_reviews(
-                    restaurant_id, reviews
-                )
+            restaurant = self.db_manager.get_restaurant_by_id(restaurant_id)
+            if not restaurant:
                 self.log_operation(
-                    "reviews_updated", restaurant_id=restaurant_id, success=success
+                    "update_reviews_error",
+                    restaurant_id=restaurant_id,
+                    error="Restaurant not found",
                 )
-                return success
+                return False
 
+            place_id = self.search_place(restaurant["name"], restaurant["address"])
+            if not place_id:
+                self.log_operation(
+                    "update_reviews_error",
+                    restaurant_id=restaurant_id,
+                    error="Place not found",
+                )
+                return False
+
+        # Fetch reviews
+        reviews = self.fetch_google_reviews(place_id)
+        if not reviews:
             return False
 
-        except Exception as e:
-            self.log_operation(
-                "update_reviews_error", restaurant_id=restaurant_id, error=str(e)
+        # Update database with reviews
+        if self.db_manager:
+            success = self.db_manager.update_restaurant_reviews(
+                restaurant_id, reviews
             )
-            return False
+            self.log_operation(
+                "reviews_updated", restaurant_id=restaurant_id, success=success
+            )
+            return success
+
+        return False
 
     def batch_update_google_reviews(self, limit: int = 10) -> dict[str, Any]:
         """Batch update Google reviews for multiple restaurants.
@@ -226,46 +237,36 @@ class GooglePlacesService(BaseService):
             Dictionary with results summary
 
         """
-        try:
-            if not self.db_manager:
-                return {"success": False, "error": "No DB manager available"}
+        context = create_error_context(limit=limit)
+        
+        if not self.db_manager:
+            return {"success": False, "error": "No DB manager available"}
 
-            # Get restaurants without recent reviews
-            restaurants = self.db_manager.get_restaurants_without_recent_reviews(limit)
+        # Get restaurants without recent reviews
+        restaurants = self.db_manager.get_restaurants_without_recent_reviews(limit)
 
-            results = {
-                "total": len(restaurants),
-                "successful": 0,
-                "failed": 0,
-                "errors": [],
-            }
+        results = {
+            "total": len(restaurants),
+            "successful": 0,
+            "failed": 0,
+            "errors": [],
+        }
 
-            for restaurant in restaurants:
-                try:
-                    success = self.update_restaurant_google_reviews(restaurant["id"])
-                    if success:
-                        results["successful"] += 1
-                    else:
-                        results["failed"] += 1
-                        results["errors"].append(
-                            f"Failed to update reviews for restaurant {restaurant['id']}"
-                        )
+        for restaurant in restaurants:
+            success = self.update_restaurant_google_reviews(restaurant["id"])
+            if success:
+                results["successful"] += 1
+            else:
+                results["failed"] += 1
+                results["errors"].append(
+                    f"Failed to update reviews for restaurant {restaurant['id']}"
+                )
 
-                    # Rate limiting
-                    time.sleep(1)
+            # Rate limiting
+            time.sleep(1)
 
-                except Exception as e:
-                    results["failed"] += 1
-                    results["errors"].append(
-                        f"Error updating restaurant {restaurant['id']}: {e!s}"
-                    )
-
-            self.log_operation("batch_update_complete", results=results)
-            return results
-
-        except Exception as e:
-            self.log_operation("batch_update_error", error=str(e))
-            return {"success": False, "error": str(e)}
+        self.log_operation("batch_update_complete", results=results)
+        return results
 
     def validate_website_url(self, url: str) -> bool:
         """Validate a website URL.
@@ -290,31 +291,26 @@ class GooglePlacesService(BaseService):
             True if successful, False otherwise
 
         """
-        try:
-            if not self.validate_website_url(website_url):
-                self.log_operation(
-                    "website_validation_failed",
-                    restaurant_id=restaurant_id,
-                    url=website_url,
-                )
-                return False
-
-            if self.db_manager:
-                success = self.db_manager.update_restaurant_website(
-                    restaurant_id, website_url
-                )
-                self.log_operation(
-                    "website_updated", restaurant_id=restaurant_id, success=success
-                )
-                return success
-
-            return False
-
-        except Exception as e:
+        context = create_error_context(restaurant_id=restaurant_id, website_url=website_url)
+        
+        if not self.validate_website_url(website_url):
             self.log_operation(
-                "website_update_error", restaurant_id=restaurant_id, error=str(e)
+                "website_validation_failed",
+                restaurant_id=restaurant_id,
+                url=website_url,
             )
             return False
+
+        if self.db_manager:
+            success = self.db_manager.update_restaurant_website(
+                restaurant_id, website_url
+            )
+            self.log_operation(
+                "website_updated", restaurant_id=restaurant_id, success=success
+            )
+            return success
+
+        return False
 
     def get_restaurants_without_websites(
         self,
@@ -329,14 +325,11 @@ class GooglePlacesService(BaseService):
             List of restaurant dictionaries
 
         """
-        try:
-            if self.db_manager:
-                return self.db_manager.get_restaurants_without_websites(limit)
-            return []
-
-        except Exception as e:
-            self.log_operation("get_restaurants_error", error=str(e))
-            return []
+        context = create_error_context(limit=limit)
+        
+        if self.db_manager:
+            return self.db_manager.get_restaurants_without_websites(limit)
+        return []
 
     def process_restaurant(self, restaurant: dict[str, Any]) -> dict[str, Any]:
         """Process a single restaurant to update its Google Places data.
@@ -348,53 +341,47 @@ class GooglePlacesService(BaseService):
             Dictionary with processing results
 
         """
-        try:
-            restaurant_id = restaurant["id"]
-            restaurant_name = restaurant["name"]
-            address = restaurant.get("address", "")
+        context = create_error_context(restaurant_id=restaurant.get("id"))
+        
+        restaurant_id = restaurant["id"]
+        restaurant_name = restaurant["name"]
+        address = restaurant.get("address", "")
 
-            # Search for place
-            place_id = self.search_place(restaurant_name, address)
-            if not place_id:
-                return {
-                    "restaurant_id": restaurant_id,
-                    "success": False,
-                    "error": "Place not found",
-                }
-
-            # Get place details
-            place_details = self.get_place_details(place_id)
-            if not place_details:
-                return {
-                    "restaurant_id": restaurant_id,
-                    "success": False,
-                    "error": "Could not fetch place details",
-                }
-
-            # Update website if available
-            website_url = place_details.get("website")
-            if website_url and self.validate_website_url(website_url):
-                self.update_restaurant_website(restaurant_id, website_url)
-
-            # Update reviews
-            reviews_updated = self.update_restaurant_google_reviews(
-                restaurant_id, place_id
-            )
-
+        # Search for place
+        place_id = self.search_place(restaurant_name, address)
+        if not place_id:
             return {
                 "restaurant_id": restaurant_id,
-                "success": True,
-                "place_id": place_id,
-                "website_updated": bool(website_url),
-                "reviews_updated": reviews_updated,
+                "success": False,
+                "error": "Place not found",
             }
 
-        except Exception as e:
+        # Get place details
+        place_details = self.get_place_details(place_id)
+        if not place_details:
             return {
-                "restaurant_id": restaurant.get("id"),
+                "restaurant_id": restaurant_id,
                 "success": False,
-                "error": str(e),
+                "error": "Could not fetch place details",
             }
+
+        # Update website if available
+        website_url = place_details.get("website")
+        if website_url and self.validate_website_url(website_url):
+            self.update_restaurant_website(restaurant_id, website_url)
+
+        # Update reviews
+        reviews_updated = self.update_restaurant_google_reviews(
+            restaurant_id, place_id
+        )
+
+        return {
+            "restaurant_id": restaurant_id,
+            "success": True,
+            "place_id": place_id,
+            "website_updated": bool(website_url),
+            "reviews_updated": reviews_updated,
+        }
 
     def update_restaurants_batch(self, limit: int = 10) -> dict[str, Any]:
         """Batch update multiple restaurants with Google Places data.
@@ -406,48 +393,34 @@ class GooglePlacesService(BaseService):
             Dictionary with batch processing results
 
         """
-        try:
-            if not self.db_manager:
-                return {"success": False, "error": "No DB manager available"}
+        context = create_error_context(limit=limit)
+        
+        if not self.db_manager:
+            return {"success": False, "error": "No DB manager available"}
 
-            # Get restaurants to process
-            restaurants = self.db_manager.get_restaurants_for_google_places_update(
-                limit
-            )
+        # Get restaurants to process
+        restaurants = self.db_manager.get_restaurants_for_google_places_update(
+            limit
+        )
 
-            results = {
-                "total": len(restaurants),
-                "successful": 0,
-                "failed": 0,
-                "results": [],
-            }
+        results = {
+            "total": len(restaurants),
+            "successful": 0,
+            "failed": 0,
+            "results": [],
+        }
 
-            for restaurant in restaurants:
-                try:
-                    result = self.process_restaurant(restaurant)
-                    results["results"].append(result)
+        for restaurant in restaurants:
+            result = self.process_restaurant(restaurant)
+            results["results"].append(result)
 
-                    if result["success"]:
-                        results["successful"] += 1
-                    else:
-                        results["failed"] += 1
+            if result["success"]:
+                results["successful"] += 1
+            else:
+                results["failed"] += 1
 
-                    # Rate limiting
-                    time.sleep(1)
+            # Rate limiting
+            time.sleep(1)
 
-                except Exception as e:
-                    results["failed"] += 1
-                    results["results"].append(
-                        {
-                            "restaurant_id": restaurant.get("id"),
-                            "success": False,
-                            "error": str(e),
-                        }
-                    )
-
-            self.log_operation("batch_processing_complete", results=results)
-            return results
-
-        except Exception as e:
-            self.log_operation("batch_processing_error", error=str(e))
-            return {"success": False, "error": str(e)}
+        self.log_operation("batch_processing_complete", results=results)
+        return results

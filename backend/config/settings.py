@@ -37,7 +37,14 @@ NEON_DATABASE_URL = os.getenv("NEON_DATABASE_URL")
 # Security
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+
+# CORS Configuration - Remove wildcard default for security
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    CORS_ORIGINS = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+else:
+    # Default to empty list - explicit origins must be configured
+    CORS_ORIGINS = []
 
 # Rate Limiting
 RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "1000 per minute")

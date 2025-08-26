@@ -29,6 +29,13 @@ export default function UserDatabasePage() {
     hasPrev: false,
   });
 
+  // Initialize controlled state from URL params
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [sortKey, setSortKey] = useState(searchParams.get('sortBy') || '');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+  );
+
   // Fetch users
   const fetchUsers = async () => {
     try {
@@ -37,17 +44,17 @@ export default function UserDatabasePage() {
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
       
-      if (searchParams.get('search')) {
-        params.set('search', searchParams.get('search')!);
+      if (searchQuery) {
+        params.set('search', searchQuery);
       }
       if (searchParams.get('provider')) {
         params.set('provider', searchParams.get('provider')!);
       }
-      if (searchParams.get('sortBy')) {
-        params.set('sortBy', searchParams.get('sortBy')!);
+      if (sortKey) {
+        params.set('sortBy', sortKey);
       }
-      if (searchParams.get('sortOrder')) {
-        params.set('sortOrder', searchParams.get('sortOrder')!);
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder);
       }
 
       const response = await fetch(`/api/admin/users?${params.toString()}`);
@@ -68,7 +75,7 @@ export default function UserDatabasePage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [pagination.page, pagination.pageSize, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {
@@ -84,7 +91,12 @@ export default function UserDatabasePage() {
     router.push(`/admin/database/users?${params.toString()}`);
   };
 
-  // Handle search
+  // Handle search query change (controlled)
+  const handleSearchQueryChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Handle search (debounced)
   const handleSearch = (query: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (query) {
@@ -96,7 +108,13 @@ export default function UserDatabasePage() {
     router.push(`/admin/database/users?${params.toString()}`);
   };
 
-  // Handle sort
+  // Handle sort change (controlled)
+  const handleSortChange = (key: string, order: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortOrder(order);
+  };
+
+  // Handle sort (immediate)
   const handleSort = (key: string, order: 'asc' | 'desc') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sortBy', key);
@@ -113,7 +131,7 @@ export default function UserDatabasePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          search: searchParams.get('search'),
+          search: searchQuery,
           filters: {
             provider: searchParams.get('provider'),
           },
@@ -287,6 +305,12 @@ export default function UserDatabasePage() {
         loading={loading}
         selectable={true}
         actions={actions}
+        // Controlled props
+        searchQuery={searchQuery}
+        sortKey={sortKey}
+        sortOrder={sortOrder}
+        onSearchQueryChange={handleSearchQueryChange}
+        onSortChange={handleSortChange}
       />
     </div>
   );

@@ -9,11 +9,11 @@ import sys
 import time
 from datetime import datetime
 
-import requests
 from database.database_manager_v3 import EnhancedDatabaseManager
 from database.google_places_manager import GooglePlacesData, GooglePlacesManager
 from dotenv import load_dotenv
 from sqlalchemy import text
+from utils.http_client import get_http_client
 
 # Load environment variables
 load_dotenv()
@@ -85,7 +85,8 @@ def fetch_hours_for_restaurant(restaurant_id, name, address):
         search_url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
         search_params = {"query": search_query, "key": api_key, "type": "restaurant"}
 
-        response = requests.get(search_url, params=search_params)
+        http_client = get_http_client()
+        response = http_client.get(search_url, params=search_params)
         data = response.json()
 
         if data.get("status") == "OK" and data.get("results"):
@@ -101,7 +102,7 @@ def fetch_hours_for_restaurant(restaurant_id, name, address):
                 "fields": "opening_hours,formatted_address,website",
             }
 
-            details_response = requests.get(details_url, params=details_params)
+            details_response = http_client.get(details_url, params=details_params)
             details_data = details_response.json()
 
             if details_data.get("status") == "OK":

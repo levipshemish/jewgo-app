@@ -51,6 +51,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors, isValid },
     trigger,
     reset

@@ -39,6 +39,16 @@ jobs:
       run: |
         node scripts/env-consistency-check.js
         
+    - name: Database Separation Validation
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lgsfyrxkqpipaumngvfi.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-build-anon-key-for-testing-only' }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
+      run: |
+        echo "🔍 Validating Database Separation Configuration..."
+        chmod +x scripts/validate-db-separation.sh
+        ./scripts/validate-db-separation.sh
+        
     - name: Debug - Check current directory and files
       run: |
         pwd
@@ -203,6 +213,16 @@ jobs:
     - name: Environment Consistency Check
       run: |
         node scripts/env-consistency-check.js
+        
+    - name: Database Separation Validation (Backend)
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lgsfyrxkqpipaumngvfi.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-build-anon-key-for-testing-only' }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
+      run: |
+        echo "🔍 Validating Database Separation Configuration (Backend)..."
+        chmod +x scripts/validate-db-separation.sh
+        ./scripts/validate-db-separation.sh
           
     - name: Install Python dependencies
       working-directory: backend

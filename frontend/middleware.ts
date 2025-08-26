@@ -3,37 +3,13 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { securityMiddleware, corsHeaders } from '@/middleware-security';
-import { requireAdmin } from '@/lib/admin/auth';
 
-// Enhanced middleware with security hardening and private route protection
+// Enhanced middleware with security hardening and admin route protection
 export const config = {
   matcher: [
-    // Apply security middleware to all routes
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    // Protected app pages
+    // Admin routes only
     '/admin/:path*',
-    '/messages/:path*',
-    '/eatery/:path*',
-    '/restaurant/:path*',
-    '/marketplace/:path*',
-    '/profile/:path*',
-    '/settings/:path*',
-    '/favorites/:path*',
-    '/live-map/:path*',
-    '/location-access/:path*',
-    '/notifications/:path*',
-    '/add-eatery/:path*',
-    '/mikva/:path*',
-    '/shuls/:path*',
-    '/stores/:path*',
-    // Protected API endpoints
     '/api/admin/:path*',
-    '/api/restaurants/:path*',
-    '/api/reviews/:path*',
-    '/api/feedback/:path*',
-    // Auth API endpoints (for rate limiting only)
-    '/api/auth/:path*'
-    // Note: /auth/:path* removed to prevent middleware from processing auth pages
   ]
 };
 
@@ -126,11 +102,17 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Check admin access for admin routes
+    // Check admin access for admin routes using app_metadata directly
     if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
       try {
-        const adminUser = await requireAdmin(request);
-        if (!adminUser) {
+        // Check admin flags directly from app_metadata to avoid duplicate auth calls
+        const isSuperAdmin = user.app_metadata?.isSuperAdmin === true;
+        const adminRole = user.app_metadata?.adminRole as string;
+        
+        // Allow access if user is super admin or has any admin role
+        const hasAdminAccess = isSuperAdmin || adminRole;
+        
+        if (!hasAdminAccess) {
           // Redirect non-admin users to home with error message
           const redirectUrl = new URL('/', request.url);
           redirectUrl.searchParams.set('error', 'admin_access_denied');
@@ -139,12 +121,14 @@ export async function middleware(request: NextRequest) {
         
         // Add admin security headers
         response.headers.set('X-Admin-Access', 'true');
+        response.headers.set('X-Admin-Verified', 'true');
+        response.headers.set('X-Admin-Role', adminRole || 'super_admin');
         response.headers.set('X-Content-Type-Options', 'nosniff');
         response.headers.set('X-Frame-Options', 'DENY');
         response.headers.set('X-XSS-Protection', '1; mode=block');
         
         // Log admin access for security monitoring
-        console.log(`[ADMIN] Admin access: ${adminUser.email} -> ${path}`);
+        console.log(`[ADMIN] Admin access: ${user.email} (${adminRole || 'super_admin'}) -> ${path}`);
       } catch (error) {
         console.error('[ADMIN] Admin access check failed:', error);
         return redirectToSignin(request, response);
@@ -202,22 +186,17 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
  * Local matcher to mirror Next.js config in unit tests
  */
 function isProtectedPath(pathname: string): boolean {
-  // Allow filter-options endpoint without authentication
-  if (pathname === '/api/restaurants/filter-options') {
-    return false;
-  }
-  
   // Exclude auth pages from protection to prevent redirect loops
   if (pathname.startsWith('/auth/')) {
     return false;
   }
   
+  // Only protect admin routes
   const protectedPrefixes = [
-    '/admin/', '/messages/', '/eatery/', '/restaurant/', '/marketplace/', '/profile/', '/settings/',
-    '/favorites/', '/live-map/', '/location-access/', '/notifications/', '/add-eatery/', '/mikva/', '/shuls/', '/stores/',
-    '/api/admin/', '/api/restaurants/', '/api/reviews/', '/api/feedback/'
+    '/admin/',
+    '/api/admin/'
   ];
-  const exactMatches = ['/admin', '/messages', '/eatery', '/marketplace', '/profile', '/settings', '/favorites', '/live-map', '/location-access', '/notifications', '/add-eatery', '/mikva', '/shuls', '/stores', '/api/admin', '/api/restaurants', '/api/reviews', '/api/feedback'];
+  const exactMatches = ['/admin'];
   return protectedPrefixes.some(p => pathname.startsWith(p)) || exactMatches.includes(pathname);
 }
 

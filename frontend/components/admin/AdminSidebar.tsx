@@ -18,7 +18,7 @@ import {
   LogOut,
   User
 } from 'lucide-react';
-import { AdminUser } from '@/lib/admin/auth';
+import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 
 interface AdminSidebarProps {
   adminUser: AdminUser;
@@ -50,8 +50,18 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       title: 'Submission Management',
       icon: Building2,
       items: [
-        { title: 'Restaurant Submissions', href: '/admin/restaurants', icon: Building2 },
-        { title: 'Review Moderation', href: '/admin/database/reviews?status=pending', icon: MessageSquare }
+        { 
+          title: 'Restaurant Submissions', 
+          href: '/admin/restaurants', 
+          icon: Building2,
+          permission: ADMIN_PERMISSIONS.RESTAURANT_APPROVE
+        },
+        { 
+          title: 'Review Moderation', 
+          href: '/admin/database/reviews?status=pending', 
+          icon: MessageSquare,
+          permission: ADMIN_PERMISSIONS.REVIEW_MODERATE
+        }
       ]
     },
     {
@@ -59,12 +69,42 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       title: 'Database Management',
       icon: Settings,
       items: [
-        { title: 'Restaurants', href: '/admin/database/restaurants', icon: Building2 },
-        { title: 'Reviews', href: '/admin/database/reviews', icon: MessageSquare },
-        { title: 'Users', href: '/admin/database/users', icon: Users },
-        { title: 'Images', href: '/admin/database/images', icon: Image },
-        { title: 'Synagogues', href: '/admin/database/synagogues', icon: MapPin },
-        { title: 'Kosher Places', href: '/admin/database/kosher-places', icon: Star }
+        { 
+          title: 'Restaurants', 
+          href: '/admin/database/restaurants', 
+          icon: Building2,
+          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+        },
+        { 
+          title: 'Reviews', 
+          href: '/admin/database/reviews', 
+          icon: MessageSquare,
+          permission: ADMIN_PERMISSIONS.REVIEW_VIEW
+        },
+        { 
+          title: 'Users', 
+          href: '/admin/database/users', 
+          icon: Users,
+          permission: ADMIN_PERMISSIONS.USER_VIEW
+        },
+        { 
+          title: 'Images', 
+          href: '/admin/database/images', 
+          icon: Image,
+          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+        },
+        { 
+          title: 'Synagogues', 
+          href: '/admin/database/synagogues', 
+          icon: MapPin,
+          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+        },
+        { 
+          title: 'Kosher Places', 
+          href: '/admin/database/kosher-places', 
+          icon: Star,
+          permission: ADMIN_PERMISSIONS.RESTAURANT_VIEW
+        }
       ]
     },
     {
@@ -72,11 +112,29 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       title: 'System Administration',
       icon: Settings,
       items: [
-        { title: 'Audit Logs', href: '/admin/audit', icon: Activity },
-        { title: 'Settings', href: '/admin/settings', icon: Settings }
+        { 
+          title: 'Audit Logs', 
+          href: '/admin/audit', 
+          icon: Activity,
+          permission: ADMIN_PERMISSIONS.AUDIT_VIEW
+        },
+        { 
+          title: 'Settings', 
+          href: '/admin/settings', 
+          icon: Settings,
+          permission: ADMIN_PERMISSIONS.SYSTEM_SETTINGS
+        }
       ]
     }
   ];
+
+  // Filter navigation items based on user permissions
+  const filteredNavigationItems = navigationItems.map(section => ({
+    ...section,
+    items: section.items.filter(item => 
+      !('permission' in item) || hasPermission(adminUser, (item as any).permission)
+    )
+  })).filter(section => section.items.length > 0); // Remove sections with no visible items
 
   const isActive = (href: string) => {
     if (href === '/admin') {
@@ -133,7 +191,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
 
       {/* Navigation */}
       <nav className="p-4 space-y-2">
-        {navigationItems.map((section) => (
+        {filteredNavigationItems.map((section) => (
           <div key={section.section}>
             <button
               onClick={() => toggleSection(section.section)}

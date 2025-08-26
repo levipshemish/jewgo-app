@@ -2,6 +2,17 @@
 
 Discover and review kosher restaurants and related establishments, with location search, kosher supervision details, and a modern web experience.
 
+## 🔒 Security Status
+
+✅ **All critical security issues resolved** - Comprehensive security improvements implemented including:
+- HTTP request timeouts and retry logic
+- Enhanced error handling with specific exception types
+- Environment validation and secure configuration
+- CORS security with explicit origins
+- Secrets management best practices
+
+See [Security Improvements Summary](docs/security/SECURITY_IMPROVEMENTS_SUMMARY.md) for details.
+
 ## Project Structure
 
 ```
@@ -16,6 +27,15 @@ jewgo-app/
 
 - Prerequisites: Node.js 22.x, Python 3.11+, Docker
 - Environment: Root `.env` (backend) and `frontend/.env.local` are the sources of truth. Example files use placeholders only. Never include real values in documentation.
+
+### Security Requirements
+
+**Production deployments require:**
+- `NEXT_PUBLIC_BACKEND_URL` - Backend service URL
+- `CORS_ORIGINS` - Explicit CORS origins (no wildcards)
+- All required API keys properly configured
+
+See [Security Deployment Guide](docs/deployment/SECURITY_DEPLOYMENT_GUIDE.md) for complete requirements.
 
 ```bash
 # Validate environment keys
@@ -71,6 +91,8 @@ cd frontend && npm test
 ## Docs & Guides
 - Full documentation index: `docs/README.md`
 - Repository & Agent Guide (standards, workflows, scripts): `AGENTS.md`
+- Security improvements: `docs/security/SECURITY_IMPROVEMENTS_SUMMARY.md`
+- Deployment guide: `docs/deployment/SECURITY_DEPLOYMENT_GUIDE.md`
 
 ## Contributing
 - Conventional Commits required; follow Python (Black/Flake8/isort/mypy) and TypeScript (ESLint/Prettier) standards.
@@ -79,6 +101,6 @@ cd frontend && npm test
 ## License
 Proprietary — All rights reserved.
 
-Last updated: 2025-08-25
+Last updated: 2025-08-26
 
 See `docs/DOCS_CHANGELOG.md` for recent documentation/script alignment.

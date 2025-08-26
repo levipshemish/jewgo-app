@@ -33,7 +33,8 @@ export interface SearchOptions {
 // Entity configuration
 const ENTITY_CONFIG = {
   restaurant: {
-    softDelete: false,
+    softDelete: true,
+    softDeleteField: 'deleted_at',
     defaultSortBy: 'created_at',
     searchFields: ['name', 'address', 'city', 'state', 'phone_number'],
   },
@@ -55,18 +56,6 @@ const ENTITY_CONFIG = {
     defaultSortBy: 'created_at',
     searchFields: ['image_url', 'cloudinary_public_id'],
   },
-  floridaSynagogue: {
-    softDelete: true,
-    softDeleteField: 'deleted_at',
-    defaultSortBy: 'created_at',
-    searchFields: ['name', 'address', 'city', 'rabbi'],
-  },
-  kosherPlace: {
-    softDelete: true,
-    softDeleteField: 'deleted_at',
-    defaultSortBy: 'created_at',
-    searchFields: ['name', 'address', 'category'],
-  },
 } as const;
 
 // Generic CRUD operations
@@ -74,28 +63,49 @@ export class AdminDatabaseService {
   /**
    * Get search fields for a model
    */
-  static getSearchFields(modelKey: keyof typeof ENTITY_CONFIG): string[] {
-    return ENTITY_CONFIG[modelKey].searchFields;
+  static getSearchFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string[] {
+    return [...ENTITY_CONFIG[modelKey].searchFields];
   }
 
   /**
    * Get default sort field for a model
    */
-  static getDefaultSortField(modelKey: keyof typeof ENTITY_CONFIG): string {
+  static getDefaultSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string {
     return ENTITY_CONFIG[modelKey].defaultSortBy;
+  }
+
+  /**
+   * Get valid sort fields for a model
+   */
+  static getValidSortFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string[] {
+    const validFields: Record<string, string[]> = {
+      restaurant: ['id', 'name', 'address', 'city', 'state', 'created_at', 'updated_at', 'status'],
+      review: ['id', 'rating', 'created_at', 'updated_at', 'status', 'helpful_count'],
+      user: ['id', 'email', 'name', 'createdat', 'updatedat', 'issuperadmin'],
+      restaurantImage: ['id', 'image_order', 'created_at', 'updated_at'],
+    };
+    return validFields[modelKey] || [];
+  }
+
+  /**
+   * Validate sort field for a model
+   */
+  static validateSortField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage', sortBy: string): boolean {
+    const validFields = this.getValidSortFields(modelKey);
+    return validFields.includes(sortBy);
   }
 
   /**
    * Check if model supports soft delete
    */
-  static supportsSoftDelete(modelKey: keyof typeof ENTITY_CONFIG): boolean {
+  static supportsSoftDelete(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): boolean {
     return ENTITY_CONFIG[modelKey].softDelete;
   }
 
   /**
    * Get soft delete field for a model
    */
-  static getSoftDeleteField(modelKey: keyof typeof ENTITY_CONFIG): string | null {
+  static getSoftDeleteField(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string | null {
     const config = ENTITY_CONFIG[modelKey];
     return config.softDelete ? config.softDeleteField : null;
   }
@@ -105,7 +115,7 @@ export class AdminDatabaseService {
    */
   static async getPaginatedData<T>(
     delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'floridaSynagogue' | 'kosherPlace',
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
@@ -134,6 +144,10 @@ export class AdminDatabaseService {
     // Build order by
     const orderBy: any = {};
     if (sortBy) {
+      // Validate sort field
+      if (!this.validateSortField(modelKey, sortBy)) {
+        throw new Error(`Invalid sort field: ${sortBy} for model: ${modelKey}`);
+      }
       orderBy[sortBy] = sortOrder || 'desc';
     } else {
       // Use default sort field based on model
@@ -172,14 +186,12 @@ export class AdminDatabaseService {
     };
   }
 
-
-
   /**
    * Create a new record
    */
   static async createRecord<T>(
     delegate: any,
-    modelKey: keyof typeof ENTITY_CONFIG,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     data: any,
     user: AdminUser,
     entityType: string
@@ -207,7 +219,7 @@ export class AdminDatabaseService {
    */
   static async updateRecord<T>(
     delegate: any,
-    modelKey: keyof typeof ENTITY_CONFIG,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     id: string | number,
     data: any,
     user: AdminUser,
@@ -243,7 +255,7 @@ export class AdminDatabaseService {
    */
   static async deleteRecord<T>(
     delegate: any,
-    modelKey: keyof typeof ENTITY_CONFIG,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     id: string | number,
     user: AdminUser,
     entityType: string,
@@ -292,15 +304,13 @@ export class AdminDatabaseService {
     }
   }
 
-
-
   /**
    * Bulk operations with transaction support
    */
   static async bulkOperation<T>(
     operation: 'create' | 'update' | 'delete',
     delegate: any,
-    modelKey: keyof typeof ENTITY_CONFIG,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     data: any[],
     user: AdminUser,
     entityType: string,
@@ -328,10 +338,10 @@ export class AdminDatabaseService {
             try {
               switch (operation) {
                 case 'create':
-                  await tx[modelKey].create({ data: item });
+                  await (tx[modelKey] as any).create({ data: item });
                   break;
                 case 'update':
-                  await tx[modelKey].update({
+                  await (tx[modelKey] as any).update({
                     where: { id: item.id },
                     data: item,
                   });
@@ -340,17 +350,17 @@ export class AdminDatabaseService {
                   if (this.supportsSoftDelete(modelKey)) {
                     const softDeleteField = this.getSoftDeleteField(modelKey);
                     if (softDeleteField) {
-                      await tx[modelKey].update({
+                      await (tx[modelKey] as any).update({
                         where: { id: item.id },
                         data: { [softDeleteField]: new Date() },
                       });
                     } else {
-                      await tx[modelKey].delete({
+                      await (tx[modelKey] as any).delete({
                         where: { id: item.id },
                       });
                     }
                   } else {
-                    await tx[modelKey].delete({
+                    await (tx[modelKey] as any).delete({
                       where: { id: item.id },
                     });
                   }
@@ -359,7 +369,10 @@ export class AdminDatabaseService {
               success++;
             } catch (error) {
               failed++;
-              errors.push(`Item ${item.id}: ${error.message}`);
+              const errorMessage = error && typeof error === 'object' && 'message' in error 
+                ? (error as any).message 
+                : 'Unknown error';
+              errors.push(`Item ${item.id}: ${errorMessage}`);
             }
           }
         });
@@ -390,14 +403,15 @@ export class AdminDatabaseService {
   }
 
   /**
-   * Export data to CSV
+   * Export data to CSV with limits to prevent memory issues
    */
   static async exportToCSV<T>(
     delegate: any,
-    modelKey: keyof typeof ENTITY_CONFIG,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     options: SearchOptions = {},
-    fields: string[] = []
-  ): Promise<string> {
+    fields: string[] = [],
+    maxRows: number = 10000
+  ): Promise<{ csv: string; totalCount: number; exportedCount: number; limited: boolean }> {
     const { search, filters, sortBy, sortOrder } = options;
 
     // Build where clause
@@ -427,21 +441,29 @@ export class AdminDatabaseService {
       orderBy[defaultSortField] = 'desc';
     }
 
-    // Get all data
+    // Get total count first
+    const totalCount = await delegate.count({ where });
+
+    // Check if we need to limit the export
+    const limited = totalCount > maxRows;
+    const take = limited ? maxRows : totalCount;
+
+    // Get data with limit
     const data = await delegate.findMany({
       where,
       orderBy,
+      take,
     });
 
     // Convert to CSV
     if (data.length === 0) {
-      return '';
+      return { csv: '', totalCount: 0, exportedCount: 0, limited: false };
     }
 
     const allFields = fields.length > 0 ? fields : Object.keys(data[0]);
     const csvHeaders = allFields.map(field => `"${field}"`).join(',');
     
-    const csvRows = data.map(item => 
+    const csvRows = data.map((item: any) => 
       allFields.map(field => {
         const value = item[field];
         if (value === null || value === undefined) {
@@ -454,7 +476,14 @@ export class AdminDatabaseService {
       }).join(',')
     );
 
-    return [csvHeaders, ...csvRows].join('\n');
+    const csv = [csvHeaders, ...csvRows].join('\n');
+
+    return {
+      csv,
+      totalCount,
+      exportedCount: data.length,
+      limited,
+    };
   }
 
   /**
@@ -465,29 +494,20 @@ export class AdminDatabaseService {
     totalReviews: number;
     totalUsers: number;
     totalImages: number;
-    totalSynagogues: number;
-    totalKosherPlaces: number;
     pendingSubmissions: number;
-    flaggedReviews: number;
   }> {
     const [
       totalRestaurants,
       totalReviews,
       totalUsers,
       totalImages,
-      totalSynagogues,
-      totalKosherPlaces,
       pendingSubmissions,
-      flaggedReviews,
     ] = await Promise.all([
       prisma.restaurant.count(),
       prisma.review.count(),
       prisma.user.count(),
       prisma.restaurantImage.count(),
-      prisma.floridaSynagogue.count(),
-      prisma.kosherPlace.count(),
       prisma.restaurant.count({ where: { status: 'pending_approval' } }),
-      prisma.reviewFlag.count({ where: { status: 'pending' } }),
     ]);
 
     return {
@@ -495,10 +515,7 @@ export class AdminDatabaseService {
       totalReviews,
       totalUsers,
       totalImages,
-      totalSynagogues,
-      totalKosherPlaces,
       pendingSubmissions,
-      flaggedReviews,
     };
   }
 
@@ -518,9 +535,12 @@ export class AdminDatabaseService {
         timestamp: new Date(),
       };
     } catch (error) {
+      const errorMessage = error && typeof error === 'object' && 'message' in error 
+        ? (error as any).message 
+        : 'Unknown error';
       return {
         status: 'unhealthy',
-        message: `Database connection failed: ${error.message}`,
+        message: `Database connection failed: ${errorMessage}`,
         timestamp: new Date(),
       };
     }
@@ -551,12 +571,17 @@ export class AdminDatabaseService {
   }
 }
 
-// Rate limiting utilities
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
+// Rate limiting utilities - only for development
 export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+  // Only use in-memory rate limiting in development
+  if (process.env.NODE_ENV !== 'development') {
+    // In production, rate limiting is handled by middleware-security.ts
+    return true;
+  }
+
+  const devRateLimitStore = new Map<string, { count: number; resetTime: number }>();
   const now = Date.now();
-  const rateLimit = rateLimitStore.get(key);
+  const rateLimit = devRateLimitStore.get(key);
   
   if (rateLimit && now < rateLimit.resetTime) {
     if (rateLimit.count >= limit) {
@@ -564,18 +589,8 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
     }
     rateLimit.count++;
   } else {
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    devRateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
   }
   
   return true;
 }
-
-// Clean up rate limiting store periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (now >= value.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000);

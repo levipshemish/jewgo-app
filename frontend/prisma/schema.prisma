@@ -80,22 +80,23 @@ model Restaurant {
 }
 
 model Review {
-  id                String   @id @db.VarChar(50)
+  id                String    @id @db.VarChar(50)
   restaurant_id     Int
-  user_id           String   @db.VarChar(50)
-  user_name         String   @db.VarChar(255)
-  user_email        String?  @db.VarChar(255)
+  user_id           String    @db.VarChar(50)
+  user_name         String    @db.VarChar(255)
+  user_email        String?   @db.VarChar(255)
   rating            Int
-  title             String?  @db.VarChar(255)
+  title             String?   @db.VarChar(255)
   content           String
   images            String?
-  status            String   @db.VarChar(20)
-  created_at        DateTime @db.Timestamp(6)
-  updated_at        DateTime @updatedAt @db.Timestamp(6)
+  status            String    @db.VarChar(20)
+  created_at        DateTime  @db.Timestamp(6)
+  updated_at        DateTime  @updatedAt @db.Timestamp(6)
   moderator_notes   String?
   verified_purchase Boolean
   helpful_count     Int
   report_count      Int
+  deleted_at        DateTime? @db.Timestamp(6)
 
   @@map("reviews")
   @@schema("public")
@@ -125,6 +126,7 @@ model RestaurantImage {
   cloudinary_public_id String?   @db.VarChar
   created_at           DateTime? @db.Timestamp(6)
   updated_at           DateTime? @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
 
   @@map("restaurant_images")
   @@schema("public")
@@ -181,6 +183,7 @@ model User {
   issuperadmin  Boolean
   createdat     DateTime  @db.Timestamp(6)
   updatedat     DateTime  @db.Timestamp(6)
+  deletedAt     DateTime? @db.Timestamp(6)
 
   // Relationships
   auditLogs AuditLog[]

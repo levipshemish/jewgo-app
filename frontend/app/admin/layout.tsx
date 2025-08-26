@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getAdminUser } from '@/lib/admin/auth';
+import { getAdminUser, generateCSRFToken } from '@/lib/admin/auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 
@@ -15,6 +15,9 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     redirect('/auth/signin?redirectTo=/admin');
   }
 
+  // Generate CSRF token
+  const csrfToken = generateCSRFToken();
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
@@ -28,6 +31,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           
           {/* Page content */}
           <main className="flex-1 p-6">
+            {/* CSRF Token for client-side use */}
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.__CSRF_TOKEN__ = "${csrfToken}";`,
+              }}
+            />
             {children}
           </main>
         </div>

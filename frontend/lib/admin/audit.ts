@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db/prisma';
 import { AdminUser } from './auth';
 
 // Audit log interface
@@ -64,9 +64,6 @@ export const AUDIT_ACTIONS = {
   AUDIT_LOG_VIEW: 'audit_log_view',
   AUDIT_LOG_DELETE: 'audit_log_delete',
 } as const;
-
-// Prisma client instance
-const prisma = new PrismaClient();
 
 /**
  * Log admin action with comprehensive audit trail
@@ -228,6 +225,16 @@ export async function queryAuditLogs(options: {
   return {
     logs: logs.map(log => ({
       ...log,
+      entityId: log.entityId || undefined,
+      ipAddress: log.ipAddress || undefined,
+      userAgent: log.userAgent || undefined,
+      sessionId: log.sessionId || undefined,
+      correlationId: log.correlationId || undefined,
+      auditLevel: log.auditLevel as 'info' | 'warning' | 'critical',
+      user: log.user ? {
+        email: log.user.email,
+        name: log.user.name || undefined,
+      } : undefined,
       oldData: log.oldData ? JSON.parse(log.oldData) : null,
       newData: log.newData ? JSON.parse(log.newData) : null,
       metadata: log.metadata ? JSON.parse(log.metadata) : null,
@@ -315,6 +322,16 @@ export async function getAuditStats(options: {
     ),
     recentActivity: recentActivity.map(log => ({
       ...log,
+      entityId: log.entityId || undefined,
+      ipAddress: log.ipAddress || undefined,
+      userAgent: log.userAgent || undefined,
+      sessionId: log.sessionId || undefined,
+      correlationId: log.correlationId || undefined,
+      auditLevel: log.auditLevel as 'info' | 'warning' | 'critical',
+      user: log.user ? {
+        email: log.user.email,
+        name: log.user.name || undefined,
+      } : undefined,
       oldData: log.oldData ? JSON.parse(log.oldData) : null,
       newData: log.newData ? JSON.parse(log.newData) : null,
       metadata: log.metadata ? JSON.parse(log.metadata) : null,
