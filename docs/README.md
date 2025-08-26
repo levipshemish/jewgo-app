@@ -87,6 +87,12 @@
 
 ## 🆕 Recent Critical Fixes (August 2025)
 
+### ✅ URL Validation and Normalization System - NEW
+- **Feature**: Flexible URL input with automatic normalization
+- **Benefits**: Better user experience, consistent data storage, reduced validation errors
+- **Implementation**: Smart URL parsing, tracking parameter removal, protocol normalization
+- **Documentation**: [URL Validation and Normalization](features/URL_VALIDATION_AND_NORMALIZATION.md)
+
 ### ✅ Webpack Cache Corruption Issues - RESOLVED
 - **Problem**: Critical development server failures due to webpack cache corruption
 - **Solution**: Disabled filesystem cache in development mode

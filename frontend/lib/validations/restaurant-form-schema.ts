@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeUrl } from '@/lib/utils/url-normalize';
 
 // Base validation schemas
 const emailSchema = z.string()
@@ -37,9 +38,25 @@ const phoneSchema = z.string()
   }, 'Please enter a real phone number');
 
 const urlSchema = z.string()
-  .url('Please enter a valid URL')
   .refine((url) => {
-    if (!url) {return true;} // Allow empty
+    if (!url) return true; // Allow empty
+    try {
+      normalizeUrl(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'Please enter a valid website URL')
+  .transform((url) => {
+    if (!url) return url;
+    try {
+      return normalizeUrl(url);
+    } catch {
+      return url; // Return original if normalization fails
+    }
+  })
+  .refine((url) => {
+    if (!url) return true; // Allow empty
     // Check for common fake URL patterns
     const fakePatterns = ['example.com', 'test.com', 'fake.com', 'placeholder.com'];
     return !fakePatterns.some(pattern => url.toLowerCase().includes(pattern));

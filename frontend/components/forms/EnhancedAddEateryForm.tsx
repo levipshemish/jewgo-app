@@ -127,7 +127,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             setFilterOptions({
             agencies: data.data.agencies || ['ORB', 'Kosher Miami', 'KM'],
             kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
-            listingTypes: data.data.listingTypes || ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
+            listingTypes: data.data.listingTypes || ['Restaurant', 'Catering', 'Food Truck'],
             priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
           });
         }
@@ -137,7 +137,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         setFilterOptions({
           agencies: ['ORB', 'Kosher Miami', 'Other'],
           kosherCategories: ['Dairy', 'Meat', 'Pareve'],
-          listingTypes: ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
+          listingTypes: ['Restaurant', 'Catering', 'Food Truck'],
           priceRanges: ['$', '$$', '$$$', '$$$$']
         });
       }
@@ -480,18 +480,21 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       render={({ field }) => (
                         <input
                           {...field}
-                          type="url"
+                          type="text"
                           className={cn(
                             "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                             errors.website ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
                           )}
-                          placeholder="https://www.example.com"
+                          placeholder="example.com or https://www.example.com"
                         />
                       )}
                     />
                     {errors.website && (
                       <p className="text-red-500 text-sm mt-1">{errors.website.message}</p>
                     )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Accepts: example.com, www.example.com, https://example.com, etc.
+                    </p>
                   </div>
 
                   {/* Owner Information (conditional) */}
@@ -887,12 +890,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         render={({ field }) => (
                           <input
                             {...field}
-                            type="url"
+                            type="text"
                             className={cn(
                               "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                               errors.google_listing_url ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
                             )}
-                            placeholder="https://maps.google.com/..."
+                            placeholder="maps.google.com/... or https://maps.google.com/..."
                           />
                         )}
                       />
@@ -912,12 +915,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                           render={({ field }) => (
                             <input
                               {...field}
-                              type="url"
+                              type="text"
                               className={cn(
                                 "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                                 errors.instagram_link ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
                               )}
-                              placeholder="https://instagram.com/..."
+                              placeholder="instagram.com/... or https://instagram.com/..."
                             />
                           )}
                         />
@@ -936,12 +939,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                           render={({ field }) => (
                             <input
                               {...field}
-                              type="url"
+                              type="text"
                               className={cn(
                                 "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                                 errors.facebook_link ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
                               )}
-                              placeholder="https://facebook.com/..."
+                              placeholder="facebook.com/... or https://facebook.com/..."
                             />
                           )}
                         />
@@ -960,12 +963,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                           render={({ field }) => (
                             <input
                               {...field}
-                              type="url"
+                              type="text"
                               className={cn(
                                 "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                                 errors.tiktok_link ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
                               )}
-                              placeholder="https://tiktok.com/@..."
+                              placeholder="tiktok.com/@... or https://tiktok.com/@..."
                             />
                           )}
                         />

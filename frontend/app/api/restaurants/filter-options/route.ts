@@ -26,13 +26,8 @@ export async function GET(request: NextRequest) {
           ],
           listingTypes: [
             'Restaurant',
-            'Bakery',
             'Catering',
-            'Cafe',
-            'Deli',
-            'Food Truck',
-            'Grocery Store',
-            'Other'
+            'Food Truck'
           ],
           priceRanges: [
             '$',
@@ -77,13 +72,8 @@ export async function GET(request: NextRequest) {
         ],
         listingTypes: [
           'Restaurant',
-          'Bakery',
           'Catering',
-          'Cafe',
-          'Deli',
-          'Food Truck',
-          'Grocery Store',
-          'Other'
+          'Food Truck'
         ],
         priceRanges: [
           '$',
