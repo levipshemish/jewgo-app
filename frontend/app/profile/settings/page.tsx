@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
   isSupabaseConfigured, 
-  transformSupabaseUser, 
   handleUserLoadError,
   createMockUser,
   type TransformedUser 
@@ -29,6 +28,7 @@ export default function SettingsPage() {
   // Load user data
   useEffect(() => {
     const loadUser = async () => {
+      let redirected = false;
       try {
         // Use server-side API to get user data instead of client-side Supabase
         const response = await fetch('/api/auth/sync-user', {
@@ -45,6 +45,7 @@ export default function SettingsPage() {
             
             if (isGuest) {
               // Guest users should sign in to access settings
+              redirected = true;
               router.push('/auth/signin');
               return;
             }
@@ -68,7 +69,8 @@ export default function SettingsPage() {
         // console.error('Error loading user:', error);
         handleUserLoadError(_error);
       } finally {
-        setIsLoading(false);
+        // Avoid flash of Access Denied while redirecting
+        setIsLoading(!redirected);
       }
     };
     loadUser();
@@ -115,12 +117,27 @@ export default function SettingsPage() {
               <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
               <p className="text-gray-600">Manage your account preferences and security</p>
             </div>
-            <Link
-              href="/profile"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              ← Back to Profile
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
+                    router.push('/');
+                  } catch (e) {
+                    console.error('Sign out failed', e);
+                  }
+                }}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Sign Out
+              </button>
+              <Link
+                href="/profile"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                ← Back to Profile
+              </Link>
+            </div>
           </div>
         </div>
 

@@ -21,6 +21,7 @@ export default function ProfilePage() {
   // Load user data
   useEffect(() => {
     const loadUser = async () => {
+      let redirected = false;
       try {
         console.log('Profile page: Starting to load user data...');
         
@@ -49,6 +50,7 @@ export default function ProfilePage() {
             if (isGuest) {
               console.log('Profile page: User is a guest, redirecting to signin');
               setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
+              redirected = true;
               router.push('/auth/signin');
               return;
             }
@@ -65,6 +67,7 @@ export default function ProfilePage() {
           console.log('Profile page: User is not authenticated (401)');
           // User is not authenticated
           setRedirectStatus('Redirecting to /auth/signin...');
+          redirected = true;
           router.push('/auth/signin');
           return;
         } else {
@@ -74,6 +77,7 @@ export default function ProfilePage() {
         // If no user data, redirect to signin
         console.log('Profile page: No user data, redirecting to signin');
         setRedirectStatus('Redirecting to /auth/signin...');
+        redirected = true;
         router.push('/auth/signin');
       } catch (_error) {
         console.log('Profile page: Error occurred:', _error);
@@ -81,7 +85,8 @@ export default function ProfilePage() {
         handleUserLoadError(_error, router);
       } finally {
         console.log('Profile page: Setting loading to false');
-        setIsLoading(false);
+        // Avoid flash of Access Denied while redirecting
+        setIsLoading(!redirected);
       }
     };
     loadUser();
@@ -122,6 +127,14 @@ export default function ProfilePage() {
                 <p className="text-blue-800 text-sm">{redirectStatus}</p>
               </div>
             )}
+            <div className="mt-6">
+              <Link
+                href="/auth/signin"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Go to Sign In
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -133,9 +146,14 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-            <p className="text-gray-600">Your account information</p>
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+              <p className="text-gray-600">Your account information</p>
+            </div>
+            {user.avatar_url && (
+              <img src={user.avatar_url} alt={user.name || user.email || 'Profile avatar'} className="h-12 w-12 rounded-full object-cover" />
+            )}
           </div>
 
           {/* Profile Content */}
@@ -196,6 +214,15 @@ export default function ProfilePage() {
                 >
                   Edit Profile Settings
                 </Link>
+                {user.username && (
+                  <Link
+                    href={`/u/${user.username}`}
+                    target="_blank"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    View Public Profile
+                  </Link>
+                )}
                 <button
                   onClick={async () => {
                     try {

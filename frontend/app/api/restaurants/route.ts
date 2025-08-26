@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
     // Fetch from backend API
     const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants?${queryParams}`, {
       headers: {
-        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
     });
     
@@ -210,7 +210,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
     // Fetch existing restaurants
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants?limit=1000`, {
       headers: {
-        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
     });
     

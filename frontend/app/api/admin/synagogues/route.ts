@@ -30,35 +30,41 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Validate sort parameters to prevent SQL injection
-    const allowedColumns = ['created_at', 'name', 'city', 'state', 'address', 'phone_number'];
+    const allowedColumns = ['created_at', 'name', 'city', 'state', 'address', 'phone'];
     const validSortBy = allowedColumns.includes(sortBy) ? sortBy : 'created_at';
     const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
-    const conditions: Prisma.Sql[] = [];
+    // Build WHERE clause
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
     if (search) {
-      const like = `%${search}%`;
-      conditions.push(Prisma.sql`(name ILIKE ${like} OR address ILIKE ${like} OR city ILIKE ${like} OR rabbi ILIKE ${like})`);
+      conditions.push(`(name ILIKE $${paramIndex} OR address ILIKE $${paramIndex} OR city ILIKE $${paramIndex} OR rabbi ILIKE $${paramIndex})`);
+      params.push(`%${search}%`);
+      paramIndex++;
     }
     if (city) {
-      const like = `%${city}%`;
-      conditions.push(Prisma.sql`city ILIKE ${like}`);
+      conditions.push(`city ILIKE $${paramIndex}`);
+      params.push(`%${city}%`);
+      paramIndex++;
     }
     if (state) {
-      const like = `%${state}%`;
-      conditions.push(Prisma.sql`state ILIKE ${like}`);
+      conditions.push(`state ILIKE $${paramIndex}`);
+      params.push(`%${state}%`);
+      paramIndex++;
     }
     if (affiliation) {
-      const like = `%${affiliation}%`;
-      conditions.push(Prisma.sql`affiliation ILIKE ${like}`);
+      conditions.push(`affiliation ILIKE $${paramIndex}`);
+      params.push(`%${affiliation}%`);
+      paramIndex++;
     }
-    const whereClause = conditions.length ? Prisma.sql`WHERE ${conditions.reduce((acc, condition, index) => 
-      index === 0 ? condition : Prisma.sql`${acc} AND ${condition}`
-    )}` : Prisma.sql``;
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Get total count
-    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*)::bigint as count FROM florida_synagogues ${whereClause}
-    `;
+    const countQuery = `SELECT COUNT(*) FROM florida_synagogues ${whereClause}`;
+    const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...params);
     const total = Number(countResult[0]?.count || 0);
 
     // Calculate pagination
@@ -66,12 +72,13 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
 
     // Get paginated data
-    const dataResult = await prisma.$queryRaw<any[]>`
+    const dataQuery = `
       SELECT * FROM florida_synagogues
       ${whereClause}
-      ORDER BY ${Prisma.raw(validSortBy)} ${Prisma.raw(validSortOrder)}
-      LIMIT ${pageSize} OFFSET ${offset}
+      ORDER BY ${validSortBy} ${validSortOrder}
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
+    const dataResult = await prisma.$queryRawUnsafe<any[]>(dataQuery, ...params, pageSize, offset);
 
     // Log the action
     await logAdminAction(adminUser, 'synagogue_list_view', 'florida_synagogue', {

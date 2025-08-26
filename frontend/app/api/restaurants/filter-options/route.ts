@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
     // Fetch filter options from backend API
     const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v4/restaurants/filter-options`, {
       headers: {
-        'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
       },
     });
     
