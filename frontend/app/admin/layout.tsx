@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { getAdminUser } from '@/lib/admin/auth';
-import { setAdminCSRFToken } from './actions';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { headers } from 'next/headers';
