@@ -28,8 +28,10 @@ export default function SettingsPage() {
 
   // Load user data
   useEffect(() => {
+    let isMounted = true;
     const loadUser = async () => {
       let redirected = false;
+      let userAuthenticated = false;
       try {
         // Use server-side API to get user data instead of client-side Supabase
         const response = await fetch('/api/auth/sync-user', {
@@ -47,12 +49,16 @@ export default function SettingsPage() {
             if (isGuest) {
               // Guest users should sign in to access settings
               redirected = true;
-              router.push('/auth/signin');
+              router.push('/auth/signin?redirectTo=/profile/settings');
               return;
             }
             
             // User is authenticated with email (not a guest)
-            setUser(userData.user);
+            if (isMounted) {
+              setUser(userData.user);
+              setIsLoading(false);
+              userAuthenticated = true;
+            }
             return;
           }
         }
@@ -60,21 +66,35 @@ export default function SettingsPage() {
         // If no user data, check if Supabase is configured for development fallback
         if (!isSupabaseConfigured()) {
           // For development, create a mock user
-          setUser(createMockUser());
+          if (isMounted) {
+            setUser(createMockUser());
+            setIsLoading(false);
+            userAuthenticated = true;
+          }
           return;
         }
 
         // No user found, will show access denied
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
       } catch (_error) {
         // console.error('Error loading user:', error);
-        handleUserLoadError(_error);
+        redirected = true;
+        router.push('/auth/signin?redirectTo=/profile/settings');
       } finally {
-        // Avoid flash of Access Denied while redirecting
-        setIsLoading(!redirected);
+        // Only set loading to false if we're not redirecting AND user is not authenticated
+        if (isMounted && !userAuthenticated) {
+          setIsLoading(!redirected);
+        }
       }
     };
     loadUser();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -287,6 +307,18 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
       <div>
         <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
         <p className="text-sm text-gray-500">Update your profile details and preferences.</p>
+      </div>
+      
+      {/* Avatar Upload Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <h4 className="text-sm font-medium text-gray-900 mb-4">Profile Picture</h4>
+        <AvatarUpload 
+          currentAvatarUrl={user.avatar_url}
+          onAvatarChange={(avatarUrl) => {
+            // Handle avatar change - you might want to update the user state here
+            console.log('Avatar changed:', avatarUrl);
+          }}
+        />
       </div>
       
       <ProfileEditForm />

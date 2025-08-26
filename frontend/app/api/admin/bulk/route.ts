@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       data: validatedData.data,
       user: adminUser,
       entityType: validatedData.entityType,
+      correlationId,
       options: {
         batchSize: validatedData.batchSize,
         onProgress: async (processed, total) => {

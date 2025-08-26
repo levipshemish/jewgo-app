@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { Loader2, Eye, CheckCircle, XCircle, Filter, Search } from 'lucide-react';
 
 interface Restaurant {
@@ -38,6 +40,8 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const [filterStatus, setFilterStatus] = useState('pending_approval');
   const [searchTerm, setSearchTerm] = useState('');
   const [processingAction, setProcessingAction] = useState<number | null>(null);
+  const [adminUser, setAdminUser] = useState<{ permissions: string[] } | null>(null);
+  const csrfToken = useAdminCsrf();
 
   // Statistics
   const [stats, setStats] = useState({
@@ -52,6 +56,19 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   useEffect(() => {
     fetchRestaurants();
   }, [filterStatus]);
+
+  useEffect(() => {
+    // Fetch current admin user for permission-aware UI
+    const fetchAdmin = async () => {
+      try {
+        const res = await fetch('/api/admin/user');
+        if (res.ok) {
+          setAdminUser(await res.json());
+        }
+      } catch {}
+    };
+    fetchAdmin();
+  }, []);
 
   const fetchRestaurants = async () => {
     try {
@@ -95,7 +112,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrfToken || '',
         },
       });
 
@@ -119,7 +136,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrfToken || '',
         },
         body: JSON.stringify({ 
           reason: rejectionReason || 'Rejected by admin'
@@ -298,7 +315,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
                         View Details
                       </button>
                       
-                      {restaurant.submission_status === 'pending_approval' && (
+                      {restaurant.submission_status === 'pending_approval' && adminUser?.permissions?.includes(ADMIN_PERMISSIONS.RESTAURANT_APPROVE) && (
                         <>
                           <button
                             onClick={() => handleApprove(restaurant.id)}

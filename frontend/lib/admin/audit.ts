@@ -98,8 +98,8 @@ export async function logAdminAction(
     } = options;
 
     // Sanitize sensitive data
-    const sanitizedOldData = sanitizeData(oldData);
-    const sanitizedNewData = sanitizeData(newData);
+    const sanitizedOldData = truncateForAudit(sanitizeData(oldData));
+    const sanitizedNewData = truncateForAudit(sanitizeData(newData));
 
     // Create audit log entry
     await prisma.auditLog.create({
@@ -464,5 +464,18 @@ export async function logBulkProgress(
     });
   } catch (error) {
     console.error('[AUDIT] Failed to log bulk progress:', error);
+  }
+}
+
+
+function truncateForAudit(obj: any, maxLen = 4000): any {
+  try {
+    if (!obj) return obj;
+    const str = typeof obj === 'string' ? obj : JSON.stringify(obj);
+    if (str.length <= maxLen) return obj;
+    if (typeof obj === 'string') return str.slice(0, maxLen) + '...';
+    return { truncated: true, preview: str.slice(0, maxLen) };
+  } catch {
+    return obj;
   }
 }

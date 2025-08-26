@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { Building2, MapPin, Phone, Mail, Globe, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface FloridaSynagogue {
   id: number;
@@ -61,6 +62,7 @@ export default function SynagogueDatabasePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
     (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
   );
+  const csrfToken = useAdminCsrf();
 
   // Fetch synagogues
   const fetchSynagogues = async () => {
@@ -89,11 +91,7 @@ export default function SynagogueDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/synagogues?${params.toString()}`, {
-        headers: {
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
-        },
-      });
+      const response = await fetch(`/api/admin/synagogues?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch synagogues');
@@ -165,7 +163,7 @@ export default function SynagogueDatabasePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrfToken || '',
         },
         body: JSON.stringify({
           search: searchParams.get('search'),

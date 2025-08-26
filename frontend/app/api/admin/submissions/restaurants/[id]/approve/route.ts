@@ -29,14 +29,13 @@ export async function POST(
       );
     }
 
-    // Proxy to Flask backend
-    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/approve`, {
-      method: 'POST',
+    // Call the frontend API route for restaurant approval
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/restaurants/${restaurantId}/approve`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        // Note: Backend authentication should be handled by the backend
-        // For now, we'll send the request without auth and let the backend handle it
       },
+      body: JSON.stringify({ status: 'approved' }),
     });
 
     if (!response.ok) {

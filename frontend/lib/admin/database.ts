@@ -378,12 +378,13 @@ export class AdminDatabaseService {
       batchSize?: number;
       onProgress?: (processed: number, total: number) => void;
     };
+    correlationId?: string;
   }): Promise<{
     success: number;
     failed: number;
     errors: string[];
   }> {
-    const { operation, delegate, modelKey, data, user, entityType, options = {} } = params;
+    const { operation, delegate, modelKey, data, user, entityType, options = {}, correlationId } = params;
     const { batchSize = 100, onProgress } = options;
     let success = 0;
     let failed = 0;
@@ -447,6 +448,7 @@ export class AdminDatabaseService {
       // Log bulk operation
       await logAdminAction(user, 'bulk_operation', entityType, {
         auditLevel: 'info',
+        correlationId,
         metadata: {
           operation,
           totalItems: data.length,
@@ -663,6 +665,9 @@ export class AdminDatabaseService {
 }
 
 // Rate limiting utilities - only for development
+// Dev-only in-memory rate limit store persisted at module scope
+const DEV_DB_RATE_LIMIT_STORE: Map<string, { count: number; resetTime: number }> = new Map();
+
 export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
   // Only use in-memory rate limiting in development
   if (process.env.NODE_ENV !== 'development') {
@@ -670,9 +675,8 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
     return true;
   }
 
-  const devRateLimitStore = new Map<string, { count: number; resetTime: number }>();
   const now = Date.now();
-  const rateLimit = devRateLimitStore.get(key);
+  const rateLimit = DEV_DB_RATE_LIMIT_STORE.get(key);
   
   if (rateLimit && now < rateLimit.resetTime) {
     if (rateLimit.count >= limit) {
@@ -680,7 +684,7 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
     }
     rateLimit.count++;
   } else {
-    devRateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    DEV_DB_RATE_LIMIT_STORE.set(key, { count: 1, resetTime: now + windowMs });
   }
   
   return true;

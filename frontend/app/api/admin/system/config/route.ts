@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { validateSignedCSRFToken } from '@/lib/admin/csrf';
+import { prisma } from '@/lib/db/prisma';
 
 const DEFAULT_CONFIG = {
   maintenanceMode: false,
@@ -18,8 +20,15 @@ export async function GET(request: NextRequest) {
   if (!adminUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  // Read-only initial config
-  return NextResponse.json(DEFAULT_CONFIG);
+
+  try {
+    const row = await prisma.adminConfig.findUnique({ where: { key: 'system_config' } });
+    const value = (row?.value as any) || {};
+    return NextResponse.json({ ...DEFAULT_CONFIG, ...value });
+  } catch (e) {
+    // Fallback to defaults if table missing
+    return NextResponse.json(DEFAULT_CONFIG);
+  }
 }
 
 export async function PUT(request: NextRequest) {
@@ -30,7 +39,25 @@ export async function PUT(request: NextRequest) {
   if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYSTEM_SETTINGS)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
-  // No-op write until ready; accept and return current config to keep UI functional
-  return NextResponse.json(DEFAULT_CONFIG);
-}
 
+  // Validate CSRF
+  const headerToken = request.headers.get('x-csrf-token');
+  if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+  }
+
+  const body = await request.json();
+  const nextConfig = { ...DEFAULT_CONFIG, ...(body || {}) };
+
+  try {
+    await prisma.adminConfig.upsert({
+      where: { key: 'system_config' },
+      update: { value: nextConfig, updated_at: new Date(), updated_by: adminUser.id },
+      create: { key: 'system_config', value: nextConfig, updated_at: new Date(), updated_by: adminUser.id },
+    });
+  } catch (e) {
+    console.error('[ADMIN] Failed to persist system config:', e);
+  }
+
+  return NextResponse.json(nextConfig);
+}

@@ -57,6 +57,11 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                 __html: `window.__CSRF_TOKEN__ = ${JSON.stringify(signedToken)};`,
               }}
             />
+            {!signedToken && (
+              <div className="mb-4 p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-800">
+                CSRF token unavailable. Client actions may be limited.
+              </div>
+            )}
             {children}
           </main>
         </div>

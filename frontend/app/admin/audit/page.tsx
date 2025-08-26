@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { Activity, User, Calendar, Filter, Download } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface AuditLog {
   id: string;
@@ -31,6 +32,8 @@ export default function AuditLogPage() {
   const router = useRouter();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const csrfToken = useAdminCsrf();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [pagination, setPagination] = useState({
     page: parseInt(searchParams.get('page') || '1'),
     pageSize: parseInt(searchParams.get('pageSize') || '50'),
@@ -115,7 +118,7 @@ export default function AuditLogPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrfToken || '',
         },
         body: JSON.stringify(payload),
       });
@@ -222,6 +225,50 @@ export default function AuditLogPage() {
           {value || '-'}
         </span>
       ),
+    },
+    {
+      key: 'details',
+      title: 'Details',
+      render: (_value, row) => {
+        const isOpen = !!expanded[row.id];
+        const pretty = (obj: any) => {
+          try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+        };
+        const truncate = (s: string, n = 600) => (s.length > n ? s.slice(0, n) + '... (show more)' : s);
+        const oldStr = pretty(row.oldData || {});
+        const newStr = pretty(row.newData || {});
+        return (
+          <div className="text-xs">
+            <button
+              onClick={() => setExpanded(prev => ({ ...prev, [row.id]: !isOpen }))}
+              className="px-2 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+            >
+              {isOpen ? 'Hide' : 'Show'}
+            </button>
+            {isOpen && (
+              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-gray-500 mb-1">Old Data</div>
+                  <pre className="p-2 bg-gray-50 rounded overflow-auto max-h-48 whitespace-pre-wrap break-all">
+                    {oldStr}
+                  </pre>
+                </div>
+                <div>
+                  <div className="text-gray-500 mb-1">New Data</div>
+                  <pre className="p-2 bg-gray-50 rounded overflow-auto max-h-48 whitespace-pre-wrap break-all">
+                    {newStr}
+                  </pre>
+                </div>
+              </div>
+            )}
+            {!isOpen && (oldStr || newStr) && (
+              <div className="text-gray-500 mt-1">
+                {truncate(newStr || oldStr)}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

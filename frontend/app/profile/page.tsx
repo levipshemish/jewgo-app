@@ -21,77 +21,83 @@ export default function ProfilePage() {
 
   // Load user data
   useEffect(() => {
+    let isMounted = true;
     const loadUser = async () => {
       let redirected = false;
+      let userAuthenticated = false;
       try {
-        console.log('Profile page: Starting to load user data...');
-        
         // Use server-side API to get user data instead of client-side Supabase
         const response = await fetch('/api/auth/sync-user', {
           method: 'GET',
           credentials: 'include',
         });
 
-        console.log('Profile page: Response status:', response.status);
-
         if (response.ok) {
           const userData = await response.json();
           console.log('Profile page: User data received:', userData);
           
           if (userData.user) {
+            console.log('Profile page: User exists, checking if guest...');
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
-            console.log('Profile page: Checking if user is a guest...');
-            console.log('Profile page: user.email:', userData.user.email);
-            console.log('Profile page: user.provider:', userData.user.provider);
-            
             const isGuest = !userData.user.email && userData.user.provider === 'unknown';
-            console.log('Profile page: isGuest:', isGuest);
+            console.log('Profile page: Is guest?', isGuest);
             
             if (isGuest) {
-              console.log('Profile page: User is a guest, redirecting to signin');
+              console.log('Profile page: Redirecting guest user');
               setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
               redirected = true;
-              router.push('/auth/signin');
+              router.push('/auth/signin?redirectTo=/profile');
               return;
             }
             
             // User is authenticated with email (not a guest)
-            console.log('Profile page: User is authenticated with email, setting user data');
-            setUser(userData.user);
-            setIsLoading(false);
+            console.log('Profile page: Setting user data and stopping loading');
+            if (isMounted) {
+              setUser(userData.user);
+              setIsLoading(false);
+              userAuthenticated = true;
+            }
             return;
           } else {
-            console.log('Profile page: No user data in response');
+            console.log('Profile page: No user data, redirecting');
+            // userData.user is null - user is not authenticated
+            setRedirectStatus('Redirecting to /auth/signin...');
+            redirected = true;
+            router.push('/auth/signin?redirectTo=/profile');
+            return;
           }
         } else if (response.status === 401) {
-          console.log('Profile page: User is not authenticated (401)');
           // User is not authenticated
           setRedirectStatus('Redirecting to /auth/signin...');
           redirected = true;
-          router.push('/auth/signin');
+          router.push('/auth/signin?redirectTo=/profile');
           return;
         } else {
-          console.log('Profile page: Response not ok, status:', response.status);
+          // Handle other error statuses
+          setRedirectStatus('Error occurred, redirecting to /auth/signin...');
+          redirected = true;
+          router.push('/auth/signin?redirectTo=/profile');
+          return;
         }
-
-        // If no user data, redirect to signin
-        console.log('Profile page: No user data, redirecting to signin');
-        setRedirectStatus('Redirecting to /auth/signin...');
-        redirected = true;
-        router.push('/auth/signin');
       } catch (_error) {
-        console.log('Profile page: Error occurred:', _error);
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
-        handleUserLoadError(_error, router);
+        redirected = true;
+        router.push('/auth/signin?redirectTo=/profile');
       } finally {
-        console.log('Profile page: Setting loading to false');
-        // Avoid flash of Access Denied while redirecting
-        setIsLoading(!redirected);
+        console.log('Profile page: Finally block - redirected:', redirected, 'userAuthenticated:', userAuthenticated, 'setting loading to:', !redirected && !userAuthenticated);
+        // Only set loading to false if we're not redirecting AND user is not authenticated
+        if (isMounted && !userAuthenticated) {
+          setIsLoading(!redirected);
+        }
       }
     };
     loadUser();
-  }, [router]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (

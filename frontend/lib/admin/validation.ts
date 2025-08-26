@@ -191,8 +191,8 @@ export const userDbSchema = z.object({
   name: z.string().max(255).optional(),
   image: z.string().url().optional().or(z.literal('')),
   issuperadmin: z.boolean().optional(),
-  createdat: z.date().optional(),
-  updatedat: z.date().optional(),
+  createdat: asDate.optional(),
+  updatedat: asDate.optional(),
 });
 
 // Pagination validation schema

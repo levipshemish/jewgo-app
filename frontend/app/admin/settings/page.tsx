@@ -88,6 +88,7 @@ export default function SystemSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Fetch system data
   const fetchSystemData = async () => {
@@ -152,13 +153,16 @@ export default function SystemSettingsPage() {
       });
 
       if (response.ok) {
-        // Show success message
-        console.log('Configuration saved successfully');
+        setToast({ message: 'Configuration saved successfully', type: 'success' });
+      } else {
+        setToast({ message: 'Failed to save configuration', type: 'error' });
       }
     } catch (error) {
       console.error('Error saving configuration:', error);
+      setToast({ message: 'An error occurred while saving', type: 'error' });
     } finally {
       setSaving(false);
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
@@ -256,6 +260,19 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div
+          className={`fixed bottom-4 right-4 z-50 rounded-md px-4 py-3 shadow-lg border ${
+            toast.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>

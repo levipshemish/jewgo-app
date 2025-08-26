@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import RestaurantDatabaseClient from '@/components/admin/RestaurantDatabaseClient';
 
 export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -8,8 +7,6 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
   const search = (params.search as string) || '';
   const sortBy = (params.sortBy as string) || '';
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
-
-  const h = await headers();
   const urlParams = new URLSearchParams();
   urlParams.set('page', String(page));
   urlParams.set('pageSize', String(pageSize));
@@ -23,10 +20,7 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   try {
-    const res = await fetch(`/api/admin/restaurants?${urlParams.toString()}`, {
-      cache: 'no-store',
-      headers: { Cookie: h.get('cookie') || '' },
-    });
+    const res = await fetch(`/api/admin/restaurants?${urlParams.toString()}`, { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
       initialData = json.data || [];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
@@ -69,7 +70,32 @@ export async function POST(request: NextRequest) {
   if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_EDIT)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
-  return NextResponse.json({ message: 'Role assignment not implemented yet' });
+
+  // CSRF
+  const headerToken = request.headers.get('x-csrf-token');
+  if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+  }
+
+  const body = await request.json();
+  const { userId, role, expiresAt, notes } = body || {};
+  if (!userId || !role) {
+    return NextResponse.json({ error: 'userId and role are required' }, { status: 400 });
+  }
+
+  await prisma.adminRole.create({
+    data: {
+      userId,
+      role: String(role),
+      assignedBy: adminUser.id,
+      assignedAt: new Date(),
+      isActive: true,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      notes: notes ? String(notes) : null,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function PUT(request: NextRequest) {
@@ -80,7 +106,28 @@ export async function PUT(request: NextRequest) {
   if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_EDIT)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
-  return NextResponse.json({ message: 'Role update not implemented yet' });
+
+  // CSRF
+  const headerToken = request.headers.get('x-csrf-token');
+  if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+  }
+
+  const body = await request.json();
+  const { id, isActive, expiresAt } = body || {};
+  if (!id) {
+    return NextResponse.json({ error: 'id is required' }, { status: 400 });
+  }
+
+  await prisma.adminRole.update({
+    where: { id: Number(id) },
+    data: {
+      isActive: typeof isActive === 'boolean' ? isActive : undefined,
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+    },
+  });
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -91,6 +138,25 @@ export async function DELETE(request: NextRequest) {
   if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_DELETE)) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
-  return NextResponse.json({ message: 'Role removal not implemented yet' });
-}
 
+  // CSRF
+  const headerToken = request.headers.get('x-csrf-token');
+  if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+    return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get('userId');
+  const role = searchParams.get('role');
+  if (!userId || !role) {
+    return NextResponse.json({ error: 'userId and role are required' }, { status: 400 });
+  }
+
+  // Deactivate any active matching role assignments
+  await prisma.adminRole.updateMany({
+    where: { userId, role, isActive: true },
+    data: { isActive: false },
+  });
+
+  return NextResponse.json({ ok: true });
+}

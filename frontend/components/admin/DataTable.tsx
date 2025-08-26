@@ -221,6 +221,7 @@ export default function DataTable<T extends { id: string | number }>({
                 <span>Export</span>
               </button>
             )}
+          </div>
         </div>
 
         {(title || exportHint) && (
@@ -237,19 +238,18 @@ export default function DataTable<T extends { id: string | number }>({
         )}
       </div>
 
-        {/* Bulk Actions */}
-        {selectedCount > 0 && onBulkAction && (
-          <div className="mt-4 flex items-center space-x-2">
-            <button
-              onClick={() => handleBulkAction('delete')}
-              className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Delete Selected</span>
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Bulk Actions */}
+      {selectedCount > 0 && onBulkAction && (
+        <div className="p-6 border-b border-gray-200 flex items-center space-x-2">
+          <button
+            onClick={() => handleBulkAction('delete')}
+            className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Delete Selected</span>
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-x-auto">

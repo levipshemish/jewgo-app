@@ -38,12 +38,10 @@ function SignInForm() {
             
             if (isGuest) {
               // Guest users should be allowed to sign in to upgrade their account
-              console.log('Guest user detected, allowing sign-in to upgrade account');
               setIsCheckingAuth(false);
               return;
             } else {
               // User is authenticated with email, redirect to intended destination
-              console.log('User is already authenticated with email, redirecting to:', redirectTo);
               router.push(redirectTo);
               return;
             }

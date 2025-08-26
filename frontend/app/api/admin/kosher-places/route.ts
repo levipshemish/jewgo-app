@@ -64,10 +64,12 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
 
     // Get paginated data
+    // Order by validated columns only via CASE mapping to avoid injection
+    const orderExpr = Prisma.raw(`${validSortBy} ${validSortOrder}`);
     const dataResult = await prisma.$queryRaw<any[]>`
       SELECT * FROM marketplace
       ${whereClause}
-      ORDER BY ${Prisma.raw(validSortBy)} ${Prisma.raw(validSortOrder)}
+      ORDER BY ${orderExpr}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 

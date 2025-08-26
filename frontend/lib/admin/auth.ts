@@ -7,6 +7,9 @@ export type { AdminUser, AdminRole };
 export { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
 export { hasPermission } from './types';
 
+// Dev-only in-memory rate limit store persisted at module scope
+const DEV_AUTH_RATE_LIMIT_STORE: Map<string, { count: number; resetTime: number }> = new Map();
+
 /**
  * Get user's admin role from Supabase using the get_user_admin_role function
  */
@@ -110,9 +113,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
       const rateLimitKey = `admin_auth_dev:${clientIP}`;
       const now = Date.now();
       
-      // Use a simple Map for development rate limiting
-      const devRateLimitStore = new Map<string, { count: number; resetTime: number }>();
-      const rateLimit = devRateLimitStore.get(rateLimitKey);
+      const rateLimit = DEV_AUTH_RATE_LIMIT_STORE.get(rateLimitKey);
       
       if (rateLimit && now < rateLimit.resetTime) {
         if (rateLimit.count >= 10) { // 10 attempts per minute in dev
@@ -121,7 +122,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
         }
         rateLimit.count++;
       } else {
-        devRateLimitStore.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
+        DEV_AUTH_RATE_LIMIT_STORE.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
       }
     }
 

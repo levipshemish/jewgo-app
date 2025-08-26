@@ -40,6 +40,14 @@ export async function middleware(request: NextRequest) {
     if (!isProtectedPath(path)) {
       return NextResponse.next();
     }
+
+    // Fast-path redirect for admin UI if role cookie missing
+    if (!isApi && (path === '/admin' || path.startsWith('/admin/'))) {
+      const roleCookie = request.cookies.get('admin_role')?.value;
+      if (!roleCookie) {
+        return NextResponse.redirect(new URL('/', request.url), 302);
+      }
+    }
     
     // Create NextResponse upfront to persist refreshed auth cookies
     const response = NextResponse.next();
@@ -169,11 +177,12 @@ function isProtectedPath(pathname: string): boolean {
     return false;
   }
   
-  // Only protect admin UI routes
+  // Protect admin UI routes and admin API routes
   const protectedPrefixes = [
     '/admin/',
+    '/api/admin/',
   ];
-  const exactMatches = ['/admin'];
+  const exactMatches = ['/admin', '/api/admin'];
   return protectedPrefixes.some(p => pathname.startsWith(p)) || exactMatches.includes(pathname);
 }
 

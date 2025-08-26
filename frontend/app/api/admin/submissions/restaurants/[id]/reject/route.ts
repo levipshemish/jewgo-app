@@ -32,15 +32,16 @@ export async function POST(
       );
     }
 
-    // Proxy to Flask backend
-    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/reject`, {
-      method: 'POST',
+    // Call the frontend API route for restaurant rejection
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/restaurants/${restaurantId}/reject`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        // Note: Backend authentication should be handled by the backend
-        // For now, we'll send the request without auth and let the backend handle it
       },
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ 
+        status: 'rejected',
+        reason: reason || 'Rejected by admin'
+      }),
     });
 
     if (!response.ok) {
