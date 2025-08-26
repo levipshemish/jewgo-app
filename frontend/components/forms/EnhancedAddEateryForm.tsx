@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle, Phone } from 'lucide-react';
 import MultipleImageUpload from './MultipleImageUpload';
 import AddressAutofill from './AddressAutofill';
+import CustomHoursSelector from './CustomHoursSelector';
 
 import { 
   restaurantFormSchema, 
@@ -812,15 +813,10 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     />
                     {watchedValues.hours_of_operation === 'custom' && (
                       <div className="mt-3">
-                        <textarea
-                          rows={7}
-                          maxLength={1000}
-                          className={cn(
-                            "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
-                            errors.hours_of_operation ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
-                          )}
-                          placeholder="Enter your custom hours of operation...&#10;Example:&#10;Monday: 10:00 AM – 10:00 PM&#10;Tuesday: 10:00 AM – 10:00 PM&#10;Wednesday: 10:00 AM – 10:00 PM&#10;Thursday: 10:00 AM – 10:00 PM&#10;Friday: 10:00 AM – 3:00 PM&#10;Saturday: Closed&#10;Sunday: 10:00 AM – 9:00 PM"
-                          onChange={(e) => setValue('hours_of_operation', e.target.value)}
+                        <CustomHoursSelector
+                          value={watchedValues.hours_of_operation}
+                          onChange={(value) => setValue('hours_of_operation', value)}
+                          error={errors.hours_of_operation?.message}
                         />
                       </div>
                     )}
