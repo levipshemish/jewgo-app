@@ -21,8 +21,8 @@ RUN npm ci
 COPY frontend/ .
 
 # Copy environment file if provided (relative to build context)
-ARG ENV_FILE=.env
-COPY ${ENV_FILE} .env
+ARG ENV_FILE
+COPY ${ENV_FILE:-.env.example} .env
 # Create .env.local symlink for Next.js compatibility
 RUN ln -sf .env .env.local
 

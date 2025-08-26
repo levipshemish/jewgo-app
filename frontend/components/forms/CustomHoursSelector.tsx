@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 
 interface DayHours {
@@ -14,6 +14,7 @@ interface CustomHoursSelectorProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  testMode?: boolean; // Add test mode to isolate issues
 }
 
 const DAYS_OF_WEEK = [
@@ -35,35 +36,139 @@ const TIME_OPTIONS = [
   '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM',
 ];
 
-export default function CustomHoursSelector({ value, onChange, error }: CustomHoursSelectorProps) {
+export default function CustomHoursSelector({ value, onChange, error, testMode = false }: CustomHoursSelectorProps) {
   const [daysHours, setDaysHours] = useState<DayHours[]>([]);
+  const [dropdownStates, setDropdownStates] = useState<{ [key: string]: boolean }>({});
+  const componentRef = useRef<HTMLDivElement>(null);
+  const lastEmittedRef = useRef<string>('');
+  const prevValueRef = useRef<string | null>(null);
+
+  // Component lifecycle (minimal logging)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Component mounted, testMode:', testMode);
+    }
+    
+    return () => {
+      if (process.env.NODE_ENV === 'development' && testMode) {
+        console.log('[CustomHoursSelector] Component unmounting');
+      }
+    };
+  }, [testMode]);
 
   // Initialize or parse existing hours
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Value changed:', value);
+    }
+    // Prevent reprocessing the same incoming value repeatedly
+    if (prevValueRef.current === value) return;
+    prevValueRef.current = value;
+
     if (value && value !== 'custom') {
       // Parse existing hours string
       const parsed = parseHoursString(value);
-      setDaysHours(parsed);
+      if (process.env.NODE_ENV === 'development' && testMode) {
+        console.log('[CustomHoursSelector] Parsed hours:', parsed);
+      }
+      // Only update state if it actually differs in content
+      const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
+      const newFormatted = formatHoursString(parsed);
+      if (currentFormatted !== newFormatted) {
+        setDaysHours(parsed);
+      }
     } else {
-      // Initialize with default hours
+      // Initialize with default hours for 'custom' or empty value
       const defaultHours: DayHours[] = DAYS_OF_WEEK.map(day => ({
         day: day.label,
         open: '10:00 AM',
         close: '10:00 PM',
         isClosed: day.key === 'saturday' // Default to closed on Saturday
       }));
-      setDaysHours(defaultHours);
+      const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
+      const newFormatted = formatHoursString(defaultHours);
+      if (currentFormatted !== newFormatted) {
+        if (process.env.NODE_ENV === 'development' && testMode) {
+          console.log('[CustomHoursSelector] Setting default hours:', defaultHours);
+        }
+        setDaysHours(defaultHours);
+      }
     }
-  }, [value]);
+  }, [value, testMode]);
 
   // Update parent form when hours change
   useEffect(() => {
     if (daysHours.length > 0) {
       const hoursString = formatHoursString(daysHours);
-      // Update parent form with the formatted hours string
-      onChange(hoursString);
+      // Only emit when string actually changes to avoid render loops
+      if (lastEmittedRef.current !== hoursString) {
+        if (process.env.NODE_ENV === 'development' && testMode) {
+          console.log('[CustomHoursSelector] Updating parent with hours:', hoursString);
+        }
+        lastEmittedRef.current = hoursString;
+        onChange(hoursString);
+      }
     }
-  }, [daysHours, onChange]);
+  }, [daysHours, onChange, testMode]);
+
+  // Global event listeners for debugging (only in test mode)
+  useEffect(() => {
+    if (!testMode || process.env.NODE_ENV !== 'development') return;
+
+    const handleGlobalClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      console.log('[CustomHoursSelector] Global click detected:', {
+        target: target.tagName,
+        className: target.className,
+        id: target.id,
+        textContent: target.textContent?.substring(0, 50),
+        isWithinComponent: componentRef.current?.contains(target)
+      });
+    };
+
+    const handleGlobalFocus = (event: FocusEvent) => {
+      const target = event.target as HTMLElement;
+      console.log('[CustomHoursSelector] Global focus detected:', {
+        target: target.tagName,
+        className: target.className,
+        id: target.id,
+        isWithinComponent: componentRef.current?.contains(target)
+      });
+    };
+
+    const handleGlobalBlur = (event: FocusEvent) => {
+      const target = event.target as HTMLElement;
+      console.log('[CustomHoursSelector] Global blur detected:', {
+        target: target.tagName,
+        className: target.className,
+        id: target.id,
+        isWithinComponent: componentRef.current?.contains(target)
+      });
+    };
+
+    const handleGlobalMouseDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      console.log('[CustomHoursSelector] Global mousedown detected:', {
+        target: target.tagName,
+        className: target.className,
+        id: target.id,
+        isWithinComponent: componentRef.current?.contains(target)
+      });
+    };
+
+    // Add event listeners
+    document.addEventListener('click', handleGlobalClick, true);
+    document.addEventListener('focus', handleGlobalFocus, true);
+    document.addEventListener('blur', handleGlobalBlur, true);
+    document.addEventListener('mousedown', handleGlobalMouseDown, true);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+      document.removeEventListener('focus', handleGlobalFocus, true);
+      document.removeEventListener('blur', handleGlobalBlur, true);
+      document.removeEventListener('mousedown', handleGlobalMouseDown, true);
+    };
+  }, [testMode]);
 
   const parseHoursString = (hoursString: string): DayHours[] => {
     const lines = hoursString.split('\n');
@@ -105,16 +210,25 @@ export default function CustomHoursSelector({ value, onChange, error }: CustomHo
   };
 
   const updateDayHours = (index: number, updates: Partial<DayHours>) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Updating day hours:', { index, updates });
+    }
     const updated = [...daysHours];
     updated[index] = { ...updated[index], ...updates };
     setDaysHours(updated);
   };
 
   const toggleDayClosed = (index: number) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Toggling day closed:', index);
+    }
     updateDayHours(index, { isClosed: !daysHours[index].isClosed });
   };
 
   const setAllDays = (open: string, close: string, isClosed: boolean) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Setting all days:', { open, close, isClosed });
+    }
     const updated = daysHours.map(day => ({
       ...day,
       open,
@@ -124,8 +238,145 @@ export default function CustomHoursSelector({ value, onChange, error }: CustomHo
     setDaysHours(updated);
   };
 
+  const handleSelectChange = (index: number, field: 'open' | 'close', value: string) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Select change:', { index, field, value });
+    }
+    updateDayHours(index, { [field]: value });
+  };
+
+  const handleSelectFocus = (index: number, field: string) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Select focus:', { index, field });
+    }
+  };
+
+  const handleSelectBlur = (index: number, field: string) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Select blur:', { index, field });
+    }
+  };
+
+  const handleSelectClick = (index: number, field: string) => {
+    if (process.env.NODE_ENV === 'development' && testMode) {
+      console.log('[CustomHoursSelector] Select click:', { index, field });
+    }
+  };
+
+  // Test mode wrapper
+  if (testMode) {
+    return (
+      <div className="p-8 bg-white border rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold mb-4">CustomHoursSelector Test Mode</h2>
+        <div ref={componentRef} className="space-y-4">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setAllDays('10:00 AM', '10:00 PM', false)}
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+            >
+              Set All: 10 AM - 10 PM
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllDays('9:00 AM', '9:00 PM', false)}
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+            >
+              Set All: 9 AM - 9 PM
+            </button>
+            <button
+              type="button"
+              onClick={() => setAllDays('', '', true)}
+              className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+            >
+              Close All
+            </button>
+          </div>
+
+          {/* Days Grid */}
+          <div className="grid gap-3">
+            {daysHours.map((day, index) => (
+              <div key={day.day} className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
+                {/* Day Label */}
+                <div className="w-20 text-sm font-medium text-gray-700">
+                  {day.day}
+                </div>
+
+                {/* Closed Toggle */}
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={day.isClosed}
+                    onChange={() => toggleDayClosed(index)}
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-600">Closed</span>
+                </label>
+
+                {/* Time Selectors */}
+                {!day.isClosed && (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <select
+                        value={day.open}
+                        onChange={(e) => handleSelectChange(index, 'open', e.target.value)}
+                        onFocus={() => handleSelectFocus(index, 'open')}
+                        onBlur={() => handleSelectBlur(index, 'open')}
+                        onClick={() => handleSelectClick(index, 'open')}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                        style={{ zIndex: 9999, position: 'relative' }}
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                      <span className="text-gray-500">to</span>
+                      <select
+                        value={day.close}
+                        onChange={(e) => handleSelectChange(index, 'close', e.target.value)}
+                        onFocus={() => handleSelectFocus(index, 'close')}
+                        onBlur={() => handleSelectBlur(index, 'close')}
+                        onClick={() => handleSelectClick(index, 'close')}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                        style={{ zIndex: 9999, position: 'relative' }}
+                      >
+                        {TIME_OPTIONS.map(time => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {/* Display Hours */}
+                {day.isClosed && (
+                  <span className="text-sm text-gray-500 italic">Closed</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Preview */}
+          <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Preview:</h4>
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap">
+              {formatHoursString(daysHours)}
+            </pre>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <p className="text-red-500 text-sm mt-1">{error}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div ref={componentRef} className="space-y-4">
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">
         <button
@@ -178,8 +429,12 @@ export default function CustomHoursSelector({ value, onChange, error }: CustomHo
                   <Clock className="h-4 w-4 text-gray-400" />
                   <select
                     value={day.open}
-                    onChange={(e) => updateDayHours(index, { open: e.target.value })}
+                    onChange={(e) => handleSelectChange(index, 'open', e.target.value)}
+                    onFocus={() => handleSelectFocus(index, 'open')}
+                    onBlur={() => handleSelectBlur(index, 'open')}
+                    onClick={() => handleSelectClick(index, 'open')}
                     className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                    style={{ zIndex: 9999, position: 'relative' }}
                   >
                     {TIME_OPTIONS.map(time => (
                       <option key={time} value={time}>{time}</option>
@@ -188,8 +443,12 @@ export default function CustomHoursSelector({ value, onChange, error }: CustomHo
                   <span className="text-gray-500">to</span>
                   <select
                     value={day.close}
-                    onChange={(e) => updateDayHours(index, { close: e.target.value })}
+                    onChange={(e) => handleSelectChange(index, 'close', e.target.value)}
+                    onFocus={() => handleSelectFocus(index, 'close')}
+                    onBlur={() => handleSelectBlur(index, 'close')}
+                    onClick={() => handleSelectClick(index, 'close')}
                     className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                    style={{ zIndex: 9999, position: 'relative' }}
                   >
                     {TIME_OPTIONS.map(time => (
                       <option key={time} value={time}>{time}</option>

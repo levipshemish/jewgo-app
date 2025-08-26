@@ -69,7 +69,11 @@ export default function RestaurantDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/restaurants?${params.toString()}`);
+      const response = await fetch(`/api/admin/restaurants?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '' || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch restaurants');
@@ -137,19 +141,31 @@ export default function RestaurantDatabasePage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/restaurants/export', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      if (searchParams.get('status')) {
+        params.set('status', searchParams.get('status')!);
+      }
+      if (searchParams.get('city')) {
+        params.set('city', searchParams.get('city')!);
+      }
+      if (searchParams.get('state')) {
+        params.set('state', searchParams.get('state')!);
+      }
+      if (sortKey) {
+        params.set('sortBy', sortKey);
+      }
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder);
+      }
+
+      const response = await fetch(`/api/admin/restaurants/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          search: searchQuery,
-          filters: {
-            status: searchParams.get('status'),
-            city: searchParams.get('city'),
-            state: searchParams.get('state'),
-          },
-        }),
       });
 
       if (response.ok) {
@@ -176,14 +192,16 @@ export default function RestaurantDatabasePage() {
       }
 
       try {
-        const response = await fetch('/api/admin/restaurants/bulk', {
+        const response = await fetch('/api/admin/bulk', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+                  headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '' || '',
+        },
           body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
+            operation: 'delete',
+            entityType: 'restaurant',
+            data: selectedIds.map((id) => ({ id })),
           }),
         });
 

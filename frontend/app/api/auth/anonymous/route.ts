@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       referer,
       csrfToken: csrfToken ? 'present' : 'missing',
       allowedOrigins: ALLOWED_ORIGINS,
-      isProduction: isProduction
+      isProduction
     });
     
     // In production, be more lenient with CSRF validation

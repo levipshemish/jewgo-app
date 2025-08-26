@@ -104,18 +104,34 @@ export default function AuditLogPage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/audit', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchParams.get('userId')) {
+        params.set('userId', searchParams.get('userId')!);
+      }
+      if (searchParams.get('action')) {
+        params.set('action', searchParams.get('action')!);
+      }
+      if (searchParams.get('entityType')) {
+        params.set('entityType', searchParams.get('entityType')!);
+      }
+      if (searchParams.get('startDate')) {
+        params.set('startDate', searchParams.get('startDate')!);
+      }
+      if (searchParams.get('endDate')) {
+        params.set('endDate', searchParams.get('endDate')!);
+      }
+      if (searchParams.get('sortBy')) {
+        params.set('sortBy', searchParams.get('sortBy')!);
+      }
+      if (searchParams.get('sortOrder')) {
+        params.set('sortOrder', searchParams.get('sortOrder')!);
+      }
+
+      const response = await fetch(`/api/admin/audit/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          userId: searchParams.get('userId'),
-          action: searchParams.get('action'),
-          entityType: searchParams.get('entityType'),
-          startDate: searchParams.get('startDate'),
-          endDate: searchParams.get('endDate'),
-        }),
       });
 
       if (response.ok) {

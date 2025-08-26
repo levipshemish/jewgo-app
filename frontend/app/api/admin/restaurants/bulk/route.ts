@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -35,20 +36,20 @@ export async function POST(request: NextRequest) {
     });
 
     // Perform bulk operation
-    const result = await AdminDatabaseService.bulkOperation(
-      validatedData.operation,
-      prisma.restaurant,
-      'restaurant',
-      validatedData.data,
-      adminUser,
-      'restaurant',
-      {
+    const result = await AdminDatabaseService.bulkOperation({
+      operation: validatedData.operation,
+      delegate: prisma.restaurant,
+      modelKey: 'restaurant',
+      data: validatedData.data,
+      user: adminUser,
+      entityType: 'restaurant',
+      options: {
         batchSize: 100,
         onProgress: async (processed, total) => {
           console.log(`[BULK] Restaurant ${action}: ${processed}/${total}`);
         },
-      }
-    );
+      },
+    });
 
     return NextResponse.json({
       message: `Bulk ${action} completed`,

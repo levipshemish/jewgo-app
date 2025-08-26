@@ -220,7 +220,7 @@ const fetchShuls = async (limit: number, params?: string) => {
     shuls: mockShuls,
     total: mockShuls.length,
     page: 1,
-    limit: limit
+    limit
   };
 };
 

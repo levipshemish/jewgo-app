@@ -156,9 +156,10 @@ export default function SmartSearch({
       }
 
       // Get place details for coordinates using the Google Places API
-      const placeDetails = await googlePlacesAPI.getPlaceDetails(place.place_id, ['geometry', 'formatted_address']);
-      if (placeDetails && placeDetails.geometry) {
-        const { lat, lng } = placeDetails.geometry.location;
+      const placeDetails = await googlePlacesAPI.getPlaceDetails(place.place_id, ['location', 'formattedAddress']);
+      if (placeDetails && (placeDetails.geometry || placeDetails.location)) {
+        const location = placeDetails.geometry?.location || placeDetails.location;
+        const { lat, lng } = location;
         const locationData = {
           lat,
           lng,

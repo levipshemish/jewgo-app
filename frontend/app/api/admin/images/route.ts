@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -86,8 +88,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -141,8 +143,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -150,8 +152,13 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...data } = body;
 
-    if (!id) {
+    // Validate and coerce ID to integer
+    if (id === undefined || id === null || (typeof id === 'string' && id.trim() === '')) {
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
+    }
+    const coercedId = typeof id === 'string' ? Number(id) : Number(id);
+    if (!Number.isInteger(coercedId)) {
+      return NextResponse.json({ error: 'Invalid image ID. Must be an integer.' }, { status: 400 });
     }
 
     // Validate data
@@ -164,7 +171,7 @@ export async function PUT(request: NextRequest) {
     const image = await AdminDatabaseService.updateRecord(
       prisma.restaurantImage,
       'restaurantImage',
-      id,
+      coercedId,
       sanitizedData,
       adminUser,
       'restaurant_image'
@@ -202,24 +209,27 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
     // Get image ID from query params
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
+    const idParam = searchParams.get('id');
+    if (idParam === null || idParam.trim() === '') {
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 });
+    }
+    const coercedId = Number(idParam);
+    if (!Number.isInteger(coercedId)) {
+      return NextResponse.json({ error: 'Invalid image ID. Must be an integer.' }, { status: 400 });
     }
 
     // Delete image record (soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.restaurantImage,
       'restaurantImage',
-      id,
+      coercedId,
       adminUser,
       'restaurant_image',
       true // soft delete

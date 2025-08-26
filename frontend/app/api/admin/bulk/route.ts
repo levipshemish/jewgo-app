@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, validateCSRFToken } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logBulkOperation, logBulkProgress } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -14,14 +16,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('BULK_OPERATIONS')) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.BULK_OPERATIONS)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    const headerToken = request.headers.get('x-csrf-token');
+    
+    try {
+      // Validate header token to ensure CSRF protection
+      if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      }
+    } catch (error) {
+      console.error('[ADMIN] CSRF token validation error:', error);
+      return NextResponse.json({ error: 'CSRF token validation failed' }, { status: 419 });
     }
 
     // Parse request body
@@ -44,10 +53,10 @@ export async function POST(request: NextRequest) {
       restaurantImage: prisma.restaurantImage,
     };
 
-    const model = modelMap[entityType];
+    const model = modelMap[validatedData.entityType];
     if (!model) {
       return NextResponse.json(
-        { error: `Unsupported entity type: ${entityType}` },
+        { error: `Unsupported entity type: ${validatedData.entityType}` },
         { status: 400 }
       );
     }
@@ -55,26 +64,26 @@ export async function POST(request: NextRequest) {
     // Log bulk operation start
     const correlationId = await logBulkOperation(
       adminUser,
-      operation,
-      entityType,
-      data.length
+      validatedData.operation,
+      validatedData.entityType,
+      validatedData.data.length
     );
 
     // Perform bulk operation
-    const result = await AdminDatabaseService.bulkOperation(
-      operation,
-      model,
-      entityType,
-      data,
-      adminUser,
-      entityType,
-      {
-        batchSize,
+    const result = await AdminDatabaseService.bulkOperation({
+      operation: validatedData.operation,
+      delegate: model,
+      modelKey: validatedData.entityType as 'restaurant' | 'review' | 'user' | 'restaurantImage',
+      data: validatedData.data,
+      user: adminUser,
+      entityType: validatedData.entityType,
+      options: {
+        batchSize: validatedData.batchSize,
         onProgress: async (processed, total) => {
           await logBulkProgress(correlationId, processed, total);
         },
-      }
-    );
+      },
+    });
 
     return NextResponse.json({
       message: 'Bulk operation completed',
@@ -117,17 +126,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get bulk operation status
-    // This would typically query a job queue or status table
-    // For now, return a mock response
-    return NextResponse.json({
-      correlationId,
-      status: 'completed',
-      progress: 100,
-      success: 0,
-      failed: 0,
-      errors: [],
-    });
+    // Not implemented: hook into background job status store.
+    // TODO: Implement bulk_jobs table and read progress by correlationId.
+    return NextResponse.json({ error: 'Not Implemented' }, { status: 501 });
   } catch (error) {
     console.error('[ADMIN] Bulk operation status error:', error);
     return NextResponse.json(

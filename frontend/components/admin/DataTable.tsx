@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useCSRF } from '@/hooks/useCSRF';
 import { 
   ChevronLeft, 
   ChevronRight, 

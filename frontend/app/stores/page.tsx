@@ -146,7 +146,7 @@ const fetchStores = async (limit: number, params?: string) => {
     stores: mockStores,
     total: mockStores.length,
     page: 1,
-    limit: limit
+    limit
   };
 };
 

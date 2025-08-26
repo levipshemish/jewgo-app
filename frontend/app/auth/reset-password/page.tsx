@@ -22,17 +22,52 @@ function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [hasValidTokens, setHasValidTokens] = useState(false);
 
-  // Check if we have the necessary tokens from the URL
+  // Check if we have the necessary tokens from the URL and set session
   useEffect(() => {
-    const accessToken = searchParams.get("access_token");
-    const refreshToken = searchParams.get("refresh_token");
-    
-    if (!accessToken || !refreshToken) {
+    let accessToken = searchParams.get("access_token");
+    let refreshToken = searchParams.get("refresh_token");
+    let typeParam: string | null = searchParams.get("type");
+
+    // Supabase typically places tokens in the URL hash for recovery links
+    if ((!accessToken || !refreshToken) && typeof window !== 'undefined' && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      accessToken = accessToken || hashParams.get('access_token');
+      refreshToken = refreshToken || hashParams.get('refresh_token');
+      typeParam = typeParam || hashParams.get('type');
+    }
+
+    // Require recovery type and tokens
+    if (!accessToken || !refreshToken || (typeParam && typeParam !== 'recovery')) {
       setError("Invalid or missing reset link. Please request a new password reset.");
       setHasValidTokens(false);
-    } else {
-      setHasValidTokens(true);
+      return;
     }
+
+    // Establish session so we can update the password
+    (async () => {
+      const { error } = await supabaseClient.auth.setSession({
+        access_token: accessToken as string,
+        refresh_token: refreshToken as string,
+      } as any);
+
+      if (error) {
+        setError("Reset link is invalid or expired. Please request a new one.");
+        setHasValidTokens(false);
+        return;
+      }
+
+      // Clean the URL to remove sensitive tokens from the address bar
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.hash = '';
+        url.searchParams.delete('access_token');
+        url.searchParams.delete('refresh_token');
+        url.searchParams.delete('type');
+        window.history.replaceState({}, document.title, url.toString());
+      }
+
+      setHasValidTokens(true);
+    })();
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {

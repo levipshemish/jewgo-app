@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
@@ -31,9 +33,16 @@ export async function GET(request: NextRequest) {
 
     // Build filters
     const filters: any = {};
-    if (status) filters.status = status;
-    if (city) filters.city = city;
-    if (state) filters.state = state;
+    if (status) {
+      // Map status to submission_status if it's a submission-related status
+      if (['pending_approval', 'approved', 'rejected'].includes(status)) {
+        filters.submission_status = status;
+      } else {
+        filters.status = status;
+      }
+    }
+    if (city) {filters.city = city;}
+    if (state) {filters.state = state;}
 
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
@@ -78,8 +87,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -133,8 +142,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -194,8 +203,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 

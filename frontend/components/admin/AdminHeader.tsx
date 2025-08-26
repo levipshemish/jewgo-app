@@ -8,9 +8,10 @@ import {
   Settings, 
   User,
   ChevronDown,
-  Clock
+  Clock as ClockIcon
 } from 'lucide-react';
-import { AdminUser } from '@/lib/admin/auth';
+import Clock from './Clock';
+import { AdminUser } from '@/lib/admin/types';
 
 interface AdminHeaderProps {
   adminUser: AdminUser;
@@ -182,8 +183,8 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
-              <Clock className="h-3 w-3" />
-              <span>{new Date().toLocaleString()}</span>
+              <ClockIcon className="h-3 w-3" />
+              <Clock />
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>

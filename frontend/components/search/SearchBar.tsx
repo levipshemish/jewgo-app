@@ -33,7 +33,6 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const placesTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
 
   // Initialize Google Places services
   useEffect(() => {
@@ -106,7 +105,7 @@ export default function SearchBar({ onSearch, placeholder: _placeholder = "Searc
       clearTimeout(placesTimeoutRef.current);
     }
 
-    if (query.length > 2 && autocompleteServiceRef.current && !placesApiError) {
+    if (query.length > 2 && !placesApiError) {
       setIsLoadingPlaces(true);
       setPlaceSuggestions([]);
       placesTimeoutRef.current = setTimeout(() => {

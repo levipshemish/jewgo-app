@@ -193,7 +193,7 @@ const fetchMikvah = async (limit: number, params?: string) => {
     mikvah: mockMikvah,
     total: mockMikvah.length,
     page: 1,
-    limit: limit
+    limit
   };
 };
 

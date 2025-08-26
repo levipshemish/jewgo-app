@@ -25,7 +25,7 @@ export default function MarketplaceCategoriesDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadCategories = useCallback(async () => {
-    if (!isOpen) return;
+    if (!isOpen) {return;}
     
     try {
       setLoading(true);

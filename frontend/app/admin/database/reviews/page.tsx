@@ -78,7 +78,11 @@ export default function ReviewDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/reviews?${params.toString()}`);
+      const response = await fetch(`/api/admin/reviews?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch reviews');
@@ -146,19 +150,31 @@ export default function ReviewDatabasePage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/reviews/export', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchParams.get('search')) {
+        params.set('search', searchParams.get('search')!);
+      }
+      if (searchParams.get('status')) {
+        params.set('status', searchParams.get('status')!);
+      }
+      if (searchParams.get('rating')) {
+        params.set('rating', searchParams.get('rating')!);
+      }
+      if (searchParams.get('restaurantId')) {
+        params.set('restaurantId', searchParams.get('restaurantId')!);
+      }
+      if (searchParams.get('sortBy')) {
+        params.set('sortBy', searchParams.get('sortBy')!);
+      }
+      if (searchParams.get('sortOrder')) {
+        params.set('sortOrder', searchParams.get('sortOrder')!);
+      }
+
+      const response = await fetch(`/api/admin/reviews/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          search: searchParams.get('search'),
-          filters: {
-            status: searchParams.get('status'),
-            rating: searchParams.get('rating'),
-            restaurantId: searchParams.get('restaurantId'),
-          },
-        }),
       });
 
       if (response.ok) {
@@ -185,14 +201,16 @@ export default function ReviewDatabasePage() {
       }
 
       try {
-        const response = await fetch('/api/admin/reviews/bulk', {
+        const response = await fetch('/api/admin/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-csrf-token': window.__CSRF_TOKEN__ || '',
           },
           body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
+            operation: 'delete',
+            entityType: 'review',
+            data: selectedIds.map((id) => ({ id })),
           }),
         });
 

@@ -78,18 +78,42 @@ export const toSearchParams = (filters: Filters): URLSearchParams => {
 
 export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
   const obj: Record<string, unknown> = {};
-  
-  // Convert URLSearchParams to object, handling boolean conversion
+
+  // Keys that are boolean in our schema
+  const booleanKeys = new Set([
+    'nearMe',
+    'openNow',
+    'requiresAppointment',
+    'walkInAvailable',
+    'hasChangingRooms',
+    'hasShowerFacilities',
+    'hasDelivery',
+    'hasPickup',
+    'hasMikvah',
+    'hasKiddush',
+    'hasKosherFood',
+    'hasHebrewSchool',
+    'hasWheelchairAccess',
+    'hasSeparateSeating',
+    'hasDailyMincha',
+  ]);
+
+  // Convert URLSearchParams to object, with safe boolean conversion only for boolean keys
   searchParams.forEach((value, key) => {
-    if (value === "1") {
-      obj[key] = true;
-    } else if (value === "0") {
-      obj[key] = false;
-    } else {
-      obj[key] = value;
+    if (booleanKeys.has(key)) {
+      if (value === '1') {
+        obj[key] = true;
+        return;
+      }
+      if (value === '0') {
+        obj[key] = false;
+        return;
+      }
+      // Fall through to string to allow z.coerce.boolean to handle other truthy strings
     }
+    obj[key] = value;
   });
-  
+
   return FiltersSchema.parse(obj);
 };
 

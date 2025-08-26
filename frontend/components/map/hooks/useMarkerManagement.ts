@@ -324,7 +324,7 @@ export function useMarkerManagement({
           title: restaurant.name,
           map,
           icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#4285F4" stroke="#fff" stroke-width="2"/></svg>'),
+            url: `data:image/svg+xml;charset=UTF-8,${  encodeURIComponent('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" fill="#4285F4" stroke="#fff" stroke-width="2"/></svg>')}`,
             scaledSize: new window.google.maps.Size(24, 24)
           }
         }) as any;

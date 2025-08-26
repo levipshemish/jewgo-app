@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, validateCSRFToken } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('AUDIT_VIEW')) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.AUDIT_VIEW)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -42,7 +44,18 @@ export async function GET(request: NextRequest) {
       correlationId,
     });
 
-    return NextResponse.json(result);
+    // Normalize response to match UI expectations
+    return NextResponse.json({
+      logs: result.logs,
+      pagination: {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: Math.ceil(result.total / result.pageSize),
+        hasNext: result.page < Math.ceil(result.total / result.pageSize),
+        hasPrev: result.page > 1,
+      },
+    });
   } catch (error) {
     console.error('[ADMIN] Audit log query error:', error);
     return NextResponse.json(
@@ -61,13 +74,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('AUDIT_EXPORT')) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const csrfToken = await getCSRFTokenFromCookie();
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 

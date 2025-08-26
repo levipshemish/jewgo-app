@@ -44,12 +44,8 @@ export async function GET(request: NextRequest) {
         isProduction: process.env.NODE_ENV === 'production'
       });
       
-      // In production, return a more graceful response for unauthenticated users
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ user: null }, { status: 200, headers: baseHeaders });
-      }
-      
-      return NextResponse.json({ error: 'AUTHENTICATION_REQUIRED' }, { status: 401, headers: baseHeaders });
+      // Return a graceful response for unauthenticated users in both dev and production
+      return NextResponse.json({ user: null }, { status: 200, headers: baseHeaders });
     }
 
     // Transform user data for client consumption

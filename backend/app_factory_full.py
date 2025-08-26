@@ -978,6 +978,9 @@ def create_app(config_class=None):
     def debug_admin_tokens():
         """Debug endpoint to check if admin tokens are loaded."""
         try:
+            # Disable in production for security
+            if os.environ.get("ENVIRONMENT") == "production":
+                return jsonify({"error": "Not found"}), 404
             # Get admin tokens info without exposing actual tokens
             admin_tokens = security_manager.admin_tokens
             token_count = len(admin_tokens)

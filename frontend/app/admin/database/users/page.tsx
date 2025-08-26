@@ -9,10 +9,11 @@ interface UserData {
   id: string;
   email: string;
   name?: string;
-  avatar_url?: string;
-  provider: string;
+  image?: string;
+  provider?: string;
   createdAt: string;
   updatedAt: string;
+  isSuperAdmin: boolean;
 }
 
 export default function UserDatabasePage() {
@@ -57,7 +58,11 @@ export default function UserDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/users?${params.toString()}`);
+      const response = await fetch(`/api/admin/users?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch users');
@@ -125,17 +130,25 @@ export default function UserDatabasePage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/users/export', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      if (searchParams.get('provider')) {
+        params.set('provider', searchParams.get('provider')!);
+      }
+      if (searchParams.get('sortBy')) {
+        params.set('sortBy', searchParams.get('sortBy')!);
+      }
+      if (searchParams.get('sortOrder')) {
+        params.set('sortOrder', searchParams.get('sortOrder')!);
+      }
+
+      const response = await fetch(`/api/admin/users/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          search: searchQuery,
-          filters: {
-            provider: searchParams.get('provider'),
-          },
-        }),
       });
 
       if (response.ok) {
@@ -162,14 +175,16 @@ export default function UserDatabasePage() {
       }
 
       try {
-        const response = await fetch('/api/admin/users/bulk', {
+        const response = await fetch('/api/admin/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-csrf-token': window.__CSRF_TOKEN__ || '',
           },
           body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
+            operation: 'delete',
+            entityType: 'user',
+            data: selectedIds.map((id) => ({ id })),
           }),
         });
 
@@ -189,9 +204,9 @@ export default function UserDatabasePage() {
       title: 'User',
       render: (value, row) => (
         <div className="flex items-center space-x-3">
-          {row.avatar_url ? (
+          {row.image ? (
             <img
-              src={row.avatar_url}
+              src={row.image}
               alt={value || row.email}
               className="h-8 w-8 rounded-full"
             />
@@ -216,7 +231,7 @@ export default function UserDatabasePage() {
         <div className="flex items-center space-x-2">
           <Shield className="h-4 w-4 text-gray-400" />
           <span className="text-sm font-medium text-gray-900 capitalize">
-            {value}
+            {value || 'Unknown'}
           </span>
         </div>
       ),

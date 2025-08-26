@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,54 +29,49 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // Build WHERE clause
-    const whereConditions: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    // Validate sort parameters to prevent SQL injection
+    const allowedColumns = ['created_at', 'name', 'city', 'state', 'address', 'phone_number'];
+    const validSortBy = allowedColumns.includes(sortBy) ? sortBy : 'created_at';
+    const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
 
+    const conditions: Prisma.Sql[] = [];
     if (search) {
-      whereConditions.push(`(name ILIKE $${paramIndex} OR address ILIKE $${paramIndex} OR city ILIKE $${paramIndex} OR rabbi ILIKE $${paramIndex})`);
-      params.push(`%${search}%`);
-      paramIndex++;
+      const like = `%${search}%`;
+      conditions.push(Prisma.sql`(name ILIKE ${like} OR address ILIKE ${like} OR city ILIKE ${like} OR rabbi ILIKE ${like})`);
     }
-
     if (city) {
-      whereConditions.push(`city ILIKE $${paramIndex}`);
-      params.push(`%${city}%`);
-      paramIndex++;
+      const like = `%${city}%`;
+      conditions.push(Prisma.sql`city ILIKE ${like}`);
     }
-
     if (state) {
-      whereConditions.push(`state ILIKE $${paramIndex}`);
-      params.push(`%${state}%`);
-      paramIndex++;
+      const like = `%${state}%`;
+      conditions.push(Prisma.sql`state ILIKE ${like}`);
     }
-
     if (affiliation) {
-      whereConditions.push(`affiliation ILIKE $${paramIndex}`);
-      params.push(`%${affiliation}%`);
-      paramIndex++;
+      const like = `%${affiliation}%`;
+      conditions.push(Prisma.sql`affiliation ILIKE ${like}`);
     }
-
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    const whereClause = conditions.length ? Prisma.sql`WHERE ${conditions.reduce((acc, condition, index) => 
+      index === 0 ? condition : Prisma.sql`${acc} AND ${condition}`
+    )}` : Prisma.sql``;
 
     // Get total count
-    const countQuery = `SELECT COUNT(*) FROM florida_synagogues ${whereClause}`;
-    const countResult = await prisma.$queryRawUnsafe(countQuery, ...params);
-    const total = parseInt((countResult as any)[0].count);
+    const countResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::bigint as count FROM florida_synagogues ${whereClause}
+    `;
+    const total = Number(countResult[0]?.count || 0);
 
     // Calculate pagination
     const offset = (page - 1) * pageSize;
     const totalPages = Math.ceil(total / pageSize);
 
     // Get paginated data
-    const dataQuery = `
-      SELECT * FROM florida_synagogues 
+    const dataResult = await prisma.$queryRaw<any[]>`
+      SELECT * FROM florida_synagogues
       ${whereClause}
-      ORDER BY ${sortBy} ${sortOrder.toUpperCase()}
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      ORDER BY ${Prisma.raw(validSortBy)} ${Prisma.raw(validSortOrder)}
+      LIMIT ${pageSize} OFFSET ${offset}
     `;
-    const dataResult = await prisma.$queryRawUnsafe(dataQuery, ...params, pageSize, offset);
 
     // Log the action
     await logAdminAction(adminUser, 'synagogue_list_view', 'florida_synagogue', {

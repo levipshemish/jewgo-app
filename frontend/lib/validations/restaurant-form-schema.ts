@@ -88,6 +88,7 @@ export const restaurantFormSchema = z.object({
     message: 'Please select a kosher category'
   }),
   certifying_agency: z.string().min(1, 'Certifying agency is required').max(100, 'Certifying agency must be 100 characters or less'),
+  custom_certifying_agency: z.string().max(100, 'Custom certifying agency must be 100 characters or less').optional().or(z.literal('')),
   is_cholov_yisroel: z.boolean().optional().default(false),
   is_pas_yisroel: z.boolean().optional().default(false),
   
@@ -144,6 +145,15 @@ export const restaurantFormSchema = z.object({
 }, {
   message: 'Owner submissions require owner contact information',
   path: ['is_owner_submission']
+}).refine((data) => {
+  // Conditional validation for custom certifying agency
+  if (data.certifying_agency === 'Other' && !data.custom_certifying_agency) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Please specify the custom certifying agency name',
+  path: ['custom_certifying_agency']
 });
 
 // Step-specific validation schemas
@@ -168,6 +178,7 @@ export const step2Schema = z.object({
     message: 'Please select a kosher category'
   }),
   certifying_agency: z.string().min(1, 'Certifying agency is required').max(100, 'Certifying agency must be 100 characters or less'),
+  custom_certifying_agency: z.string().max(100, 'Custom certifying agency must be 100 characters or less').optional().or(z.literal('')),
   is_cholov_yisroel: z.boolean().optional(),
   is_pas_yisroel: z.boolean().optional(),
 }).refine((data) => {
@@ -182,6 +193,15 @@ export const step2Schema = z.object({
 }, {
   message: 'Please specify kosher certification details',
   path: ['kosher_category']
+}).refine((data) => {
+  // Conditional validation for custom certifying agency
+  if (data.certifying_agency === 'Other' && !data.custom_certifying_agency) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Please specify the custom certifying agency name',
+  path: ['custom_certifying_agency']
 });
 
 export const step3Schema = z.object({
@@ -281,6 +301,7 @@ export const defaultFormData: RestaurantFormData = {
   // Step 2
   kosher_category: 'dairy',
   certifying_agency: '',
+  custom_certifying_agency: '',
   is_cholov_yisroel: false,
   is_pas_yisroel: false,
   

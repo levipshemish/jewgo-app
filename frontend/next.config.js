@@ -234,7 +234,8 @@ const nextConfig = {
       // Only redirect non-Next.js API routes to backend
       { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*`, permanent: false },
       { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*`, permanent: false },
-      { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*`, permanent: false },
+      // Admin endpoints are handled by Next.js frontend, not backend
+      // { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*`, permanent: false },
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*`, permanent: false },
       { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*`, permanent: false },
       { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*`, permanent: false },
@@ -258,7 +259,8 @@ const nextConfig = {
       // Only rewrite non-Next.js API routes to backend
       { source: '/api/specials/:path*', destination: `${BACKEND_URL}/api/specials/:path*` },
       { source: '/api/health/:path*', destination: `${BACKEND_URL}/api/health/:path*` },
-      { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*` },
+      // Admin endpoints are handled by Next.js frontend, not backend
+      // { source: '/api/admin/:path*', destination: `${BACKEND_URL}/api/admin/:path*` },
       { source: '/api/feedback/:path*', destination: `${BACKEND_URL}/api/feedback/:path*` },
       { source: '/api/statistics/:path*', destination: `${BACKEND_URL}/api/statistics/:path*` },
       { source: '/api/kosher-types/:path*', destination: `${BACKEND_URL}/api/kosher-types/:path*` },

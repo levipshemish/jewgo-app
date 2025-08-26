@@ -16,6 +16,7 @@ export const ADMIN_PERMISSIONS = {
   RESTAURANT_EDIT: 'restaurant:edit',
   RESTAURANT_DELETE: 'restaurant:delete',
   RESTAURANT_APPROVE: 'restaurant:approve',
+  RESTAURANT_MODERATE: 'restaurant:moderate',
   
   // Review management
   REVIEW_VIEW: 'review:view',
@@ -34,6 +35,7 @@ export const ADMIN_PERMISSIONS = {
   
   // System administration
   SYSTEM_SETTINGS: 'system:settings',
+  SYSTEM_VIEW: 'system:view',
   AUDIT_VIEW: 'audit:view',
   AUDIT_DELETE: 'audit:delete',
   
@@ -42,6 +44,17 @@ export const ADMIN_PERMISSIONS = {
   
   // Data export
   DATA_EXPORT: 'data:export',
+  
+  // Role management
+  ROLE_VIEW: 'role:view',
+  ROLE_EDIT: 'role:edit',
+  ROLE_DELETE: 'role:delete',
+  
+  // Synagogue management
+  SYNAGOGUE_VIEW: 'synagogue:view',
+  
+  // Kosher place management
+  KOSHER_PLACE_VIEW: 'kosher_place:view',
 } as const;
 
 // Role-based permission mapping
@@ -84,5 +97,5 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
  * Check if user has a specific permission
  */
 export function hasPermission(user: AdminUser, permission: string): boolean {
-  return user.permissions.includes(permission);
+  return user.permissions.includes(permission) || user.isSuperAdmin;
 }

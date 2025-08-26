@@ -1,12 +1,14 @@
 import { prisma } from '@/lib/db/prisma';
-import { AdminUser } from './auth';
+import { AdminUser } from './types';
 import { logAdminAction } from './audit';
+
+// Constants for submission status
+const PENDING_STATUS = 'pending_approval';
 
 // Pagination interface
 export interface PaginationOptions {
   page: number;
   pageSize: number;
-  cursor?: string;
 }
 
 export interface PaginatedResult<T> {
@@ -18,7 +20,6 @@ export interface PaginatedResult<T> {
     totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
-    cursor?: string;
   };
 }
 
@@ -39,7 +40,8 @@ const ENTITY_CONFIG = {
     searchFields: ['name', 'address', 'city', 'state', 'phone_number'],
   },
   review: {
-    softDelete: true,
+    // Reviews table does not have a deleted_at column; disable soft delete
+    softDelete: false,
     softDeleteField: 'deleted_at',
     defaultSortBy: 'created_at',
     searchFields: ['content', 'title', 'user_name'],
@@ -51,7 +53,8 @@ const ENTITY_CONFIG = {
     searchFields: ['email', 'name'],
   },
   restaurantImage: {
-    softDelete: true,
+    // Restaurant images table does not have a deleted_at column; disable soft delete
+    softDelete: false,
     softDeleteField: 'deleted_at',
     defaultSortBy: 'created_at',
     searchFields: ['image_url', 'cloudinary_public_id'],
@@ -79,10 +82,24 @@ export class AdminDatabaseService {
    */
   static getValidSortFields(modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage'): string[] {
     const validFields: Record<string, string[]> = {
-      restaurant: ['id', 'name', 'address', 'city', 'state', 'created_at', 'updated_at', 'status'],
-      review: ['id', 'rating', 'created_at', 'updated_at', 'status', 'helpful_count'],
-      user: ['id', 'email', 'name', 'createdat', 'updatedat', 'issuperadmin'],
-      restaurantImage: ['id', 'image_order', 'created_at', 'updated_at'],
+      restaurant: [
+        'id', 'name', 'address', 'city', 'state', 'created_at', 'updated_at', 
+        'status', 'submission_status', 'approval_date', 'submission_date',
+        'phone_number', 'kosher_category', 'certifying_agency', 'rating', 
+        'google_rating', 'google_review_count'
+      ],
+      review: [
+        'id', 'rating', 'created_at', 'updated_at', 'status', 'helpful_count',
+        'report_count', 'user_name', 'user_email', 'restaurant_id'
+      ],
+      user: [
+        'id', 'email', 'name', 'createdat', 'updatedat', 'issuperadmin',
+        'emailverified', 'image'
+      ],
+      restaurantImage: [
+        'id', 'image_order', 'created_at', 'updated_at', 'restaurant_id',
+        'image_url', 'cloudinary_public_id'
+      ],
     };
     return validFields[modelKey] || [];
   }
@@ -119,7 +136,7 @@ export class AdminDatabaseService {
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
-    const { page, pageSize, search, filters, sortBy, sortOrder, cursor } = options;
+    const { page, pageSize, search, filters, sortBy, sortOrder } = options;
 
     // Build where clause
     const where: any = {};
@@ -159,14 +176,39 @@ export class AdminDatabaseService {
     const total = await delegate.count({ where });
 
     // Get paginated data
-    const data = await delegate.findMany({
+    // Build options object without undefined properties (e.g. include)
+    const findOptions: any = {
       where,
       orderBy,
-      skip: cursor ? undefined : (page - 1) * pageSize,
+      skip: (page - 1) * pageSize,
       take: pageSize,
-      cursor: cursor ? { id: cursor } : undefined,
-      include,
-    });
+    };
+    if (typeof include !== 'undefined') {
+      findOptions.include = include;
+    }
+
+    let data: T[];
+    try {
+      data = await delegate.findMany(findOptions);
+    } catch (err: any) {
+      // Prisma P2022: Column for the selected field does not exist in DB.
+      // Fall back to a safe default ordering by primary key `id`.
+      if (err && typeof err === 'object' && err.code === 'P2022') {
+        try {
+          const fallbackOptions = { ...findOptions, orderBy: { id: sortOrder || 'desc' } };
+          data = await delegate.findMany(fallbackOptions);
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[ADMIN] getPaginatedData fallback to orderBy.id due to P2022 on model ${modelKey}. Original orderBy: ${JSON.stringify(orderBy)}`
+          );
+        } catch (fallbackErr) {
+          // Re-throw fallback error if it also fails
+          throw fallbackErr;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     const totalPages = Math.ceil(total / pageSize);
     const hasNext = page < totalPages;
@@ -181,7 +223,6 @@ export class AdminDatabaseService {
         totalPages,
         hasNext,
         hasPrev,
-        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
       },
     };
   }
@@ -307,22 +348,23 @@ export class AdminDatabaseService {
   /**
    * Bulk operations with transaction support
    */
-  static async bulkOperation<T>(
-    operation: 'create' | 'update' | 'delete',
-    delegate: any,
-    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
-    data: any[],
-    user: AdminUser,
-    entityType: string,
-    options: {
+  static async bulkOperation<T>(params: {
+    operation: 'create' | 'update' | 'delete';
+    delegate: any;
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage';
+    data: any[];
+    user: AdminUser;
+    entityType: string;
+    options?: {
       batchSize?: number;
       onProgress?: (processed: number, total: number) => void;
-    } = {}
-  ): Promise<{
+    };
+  }): Promise<{
     success: number;
     failed: number;
     errors: string[];
   }> {
+    const { operation, delegate, modelKey, data, user, entityType, options = {} } = params;
     const { batchSize = 100, onProgress } = options;
     let success = 0;
     let failed = 0;
@@ -405,7 +447,7 @@ export class AdminDatabaseService {
   /**
    * Export data to CSV with limits to prevent memory issues
    */
-  static async exportToCSV<T>(
+  static async exportToCSV<T extends Record<string, any>>(
     delegate: any,
     modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage',
     options: SearchOptions = {},
@@ -449,11 +491,30 @@ export class AdminDatabaseService {
     const take = limited ? maxRows : totalCount;
 
     // Get data with limit
-    const data = await delegate.findMany({
+    const findOptions: any = {
       where,
       orderBy,
       take,
-    });
+    };
+    let data: T[];
+    try {
+      data = await delegate.findMany(findOptions);
+    } catch (err: any) {
+      if (err && typeof err === 'object' && err.code === 'P2022') {
+        try {
+          const fallbackOptions = { ...findOptions, orderBy: { id: sortOrder || 'desc' } };
+          data = await delegate.findMany(fallbackOptions);
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[ADMIN] exportToCSV fallback to orderBy.id due to P2022 on model ${modelKey}. Original orderBy: ${JSON.stringify(orderBy)}`
+          );
+        } catch (fallbackErr) {
+          throw fallbackErr;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     // Convert to CSV
     if (data.length === 0) {
@@ -496,27 +557,39 @@ export class AdminDatabaseService {
     totalImages: number;
     pendingSubmissions: number;
   }> {
-    const [
-      totalRestaurants,
-      totalReviews,
-      totalUsers,
-      totalImages,
-      pendingSubmissions,
-    ] = await Promise.all([
-      prisma.restaurant.count(),
-      prisma.review.count(),
-      prisma.user.count(),
-      prisma.restaurantImage.count(),
-      prisma.restaurant.count({ where: { status: 'pending_approval' } }),
-    ]);
+    try {
+      const [
+        totalRestaurants,
+        totalReviews,
+        totalUsers,
+        totalImages,
+        pendingSubmissions,
+      ] = await Promise.all([
+        prisma.restaurant.count(),
+        prisma.review.count(),
+        prisma.user.count(),
+        prisma.restaurantImage.count(),
+        prisma.restaurant.count({ where: { submission_status: PENDING_STATUS } }),
+      ]);
 
-    return {
-      totalRestaurants,
-      totalReviews,
-      totalUsers,
-      totalImages,
-      pendingSubmissions,
-    };
+      return {
+        totalRestaurants,
+        totalReviews,
+        totalUsers,
+        totalImages,
+        pendingSubmissions,
+      };
+    } catch (error) {
+      console.error('[ADMIN] Failed to get database stats:', error);
+      // Return fallback object with all counts set to zero
+      return {
+        totalRestaurants: 0,
+        totalReviews: 0,
+        totalUsers: 0,
+        totalImages: 0,
+        pendingSubmissions: 0,
+      };
+    }
   }
 
   /**
@@ -552,13 +625,9 @@ export class AdminDatabaseService {
   static async getTableSizes(): Promise<Record<string, number>> {
     try {
       const result = await prisma.$queryRaw<Array<{ table_name: string; row_count: bigint }>>`
-        SELECT 
-          schemaname,
-          tablename as table_name,
-          n_tup_ins + n_tup_upd + n_tup_del as row_count
-        FROM pg_stat_user_tables 
-        WHERE schemaname = 'public'
-        ORDER BY n_tup_ins + n_tup_upd + n_tup_del DESC
+        SELECT relname as table_name, n_live_tup as row_count
+        FROM pg_stat_user_tables
+        ORDER BY n_live_tup DESC;
       `;
 
       return Object.fromEntries(

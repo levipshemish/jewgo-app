@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
-          limit: limit,
+          limit,
           offset: calculatedOffset,
           message: 'Using sample data - backend unavailable'
         });
@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: restaurantsWithImages,
       total: data.total || data.count || 0, // Use backend total, not filtered length
-      limit: limit,
+      limit,
       offset: calculatedOffset,
       message: 'Restaurants with images only'
     });

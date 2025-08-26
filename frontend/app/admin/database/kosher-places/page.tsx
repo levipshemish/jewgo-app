@@ -73,7 +73,11 @@ export default function KosherPlaceDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/kosher-places?${params.toString()}`);
+      const response = await fetch(`/api/admin/kosher-places?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch kosher places');
@@ -141,18 +145,18 @@ export default function KosherPlaceDatabasePage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/kosher-places/export', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchParams.get('search')) params.set('search', searchParams.get('search')!);
+      if (searchParams.get('category')) params.set('category', searchParams.get('category')!);
+      if (searchParams.get('status')) params.set('status', searchParams.get('status')!);
+      if (searchParams.get('sortBy')) params.set('sortBy', searchParams.get('sortBy')!);
+      if (searchParams.get('sortOrder')) params.set('sortOrder', searchParams.get('sortOrder')!);
+
+      const response = await fetch(`/api/admin/kosher-places/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          search: searchParams.get('search'),
-          filters: {
-            category: searchParams.get('category'),
-            status: searchParams.get('status'),
-          },
-        }),
       });
 
       if (response.ok) {

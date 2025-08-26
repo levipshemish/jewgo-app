@@ -339,9 +339,19 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
 }
 
 export default function SignUp() {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SignUpFormWithParams />
-    </Suspense>
+    <>
+      {siteKey && siteKey !== 'your-recaptcha-site-key-here' && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="beforeInteractive"
+        />
+      )}
+      <Suspense fallback={<div>Loading...</div>}>
+        <SignUpFormWithParams />
+      </Suspense>
+    </>
   );
 }

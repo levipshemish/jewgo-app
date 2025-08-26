@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle, Phone } from 'lucide-react';
@@ -38,6 +38,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomHours, setShowCustomHours] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
     kosherCategories: [],
@@ -52,16 +53,45 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     watch,
     setValue,
     getValues,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isDirty, touchedFields },
     trigger,
     reset
   } = useForm<RestaurantFormData>({
     resolver: zodResolver(restaurantFormSchema) as any,
     defaultValues: defaultFormData,
-    mode: 'onChange'
+    mode: 'onBlur' // Changed from 'onChange' to 'onBlur' to reduce validation frequency
   });
 
-  const watchedValues = watch();
+  // Form already receives defaultValues via useForm. Avoid resetting each render.
+  // If you need to programmatically reset later, do it in response to an explicit action.
+
+  // Watch specific fields for conditional rendering
+  const watchedHours = watch('hours_of_operation');
+  const watchedIsOwner = watch('is_owner_submission');
+  const watchedKosherCategory = watch('kosher_category');
+  const watchedCertifyingAgency = watch('certifying_agency');
+  const watchedValues = watch(); // Watch all form values
+
+  // Debug logging for kosher category changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[EnhancedAddEateryForm] Kosher category changed:', {
+        kosher_category: watchedKosherCategory,
+        isDairy: isDairyCategory(watchedKosherCategory),
+        isPasYisroel: isPasYisroelCategory(watchedKosherCategory)
+      });
+    }
+  }, [watchedKosherCategory]);
+
+  // Debug logging for filter options
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[EnhancedAddEateryForm] Filter options updated:', {
+        kosherCategories: filterOptions.kosherCategories,
+        agencies: filterOptions.agencies
+      });
+    }
+  }, [filterOptions]);
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string | undefined) => {
@@ -105,7 +135,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         console.error('Error fetching filter options:', error);
         // Set default options
         setFilterOptions({
-          agencies: ['ORB', 'Kosher Miami', 'KM'],
+          agencies: ['ORB', 'Kosher Miami', 'Other'],
           kosherCategories: ['Dairy', 'Meat', 'Pareve'],
           listingTypes: ['Restaurant', 'Bakery', 'Catering', 'Cafe', 'Deli'],
           priceRanges: ['$', '$$', '$$$', '$$$$']
@@ -128,7 +158,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
       case 1:
         return ['is_owner_submission', 'name', 'address', 'phone', 'business_email', 'website', 'listing_type', 'owner_name', 'owner_email', 'owner_phone'];
       case 2:
-        return ['kosher_category', 'certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel'];
+        return ['kosher_category', 'certifying_agency', 'custom_certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel'];
       case 3:
         return ['short_description', 'description', 'hours_of_operation', 'google_listing_url', 'instagram_link', 'facebook_link', 'tiktok_link'];
       case 4:
@@ -168,6 +198,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const onSubmit = async (data: RestaurantFormData) => {
     setIsSubmitting(true);
     try {
+      // Handle custom certifying agency
+      let finalCertifyingAgency = data.certifying_agency;
+      if (data.certifying_agency === 'Other' && data.custom_certifying_agency) {
+        finalCertifyingAgency = data.custom_certifying_agency;
+      }
+      
       const response = await fetch('/api/restaurants', {
         method: 'POST',
         headers: {
@@ -175,6 +211,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         },
         body: JSON.stringify({
           ...data,
+          certifying_agency: finalCertifyingAgency,
           submission_status: 'pending_approval',
           submission_date: new Date().toISOString(),
         }),
@@ -197,10 +234,10 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     }
   };
 
-  // Image upload handler
-  const handleImagesUpload = (imageUrls: string[]) => {
+  // Image upload handler (memoized to prevent effect loops in child)
+  const handleImagesUpload = useCallback((imageUrls: string[]) => {
     setValue('business_images', imageUrls);
-  };
+  }, [setValue]);
 
   // Progress calculation
   const progress = (currentStep / 5) * 100;
@@ -458,7 +495,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   </div>
 
                   {/* Owner Information (conditional) */}
-                  {watchedValues.is_owner_submission && (
+                  {watchedIsOwner && (
                     <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
                       <h3 className="text-lg font-semibold mb-4 text-blue-900">Owner Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -574,18 +611,22 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       control={control}
                       render={({ field }) => (
                         <div className="space-y-2">
-                          {filterOptions.kosherCategories.map((category) => (
-                            <label key={category} className="flex items-center">
-                              <input
-                                type="radio"
-                                {...field}
-                                value={category.toLowerCase()}
-                                checked={field.value === category.toLowerCase()}
-                                className="mr-3"
-                              />
-                              <span className="capitalize">{category}</span>
-                            </label>
-                          ))}
+                          {filterOptions.kosherCategories.length > 0 ? (
+                            filterOptions.kosherCategories.map((category) => (
+                              <label key={category} className="flex items-center">
+                                <input
+                                  type="radio"
+                                  {...field}
+                                  value={category.toLowerCase()}
+                                  checked={field.value === category.toLowerCase()}
+                                  className="mr-3"
+                                />
+                                <span className="capitalize">{category}</span>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="text-gray-500">Loading kosher categories...</div>
+                          )}
                         </div>
                       )}
                     />
@@ -620,10 +661,37 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     {errors.certifying_agency && (
                       <p className="text-red-500 text-sm mt-1">{errors.certifying_agency.message}</p>
                     )}
+                    
+                    {/* Custom Certifying Agency Input */}
+                    {watchedCertifyingAgency === 'Other' && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Specify Certifying Agency *
+                        </label>
+                        <Controller
+                          name="custom_certifying_agency"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              placeholder="Enter the name of the certifying agency"
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                                errors.custom_certifying_agency ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                            />
+                          )}
+                        />
+                        {errors.custom_certifying_agency && (
+                          <p className="text-red-500 text-sm mt-1">{errors.custom_certifying_agency.message}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Conditional Fields */}
-                  {isDairyCategory(watchedValues.kosher_category) && (
+                  {isDairyCategory(watchedKosherCategory) && (
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <h3 className="text-sm font-medium text-blue-900 mb-3">Dairy Kosher Status *</h3>
                       <Controller
@@ -662,7 +730,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     </div>
                   )}
 
-                  {isPasYisroelCategory(watchedValues.kosher_category) && (
+                  {isPasYisroelCategory(watchedKosherCategory) && (
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                       <h3 className="text-sm font-medium text-blue-900 mb-3">Pas Yisroel Status *</h3>
                       <Controller
@@ -796,6 +864,17 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       render={({ field }) => (
                         <select
                           {...field}
+                          value={showCustomHours ? 'custom' : (field.value || '')}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === 'custom') {
+                              setShowCustomHours(true);
+                              field.onChange('custom');
+                            } else {
+                              setShowCustomHours(false);
+                              field.onChange(val);
+                            }
+                          }}
                           className={cn(
                             "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
                             errors.hours_of_operation ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
@@ -812,11 +891,15 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         </select>
                       )}
                     />
-                    {watchedValues.hours_of_operation === 'custom' && (
+                    {showCustomHours && (
                       <div className="mt-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        {/* Debug log removed */}
                         <CustomHoursSelector
-                          value={watchedValues.hours_of_operation === 'custom' ? '' : getValues('hours_of_operation') || ''}
-                          onChange={(value) => setValue('hours_of_operation', value)}
+                          key="custom-hours-selector" // Add key to prevent unnecessary re-renders
+                          value={getValues('hours_of_operation') || ''}
+                          onChange={(value) => {
+                            setValue('hours_of_operation', value);
+                          }}
                           error={errors.hours_of_operation?.message}
                         />
                       </div>
@@ -992,29 +1075,29 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     <div>
                       <h3 className="text-lg font-semibold mb-3">Business Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Name:</span> {watchedValues.name}
+                                                <div>
+                          <span className="font-medium">Name:</span> {getValues('name')}
                         </div>
                         <div>
-                          <span className="font-medium">Type:</span> {watchedValues.listing_type}
+                          <span className="font-medium">Type:</span> {getValues('listing_type')}
                         </div>
                         <div>
-                          <span className="font-medium">Address:</span> {watchedValues.address}
+                          <span className="font-medium">Address:</span> {getValues('address')}
                         </div>
                         <div>
-                          <span className="font-medium">Phone:</span> {watchedValues.phone}
+                          <span className="font-medium">Phone:</span> {getValues('phone')}
                         </div>
                         <div>
                           <span className="font-medium">Location:</span> {
-                            watchedValues.city && watchedValues.state && watchedValues.zip_code 
-                              ? `${watchedValues.city}, ${watchedValues.state} ${watchedValues.zip_code}`
-                              : watchedValues.city && watchedValues.state
-                                ? `${watchedValues.city}, ${watchedValues.state}`
-                                : watchedValues.city || watchedValues.state || watchedValues.zip_code || 'Not provided'
+                            getValues('city') && getValues('state') && getValues('zip_code')
+                              ? `${getValues('city')}, ${getValues('state')} ${getValues('zip_code')}`
+                              : getValues('city') && getValues('state')
+                                ? `${getValues('city')}, ${getValues('state')}`
+                                : getValues('city') || getValues('state') || getValues('zip_code') || 'Not provided'
                           }
                         </div>
                         <div>
-                          <span className="font-medium">Email:</span> {watchedValues.business_email || 'Not provided'}
+                          <span className="font-medium">Email:</span> {getValues('business_email') || 'Not provided'}
                         </div>
                       </div>
                     </div>
@@ -1023,22 +1106,26 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     <div>
                       <h3 className="text-lg font-semibold mb-3">Kosher Certification</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Category:</span> {watchedValues.kosher_category}
+                                                <div>
+                          <span className="font-medium">Category:</span> {getValues('kosher_category')}
                         </div>
                         <div>
-                          <span className="font-medium">Agency:</span> {watchedValues.certifying_agency}
+                          <span className="font-medium">Agency:</span> {
+                            getValues('certifying_agency') === 'Other' 
+                              ? getValues('custom_certifying_agency') 
+                              : getValues('certifying_agency')
+                          }
                         </div>
-                        {isDairyCategory(watchedValues.kosher_category) && (
+                        {isDairyCategory(getValues('kosher_category')) && (
                           <div>
-                            <span className="font-medium">Dairy Status:</span> {watchedValues.is_cholov_yisroel ? 'Cholov Yisroel' : 'Cholov Stam'}
+                            <span className="font-medium">Dairy Status:</span> {getValues('is_cholov_yisroel') ? 'Cholov Yisroel' : 'Cholov Stam'}
                           </div>
                         )}
-                                            {isPasYisroelCategory(watchedValues.kosher_category) && (
-                      <div>
-                        <span className="font-medium">Pas Yisroel:</span> {watchedValues.is_pas_yisroel ? 'Yes' : 'No'}
-                      </div>
-                    )}
+                        {isPasYisroelCategory(getValues('kosher_category')) && (
+                          <div>
+                            <span className="font-medium">Pas Yisroel:</span> {getValues('is_pas_yisroel') ? 'Yes' : 'No'}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1048,29 +1135,29 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       <div className="text-sm">
                         <div className="mb-2">
                           <span className="font-medium">Short Description:</span>
-                          <p className="mt-1">{watchedValues.short_description}</p>
+                          <p className="mt-1">{getValues('short_description')}</p>
                         </div>
-                        {watchedValues.description && (
+                        {getValues('description') && (
                           <div>
                             <span className="font-medium">Long Description:</span>
-                            <p className="mt-1">{watchedValues.description}</p>
+                            <p className="mt-1">{getValues('description')}</p>
                           </div>
                         )}
-                        {watchedValues.hours_of_operation && (
+                        {getValues('hours_of_operation') && (
                           <div>
                             <span className="font-medium">Hours of Operation:</span>
-                            <pre className="mt-1 text-xs whitespace-pre-wrap">{watchedValues.hours_of_operation}</pre>
+                            <pre className="mt-1 text-xs whitespace-pre-wrap">{getValues('hours_of_operation')}</pre>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Images Preview */}
-                    {watchedValues.business_images && watchedValues.business_images.length > 0 && (
+                    {getValues('business_images') && getValues('business_images').length > 0 && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-3">Images ({watchedValues.business_images.length})</h3>
+                        <h3 className="text-lg font-semibold mb-3">Images ({getValues('business_images').length})</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                          {watchedValues.business_images.map((image, index) => (
+                          {getValues('business_images').map((image, index) => (
                             <img
                               key={index}
                               src={image}
@@ -1083,18 +1170,18 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     )}
 
                     {/* Owner Info Preview */}
-                    {watchedValues.is_owner_submission && (
+                    {getValues('is_owner_submission') && (
                       <div>
                         <h3 className="text-lg font-semibold mb-3">Owner Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <span className="font-medium">Name:</span> {watchedValues.owner_name}
+                            <span className="font-medium">Name:</span> {getValues('owner_name')}
                           </div>
                           <div>
-                            <span className="font-medium">Email:</span> {watchedValues.owner_email}
+                            <span className="font-medium">Email:</span> {getValues('owner_email')}
                           </div>
                           <div>
-                            <span className="font-medium">Phone:</span> {watchedValues.owner_phone}
+                            <span className="font-medium">Phone:</span> {getValues('owner_phone')}
                           </div>
                         </div>
                       </div>

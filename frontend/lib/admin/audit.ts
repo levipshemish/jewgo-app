@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { AdminUser } from './auth';
+import { AdminUser } from './types';
 
 // Audit log interface
 export interface AuditLog {
@@ -132,7 +132,7 @@ export async function logAdminAction(
  * Sanitize sensitive data for audit logs
  */
 function sanitizeData(data: any): any {
-  if (!data) return data;
+  if (!data) {return data;}
 
   const sensitiveFields = [
     'password', 'token', 'refresh_token', 'access_token', 'secret',
@@ -190,17 +190,17 @@ export async function queryAuditLogs(options: {
   // Build where clause
   const where: any = {};
   
-  if (userId) where.userId = userId;
-  if (action) where.action = action;
-  if (entityType) where.entityType = entityType;
-  if (entityId) where.entityId = entityId;
-  if (auditLevel) where.auditLevel = auditLevel;
-  if (correlationId) where.correlationId = correlationId;
+  if (userId) {where.userId = userId;}
+  if (action) {where.action = action;}
+  if (entityType) {where.entityType = entityType;}
+  if (entityId) {where.entityId = entityId;}
+  if (auditLevel) {where.auditLevel = auditLevel;}
+  if (correlationId) {where.correlationId = correlationId;}
   
   if (startDate || endDate) {
     where.timestamp = {};
-    if (startDate) where.timestamp.gte = startDate;
-    if (endDate) where.timestamp.lte = endDate;
+    if (startDate) {where.timestamp.gte = startDate;}
+    if (endDate) {where.timestamp.lte = endDate;}
   }
 
   // Get total count
@@ -263,11 +263,11 @@ export async function getAuditStats(options: {
 
   // Build where clause
   const where: any = {};
-  if (userId) where.userId = userId;
+  if (userId) {where.userId = userId;}
   if (startDate || endDate) {
     where.timestamp = {};
-    if (startDate) where.timestamp.gte = startDate;
-    if (endDate) where.timestamp.lte = endDate;
+    if (startDate) {where.timestamp.gte = startDate;}
+    if (endDate) {where.timestamp.lte = endDate;}
   }
 
   // Get total count

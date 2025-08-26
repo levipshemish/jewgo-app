@@ -19,7 +19,7 @@ import {
   UserMinus,
   Crown
 } from 'lucide-react';
-import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 
 interface SystemStats {
   totalUsers: number;
@@ -83,6 +83,7 @@ export default function SystemSettingsPage() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [adminRoles, setAdminRoles] = useState<AdminRolesData | null>(null);
+  const [roleEdits, setRoleEdits] = useState<Record<number, { is_active?: boolean; expires_at?: string }>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -101,10 +102,12 @@ export default function SystemSettingsPage() {
       }
 
       // Fetch system stats
-      const statsResponse = await fetch('/api/admin/system/stats');
+      const statsResponse = await fetch('/api/admin/system/stats', {
+        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
+      });
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData);
+        setStats(statsData.data || statsData);
       }
 
       // Fetch system config
@@ -135,7 +138,7 @@ export default function SystemSettingsPage() {
 
   // Save system configuration
   const saveConfig = async () => {
-    if (!config) return;
+    if (!config) {return;}
 
     try {
       setSaving(true);
@@ -143,6 +146,7 @@ export default function SystemSettingsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
         body: JSON.stringify(config),
       });
@@ -165,6 +169,7 @@ export default function SystemSettingsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
         body: JSON.stringify({
           userId,
@@ -192,6 +197,9 @@ export default function SystemSettingsPage() {
     try {
       const response = await fetch(`/api/admin/roles?userId=${userId}&role=${role}`, {
         method: 'DELETE',
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
       });
 
       if (response.ok) {
@@ -204,6 +212,37 @@ export default function SystemSettingsPage() {
       }
     } catch (error) {
       console.error('Error removing role:', error);
+    }
+  };
+
+  // Update a role inline (active/expiry)
+  const updateRole = async (id: number) => {
+    try {
+      const edits = roleEdits[id];
+      if (!edits) return;
+      const payload: any = { id };
+      if (typeof edits.is_active === 'boolean') payload.isActive = edits.is_active;
+      if (edits.expires_at) payload.expiresAt = edits.expires_at;
+      const response = await fetch('/api/admin/roles', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        // Refresh roles
+        const rolesResponse = await fetch('/api/admin/roles');
+        if (rolesResponse.ok) {
+          const rolesData = await rolesResponse.json();
+          setAdminRoles(rolesData);
+          // Clear edits for this row
+          setRoleEdits((prev) => ({ ...prev, [id]: {} }));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
     }
   };
 
@@ -497,18 +536,45 @@ export default function SystemSettingsPage() {
                           {new Date(role.assigned_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {role.expires_at ? new Date(role.expires_at).toLocaleDateString() : 'Never'}
+                          <input
+                            type="date"
+                            value={
+                              roleEdits[role.id]?.expires_at !== undefined
+                                ? (roleEdits[role.id]?.expires_at || '')
+                                : (role.expires_at ? new Date(role.expires_at).toISOString().slice(0,10) : '')
+                            }
+                            onChange={(e) => setRoleEdits((prev) => ({
+                              ...prev,
+                              [role.id]: { ...prev[role.id], expires_at: e.target.value }
+                            }))}
+                            className="border rounded px-2 py-1 text-sm"
+                          />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            role.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {role.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          <label className="inline-flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={
+                                roleEdits[role.id]?.is_active !== undefined
+                                  ? !!roleEdits[role.id]?.is_active
+                                  : !!role.is_active
+                              }
+                              onChange={(e) => setRoleEdits((prev) => ({
+                                ...prev,
+                                [role.id]: { ...prev[role.id], is_active: e.target.checked }
+                              }))}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-700">Active</span>
+                          </label>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                          <button
+                            onClick={() => updateRole(role.id)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Update
+                          </button>
                           <button
                             onClick={() => removeRole(role.user_id, role.role)}
                             className="text-red-600 hover:text-red-900"

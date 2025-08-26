@@ -63,7 +63,11 @@ export default function ImageDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/images?${params.toString()}`);
+      const response = await fetch(`/api/admin/images?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch images');
@@ -131,17 +135,25 @@ export default function ImageDatabasePage() {
   // Handle export
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/images/export', {
-        method: 'POST',
+      const params = new URLSearchParams();
+      if (searchParams.get('search')) {
+        params.set('search', searchParams.get('search')!);
+      }
+      if (searchParams.get('restaurantId')) {
+        params.set('restaurantId', searchParams.get('restaurantId')!);
+      }
+      if (searchParams.get('sortBy')) {
+        params.set('sortBy', searchParams.get('sortBy')!);
+      }
+      if (searchParams.get('sortOrder')) {
+        params.set('sortOrder', searchParams.get('sortOrder')!);
+      }
+
+      const response = await fetch(`/api/admin/images/export?${params.toString()}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
-        body: JSON.stringify({
-          search: searchParams.get('search'),
-          filters: {
-            restaurantId: searchParams.get('restaurantId'),
-          },
-        }),
       });
 
       if (response.ok) {
@@ -168,14 +180,16 @@ export default function ImageDatabasePage() {
       }
 
       try {
-        const response = await fetch('/api/admin/images/bulk', {
+        const response = await fetch('/api/admin/bulk', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'x-csrf-token': window.__CSRF_TOKEN__ || '',
           },
           body: JSON.stringify({
-            action: 'delete',
-            ids: selectedIds,
+            operation: 'delete',
+            entityType: 'restaurantImage',
+            data: selectedIds.map((id) => ({ id })),
           }),
         });
 

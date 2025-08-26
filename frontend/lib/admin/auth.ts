@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { transformSupabaseUser } from '@/lib/utils/auth-utils';
 import { AdminUser, AdminRole, ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
+// Re-export types and helpers so other modules can import from this single entrypoint
+export type { AdminUser, AdminRole };
+export { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
+export { hasPermission } from './types';
 import { prisma } from '@/lib/db/prisma';
 
 /**

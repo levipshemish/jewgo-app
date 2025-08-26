@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, validateCSRFToken, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { getCSRFTokenFromCookie, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 import { mapUsersToApiResponse, mapApiRequestToUser } from '@/lib/admin/dto/user';
+import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,13 +28,13 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
     const search = searchParams.get('search') || undefined;
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortBy = searchParams.get('sortBy') || 'createdat';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
     const provider = searchParams.get('provider') || undefined;
 
     // Build filters
     const filters: any = {};
-    if (provider) filters.provider = provider;
+    if (provider) {filters.provider = provider;}
 
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
@@ -81,13 +85,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
     // Parse request body
     const body = await request.json();
+    // Do not allow client-provided ID on create
+    if (body && 'id' in body) {
+      delete body.id;
+    }
 
     // Validate data
     const validatedData = validationUtils.validateUser(body);
@@ -97,6 +105,12 @@ export async function POST(request: NextRequest) {
 
     // Map API request to Prisma format
     const userData = mapApiRequestToUser(sanitizedData);
+
+    // Ensure email is unique
+    const existing = await prisma.user.findUnique({ where: { email: userData.email } as any });
+    if (existing) {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 409 });
+    }
 
     // Create user
     const user = await AdminDatabaseService.createRecord(
@@ -111,10 +125,19 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] User create error:', error);
     
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+    // Handle ZodError with instanceof check for better reliability
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
+      );
+    }
+
+    // Handle Prisma unique constraint violations
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'User with this information already exists' },
+        { status: 409 }
       );
     }
 
@@ -139,8 +162,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -175,11 +198,28 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('[ADMIN] User update error:', error);
     
-    if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+    // Handle ZodError with instanceof check for better reliability
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
+        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error) },
         { status: 400 }
       );
+    }
+
+    // Handle Prisma unique constraint violations and not found errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'User with this information already exists' },
+          { status: 409 }
+        );
+      }
+      if (error.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
     }
 
     return NextResponse.json(
@@ -203,8 +243,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
     }
 
@@ -237,6 +277,15 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('[ADMIN] User delete error:', error);
+    
+    // Handle Prisma not found errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }

@@ -89,7 +89,11 @@ export default function SynagogueDatabasePage() {
         params.set('sortOrder', sortOrder);
       }
 
-      const response = await fetch(`/api/admin/synagogues?${params.toString()}`);
+      const response = await fetch(`/api/admin/synagogues?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+        },
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch synagogues');
@@ -161,6 +165,7 @@ export default function SynagogueDatabasePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
         body: JSON.stringify({
           search: searchParams.get('search'),

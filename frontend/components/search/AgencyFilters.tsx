@@ -11,7 +11,6 @@ interface AgencyFiltersProps {
 
 const AGENCIES = [
   { id: 'ORB', name: 'ORB', color: 'bg-blue-500', description: 'Orthodox Rabbinical Board' },
-  { id: 'KM', name: 'KM', color: 'bg-green-500', description: 'Kosher Miami' },
   { id: 'Kosher Miami', name: 'Kosher Miami', color: 'bg-green-600', description: 'Kosher Miami Certification' },
 ];
 

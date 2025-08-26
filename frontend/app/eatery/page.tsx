@@ -20,7 +20,7 @@ import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Restaurant } from '@/lib/types/restaurant';
-import { Filters } from '@/lib/filters/schema';
+import { Filters, toSearchParams } from '@/lib/filters/schema';
 
 // Loading component for Suspense fallback
 function EateryPageLoading() {
@@ -247,23 +247,12 @@ function EateryPageContent() {
 
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      
-      // Add search query if present
+      // Build params from filters for consistency
+      const params = toSearchParams({ ...activeFilters, page, limit: mobileOptimizedItemsPerPage });
       if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
+        params.set('search', searchQuery.trim());
       }
-      
-      // Add current filters - exclude page and limit to prevent duplicates
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', page.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
+      params.set('mobile_optimized', 'true');
 
       // Call the working API endpoint directly
       const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
@@ -281,6 +270,8 @@ function EateryPageContent() {
       
       setRestaurants(processedRestaurants);
       setCurrentPage(page);
+      // Keep URL filter state in sync with current page
+      setFilter('page', page as any);
     } catch (err) {
       console.error('Error fetching page:', err);
     } finally {
@@ -342,8 +333,15 @@ function EateryPageContent() {
     }
   }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
 
+  // Clear distance when Near Me is turned off
+  useEffect(() => {
+    if (!activeFilters.nearMe) {
+      clearFilter('maxDistanceMi');
+    }
+  }, [activeFilters.nearMe, clearFilter]);
+
   // Fetch restaurants with mobile optimization and distance sorting
-  const fetchRestaurantsData = useCallback(async (filters: Filters = activeFilters, resetPage: boolean = true) => {
+  const fetchRestaurantsData = useCallback(async (filters?: Filters, resetPage: boolean = true) => {
     // Prevent API calls when automatically setting location filters
     if (isSettingLocationFilters) {
       return;
@@ -353,23 +351,12 @@ function EateryPageContent() {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams();
-      
-      // Add search query if present
+      const currentFilters = filters || activeFilters;
+      const params = toSearchParams({ ...currentFilters, page: 1, limit: mobileOptimizedItemsPerPage });
       if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
+        params.set('search', searchQuery.trim());
       }
-      
-      // Add current filters - exclude page and limit to prevent duplicates
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', '1');
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
+      params.set('mobile_optimized', 'true');
 
       // Call the working API endpoint directly
       const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
@@ -407,7 +394,7 @@ function EateryPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation]);
+  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation, activeFilters]);
 
   // Handle location-based data fetching after filters are set
   useEffect(() => {
@@ -420,7 +407,7 @@ function EateryPageContent() {
       
       return () => clearTimeout(timeout);
     }
-  }, [userLocation, isSettingLocationFilters]); // Removed fetchRestaurantsData from dependencies
+  }, [userLocation, isSettingLocationFilters, fetchRestaurantsData]);
 
   // Remove the shouldFetchData pattern entirely
   // useEffect(() => {
@@ -476,23 +463,11 @@ function EateryPageContent() {
     try {
       setIsLoadingMore(true);
       const nextPage = currentPage + 1;
-      const params = new URLSearchParams();
-      
-      // Add search query if present
+      const params = toSearchParams({ ...activeFilters, page: nextPage, limit: mobileOptimizedItemsPerPage });
       if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
+        params.set('search', searchQuery.trim());
       }
-      
-      // Add current filters - exclude page and limit to prevent duplicates
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null && key !== 'page' && key !== 'limit') {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', nextPage.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
+      params.set('mobile_optimized', 'true');
 
       console.log('🔍 FETCHING MORE RESTAURANTS:', {
         nextPage,
@@ -558,7 +533,7 @@ function EateryPageContent() {
     if (restaurants.length === 0) {
       fetchRestaurantsData();
     }
-  }, [restaurants.length]); // Removed fetchRestaurantsData from dependencies
+  }, [fetchRestaurantsData]); // Only depend on fetchRestaurantsData, not restaurants.length
 
   // Handle filter changes while preserving current page
   useEffect(() => {

@@ -30,8 +30,9 @@ export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAd
     return { ...DEFAULT_FILTERS, ...initialFilters };
   });
 
-  // Track pending URL updates to avoid calling router during render
+  // Track pending URL updates and debounce to avoid churn
   const [pendingURLUpdate, setPendingURLUpdate] = useState<Filters | null>(null);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Update URL when filters change - deferred to useEffect
   const updateURL = useCallback((filters: Filters) => {
@@ -40,15 +41,33 @@ export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAd
 
   // Apply pending URL updates in useEffect to avoid render-time router calls
   useEffect(() => {
-    if (pendingURLUpdate) {
-      const params = toSearchParams(pendingURLUpdate);
-      const newURL = params.toString() ? `?${params.toString()}` : '';
-      
-      // Use replace to avoid adding to browser history for filter changes
+    if (!pendingURLUpdate) return;
+
+    const params = toSearchParams(pendingURLUpdate);
+    const nextQueryString = params.toString();
+    const currentQueryString = searchParams.toString();
+
+    // Skip if no actual change
+    if (nextQueryString === currentQueryString) {
+      setPendingURLUpdate(null);
+      return;
+    }
+
+    // Debounce updates to prevent churn (e.g., range sliders)
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    const timer = setTimeout(() => {
+      const newURL = nextQueryString ? `?${nextQueryString}` : '';
       router.replace(newURL, { scroll: false });
       setPendingURLUpdate(null);
-    }
-  }, [pendingURLUpdate, router]);
+    }, 200);
+    setDebounceTimer(timer);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [pendingURLUpdate, router, searchParams]); // Removed debounceTimer from dependencies
 
   // Sync URL with filter state
   useEffect(() => {

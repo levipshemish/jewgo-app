@@ -209,7 +209,7 @@ export default function MultipleImageUpload({
 
   const retryUpload = useCallback(async (imageId: string) => {
     const image = images.find(img => img.id === imageId);
-    if (!image?.file) return;
+    if (!image?.file) {return;}
 
     setImages(prev => prev.map(img => 
       img.id === imageId 

@@ -69,6 +69,7 @@ model Restaurant {
   preferred_contact_method String?
   preferred_contact_time   String?
   contact_notes            String?
+  deleted_at               DateTime? @db.Timestamp(6)
 
   @@index([business_email], map: "idx_restaurants_business_email")
   @@index([is_owner_submission], map: "idx_restaurants_is_owner_submission")
@@ -80,23 +81,22 @@ model Restaurant {
 }
 
 model Review {
-  id                String    @id @db.VarChar(50)
+  id                String   @id @db.VarChar(50)
   restaurant_id     Int
-  user_id           String    @db.VarChar(50)
-  user_name         String    @db.VarChar(255)
-  user_email        String?   @db.VarChar(255)
+  user_id           String   @db.VarChar(50)
+  user_name         String   @db.VarChar(255)
+  user_email        String?  @db.VarChar(255)
   rating            Int
-  title             String?   @db.VarChar(255)
+  title             String?  @db.VarChar(255)
   content           String
   images            String?
-  status            String    @db.VarChar(20)
-  created_at        DateTime  @db.Timestamp(6)
-  updated_at        DateTime  @updatedAt @db.Timestamp(6)
+  status            String   @db.VarChar(20)
+  created_at        DateTime @db.Timestamp(6)
+  updated_at        DateTime @updatedAt @db.Timestamp(6)
   moderator_notes   String?
   verified_purchase Boolean
   helpful_count     Int
   report_count      Int
-  deleted_at        DateTime? @db.Timestamp(6)
 
   @@map("reviews")
   @@schema("public")
@@ -126,7 +126,6 @@ model RestaurantImage {
   cloudinary_public_id String?   @db.VarChar
   created_at           DateTime? @db.Timestamp(6)
   updated_at           DateTime? @db.Timestamp(6)
-  deleted_at           DateTime? @db.Timestamp(6)
 
   @@map("restaurant_images")
   @@schema("public")
@@ -175,20 +174,45 @@ model FloridaSynagogue {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model User {
-  id            String    @id @db.VarChar(50)
-  name          String?   @db.VarChar(255)
-  email         String    @unique @db.VarChar(255)
-  emailverified DateTime? @db.Timestamp(6)
-  image         String?   @db.VarChar(500)
+  id            String      @id @db.VarChar(50)
+  name          String?     @db.VarChar(255)
+  email         String      @unique @db.VarChar(255)
+  emailverified DateTime?   @db.Timestamp(6)
+  image         String?     @db.VarChar(500)
   issuperadmin  Boolean
-  createdat     DateTime  @db.Timestamp(6)
-  updatedat     DateTime  @db.Timestamp(6)
-  deletedAt     DateTime? @db.Timestamp(6)
-
-  // Relationships
-  auditLogs AuditLog[]
+  createdat     DateTime    @db.Timestamp(6)
+  updatedat     DateTime    @db.Timestamp(6)
+  deletedAt     DateTime?   @db.Timestamp(6)
+  adminRoles    AdminRole[]
+  auditLogs     AuditLog[]
 
   @@map("users")
+  @@schema("public")
+}
+
+model AdminRole {
+  id         Int       @id @default(autoincrement())
+  userId     String    @map("user_id") @db.VarChar(50)
+  role       String    @db.VarChar(50)
+  assignedBy String?   @map("assigned_by") @db.VarChar(50)
+  assignedAt DateTime  @default(now()) @map("assigned_at") @db.Timestamp(6)
+  expiresAt  DateTime? @map("expires_at") @db.Timestamp(6)
+  isActive   Boolean   @default(true) @map("is_active")
+  notes      String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_admin_roles_user")
+
+  @@index([userId], map: "idx_admin_roles_user")
+  @@map("admin_roles")
+  @@schema("public")
+}
+
+model AdminConfig {
+  key        String    @id @db.VarChar(100)
+  value      Json
+  updated_at DateTime? @db.Timestamp(6)
+  updated_by String?   @db.VarChar(50)
+
+  @@map("admin_config")
   @@schema("public")
 }
 
@@ -347,26 +371,23 @@ model verification_tokens {
 }
 
 model AuditLog {
-  id           String    @id @default(cuid())
-  userId       String    @db.VarChar(50)
-  action       String    @db.VarChar(100)
-  entityType   String    @db.VarChar(50)
-  entityId     String?   @db.VarChar(50)
-  oldData      String?   @db.Text // JSON string
-  newData      String?   @db.Text // JSON string
-  timestamp    DateTime  @default(now()) @db.Timestamp(6)
-  ipAddress    String?   @db.VarChar(45)
-  userAgent    String?   @db.Text
-  sessionId    String?   @db.VarChar(100)
-  correlationId String?  @db.VarChar(100)
-  auditLevel   String    @default("info") @db.VarChar(20)
-  metadata     String?   @db.Text // JSON string
-  deletedAt    DateTime? @db.Timestamp(6)
+  id            String    @id @default(cuid())
+  userId        String    @db.VarChar(50)
+  action        String    @db.VarChar(100)
+  entityType    String    @db.VarChar(50)
+  entityId      String?   @db.VarChar(50)
+  oldData       String?
+  newData       String?
+  timestamp     DateTime  @default(now()) @db.Timestamp(6)
+  ipAddress     String?   @db.VarChar(45)
+  userAgent     String?
+  sessionId     String?   @db.VarChar(100)
+  correlationId String?   @db.VarChar(100)
+  auditLevel    String    @default("info") @db.VarChar(20)
+  metadata      String?
+  deletedAt     DateTime? @db.Timestamp(6)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relationships
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Indexes for efficient querying
   @@index([userId])
   @@index([entityType])
   @@index([entityId])
@@ -374,7 +395,6 @@ model AuditLog {
   @@index([auditLevel])
   @@index([correlationId])
   @@index([deletedAt])
-
   @@map("audit_logs")
   @@schema("public")
 }

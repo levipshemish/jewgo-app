@@ -9,7 +9,7 @@ interface Restaurant {
   address: string;
   city: string;
   state: string;
-  phone: string;
+  phone_number: string;
   kosher_category: string;
   certifying_agency: string;
   submission_status: string;
@@ -56,8 +56,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
-      const response = await fetch(`${backendUrl}/api/v4/restaurants?status=${filterStatus}&limit=100`);
+      const response = await fetch(`/api/admin/restaurants?status=${filterStatus}&pageSize=100`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch restaurants');
@@ -96,6 +95,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
       });
 
@@ -119,6 +119,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-csrf-token': window.__CSRF_TOKEN__ || '',
         },
         body: JSON.stringify({ 
           reason: rejectionReason || 'Rejected by admin'
@@ -281,7 +282,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
                         {restaurant.address}, {restaurant.city}, {restaurant.state}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Phone: {restaurant.phone} | {restaurant.kosher_category} | {restaurant.certifying_agency}
+                        Phone: {restaurant.phone_number} | {restaurant.kosher_category} | {restaurant.certifying_agency}
                       </p>
                       {restaurant.short_description && (
                         <p className="text-sm">{restaurant.short_description}</p>
@@ -363,7 +364,7 @@ export default function AdminRestaurantsPage({}: AdminDashboardProps) {
                       <p><strong>Address:</strong> {selectedRestaurant.address}</p>
                       <p><strong>City:</strong> {selectedRestaurant.city}</p>
                       <p><strong>State:</strong> {selectedRestaurant.state}</p>
-                      <p><strong>Phone:</strong> {selectedRestaurant.phone}</p>
+                      <p><strong>Phone:</strong> {selectedRestaurant.phone_number}</p>
                       <p><strong>Kosher Category:</strong> {selectedRestaurant.kosher_category}</p>
                       <p><strong>Certifying Agency:</strong> {selectedRestaurant.certifying_agency}</p>
                     </div>

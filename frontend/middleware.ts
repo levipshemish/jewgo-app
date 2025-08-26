@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
-import { securityMiddleware, corsHeaders } from '@/middleware-security';
+import { securityMiddleware, corsHeaders } from '@/lib/middleware/security';
 
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
@@ -102,37 +102,12 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Check admin access for admin routes using app_metadata directly
+    // Add basic security headers for admin/API paths
     if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
-      try {
-        // Check admin flags directly from app_metadata to avoid duplicate auth calls
-        const isSuperAdmin = user.app_metadata?.isSuperAdmin === true;
-        const adminRole = user.app_metadata?.adminRole as string;
-        
-        // Allow access if user is super admin or has any admin role
-        const hasAdminAccess = isSuperAdmin || adminRole;
-        
-        if (!hasAdminAccess) {
-          // Redirect non-admin users to home with error message
-          const redirectUrl = new URL('/', request.url);
-          redirectUrl.searchParams.set('error', 'admin_access_denied');
-          return NextResponse.redirect(redirectUrl, 302);
-        }
-        
-        // Add admin security headers
-        response.headers.set('X-Admin-Access', 'true');
-        response.headers.set('X-Admin-Verified', 'true');
-        response.headers.set('X-Admin-Role', adminRole || 'super_admin');
-        response.headers.set('X-Content-Type-Options', 'nosniff');
-        response.headers.set('X-Frame-Options', 'DENY');
-        response.headers.set('X-XSS-Protection', '1; mode=block');
-        
-        // Log admin access for security monitoring
-        console.log(`[ADMIN] Admin access: ${user.email} (${adminRole || 'super_admin'}) -> ${path}`);
-      } catch (error) {
-        console.error('[ADMIN] Admin access check failed:', error);
-        return redirectToSignin(request, response);
-      }
+      response.headers.set('X-Content-Type-Options', 'nosniff');
+      response.headers.set('X-Frame-Options', 'DENY');
+      response.headers.set('X-XSS-Protection', '1; mode=block');
+      // Relax admin check: rely on server-side requireAdmin() for RBAC
     }
 
     // Authenticated, non-anonymous user - allow access and return response with persisted cookies
@@ -211,9 +186,8 @@ function isAnonymousAllowedPath(pathname: string): boolean {
   
   // Guest users can access only the following app sections
   const allowedPrefixes = [
-    '/eatery/', '/shuls/', '/stores/', '/mikva/', '/live-map/',
-    '/favorites/', '/profile/'
+    '/eatery/', '/shuls/', '/stores/', '/mikva/', '/live-map/'
   ];
-  const allowedExact = ['/eatery', '/shuls', '/stores', '/mikva', '/live-map', '/favorites', '/profile'];
+  const allowedExact = ['/eatery', '/shuls', '/stores', '/mikva', '/live-map'];
   return allowedPrefixes.some(p => pathname.startsWith(p)) || allowedExact.includes(pathname);
 }

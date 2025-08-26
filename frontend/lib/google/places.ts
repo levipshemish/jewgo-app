@@ -1,5 +1,6 @@
 
 import { GooglePlacesHours, GooglePlacesResult } from '@/types';
+import { loadMaps } from '@/lib/maps/loader';
 
 export async function fetchPlaceDetails(place_id: string): Promise<{
   hoursText: string,
@@ -98,102 +99,43 @@ export class ModernGooglePlacesAPI {
       }
     });
     
-    keysToDelete.forEach(key => {
-      this.cache.delete(key);
-    });
+    keysToDelete.forEach(key => this.cache.delete(key));
   }
 
   async initialize(): Promise<void> {
-    // If already initialized, return immediately
-    if (this.isInitialized) {
-      return;
-    }
-    
-    // If there's an ongoing initialization, return that promise
+    // Prevent multiple simultaneous initialization attempts
     if (this.initPromise) {
       return this.initPromise;
     }
 
-    // Check if we should retry initialization (avoid too frequent attempts)
+    // Check if we've tried recently to avoid spam
     const now = Date.now();
-    if (now - this.lastInitAttempt < this.INIT_RETRY_DELAY) {
+    if (this.isInitialized || (now - this.lastInitAttempt < this.INIT_RETRY_DELAY)) {
       return;
     }
 
     this.lastInitAttempt = now;
-    this.initPromise = new Promise((resolve, reject) => {
-      let checkCount = 0;
-      const maxChecks = 300; // 30 seconds with 100ms intervals
-      
-      const checkGoogleMaps = () => {
-        checkCount++;
-        
-        if (window.google && window.google.maps && window.google.maps.places) {
-          this.isInitialized = true;
-          resolve();
-          return;
-        }
-        
-        if (checkCount >= maxChecks) {
-          const error = 'Google Maps failed to load within 30 seconds. Please check your internet connection and try again.';
-          // // console.error(error);
-          reject(new Error(error));
-          return;
-        }
-        
-        // Continue checking
-        setTimeout(checkGoogleMaps, 100);
-      };
-
-      // Check if API key is available
-      const apiKey = process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'];
-      if (!apiKey) {
-        const error = 'Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your environment variables.';
-        // // console.error(error);
-        reject(new Error(error));
-        return;
-      }
-
-      // Start checking for Google Maps availability
-      checkGoogleMaps();
-    });
-
+    this.initPromise = this._initialize();
+    
     try {
       await this.initPromise;
-    } catch (_error) {
-      // Reset initialization state on error so it can be retried
-      this.isInitialized = false;
+    } finally {
       this.initPromise = null;
-      throw _error;
     }
-
-    return this.initPromise;
   }
 
-  // Method to reset initialization state (useful for testing or manual refresh)
-  resetInitialization(): void {
-    this.isInitialized = false;
-    this.initPromise = null;
-    this.lastInitAttempt = 0;
+  private async _initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
     }
 
-  // Method to check if API is ready
-  isReady(): boolean {
-    return this.isInitialized && !!(window.google && window.google.maps && window.google.maps.places);
-  }
-
-  // Method to clear cache
-  clearCache(): void {
-    this.cache.clear();
+    try {
+      await loadMaps();
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('[ModernGooglePlacesAPI] Failed to initialize:', error);
+      throw error;
     }
-
-  // Method to get cache statistics
-  getCacheStats(): { size: number; keys: string[] } {
-    this.cleanupCache();
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
   }
 
   async searchPlaces(query: string, options: {
@@ -204,97 +146,63 @@ export class ModernGooglePlacesAPI {
   } = {}): Promise<GooglePlacesResult[]> {
     await this.initialize();
 
-    // Validate query parameter
+    // Validate input
     if (!query || typeof query !== 'string' || query.trim() === '') {
       return [];
     }
 
-    try {
-      // Create cache key based on search parameters
-      const cacheKey = `search:${query}:${JSON.stringify(options)}`;
-      
-      // Check cache first
-      const cachedResult = this.getCachedData(cacheKey);
-      if (cachedResult) {
-        return cachedResult;
-      }
+    const cacheKey = `search:${query}:${JSON.stringify(options)}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
-      // Use the new Place API for text search
-      const request: google.maps.places.TextSearchRequest = {
+    try {
+      // Use the modern Place API for searching
+      const results: GooglePlacesResult[] = [];
+      
+      // For now, we'll use a simple approach with the Places API
+      // In the future, this could be enhanced with the modern Place API
+      const searchRequest = {
         query: query.trim(),
         location: options.location ? new google.maps.LatLng(options.location.lat, options.location.lng) : undefined,
-        radius: options.radius,
-        types: options.types
+        radius: options.radius || 50000, // 50km default
+        type: options.types?.[0] || 'establishment'
       };
 
-      const results = await new Promise<GooglePlacesResult[]>((resolve, _reject) => {
-        // Create a dummy div for the service (required by Google Maps API)
-        const dummyDiv = document.createElement('div');
-        // Use the new Place API if available, fallback to PlacesService
-        if (window.google.maps.places.Place) {
-          // Modern approach - use Place API
-          const placeService = new window.google.maps.places.Place(dummyDiv);
-          placeService.textSearch(request, (results: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-              const convertedResults: GooglePlacesResult[] = results
-                .filter((result: any) => result.place_id) // Filter out results without place_id
-                .map((result: any) => ({
-                  place_id: result.place_id!,
-                  name: result.name || '',
-                  formatted_address: result.formatted_address || '',
-                  geometry: result.geometry?.location ? {
-                    location: {
-                      lat: result.geometry.location.lat(),
-                      lng: result.geometry.location.lng()
-                    }
-                  } : { location: { lat: 0, lng: 0 } },
-                  rating: undefined, // PlaceResult doesn't have rating
-                  user_ratings_total: undefined, // PlaceResult doesn't have user_ratings_total
-                  photos: result.photos,
-                  opening_hours: undefined, // PlaceResult doesn't have opening_hours
-                  website: result.website,
-                  formatted_phone_number: undefined, // PlaceResult doesn't have formatted_phone_number
-                  price_level: undefined, // PlaceResult doesn't have price_level
-                  types: result.types || []
-                }));
-              resolve(convertedResults.slice(0, options.limit || 20));
-            } else {
-              resolve([]);
-            }
-          });
-        } else {
-          // Fallback to PlacesService (deprecated but still works)
-          const placesService = new window.google.maps.places.PlacesService(dummyDiv);
-          placesService.textSearch(request, (results: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-              const convertedResults: GooglePlacesResult[] = results
-                .filter((result: any) => result.place_id) // Filter out results without place_id
-                .map((result: any) => ({
-                  place_id: result.place_id!,
-                  name: result.name || '',
-                  formatted_address: result.formatted_address || '',
-                  geometry: result.geometry?.location ? {
-                    location: {
-                      lat: result.geometry.location.lat(),
-                      lng: result.geometry.location.lng()
-                    }
-                  } : { location: { lat: 0, lng: 0 } },
-                  rating: undefined, // PlaceResult doesn't have rating
-                  user_ratings_total: undefined, // PlaceResult doesn't have user_ratings_total
-                  photos: result.photos,
-                  opening_hours: undefined, // PlaceResult doesn't have opening_hours
-                  website: result.website,
-                  formatted_phone_number: undefined, // PlaceResult doesn't have formatted_phone_number
-                  price_level: undefined, // PlaceResult doesn't have price_level
-                  types: result.types || []
-                }));
-              resolve(convertedResults.slice(0, options.limit || 20));
-            } else {
-              resolve([]);
-            }
+      // Use PlacesService for text search (this is still supported)
+      const dummyDiv = document.createElement('div');
+      const placesService = new google.maps.places.PlacesService(dummyDiv);
+      
+      const searchResults = await new Promise<google.maps.PlaceResult[]>((resolve, reject) => {
+        placesService.textSearch(searchRequest, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            resolve(results);
+          } else {
+            resolve([]);
+          }
+        });
+      });
+
+      // Convert to our format
+      for (const place of searchResults.slice(0, options.limit || 10)) {
+        if (place.place_id) {
+          results.push({
+            place_id: place.place_id,
+            name: place.name || '',
+            formatted_address: place.formatted_address || '',
+            geometry: place.geometry ? {
+              location: {
+                lat: place.geometry.location?.lat() || 0,
+                lng: place.geometry.location?.lng() || 0
+              }
+            } : { location: { lat: 0, lng: 0 } },
+            rating: (place as any).rating,
+            user_ratings_total: (place as any).user_ratings_total,
+            types: place.types || []
           });
         }
-      });
+      }
 
       // Cache the results
       this.setCachedData(cacheKey, results, 300000); // Cache for 5 minutes
@@ -328,28 +236,100 @@ export class ModernGooglePlacesAPI {
       };
 
       return new Promise((resolve, _reject) => {
-        // Use AutocompleteSuggestion if available (newer API)
-        if (window.google.maps.places.AutocompleteSuggestion) {
-          const autocompleteService = new window.google.maps.places.AutocompleteSuggestion();
-          autocompleteService.getPlacePredictions(request)
-            .then((response: any) => {
-              resolve(response.predictions || []);
-            })
-            .catch((_error: any) => {
-              // console.error('AutocompleteSuggestion error:', _error);
-              resolve([]);
-            });
-        } else if (window.google.maps.places.AutocompleteService) {
-          // Fallback to AutocompleteService
-          const autocompleteService = new window.google.maps.places.AutocompleteService();
-          autocompleteService.getPlacePredictions(request, (predictions: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-              resolve(predictions);
-            } else {
+        try {
+          // Check if Google Maps and Places are properly loaded
+          if (!window.google || !window.google.maps || !window.google.maps.places) {
+            console.error('[ModernGooglePlacesAPI] Google Maps Places not available');
+            resolve([]);
+            return;
+          }
+
+          // Helper function to try legacy AutocompleteService as fallback
+          const tryLegacyAutocomplete = () => {
+            try {
+              if (!window.google?.maps?.places?.AutocompleteService) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService not available');
+                }
+                resolve([]);
+                return;
+              }
+              
+              const legacy = new window.google.maps.places.AutocompleteService();
+              if (typeof legacy.getPlacePredictions !== 'function') {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService.getPlacePredictions not available');
+                }
+                resolve([]);
+                return;
+              }
+              
+              legacy.getPlacePredictions(request, (predictions: any, status: any) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService returned predictions:', predictions.length);
+                  }
+                  resolve(predictions);
+                } else {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService status:', status);
+                  }
+                  resolve([]);
+                }
+              });
+            } catch (error) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService error:', error);
+              }
               resolve([]);
             }
-          });
-        } else {
+          };
+
+          // Try the modern AutocompleteSuggestion API first
+          if (window.google.maps.places.AutocompleteSuggestion) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Trying modern AutocompleteSuggestion API');
+            }
+            
+            const autocompleteService = new window.google.maps.places.AutocompleteSuggestion();
+            
+            if (typeof autocompleteService.getPlacePredictions === 'function') {
+              autocompleteService.getPlacePredictions(request)
+                .then((response: any) => {
+                  if (response && response.predictions && response.predictions.length > 0) {
+                    if (process.env.NODE_ENV === 'development') {
+                      console.log('[ModernGooglePlacesAPI] Modern API returned predictions:', response.predictions.length);
+                    }
+                    resolve(response.predictions);
+                  } else {
+                    if (process.env.NODE_ENV === 'development') {
+                      console.log('[ModernGooglePlacesAPI] Modern API returned no predictions, trying legacy fallback');
+                    }
+                    // Fallback to legacy API
+                    tryLegacyAutocomplete();
+                  }
+                })
+                .catch((error: any) => {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Modern API error, trying legacy fallback:', error);
+                  }
+                  // Fallback to legacy API
+                  tryLegacyAutocomplete();
+                });
+            } else {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ModernGooglePlacesAPI] Modern API getPlacePredictions method not available, using legacy');
+              }
+              tryLegacyAutocomplete();
+            }
+          } else {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Modern AutocompleteSuggestion not available, using legacy');
+            }
+            tryLegacyAutocomplete();
+          }
+        } catch (error) {
+          console.error('[ModernGooglePlacesAPI] Error in getPlacePredictions:', error);
           resolve([]);
         }
       });
@@ -359,47 +339,215 @@ export class ModernGooglePlacesAPI {
     }
   }
 
-  async getPlaceDetails(placeId: string, fields: string[] = ['name', 'formatted_address', 'geometry', 'rating', 'user_ratings_total', 'photos', 'opening_hours', 'website', 'formatted_phone_number', 'price_level']): Promise<any> {
+  async getPlaceDetails(placeId: string, fields: string[] = ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount', 'photos', 'openingHours', 'website', 'formattedPhoneNumber', 'priceLevel']): Promise<any> {
     await this.initialize();
 
     // Validate placeId parameter
     if (!placeId || typeof placeId !== 'string' || placeId.trim() === '') {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[ModernGooglePlacesAPI] Invalid placeId provided:', { placeId, type: typeof placeId });
+      }
+      return null;
+    }
+
+    // Additional validation for placeId format
+    const trimmedPlaceId = placeId.trim();
+    if (trimmedPlaceId.length < 10) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[ModernGooglePlacesAPI] PlaceId too short:', trimmedPlaceId);
+      }
       return null;
     }
 
     try {
-      const request: google.maps.places.PlaceDetailsRequest = {
-        placeId: placeId.trim(),
-        fields
+      // Use the modern Place API
+      if ((window.google.maps.places as any).Place) {
+        try {
+          const PlaceCtor = (window.google.maps.places as any).Place;
+          const place = new PlaceCtor({ id: trimmedPlaceId });
+          
+          // Use the correct field names for the modern API
+          const modernFields = fields.map(field => {
+            switch (field) {
+              case 'name':
+                return 'displayName';
+              case 'formatted_address':
+                return 'formattedAddress';
+              case 'formatted_phone_number':
+                return 'formattedPhoneNumber';
+              case 'opening_hours':
+                return 'openingHours';
+              case 'price_level':
+                return 'priceLevel';
+              case 'user_ratings_total':
+                return 'userRatingCount';
+              case 'geometry':
+                return 'location';
+              default:
+                return field;
+            }
+          });
+          
+          // Modern API: fetchFields returns a Promise with requested fields
+          const result = await place.fetchFields({ fields: modernFields });
+          if (result) {
+            // Map modern field names back to legacy format for compatibility
+            const legacyResult = { ...result };
+            if (result.displayName) legacyResult.name = result.displayName;
+            if (result.formattedAddress) legacyResult.formatted_address = result.formattedAddress;
+            if (result.formattedPhoneNumber) legacyResult.formatted_phone_number = result.formattedPhoneNumber;
+            if (result.openingHours) legacyResult.opening_hours = result.openingHours;
+            if (result.priceLevel) legacyResult.price_level = result.priceLevel;
+            if (result.userRatingCount) legacyResult.user_ratings_total = result.userRatingCount;
+            if (result.location) legacyResult.geometry = result.location;
+            
+            return legacyResult;
+          }
+          return null;
+        } catch (e) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Modern Place API failed, trying legacy fallback:', e);
+          }
+          
+          // Try legacy PlacesService as fallback
+          try {
+            const dummyDiv = document.createElement('div');
+            const placesService = new window.google.maps.places.PlacesService(dummyDiv);
+            const request: google.maps.places.PlaceDetailsRequest = {
+              placeId: trimmedPlaceId,
+              fields
+            };
+            
+            const legacyResult = await new Promise((resolve) => {
+              placesService.getDetails(request, (result: any, status: any) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
+                  resolve(result);
+                } else {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Legacy PlacesService status:', status);
+                  }
+                  resolve(null);
+                }
+              });
+            });
+            
+            return legacyResult;
+          } catch (legacyError) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Legacy PlacesService also failed:', legacyError);
+            }
+            return null;
+          }
+        }
+      } else {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[ModernGooglePlacesAPI] Modern Place API not available, trying legacy fallback');
+        }
+        
+        // Try legacy PlacesService as fallback
+        try {
+          const dummyDiv = document.createElement('div');
+          const placesService = new window.google.maps.places.PlacesService(dummyDiv);
+          const request: google.maps.places.PlaceDetailsRequest = {
+            placeId: trimmedPlaceId,
+            fields
+          };
+          
+          const legacyResult = await new Promise((resolve) => {
+            placesService.getDetails(request, (result: any, status: any) => {
+              if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
+                resolve(result);
+              } else {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[ModernGooglePlacesAPI] Legacy PlacesService status:', status);
+                }
+                resolve(null);
+              }
+            });
+          });
+          
+          return legacyResult;
+        } catch (legacyError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Legacy PlacesService failed:', legacyError);
+          }
+          return null;
+        }
+      }
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  // Test method to verify API functionality
+  async testAPI(): Promise<{ success: boolean; message: string; details?: any }> {
+    await this.initialize();
+
+    try {
+      // Check if Google Maps and Places are properly loaded
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        return {
+          success: false,
+          message: 'Google Maps Places not available'
+        };
+      }
+
+      // Test if modern API is available
+      const hasModernAPI = !!(window.google.maps.places.AutocompleteSuggestion);
+      const hasLegacyAPI = !!(window.google.maps.places.AutocompleteService);
+
+      // Test a simple prediction request
+      const testRequest: google.maps.places.AutocompletionRequest = {
+        input: 'Miami',
+        types: ['address'],
+        componentRestrictions: { country: 'us' }
       };
 
-      return new Promise((resolve, _reject) => {
-        const dummyDiv = document.createElement('div');
-        
-        // Use Place API if available, fallback to PlacesService
-        if (window.google.maps.places.Place) {
-          const placeService = new window.google.maps.places.Place(dummyDiv);
-          placeService.getDetails(request, (result: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
-              resolve(result);
-            } else {
-              resolve(null);
-            }
-          });
-        } else {
-          const placesService = new window.google.maps.places.PlacesService(dummyDiv);
-          placesService.getDetails(request, (result: any, status: any) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
-              resolve(result);
-            } else {
-              resolve(null);
-            }
-          });
+      let testResult = null;
+      let testError = null;
+
+      try {
+        if (hasModernAPI) {
+          const autocompleteService = new window.google.maps.places.AutocompleteSuggestion();
+          if (typeof autocompleteService.getPlacePredictions === 'function') {
+            const response = await autocompleteService.getPlacePredictions(testRequest);
+            testResult = response;
+          }
         }
-      });
-    } catch (_error) {
-      // console.error('Error getting place details:', _error);
-      return null;
+      } catch (error) {
+        testError = error;
+      }
+
+      // Try legacy API if modern failed
+      if (!testResult && hasLegacyAPI) {
+        try {
+          const legacy = new window.google.maps.places.AutocompleteService();
+          testResult = await new Promise((resolve) => {
+            legacy.getPlacePredictions(testRequest, (predictions: any, status: any) => {
+              resolve({ predictions, status });
+            });
+          });
+        } catch (error) {
+          testError = error;
+        }
+      }
+
+      return {
+        success: true,
+        message: `API test completed. Modern API: ${hasModernAPI}, Legacy API: ${hasLegacyAPI}`,
+        details: {
+          hasModernAPI,
+          hasLegacyAPI,
+          testResult,
+          testError
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `API test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: error
+      };
     }
   }
 }

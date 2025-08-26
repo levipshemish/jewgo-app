@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { validateSignedCSRFToken } from '@/lib/admin/csrf';
+import { AdminDatabaseService } from '@/lib/admin/database';
 import { logAdminAction } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
@@ -15,15 +20,19 @@ export async function POST(
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_APPROVE)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_MODERATE)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const { id } = await params;
-    const restaurantId = parseInt(id);
+    // Validate CSRF token
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
 
-    if (isNaN(restaurantId)) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'Restaurant ID is required' }, { status: 400 });
     }
 
     // Parse request body for rejection reason
@@ -31,25 +40,49 @@ export async function POST(
     const { reason } = body;
 
     if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
-      return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Rejection reason is required' },
+        { status: 400 }
+      );
     }
 
-    // Update restaurant submission status
-    const updatedRestaurant = await prisma.restaurant.update({
-      where: { id: restaurantId },
-      data: {
-        submission_status: 'rejected',
-        rejection_reason: reason.trim(),
-        approval_date: null, // Clear any previous approval
-        approved_by: null,
-      },
+    // Get the restaurant to check current status
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: parseInt(id) },
     });
 
-    // Log the action
-    await logAdminAction(adminUser, 'restaurant_rejected', 'restaurant', {
-      entityId: restaurantId.toString(),
-      metadata: { 
-        restaurantName: updatedRestaurant.name,
+    if (!restaurant) {
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
+
+    if (restaurant.submission_status !== 'pending_approval') {
+      return NextResponse.json(
+        { error: 'Restaurant is not pending approval' },
+        { status: 400 }
+      );
+    }
+
+    // Update restaurant status to rejected
+    const updatedRestaurant = await AdminDatabaseService.updateRecord(
+      prisma.restaurant,
+      'restaurant',
+      id,
+      {
+        submission_status: 'rejected',
+        rejection_reason: reason.trim(),
+      },
+      adminUser,
+      'restaurant'
+    );
+
+    // Log the rejection action
+    await logAdminAction(adminUser, 'restaurant_reject', 'restaurant', {
+      entityId: id,
+      oldData: restaurant,
+      newData: updatedRestaurant,
+      metadata: {
+        action: 'reject',
+        restaurantName: restaurant.name,
         rejectionReason: reason.trim(),
       },
     });
@@ -60,11 +93,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('[ADMIN] Restaurant rejection error:', error);
-    
-    if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'P2025') {
-      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
-    }
-
     return NextResponse.json(
       { error: 'Failed to reject restaurant' },
       { status: 500 }

@@ -424,9 +424,19 @@ function SignInForm() {
 }
 
 export default function SignInPage() {
+  const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SignInForm />
-    </Suspense>
+    <>
+      {siteKey && siteKey !== 'your-recaptcha-site-key-here' && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
+          strategy="beforeInteractive"
+        />
+      )}
+      <Suspense fallback={<div>Loading...</div>}>
+        <SignInForm />
+      </Suspense>
+    </>
   );
 }

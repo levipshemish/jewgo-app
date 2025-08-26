@@ -23,7 +23,7 @@ export const API_CONFIG = {
   TIMEOUT: 10000, // 10 seconds
 }
 
-// API endpoints
+// API endpoints (backend-proxied)
 export const API_ENDPOINTS = {
   // Authentication
   REGISTER: '/api/auth/register',
@@ -36,11 +36,6 @@ export const API_ENDPOINTS = {
   RESTAURANT_DETAILS: (id: string) => `/api/restaurants/${id}`,
   REVIEWS: '/api/reviews',
   STATISTICS: '/api/statistics',
-  
-  // Admin endpoints
-  ADMIN_USERS: '/api/admin-proxy/users',
-  ADMIN_RESTAURANTS: '/api/admin-proxy/restaurants',
-  ADMIN_REVIEWS: '/api/admin-proxy/reviews',
 }
 
 // Helper function to make API calls
@@ -85,6 +80,11 @@ export const frontendApiCall = async (
   
   return fetch(url, { ...defaultOptions, ...options })
 }
+
+// Note: Admin routes are implemented within the Next.js app under `/api/admin/*`.
+// Use `fetch('/api/admin/...')` or `frontendApiCall('/api/admin/...')` for admin functionality.
+// We intentionally do not list admin endpoints in API_ENDPOINTS to avoid confusion with
+// backend-proxied endpoints configured via BASE_URL.
 
 // Environment detection
 export const isProduction = process.env.NODE_ENV === 'production'
