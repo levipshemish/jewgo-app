@@ -46,7 +46,7 @@ export function useCaptcha(options: UseCheckboxCaptchaOptions = {}) {
 
   const handleCaptchaVerify = useCallback((token: string) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('Checkbox captcha verified with token:', token);
+
     }
     setState(prev => ({
       ...prev,
@@ -59,7 +59,7 @@ export function useCaptcha(options: UseCheckboxCaptchaOptions = {}) {
 
   const handleCaptchaError = useCallback((error: string) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('Checkbox captcha error:', error);
+
     }
     setState(prev => ({
       ...prev,

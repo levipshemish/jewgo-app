@@ -122,8 +122,7 @@ export async function POST(request: NextRequest) {
     
     // Use API v4 endpoint
     const backendUrl = 'http://localhost:8082';
-    console.log(`[API] Using API v4 endpoint: ${backendUrl}/api/v4/restaurants`);
-    
+
     let backendResponse: Response | undefined;
     let lastError: Error | undefined;
     
@@ -135,10 +134,9 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify(restaurantDataWithoutPhone),
       });
-      
-      console.log(`[API] Backend response status: ${backendResponse.status}`);
+
     } catch (error) {
-      console.log(`[API] Failed to connect to ${backendUrl}:`, error);
+
       lastError = error as Error;
     }
     

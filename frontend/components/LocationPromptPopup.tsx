@@ -33,17 +33,11 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
   // Only close when user actually gets location or manually closes
 
   const _handleRequestLocation = () => {
-    // console.log('📍 LocationPromptPopup: Requesting location...', {
-    //   permissionStatus,
-    //   isLoading,
-    //   error
-    // });
-    
+
     // Check current permission status first
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-        // console.log('📍 LocationPromptPopup: Current permission state:', result.state);
-        
+
         if (result.state === 'granted') {
           // Permission already granted, just get location
           requestLocation();
@@ -52,7 +46,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
           requestLocation();
         } else if (result.state === 'denied') {
           // Permission denied, show instructions
-          // console.log('📍 LocationPromptPopup: Permission denied, showing instructions');
+
         }
       });
     } else {

@@ -36,8 +36,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
  */
 async function createAdminRolesTable(): Promise<void> {
   try {
-    console.log('🔧 Creating admin_roles table...');
-    
+
     // Check if table already exists
     const { data: existingTable, error: checkError } = await supabase
       .from('admin_roles')
@@ -45,7 +44,7 @@ async function createAdminRolesTable(): Promise<void> {
       .limit(1);
     
     if (!checkError) {
-      console.log('✅ admin_roles table already exists');
+
       return;
     }
     
@@ -74,8 +73,7 @@ async function createAdminRolesTable(): Promise<void> {
       console.error('❌ Error creating admin_roles table:', createError);
       throw createError;
     }
-    
-    console.log('✅ admin_roles table created successfully');
+
   } catch (error) {
     console.error('❌ Error in createAdminRolesTable:', error);
     throw error;
@@ -87,8 +85,7 @@ async function createAdminRolesTable(): Promise<void> {
  */
 async function createAdminConfigTable(): Promise<void> {
   try {
-    console.log('🔧 Creating admin_config table...');
-    
+
     // Check if table already exists
     const { data: existingTable, error: checkError } = await supabase
       .from('admin_config')
@@ -96,7 +93,7 @@ async function createAdminConfigTable(): Promise<void> {
       .limit(1);
     
     if (!checkError) {
-      console.log('✅ admin_config table already exists');
+
       return;
     }
     
@@ -118,8 +115,7 @@ async function createAdminConfigTable(): Promise<void> {
       console.error('❌ Error creating admin_config table:', createError);
       throw createError;
     }
-    
-    console.log('✅ admin_config table created successfully');
+
   } catch (error) {
     console.error('❌ Error in createAdminConfigTable:', error);
     throw error;
@@ -131,8 +127,7 @@ async function createAdminConfigTable(): Promise<void> {
  */
 async function createAdminFunctions(): Promise<void> {
   try {
-    console.log('🔧 Creating admin functions...');
-    
+
     // Create get_user_admin_role function
     const { error: getRoleError } = await supabase.rpc('exec_sql', {
       sql: `
@@ -274,8 +269,7 @@ async function createAdminFunctions(): Promise<void> {
       console.error('❌ Error creating remove_admin_role function:', removeRoleError);
       throw removeRoleError;
     }
-    
-    console.log('✅ Admin functions created successfully');
+
   } catch (error) {
     console.error('❌ Error in createAdminFunctions:', error);
     throw error;
@@ -287,8 +281,7 @@ async function createAdminFunctions(): Promise<void> {
  */
 async function verifyAdminSetup(): Promise<void> {
   try {
-    console.log('🔍 Verifying admin setup...');
-    
+
     // Check admin_roles table
     const { data: roles, error: rolesError } = await supabase
       .from('admin_roles')
@@ -299,9 +292,7 @@ async function verifyAdminSetup(): Promise<void> {
       console.error('❌ admin_roles table verification failed:', rolesError);
       return;
     }
-    
-    console.log('✅ admin_roles table verified');
-    
+
     // Check admin_config table
     const { data: config, error: configError } = await supabase
       .from('admin_config')
@@ -312,9 +303,7 @@ async function verifyAdminSetup(): Promise<void> {
       console.error('❌ admin_config table verification failed:', configError);
       return;
     }
-    
-    console.log('✅ admin_config table verified');
-    
+
     // Check functions
     try {
       const { data: functionResult, error: functionError } = await supabase.rpc('get_user_admin_role', {
@@ -325,13 +314,11 @@ async function verifyAdminSetup(): Promise<void> {
         console.error('❌ get_user_admin_role function verification failed');
         return;
       }
-      
-      console.log('✅ get_user_admin_role function verified');
+
     } catch (error) {
       console.log('✅ get_user_admin_role function verified (fallback will be used)');
     }
-    
-    console.log('✅ Admin setup verification complete');
+
   } catch (error) {
     console.error('❌ Error in verifyAdminSetup:', error);
     throw error;
@@ -342,13 +329,12 @@ async function verifyAdminSetup(): Promise<void> {
  * Main function
  */
 async function main() {
-  console.log('🚀 Safe Admin Tables Creation Script');
-  console.log('====================================');
-  console.log('');
-  console.log('⚠️  This script will create admin tables and functions');
-  console.log('   WITHOUT affecting any existing data.');
-  console.log('');
-  
+
+
+
+
+
+
   try {
     // Create tables
     await createAdminRolesTable();
@@ -359,17 +345,15 @@ async function main() {
     
     // Verify setup
     await verifyAdminSetup();
-    
-    console.log('');
-    console.log('🎉 Admin setup completed successfully!');
-    console.log('');
-    console.log('📋 Next steps:');
-    console.log('   1. Verify the setup: npm run admin:verify');
-    console.log('   2. Create a super admin: npm run admin:create-super-admin <email>');
-    console.log('   3. List admin users: npm run admin:list');
-    console.log('');
-    console.log('📚 For more information, see: docs/setup/ADMIN_ROLES_PRODUCTION_SETUP.md');
-    
+
+
+
+
+
+
+
+
+
   } catch (error) {
     console.error('❌ Script failed:', error);
     process.exit(1);

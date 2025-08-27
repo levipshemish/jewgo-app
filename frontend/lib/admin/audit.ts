@@ -437,7 +437,6 @@ export async function cleanupAuditLogs(retentionDays: number = 90): Promise<numb
     },
   });
 
-  console.log(`[AUDIT] Cleaned up ${result.count} audit logs older than ${retentionDays} days`);
   return result.count;
 }
 

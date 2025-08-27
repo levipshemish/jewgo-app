@@ -63,7 +63,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Implement global search functionality
-    console.log('Search query:', searchQuery);
+
   };
 
   // SignOut handled by SignOutButton

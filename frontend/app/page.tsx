@@ -16,7 +16,7 @@ export default function HomePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // console.log('Checking authentication on home page...');
+
         const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (error) {
@@ -37,19 +37,13 @@ export default function HomePage() {
         if (user) {
           // Check if user is anonymous or regular user
           // const isAnonymous = extractIsAnonymous(session.user);
-          // console.log('Home page auth check:', { 
-          //   hasUser: !!session.user, 
-          //   isAnonymous, 
-          //   userId: session.user.id,
-          //   userEmail: session.user.email
-          // });
-          
+
           setIsAuthenticated(true);
           
           // Redirect both anonymous and regular users to eatery page
           router.push('/eatery');
         } else {
-          // console.log('Home page auth check: No session found');
+
           setIsAuthenticated(false);
           // Redirect unauthenticated users to signin page
           router.push('/auth/signin');
@@ -66,20 +60,18 @@ export default function HomePage() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(_async (event: string, _session: any) => {
-        // console.log('Auth state change:', { event, hasUser: !!session?.user });
-        
+
         if (event === 'SIGNED_IN') {
           const { data: { user } } = await supabaseClient.auth.getUser();
           if (!user) { return; }
           // const isAnonymous = extractIsAnonymous(session.user);
-          // console.log('User signed in:', { isAnonymous, userId: session.user.id });
-          
+
           setIsAuthenticated(true);
           
           // Redirect to eatery page
           router.push('/eatery');
         } else if (event === 'SIGNED_OUT') {
-          // console.log('User signed out');
+
           setIsAuthenticated(false);
           // Redirect to signin page when user signs out
           router.push('/auth/signin');

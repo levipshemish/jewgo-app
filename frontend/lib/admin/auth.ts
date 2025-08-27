@@ -115,7 +115,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     // Development bypass only when explicitly enabled
     if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
       // eslint-disable-next-line no-console
-      console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
+
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
         email: 'dev-admin@jewgo.com',
@@ -240,7 +240,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     // Development bypass only when explicitly enabled
     if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
       // eslint-disable-next-line no-console
-      console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
+
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
         email: 'dev-admin@jewgo.com',

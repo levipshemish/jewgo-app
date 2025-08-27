@@ -176,7 +176,7 @@ export class ModernGooglePlacesAPI {
           process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true' && 
           source !== 'get') { // Skip logging for frequent 'get' calls
         // eslint-disable-next-line no-console
-        console.debug('[ModernGooglePlacesAPI] Diagnostics refresh', { source, diag: this.diagnostics });
+
       }
     } catch {
       // ignore
@@ -296,18 +296,18 @@ export class ModernGooglePlacesAPI {
       if ((window.google.maps as any).importLibrary) {
         try {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Attempting to use importLibrary approach');
+
           }
           
           // Try to get the places library first
           const places = await (window.google.maps as any).importLibrary('places');
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Places library imported:', places);
+
           }
           
           if (places && places.AutocompleteSuggestion) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('[ModernGooglePlacesAPI] Successfully imported AutocompleteSuggestion');
+
             }
             
             // Create a session token for the request
@@ -327,7 +327,7 @@ export class ModernGooglePlacesAPI {
             }
 
             if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-              console.log('[ModernGooglePlacesAPI] Making request with:', request);
+
             }
 
             // Use the static fetchAutocompleteSuggestions method
@@ -336,7 +336,7 @@ export class ModernGooglePlacesAPI {
             
             if (suggestions.length > 0) {
               if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-                console.log('[ModernGooglePlacesAPI] Successfully got suggestions from modern API:', suggestions.length);
+
               }
               
               // Convert modern suggestions to legacy format for compatibility
@@ -376,7 +376,7 @@ export class ModernGooglePlacesAPI {
       if ((window.google.maps.places as any).AutocompleteSuggestion) {
         try {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Trying direct AutocompleteSuggestion access');
+
           }
           
           const AutocompleteSuggestion = (window.google.maps.places as any).AutocompleteSuggestion;
@@ -404,7 +404,7 @@ export class ModernGooglePlacesAPI {
           
           if (suggestions.length > 0) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('[ModernGooglePlacesAPI] Direct access worked:', suggestions.length);
+
             }
             
             // Convert modern suggestions to legacy format for compatibility
@@ -533,7 +533,7 @@ export class ModernGooglePlacesAPI {
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[ModernGooglePlacesAPI] Getting place details for:', trimmedPlaceId, 'with fields:', fields);
+
     }
 
     try {
@@ -541,7 +541,7 @@ export class ModernGooglePlacesAPI {
       if ((window.google.maps.places as any).Place) {
         try {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Using modern Place API');
+
           }
           
           const PlaceCtor = (window.google.maps.places as any).Place;
@@ -572,7 +572,7 @@ export class ModernGooglePlacesAPI {
           });
           
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Modern fields mapped:', modernFields);
+
           }
           
           // Modern API: fetchFields populates the place instance; it does not return data
@@ -613,13 +613,13 @@ export class ModernGooglePlacesAPI {
           return legacyResult;
         } catch (e) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('[ModernGooglePlacesAPI] Modern Place API failed:', e);
+
           }
           return null;
         }
       } else {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[ModernGooglePlacesAPI] Modern Place API not available');
+
         }
         return null;
       }

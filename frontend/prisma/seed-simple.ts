@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 async function main() {
   const email = process.env.ADMIN_SEED_SUPERADMIN_EMAIL;
   if (!email) {
-    console.log('ADMIN_SEED_SUPERADMIN_EMAIL not set; skipping seed.');
+
     return;
   }
 
@@ -35,7 +35,7 @@ async function main() {
   `;
 
   if (existingRole && existingRole.length > 0) {
-    console.log(`User ${email} already has super_admin role.`);
+
     return;
   }
 
@@ -56,8 +56,7 @@ async function main() {
         'Seeded as super_admin'
       )
     `;
-    
-    console.log(`Seeded super_admin role for ${email}`);
+
   } catch (error) {
     console.error('Error creating super_admin role:', error);
     process.exit(1);

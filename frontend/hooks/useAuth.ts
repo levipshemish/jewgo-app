@@ -119,8 +119,7 @@ export function useAuth() {
 
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event: any, session: any) => {
-        console.log('Auth state change:', event, session?.user?.id);
-        
+
         if (event === 'SIGNED_IN' && session?.user) {
           const transformedUser = transformSupabaseUser(session.user);
           dispatch({ type: 'SET_USER', payload: transformedUser });

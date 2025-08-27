@@ -87,33 +87,31 @@ function checkEnvironmentVariables(): EnvCheck[] {
 }
 
 function printEnvironmentStatus() {
-  console.log('🔍 Environment Variables Check');
+
   console.log('='.repeat(50));
   
   const checks = checkEnvironmentVariables();
   
   checks.forEach(check => {
-    console.log(`${check.status} ${check.variable}`);
-    console.log(`   Status: ${check.message}`);
+
+
     if (check.value) {
-      console.log(`   Value: ${check.value}`);
+
     }
-    console.log('');
+
   });
   
   const configured = checks.filter(c => c.status === '✅').length;
   const total = checks.length;
-  
-  console.log('📊 Summary:');
-  console.log(`✅ Configured: ${configured}/${total}`);
-  console.log(`❌ Missing: ${total - configured}/${total}`);
-  
+
+
+
   if (configured === total) {
-    console.log('\n🎉 All environment variables are configured!');
-    console.log('You can now run: npm run test:auth-systems');
+
+
   } else {
-    console.log('\n⚠️  Some environment variables need to be configured.');
-    console.log('Follow the guide: docs/setup/env-variables-setup.md');
+
+
   }
   
   // Specific recommendations
@@ -121,19 +119,19 @@ function printEnvironmentStatus() {
   const missingGoogle = checks.filter(c => c.variable.includes('GOOGLE') && c.status === '❌');
   
   if (missingSupabase.length > 0) {
-    console.log('\n🔧 Supabase Setup Needed:');
-    console.log('1. Go to https://supabase.com/dashboard');
-    console.log('2. Select your project: lgsfyrxkqpipaumngvfi');
-    console.log('3. Go to Settings → API');
-    console.log('4. Copy the service_role key');
+
+
+
+
+
   }
   
   if (missingGoogle.length > 0) {
-    console.log('\n🔧 Google OAuth Setup Needed:');
-    console.log('1. Go to https://console.cloud.google.com/');
-    console.log('2. Create OAuth 2.0 Client ID');
-    console.log('3. Add redirect URIs for Supabase');
-    console.log('4. Configure in Supabase dashboard');
+
+
+
+
+
   }
 }
 

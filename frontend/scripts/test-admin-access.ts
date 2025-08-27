@@ -33,8 +33,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
  */
 async function testAdminAccess(email: string): Promise<void> {
   try {
-    console.log(`🔍 Testing admin access for: ${email}`);
-    
+
     // First, find the user by email
     const { data: users, error: userError } = await supabase.auth.admin.listUsers();
     
@@ -46,8 +45,8 @@ async function testAdminAccess(email: string): Promise<void> {
     const user = users.users.find(u => u.email === email);
     
     if (!user) {
-      console.log(`❌ User ${email} not found in auth.users`);
-      console.log('💡 Make sure the user has signed up through your app first');
+
+
       return;
     }
     
@@ -55,16 +54,15 @@ async function testAdminAccess(email: string): Promise<void> {
     
     // Check if user is super admin
     const isSuperAdmin = user.user_metadata?.is_super_admin === true;
-    console.log(`👑 Super Admin Status: ${isSuperAdmin ? '✅ YES' : '❌ NO'}`);
-    
+
     if (isSuperAdmin) {
-      console.log('🎉 User is a super admin!');
+
     } else {
-      console.log('⚠️  User is not a super admin');
-      console.log('💡 To make them a super admin, run this SQL in Supabase:');
-      console.log(`   UPDATE auth.users SET raw_user_meta_data = jsonb_set(`);
+
+
+
       console.log(`     COALESCE(raw_user_meta_data, '{}'::jsonb),`);
-      console.log(`     '{is_super_admin}', 'true'::jsonb`);
+
       console.log(`   ) WHERE email = '${email}';`);
     }
     
@@ -77,7 +75,7 @@ async function testAdminAccess(email: string): Promise<void> {
       if (roleError) {
         console.error('❌ Error calling get_user_admin_role:', roleError);
       } else {
-        console.log(`🔧 Admin Role: ${role || 'moderator'}`);
+
       }
     } catch (error) {
       console.error('❌ Error testing admin role function:', error);
@@ -94,7 +92,7 @@ async function testAdminAccess(email: string): Promise<void> {
       if (rolesError) {
         console.error('❌ Error checking admin_roles:', rolesError);
       } else {
-        console.log(`📋 Admin Roles in admin_roles table: ${adminRoles?.length || 0}`);
+
         adminRoles?.forEach(role => {
           console.log(`   - ${role.role} (assigned: ${role.assigned_at})`);
         });
@@ -112,8 +110,7 @@ async function testAdminAccess(email: string): Promise<void> {
  * Test admin API endpoints
  */
 async function testAdminEndpoints(): Promise<void> {
-  console.log('\n🧪 Testing Admin API Endpoints...');
-  
+
   const endpoints = [
     '/api/admin/users',
     '/api/admin/reviews', 
@@ -128,17 +125,15 @@ async function testAdminEndpoints(): Promise<void> {
           'Content-Type': 'application/json',
         }
       });
-      
-      console.log(`${endpoint}: ${response.status} ${response.statusText}`);
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log(`   ✅ Data received: ${data.length || 0} items`);
+
       } else {
-        console.log(`   ❌ Error: ${response.statusText}`);
+
       }
     } catch (error) {
-      console.log(`${endpoint}: ❌ Connection error`);
+
     }
   }
 }
@@ -148,16 +143,12 @@ async function testAdminEndpoints(): Promise<void> {
  */
 async function main() {
   const email = process.argv[2] || 'admin@jewgo.app';
-  
-  console.log('🚀 Admin Access Test Script');
-  console.log('==========================\n');
-  
+
+
   try {
     await testAdminAccess(email);
     await testAdminEndpoints();
-    
-    console.log('\n✅ Test completed!');
-    
+
   } catch (error) {
     console.error('❌ Test failed:', error);
     process.exit(1);

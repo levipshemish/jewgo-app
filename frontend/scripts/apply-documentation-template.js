@@ -360,8 +360,8 @@ The documentation system includes validation tools to ensure documentation quali
 \`\`\`javascript
 // Validate existing documentation
 const validation = defaultDocTemplate.validateDocumentation(content);
-console.log('Documentation score:', validation.score);
-console.log('Issues:', validation.issues);
+
+
 \`\`\`
 
 ## Examples

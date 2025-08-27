@@ -5,8 +5,7 @@ import { _Prisma} from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[DB INFO] Starting database info request...');
-    
+
     const result: any = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Test database connection
     try {
-      console.log('[DB INFO] Testing database connection...');
+
       await prisma.$connect();
       result.database = 'connected';
       
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
       result.connection_info = Array.isArray(connectionInfo) ? connectionInfo[0] : connectionInfo;
       
       // Get list of all tables in the public schema
-      console.log('[DB INFO] Getting table list...');
+
       const _tables = await prisma.$queryRaw<{ table_name: string; table_type: string }[]>`
         SELECT 
           table_name,
@@ -72,16 +71,13 @@ export async function GET(request: NextRequest) {
       result.table_info = tableInfo;
       
       await prisma.$disconnect();
-      console.log('[DB INFO] Database disconnected');
-      
+
     } catch (_dbError) {
       console.error('[DB INFO] Database error:', dbError);
       result.database = 'error';
       result.database_error = String(dbError);
     }
 
-    console.log('[DB INFO] Database info result:', result);
-    
     return NextResponse.json(result);
   } catch (_error) {
     console.error('[DB INFO] Unexpected error:', error);

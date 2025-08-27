@@ -45,7 +45,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   
   // Debug logging (only in development and not too frequently)
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-    console.log('[EnhancedAddEateryForm] Component rendered, currentStep:', currentStep);
+
   }
 
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -95,10 +95,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   // Debug logging for filter options (only when explicitly enabled)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-      console.log('[EnhancedAddEateryForm] Filter options updated:', {
-        kosherCategories: filterOptions.kosherCategories,
-        agencies: filterOptions.agencies
-      });
+
     }
   }, [filterOptions]);
 
@@ -199,12 +196,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const handleNext = async () => {
     if (currentStep < 5) {
       const isValid = await validateCurrentStep();
-      console.log(`[EnhancedAddEateryForm] Step ${currentStep} validation result:`, isValid);
+
       if (isValid) {
         setCurrentStep(currentStep + 1);
-        console.log(`[EnhancedAddEateryForm] Moving to step ${currentStep + 1}`);
+
       } else {
-        console.log(`[EnhancedAddEateryForm] Step ${currentStep} validation failed`);
+
         // Show validation errors more prominently
         alert(`Please fix the errors on step ${currentStep} before proceeding.`);
       }
@@ -229,22 +226,12 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const debugFormState = () => {
     const values = getValues();
     const stepFields = getStepFields(currentStep);
-    console.log('[EnhancedAddEateryForm] Current form state:', {
-      currentStep,
-      totalSteps: 5,
-      isOnLastStep: currentStep === 5,
-      stepFields,
-      formValues: values,
-      errors,
-      isValid,
-      isDirty
-    });
+
   };
 
   // Form submission
   const onSubmit = async (data: RestaurantFormData) => {
-    console.log('[EnhancedAddEateryForm] Form submission started:', data);
-    
+
     // Check if user is authenticated
     if (!user) {
       alert('Please sign in to submit a restaurant. You will be redirected to the sign-in page.');
@@ -282,12 +269,10 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
           updated_at: new Date().toISOString(),
         };
 
-        console.log('[EnhancedAddEateryForm] Submitting to API:', submissionData);
-        console.log('[EnhancedAddEateryForm] Zip code value:', submissionData.zip_code);
-        console.log('[EnhancedAddEateryForm] Seating capacity value:', submissionData.seating_capacity);
-        console.log('[EnhancedAddEateryForm] business_images type:', typeof submissionData.business_images);
-        console.log('[EnhancedAddEateryForm] business_images value:', submissionData.business_images);
-        
+
+
+
+
         const response = await fetch('/api/restaurants', {
           method: 'POST',
           headers: {
@@ -295,8 +280,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
           },
           body: JSON.stringify(submissionData),
         });
-
-        console.log('[EnhancedAddEateryForm] API response status:', response.status);
 
       const result = await response.json();
       
@@ -360,7 +343,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   </button>
                   <button
                     onClick={() => {
-                      console.log('[EnhancedAddEateryForm] Test submission');
+
                       const testData = {
                         name: 'Test Restaurant',
                         address: '123 Test St',
@@ -1561,12 +1544,11 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => {
-                    console.log('[EnhancedAddEateryForm] Submit button clicked');
+
                     console.log('[EnhancedAddEateryForm] Form state:', getValues());
-                    console.log('[EnhancedAddEateryForm] Form is valid:', isValid);
-                    console.log('[EnhancedAddEateryForm] Form errors:', errors);
-                    console.log('[EnhancedAddEateryForm] Current step:', currentStep);
-                    
+
+
+
                     // Manually trigger form submission
                     handleSubmit(onSubmit)();
                   }}

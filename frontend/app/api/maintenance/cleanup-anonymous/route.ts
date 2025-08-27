@@ -150,9 +150,7 @@ export async function POST(request: NextRequest) {
     
     if (allAnonymousUsers.length === 0) {
       // No anonymous users to clean up - log for monitoring
-      // console.log(`No anonymous users to clean up for correlation ID: ${correlationId}`, {
-      //   correlationId,
-      //   cutoff_date: cutoffDate.toISOString()
+
       // });
       
       return NextResponse.json(
@@ -174,10 +172,7 @@ export async function POST(request: NextRequest) {
     
     if (dryRun) {
       // Dry run mode - log what would be deleted without actual operations
-      // console.log(`DRY RUN: Would clean up ${allAnonymousUsers.length} anonymous users for correlation ID: ${correlationId}`, {
-      //   user_ids: processedUsers,
-      //   correlationId,
-      //   cutoff_date: cutoffDate.toISOString()
+
       // });
       
       return NextResponse.json(

@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function main() {
   const email = process.env.ADMIN_SEED_SUPERADMIN_EMAIL;
   if (!email) {
-    console.log('ADMIN_SEED_SUPERADMIN_EMAIL not set; skipping seed.');
+
     return;
   }
 
@@ -50,7 +50,7 @@ async function main() {
   }
 
   if (existingRole) {
-    console.log(`User ${email} already has super_admin role.`);
+
     return;
   }
 
@@ -70,7 +70,6 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Seeded super_admin role for ${email}`);
 }
 
 main()

@@ -141,36 +141,31 @@ function fixUnusedVarsInFile(filePath) {
 
 // Main execution
 function main() {
-  console.log('🔧 Fixing unused variable warnings...');
-  
+
   const files = getFilesWithUnusedVars();
   
   if (files.length === 0) {
-    console.log('✅ No files with unused variable warnings found');
+
     return;
   }
-  
-  console.log(`Found ${files.length} files with unused variable warnings:`);
-  
+
   let fixedCount = 0;
   for (const file of files) {
-    console.log(`  - ${file}`);
+
     if (fixUnusedVarsInFile(file)) {
       fixedCount++;
-      console.log(`    ✅ Fixed`);
+
     } else {
-      console.log(`    ⚠️  No changes needed or error occurred`);
+
     }
   }
-  
-  console.log(`\n🎉 Fixed ${fixedCount} out of ${files.length} files`);
-  
+
   // Run lint again to show remaining issues
-  console.log('\n📋 Running lint check again...');
+
   try {
     execSync('npm run lint', { stdio: 'inherit' });
   } catch (error) {
-    console.log('Some linting issues may still remain');
+
   }
 }
 

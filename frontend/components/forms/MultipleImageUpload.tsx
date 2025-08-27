@@ -67,9 +67,7 @@ export default function MultipleImageUpload({
     if (!cloudName) {
       throw new Error('Cloudinary cloud name not configured');
     }
-    
-    console.log('Uploading to Cloudinary:', { cloudName, fileSize: file.size, fileName: file.name });
-    
+
     // Try different upload presets
     const uploadPresets = ['jewgo_restaurants', 'ml_default', 'jewgo'];
     
@@ -87,7 +85,7 @@ export default function MultipleImageUpload({
 
         if (response.ok) {
           const data = await response.json();
-          console.log('Upload successful with preset:', preset, data.secure_url);
+
           return data.secure_url;
         } else {
           const errorText = await response.text();
@@ -175,9 +173,9 @@ export default function MultipleImageUpload({
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    console.log('File selected:', files);
+
     if (files && files.length > 0) {
-      console.log('Processing files:', files.length);
+
       addImages(files);
     }
     // Reset the input value so the same file can be selected again
@@ -334,7 +332,7 @@ export default function MultipleImageUpload({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => {
-            console.log('Upload area clicked, triggering file input');
+
             fileInputRef.current?.click();
           }}
           className={cn(

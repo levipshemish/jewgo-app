@@ -30,18 +30,10 @@ export async function POST(request: NextRequest) {
   const baseHeaders = getCORSHeaders(origin || undefined);
 
   // Debug logging for production
-  console.log('Anonymous auth request:', {
-    origin,
-    referer,
-    csrfToken: csrfToken ? 'present' : 'missing',
-    isProduction: process.env.NODE_ENV === 'production',
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  });
 
   // Feature guard: ensure required Supabase methods exist
   const featureOk = await validateSupabaseFeaturesWithLogging();
-  console.log('Supabase feature validation result:', featureOk);
+
   if (!featureOk) {
     console.error('Supabase features not available for anonymous auth');
     return NextResponse.json(
@@ -65,7 +57,7 @@ export async function POST(request: NextRequest) {
     
     // In production, be more lenient with CSRF validation
     if (isProduction) {
-      console.log('CSRF validation failed in production, but allowing request for anonymous auth');
+
     } else {
       return NextResponse.json(
         { error: 'CSRF' },
@@ -97,14 +89,7 @@ export async function POST(request: NextRequest) {
   // Debug Supabase configuration
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  console.log('Supabase configuration:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseKey,
-    urlLength: supabaseUrl?.length,
-    keyLength: supabaseKey?.length
-  });
-  
+
   if (!supabaseUrl || !supabaseKey) {
     console.error('Missing Supabase configuration');
     return NextResponse.json(
@@ -151,7 +136,7 @@ export async function POST(request: NextRequest) {
 
   // Attempt anonymous sign-in (no CAPTCHA required)
   try {
-    console.log('Attempting anonymous sign-in...');
+
     const { data, error } = await supabase.auth.signInAnonymously();
     
     if (error || !data?.user) {
@@ -161,8 +146,7 @@ export async function POST(request: NextRequest) {
         { status: 500, headers: baseHeaders }
       );
     }
-    
-    console.log('✅ Anonymous sign-in succeeded for user:', data.user.id);
+
   } catch (unexpectedError) {
     console.error('Unexpected error during anonymous sign-in:', unexpectedError);
     return NextResponse.json(

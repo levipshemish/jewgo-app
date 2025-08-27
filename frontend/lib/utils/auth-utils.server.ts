@@ -594,7 +594,7 @@ export function validateCSRFServer(
   
   // In production with invalid CSRF secret, be very lenient
   if (isProduction && !hasValidCSRFSecret) {
-    console.log('CSRF validation: Production with invalid CSRF secret - allowing request');
+
     return true;
   }
   

@@ -169,7 +169,7 @@ function createEnvFile(envVars, filename) {
     .join('\n');
   
   fs.writeFileSync(filename, envContent);
-  console.log(`✅ Created ${filename}`);
+
 }
 
 /**
@@ -339,7 +339,7 @@ function runValidation(platform = 'FRONTEND') {
     console.error('Please fix the issues above before deploying.');
     process.exit(1);
   } else {
-    console.log('✅ Deployment validation passed!');
+
   }
   
   return {
@@ -356,8 +356,7 @@ function runValidation(platform = 'FRONTEND') {
  * Setup deployment environment
  */
 function setupDeployment(platform = 'VERCEL') {
-  console.log(`🚀 Setting up ${platform} deployment...`);
-  
+
   const envVars = ENV_TEMPLATES[platform];
   if (!envVars) {
     console.error(`❌ Unknown platform: ${platform}`);
@@ -372,8 +371,7 @@ function setupDeployment(platform = 'VERCEL') {
   // Create environment file
   const filename = `${platform.toLowerCase()}.env.production`;
   createEnvFile(envVars, filename);
-  
-  console.log(`✅ ${platform} deployment setup complete!`);
+
   return true;
 }
 
@@ -381,30 +379,28 @@ function setupDeployment(platform = 'VERCEL') {
  * Build application
  */
 function buildApplication() {
-  console.log('🔨 Building application...');
-  
+
   try {
     // Install dependencies
-    console.log('📦 Installing dependencies...');
+
     execSync('npm install', { stdio: 'inherit' });
     
     // Run type checking
-    console.log('🔍 Running type checking...');
+
     execSync('npm run typecheck', { stdio: 'inherit' });
     
     // Run linting
-    console.log('🧹 Running linting...');
+
     execSync('npm run lint', { stdio: 'inherit' });
     
     // Run tests
-    console.log('🧪 Running tests...');
+
     execSync('npm run test', { stdio: 'inherit' });
     
     // Build application
-    console.log('🏗️  Building application...');
+
     execSync('npm run build', { stdio: 'inherit' });
-    
-    console.log('✅ Build completed successfully!');
+
     return true;
   } catch (error) {
     console.error('❌ Build failed:', error.message);
@@ -416,8 +412,7 @@ function buildApplication() {
  * Deploy application
  */
 function deployApplication(platform = 'VERCEL') {
-  console.log(`🚀 Deploying to ${platform}...`);
-  
+
   try {
     if (platform === 'VERCEL') {
       execSync('vercel --prod', { stdio: 'inherit' });
@@ -427,8 +422,7 @@ function deployApplication(platform = 'VERCEL') {
       console.error(`❌ Unknown deployment platform: ${platform}`);
       return false;
     }
-    
-    console.log(`✅ Deployment to ${platform} completed successfully!`);
+
     return true;
   } catch (error) {
     console.error(`❌ Deployment to ${platform} failed:`, error.message);
@@ -440,8 +434,7 @@ function deployApplication(platform = 'VERCEL') {
  * Run health checks
  */
 function runHealthChecks() {
-  console.log('🏥 Running health checks...');
-  
+
   const healthChecks = [
     { name: 'Frontend', url: process.env.NEXT_PUBLIC_URL || 'http://localhost:3000' },
     { name: 'Backend', url: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000' }
@@ -453,7 +446,7 @@ function runHealthChecks() {
     try {
       const response = fetch(`${check.url  }/health`);
       if (response.ok) {
-        console.log(`✅ ${check.name} health check passed`);
+
         results.push({ name: check.name, status: 'healthy' });
       } else {
         console.error(`❌ ${check.name} health check failed`);
@@ -472,8 +465,7 @@ function runHealthChecks() {
  * Clean up build artifacts
  */
 function cleanupBuildArtifacts() {
-  console.log('🧹 Cleaning up build artifacts...');
-  
+
   const artifactsToClean = [
     '.next',
     'node_modules/.cache',
@@ -487,28 +479,26 @@ function cleanupBuildArtifacts() {
     if (fs.existsSync(artifactPath)) {
       try {
         fs.rmSync(artifactPath, { recursive: true, force: true });
-        console.log(`✅ Cleaned up ${artifact}`);
+
       } catch (error) {
         console.warn(`⚠️  Could not clean up ${artifact}:`, error.message);
       }
     }
   });
-  
-  console.log('✅ Build artifacts cleanup completed!');
+
 }
 
 /**
  * Get deployment status
  */
 function getDeploymentStatus(platform = 'VERCEL') {
-  console.log(`📊 Getting ${platform} deployment status...`);
-  
+
   try {
     if (platform === 'VERCEL') {
       const output = execSync('vercel ls', { encoding: 'utf8' });
-      console.log(output);
+
     } else if (platform === 'RENDER') {
-      console.log('Render deployment status check not implemented');
+
     }
     
     return true;
@@ -522,8 +512,7 @@ function getDeploymentStatus(platform = 'VERCEL') {
  * Rollback deployment
  */
 function rollbackDeployment(platform = 'VERCEL', deploymentId = null) {
-  console.log(`🔄 Rolling back ${platform} deployment...`);
-  
+
   try {
     if (platform === 'VERCEL') {
       if (deploymentId) {
@@ -532,10 +521,9 @@ function rollbackDeployment(platform = 'VERCEL', deploymentId = null) {
         execSync('vercel rollback', { stdio: 'inherit' });
       }
     } else if (platform === 'RENDER') {
-      console.log('Render rollback not implemented');
+
     }
-    
-    console.log(`✅ ${platform} deployment rollback completed!`);
+
     return true;
   } catch (error) {
     console.error(`❌ ${platform} deployment rollback failed:`, error.message);

@@ -218,7 +218,7 @@ class Logger extends EventEmitter {
     const timeStr = timestamp.split('T')[1].split('.')[0]; // HH:MM:SS format
     
     const output = `${color}${icon} [${level}] ${timeStr} - ${message}${colors.reset}`;
-    console.log(output);
+
   }
 
   /**

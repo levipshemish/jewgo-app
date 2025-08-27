@@ -36,8 +36,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function promoteFirstAdmin(email: string) {
   try {
-    console.log(`🔍 Looking for user with email: ${email}`);
-    
+
     // Find the user by email using the correct API
     const { data: users, error: findError } = await supabase.auth.admin.listUsers();
     
@@ -58,7 +57,7 @@ async function promoteFirstAdmin(email: string) {
     // Check if user is already a super admin
     const currentMetadata = targetUser.user_metadata || {};
     if (currentMetadata.issuperadmin) {
-      console.log('ℹ️  User is already a super admin');
+
       return;
     }
     
@@ -69,9 +68,7 @@ async function promoteFirstAdmin(email: string) {
       promoted_by: 'script',
       promoted_at: new Date().toISOString()
     };
-    
-    console.log('🔄 Promoting user to super admin...');
-    
+
     const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(
       targetUser.id,
       { user_metadata: updatedMetadata }
@@ -81,12 +78,10 @@ async function promoteFirstAdmin(email: string) {
       console.error('❌ Error promoting user:', updateError.message);
       return;
     }
-    
-    console.log('✅ User promoted to super admin successfully!');
-    console.log(`   Email: ${updatedUser.user.email}`);
-    console.log(`   ID: ${updatedUser.user.id}`);
-    console.log(`   Super Admin: ${updatedUser.user.user_metadata?.issuperadmin}`);
-    
+
+
+
+
   } catch (error) {
     console.error('❌ Unexpected error:', error);
   }
@@ -109,9 +104,8 @@ if (!emailRegex.test(email)) {
   process.exit(1);
 }
 
-console.log('🚀 Starting first admin promotion...');
 promoteFirstAdmin(email).then(() => {
-  console.log('✨ Script completed');
+
   process.exit(0);
 }).catch((error) => {
   console.error('❌ Script failed:', error);

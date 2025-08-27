@@ -36,15 +36,13 @@ export default function ProfilePage() {
 
         if (response.ok) {
           const _userData = await response.json();
-          // console.log('Profile page: User data received:', userData);
-          
+
           if (userData.user) {
-            // console.log('Profile page: User exists, checking if guest...');
+
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
             const _isGuest = !userData.user.email && userData.user.provider === 'unknown';
-            // console.log('Profile page: Is guest?', isGuest);
-            
+
             if (isGuest) {
               appLogger.info('Profile page: Redirecting guest user');
               setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
@@ -54,7 +52,7 @@ export default function ProfilePage() {
             }
             
             // User is authenticated with email (not a guest)
-            // console.log('Profile page: Setting user data and stopping loading');
+
             if (isMounted) {
               setUser(userData.user);
               setIsLoading(false);
@@ -87,7 +85,7 @@ export default function ProfilePage() {
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');
       } finally {
-        // console.log('Profile page: Finally block - redirected:', redirected, 'userAuthenticated:', userAuthenticated, 'setting loading to:', !redirected && !userAuthenticated);
+
         // Only set loading to false if we're not redirecting AND user is not authenticated
         if (isMounted && !userAuthenticated) {
           setIsLoading(!redirected);

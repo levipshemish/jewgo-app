@@ -117,28 +117,26 @@ export default function ClickableAvatarUpload({
       return;
     }
 
-    console.log('Delete avatar clicked');
     setIsDeleting(true);
     setError(null);
 
     try {
-      console.log('Calling deleteAvatar server action...');
+
       const result = await deleteAvatar();
-      console.log('Delete result:', result);
-      
+
       if (result.success) {
-        console.log('Delete successful, updating UI...');
+
         setPreviewUrl(null);
         onAvatarChange?.("");
       } else {
-        console.log('Delete failed:', result.error);
+
         setError(result.error || "Failed to delete avatar");
       }
     } catch (error) {
       console.error('Delete error:', error);
       setError("Failed to delete avatar. Please try again.");
     } finally {
-      console.log('Setting isDeleting to false');
+
       setIsDeleting(false);
     }
   };

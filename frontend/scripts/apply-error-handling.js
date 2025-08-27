@@ -278,7 +278,7 @@ function createErrorHandlingConfig() {
   };
   
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log(`📄 Created error handling configuration: ${configPath}`);
+
 }
 
 /**
@@ -378,16 +378,15 @@ node scripts/apply-error-handling.js
 `;
 
   fs.writeFileSync(docsPath, docs);
-  console.log(`📄 Created error handling documentation: ${docsPath}`);
+
 }
 
 /**
  * Main function
  */
 async function main() {
-  console.log('🔧 Applying Error Handling System');
-  console.log('==================================');
-  
+
+
   const results = {
     total: SCRIPTS_TO_UPDATE.length,
     updated: 0,
@@ -401,7 +400,7 @@ async function main() {
     const scriptPath = path.join(__dirname, scriptName);
     
     if (!fs.existsSync(scriptPath)) {
-      console.log(`⚠️  ${scriptName}: File not found`);
+
       results.skipped++;
       results.details.push({ script: scriptName, status: 'skipped', reason: 'File not found' });
       continue;
@@ -424,22 +423,20 @@ async function main() {
   createErrorHandlingDocs();
   
   // Summary
-  console.log('\n📊 Error Handling Application Summary');
-  console.log('=====================================');
-  console.log(`Total scripts: ${results.total}`);
-  console.log(`✅ Updated: ${results.updated}`);
-  console.log(`⚠️  Skipped: ${results.skipped}`);
-  console.log(`❌ Failed: ${results.failed}`);
-  
+
+
+
+
+
+
   if (results.failed > 0) {
-    console.log('\n❌ Failed Updates:');
+
     results.details
       .filter(d => d.error)
       .forEach(d => console.log(`  - ${d.script}: ${d.error}`));
   }
-  
-  console.log('\n🎉 Error handling system applied successfully!');
-  console.log('📖 See ERROR_HANDLING_GUIDE.md for usage instructions');
+
+
 }
 
 // Execute with error handling
