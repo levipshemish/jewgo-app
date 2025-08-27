@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+import { appLogger } from '@/lib/utils/logger';
 "use client";
 
 import Link from "next/link";
@@ -69,18 +69,18 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     let recaptchaToken = null;
     try {
       if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
-        console.log('Executing reCAPTCHA v3 for signup action...');
+        appLogger.info('Executing reCAPTCHA v3 for signup action');
         recaptchaToken = await (window as any).grecaptcha.execute(siteKey, { action: 'signup' });
         if (recaptchaToken) {
-          console.log('reCAPTCHA token obtained successfully for signup');
+          appLogger.info('reCAPTCHA token obtained successfully for signup');
         } else {
-          console.warn('reCAPTCHA token was empty for signup');
+          appLogger.warn('reCAPTCHA token was empty for signup');
         }
       } else {
-        console.log('reCAPTCHA not configured or not available for signup - proceeding without reCAPTCHA');
+        appLogger.info('reCAPTCHA not configured for signup - proceeding without reCAPTCHA');
       }
     } catch (error) {
-      console.error('reCAPTCHA execution failed for signup:', error);
+      appLogger.error('reCAPTCHA execution failed for signup', { error: String(error) });
       // Non-fatal; continue with signup
     }
     
@@ -103,7 +103,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         setSuccess("Account created successfully! Please check your email to verify your account.");
       }
     } catch (err) {
-      console.error('Sign up error:', err);
+      appLogger.error('Sign up error', { error: String(err) });
       setError("An unexpected error occurred. Please try again.");
     }
     
@@ -138,7 +138,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         setError(mapAppleOAuthError(error.message));
       }
     } catch (err) {
-      console.error('Apple sign up error:', err);
+      appLogger.error('Apple sign up error', { error: String(err) });
       setError('Apple sign up failed');
     } finally {
       setPending(false);

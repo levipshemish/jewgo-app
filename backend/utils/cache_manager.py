@@ -174,6 +174,9 @@ class CacheManager:
 # Global cache manager instance
 _cache_manager = CacheManager()
 
+# Public export for external imports
+cache_manager = _cache_manager
+
 
 def get_cache(key: str) -> Optional[Any]:
     """Get value from global cache."""

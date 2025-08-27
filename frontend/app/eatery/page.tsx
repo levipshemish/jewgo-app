@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
@@ -133,7 +132,7 @@ function EateryPageContent() {
       
       const result = columnsPerRow * 4; // Always 4 rows
       
-      console.log('🔍 MOBILE OPTIMIZATION:', {
+      appLogger.debug('Mobile optimization', {
         isMobile,
         isMobileDevice,
         viewportWidth,
@@ -274,7 +273,7 @@ function EateryPageContent() {
       // Keep URL filter state in sync with current page
       setFilter('page', page as any);
     } catch (err) {
-      console.error('Error fetching page:', err);
+      appLogger.error('Eatery page load error', { error: String(err) });
     } finally {
       setLoading(false);
     }
@@ -386,7 +385,7 @@ function EateryPageContent() {
       const hasMoreContent = processedRestaurants.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching restaurants:', err);
+      appLogger.error('Eatery fetch error', { error: String(err) });
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -497,7 +496,7 @@ function EateryPageContent() {
       const hasMoreContent = processedNewRestaurants.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching more restaurants:', err);
+      appLogger.error('Eatery fetch more error', { error: String(err) });
     } finally {
       setIsLoadingMore(false);
     }

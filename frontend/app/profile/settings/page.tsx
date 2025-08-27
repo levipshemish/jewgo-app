@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 "use client";
+import { appLogger } from '@/lib/utils/logger';
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -221,7 +222,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
       setCurrentUser(prev => ({ ...prev, name }));
       // You might want to show a success message here
     } catch (error) {
-      console.error("Failed to update profile:", error);
+      appLogger.error('Failed to update profile', { error: String(error) });
       // You might want to show an error message here
     } finally {
       setIsSaving(false);
@@ -318,7 +319,7 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
           currentAvatarUrl={user.avatar_url}
           onAvatarChange={(avatarUrl) => {
             // Handle avatar change - you might want to update the user state here
-            console.log('Avatar changed:', avatarUrl);
+            appLogger.info('Avatar changed', { avatarUrl });
           }}
           size="lg"
         />

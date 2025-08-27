@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { appLogger } from '@/lib/utils/logger';
 
 /**
  * Server action to upload an avatar image to Supabase Storage
@@ -62,7 +63,7 @@ export async function uploadAvatar(formData: FormData) {
       });
 
     if (uploadError) {
-      console.error("Upload error:", uploadError);
+      appLogger.error('Upload error', { error: String(uploadError) });
       return { 
         success: false, 
         error: "Failed to upload image. Please try again." 
@@ -82,7 +83,7 @@ export async function uploadAvatar(formData: FormData) {
     });
 
     if (updateError) {
-      console.error("Profile update error:", updateError);
+      appLogger.error('Profile update error', { error: String(updateError) });
       // If profile update fails, try to delete the uploaded file
       await supabase.storage.from("avatars").remove([filePath]);
       return { 
@@ -101,7 +102,7 @@ export async function uploadAvatar(formData: FormData) {
     };
 
   } catch (error) {
-    console.error("Avatar upload error:", error);
+    appLogger.error('Avatar upload error', { error: String(error) });
     return { 
       success: false, 
       error: "An unexpected error occurred. Please try again." 
@@ -141,7 +142,7 @@ export async function deleteAvatar() {
       .remove([filePath]);
 
     if (deleteError) {
-      console.error("Delete error:", deleteError);
+      appLogger.error('Delete error', { error: String(deleteError) });
       // Continue even if file deletion fails (file might not exist)
     }
 
@@ -151,7 +152,7 @@ export async function deleteAvatar() {
     });
 
     if (updateError) {
-      console.error("Profile update error:", updateError);
+      appLogger.error('Profile update error', { error: String(updateError) });
       return { 
         success: false, 
         error: "Failed to update profile. Please try again." 

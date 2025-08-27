@@ -2,6 +2,7 @@
 "use server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { appLogger } from '@/lib/utils/logger';
 
 export async function testStorage() {
   try {
@@ -11,11 +12,11 @@ export async function testStorage() {
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     
     if (listError) {
-      console.error('Error listing buckets:', listError);
+      appLogger.error('Error listing buckets', { error: String(listError) });
       return { success: false, error: listError.message };
     }
     
-    console.log('Available buckets:', buckets);
+    appLogger.info('Available buckets', { count: buckets?.length || 0 });
     
     // Check if avatars bucket exists
     const avatarsBucket = buckets.find(bucket => bucket.name === 'avatars');
@@ -35,7 +36,7 @@ export async function testStorage() {
     };
     
   } catch (error) {
-    console.error('Test storage error:', error);
+    appLogger.error('Test storage error', { error: String(error) });
     return { success: false, error: 'Storage test failed' };
   }
 }

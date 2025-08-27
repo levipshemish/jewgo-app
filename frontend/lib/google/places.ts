@@ -434,10 +434,15 @@ export class ModernGooglePlacesAPI {
         };
       }
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ModernGooglePlacesAPI] Legacy API request:', request);
+      }
+
       autocompleteService.getPlacePredictions(request, (predictions: any[], status: any) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
           if (process.env.NODE_ENV === 'development') {
             console.log('[ModernGooglePlacesAPI] Legacy API returned predictions:', predictions.length);
+            console.log('[ModernGooglePlacesAPI] First prediction:', predictions[0]);
           }
           resolve(predictions);
         } else {
@@ -566,6 +571,8 @@ export class ModernGooglePlacesAPI {
                 if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
                   if (process.env.NODE_ENV === 'development') {
                     console.log('[ModernGooglePlacesAPI] Legacy API result:', result);
+                    console.log('[ModernGooglePlacesAPI] Address components:', result.address_components);
+                    console.log('[ModernGooglePlacesAPI] Formatted address:', result.formatted_address);
                   }
                   resolve(result);
                 } else {
@@ -592,6 +599,10 @@ export class ModernGooglePlacesAPI {
         
         // Try legacy PlacesService as fallback
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Using legacy PlacesService fallback (no modern API)');
+          }
+          
           const dummyDiv = document.createElement('div');
           const placesService = new window.google.maps.places.PlacesService(dummyDiv);
           const request: google.maps.places.PlaceDetailsRequest = {
@@ -599,11 +610,17 @@ export class ModernGooglePlacesAPI {
             fields
           };
           
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Legacy request:', request);
+          }
+          
           const legacyResult = await new Promise((resolve) => {
             placesService.getDetails(request, (result: any, status: any) => {
               if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
                 if (process.env.NODE_ENV === 'development') {
                   console.log('[ModernGooglePlacesAPI] Legacy API result:', result);
+                  console.log('[ModernGooglePlacesAPI] Address components:', result.address_components);
+                  console.log('[ModernGooglePlacesAPI] Formatted address:', result.formatted_address);
                 }
                 resolve(result);
               } else {

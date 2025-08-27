@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { appLogger } from '@/lib/utils/logger';
 import { useEffect } from "react";
 
 import { supabaseClient } from "@/lib/supabase/client-secure";
@@ -15,7 +16,7 @@ export default function LogoutPage() {
         // Redirect to home page after successful sign out
         router.push("/");
       } catch (error) {
-        console.error('Sign out error:', error);
+        appLogger.error('Sign out error', { error: String(error) });
         // Even if there's an error, redirect to home
         router.push("/");
       }

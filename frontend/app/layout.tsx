@@ -4,6 +4,7 @@ import './globals.css'
 import Script from 'next/script'
 
 import Analytics from '@/components/analytics/Analytics'
+import { appLogger } from '@/lib/utils/logger'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 // Remove FontOptimizer to prevent font preload warnings
 // import { FontOptimizer } from '@/components/ui/FontOptimizer'
@@ -85,7 +86,7 @@ export default function RootLayout({
   if (typeof window !== 'undefined') {
     // Client-side initialization
     initializeFeatureGuard().catch(error => {
-      console.error('Failed to initialize Feature Guard:', error);
+      appLogger.error('Failed to initialize Feature Guard', { error: String(error) });
     });
   }
 

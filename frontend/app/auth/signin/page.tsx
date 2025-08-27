@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+import { appLogger } from '@/lib/utils/logger';
 "use client";
 
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
@@ -52,7 +52,7 @@ function SignInForm() {
         // User is not authenticated, show sign-in form
         setIsCheckingAuth(false);
       } catch (error) {
-        console.error('Error checking auth status:', error);
+        appLogger.error('Error checking auth status', { error: String(error) });
         // On error, show sign-in form
         setIsCheckingAuth(false);
       }
@@ -84,7 +84,7 @@ function SignInForm() {
     try {
       // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
       if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
-        console.log('Executing reCAPTCHA v3 for login action...');
+        appLogger.info('Executing reCAPTCHA v3 for login action');
         
         // Add timeout to prevent hanging
         const tokenPromise = (window as any).grecaptcha.execute(siteKey, { action: 'login' });
@@ -95,22 +95,22 @@ function SignInForm() {
         const token = await Promise.race([tokenPromise, timeoutPromise]);
         
         if (token) {
-          console.log('reCAPTCHA token obtained successfully');
+          appLogger.info('reCAPTCHA token obtained successfully');
           formData.set('recaptchaToken', token);
           formData.set('recaptchaAction', 'login');
         } else {
-          console.warn('reCAPTCHA token was empty');
+          appLogger.warn('reCAPTCHA token was empty');
         }
       } else {
-        console.log('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
+        appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
     } catch (error) {
-      console.error('reCAPTCHA execution failed:', error);
+      appLogger.error('reCAPTCHA execution failed', { error: String(error) });
       // Non-fatal; continue without reCAPTCHA token
     }
     
     // Always call formAction, even if reCAPTCHA fails
-    console.log('Submitting form with or without reCAPTCHA token');
+    appLogger.info('Submitting form with or without reCAPTCHA token');
     formAction(formData);
   };
 

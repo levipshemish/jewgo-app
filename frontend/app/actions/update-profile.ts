@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { appLogger } from '@/lib/utils/logger';
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { ProfileSchema, UsernameSchema, type ProfileData } from "@/lib/validators/profile";
@@ -52,7 +53,7 @@ export async function updateProfile(data: ProfileData) {
           .single();
 
         if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error("Username check error:", checkError);
+          appLogger.error('Username check error', { error: String(checkError) });
           return { success: false, error: "Failed to check username availability" };
         }
 
@@ -86,7 +87,7 @@ export async function updateProfile(data: ProfileData) {
       .single();
 
     if (updateError) {
-      console.error("Profile update error:", updateError);
+      appLogger.error('Profile update error', { error: String(updateError) });
       
       // Handle specific constraint violations
       if (updateError.code === '23505') { // Unique constraint violation
@@ -118,7 +119,7 @@ export async function updateProfile(data: ProfileData) {
     });
 
     if (metadataError) {
-      console.error("Metadata update error:", metadataError);
+      appLogger.error('Metadata update error', { error: String(metadataError) });
       // Don't fail the entire operation if metadata update fails
       // The profile is still updated in the database
     }
@@ -134,7 +135,7 @@ export async function updateProfile(data: ProfileData) {
     };
 
   } catch (error) {
-    console.error("Profile update error:", error);
+    appLogger.error('Profile update error', { error: String(error) });
     return { 
       success: false, 
       error: "An unexpected error occurred. Please try again." 
@@ -177,7 +178,7 @@ export async function checkUsernameAvailability(username: string) {
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error("Username check error:", checkError);
+      appLogger.error('Username check error', { error: String(checkError) });
       return { available: false, error: "Failed to check username availability" };
     }
 
@@ -186,7 +187,7 @@ export async function checkUsernameAvailability(username: string) {
     return { available };
 
   } catch (error) {
-    console.error("Username availability check error:", error);
+    appLogger.error('Username availability check error', { error: String(error) });
     return { available: false, error: "Failed to check username availability" };
   }
 }
@@ -236,7 +237,7 @@ export async function getCurrentProfile() {
       .single();
 
     if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error("Profile fetch error:", profileError);
+      appLogger.error('Profile fetch error', { error: String(profileError) });
       return { success: false, error: "Failed to fetch profile" };
     }
 
@@ -264,7 +265,7 @@ export async function getCurrentProfile() {
     };
 
   } catch (error) {
-    console.error("Get profile error:", error);
+    appLogger.error('Get profile error', { error: String(error) });
     return { 
       success: false, 
       error: "An unexpected error occurred. Please try again." 
