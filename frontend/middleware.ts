@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Admin RBAC gate: prefer route-level RBAC; fail open if RBAC lookup fails (e.g., RLS)
+    // Admin RBAC gate: prefer route-level RBAC; fail closed on lookup error unless explicitly allowed in dev
     if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
       let rbacLookupFailed = false;
       let isAdmin = false;
@@ -125,12 +125,13 @@ export async function middleware(request: NextRequest) {
         isAdmin = Boolean(userRow?.issuperadmin);
 
         if (!isAdmin) {
+          const nowISO = new Date().toISOString();
           const { data: roles, error: rolesError } = await supabase
             .from('admin_roles')
             .select('role,is_active,expires_at')
             .eq('user_id', user.id)
             .eq('is_active', true)
-            .or('expires_at.is.null,expires_at.gt.now()');
+            .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
           if (rolesError) {
             rbacLookupFailed = true;
           }
@@ -141,12 +142,17 @@ export async function middleware(request: NextRequest) {
         rbacLookupFailed = true;
       }
 
-      // If lookup conclusively says "not an admin" then block, otherwise fail open
-      if (!rbacLookupFailed && !isAdmin) {
+      // Fail closed by default on RBAC lookup failure or non-admin, with dev override
+      const devOverride = process.env.NODE_ENV === 'development' && process.env.ADMIN_RBAC_FAIL_OPEN === 'true';
+      if (!devOverride && (rbacLookupFailed || !isAdmin)) {
+        console.warn('[MIDDLEWARE] RBAC gate blocked access', { rbacLookupFailed, isAdmin });
         if (isApi) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
         }
         return redirectToSignin(request, response);
+      }
+      if (devOverride && (rbacLookupFailed || !isAdmin)) {
+        console.warn('[MIDDLEWARE] RBAC gate fail-open (development override enabled)');
       }
     }
 

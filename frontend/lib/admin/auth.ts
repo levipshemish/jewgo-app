@@ -44,13 +44,13 @@ async function getUserAdminRoleFallback(userId: string): Promise<AdminRole> {
     }
     
     // Then check admin_roles table for active role
+    const nowISO = new Date().toISOString();
     const { data: roles, error: rolesError } = await supabase
       .from('admin_roles')
       .select('role')
       .eq('user_id', userId)
       .eq('is_active', true)
-      .is('expires_at', null)
-      .or('expires_at.gt.now()');
+      .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
     
     if (!rolesError && roles && roles.length > 0) {
       const rolePriority: Record<AdminRole, number> = {

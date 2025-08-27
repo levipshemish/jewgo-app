@@ -85,17 +85,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { format = 'csv', ...options } = body;
+    const { format = 'csv', ...options } = body || {};
 
-    // Export audit logs
-    const csvContent = await exportAuditLogs(options);
+    if (format === 'json') {
+      const result = await (await import('@/lib/admin/audit')).queryAuditLogs({ ...options, pageSize: 10000 });
+      return NextResponse.json({ logs: result.logs, total: result.total });
+    }
 
-    return new NextResponse(csvContent, {
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,
-      },
-    });
+    if (format === 'csv') {
+      const csvContent = await exportAuditLogs(options);
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
+    }
+
+    return NextResponse.json({ error: 'Unsupported format' }, { status: 400 });
   } catch (error) {
     console.error('[ADMIN] Audit log export error:', error);
     return NextResponse.json(

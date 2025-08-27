@@ -20,7 +20,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
               <p>
-                By accessing and using JewGo ("the Service"), you accept and agree to be bound by the 
+                By accessing and using JewGo (&quot;the Service&quot;), you accept and agree to be bound by the 
                 terms and provision of this agreement. If you do not agree to abide by the above, 
                 please do not use this service.
               </p>
@@ -101,7 +101,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-xl font-semibold text-white mb-3">8. Disclaimers</h2>
               <p>
-                The Service is provided "as is" and "as available" without warranties of any kind. 
+                The Service is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind. 
                 We do not guarantee:
               </p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
@@ -151,7 +151,7 @@ export default function TermsOfServicePage() {
               <h2 className="text-xl font-semibold text-white mb-3">13. Changes to Terms</h2>
               <p>
                 We reserve the right to modify these Terms at any time. We will notify users of any 
-                material changes by posting the new Terms on this page and updating the "Last Updated" date.
+                material changes by posting the new Terms on this page and updating the &quot;Last Updated&quot; date.
               </p>
             </section>
 

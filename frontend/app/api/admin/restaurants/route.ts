@@ -10,18 +10,6 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    // Test database connection first
-    try {
-      await prisma.$connect();
-      console.log('[ADMIN] Database connection successful');
-    } catch (dbError) {
-      console.error('[ADMIN] Database connection failed:', dbError);
-      return NextResponse.json({ 
-        error: 'Database connection failed',
-        details: process.env.NODE_ENV === 'development' ? String(dbError) : undefined
-      }, { status: 503 });
-    }
-
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -96,13 +84,6 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
-  } finally {
-    // Always disconnect from database
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('[ADMIN] Error disconnecting from database:', disconnectError);
-    }
   }
 }
 
