@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ data: updated });
   } catch (error) {
-    console.error('[ADMIN] Restaurant approve error:', error);
+    adminLogger.error('Restaurant approve error', { error: String(error) });
     return NextResponse.json({ error: 'Failed to approve restaurant' }, { status: 500 });
   }
 }

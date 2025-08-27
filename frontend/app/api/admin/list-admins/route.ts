@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
           userId: true,
           role: true,
           isActive: true,
-          createdAt: true,
+          assignedAt: true,
           expiresAt: true
         },
         orderBy: {
-          createdAt: 'desc'
+          assignedAt: 'desc'
         }
       });
       
