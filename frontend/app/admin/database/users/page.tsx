@@ -2,12 +2,12 @@ import UserDatabaseClient from '@/components/admin/UserDatabaseClient';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
 
-export default async function UserDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  const params = searchParams;
+export default async function UserDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || 'createdat';
+  const sortBy = (params.sortBy as string) || 'created_at';
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
 
   let initialData: any[] = [];

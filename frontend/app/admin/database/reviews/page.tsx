@@ -1,14 +1,14 @@
 import ReviewDatabaseClient from '@/components/admin/ReviewDatabaseClient';
-import { AdminDatabaseService } from '@/lib/admin/database';
-import { prisma } from '@/lib/db/prisma';
+import { _AdminDatabaseService} from '@/lib/admin/database';
+import { _prisma} from '@/lib/db/prisma';
 
-export default async function ReviewDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  const params = searchParams;
-  const page = parseInt((params.page as string) || '1');
-  const pageSize = parseInt((params.pageSize as string) || '20');
-  const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || 'created_at';
-  const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
+export default async function ReviewDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const _params = await searchParams;
+  const _page = parseInt((params.page as string) || '1');
+  const _pageSize = parseInt((params.pageSize as string) || '20');
+  const _search = (params.search as string) || '';
+  const _sortBy = (params.sortBy as string) || 'created_at';
+  const _sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
   
   // Build filters
   const filters: any = {};
@@ -19,7 +19,7 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   try {
-    const result = await AdminDatabaseService.getPaginatedData(
+    const _result = await AdminDatabaseService.getPaginatedData(
       prisma.review,
       'review',
       {
@@ -33,7 +33,7 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-  } catch (e) {
+  } catch (_e) {
     // ignore; client-side will fetch
   }
 

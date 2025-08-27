@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import { getCORSHeaders, ALLOWED_ORIGINS } from '@/lib/config/environment';
-import { validateCSRFServer } from '@/lib/utils/auth-utils.server';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _cookies} from 'next/headers';
+import { _createServerClient} from '@supabase/ssr';
+import { _getCORSHeaders, _ALLOWED_ORIGINS} from '@/lib/config/environment';
+import { _validateCSRFServer} from '@/lib/utils/auth-utils.server';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const _runtime = 'nodejs';
+export const _dynamic = 'force-dynamic';
 
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin') || undefined;
+  const _origin = request.headers.get('origin') || undefined;
   return new Response(null, {
     status: 204,
     headers: getCORSHeaders(origin)
@@ -16,18 +16,18 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const baseHeaders = getCORSHeaders(origin || undefined);
+  const _origin = request.headers.get('origin');
+  const _baseHeaders = getCORSHeaders(origin || undefined);
 
   try {
     // Create SSR Supabase client bound to cookies
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
+    const _cookieStore = await cookies();
+    const _supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(_name: string) { return cookieStore.get(name)?.value; },
           set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }); },
           remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options, maxAge: 0 }); },
         },
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform user data for client consumption
-    const transformedUser = {
+    const _transformedUser = {
       id: user.id,
       email: user.email || undefined,
       name: user.user_metadata?.full_name || user.user_metadata?.name || null,
@@ -68,10 +68,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const referer = request.headers.get('referer');
-  const csrfToken = request.headers.get('x-csrf-token');
-  const baseHeaders = getCORSHeaders(origin || undefined);
+  const _origin = request.headers.get('origin');
+  const _referer = request.headers.get('referer');
+  const _csrfToken = request.headers.get('x-csrf-token');
+  const _baseHeaders = getCORSHeaders(origin || undefined);
 
   // CSRF validation. OAuth-success page calls from same origin, so Origin+Referer should be present.
   if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
@@ -82,13 +82,13 @@ export async function POST(request: NextRequest) {
     const { name, avatar_url } = await request.json().catch(() => ({}));
 
     // Create SSR Supabase client bound to cookies
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
+    const _cookieStore = await cookies();
+    const _supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(_name: string) { return cookieStore.get(name)?.value; },
           set(name: string, value: string, options: any) { cookieStore.set({ name, value, ...options }); },
           remove(name: string, options: any) { cookieStore.set({ name, value: '', ...options, maxAge: 0 }); },
         },
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare profile data with safe defaults
-    const display_name = (name && String(name).trim()) || user.user_metadata?.full_name || user.user_metadata?.name || '';
+    const _display_name = (name && String(name).trim()) || user.user_metadata?.full_name || user.user_metadata?.name || '';
 
     // Check if profile exists to avoid overwriting preferences on repeat sync
     const { data: existingProfile, error: _getError } = await supabase
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Default preferences on first insert
-    const defaultPreferences = {
+    const _defaultPreferences = {
       emailNotifications: true,
       pushNotifications: true,
       marketingEmails: false,

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { LoadingButton } from '@/components/ui/LoadingStates';
-import { Loader2, UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { _useState} from 'react';
+import { _LoadingButton} from '@/components/ui/LoadingStates';
+import { _Loader2, _UserPlus, _Shield, _CheckCircle, _XCircle} from 'lucide-react';
 
 interface SuperAdminManagerProps {
   currentAdmins: Array<{
@@ -18,7 +18,7 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handlePromoteUser = async () => {
+  const _handlePromoteUser = async () => {
     if (!email.trim()) {
       setMessage({ type: 'error', text: 'Please enter an email address' });
       return;
@@ -28,7 +28,7 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/admin/promote-user', {
+      const _response = await fetch('/api/admin/promote-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
         body: JSON.stringify({ targetEmail: email.trim() }),
       });
 
-      const data = await response.json();
+      const _data = await response.json();
 
       if (response.ok) {
         setMessage({ type: 'success', text: data.message });
@@ -46,7 +46,7 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to promote user' });
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Network error occurred' });
     } finally {
       setIsLoading(false);

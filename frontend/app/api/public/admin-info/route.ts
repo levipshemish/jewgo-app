@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _prisma} from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       
       // Count super admins
       console.log('[PUBLIC ADMIN INFO] Counting super admins...');
-      const superAdminsCount = await prisma.user.count({
+      const _superAdminsCount = await prisma.user.count({
         where: {
           issuperadmin: true
         }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       
       // Count admin roles
       console.log('[PUBLIC ADMIN INFO] Counting admin roles...');
-      const adminRolesCount = await prisma.adminRole.count({
+      const _adminRolesCount = await prisma.adminRole.count({
         where: {
           isActive: true
         }
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       console.log('[PUBLIC ADMIN INFO] Admin roles count:', adminRolesCount);
       
       // Get unique admin user IDs
-      const adminRoleUserIds = await prisma.adminRole.findMany({
+      const _adminRoleUserIds = await prisma.adminRole.findMany({
         where: {
           isActive: true
         },
@@ -55,12 +55,12 @@ export async function GET(request: NextRequest) {
         }
       });
       
-      const adminUserIds = new Set([
+      const _adminUserIds = new Set([
         ...adminRoleUserIds.map(role => role.userId)
       ]);
       
       // Add super admin IDs
-      const superAdmins = await prisma.user.findMany({
+      const _superAdmins = await prisma.user.findMany({
         where: {
           issuperadmin: true
         },
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       await prisma.$disconnect();
       console.log('[PUBLIC ADMIN INFO] Database disconnected');
       
-    } catch (dbError) {
+    } catch (_dbError) {
       console.error('[PUBLIC ADMIN INFO] Database error:', dbError);
       result.database = 'error';
       result.database_error = String(dbError);
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     console.log('[PUBLIC ADMIN INFO] Admin info result:', result);
     
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (_error) {
     console.error('[PUBLIC ADMIN INFO] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Failed to get admin info',

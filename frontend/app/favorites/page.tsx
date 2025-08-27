@@ -17,7 +17,7 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useGuestProtection } from '@/lib/utils/guest-protection';
 
 // Dynamically import Supabase client to prevent SSR issues
-const getSupabaseClient = async () => {
+const _getSupabaseClient = async () => {
   if (typeof window === 'undefined') {
     return null;
   }
@@ -42,7 +42,7 @@ function FavoritesPageContent() {
     // Search disabled on this page; no-op to satisfy types
   };
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (_tab: string) => {
     setActiveTab(tab);
   };
 
@@ -50,7 +50,7 @@ function FavoritesPageContent() {
     setShowFilters(true);
   };
 
-  const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
+  const handleFilterChange = (_filterType: keyof typeof activeFilters, _value: any) => {
     setFilter(filterType, value);
   };
 
@@ -58,7 +58,7 @@ function FavoritesPageContent() {
     setShowFilters(false);
   };
 
-  const handleCardClick = (restaurantId: string) => {
+  const handleCardClick = (_restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
   };
 
@@ -168,7 +168,7 @@ function FavoritesPageContent() {
                             {restaurant.name}
                           </h3>
                           <button
-                            onClick={(e) => {
+                            onClick={(_e) => {
                               e.stopPropagation();
                               // Remove favorite is handled by useFavorites elsewhere; placeholder
                             }}
@@ -219,8 +219,7 @@ function FavoritesPageContent() {
             )}
           </div>
 
-          {showFilters && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+          {showFilters && (_<div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
               <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">

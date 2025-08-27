@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { Prisma } from '@prisma/client';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _prisma} from '@/lib/db/prisma';
+import { _Prisma} from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       result.database = 'connected';
       
       // Get database connection info
-      const connectionInfo = await prisma.$queryRaw<{
+      const _connectionInfo = await prisma.$queryRaw<{
         database_name: string;
         current_user: string;
         postgres_version: string;
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       
       // Get list of all tables in the public schema
       console.log('[DB INFO] Getting table list...');
-      const tables = await prisma.$queryRaw<{ table_name: string; table_type: string }[]>`
+      const _tables = await prisma.$queryRaw<{ table_name: string; table_type: string }[]>`
         SELECT 
           table_name,
           table_type
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       const tableInfo: Array<{ name: string; type: string; row_count: number | string; error?: string }> = [];
       for (const table of tables) {
         try {
-          const count = await prisma.$queryRaw<{ count: bigint }[]>(
+          const _count = await prisma.$queryRaw<{ count: bigint }[]>(
             Prisma.sql`SELECT COUNT(*)::bigint as count FROM ${Prisma.raw(`"${table.table_name}"`)}`
           );
           tableInfo.push({
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
             type: table.table_type,
             row_count: typeof count?.[0]?.count !== 'undefined' ? Number(count[0].count) : 0
           });
-        } catch (error) {
+        } catch (_error) {
           tableInfo.push({
             name: table.table_name,
             type: table.table_type,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       await prisma.$disconnect();
       console.log('[DB INFO] Database disconnected');
       
-    } catch (dbError) {
+    } catch (_dbError) {
       console.error('[DB INFO] Database error:', dbError);
       result.database = 'error';
       result.database_error = String(dbError);
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     console.log('[DB INFO] Database info result:', result);
     
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (_error) {
     console.error('[DB INFO] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Failed to get database info',

@@ -229,7 +229,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
     }
   };
 
-  const handleAvatarChange = (avatarUrl: string) => {
+  const handleAvatarChange = (_avatarUrl: string) => {
     setCurrentUser(prev => ({ ...prev, avatar_url: avatarUrl || null }));
   };
 
@@ -305,8 +305,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
 }
 
 function ProfileSettings({ user }: { user: TransformedUser }) {
-  return (
-    <div className="space-y-6">
+  return (_<div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
         <p className="text-sm text-gray-500">Update your profile details and preferences.</p>
@@ -413,7 +412,7 @@ function NotificationSettings({ user }: { user: TransformedUser }) {
     certificationUpdates: false,
   });
 
-  const handlePreferenceChange = (key: string, value: boolean) => {
+  const handlePreferenceChange = (_key: string, _value: boolean) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
   };
 

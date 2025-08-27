@@ -61,7 +61,7 @@ interface Store {
 }
 
 // Mock API function for stores - will be replaced with actual API
-const fetchStores = async (limit: number, params?: string) => {
+const fetchStores = async (_limit: number, _params?: string) => {
   // For now, return mock data
   const mockStores: Store[] = [
     {
@@ -248,7 +248,7 @@ function StoresPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize store transformation to prevent unnecessary re-renders
-  const transformStoreToCardData = useCallback((store: Store) => {
+  const transformStoreToCardData = useCallback(_(store: Store) => {
     // Enhanced rating logic with better fallbacks
     const rating = store.rating || store.star_rating || store.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -280,9 +280,9 @@ function StoresPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(([key, value]) => {
+    Object.entries(newFilters).forEach(_([key, _value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -300,7 +300,7 @@ function StoresPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -309,7 +309,7 @@ function StoresPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback(_(query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -333,7 +333,7 @@ function StoresPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
+  const handlePageChange = async (_page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -348,7 +348,7 @@ function StoresPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -370,7 +370,7 @@ function StoresPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -417,7 +417,7 @@ function StoresPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch stores with mobile optimization
-  const fetchStoresData = async (filters: Filters = activeFilters) => {
+  const fetchStoresData = async (_filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -431,7 +431,7 @@ function StoresPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
+      Object.entries(filters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -491,7 +491,7 @@ function StoresPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }

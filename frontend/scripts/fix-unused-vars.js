@@ -15,29 +15,54 @@ function getFilesWithUnusedVars() {
     const lines = result.split('\n');
     const files = new Set();
     
-    console.log('Debug: Lint output lines:', lines.length);
-    
+    let currentFile = '';
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      
+      // Check if this line is a file path
+      if (line.startsWith('./') && !line.includes('Warning:')) {
+        const fileMatch = line.match(/^\.\/([^:]+)/);
+        if (fileMatch) {
+          currentFile = fileMatch[1];
+        }
+      }
+      
+      // Check if this line is a warning about unused variables
       if (line.includes('Warning:') && line.includes('is defined but never used')) {
-        console.log('Debug: Found warning line:', line);
-        // Look for the file path in the previous line
-        const prevLine = lines[i - 1];
-        console.log('Debug: Previous line:', prevLine);
-        if (prevLine && prevLine.startsWith('./')) {
-          const fileMatch = prevLine.match(/^\.\/([^:]+):/);
-          if (fileMatch) {
-            files.add(fileMatch[1]);
-            console.log('Debug: Added file:', fileMatch[1]);
-          }
+        if (currentFile) {
+          files.add(currentFile);
         }
       }
     }
     
     return Array.from(files);
   } catch (error) {
-    console.log('No linting issues found or linting failed');
-    return [];
+    // The lint command exits with code 1 when there are warnings, so we need to capture the output
+    const result = error.stdout || error.stderr || '';
+    const lines = result.split('\n');
+    const files = new Set();
+    
+    let currentFile = '';
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Check if this line is a file path
+      if (line.startsWith('./') && !line.includes('Warning:')) {
+        const fileMatch = line.match(/^\.\/([^:]+)/);
+        if (fileMatch) {
+          currentFile = fileMatch[1];
+        }
+      }
+      
+      // Check if this line is a warning about unused variables
+      if (line.includes('Warning:') && line.includes('is defined but never used')) {
+        if (currentFile) {
+          files.add(currentFile);
+        }
+      }
+    }
+    
+    return Array.from(files);
   }
 }
 
@@ -47,27 +72,64 @@ function fixUnusedVarsInFile(filePath) {
     let content = fs.readFileSync(filePath, 'utf8');
     let modified = false;
     
-    // Fix unused variables that are already prefixed with underscore
-    content = content.replace(/(\s+)(_err|_error|_userError|_handleFiltersChange|_handleClearFilters|_userLoadError|_requestLocation|_resetPage|_infiniteScrollHasMore|_handleRequestLocation|_toggleFilter|_clearAllFilters|_requestLocation|_categoryId|_sortRestaurantsByDistance|_startTransition|_Fragment|_Activity|_Download|_MapPin|_Star|_body|_phone|_NextRequest|_request|_useEffect|_isSupabaseConfigured|_handleUserLoadError|_getSupabaseClient)\s*=/g, '$1_$2 =');
-    
-    // Fix unused variables that are not prefixed
-    content = content.replace(/(\s+)(err|error|e|categoryId|toggleFilter|clearAllFilters|requestLocation|resetPage|infiniteScrollHasMore|handleRequestLocation|handleFiltersChange|handleClearFilters|userLoadError|sortRestaurantsByDistance|startTransition|Fragment|Activity|Download|MapPin|Star|body|phone|NextRequest|request|useEffect|isSupabaseConfigured|handleUserLoadError|getSupabaseClient)\s*=/g, '$1_$2 =');
-    
-    // Fix unused function parameters
-    content = content.replace(/\(\s*([^)]*)\s*\)\s*=>\s*{/g, (match, params) => {
-      const newParams = params.split(',').map(param => {
-        const trimmed = param.trim();
-        if (trimmed && !trimmed.startsWith('_') && !trimmed.startsWith('...')) {
-          return `_${trimmed}`;
+    // Fix specific patterns for unused variables
+    const patterns = [
+      // Fix unused error variables in catch blocks
+      { 
+        regex: /catch\s*\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\)/g, 
+        replacement: (match, varName) => {
+          if (!varName.startsWith('_')) {
+            return `catch (_${varName})`;
+          }
+          return match;
         }
-        return trimmed;
-      }).join(', ');
-      return `(${newParams}) => {`;
-    });
+      },
+      // Fix unused function parameters
+      {
+        regex: /\(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*string\s*\)/g,
+        replacement: (match, paramName) => {
+          if (!paramName.startsWith('_')) {
+            return `(_${paramName}: string)`;
+          }
+          return match;
+        }
+      },
+      // Fix unused variables in destructuring
+      {
+        regex: /const\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*([^;]+);/g,
+        replacement: (match, varName, value) => {
+          if (!varName.startsWith('_') && !value.includes('useState') && !value.includes('useEffect')) {
+            return `const _${varName} = ${value};`;
+          }
+          return match;
+        }
+      },
+      // Fix unused imports
+      {
+        regex: /import\s+{\s*([^}]+)\s*}\s+from\s+['"][^'"]+['"]/g,
+        replacement: (match, imports) => {
+          const newImports = imports.split(',').map(imp => {
+            const trimmed = imp.trim();
+            if (trimmed && !trimmed.startsWith('_') && !trimmed.includes(' as ')) {
+              return `_${trimmed}`;
+            }
+            return trimmed;
+          }).join(', ');
+          return match.replace(imports, newImports);
+        }
+      }
+    ];
     
-    if (content !== fs.readFileSync(filePath, 'utf8')) {
+    for (const pattern of patterns) {
+      const newContent = content.replace(pattern.regex, pattern.replacement);
+      if (newContent !== content) {
+        content = newContent;
+        modified = true;
+      }
+    }
+    
+    if (modified) {
       fs.writeFileSync(filePath, content, 'utf8');
-      modified = true;
     }
     
     return modified;

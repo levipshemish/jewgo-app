@@ -65,8 +65,7 @@ export default function HomePage() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      async (event: string, session: any) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(_async (event: string, _session: any) => {
         // console.log('Auth state change:', { event, hasUser: !!session?.user });
         
         if (event === 'SIGNED_IN') {

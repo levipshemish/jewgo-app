@@ -35,7 +35,7 @@ function MarketplacePageLoading() {
 }
 
 // Calculate distance between two coordinates using Haversine formula
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+const calculateDistance = (_lat1: number, _lon1: number, _lat2: number, _lon2: number) => {
   const R = 3959; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -47,7 +47,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 };
 
 // Utility function to format distance for display
-const formatDistance = (distance: number) => {
+const formatDistance = (_distance: number) => {
   if (distance < 0.1) {
     return `${Math.round(distance * 5280)}ft`; // Convert to feet
   } else if (distance < 1) {
@@ -443,16 +443,16 @@ function MarketplacePageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize marketplace listing transformation to prevent unnecessary re-renders
-  const transformMarketplaceToCardData = useCallback((listing: MarketplaceListing) => {
+  const transformMarketplaceToCardData = useCallback(_(listing: MarketplaceListing) => {
     appLogger.debug('Transforming marketplace listing', { listingId: listing.id });
     
   // Format price from cents to dollars
-  const formatPrice = (priceCents: number) => {
+  const formatPrice = (_priceCents: number) => {
     return `$${(priceCents / 100).toFixed(0)}`;
   };
 
   // Format condition for display
-  const formatCondition = (condition: string) => {
+  const formatCondition = (_condition: string) => {
     switch (condition) {
       case 'new': return 'New';
       case 'used_like_new': return 'Like New';
@@ -463,7 +463,7 @@ function MarketplacePageContent() {
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const formatDate = (_dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -512,7 +512,7 @@ function MarketplacePageContent() {
       return listings;
     }
 
-    return [...listings].sort((a, b) => {
+    return [...listings].sort(_(a, _b) => {
       // If either listing doesn't have coordinates, keep original order
       if (!a.lat || !a.lng || !b.lat || !b.lng) {
         return 0;
@@ -550,7 +550,7 @@ function MarketplacePageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
+  const handlePageChange = async (_page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -597,7 +597,7 @@ function MarketplacePageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -632,7 +632,7 @@ function MarketplacePageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch marketplace listings with mobile optimization and distance sorting
-  const fetchMarketplaceData = useCallback(async (page = 1, append = false) => {
+  const fetchMarketplaceData = useCallback(_async (page = 1, _append = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -760,7 +760,7 @@ function MarketplacePageContent() {
     }
   }, [mobileOptimizedItemsPerPage, searchQuery, filters, setInfiniteScrollHasMore]);
 
-  const fetchMoreListings = useCallback(async () => {
+  const fetchMoreListings = useCallback(_async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -773,19 +773,19 @@ function MarketplacePageContent() {
     }
   }, [isLoadingMore, hasMore, currentPage, fetchMarketplaceData]);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = (_query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     fetchMarketplaceData(1, false);
   };
 
-  const handleFilterChange = (newFilters: MarketplaceFiltersType) => {
+  const handleFilterChange = (_newFilters: MarketplaceFiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
     fetchMarketplaceData(1, false);
   };
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = (_tab: string) => {
     setActiveTab(tab);
     
     // Handle navigation to different pages based on the selected tab
@@ -822,7 +822,7 @@ function MarketplacePageContent() {
     setShowFilters(true);
   };
 
-  const handleCategorySelect = (category: MarketplaceCategory) => {
+  const handleCategorySelect = (_category: MarketplaceCategory) => {
     setSelectedCategory(category);
     if (category.id) {
       setFilters(prev => ({
@@ -947,8 +947,7 @@ function MarketplacePageContent() {
   }
 
   if (error) {
-    return (
-      <div style={responsiveStyles.container}>
+    return (_<div style={responsiveStyles.container}>
         <Header />
         
         {/* Navigation Tabs - Always visible */}

@@ -228,6 +228,20 @@ def handle_cache_operation(operation_name: str = "cache operation"):
     return decorator
 
 
+def handle_operation_with_fallback(operation_name: str = "operation", fallback_value=None):
+    """Decorator to handle operations with fallback values on failure."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"Operation failed, using fallback: {operation_name}", exc_info=True)
+                return fallback_value
+        return wrapper
+    return decorator
+
+
 def create_error_response(
     message: str, 
     status_code: int = 500, 

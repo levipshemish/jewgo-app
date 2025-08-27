@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from '@/lib/contexts/LocationContext';
+import { _useLocation} from '@/lib/contexts/LocationContext';
 
 interface LocationPromptPopupProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
   // Don't auto-close just because permission is granted
   // Only close when user actually gets location or manually closes
 
-  const handleRequestLocation = () => {
+  const _handleRequestLocation = () => {
     // console.log('📍 LocationPromptPopup: Requesting location...', {
     //   permissionStatus,
     //   isLoading,
@@ -61,11 +61,11 @@ export const LocationPromptPopup: React.FC<LocationPromptPopupProps> = ({
     }
   };
 
-  const handleSkip = () => {
+  const _handleSkip = () => {
     onClose();
   };
 
-  const handleResetPermission = () => {
+  const _handleResetPermission = () => {
     // Clear stored location data to reset permission state
     localStorage.removeItem('jewgo_location_data');
     // Reload the page to reset the location context

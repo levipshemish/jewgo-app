@@ -1,17 +1,17 @@
 "use server";
-import { checkRateLimit } from "@/lib/rate-limiting";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { verifyRecaptchaToken } from "@/lib/utils/recaptcha";
+import { _checkRateLimit} from "@/lib/rate-limiting";
+import { _createServerSupabaseClient} from "@/lib/supabase/server";
+import { _verifyRecaptchaToken} from "@/lib/utils/recaptcha";
 
 // Note: No CAPTCHA verification required.
 // Supabase Auth verifies captcha tokens itself. Double-verification can
 // consume the one-time token before Supabase sees it and cause failures.
 
 export async function signInAction(prevState: any, formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const recaptchaToken = formData.get("recaptchaToken") as string | null;
-  const recaptchaAction = (formData.get("recaptchaAction") as string | null) || 'login';
+  const _email = formData.get("email") as string;
+  const _password = formData.get("password") as string;
+  const _recaptchaToken = formData.get("recaptchaToken") as string | null;
+  const _recaptchaAction = (formData.get("recaptchaAction") as string | null) || 'login';
   
 
   if (!email || !password) {
@@ -20,12 +20,12 @@ export async function signInAction(prevState: any, formData: FormData) {
 
   try {
     // Verify reCAPTCHA v3 (only enforce in production; allow in dev if not configured)
-    const captchaCheck = await verifyRecaptchaToken(recaptchaToken, recaptchaAction || undefined, 0.5);
+    const _captchaCheck = await verifyRecaptchaToken(recaptchaToken, recaptchaAction || undefined, 0.5);
     if (!captchaCheck.ok) {
       return { ok: false, message: "Captcha verification failed. Please try again." };
     }
 
-    const rateLimitResult = await checkRateLimit("email_auth", "email", "", email);
+    const _rateLimitResult = await checkRateLimit("email_auth", "email", "", email);
     if (!rateLimitResult.allowed) {
       return { ok: false, message: "Too many attempts. Try again shortly." };
     }
@@ -33,7 +33,7 @@ export async function signInAction(prevState: any, formData: FormData) {
 
 
     // Attempt sign in
-    const supabase = await createServerSupabaseClient();
+    const _supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,

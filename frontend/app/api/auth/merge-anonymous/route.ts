@@ -1,35 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _createServerClient} from '@supabase/ssr';
+import { _createClient} from '@supabase/supabase-js';
+import { _cookies} from 'next/headers';
 import { 
-  checkRateLimit
-} from '@/lib/rate-limiting';
+  _checkRateLimit} from '@/lib/rate-limiting';
 import { 
-  validateTrustedIP,
-  generateCorrelationId,
-  extractIsAnonymous
-} from '@/lib/utils/auth-utils';
+  _validateTrustedIP, _generateCorrelationId, _extractIsAnonymous} from '@/lib/utils/auth-utils';
 import { 
-  verifyMergeCookieVersioned, 
-  hashIPForPrivacy,
-  validateCSRFServer
-} from '@/lib/utils/auth-utils.server';
+  _verifyMergeCookieVersioned, _hashIPForPrivacy, _validateCSRFServer} from '@/lib/utils/auth-utils.server';
 import { 
-  ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  FEATURE_FLAGS
-} from '@/lib/config/environment';
-import { initializeServer } from '@/lib/server-init';
+  _ALLOWED_ORIGINS, _getCORSHeaders, _FEATURE_FLAGS} from '@/lib/config/environment';
+import { _initializeServer} from '@/lib/server-init';
 
-export const runtime = 'nodejs';
+export const _runtime = 'nodejs';
 
 /**
  * Merge anonymous user API with versioned HMAC cookie verification
  * Handles OPTIONS/CORS preflight and POST requests for user merging
  */
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
+  const _origin = request.headers.get('origin');
   
   return new Response(null, {
     status: 204,
@@ -38,11 +28,11 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
-  // const startTime = Date.now();
+  const _correlationId = generateCorrelationId();
+  // const _startTime = Date.now();
   
   // Initialize server-side functionality
-  const serverInitialized = await initializeServer();
+  const _serverInitialized = await initializeServer();
   if (!serverInitialized) {
     console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
       correlationId
@@ -60,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Validate origin against allowlist
-  const origin = request.headers.get('origin');
+  const _origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
       { error: 'CSRF' },
@@ -89,14 +79,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const referer = request.headers.get('referer');
-    const csrfToken = request.headers.get('x-csrf-token');
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const _referer = request.headers.get('referer');
+    const _csrfToken = request.headers.get('x-csrf-token');
+    const _forwardedFor = request.headers.get('x-forwarded-for');
+    const _realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
-    const ipHash = hashIPForPrivacy(validatedIP);
+    const _validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
+    const _ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
@@ -118,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Rate limiting for merge operations
-    const rateLimitResult = await checkRateLimit(
+    const _rateLimitResult = await checkRateLimit(
       `merge_anonymous:${ipHash}`,
       'merge_operations',
       validatedIP,
@@ -149,11 +139,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse request body (email/password not required for merge)
-    // const body = await request.json().catch(() => ({}));
+    // const _body = await request.json().catch(() => ({}));
     
     // Get merge token from cookies
-    const cookieStore = await cookies();
-    const mergeToken = cookieStore.get('merge_token')?.value;
+    const _cookieStore = await cookies();
+    const _mergeToken = cookieStore.get('merge_token')?.value;
     
     if (!mergeToken) {
       return NextResponse.json(
@@ -166,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify merge token
-    const tokenVerification = verifyMergeCookieVersioned(mergeToken);
+    const _tokenVerification = verifyMergeCookieVersioned(mergeToken);
     if (!tokenVerification.valid) {
       // Invalid merge token - log for security monitoring
       // console.error(`Invalid merge token for correlation ID: ${correlationId}`, {
@@ -186,12 +176,12 @@ export async function POST(request: NextRequest) {
     const { anon_uid } = tokenVerification.payload;
     
     // Create Supabase SSR client
-    const supabase = createServerClient(
+    const _supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
+          get(_name: string) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
@@ -253,7 +243,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create service role client for database operations
-    const supabaseService = createClient(
+    const _supabaseService = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -267,7 +257,7 @@ export async function POST(request: NextRequest) {
     
     if (existingJob) {
 
-      const response = NextResponse.json(
+      const _response = NextResponse.json(
         { 
           ok: true,
           moved: existingJob.moved_data || {},
@@ -349,7 +339,7 @@ export async function POST(request: NextRequest) {
     // });
     
     // Clear merge token and return success
-    const response = NextResponse.json(
+    const _response = NextResponse.json(
       { 
         ok: true,
         moved: movedData,

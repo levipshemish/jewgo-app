@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { _NextRequest, _NextResponse} from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
     // Fetch filter options from backend API
-    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants/filter-options`, {
+    const _backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants/filter-options`, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const data = await backendResponse.json();
+    const _data = await backendResponse.json();
     
     return NextResponse.json({
       success: true,
       data: data.data || data
     });
     
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching filter options:', error);
     
     // Return default options on error

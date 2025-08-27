@@ -1,31 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _createServerClient} from '@supabase/ssr';
+import { _cookies} from 'next/headers';
 import { 
-  checkRateLimit
-} from '@/lib/rate-limiting';
+  _checkRateLimit} from '@/lib/rate-limiting';
 import { 
-  validateTrustedIP,
-  generateCorrelationId,
-  extractIsAnonymous
-} from '@/lib/utils/auth-utils';
-import { validateCSRFServer, signMergeCookieVersioned, hashIPForPrivacy } from '@/lib/utils/auth-utils.server';
+  _validateTrustedIP, _generateCorrelationId, _extractIsAnonymous} from '@/lib/utils/auth-utils';
+import { _validateCSRFServer, _signMergeCookieVersioned, _hashIPForPrivacy} from '@/lib/utils/auth-utils.server';
 import { 
-  ALLOWED_ORIGINS, 
-  getCORSHeaders,
-  getCookieOptions,
-  FEATURE_FLAGS
-} from '@/lib/config/environment';
-import { initializeServer } from '@/lib/server-init';
+  _ALLOWED_ORIGINS, _getCORSHeaders, _getCookieOptions, _FEATURE_FLAGS} from '@/lib/config/environment';
+import { _initializeServer} from '@/lib/server-init';
 
-export const runtime = 'nodejs';
+export const _runtime = 'nodejs';
 
 /**
  * Prepare merge API with versioned HMAC cookie generation
  * Handles OPTIONS/CORS preflight and POST requests for merge preparation
  */
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
+  const _origin = request.headers.get('origin');
   
   return new Response(null, {
     status: 204,
@@ -34,11 +26,11 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const correlationId = generateCorrelationId();
-  // const startTime = Date.now();
+  const _correlationId = generateCorrelationId();
+  // const _startTime = Date.now();
   
   // Initialize server-side functionality
-  const serverInitialized = await initializeServer();
+  const _serverInitialized = await initializeServer();
   if (!serverInitialized) {
     console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
       correlationId
@@ -56,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Validate origin against allowlist
-  const origin = request.headers.get('origin');
+  const _origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
       { error: 'CSRF' },
@@ -85,15 +77,15 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const origin = request.headers.get('origin');
-    const referer = request.headers.get('referer');
-    const csrfToken = request.headers.get('x-csrf-token');
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const _origin = request.headers.get('origin');
+    const _referer = request.headers.get('referer');
+    const _csrfToken = request.headers.get('x-csrf-token');
+    const _forwardedFor = request.headers.get('x-forwarded-for');
+    const _realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Trusted IP validation with left-most X-Forwarded-For parsing
-    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
-    const ipHash = hashIPForPrivacy(validatedIP);
+    const _validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
+    const _ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
@@ -115,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Rate limiting for merge operations
-    const rateLimitResult = await checkRateLimit(
+    const _rateLimitResult = await checkRateLimit(
       `merge_prepare:${ipHash}`,
       'merge_operations',
       validatedIP,
@@ -146,13 +138,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Create Supabase SSR client with cookie adapter
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
+    const _cookieStore = await cookies();
+    const _supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
+          get(_name: string) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
@@ -217,16 +209,16 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate versioned HMAC cookie with reduced expiration (10 minutes)
-    const cookiePayload = {
+    const _cookiePayload = {
       anon_uid: user.id,
       exp: Math.floor(Date.now() / 1000) + 600 // 10 minutes expiration
     };
     
-    const signedCookie = signMergeCookieVersioned(cookiePayload);
+    const _signedCookie = signMergeCookieVersioned(cookiePayload);
     
     // Set HttpOnly cookie with environment-specific domain and security attributes
-    const cookieOptions = getCookieOptions();
-    const response = new NextResponse(null, { 
+    const _cookieOptions = getCookieOptions();
+    const _response = new NextResponse(null, { 
       status: 204,
       headers: getCORSHeaders(origin || undefined)
     });

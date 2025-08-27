@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { generateCorrelationId, scrubPII } from '@/lib/utils/auth-utils';
+import { _NextRequest, _NextResponse} from 'next/server';
+import { _createServerClient} from '@supabase/ssr';
+import { _cookies} from 'next/headers';
+import { _generateCorrelationId, _scrubPII} from '@/lib/utils/auth-utils';
 
-export const runtime = 'nodejs';
+export const _runtime = 'nodejs';
 
 // Cleanup configuration
-const CLEANUP_CONFIG = {
+const _CLEANUP_CONFIG = {
   // Anonymous users older than 30 days will be cleaned up
   ANONYMOUS_USER_AGE_DAYS: 30,
   // Batch size for processing
@@ -28,13 +28,13 @@ const CLEANUP_CONFIG = {
  * - CLEANUP_DRY_RUN: Set to 'true' for dry-run mode
  */
 export async function GET(request: NextRequest) {
-  const correlationId = generateCorrelationId();
-  const startTime = Date.now();
+  const _correlationId = generateCorrelationId();
+  const _startTime = Date.now();
   
   try {
     // Verify cron secret for security
-    const authHeader = request.headers.get('authorization');
-    const expectedSecret = process.env.CLEANUP_CRON_SECRET;
+    const _authHeader = request.headers.get('authorization');
+    const _expectedSecret = process.env.CLEANUP_CRON_SECRET;
     
     if (!expectedSecret) {
       console.error(`[Cleanup Cron] CLEANUP_CRON_SECRET not configured (${correlationId})`);
@@ -53,13 +53,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase service role client
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
+    const _cookieStore = await cookies();
+    const _supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
-          get(name: string) {
+          get(_name: string) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Calculate cutoff date
-    const cutoffDate = new Date();
+    const _cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - CLEANUP_CONFIG.ANONYMOUS_USER_AGE_DAYS);
 
     // Find anonymous users older than cutoff date
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Process users in batches
-    const results = {
+    const _results = {
       processed: 0,
       deleted: 0,
       errors: 0,
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     };
 
     for (let i = 0; i < oldAnonymousUsers.length; i += CLEANUP_CONFIG.BATCH_SIZE) {
-      const batch = oldAnonymousUsers.slice(i, i + CLEANUP_CONFIG.BATCH_SIZE);
+      const _batch = oldAnonymousUsers.slice(i, i + CLEANUP_CONFIG.BATCH_SIZE);
       
       for (const user of batch) {
         try {
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
             }
           }
           
-        } catch (error) {
+        } catch (_error) {
           // Error processing user - log for debugging
           // console.error(`[Cleanup Cron] Error processing user ${user.id} (${correlationId})`, error);
           results.errors++;
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const duration = Date.now() - startTime;
+    const _duration = Date.now() - startTime;
     
     // Cleanup completed - log for monitoring
     // console.log(`[Cleanup Cron] Cleanup completed (${correlationId})`, {
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
       user_ids: results.userIds
     });
 
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
     // console.error(`[Cleanup Cron] Unexpected error (${correlationId})`, error);
     
@@ -216,7 +216,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   // For manual triggers, we can accept additional parameters
-  const body = await request.json().catch(() => ({}));
+  const _body = await request.json().catch(() => ({}));
   const { dry_run = CLEANUP_CONFIG.DRY_RUN } = body;
   
   // Override dry run mode for manual triggers

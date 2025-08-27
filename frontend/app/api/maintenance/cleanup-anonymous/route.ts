@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Parse request body for configuration overrides
-    const body = await request.json().catch(() => ({}));
+    const _body = await request.json().catch(() => ({}));
     const dryRun = body.dry_run ?? CLEANUP_CONFIG.dry_run;
     const batchSize = body.batch_size ?? CLEANUP_CONFIG.batch_size;
     const maxAgeDays = body.max_age_days ?? CLEANUP_CONFIG.max_age_days;
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Filter anonymous users by metadata and age
-      const anonymousUsers = users.filter((user: any) => {
+      const anonymousUsers = users.filter(_(user: any) => {
         const isAnonymous = user.user_metadata?.is_anonymous === true;
         const createdAt = new Date(user.created_at);
         const isOldEnough = createdAt < cutoffDate;

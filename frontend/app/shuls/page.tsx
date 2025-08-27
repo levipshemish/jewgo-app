@@ -79,7 +79,7 @@ interface Shul {
 }
 
 // Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (limit: number, params?: string) => {
+const fetchShuls = async (_limit: number, _params?: string) => {
   // For now, return mock data
   const mockShuls: Shul[] = [
     {
@@ -322,7 +322,7 @@ function ShulsPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize shul transformation to prevent unnecessary re-renders
-  const transformShulToCardData = useCallback((shul: Shul) => {
+  const transformShulToCardData = useCallback(_(shul: Shul) => {
     // Enhanced rating logic with better fallbacks
     const rating = shul.rating || shul.star_rating || shul.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -352,9 +352,9 @@ function ShulsPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(([key, value]) => {
+    Object.entries(newFilters).forEach(_([key, _value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -372,7 +372,7 @@ function ShulsPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -381,7 +381,7 @@ function ShulsPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback(_(query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -405,7 +405,7 @@ function ShulsPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
+  const handlePageChange = async (_page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -420,7 +420,7 @@ function ShulsPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -442,7 +442,7 @@ function ShulsPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -489,7 +489,7 @@ function ShulsPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch shuls with mobile optimization
-  const fetchShulsData = async (filters: Filters = activeFilters) => {
+  const fetchShulsData = async (_filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -503,7 +503,7 @@ function ShulsPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
+      Object.entries(filters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -563,7 +563,7 @@ function ShulsPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }

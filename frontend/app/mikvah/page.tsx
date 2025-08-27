@@ -75,7 +75,7 @@ interface Mikvah {
 }
 
 // Mock API function for mikvah - will be replaced with actual API
-const fetchMikvah = async (limit: number, params?: string) => {
+const fetchMikvah = async (_limit: number, _params?: string) => {
   // For now, return mock data
   const mockMikvah: Mikvah[] = [
     {
@@ -296,7 +296,7 @@ function MikvahPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize mikvah transformation to prevent unnecessary re-renders
-  const transformMikvahToCardData = useCallback((mikvah: Mikvah) => {
+  const transformMikvahToCardData = useCallback(_(mikvah: Mikvah) => {
     // Enhanced rating logic with better fallbacks
     const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -326,9 +326,9 @@ function MikvahPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(([key, value]) => {
+    Object.entries(newFilters).forEach(_([key, _value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -346,7 +346,7 @@ function MikvahPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -355,7 +355,7 @@ function MikvahPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback(_(query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -379,7 +379,7 @@ function MikvahPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
+  const handlePageChange = async (_page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -394,7 +394,7 @@ function MikvahPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -416,7 +416,7 @@ function MikvahPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -463,7 +463,7 @@ function MikvahPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch mikvah with mobile optimization
-  const fetchMikvahData = async (filters: Filters = activeFilters) => {
+  const fetchMikvahData = async (_filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -477,7 +477,7 @@ function MikvahPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
+      Object.entries(filters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -537,7 +537,7 @@ function MikvahPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
+      Object.entries(activeFilters).forEach(_([key, _value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
