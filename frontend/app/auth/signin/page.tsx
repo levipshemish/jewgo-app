@@ -17,10 +17,46 @@ function SignInForm() {
   const [anonLoading, setAnonLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isEmailSigningIn, setIsEmailSigningIn] = useState(false);
+  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || searchParams.get("callbackUrl") || "/eatery";
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
+  // Check if reCAPTCHA is ready
+  useEffect(() => {
+    const checkRecaptchaReady = () => {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && (window as any).grecaptcha.ready) {
+        setIsRecaptchaReady(true);
+        appLogger.info('reCAPTCHA is ready');
+      } else {
+        // Retry after a short delay, but give up after 10 seconds
+        const maxAttempts = 100; // 10 seconds with 100ms intervals
+        let attempts = 0;
+        
+        const retry = () => {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            appLogger.warn('reCAPTCHA failed to load after 10 seconds, proceeding without it');
+            return;
+          }
+          
+          if (typeof window !== 'undefined' && (window as any).grecaptcha && (window as any).grecaptcha.ready) {
+            setIsRecaptchaReady(true);
+            appLogger.info('reCAPTCHA is ready');
+          } else {
+            setTimeout(retry, 100);
+          }
+        };
+        
+        setTimeout(retry, 100);
+      }
+    };
+    
+    if (siteKey && siteKey !== 'your-recaptcha-site-key-here') {
+      checkRecaptchaReady();
+    }
+  }, [siteKey]);
 
   // Check if user is already authenticated and redirect to eatery
   useEffect(() => {
@@ -83,29 +119,45 @@ function SignInForm() {
     setIsEmailSigningIn(true);
     try {
       // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
-      if (typeof window !== 'undefined' && (window as any).grecaptcha && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
+      if (isRecaptchaReady && siteKey && siteKey !== 'your-recaptcha-site-key-here') {
         appLogger.info('Executing reCAPTCHA v3 for login action');
         
-        // Add timeout to prevent hanging
-        const tokenPromise = (window as any).grecaptcha.execute(siteKey, { action: 'login' });
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('reCAPTCHA timeout')), 5000)
-        );
-        
-        const token = await Promise.race([tokenPromise, timeoutPromise]);
-        
-        if (token) {
-          appLogger.info('reCAPTCHA token obtained successfully');
-          formData.set('recaptchaToken', token);
-          formData.set('recaptchaAction', 'login');
-        } else {
-          appLogger.warn('reCAPTCHA token was empty');
+        try {
+          // Use grecaptcha.ready() to ensure it's fully loaded, then execute
+          const token = await new Promise<string>((resolve, reject) => {
+            (window as any).grecaptcha.ready(async () => {
+              try {
+                const result = await (window as any).grecaptcha.execute(siteKey, { action: 'login' });
+                resolve(result);
+              } catch (error) {
+                reject(error);
+              }
+            });
+          });
+          
+          // Add timeout to prevent hanging
+          const timeoutPromise = new Promise<string>((_, reject) => 
+            setTimeout(() => reject(new Error('reCAPTCHA timeout')), 5000)
+          );
+          
+          const finalToken = await Promise.race([Promise.resolve(token), timeoutPromise]);
+          
+          if (finalToken) {
+            appLogger.info('reCAPTCHA token obtained successfully');
+            formData.set('recaptchaToken', finalToken);
+            formData.set('recaptchaAction', 'login');
+          } else {
+            appLogger.warn('reCAPTCHA token was empty');
+          }
+        } catch (recaptchaError) {
+          appLogger.error('reCAPTCHA execution failed', { error: String(recaptchaError) });
+          // Non-fatal; continue without reCAPTCHA token
         }
       } else {
         appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
     } catch (error) {
-      appLogger.error('reCAPTCHA execution failed', { error: String(error) });
+      appLogger.error('Form submission error', { error: String(error) });
       // Non-fatal; continue without reCAPTCHA token
     }
     
@@ -430,7 +482,13 @@ export default function SignInPage() {
       {siteKey && siteKey !== 'your-recaptcha-site-key-here' && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
+          onLoad={() => {
+            appLogger.info('reCAPTCHA script loaded successfully');
+          }}
+          onError={(error) => {
+            appLogger.error('reCAPTCHA script failed to load', { error: String(error) });
+          }}
         />
       )}
       <Suspense fallback={<div>Loading...</div>}>

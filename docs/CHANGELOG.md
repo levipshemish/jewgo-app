@@ -1,8 +1,22 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to the JewGo application will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+- **reCAPTCHA Sign-In Issues**: Fixed "Uncaught (in promise) null" errors during captcha sign-in
+  - Improved reCAPTCHA script loading with proper ready state detection
+  - Added timeout protection and graceful error handling
+  - Enhanced script loading strategy from `beforeInteractive` to `afterInteractive`
+  - Implemented proper `grecaptcha.ready()` usage before execution
+  - Added polling mechanism with 10-second timeout for reCAPTCHA readiness
+  - Fixed TypeScript error in PlacesStatusBadge component
+
+### Technical Improvements
+- Enhanced error handling for reCAPTCHA operations with comprehensive logging
+- Added graceful fallback when reCAPTCHA fails to load or execute
+- Improved user experience by preventing sign-in form hanging due to reCAPTCHA issues
 
 ### Added
 - Enhanced Google Places API debugging with detailed initialization logging
