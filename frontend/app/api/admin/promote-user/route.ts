@@ -49,12 +49,19 @@ export async function POST(request: NextRequest) {
       }
       targetUser = user.user;
     } else if (targetEmail) {
-      const { data: user, error } = await supabase.auth.admin.getUserByEmail(targetEmail);
-      if (error || !user.user) {
-        adminLogger.error('Failed to find user by email', { targetEmail, error });
+      // Find user by email using listUsers and filtering
+      const { data: users, error } = await supabase.auth.admin.listUsers();
+      if (error) {
+        adminLogger.error('Failed to list users', { error });
+        return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
+      }
+      
+      const user = users.users.find(u => u.email === targetEmail);
+      if (!user) {
+        adminLogger.error('User not found by email', { targetEmail });
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-      targetUser = user.user;
+      targetUser = user;
     }
 
     if (!targetUser) {

@@ -38,23 +38,25 @@ async function promoteFirstAdmin(email: string) {
   try {
     console.log(`🔍 Looking for user with email: ${email}`);
     
-    // Find the user by email
-    const { data: user, error: findError } = await supabase.auth.admin.getUserByEmail(email);
+    // Find the user by email using the correct API
+    const { data: users, error: findError } = await supabase.auth.admin.listUsers();
     
     if (findError) {
-      console.error('❌ Error finding user:', findError.message);
+      console.error('❌ Error listing users:', findError.message);
       return;
     }
     
-    if (!user.user) {
+    const targetUser = users.users.find(user => user.email === email);
+    
+    if (!targetUser) {
       console.error('❌ User not found');
       return;
     }
     
-    console.log(`✅ Found user: ${user.user.email} (ID: ${user.user.id})`);
+    console.log(`✅ Found user: ${targetUser.email} (ID: ${targetUser.id})`);
     
     // Check if user is already a super admin
-    const currentMetadata = user.user.user_metadata || {};
+    const currentMetadata = targetUser.user_metadata || {};
     if (currentMetadata.issuperadmin) {
       console.log('ℹ️  User is already a super admin');
       return;
@@ -71,7 +73,7 @@ async function promoteFirstAdmin(email: string) {
     console.log('🔄 Promoting user to super admin...');
     
     const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(
-      user.user.id,
+      targetUser.id,
       { user_metadata: updatedMetadata }
     );
     
