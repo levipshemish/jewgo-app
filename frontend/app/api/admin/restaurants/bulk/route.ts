@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { AdminDatabaseService } from '@/lib/admin/database';
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       options: {
         batchSize: 100,
         onProgress: async (processed, total) => {
-          console.log(`[BULK] Restaurant ${action}: ${processed}/${total}`);
+          adminLogger.info('Bulk restaurant progress', { action, processed, total });
         },
       },
     });
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    console.error('[ADMIN] Restaurant bulk operation error:', error);
+    adminLogger.error('Restaurant bulk operation error', { error: String(error) });
     
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(

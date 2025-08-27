@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get Supabase admin client
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     
     let targetUser;
     
