@@ -18,7 +18,7 @@ export function getMapsLoader(): Loader {
     }
     singletonLoader = new Loader({
       apiKey: apiKey.trim(),
-      version: 'quarterly',
+      version: 'weekly',
       libraries: ['places', 'geometry', 'marker'],
     });
   }

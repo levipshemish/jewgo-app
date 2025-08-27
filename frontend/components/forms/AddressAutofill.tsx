@@ -174,6 +174,7 @@ export default function AddressAutofill({
         console.log('[AddressAutofill] displayName field:', placeDetails?.displayName);
         console.log('[AddressAutofill] address_components field:', placeDetails?.address_components);
         console.log('[AddressAutofill] addressComponents field:', placeDetails?.addressComponents);
+        console.log('[AddressAutofill] Full place details:', JSON.stringify(placeDetails, null, 2));
       }
 
       if (placeDetails) {
@@ -202,8 +203,11 @@ export default function AddressAutofill({
 
           if (placeDetails.address_components && Array.isArray(placeDetails.address_components)) {
             // Parse address components for more accurate extraction
+            console.log('[AddressAutofill] Processing address components:', placeDetails.address_components);
+            
             for (const component of placeDetails.address_components) {
               const types = component.types || [];
+              console.log('[AddressAutofill] Processing component:', { types, long_name: component.long_name, short_name: component.short_name });
               
               if (types.includes('street_number') || types.includes('route')) {
                 street += component.long_name + ' ';
@@ -218,6 +222,7 @@ export default function AddressAutofill({
             
             // Clean up street address
             street = street.trim();
+            console.log('[AddressAutofill] After component processing:', { street, city, state, zipCode });
           }
 
           // Fallback to parsing formatted address if components didn't work

@@ -246,13 +246,29 @@ export class ModernGooglePlacesAPI {
               };
             }
 
-            autocompleteSuggestion.getPlacePredictions(request, (predictions: any[], status: any) => {
-              if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                resolve(predictions);
-              } else {
+            // Modern API uses a different method signature
+            if (typeof autocompleteSuggestion.getPlacePredictions === 'function') {
+              autocompleteSuggestion.getPlacePredictions(request, (predictions: any[], status: any) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                  resolve(predictions);
+                } else {
+                  resolve([]);
+                }
+              });
+            } else if (typeof autocompleteSuggestion.getPlacePredictionsAsync === 'function') {
+              // Try async version if available
+              autocompleteSuggestion.getPlacePredictionsAsync(request).then((result: any) => {
+                if (result && result.predictions) {
+                  resolve(result.predictions);
+                } else {
+                  resolve([]);
+                }
+              }).catch(() => {
                 resolve([]);
-              }
-            });
+              });
+            } else {
+              throw new Error('AutocompleteSuggestion API not properly initialized');
+            }
           } catch (error) {
             console.warn('[ModernGooglePlacesAPI] Modern AutocompleteSuggestion failed, falling back to legacy:', error);
             this.tryLegacyAutocomplete(input, options, resolve);
