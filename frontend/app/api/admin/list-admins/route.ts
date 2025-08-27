@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { adminLogger } from '@/lib/utils/logger';
+// import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/db/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    console.log('[ADMIN LIST] Starting admin list request...');
+    adminLogger.info('Starting admin list request');
     
     const result: any = {
       timestamp: new Date().toISOString(),
@@ -15,30 +16,34 @@ export async function GET(request: NextRequest) {
 
     // Test database connection
     try {
-      console.log('[ADMIN LIST] Testing database connection...');
+      adminLogger.info('Testing database connection');
       await prisma.$connect();
-      console.log('[ADMIN LIST] Database connected successfully');
+      adminLogger.info('Database connected successfully');
       
       // Get super admins from users table
-      console.log('[ADMIN LIST] Querying super admins...');
+      adminLogger.info('Querying super admins');
       const superAdmins = await prisma.user.findMany({
         where: {
           issuperadmin: true
         },
         select: {
           id: true,
-          email: true,
           name: true,
+          email: true,
+          issuperadmin: true,
           createdat: true,
-          issuperadmin: true
+          updatedat: true
+        },
+        orderBy: {
+          createdat: 'desc'
         }
       });
       
       result.super_admins = superAdmins;
-      console.log('[ADMIN LIST] Found super admins:', superAdmins.length);
-
-      // Get admin roles from admin_roles table
-      console.log('[ADMIN LIST] Querying admin roles...');
+      adminLogger.info('Found super admins', { count: superAdmins.length });
+      
+      // Get admin roles
+      adminLogger.info('Querying admin roles');
       const adminRoles = await prisma.adminRole.findMany({
         where: {
           isActive: true
@@ -57,8 +62,8 @@ export async function GET(request: NextRequest) {
       });
       
       result.admin_roles = adminRoles;
-      console.log('[ADMIN LIST] Found admin roles:', adminRoles.length);
-
+      adminLogger.info('Found admin roles', { count: adminRoles.length });
+      
       // Get user details for admin roles
       if (adminRoles.length > 0) {
         const userIds = adminRoles.map(role => role.userId);
@@ -70,9 +75,9 @@ export async function GET(request: NextRequest) {
           },
           select: {
             id: true,
-            email: true,
             name: true,
-            createdat: true
+            email: true,
+            issuperadmin: true
           }
         });
         
@@ -85,24 +90,29 @@ export async function GET(request: NextRequest) {
           };
         });
       }
-
-      result.total_admins = result.super_admins.length + result.admin_roles.length;
+      
+      // Calculate total admins (super admins + users with admin roles)
+      const adminUserIds = new Set([
+        ...superAdmins.map(admin => admin.id),
+        ...adminRoles.map(role => role.userId)
+      ]);
+      result.total_admins = adminUserIds.size;
       
       await prisma.$disconnect();
-      console.log('[ADMIN LIST] Database disconnected');
+      adminLogger.info('Database disconnected');
       
     } catch (dbError) {
-      console.error('[ADMIN LIST] Database error:', dbError);
+      adminLogger.error('Database error', { error: String(dbError) });
       result.database_error = String(dbError);
     }
 
-    console.log('[ADMIN LIST] Admin list result:', result);
+    adminLogger.info('Admin list result', result);
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN LIST] Unexpected error:', error);
+    adminLogger.error('Unexpected error', { error: String(error) });
     return NextResponse.json({ 
-      error: 'Failed to list admins',
+      error: 'Failed to get admin list',
       details: process.env.NODE_ENV === 'development' ? String(error) : undefined
     }, { status: 500 });
   }

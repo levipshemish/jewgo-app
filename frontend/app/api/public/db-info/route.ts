@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,17 +21,21 @@ export async function GET(request: NextRequest) {
       result.database = 'connected';
       
       // Get database connection info
-      const connectionInfo = await prisma.$queryRaw`
+      const connectionInfo = await prisma.$queryRaw<{
+        database_name: string;
+        current_user: string;
+        postgres_version: string;
+      }[]>`
         SELECT 
           current_database() as database_name,
           current_user as current_user,
           version() as postgres_version
       `;
-      result.connection_info = connectionInfo;
+      result.connection_info = Array.isArray(connectionInfo) ? connectionInfo[0] : connectionInfo;
       
       // Get list of all tables in the public schema
       console.log('[DB INFO] Getting table list...');
-      const tables = await prisma.$queryRaw`
+      const tables = await prisma.$queryRaw<{ table_name: string; table_type: string }[]>`
         SELECT 
           table_name,
           table_type
@@ -40,17 +45,19 @@ export async function GET(request: NextRequest) {
       `;
       
       result.tables = tables;
-      console.log('[DB INFO] Found tables:', tables.length);
+      console.log('[DB INFO] Found tables:', Array.isArray(tables) ? tables.length : 'unknown');
 
       // Try to get some basic info about each table
-      const tableInfo = [];
+      const tableInfo: Array<{ name: string; type: string; row_count: number | string; error?: string }> = [];
       for (const table of tables) {
         try {
-          const count = await prisma.$queryRaw`SELECT COUNT(*) as count FROM "${table.table_name}"`;
+          const count = await prisma.$queryRaw<{ count: bigint }[]>(
+            Prisma.sql`SELECT COUNT(*)::bigint as count FROM ${Prisma.raw('"' + table.table_name + '"')}`
+          );
           tableInfo.push({
             name: table.table_name,
             type: table.table_type,
-            row_count: count[0]?.count || 0
+            row_count: typeof count?.[0]?.count !== 'undefined' ? Number(count[0].count) : 0
           });
         } catch (error) {
           tableInfo.push({

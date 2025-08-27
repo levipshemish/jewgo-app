@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/db/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    console.log('[ADMIN DEBUG] Starting debug request...');
+    adminLogger.info('Starting debug request');
     
     const result: any = {
       timestamp: new Date().toISOString(),
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Test database connection
     try {
-      console.log('[ADMIN DEBUG] Testing database connection...');
+      adminLogger.info('Testing database connection');
       await prisma.$connect();
       result.database = 'connected';
       
@@ -32,14 +33,14 @@ export async function GET(request: NextRequest) {
       
       await prisma.$disconnect();
     } catch (dbError) {
-      console.error('[ADMIN DEBUG] Database error:', dbError);
+      adminLogger.error('Database error', { error: String(dbError) });
       result.database = 'error';
       result.database_error = String(dbError);
     }
 
     // Test authentication
     try {
-      console.log('[ADMIN DEBUG] Testing authentication...');
+      adminLogger.info('Testing authentication');
       const supabase = await createServerSupabaseClient();
       const { data: { user }, error } = await supabase.auth.getUser();
       
@@ -72,16 +73,16 @@ export async function GET(request: NextRequest) {
         }
       }
     } catch (authError) {
-      console.error('[ADMIN DEBUG] Auth error:', authError);
+      adminLogger.error('Auth error', { error: String(authError) });
       result.auth = 'error';
       result.auth_error = String(authError);
     }
 
-    console.log('[ADMIN DEBUG] Debug result:', result);
+    adminLogger.info('Debug result', result);
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN DEBUG] Unexpected error:', error);
+    adminLogger.error('Unexpected error', { error: String(error) });
     return NextResponse.json({ 
       error: 'Debug failed',
       details: process.env.NODE_ENV === 'development' ? String(error) : undefined

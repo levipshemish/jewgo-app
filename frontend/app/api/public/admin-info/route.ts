@@ -24,58 +24,54 @@ export async function GET(request: NextRequest) {
       
       // Count super admins
       console.log('[PUBLIC ADMIN INFO] Counting super admins...');
-      const superAdminCount = await prisma.user.count({
+      const superAdminsCount = await prisma.user.count({
         where: {
           issuperadmin: true
         }
       });
       
-      result.admin_structure.super_admins_count = superAdminCount;
-      console.log('[PUBLIC ADMIN INFO] Found super admins:', superAdminCount);
-
+      result.admin_structure.super_admins_count = superAdminsCount;
+      console.log('[PUBLIC ADMIN INFO] Super admins count:', superAdminsCount);
+      
       // Count admin roles
       console.log('[PUBLIC ADMIN INFO] Counting admin roles...');
-      const adminRoleCount = await prisma.adminRole.count({
+      const adminRolesCount = await prisma.adminRole.count({
         where: {
-          is_active: true
+          isActive: true
         }
       });
       
-      result.admin_structure.admin_roles_count = adminRoleCount;
-      console.log('[PUBLIC ADMIN INFO] Found admin roles:', adminRoleCount);
-
-      result.admin_structure.total_admins = superAdminCount + adminRoleCount;
+      result.admin_structure.admin_roles_count = adminRolesCount;
+      console.log('[PUBLIC ADMIN INFO] Admin roles count:', adminRolesCount);
       
-      // Get some sample admin emails (without exposing too much info)
-      if (superAdminCount > 0) {
-        const sampleSuperAdmins = await prisma.user.findMany({
-          where: {
-            issuperadmin: true
-          },
-          select: {
-            email: true,
-            name: true,
-            createdat: true
-          },
-          take: 3
-        });
-        result.sample_super_admins = sampleSuperAdmins;
-      }
-
-      if (adminRoleCount > 0) {
-        const sampleAdminRoles = await prisma.adminRole.findMany({
-          where: {
-            is_active: true
-          },
-          select: {
-            role: true,
-            assignedAt: true,
-            expiresAt: true
-          },
-          take: 3
-        });
-        result.sample_admin_roles = sampleAdminRoles;
-      }
+      // Get unique admin user IDs
+      const adminRoleUserIds = await prisma.adminRole.findMany({
+        where: {
+          isActive: true
+        },
+        select: {
+          userId: true
+        }
+      });
+      
+      const adminUserIds = new Set([
+        ...adminRoleUserIds.map(role => role.userId)
+      ]);
+      
+      // Add super admin IDs
+      const superAdmins = await prisma.user.findMany({
+        where: {
+          issuperadmin: true
+        },
+        select: {
+          id: true
+        }
+      });
+      
+      superAdmins.forEach(admin => adminUserIds.add(admin.id));
+      
+      result.admin_structure.total_admins = adminUserIds.size;
+      console.log('[PUBLIC ADMIN INFO] Total unique admins:', adminUserIds.size);
       
       await prisma.$disconnect();
       console.log('[PUBLIC ADMIN INFO] Database disconnected');

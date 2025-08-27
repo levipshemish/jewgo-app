@@ -1,0 +1,117 @@
+#!/usr/bin/env tsx
+
+/**
+ * Script to promote the first super admin user
+ * Run this script to set up the initial super admin
+ * 
+ * Usage: 
+ * npx tsx scripts/promote-first-admin.ts <email>
+ * 
+ * Example:
+ * npx tsx scripts/promote-first-admin.ts admin@example.com
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config({ path: '.env.local' });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing required environment variables:');
+  console.error('   NEXT_PUBLIC_SUPABASE_URL');
+  console.error('   SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+async function promoteFirstAdmin(email: string) {
+  try {
+    console.log(`🔍 Looking for user with email: ${email}`);
+    
+    // Find the user by email
+    const { data: user, error: findError } = await supabase.auth.admin.getUserByEmail(email);
+    
+    if (findError) {
+      console.error('❌ Error finding user:', findError.message);
+      return;
+    }
+    
+    if (!user.user) {
+      console.error('❌ User not found');
+      return;
+    }
+    
+    console.log(`✅ Found user: ${user.user.email} (ID: ${user.user.id})`);
+    
+    // Check if user is already a super admin
+    const currentMetadata = user.user.user_metadata || {};
+    if (currentMetadata.issuperadmin) {
+      console.log('ℹ️  User is already a super admin');
+      return;
+    }
+    
+    // Update user metadata to make them a super admin
+    const updatedMetadata = {
+      ...currentMetadata,
+      issuperadmin: true,
+      promoted_by: 'script',
+      promoted_at: new Date().toISOString()
+    };
+    
+    console.log('🔄 Promoting user to super admin...');
+    
+    const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(
+      user.user.id,
+      { user_metadata: updatedMetadata }
+    );
+    
+    if (updateError) {
+      console.error('❌ Error promoting user:', updateError.message);
+      return;
+    }
+    
+    console.log('✅ User promoted to super admin successfully!');
+    console.log(`   Email: ${updatedUser.user.email}`);
+    console.log(`   ID: ${updatedUser.user.id}`);
+    console.log(`   Super Admin: ${updatedUser.user.user_metadata?.issuperadmin}`);
+    
+  } catch (error) {
+    console.error('❌ Unexpected error:', error);
+  }
+}
+
+// Get email from command line arguments
+const email = process.argv[2];
+
+if (!email) {
+  console.error('❌ Please provide an email address');
+  console.error('Usage: npx tsx scripts/promote-first-admin.ts <email>');
+  console.error('Example: npx tsx scripts/promote-first-admin.ts admin@example.com');
+  process.exit(1);
+}
+
+// Validate email format
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+if (!emailRegex.test(email)) {
+  console.error('❌ Invalid email format');
+  process.exit(1);
+}
+
+console.log('🚀 Starting first admin promotion...');
+promoteFirstAdmin(email).then(() => {
+  console.log('✨ Script completed');
+  process.exit(0);
+}).catch((error) => {
+  console.error('❌ Script failed:', error);
+  process.exit(1);
+});

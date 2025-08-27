@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const merged = { ...DEFAULT_CONFIG, ...value };
     await logAdminAction(adminUser, 'system_config_view', 'system', { metadata: { viewer: adminUser.id } });
     return NextResponse.json(merged);
-  } catch (e) {
+  } catch {
     // Fallback to defaults if table missing
     return NextResponse.json(DEFAULT_CONFIG);
   }

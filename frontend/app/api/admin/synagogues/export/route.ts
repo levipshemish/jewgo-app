@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('[ADMIN] Synagogue export error:', error);
+    adminLogger.error('Synagogue export error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to export synagogues' },
       { status: 500 }
@@ -232,7 +233,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[ADMIN] Synagogue export (POST) error:', error);
+    adminLogger.error('Synagogue export (POST) error', { error: String(error) });
     return NextResponse.json({ error: 'Failed to export synagogues' }, { status: 500 });
   }
 }
