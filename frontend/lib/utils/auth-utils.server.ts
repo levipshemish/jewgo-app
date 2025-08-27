@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Server-only authentication utilities
  * These functions should only be used in server-side code (API routes, SSR)

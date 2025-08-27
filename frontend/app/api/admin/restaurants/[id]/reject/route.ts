@@ -1,55 +1,95 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { prisma } from '@/lib/db/prisma';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
+import { prisma } from '@/lib/db/prisma';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   try {
+    // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_APPROVE)) {
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const headerToken = request.headers.get('x-csrf-token');
-    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateSignedCSRFToken(csrfToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
-    const { id } = await params;
-    const restaurantId = Number(id);
-    if (!Number.isInteger(restaurantId)) {
+    const restaurantId = parseInt(id);
+    if (isNaN(restaurantId)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const reason: string | undefined = body?.reason;
+    // Get request body for rejection reason
+    const body = await request.json();
+    const rejectionReason = body.reason || 'Rejected by admin';
 
-    const updated = await prisma.restaurant.update({
+    // Get the restaurant to check current status
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { id: true, name: true, submission_status: true, status: true }
+    });
+
+    if (!restaurant) {
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
+
+    // Update restaurant status
+    const updatedRestaurant = await prisma.restaurant.update({
       where: { id: restaurantId },
       data: {
         submission_status: 'rejected',
-        approval_date: null,
-        approved_by: null,
-        rejection_reason: reason || 'Rejected by admin',
+        rejection_reason: rejectionReason,
+        status: 'inactive',
+        updated_at: new Date(),
       },
     });
 
-    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_REJECT, 'restaurant', {
-      entityId: String(restaurantId),
-      newData: { submission_status: 'rejected', rejection_reason: updated.rejection_reason },
-      auditLevel: 'warning',
+    adminLogger.info('Restaurant rejected', { 
+      restaurantId, 
+      restaurantName: restaurant.name,
+      adminUserId: adminUser.id,
+      rejectionReason 
     });
 
-    return NextResponse.json({ data: updated });
+    // Log the action
+    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_REJECT, 'restaurant', {
+      entityId: restaurantId.toString(),
+      oldData: { submission_status: restaurant.submission_status, status: restaurant.status },
+      newData: { submission_status: 'rejected', status: 'inactive', rejection_reason: rejectionReason },
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Restaurant rejected successfully',
+      restaurant: updatedRestaurant 
+    });
   } catch (error) {
-    adminLogger.error('Restaurant reject error', { error: String(error) });
-    return NextResponse.json({ error: 'Failed to reject restaurant' }, { status: 500 });
+    adminLogger.error('Restaurant rejection error', { 
+      error: String(error), 
+      restaurantId: id 
+    });
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to reject restaurant',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
+      { status: 500 }
+    );
   }
 }

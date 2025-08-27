@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { AdminUser } from '@/lib/admin/types';
 import { useToast, ToastContainer } from '@/lib/ui/toast';
+import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface SystemStats {
   totalUsers: number;
@@ -83,6 +84,7 @@ export default function SystemSettingsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const { toast, showSuccess, showError, clear } = useToast();
+  const { token: csrf } = useAdminCsrf();
 
   // Fetch system data
   const fetchSystemData = async () => {
@@ -98,7 +100,7 @@ export default function SystemSettingsPage() {
 
       // Fetch system stats
       const statsResponse = await fetch('/api/admin/system/stats', {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
+        headers: { 'x-csrf-token': csrf || '' },
       });
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
@@ -194,7 +196,7 @@ export default function SystemSettingsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify(config),
       });
@@ -220,7 +222,7 @@ export default function SystemSettingsPage() {
       const response = await fetch(`/api/admin/roles?userId=${userId}&role=${role}`, {
         method: 'DELETE',
         headers: {
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrf || '',
         },
       });
 
@@ -253,7 +255,7 @@ export default function SystemSettingsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
+          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify(payload),
       });

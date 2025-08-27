@@ -514,6 +514,7 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     // with the application's navigation structure and user expectations
     const allowedPrefixes = [
       '/app',           // Main application routes
+      '/admin',         // Admin panel routes
       '/dashboard',     // Admin and user dashboard
       '/profile',       // User profile management
       '/settings',      // User settings

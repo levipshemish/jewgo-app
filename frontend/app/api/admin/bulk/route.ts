@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -7,37 +7,16 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logBulkOperation, logBulkProgress } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
-
-// Simple in-memory token bucket per-user for dev and edge environments
-const BULK_RATE_BUCKET: Map<string, { tokens: number; lastRefill: number }> = new Map();
-const BULK_RATE_LIMIT = Number(process.env.ADMIN_BULK_RATE_LIMIT || 5); // ops per minute
-const BULK_REFILL_MS = 60_000; // 1 minute
-
-function checkBulkRateLimit(userId: string): boolean {
-  // If external rate limiting is configured (e.g., Redis via another layer), skip
-  // Here we use a local token bucket to provide minimal protection
-  const now = Date.now();
-  let bucket = BULK_RATE_BUCKET.get(userId);
-  if (!bucket) {
-    bucket = { tokens: BULK_RATE_LIMIT, lastRefill: now };
-    BULK_RATE_BUCKET.set(userId, bucket);
-  }
-  // Refill
-  const elapsed = now - bucket.lastRefill;
-  if (elapsed >= BULK_REFILL_MS) {
-    const refills = Math.floor(elapsed / BULK_REFILL_MS);
-    bucket.tokens = Math.min(BULK_RATE_LIMIT, bucket.tokens + refills * BULK_RATE_LIMIT);
-    bucket.lastRefill = now;
-  }
-  if (bucket.tokens <= 0) {
-    return false;
-  }
-  bucket.tokens -= 1;
-  return true;
-}
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting for bulk operations
+    const rateLimitResult = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -55,11 +34,11 @@ export async function POST(request: NextRequest) {
     try {
       // Validate header token to ensure CSRF protection
       if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+        return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
       }
     } catch (error) {
     adminLogger.error('CSRF token validation error', { error: String(error) });
-      return NextResponse.json({ error: 'CSRF token validation failed' }, { status: 419 });
+      return NextResponse.json({ error: 'CSRF token validation failed' }, { status: 403 });
     }
 
     // Parse request body
@@ -91,10 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Rate limiting (best-effort)
-    if (!checkBulkRateLimit(adminUser.id)) {
-      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
-    }
+
 
     // Log bulk operation start
     const correlationId = await logBulkOperation(

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +10,7 @@ import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle, Phone } f
 import MultipleImageUpload from './MultipleImageUpload';
 import AddressAutofill from './AddressAutofill';
 import CustomHoursSelector from './CustomHoursSelector';
+import { useAuth } from '@/hooks/useAuth';
 
 import { 
   restaurantFormSchema, 
@@ -36,12 +38,15 @@ interface EnhancedAddEateryFormProps {
 
 export default function EnhancedAddEateryForm({ onClose, className = '' }: EnhancedAddEateryFormProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  // Debug logging
-  console.log('[EnhancedAddEateryForm] Component rendered, currentStep:', currentStep);
+  // Debug logging (only in development and not too frequently)
+  if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
+    console.log('[EnhancedAddEateryForm] Component rendered, currentStep:', currentStep);
+  }
 
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agencies: [],
@@ -76,9 +81,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const watchedCertifyingAgency = watch('certifying_agency');
   const watchedValues = watch(); // Watch all form values
 
-  // Debug logging for kosher category changes
+  // Debug logging for kosher category changes (only when explicitly enabled)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
       console.log('[EnhancedAddEateryForm] Kosher category changed:', {
         kosher_category: watchedKosherCategory,
         isDairy: isDairyCategory(watchedKosherCategory),
@@ -87,9 +92,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     }
   }, [watchedKosherCategory]);
 
-  // Debug logging for filter options
+  // Debug logging for filter options (only when explicitly enabled)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
       console.log('[EnhancedAddEateryForm] Filter options updated:', {
         kosherCategories: filterOptions.kosherCategories,
         agencies: filterOptions.agencies
@@ -176,11 +181,11 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   const getStepFields = (step: number): (keyof RestaurantFormData)[] => {
     switch (step) {
       case 1:
-        return ['is_owner_submission', 'name', 'address', 'phone', 'business_email', 'website', 'listing_type', 'owner_name', 'owner_email', 'owner_phone'];
+        return ['is_owner_submission', 'name', 'address', 'city', 'state', 'zip_code', 'phone', 'business_email', 'website', 'listing_type', 'owner_name', 'owner_email', 'owner_phone'];
       case 2:
-        return ['kosher_category', 'certifying_agency', 'custom_certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel'];
+        return ['kosher_category', 'certifying_agency', 'custom_certifying_agency', 'is_cholov_yisroel', 'is_pas_yisroel', 'cholov_stam'];
       case 3:
-        return ['short_description', 'description', 'hours_of_operation', 'google_listing_url', 'instagram_link', 'facebook_link', 'tiktok_link'];
+        return ['short_description', 'description', 'hours_of_operation', 'hours_open', 'google_listing_url', 'instagram_link', 'facebook_link', 'tiktok_link', 'business_license', 'tax_id', 'years_in_business', 'seating_capacity', 'delivery_available', 'takeout_available', 'catering_available', 'preferred_contact_method', 'preferred_contact_time', 'contact_notes'];
       case 4:
         return ['business_images'];
       case 5:
@@ -239,6 +244,14 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   // Form submission
   const onSubmit = async (data: RestaurantFormData) => {
     console.log('[EnhancedAddEateryForm] Form submission started:', data);
+    
+    // Check if user is authenticated
+    if (!user) {
+      alert('Please sign in to submit a restaurant. You will be redirected to the sign-in page.');
+      router.push('/auth/signin');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       // Handle custom certifying agency
@@ -251,11 +264,20 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         const submissionData = {
           ...data,
           certifying_agency: finalCertifyingAgency,
+          status: 'pending', // Set status to pending instead of active
           submission_status: 'pending_approval',
           submission_date: new Date().toISOString(),
           // Map fields to match backend schema
           phone_number: data.phone,
           image_url: data.business_images[0] || '',
+          // Ensure hours data is included
+          hours_of_operation: data.hours_of_operation || data.hours_open || '',
+          // Handle kosher flags properly - convert undefined to false
+          is_cholov_yisroel: data.is_cholov_yisroel ?? false,
+          is_pas_yisroel: data.is_pas_yisroel ?? false,
+          cholov_stam: data.cholov_stam ?? false,
+          // Add user information for tracking who submitted
+          user_email: user?.email || '',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -263,6 +285,8 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         console.log('[EnhancedAddEateryForm] Submitting to API:', submissionData);
         console.log('[EnhancedAddEateryForm] Zip code value:', submissionData.zip_code);
         console.log('[EnhancedAddEateryForm] Seating capacity value:', submissionData.seating_capacity);
+        console.log('[EnhancedAddEateryForm] business_images type:', typeof submissionData.business_images);
+        console.log('[EnhancedAddEateryForm] business_images value:', submissionData.business_images);
         
         const response = await fetch('/api/restaurants', {
           method: 'POST',
@@ -351,6 +375,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                         certifying_agency: 'Test Agency',
                         is_cholov_yisroel: false,
                         is_pas_yisroel: true,
+                        cholov_stam: false,
                         short_description: 'Test description',
                         description: 'Test long description',
                         business_images: ['https://test.com/image1.jpg', 'https://test.com/image2.jpg'],

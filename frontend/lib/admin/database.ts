@@ -1,9 +1,26 @@
 import { prisma } from '@/lib/db/prisma';
 import { AdminUser } from './types';
-import { logAdminAction } from './audit';
+import { logAdminAction, AUDIT_ACTIONS } from './audit';
 
 // Constants for submission status
 const PENDING_STATUS = 'pending_approval';
+
+/**
+ * Helper function to translate entity type and operation to audit action
+ */
+function getAuditAction(entityType: string, operation: string): string {
+  const entityKey = entityType.toUpperCase().replace(/[^A-Z]/g, '_');
+  const operationKey = operation.toUpperCase();
+  
+  const actionKey = `${entityKey}_${operationKey}` as keyof typeof AUDIT_ACTIONS;
+  
+  if (actionKey in AUDIT_ACTIONS) {
+    return AUDIT_ACTIONS[actionKey];
+  }
+  
+  // Fallback to generic action
+  return `${entityType}_${operation}`;
+}
 
 // Pagination interface
 export interface PaginationOptions {
@@ -262,7 +279,7 @@ export class AdminDatabaseService {
       });
 
       // Log the action
-      await logAdminAction(user, 'create', entityType, {
+      await logAdminAction(user, getAuditAction(entityType, 'create'), entityType, {
         entityId: result.id.toString(),
         newData: result,
       });
@@ -297,7 +314,7 @@ export class AdminDatabaseService {
       });
 
       // Log the action
-      await logAdminAction(user, 'update', entityType, {
+      await logAdminAction(user, getAuditAction(entityType, 'update'), entityType, {
         entityId: id.toString(),
         oldData,
         newData: result,
@@ -351,7 +368,7 @@ export class AdminDatabaseService {
       }
 
       // Log the action
-      await logAdminAction(user, 'delete', entityType, {
+      await logAdminAction(user, getAuditAction(entityType, 'delete'), entityType, {
         entityId: id.toString(),
         oldData,
         auditLevel: 'warning',
@@ -446,7 +463,7 @@ export class AdminDatabaseService {
       }
 
       // Log bulk operation
-      await logAdminAction(user, 'bulk_operation', entityType, {
+      await logAdminAction(user, AUDIT_ACTIONS.BULK_OPERATION, entityType, {
         auditLevel: 'info',
         correlationId,
         metadata: {
@@ -572,6 +589,135 @@ export class AdminDatabaseService {
   }
 
   /**
+   * Stream data to CSV format (memory-efficient for large datasets)
+   */
+  static async streamToCSV<T extends Record<string, any>>(
+    delegate: any,
+    modelKey: 'restaurant' | 'review' | 'user' | 'restaurantImage' | 'marketplace',
+    options: SearchOptions = {},
+    fields: string[] = [],
+    maxRows: number = 10000,
+    batchSize: number = 1000
+  ): Promise<{ stream: ReadableStream; totalCount: number; exportedCount: number; limited: boolean }> {
+    const { search, filters, sortBy, sortOrder } = options;
+
+    // Build where clause
+    const where: any = {};
+    if (filters) {
+      Object.assign(where, filters);
+    }
+
+    // Exclude soft-deleted rows by default
+    applySoftDeleteFilter(modelKey, where);
+
+    if (search) {
+      const searchFields = this.getSearchFields(modelKey);
+      if (searchFields.length > 0) {
+        where.OR = searchFields.map(field => ({
+          [field]: {
+            contains: search,
+            mode: 'insensitive' as const,
+          },
+        }));
+      }
+    }
+
+    // Build order by
+    const orderBy: any = {};
+    if (sortBy) {
+      orderBy[sortBy] = sortOrder || 'desc';
+    } else {
+      const defaultSortField = this.getDefaultSortField(modelKey);
+      orderBy[defaultSortField] = 'desc';
+    }
+
+    // Get total count first
+    const totalCount = await delegate.count({ where });
+
+    // Check if we need to limit the export
+    const limited = totalCount > maxRows;
+    const take = limited ? maxRows : totalCount;
+
+    // Create a ReadableStream for streaming CSV data
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Write CSV headers
+          const allFields = fields.length > 0 ? fields : [];
+          if (allFields.length === 0) {
+            // Get first batch to determine fields
+            const firstBatch = await delegate.findMany({
+              where,
+              orderBy,
+              take: 1,
+            });
+            if (firstBatch.length > 0) {
+              allFields.push(...Object.keys(firstBatch[0]));
+            }
+          }
+
+          if (allFields.length > 0) {
+            const csvHeaders = allFields.map(field => `"${field}"`).join(',');
+            controller.enqueue(new TextEncoder().encode(csvHeaders + '\n'));
+          }
+
+          // Stream data in batches
+          let exportedCount = 0;
+          let skip = 0;
+
+          while (exportedCount < take) {
+            const currentBatchSize = Math.min(batchSize, take - exportedCount);
+            
+            const batch = await delegate.findMany({
+              where,
+              orderBy,
+              skip,
+              take: currentBatchSize,
+            });
+
+            if (batch.length === 0) {
+              break;
+            }
+
+            // Convert batch to CSV rows
+            for (const item of batch) {
+              const csvRow = allFields.map(field => {
+                const value = item[field];
+                if (value === null || value === undefined) {
+                  return '""';
+                }
+                if (typeof value === 'object') {
+                  return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+                }
+                return `"${String(value).replace(/"/g, '""')}"`;
+              }).join(',');
+              
+              controller.enqueue(new TextEncoder().encode(csvRow + '\n'));
+            }
+
+            exportedCount += batch.length;
+            skip += batch.length;
+
+            // Yield control to prevent blocking
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return {
+      stream,
+      totalCount,
+      exportedCount: Math.min(take, totalCount),
+      limited,
+    };
+  }
+
+  /**
    * Get database statistics
    */
   static async getDatabaseStats(): Promise<{
@@ -589,17 +735,17 @@ export class AdminDatabaseService {
         totalImages,
         pendingSubmissions,
       ] = await Promise.all([
-        prisma.restaurant.count(),
+        prisma.restaurant.count({ where: { deleted_at: null } }),
         prisma.review.count(),
-        prisma.user.count(),
+        prisma.user.count({ where: { deletedAt: null } }),
         prisma.restaurantImage.count(),
         prisma.restaurant.count({ where: { submission_status: PENDING_STATUS } }),
       ]);
 
       return {
-        totalRestaurants: await prisma.restaurant.count({ where: { deleted_at: null } }),
+        totalRestaurants,
         totalReviews,
-        totalUsers: await prisma.user.count({ where: { deletedAt: null } }),
+        totalUsers,
         totalImages,
         pendingSubmissions,
       };
@@ -641,6 +787,13 @@ export class AdminDatabaseService {
         timestamp: new Date(),
       };
     }
+  }
+
+  /**
+   * Alias for healthCheck method
+   */
+  static async getHealthStatus() {
+    return this.healthCheck();
   }
 
   /**

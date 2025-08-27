@@ -54,7 +54,8 @@ export const EateryFilters: React.FC<EateryFiltersProps> = ({
       } catch (error) {
         // Handle JSON parsing errors gracefully
         if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
-          console.warn('Filter options API returned non-JSON response (likely authentication required)');
+          // eslint-disable-next-line no-console
+          console.error('Filter options API returned non-JSON response (likely authentication required)');
         } else {
           console.error('Error fetching filter options:', error);
         }

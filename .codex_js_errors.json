@@ -1,0 +1,210 @@
+[
+  {
+    "file": "frontend/tailwind.config.js",
+    "error": "/Users/mendell/jewgo app/frontend/tailwind.config.js:6 ] ^ SyntaxError: Unexpected token ']'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/jest.config.js",
+    "error": "/Users/mendell/jewgo app/frontend/jest.config.js:3 const createJestConfig = nextJest({)}                                    ^ SyntaxError: Unexpected token ')'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/public/sw.js",
+    "error": "/Users/mendell/jewgo app/frontend/public/sw.js:6           });           ^ SyntaxError: Unexpected token '}'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/postcss.config.js",
+    "error": "/Users/mendell/jewgo app/frontend/postcss.config.js:3     'tailwindcss': {},                  ^ SyntaxError: Unexpected token ':'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/public/workers/mendel-worker.js",
+    "error": "/Users/mendell/jewgo app/frontend/public/workers/mendel-worker.js:19     if(!Array.isArray(hours)){return false;}const now=new Date();const day=now.toLocaleDateString('en-US',{weekday:'long'}).toLowerCase();const t=now.getHours()*60+now.getMinutes();const today=hours.find((h) =>{return h&&toLower(h.day)===day});if(!today){return false;}const o=timeToMinutes(today.open||'');const c=timeToMinutes(today.close||'');if(o===-1||c===-1){return false;}return c<o?(t>=o||t<=c):(t>=o&&t<=c);                                                                                                                                                                                                                                                                                                                          ^ SyntaxError: Identifier 'c' has already been declared     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-unused-vars.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-unused-vars.js:4  * cleanup-unused-vars,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/setup-supabase-storage.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/setup-supabase-storage.js:4  * setup-supabase-storage,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/simple-profile-test.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/simple-profile-test.js:3  * Simple Profile System Test,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/optimize-unified.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/optimize-unified.js:4  * Unified Optimization Orchestrator,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-dependencies.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-dependencies.js:3  * Cleanup Dependencies,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/performance-monitor.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/performance-monitor.js:4  * Performance Monitoring Script,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-build-artifacts.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-build-artifacts.js:3  * Cleanup Build Artifacts,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/apply-error-handling.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/apply-error-handling.js:4  * Apply Error Handling System,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/update-hours-cron.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/update-hours-cron.js:4  * update-hours-cron,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/setup-monitoring.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/setup-monitoring.js:4  * setup-monitoring,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/health-monitor.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/health-monitor.js:4  * health-monitor,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/check-auth.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/check-auth.js:4  * check-auth,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/unused-files-detector.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/unused-files-detector.js:4  * Unused Files Detector,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/fix-unified.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/fix-unified.js:4  * Unified Fix Orchestrator,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/validate-env-unified.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/validate-env-unified.js:4  * validate-env-unified,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/periodic-cleanup-scheduler.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/periodic-cleanup-scheduler.js:4  * Periodic Cleanup Scheduler,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/check-environment.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/check-environment.js:4  * check-environment,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/rotate-logs.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/rotate-logs.js:4 #!/usr/bin/env node ^ SyntaxError: Invalid or unexpected token     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/fix-font-css.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/fix-font-css.js:4  * fix-font-css,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/remove-console-logs.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/remove-console-logs.js:4  * remove-console-logs,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/comprehensive-cleanup.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/comprehensive-cleanup.js:3  * Comprehensive Cleanup,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-temp-files.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-temp-files.js:3  * Cleanup Temporary Files,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/apply-logging-standards.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/apply-logging-standards.js:4  * Apply Logging Standards,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/apply-documentation-template.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/apply-documentation-template.js:4  * Apply Documentation Template,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-remaining-vars.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-remaining-vars.js:4  * cleanup-remaining-vars,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/clear-cache.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/clear-cache.js:4  * clear-cache,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/setup-env.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/setup-env.js:4  * setup-env,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/clear-rate-limit.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/clear-rate-limit.js:4  * Clear Rate Limit Script for Development,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cleanup-unused-files.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cleanup-unused-files.js:3  * Cleanup Unused Files,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/validate-css.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/validate-css.js:4  * validate-css,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/replace-original-images.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/replace-original-images.js:4  * replace-original-images,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/update-documentation.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/update-documentation.js:3  * Update Documentation,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/script-performance-monitor.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/script-performance-monitor.js:4  * Script Performance Monitor,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/deploy-setup.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/deploy-setup.js:4  * deploy-setup,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/start-with-polyfill.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/start-with-polyfill.js:11 } else { ^ SyntaxError: Unexpected token '}'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/deploy-validate.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/deploy-validate.js:4  * deploy-validate,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/aggregate-metrics.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/aggregate-metrics.js:4 #!/usr/bin/env node ^ SyntaxError: Invalid or unexpected token     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/validate-test-demo-files.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/validate-test-demo-files.js:4  * Test and Demo Files Validation Script,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/cicd-integration.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/cicd-integration.js:4  * CI/CD Integration Manager,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/test-framework.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/test-framework.js:4  * Script Testing Framework,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/utils/errorHandler.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/utils/errorHandler.js:4  * Unified Error Handling System,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/utils/docTemplate.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/utils/docTemplate.js:4  * Documentation Template System,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/utils/scriptUtils.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/utils/scriptUtils.js:4  * Shared Script Utilities,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/utils/logger.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/utils/logger.js:4  * Unified Logging System,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/scripts/utils/buildUtils.js",
+    "error": "/Users/mendell/jewgo app/frontend/scripts/utils/buildUtils.js:2  * Unified Build and Deployment Utilities,  ^ SyntaxError: Unexpected token '*'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/test-server-init.js",
+    "error": "/Users/mendell/jewgo app/frontend/test-server-init.js:5     const featureGuardResult = await initializeFeatureGuard();                                ^^^^^ SyntaxError: await is only valid in async functions and the top level bodies of modules     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  },
+  {
+    "file": "frontend/.dependency-cruiser.js",
+    "error": "/Users/mendell/jewgo app/frontend/.dependency-cruiser.js:5 ] ^ SyntaxError: Unexpected token ']'     at wrapSafe (node:internal/modules/cjs/loader:1662:18)     at checkSyntax (node:internal/main/check_syntax:78:3) Node.js v22.16.0"
+  }
+]

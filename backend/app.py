@@ -12,7 +12,7 @@ Last Updated: 2024
 """
 
 from app_factory import create_app
-from utils.config_manager import ConfigManager
+from utils.config_manager import config_manager
 
 # Create the Flask application instance
 app = create_app()
@@ -21,5 +21,5 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=8082,  # Use port 8082 to avoid conflicts
-        debug=not ConfigManager.is_production(),
+        debug=not config_manager.get('environment.production', False),
     )

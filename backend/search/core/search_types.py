@@ -29,7 +29,6 @@ class KosherCategory(Enum):
     MEAT = "meat"
     DAIRY = "dairy"
     PAREVE = "pareve"
-    FISH = "fish"
     UNKNOWN = "unknown"
 
 

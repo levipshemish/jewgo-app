@@ -84,7 +84,7 @@ export function normalizeUrl(input: string, opts: NormalizeOptions = {}): string
     const vals = params.getAll(key);
     const shouldDrop =
       (o.dropTrackingParams && TRACKING_PARAMS.has(lower)) ||
-      vals.every(v => v === '' || v == null);
+      vals.every(v => v === '' || v === null || v === undefined);
     if (shouldDrop) {
       params.delete(key);
     }

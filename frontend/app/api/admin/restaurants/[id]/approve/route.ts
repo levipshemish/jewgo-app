@@ -1,51 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { NextResponse, NextRequest } from 'next/server';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { prisma } from '@/lib/db/prisma';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
+import { prisma } from '@/lib/db/prisma';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   try {
+    // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_APPROVE)) {
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    const headerToken = request.headers.get('x-csrf-token');
-    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    // Validate CSRF token
+    const csrfToken = request.headers.get('x-csrf-token');
+    if (!csrfToken || !validateSignedCSRFToken(csrfToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
-    const { id } = await params;
-    const restaurantId = Number(id);
-    if (!Number.isInteger(restaurantId)) {
+    const restaurantId = parseInt(id);
+    if (isNaN(restaurantId)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    const updated = await prisma.restaurant.update({
+    // Get the restaurant to check current status
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { id: true, name: true, submission_status: true, status: true }
+    });
+
+    if (!restaurant) {
+      return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
+    }
+
+    // Update restaurant status
+    const updatedRestaurant = await prisma.restaurant.update({
       where: { id: restaurantId },
       data: {
         submission_status: 'approved',
         approval_date: new Date(),
-        approved_by: adminUser.id,
-        rejection_reason: null,
+        status: 'active',
+        updated_at: new Date(),
       },
     });
 
-    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_APPROVE, 'restaurant', {
-      entityId: String(restaurantId),
-      newData: { submission_status: 'approved' },
+    adminLogger.info('Restaurant approved', { 
+      restaurantId, 
+      restaurantName: restaurant.name,
+      adminUserId: adminUser.id 
     });
 
-    return NextResponse.json({ data: updated });
+    // Log the action
+    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_APPROVE, 'restaurant', {
+      entityId: restaurantId.toString(),
+      oldData: { submission_status: restaurant.submission_status, status: restaurant.status },
+      newData: { submission_status: 'approved', status: 'active', approval_date: new Date() },
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Restaurant approved successfully',
+      restaurant: updatedRestaurant 
+    });
   } catch (error) {
-    adminLogger.error('Restaurant approve error', { error: String(error) });
-    return NextResponse.json({ error: 'Failed to approve restaurant' }, { status: 500 });
+    adminLogger.error('Restaurant approval error', { 
+      error: String(error), 
+      restaurantId: id 
+    });
+    
+    return NextResponse.json(
+      { 
+        error: 'Failed to approve restaurant',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
+      { status: 500 }
+    );
   }
 }

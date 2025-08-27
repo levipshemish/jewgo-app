@@ -1,30 +1,35 @@
 import UserDatabaseClient from '@/components/admin/UserDatabaseClient';
+import { AdminDatabaseService } from '@/lib/admin/database';
+import { prisma } from '@/lib/db/prisma';
 
-export default async function UserDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+export default async function UserDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const params = searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || '';
+  const sortBy = (params.sortBy as string) || 'createdat';
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
-  const urlParams = new URLSearchParams();
-  urlParams.set('page', String(page));
-  urlParams.set('pageSize', String(pageSize));
-  if (search) {urlParams.set('search', search);}
-  // Provider filtering is not supported until a join/source is implemented
-  if (sortBy) {urlParams.set('sortBy', sortBy);}
-  if (sortOrder) {urlParams.set('sortOrder', sortOrder);}
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   try {
-    const res = await fetch(`/api/admin/users?${urlParams.toString()}`, { cache: 'no-store' });
-    if (res.ok) {
-      const json = await res.json();
-      initialData = json.data || [];
-      initialPagination = json.pagination || initialPagination;
-    }
-  } catch {}
+    const result = await AdminDatabaseService.getPaginatedData(
+      prisma.user,
+      'user',
+      {
+        page,
+        pageSize,
+        search,
+        filters: {},
+        sortBy,
+        sortOrder,
+      }
+    );
+    initialData = result.data || [];
+    initialPagination = result.pagination || initialPagination;
+  } catch (e) {
+    // ignore; client-side will fetch
+  }
 
   return (
     <div className="space-y-6">

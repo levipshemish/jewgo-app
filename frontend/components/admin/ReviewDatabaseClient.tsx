@@ -1,199 +1,259 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { MessageSquare, Edit, Trash2, Eye, Star, Building2, User } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface Review {
   id: string;
   restaurant_id: number;
   user_id: string;
   user_name: string;
-  user_email?: string;
+  user_email: string;
   rating: number;
-  title?: string;
+  title: string;
   content: string;
-  images?: string;
   status: string;
   created_at: string;
   updated_at: string;
-  moderator_notes?: string;
-  verified_purchase: boolean;
-  helpful_count: number;
-  report_count: number;
-  restaurant?: {
-    id: number;
-    name: string;
-    city: string;
-    state: string;
-  };
 }
 
-interface Props {
+interface ReviewDatabaseClientProps {
   initialData: Review[];
-  initialPagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
-  initialSearch?: string;
-  initialSortBy?: string;
-  initialSortOrder?: 'asc' | 'desc';
+  initialPagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  initialSearch: string;
+  initialSortBy: string;
+  initialSortOrder: 'asc' | 'desc';
 }
 
-export default function ReviewDatabaseClient({ initialData, initialPagination, initialSearch = '', initialSortBy = '', initialSortOrder = 'desc' }: Props) {
-  const searchParams = useSearchParams();
+export default function ReviewDatabaseClient({
+  initialData,
+  initialPagination,
+  initialSearch,
+  initialSortBy,
+  initialSortOrder,
+}: ReviewDatabaseClientProps) {
   const router = useRouter();
-  const [reviews, setReviews] = useState<Review[]>(initialData);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { token: csrf } = useAdminCsrf();
+  const { showSuccess, showError } = useToast();
+
+  const [rows, setRows] = useState<Review[]>(initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [sortKey, setSortKey] = useState(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  const fetchReviews = async () => {
+  // Controlled state derived from URL params
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+  // Fetch server data based on URL params
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
-      if (searchParams.get('rating')) {params.set('rating', searchParams.get('rating')!);}
-      if (searchParams.get('restaurantId')) {params.set('restaurantId', searchParams.get('restaurantId')!);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-
-      const response = await fetch(`/api/admin/reviews?${params.toString()}`, {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-      });
-      if (!response.ok) {throw new Error('Failed to fetch reviews');}
-      const data = await response.json();
-      setReviews(data.data || []);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/reviews?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
+      const json = await res.json();
+      setRows(json.data || []);
+      setPagination(json.pagination);
+    } catch (e) {
+      console.error('[ADMIN] load reviews error:', e);
+      showError('Failed to load reviews');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchReviews();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+    fetchData();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/admin/database/reviews?${params.toString()}`);
+  const onPageChange = (nextPage: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('page', String(nextPage));
+    router.push(`/admin/database/reviews?${p.toString()}`);
   };
 
-  const handlePageSizeChange = (pageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', pageSize.toString());
-    params.set('page', '1');
-    router.push(`/admin/database/reviews?${params.toString()}`);
+  const onPageSizeChange = (nextSize: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('pageSize', String(nextSize));
+    p.set('page', '1');
+    router.push(`/admin/database/reviews?${p.toString()}`);
   };
 
-  const handleSearchQueryChange = (query: string) => setSearchQuery(query);
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {params.set('search', query);} else {params.delete('search');}
-    params.set('page', '1');
-    router.push(`/admin/database/reviews?${params.toString()}`);
+  const onSearch = (query: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (query) { p.set('search', query); } else { p.delete('search'); }
+    p.set('page', '1');
+    router.push(`/admin/database/reviews?${p.toString()}`);
   };
 
-  const handleSortChange = (key: string, order: 'asc' | 'desc') => { setSortKey(key); setSortOrder(order); };
-  const handleSort = (key: string, order: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sortBy', key);
-    params.set('sortOrder', order);
-    router.push(`/admin/database/reviews?${params.toString()}`);
+  const onSort = (key: string, order: 'asc' | 'desc') => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('sortBy', key);
+    p.set('sortOrder', order);
+    router.push(`/admin/database/reviews?${p.toString()}`);
   };
 
-  const handleExport = async () => {
+  const onEdit = async (id: string, data: Partial<Review>) => {
     try {
-      const payload: any = {};
-      if (searchParams.get('search')) {payload.search = searchParams.get('search');}
-      if (searchParams.get('status')) {payload.status = searchParams.get('status');}
-      if (searchParams.get('rating')) {payload.rating = searchParams.get('rating');}
-      if (searchParams.get('restaurantId')) {payload.restaurantId = searchParams.get('restaurantId');}
-      if (searchParams.get('sortBy')) {payload.sortBy = searchParams.get('sortBy');}
-      if (searchParams.get('sortOrder')) {payload.sortOrder = searchParams.get('sortOrder');}
-      const response = await fetch(`/api/admin/reviews/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-        body: JSON.stringify(payload),
+      const res = await fetch(`/api/admin/reviews`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ id, ...data }),
       });
-      if (response.ok) {
-        const blob = await response.blob();
+      
+      if (res.ok) {
+        showSuccess('Review updated successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to update review');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('Failed to update review');
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        showSuccess('Review deleted successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to delete review');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showError('Failed to delete review');
+    }
+  };
+
+  const onBulkAction = async (action: string, ids: string[]) => {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/reviews/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ action, ids }),
+      });
+      
+      if (res.ok) {
+        showSuccess(`${action} completed for ${ids.length} reviews`);
+        fetchData(); // Refresh data
+      } else {
+        showError(`Failed to ${action} reviews`);
+      }
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      showError(`Failed to ${action} reviews`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/reviews/export?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `reviews_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `reviews_export_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        showSuccess('Export completed successfully');
+      } else {
+        showError('Failed to export reviews');
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export error:', error);
+      showError('Failed to export reviews');
     }
   };
 
   const columns: Column<Review>[] = [
-    {
-      key: 'user_name',
-      title: 'User',
-      render: (value, row) => (
-        <div className="flex items-center space-x-2">
-          <User className="h-4 w-4 text-gray-400" />
-          <div>
-            <div className="font-medium text-gray-900">{value}</div>
-            {row.user_email && (
-              <div className="text-sm text-gray-500">{row.user_email}</div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'restaurant',
-      title: 'Restaurant',
-      render: (value, row) => (
-        <div className="flex items-center space-x-2">
-          <Building2 className="h-4 w-4 text-gray-400" />
-          <div>
-            <div className="font-medium text-gray-900">{row.restaurant?.name || row.restaurant_id}</div>
-            <div className="text-sm text-gray-500">{row.restaurant?.city}, {row.restaurant?.state}</div>
-          </div>
-        </div>
-      ),
-    },
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'user_name', title: 'User', sortable: true },
+    { key: 'rating', title: 'Rating', sortable: true },
+    { key: 'title', title: 'Title', sortable: true },
+    { key: 'content', title: 'Content', sortable: false },
     { key: 'status', title: 'Status', sortable: true },
-    { key: 'rating', title: 'Rating', align: 'center', render: (value) => (
-        <div className="flex items-center justify-center space-x-1">
-          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-          <span className="font-medium">{value}</span>
-        </div>
-      ), sortable: true },
     { key: 'created_at', title: 'Created', sortable: true },
   ];
 
   return (
-          <DataTable
-        data={reviews}
+    <DataTable
+      data={rows}
       columns={columns}
-      loading={loading}
       pagination={pagination}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-      searchQuery={searchQuery}
-      onSearchQueryChange={handleSearchQueryChange}
-      onSearch={handleSearch}
-      sortKey={sortKey}
-      sortOrder={sortOrder}
-      onSortChange={handleSortChange}
-              onSort={handleSort}
-        onExport={handleExport}
+      loading={loading}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onSearch={onSearch}
+      onSort={onSort}
+
+
+      onBulkAction={onBulkAction}
+      onExport={onExport}
+      searchPlaceholder="Search reviews..."
+      bulkActions={[
+        { key: 'delete', title: 'Delete Selected' },
+        { key: 'approve', title: 'Approve Selected' },
+        { key: 'reject', title: 'Reject Selected' },
+      ]}
     />
   );
 }

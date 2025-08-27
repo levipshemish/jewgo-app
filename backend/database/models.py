@@ -16,6 +16,7 @@ from sqlalchemy import (
     String,
     Text,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
 
 # SQLAlchemy Base
@@ -100,7 +101,7 @@ class Restaurant(Base):
     )  # JSONB for specials data (paid and unpaid) — keep as JSONB for flexibility
     status = Column(
         String(20),
-        default="active",
+        default="pending",
     )  # ENUM('active', 'inactive', 'pending')
 
     # 📊 Google Places Data (enriched via API)
@@ -108,6 +109,42 @@ class Restaurant(Base):
     google_review_count = Column(Integer)  # Optional
     google_reviews = Column(Text)  # JSONB for recent reviews (limited)
     user_email = Column(String(255))  # Optional — for contact form
+
+    # 👤 Owner Management Fields
+    owner_name = Column(String(255))  # Optional
+    owner_email = Column(String(255))  # Optional
+    owner_phone = Column(String(50))  # Optional
+    is_owner_submission = Column(Boolean, default=False)  # Optional
+
+    # 📧 Business Contact Fields
+    business_email = Column(String(255))  # Optional
+    instagram_link = Column(String(500))  # Optional
+    facebook_link = Column(String(500))  # Optional
+    tiktok_link = Column(String(500))  # Optional
+
+    # 🖼️ Multiple Images Support
+    business_images = Column(ARRAY(String))  # Array of image URLs
+
+    # 📋 Enhanced Status Tracking
+    submission_status = Column(String(50), default="pending_approval")  # Optional
+    submission_date = Column(DateTime)  # Optional
+    approval_date = Column(DateTime)  # Optional
+    approved_by = Column(String(255))  # Optional
+    rejection_reason = Column(Text)  # Optional
+
+    # 🏢 Additional Business Details
+    business_license = Column(String(255))  # Optional
+    tax_id = Column(String(255))  # Optional
+    years_in_business = Column(Integer)  # Optional
+    seating_capacity = Column(Integer)  # Optional
+    delivery_available = Column(Boolean, default=False)  # Optional
+    takeout_available = Column(Boolean, default=False)  # Optional
+    catering_available = Column(Boolean, default=False)  # Optional
+
+    # 📞 Contact Preferences
+    preferred_contact_method = Column(String(50))  # email, phone, text
+    preferred_contact_time = Column(String(50))  # morning, afternoon, evening
+    contact_notes = Column(Text)  # Optional
 
 
 class Review(Base):

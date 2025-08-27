@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { googlePlacesAPI } from '@/lib/google/places';
 import { appLogger } from '@/lib/utils/logger';
+import PlacesStatusBadge from '@/components/debug/PlacesStatusBadge';
 
 interface AddressAutofillProps {
   value: string;
@@ -55,9 +56,7 @@ export default function AddressAutofill({
         setApiError(null);
         appLogger.debug('Google Places API initialized successfully');
         
-        // Test the API to see what's available
-        const testResult = await googlePlacesAPI.testAPI();
-        appLogger.debug('API test result', { testResult });
+
       } catch (error) {
         appLogger.error('Failed to initialize Google Places API', { error: String(error) });
         setApiError('Failed to initialize address autocomplete. Please check your internet connection and try again.');
@@ -73,7 +72,10 @@ export default function AddressAutofill({
       return;
     }
 
-    appLogger.debug('Getting suggestions for input', { input });
+    // Only log in development when explicitly enabled
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
+      appLogger.debug('Getting suggestions for input', { input });
+    }
 
     if (apiError) {
       appLogger.warn('Google Places API not available', { apiError });
@@ -89,15 +91,18 @@ export default function AddressAutofill({
         country: 'us'
       });
       
-      appLogger.debug('Predictions received', {
-        count: predictions.length,
-        predictions: predictions.map(p => ({
-          description: p.description,
-          place_id: p.place_id,
-          place_id_type: typeof p.place_id,
-          place_id_length: p.place_id?.length
-        }))
-      });
+      // Only log in development when explicitly enabled
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
+        appLogger.debug('Predictions received', {
+          count: predictions.length,
+          predictions: predictions.map(p => ({
+            description: p.description,
+            place_id: p.place_id,
+            place_id_type: typeof p.place_id,
+            place_id_length: p.place_id?.length
+          }))
+        });
+      }
       
       setSuggestions(predictions);
     } catch (error) {
@@ -121,7 +126,7 @@ export default function AddressAutofill({
     }
     debounceRef.current = setTimeout(() => {
       getAddressSuggestions(newValue);
-    }, 300);
+    }, 200); // Reduced from 300ms to 200ms for better responsiveness
   };
 
   const handleSuggestionClick = async (suggestion: PlaceResult) => {
@@ -189,48 +194,63 @@ export default function AddressAutofill({
           if (placeDetails.address_components && Array.isArray(placeDetails.address_components)) {
             // Parse address components for more accurate extraction
             appLogger.debug('Processing address components', { address_components: placeDetails.address_components });
-            
+            let zipSuffix = '';
             for (const component of placeDetails.address_components) {
               const types = component.types || [];
-              appLogger.debug('Processing component', { types, long_name: component.long_name, short_name: component.short_name });
-              
+              const longName = (component as any).long_name ?? (component as any).longText ?? '';
+              const shortName = (component as any).short_name ?? (component as any).shortText ?? '';
+              appLogger.debug('Processing component', { types, long_name: longName, short_name: shortName });
+
               if (types.includes('street_number') || types.includes('route')) {
-                street += component.long_name + ' ';
+                street += longName + ' ';
               } else if (types.includes('locality')) {
-                city = component.long_name;
+                city = longName;
               } else if (types.includes('administrative_area_level_1')) {
-                state = component.short_name;
+                state = shortName || longName;
               } else if (types.includes('postal_code')) {
-                zipCode = component.long_name;
+                zipCode = longName;
+              } else if (types.includes('postal_code_suffix')) {
+                zipSuffix = longName;
               }
             }
             
             // Clean up street address
             street = street.trim();
+            // Combine ZIP+4 if available
+            if (zipCode && zipSuffix) {
+              zipCode = `${zipCode}-${zipSuffix}`;
+            }
             appLogger.debug('After component processing', { street, city, state, zipCode });
           }
 
           // Fallback to parsing formatted address if components didn't work
           if (!city || !state || !zipCode) {
             const addressParts = finalAddress.split(',').map((part: string) => part.trim());
-            
+
             if (addressParts.length >= 1 && !street) {
               street = addressParts[0];
             }
             if (addressParts.length >= 2 && !city) {
               city = addressParts[1];
             }
+            // Try robust state and ZIP(+4) extraction from the remaining segment
             if (addressParts.length >= 3 && (!state || !zipCode)) {
-              const stateZip = addressParts[2].split(' ');
-              if (stateZip.length >= 2) {
-                if (!state) {
+              const stateZipStr = addressParts[2];
+              const m = stateZipStr.match(/^([A-Z]{2})\s+(\d{5})(?:-(\d{4}))?$/);
+              if (m) {
+                const st = m[1];
+                const zip = m[2];
+                const suf = m[3];
+                if (!state) { state = st; }
+                if (!zipCode) { zipCode = suf ? `${zip}-${suf}` : zip; }
+              } else {
+                const stateZip = stateZipStr.split(' ').filter(Boolean);
+                if (stateZip.length >= 2) {
+                  if (!state) { state = stateZip[0]; }
+                  if (!zipCode) { zipCode = stateZip[1]; }
+                } else if (!state) {
                   state = stateZip[0];
                 }
-                if (!zipCode) {
-                  zipCode = stateZip[1];
-                }
-              } else if (!state) {
-                state = stateZip[0];
               }
             }
           }
@@ -299,12 +319,22 @@ export default function AddressAutofill({
           city = addressParts[1];
         }
         if (addressParts.length >= 3) {
-          const stateZip = addressParts[2].split(' ');
-          if (stateZip.length >= 2) {
-            state = stateZip[0];
-            zipCode = stateZip[1];
+          const stateZipStr = addressParts[2];
+          const m = stateZipStr.match(/^([A-Z]{2})\s+(\d{5})(?:-(\d{4}))?$/);
+          if (m) {
+            const st = m[1];
+            const zip = m[2];
+            const suf = m[3];
+            state = st;
+            zipCode = suf ? `${zip}-${suf}` : zip;
           } else {
-            state = stateZip[0];
+            const stateZip = stateZipStr.split(' ').filter(Boolean);
+            if (stateZip.length >= 2) {
+              state = stateZip[0];
+              zipCode = stateZip[1];
+            } else {
+              state = stateZip[0];
+            }
           }
         }
 
@@ -370,6 +400,9 @@ export default function AddressAutofill({
 
   return (
     <div className={`relative ${className}`}>
+      {process.env.NEXT_PUBLIC_DEBUG_PLACES_BADGE === 'true' && (
+        <PlacesStatusBadge />
+      )}
       <div className="relative">
         <input
           ref={inputRef}

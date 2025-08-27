@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 import { mapUsersToApiResponse, mapApiRequestToUser } from '@/lib/admin/dto/user';
 import { ZodError } from 'zod';
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
     // Log the action
     await logAdminAction(adminUser, 'user_list_view', 'user', {
       metadata: { page, pageSize, search, filters },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.USER,
     });
 
     return NextResponse.json(mappedData);
@@ -85,6 +87,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -99,7 +107,7 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -170,6 +178,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -184,7 +198,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -193,6 +207,14 @@ export async function PUT(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Check for role changes and enforce RBAC
+    if (data.issuperadmin !== undefined || data.adminRole !== undefined) {
+      // Only super admins can change admin roles
+      if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_EDIT) && adminUser.adminRole !== 'super_admin') {
+        return NextResponse.json({ error: 'Insufficient permissions to modify admin roles' }, { status: 403 });
+      }
     }
 
     // Validate data
@@ -251,6 +273,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -265,7 +293,7 @@ export async function DELETE(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Get user ID from query params

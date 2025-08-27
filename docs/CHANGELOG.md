@@ -5,6 +5,22 @@ All notable changes to the JewGo application will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Restaurant Form Submission Issues** (2025-08-27)
+  - Fixed business_images JSON string conversion to Python lists
+  - Removed invalid description field from form submission
+  - Fixed default status from "active" to "pending" for new submissions
+  - Properly capitalize kosher categories (Dairy, Meat, Pareve)
+  - Fixed address component separation (street, city, state, zip)
+  - Added missing validation schema fields (cholov_stam, hours_open)
+  - Fixed step validation arrays with all required fields
+  - Corrected kosher category validation logic
+  - Added proper default values for all fields
+  - Integrated user authentication with Supabase auth system
+  - Added user_email field for tracking who submitted restaurants
+  - Added pre-submission authentication validation
+  - Fixed kosher flags handling (boolean/null values)
+  - Enhanced error handling and debugging capabilities
+  - Improved data consistency between frontend and backend schemas
 - **reCAPTCHA Sign-In Issues**: Fixed "Uncaught (in promise) null" errors during captcha sign-in
   - Improved reCAPTCHA script loading with proper ready state detection
   - Added timeout protection and graceful error handling

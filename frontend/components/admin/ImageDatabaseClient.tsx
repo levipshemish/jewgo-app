@@ -1,197 +1,253 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Image as ImageIcon, Building2, Edit, Trash2, Eye, ExternalLink, Hash } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface RestaurantImage {
   id: number;
-  restaurant_id?: number;
-  image_url?: string;
-  image_order?: number;
-  cloudinary_public_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  restaurant?: {
-    id: number;
-    name: string;
-    city: string;
-    state: string;
-  };
+  restaurant_id: number;
+  image_url: string;
+  image_order: number;
+  cloudinary_public_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface Props {
+interface ImageDatabaseClientProps {
   initialData: RestaurantImage[];
-  initialPagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
-  initialSearch?: string;
-  initialSortBy?: string;
-  initialSortOrder?: 'asc' | 'desc';
+  initialPagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  initialSearch: string;
+  initialSortBy: string;
+  initialSortOrder: 'asc' | 'desc';
 }
 
-export default function ImageDatabaseClient({ initialData, initialPagination, initialSearch = '', initialSortBy = '', initialSortOrder = 'desc' }: Props) {
-  const searchParams = useSearchParams();
+export default function ImageDatabaseClient({
+  initialData,
+  initialPagination,
+  initialSearch,
+  initialSortBy,
+  initialSortOrder,
+}: ImageDatabaseClientProps) {
   const router = useRouter();
-  const [images, setImages] = useState<RestaurantImage[]>(initialData);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { token: csrf } = useAdminCsrf();
+  const { showSuccess, showError } = useToast();
+
+  const [rows, setRows] = useState<RestaurantImage[]>(initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [sortKey, setSortKey] = useState(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  const fetchImages = async () => {
+  // Controlled state derived from URL params
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+  // Fetch server data based on URL params
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('restaurantId')) {params.set('restaurantId', searchParams.get('restaurantId')!);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-
-      const response = await fetch(`/api/admin/images?${params.toString()}`, {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-      });
-      if (!response.ok) {throw new Error('Failed to fetch images');}
-      const data = await response.json();
-      setImages(data.data || []);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching images:', error);
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/images?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
+      const json = await res.json();
+      setRows(json.data || []);
+      setPagination(json.pagination);
+    } catch (e) {
+      console.error('[ADMIN] load images error:', e);
+      showError('Failed to load images');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+    fetchData();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/admin/database/images?${params.toString()}`);
+  const onPageChange = (nextPage: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('page', String(nextPage));
+    router.push(`/admin/database/images?${p.toString()}`);
   };
-  const handlePageSizeChange = (pageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', pageSize.toString());
-    params.set('page', '1');
-    router.push(`/admin/database/images?${params.toString()}`);
+
+  const onPageSizeChange = (nextSize: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('pageSize', String(nextSize));
+    p.set('page', '1');
+    router.push(`/admin/database/images?${p.toString()}`);
   };
-  const handleSearchQueryChange = (query: string) => setSearchQuery(query);
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {params.set('search', query);} else {params.delete('search');}
-    params.set('page', '1');
-    router.push(`/admin/database/images?${params.toString()}`);
+
+  const onSearch = (query: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (query) { p.set('search', query); } else { p.delete('search'); }
+    p.set('page', '1');
+    router.push(`/admin/database/images?${p.toString()}`);
   };
-  const handleSortChange = (key: string, order: 'asc' | 'desc') => { setSortKey(key); setSortOrder(order); };
-  const handleSort = (key: string, order: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sortBy', key);
-    params.set('sortOrder', order);
-    router.push(`/admin/database/images?${params.toString()}`);
+
+  const onSort = (key: string, order: 'asc' | 'desc') => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('sortBy', key);
+    p.set('sortOrder', order);
+    router.push(`/admin/database/images?${p.toString()}`);
   };
-  const handleExport = async () => {
+
+  const onEdit = async (id: number, data: Partial<RestaurantImage>) => {
     try {
-      const payload: any = {};
-      if (searchQuery) {payload.search = searchQuery;}
-      if (searchParams.get('restaurantId')) {payload.restaurantId = searchParams.get('restaurantId');}
-      if (sortKey) {payload.sortBy = sortKey;}
-      if (sortOrder) {payload.sortOrder = sortOrder;}
-      const response = await fetch(`/api/admin/images/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-        body: JSON.stringify(payload),
+      const res = await fetch(`/api/admin/images`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ id, ...data }),
       });
-      if (response.ok) {
-        const blob = await response.blob();
+      
+      if (res.ok) {
+        showSuccess('Image updated successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to update image');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('Failed to update image');
+    }
+  };
+
+  const onDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this image?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/images?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        showSuccess('Image deleted successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to delete image');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showError('Failed to delete image');
+    }
+  };
+
+  const onBulkAction = async (action: string, ids: string[]) => {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/images/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ action, ids }),
+      });
+      
+      if (res.ok) {
+        showSuccess(`${action} completed for ${ids.length} images`);
+        fetchData(); // Refresh data
+      } else {
+        showError(`Failed to ${action} images`);
+      }
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      showError(`Failed to ${action} images`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/images/export?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `restaurant_images_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `images_export_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        showSuccess('Export completed successfully');
+      } else {
+        showError('Failed to export images');
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export error:', error);
+      showError('Failed to export images');
     }
   };
 
   const columns: Column<RestaurantImage>[] = [
-    {
-      key: 'image_url',
-      title: 'Image',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          {value ? (
-            <img src={value} alt={`Restaurant image ${row.id}`} className="h-12 w-12 rounded-lg object-cover"
-              onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />
-          ) : (
-            <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-              <ImageIcon className="h-6 w-6 text-gray-400" />
-            </div>
-          )}
-          <div>
-            <div className="text-sm font-medium text-gray-900">Image #{row.id}</div>
-            {row.cloudinary_public_id && (
-              <div className="text-xs text-gray-500">Cloudinary ID: {row.cloudinary_public_id}</div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'restaurant',
-      title: 'Restaurant',
-      render: (value, row) => (
-        <div className="flex items-center space-x-2">
-          <Building2 className="h-4 w-4 text-gray-400" />
-          <div>
-            <div className="font-medium text-gray-900">{value?.name || `Restaurant ${row.restaurant_id}`}</div>
-            <div className="text-sm text-gray-500">{value?.city}, {value?.state}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'image_order',
-      title: 'Order',
-      align: 'center',
-      render: (value) => (
-        <div className="flex items-center justify-center space-x-1">
-          <Hash className="h-4 w-4 text-gray-400" />
-          <span className="font-medium text-gray-900">{value || 'N/A'}</span>
-        </div>
-      ),
-    },
-    { key: 'created_at', title: 'Uploaded', sortable: true },
-    { key: 'updated_at', title: 'Updated', sortable: true },
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'restaurant_id', title: 'Restaurant ID', sortable: true },
+    { key: 'image_url', title: 'Image URL', sortable: false },
+    { key: 'image_order', title: 'Order', sortable: true },
+    { key: 'cloudinary_public_id', title: 'Cloudinary ID', sortable: false },
+    { key: 'created_at', title: 'Created', sortable: true },
   ];
 
   return (
-          <DataTable
-        data={images}
+    <DataTable
+      data={rows}
       columns={columns}
-      loading={loading}
       pagination={pagination}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-      onSort={handleSort}
-      onSearch={handleSearch}
-      onExport={handleExport}
-      exportHint="Exports up to 10,000 rows"
-      searchPlaceholder="Search images by restaurant or Cloudinary ID..."
-      selectable={true}
-      searchQuery={searchQuery}
-      sortKey={sortKey}
-      sortOrder={sortOrder}
-      onSearchQueryChange={handleSearchQueryChange}
-      onSortChange={handleSortChange}
+      loading={loading}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onSearch={onSearch}
+      onSort={onSort}
+
+
+      onBulkAction={onBulkAction}
+      onExport={onExport}
+      searchPlaceholder="Search images..."
+      bulkActions={[
+        { title: 'Delete Selected', key: 'delete' },
+        { title: 'Reorder Selected', key: 'reorder' },
+      ]}
     />
   );
 }

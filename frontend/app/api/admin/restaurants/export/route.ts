@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Get query parameters for filtering
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
       'updated_at',
     ];
 
-    // Export to CSV
-    const result = await AdminDatabaseService.exportToCSV(
+    // Export to CSV using streaming for large datasets
+    const result = await AdminDatabaseService.streamToCSV(
       prisma.restaurant,
       'restaurant',
       {
@@ -72,7 +72,8 @@ export async function GET(request: NextRequest) {
         sortOrder,
       },
       exportFields,
-      10000 // Max 10k rows
+      10000, // Max 10k rows
+      1000   // Batch size
     );
 
     // Log the export action
@@ -86,13 +87,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Return CSV response
-    const response = new NextResponse(result.csv, {
+    // Return streaming CSV response
+    const response = new NextResponse(result.stream, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="restaurants_export_${new Date().toISOString().split('T')[0]}.csv"`,
         'Cache-Control': 'no-cache',
+        'Transfer-Encoding': 'chunked',
       },
     });
 
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     const body = await request.json().catch(() => ({}));

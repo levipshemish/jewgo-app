@@ -236,7 +236,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 setImageError(true);
                 setImageLoading(false);
                 // Fallback to default image on error
-                console.warn(`Failed to load image: ${heroImageUrl}`);
+                // eslint-disable-next-line no-console
+                console.error(`Failed to load image: ${heroImageUrl}`);
               }}
               sizes="180px"
               unoptimized={heroImageUrl.includes('cloudinary.com')}

@@ -20,10 +20,13 @@ const restaurantSubmissionSchema = z.object({
   certifying_agency: z.string().min(1, 'Certifying agency is required').max(100),
   is_cholov_yisroel: z.boolean().optional(),
   is_pas_yisroel: z.boolean().optional(),
+  cholov_stam: z.boolean().optional(),
   
   // Business details
   short_description: z.string().min(1, 'Short description is required').max(80),
   description: z.string().max(2000).optional().or(z.literal('')),
+  hours_of_operation: z.string().optional().or(z.literal('')),
+  hours_open: z.string().optional().or(z.literal('')),
   google_listing_url: z.string().url().optional().or(z.literal('')),
   instagram_link: z.string().url().optional().or(z.literal('')),
   facebook_link: z.string().url().optional().or(z.literal('')),
@@ -102,13 +105,20 @@ export async function POST(request: NextRequest) {
       ...validatedData,
       phone_number: validatedData.phone, // Map to database field
       image_url: validatedData.business_images[0] || '', // Use first image as main image
+      status: 'pending', // Set status to pending instead of active
       submission_date: validatedData.submission_date || new Date().toISOString(),
+      // Ensure hours data is included
+      hours_of_operation: validatedData.hours_of_operation || validatedData.hours_open || '',
+      // Handle kosher flags properly - convert undefined to null
+      is_cholov_yisroel: validatedData.is_cholov_yisroel ?? null,
+      is_pas_yisroel: validatedData.is_pas_yisroel ?? null,
+      cholov_stam: validatedData.cholov_stam ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
     
     // Remove fields that don't match database schema
-    const { phone, ...restaurantDataWithoutPhone } = restaurantData;
+    const { phone, hours_open, description, ...restaurantDataWithoutPhone } = restaurantData;
     
     // Use API v4 endpoint
     const backendUrl = 'http://localhost:8082';

@@ -27,9 +27,7 @@ const getSupabaseClient = async () => {
 
 function FavoritesPageContent() {
   const { favorites } = useFavorites();
-  // const { handleImmediateTouch } = useMobileTouch();
   const router = useRouter();
-  // const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('favorites');
   const [showFilters, setShowFilters] = useState(false);
   const { isLoading, isGuest } = useGuestProtection('/favorites');
@@ -37,12 +35,8 @@ function FavoritesPageContent() {
   // Use the shared advanced filters hook
   const {
     activeFilters,
-    setFilter,
-    toggleFilter,
-    clearAllFilters
+    setFilter
   } = useAdvancedFilters();
-
-
 
   const handleSearch = (_query: string) => {
     // Search disabled on this page; no-op to satisfy types
@@ -56,45 +50,17 @@ function FavoritesPageContent() {
     setShowFilters(true);
   };
 
-
-
   const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
   };
-
-  const handleToggleFilter = (filterType: keyof typeof activeFilters) => {
-    toggleFilter(filterType);
-  };
-
-  const handleClearAllFilters = () => {
-    clearAllFilters();
-  };
-
-  // const handleDistanceChange = (distance: number) => {
-  //   setFilter('maxDistanceMi', distance);
-  // };
 
   const handleCloseFilters = () => {
     setShowFilters(false);
   };
 
-  // const handleApplyFilters = () => {
-  //   setShowFilters(false);
-  // };
-
   const handleCardClick = (restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
   };
-
-  // const handleAddToFavorites = (_restaurantId: string) => {
-  //   // This will be handled by the useFavorites hook
-
-  // };
-
-  // const handleRemoveFromFavorites = (_restaurantId: string) => {
-  //   // This will be handled by the useFavorites hook
-
-  // };
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -273,8 +239,8 @@ function FavoritesPageContent() {
                   <AdvancedFilters
                     activeFilters={activeFilters}
                     onFilterChange={handleFilterChange}
-                    onToggleFilter={handleToggleFilter}
-                    onClearAll={handleClearAllFilters}
+                    onToggleFilter={() => {}} // No toggle filter on this page
+                    onClearAll={() => {}} // No clear all on this page
                     userLocation={null}
                     locationLoading={false}
                   />

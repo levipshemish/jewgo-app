@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { appLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 
 export async function GET(_request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest) {
       const dbHealth = await AdminDatabaseService.healthCheck();
       healthStatus.services.database = dbHealth;
     } catch (dbError) {
-      appLogger.warn('Database health check failed', { error: String(dbError) });
+      adminLogger.warn('Database health check failed', { error: String(dbError) });
       healthStatus.services.database = {
         status: 'unhealthy',
         message: String(dbError),
@@ -44,7 +44,7 @@ export async function GET(_request: NextRequest) {
         timestamp: new Date(),
       };
     } catch (redisError) {
-      appLogger.warn('Redis health check failed', { error: String(redisError) });
+      adminLogger.warn('Redis health check failed', { error: String(redisError) });
       healthStatus.services.redis = {
         status: 'unhealthy',
         message: String(redisError),
@@ -61,7 +61,7 @@ export async function GET(_request: NextRequest) {
         timestamp: new Date(),
       };
     } catch (externalError) {
-      appLogger.warn('External services health check failed', { error: String(externalError) });
+      adminLogger.warn('External services health check failed', { error: String(externalError) });
       healthStatus.services.external = {
         status: 'unhealthy',
         message: String(externalError),
@@ -81,7 +81,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(healthStatus, { status: statusCode });
   } catch (error) {
-    appLogger.error('Health check failed', { error: String(error) });
+    adminLogger.error('Health check failed', { error: String(error) });
     
     return NextResponse.json(
       {

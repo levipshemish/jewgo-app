@@ -1,31 +1,38 @@
 import RestaurantDatabaseClient from '@/components/admin/RestaurantDatabaseClient';
+import { AdminDatabaseService } from '@/lib/admin/database';
+import { prisma } from '@/lib/db/prisma';
 
-export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const params = searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || '';
+  const sortBy = (params.sortBy as string) || 'created_at';
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
-  const urlParams = new URLSearchParams();
-  urlParams.set('page', String(page));
-  urlParams.set('pageSize', String(pageSize));
-  if (search) {urlParams.set('search', search);}
-  if (params.status) {urlParams.set('status', String(params.status));}
-  if (params.city) {urlParams.set('city', String(params.city));}
-  if (params.state) {urlParams.set('state', String(params.state));}
-  if (sortBy) {urlParams.set('sortBy', sortBy);}
-  if (sortOrder) {urlParams.set('sortOrder', sortOrder);}
+  
+  // Build filters
+  const filters: any = {};
+  if (params.status) { filters.status = String(params.status); }
+  if (params.city) { filters.city = String(params.city); }
+  if (params.state) { filters.state = String(params.state); }
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   try {
-    const res = await fetch(`/api/admin/restaurants?${urlParams.toString()}`, { cache: 'no-store' });
-    if (res.ok) {
-      const json = await res.json();
-      initialData = json.data || [];
-      initialPagination = json.pagination || initialPagination;
-    }
+    const result = await AdminDatabaseService.getPaginatedData(
+      prisma.restaurant,
+      'restaurant',
+      {
+        page,
+        pageSize,
+        search,
+        filters,
+        sortBy,
+        sortOrder,
+      }
+    );
+    initialData = result.data || [];
+    initialPagination = result.pagination || initialPagination;
   } catch (e) {
     // ignore; client-side will fetch
   }

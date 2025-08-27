@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { requireAdminUser } from '@/lib/admin/auth';
+import { getAdminUser } from '@/lib/admin/auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -12,9 +12,20 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   // Server-side authentication + RBAC check
   let adminUser;
   try {
-    adminUser = await requireAdminUser();
-  } catch {
+    adminUser = await getAdminUser();
+  } catch (error) {
+    console.error('[ADMIN] Authentication error:', error);
     redirect('/auth/signin?redirectTo=/admin&message=admin_access_required');
+  }
+
+  // Check if user exists but lacks admin role
+  if (!adminUser) {
+    redirect('/auth/signin?redirectTo=/admin&message=admin_access_required');
+  }
+
+  // Check if user has minimal admin role (moderator or higher)
+  if (!adminUser.adminRole || !['moderator', 'data_admin', 'system_admin', 'super_admin'].includes(adminUser.adminRole)) {
+    redirect('/?error=not_authorized&message=insufficient_admin_permissions');
   }
 
   // CSRF token provisioning with safe fallback to avoid SSR crash on missing secret
@@ -42,17 +53,6 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           
           {/* Page content */}
           <main className="flex-1 p-6">
-            {/* Expose CSRF token for client (sent in x-csrf-token header) */}
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.__CSRF_TOKEN__ = ${JSON.stringify(signedToken)};`,
-              }}
-            />
-            {!signedToken && (
-              <div className="mb-4 p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-800">
-                CSRF token unavailable. Client actions may be limited.
-              </div>
-            )}
             {children}
           </main>
         </div>

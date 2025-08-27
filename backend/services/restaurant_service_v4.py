@@ -401,6 +401,48 @@ class RestaurantServiceV4(BaseService):
             self.logger.exception("Error retrieving restaurant images", error=str(e))
             raise
 
+    def get_filter_options(self) -> dict[str, Any]:
+        """Get filter options for restaurants.
+
+        Returns:
+            Dictionary containing filter options (kosher categories, agencies, etc.)
+
+        """
+        self.log_operation("get_filter_options")
+
+        try:
+            # Get all restaurants to extract unique values
+            restaurants = self.db_manager.get_restaurants()
+            
+            # Extract unique kosher categories
+            kosher_categories = set()
+            certifying_agencies = set()
+            
+            for restaurant in restaurants:
+                # Handle both dict and object types
+                if isinstance(restaurant, dict):
+                    kosher_categories.add(restaurant.get('kosher_category'))
+                    certifying_agencies.add(restaurant.get('certifying_agency'))
+                else:
+                    kosher_categories.add(getattr(restaurant, 'kosher_category', None))
+                    certifying_agencies.add(getattr(restaurant, 'certifying_agency', None))
+            
+            # Remove None values and convert to sorted lists
+            kosher_categories = sorted([cat for cat in kosher_categories if cat])
+            certifying_agencies = sorted([agency for agency in certifying_agencies if agency])
+            
+            filter_options = {
+                'kosherCategories': kosher_categories,
+                'agencies': certifying_agencies
+            }
+            
+            self.logger.info("Successfully retrieved filter options")
+            return filter_options
+
+        except Exception as e:
+            self.logger.exception("Error retrieving filter options", error=str(e))
+            raise
+
     def add_restaurant_image(
         self,
         restaurant_id: int,
@@ -617,8 +659,104 @@ class RestaurantServiceV4(BaseService):
 
     def _preprocess_restaurant_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess restaurant data before saving."""
-        # Add any preprocessing logic
-        return data.copy()
+        processed_data = data.copy()
+        
+        # Handle business_images field - convert JSON string to array if needed
+        if 'business_images' in processed_data:
+            business_images = processed_data['business_images']
+            self.logger.info("Processing business_images", 
+                           original_type=type(business_images), 
+                           original_value=business_images)
+            
+            if isinstance(business_images, str):
+                try:
+                    import json
+                    processed_data['business_images'] = json.loads(business_images)
+                    self.logger.info("Converted business_images from JSON string", 
+                                   result=processed_data['business_images'])
+                except (json.JSONDecodeError, TypeError) as e:
+                    # If it's not valid JSON, treat it as a single image
+                    processed_data['business_images'] = [business_images] if business_images else []
+                    self.logger.warning("Failed to parse business_images as JSON", error=str(e))
+            elif not isinstance(business_images, list):
+                # If it's not a list, convert to list
+                processed_data['business_images'] = [business_images] if business_images else []
+                self.logger.info("Converted business_images to list", 
+                               result=processed_data['business_images'])
+            else:
+                self.logger.info("business_images already a list", 
+                               result=processed_data['business_images'])
+        
+        # Remove description field if it exists (not in model)
+        if 'description' in processed_data:
+            del processed_data['description']
+        
+        # Ensure status is set to pending for new submissions
+        if 'status' not in processed_data or processed_data['status'] == 'active':
+            processed_data['status'] = 'pending'
+            self.logger.info("Set status to pending", original_status=processed_data.get('status'))
+        
+        # Capitalize kosher category
+        if 'kosher_category' in processed_data and processed_data['kosher_category']:
+            kosher_category = processed_data['kosher_category'].lower()
+            self.logger.info("Processing kosher_category", 
+                           original=processed_data['kosher_category'], 
+                           lowercase=kosher_category)
+            
+            if kosher_category == 'dairy':
+                processed_data['kosher_category'] = 'Dairy'
+            elif kosher_category == 'meat':
+                processed_data['kosher_category'] = 'Meat'
+            elif kosher_category == 'pareve':
+                processed_data['kosher_category'] = 'Pareve'
+            
+            self.logger.info("Capitalized kosher_category", 
+                           result=processed_data['kosher_category'])
+        
+        # Handle null values for kosher flags - convert empty strings to None
+        kosher_flags = ['is_cholov_yisroel', 'is_pas_yisroel', 'cholov_stam']
+        for flag in kosher_flags:
+            if flag in processed_data:
+                if processed_data[flag] == '' or processed_data[flag] is None:
+                    processed_data[flag] = None
+                elif isinstance(processed_data[flag], str):
+                    # Convert string to boolean
+                    processed_data[flag] = processed_data[flag].lower() in ['true', '1', 'yes']
+        
+        # Parse address components if full address is provided
+        if 'address' in processed_data and processed_data['address']:
+            address = processed_data['address']
+            # If address contains city, state, zip, try to parse it
+            if ',' in address and not processed_data.get('city'):
+                parts = address.split(',')
+                if len(parts) >= 2:
+                    # Extract street address (everything before the first comma)
+                    processed_data['address'] = parts[0].strip()
+                    
+                    # Try to extract city, state, zip from remaining parts
+                    remaining = ','.join(parts[1:]).strip()
+                    if remaining:
+                        # Look for state and zip pattern
+                        import re
+                        state_zip_pattern = r'([A-Z]{2})\s+(\d{5}(?:-\d{4})?)'
+                        match = re.search(state_zip_pattern, remaining)
+                        if match:
+                            state = match.group(1)
+                            zip_code = match.group(2)
+                            city = remaining.replace(f'{state} {zip_code}', '').strip().rstrip(',').strip()
+                            
+                            if not processed_data.get('state'):
+                                processed_data['state'] = state
+                            if not processed_data.get('zip_code'):
+                                processed_data['zip_code'] = zip_code
+                            if not processed_data.get('city') and city:
+                                processed_data['city'] = city
+        
+        # Ensure hours_of_operation is included
+        if 'hours_of_operation' not in processed_data and 'hours_open' in processed_data:
+            processed_data['hours_of_operation'] = processed_data['hours_open']
+        
+        return processed_data
 
     def _get_created_restaurant(self, data: dict[str, Any]) -> dict[str, Any]:
         """Get the created restaurant data."""

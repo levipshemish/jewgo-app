@@ -1,28 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
-import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
+import { corsHeaders } from '@/lib/middleware/security';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
+    // Apply rate limiting
+    const rateLimitResult = await rateLimit(RATE_LIMITS.DEFAULT)(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
-    const token = generateSignedCSRFToken(adminUser.id);
-    const headers = {
-      ...buildSecurityHeaders(request),
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      Pragma: 'no-cache',
-      Expires: '0',
-    } as HeadersInit;
+    // Authenticate admin user
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    return NextResponse.json({ token }, { headers });
+    // Generate signed CSRF token
+    const token = generateSignedCSRFToken(adminUser.id);
+
+    // Return token with no-cache headers
+    return NextResponse.json(
+      { token },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store',
+        },
+      }
+    );
   } catch (error) {
-    adminLogger.error('CSRF token generation error', { error: String(error) });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders(request) });
+    console.error('[ADMIN] CSRF token generation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate CSRF token' },
+      { status: 500 }
+    );
   }
 }
 

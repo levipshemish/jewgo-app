@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Activity, User, Calendar, Filter, Download } from 'lucide-react';
+import { User, Calendar, Filter } from 'lucide-react';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface AuditLog {
@@ -32,7 +32,7 @@ export default function AuditLogPage() {
   const router = useRouter();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const csrfToken = useAdminCsrf();
+  const { token: csrfToken } = useAdminCsrf();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [pagination, setPagination] = useState({
     page: parseInt(searchParams.get('page') || '1'),
@@ -144,7 +144,7 @@ export default function AuditLogPage() {
     {
       key: 'timestamp',
       title: 'Timestamp',
-      sortable: true,
+      sortable: false,
       render: (value) => (
         <div className="flex items-center space-x-2">
           <Calendar className="h-4 w-4 text-gray-400" />

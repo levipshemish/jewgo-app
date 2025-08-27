@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, ENTITY_TYPES, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { AdminErrors, handlePrismaError } from '@/lib/admin/errors';
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
     }
 
     // Get query parameters
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     // Build filters
     const filters: any = {};
-    if (status) {
+    if (status && status !== 'all') {
       // Map status to submission_status if it's a submission-related status
       if (['pending_approval', 'approved', 'rejected'].includes(status)) {
         filters.submission_status = status;
@@ -64,31 +66,32 @@ export async function GET(request: NextRequest) {
     adminLogger.info('Successfully fetched restaurants', { count: result.data.length, total: result.pagination.total });
 
     // Log the action
-    await logAdminAction(adminUser, 'restaurant_list_view', 'restaurant', {
+    await logAdminAction(adminUser, 'restaurant_list_view', ENTITY_TYPES.RESTAURANT, {
       metadata: { page, pageSize, search, filters },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT,
     });
 
     return NextResponse.json(result);
   } catch (error) {
     adminLogger.error('Restaurant list error', { error: String(error) });
     
-    // Provide more detailed error information in development
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? `Failed to fetch restaurants: ${error instanceof Error ? error.message : String(error)}`
-      : 'Failed to fetch restaurants';
+    // Use centralized error handling
+    if (error && typeof error === 'object' && 'code' in error) {
+      return handlePrismaError(error);
+    }
     
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      },
-      { status: 500 }
-    );
+    return AdminErrors.INTERNAL_ERROR(`Failed to fetch restaurants: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -153,6 +156,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -167,7 +176,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -214,6 +223,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -228,16 +243,16 @@ export async function DELETE(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Get restaurant ID from query params
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'Restaurant ID is required' }, { status: 400 });
+    const idParam = searchParams.get('id');
+    if (!idParam || isNaN(Number(idParam))) {
+      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
+    const id = Number(idParam);
 
     // Delete restaurant (soft delete)
     await AdminDatabaseService.deleteRecord(

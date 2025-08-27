@@ -44,10 +44,12 @@ export async function fetchMarketplaceListings(
     
     // Debug logging to help identify URL issues
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log('Fetching marketplace listings from:', apiUrl);
     }
     
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log('Using backend URL:', BACKEND_URL);
     }
 

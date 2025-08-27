@@ -1,204 +1,261 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Building2, MapPin, Phone, Mail, Globe, Edit, Trash2, Eye, Star, CheckCircle } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface KosherPlace {
   id: number;
-  name?: string;
-  detail_url?: string;
-  category?: string;
-  photo?: string;
-  address?: string;
-  phone?: string;
-  website?: string;
-  kosher_cert_link?: string;
-  kosher_type?: string;
-  extra_kosher_info?: string;
-  created_at?: string;
-  short_description?: string;
-  email?: string;
-  google_listing_url?: string;
-  status?: string;
-  is_cholov_yisroel?: boolean;
-  is_pas_yisroel?: boolean;
-  hours_open?: string;
-  price_range?: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  phone: string;
+  website: string;
+  category: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface Props {
+interface KosherPlacesDatabaseClientProps {
   initialData: KosherPlace[];
-  initialPagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
-  initialSearch?: string;
-  initialSortBy?: string;
-  initialSortOrder?: 'asc' | 'desc';
+  initialPagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  initialSearch: string;
+  initialSortBy: string;
+  initialSortOrder: 'asc' | 'desc';
 }
 
-export default function KosherPlacesDatabaseClient({ initialData, initialPagination, initialSearch = '', initialSortBy = '', initialSortOrder = 'desc' }: Props) {
-  const searchParams = useSearchParams();
+export default function KosherPlacesDatabaseClient({
+  initialData,
+  initialPagination,
+  initialSearch,
+  initialSortBy,
+  initialSortOrder,
+}: KosherPlacesDatabaseClientProps) {
   const router = useRouter();
-  const [items, setItems] = useState<KosherPlace[]>(initialData);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { token: csrf } = useAdminCsrf();
+  const { showSuccess, showError } = useToast();
+
+  const [rows, setRows] = useState<KosherPlace[]>(initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [sortKey, setSortKey] = useState(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  const fetchItems = async () => {
+  // Controlled state derived from URL params
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+  // Fetch server data based on URL params
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('category')) {params.set('category', searchParams.get('category')!);}
-      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-
-      const response = await fetch(`/api/admin/kosher-places?${params.toString()}`, {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-      });
-      if (!response.ok) {throw new Error('Failed to fetch kosher places');}
-      const data = await response.json();
-      setItems(data.data || []);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching kosher places:', error);
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/kosher-places?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
+      const json = await res.json();
+      setRows(json.data || []);
+      setPagination(json.pagination);
+    } catch (e) {
+      console.error('[ADMIN] load kosher places error:', e);
+      showError('Failed to load kosher places');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+    fetchData();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/admin/database/kosher-places?${params.toString()}`);
+  const onPageChange = (nextPage: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('page', String(nextPage));
+    router.push(`/admin/database/kosher-places?${p.toString()}`);
   };
-  const handlePageSizeChange = (pageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', pageSize.toString());
-    params.set('page', '1');
-    router.push(`/admin/database/kosher-places?${params.toString()}`);
+
+  const onPageSizeChange = (nextSize: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('pageSize', String(nextSize));
+    p.set('page', '1');
+    router.push(`/admin/database/kosher-places?${p.toString()}`);
   };
-  const handleSearchQueryChange = (query: string) => setSearchQuery(query);
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {params.set('search', query);} else {params.delete('search');}
-    params.set('page', '1');
-    router.push(`/admin/database/kosher-places?${params.toString()}`);
+
+  const onSearch = (query: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (query) { p.set('search', query); } else { p.delete('search'); }
+    p.set('page', '1');
+    router.push(`/admin/database/kosher-places?${p.toString()}`);
   };
-  const handleSortChange = (key: string, order: 'asc' | 'desc') => { setSortKey(key); setSortOrder(order); };
-  const handleSort = (key: string, order: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sortBy', key);
-    params.set('sortOrder', order);
-    router.push(`/admin/database/kosher-places?${params.toString()}`);
+
+  const onSort = (key: string, order: 'asc' | 'desc') => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('sortBy', key);
+    p.set('sortOrder', order);
+    router.push(`/admin/database/kosher-places?${p.toString()}`);
   };
-  const handleExport = async () => {
+
+  const onEdit = async (id: number, data: Partial<KosherPlace>) => {
+    try {
+      const res = await fetch(`/api/admin/kosher-places`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ id, ...data }),
+      });
+      
+      if (res.ok) {
+        showSuccess('Kosher place updated successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to update kosher place');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('Failed to update kosher place');
+    }
+  };
+
+  const onDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this kosher place?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/kosher-places?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        showSuccess('Kosher place deleted successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to delete kosher place');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showError('Failed to delete kosher place');
+    }
+  };
+
+  const onBulkAction = async (action: string, ids: string[]) => {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/kosher-places/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ action, ids }),
+      });
+      
+      if (res.ok) {
+        showSuccess(`${action} completed for ${ids.length} kosher places`);
+        fetchData(); // Refresh data
+      } else {
+        showError(`Failed to ${action} kosher places`);
+      }
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      showError(`Failed to ${action} kosher places`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onExport = async () => {
     try {
       const params = new URLSearchParams();
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('category')) {params.set('category', searchParams.get('category')!);}
-      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-      const response = await fetch(`/api/admin/kosher-places/export?${params.toString()}`, {
-        method: 'GET',
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/kosher-places/export?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
       });
-      if (response.ok) {
-        const blob = await response.blob();
+      
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `kosher_places_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `kosher_places_export_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        showSuccess('Export completed successfully');
+      } else {
+        showError('Failed to export kosher places');
       }
     } catch (error) {
-      console.error('Export failed:', error);
-    }
-  };
-
-  const handleBulkAction = async (action: string, selectedIds: string[]) => {
-    if (action === 'delete') {
-      if (!confirm(`Are you sure you want to delete ${selectedIds.length} kosher places?`)) {return;}
-      try {
-        const response = await fetch('/api/admin/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-          body: JSON.stringify({
-            operation: 'delete',
-            entityType: 'marketplace',
-            data: selectedIds.map((id) => ({ id })),
-          }),
-        });
-        if (response.ok) {fetchItems();}
-      } catch (error) {
-        console.error('Bulk delete failed:', error);
-      }
+      console.error('Export error:', error);
+      showError('Failed to export kosher places');
     }
   };
 
   const columns: Column<KosherPlace>[] = [
-    {
-      key: 'name',
-      title: 'Kosher Place',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          {row.photo ? (
-            <img src={row.photo} alt={value || 'Kosher place'} className="h-8 w-8 rounded-lg object-cover"
-              onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />
-          ) : (
-            <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
-              <Building2 className="h-4 w-4 text-green-600" />
-            </div>
-          )}
-          <div>
-            <div className="font-medium text-gray-900">{value || 'Unnamed Place'}</div>
-            {row.short_description && (
-              <div className="text-sm text-gray-500 line-clamp-1">{row.short_description}</div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    { key: 'category', title: 'Category' },
-    { key: 'address', title: 'Location', render: (v) => (<div className="flex items-center space-x-2"><MapPin className="h-4 w-4 text-gray-400" /><span>{v || '-'}</span></div>) },
-    { key: 'phone', title: 'Phone', render: (v) => (<div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-400" /><span>{v || '-'}</span></div>) },
-    { key: 'website', title: 'Website', render: (v) => v ? (<a href={v} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Visit</a>) : '-' },
-    { key: 'status', title: 'Status' },
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'name', title: 'Name', sortable: true },
+    { key: 'city', title: 'City', sortable: true },
+    { key: 'state', title: 'State', sortable: true },
+    { key: 'phone', title: 'Phone', sortable: false },
+    { key: 'category', title: 'Category', sortable: true },
+    { key: 'status', title: 'Status', sortable: true },
+    { key: 'created_at', title: 'Created', sortable: true },
   ];
 
   return (
-          <DataTable
-        data={items}
+    <DataTable
+      data={rows}
       columns={columns}
-      loading={loading}
       pagination={pagination}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-      onSort={handleSort}
-      onSearch={handleSearch}
-      onExport={handleExport}
-      onBulkAction={handleBulkAction}
-      searchPlaceholder="Search by name or category..."
-      selectable={true}
-      searchQuery={searchQuery}
-      sortKey={sortKey}
-      sortOrder={sortOrder}
-      onSearchQueryChange={handleSearchQueryChange}
-      onSortChange={handleSortChange}
+      loading={loading}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onSearch={onSearch}
+      onSort={onSort}
+
+
+      onBulkAction={onBulkAction}
+      onExport={onExport}
+      searchPlaceholder="Search kosher places..."
+      bulkActions={[
+        { title: 'Delete Selected', key: 'delete' },
+        { title: 'Approve Selected', key: 'approve' },
+        { title: 'Reject Selected', key: 'reject' },
+      ]}
     />
   );
 }

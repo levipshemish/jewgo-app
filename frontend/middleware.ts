@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { securityMiddleware, corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
+import { getAdminRole } from '@/lib/admin/auth';
 
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
@@ -22,12 +23,6 @@ export const config = {
  */
 export async function middleware(request: NextRequest) {
   try {
-    // Apply security middleware first (rate limiting, headers, CSRF)
-    const securityResponse = await securityMiddleware(request);
-    if (securityResponse.status !== 200) {
-      return securityResponse;
-    }
-
     // Only process protected paths. In Next.js runtime, matcher limits execution,
     // but unit tests call this function directly for any path.
     const path = request.nextUrl.pathname;
@@ -37,14 +32,14 @@ export async function middleware(request: NextRequest) {
     if (isApi && request.method === 'OPTIONS') {
       return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
     }
+    
     if (!isProtectedPath(path)) {
       return NextResponse.next();
     }
 
-    // Rely on server-side RBAC (requireAdmin/role checks) in routes/layout
-    
-    // Create NextResponse upfront to persist refreshed auth cookies
+    // Create response with security headers
     const response = NextResponse.next();
+    Object.entries(buildSecurityHeaders(request)).forEach(([k,v]) => response.headers.set(k, v as string));
     
     // Create Supabase client with Edge Runtime compatibility
     const supabase = createServerClient(
@@ -81,123 +76,135 @@ export async function middleware(request: NextRequest) {
     // Get authenticated user from Supabase Auth server (secure)
     const { data: { user }, error } = await supabase.auth.getUser();
     
-    // Allow anonymous access to certain pages without requiring authentication
-    if (isAnonymousAllowedPath(path)) {
-      return response;
-    }
-    
-    if (error || !user) {
+    // Handle authentication errors
+    if (error) {
       console.error('Middleware auth error:', error);
-      // Unauthenticated: return 401 JSON for API, redirect for UI
-      if (isApi) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
-      }
-      return redirectToSignin(request, response);
+      return handleAuthError(request, isApi, error);
     }
-
-    // Check if user is anonymous using shared extractor
-    const isAnonymous = extractIsAnonymous(user);
-    if (isAnonymous) {
-      if (isApi) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
-      }
-      if (!isAnonymousAllowedPath(path)) {
-        return redirectToSignin(request, response);
-      }
-      return response;
-    }
-
-    // Admin RBAC gate: prefer route-level RBAC; fail closed on lookup error unless explicitly allowed in dev
-    if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
-      let rbacLookupFailed = false;
-      let isAdmin = false;
-      try {
-        // Check admin role via database tables (no RPC dependency)
-        const { data: userRow, error: userRowError } = await supabase
-          .from('users')
-          .select('issuperadmin')
-          .eq('id', user.id)
-          .single();
-
-        if (userRowError) {
-          rbacLookupFailed = true;
-        }
-        isAdmin = Boolean(userRow?.issuperadmin);
-
-        if (!isAdmin) {
-          const nowISO = new Date().toISOString();
-          const { data: roles, error: rolesError } = await supabase
-            .from('admin_roles')
-            .select('role,is_active,expires_at')
-            .eq('user_id', user.id)
-            .eq('is_active', true)
-            .or(`expires_at.is.null,expires_at.gt.${nowISO}`);
-          if (rolesError) {
-            rbacLookupFailed = true;
-          }
-          isAdmin = Array.isArray(roles) && roles.length > 0;
-        }
-      } catch (rbacError) {
-        console.error('Middleware RBAC check error:', rbacError);
-        rbacLookupFailed = true;
-      }
-
-      // Fail closed by default on RBAC lookup failure or non-admin, with dev override
-      const devOverride = process.env.NODE_ENV === 'development' && process.env.ADMIN_RBAC_FAIL_OPEN === 'true';
-      if (!devOverride && (rbacLookupFailed || !isAdmin)) {
-        console.warn('[MIDDLEWARE] RBAC gate blocked access', { rbacLookupFailed, isAdmin });
-        if (isApi) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
-        }
-        return redirectToSignin(request, response);
-      }
-      if (devOverride && (rbacLookupFailed || !isAdmin)) {
-        console.warn('[MIDDLEWARE] RBAC gate fail-open (development override enabled)');
-      }
-    }
-
-    // Add strict security headers and CORS reflection on the base response
-    const sec = buildSecurityHeaders(request);
-    Object.entries(sec).forEach(([k, v]) => response.headers.set(k, v));
-
-    // Authenticated, non-anonymous user - allow access and return response with persisted cookies
-    return response;
     
+    // Handle unauthenticated users
+    if (!user) {
+      return handleUnauthenticatedUser(request, isApi);
+    }
+    
+    // Handle anonymous users - not allowed in admin routes
+    if (extractIsAnonymous(user)) {
+      if (isApi) {
+        return NextResponse.json(
+          { error: 'Admin access required' }, 
+          { status: 403, headers: corsHeaders(request) }
+        );
+      }
+      return redirectToSignin(request);
+    }
+    
+    // Handle authenticated users
+    return await handleAuthenticatedUser(request, isApi, user, response);
+
   } catch (error) {
     console.error('Middleware error:', error);
-    // Fail closed for security - redirect to signin on any error
-    return redirectToSignin(request);
+    return handleMiddlewareError(request, error);
   }
 }
 
 /**
- * Redirect to signin with sanitized redirect URL
+ * Handle authentication errors
  */
-function redirectToSignin(request: NextRequest, response?: NextResponse): NextResponse {
-  // Sanitize the redirect URL before composing the redirect
-  const { pathname } = request.nextUrl;
-  const fullPath = pathname + request.nextUrl.search;
-  const sanitizedRedirect = validateRedirectUrl(fullPath);
+function handleAuthError(request: NextRequest, isApi: boolean, error: any): NextResponse {
+  if (isApi) {
+    return NextResponse.json(
+      { error: 'Authentication error', details: error.message }, 
+      { status: 401, headers: corsHeaders(request) }
+    );
+  }
+  return redirectToSignin(request);
+}
+
+/**
+ * Handle unauthenticated users
+ */
+function handleUnauthenticatedUser(request: NextRequest, isApi: boolean): NextResponse {
+  if (isApi) {
+    return NextResponse.json(
+      { error: 'Unauthorized' }, 
+      { status: 401, headers: corsHeaders(request) }
+    );
+  }
+  return redirectToSignin(request);
+}
+
+
+
+
+
+/**
+ * Handle authenticated users
+ */
+async function handleAuthenticatedUser(
+  request: NextRequest, 
+  isApi: boolean, 
+  user: any, 
+  response: NextResponse
+): Promise<NextResponse> {
+  // Check admin role for both API and UI routes
+  try {
+    const adminRole = await getAdminRole(user.id);
+    if (!adminRole) {
+      if (isApi) {
+        return NextResponse.json(
+          { error: 'Insufficient permissions' }, 
+          { status: 403, headers: corsHeaders(request) }
+        );
+      } else {
+        // For UI routes, redirect to home page
+        return NextResponse.redirect(new URL('/', request.url), 302);
+      }
+    }
+    
+    // Add admin role to request headers for downstream use
+    response.headers.set('X-Admin-Role', adminRole);
+    return response;
+  } catch (roleError) {
+    console.error('Error checking admin role:', roleError);
+    if (isApi) {
+      return NextResponse.json(
+        { error: 'Role verification failed' }, 
+        { status: 500, headers: corsHeaders(request) }
+      );
+    } else {
+      // For UI routes, redirect to home page on error
+      return NextResponse.redirect(new URL('/', request.url), 302);
+    }
+  }
+}
+
+/**
+ * Handle middleware errors
+ */
+function handleMiddlewareError(request: NextRequest, error: any): NextResponse {
+  const isApi = request.nextUrl.pathname.startsWith('/api/admin');
   
-  // Compose the redirect URL with proper encoding
+  if (isApi) {
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500, headers: corsHeaders(request) }
+    );
+  }
+  
+  // For UI routes, redirect to error page or sign-in
+  return redirectToSignin(request);
+}
+
+/**
+ * Redirect to sign-in page with proper error handling
+ */
+function redirectToSignin(request: NextRequest): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const fullPath = pathname + search;
+  const sanitizedRedirect = validateRedirectUrl(fullPath);
   const redirectUrl = `/auth/signin?redirectTo=${encodeURIComponent(sanitizedRedirect)}`;
   
-  // Create redirect response
   const redirectResponse = NextResponse.redirect(new URL(redirectUrl, request.url), 302);
-  
-  // Copy cookies from response to redirectResponse if response exists
-  if (response) {
-    response.cookies.getAll().forEach(cookie => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, {
-        domain: cookie.domain,
-        path: cookie.path,
-        maxAge: cookie.maxAge,
-        httpOnly: cookie.httpOnly,
-        secure: cookie.secure,
-        sameSite: cookie.sameSite,
-      });
-    });
-  }
   
   // Add security headers
   redirectResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -208,41 +215,32 @@ function redirectToSignin(request: NextRequest, response?: NextResponse): NextRe
 }
 
 /**
- * Local matcher to mirror Next.js config in unit tests
+ * Check if path requires protection
  */
 function isProtectedPath(pathname: string): boolean {
-  // Exclude auth pages from protection to prevent redirect loops
-  if (pathname.startsWith('/auth/')) {
-    return false;
-  }
-  
-  // Allow health endpoint without authentication
-  if (pathname === '/api/admin/health') {
-    return false;
-  }
-  
-  // Protect admin UI routes and admin API routes
-  const protectedPrefixes = [
-    '/admin/',
-    '/api/admin/',
-  ];
-  const exactMatches = ['/admin', '/api/admin'];
-  return protectedPrefixes.some(p => pathname.startsWith(p)) || exactMatches.includes(pathname);
+  return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 }
 
 /**
- * Allow list for routes that anonymous users can access
+ * Check if path is allowed for anonymous users
  */
 function isAnonymousAllowedPath(pathname: string): boolean {
-  // Auth pages should always be accessible
-  if (pathname.startsWith('/auth/')) {
-    return true;
-  }
-  
-  // Guest users can access only the following app sections
-  const allowedPrefixes = [
-    '/eatery/', '/shuls/', '/stores/', '/mikva/', '/live-map/'
+  // Allow public pages for anonymous users
+  const publicPaths = [
+    '/',
+    '/auth/signin',
+    '/auth/signup',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/privacy',
+    '/terms',
+    '/healthz',
+    '/api/health',
+    '/api/health-check',
+    '/api/public',
   ];
-  const allowedExact = ['/eatery', '/shuls', '/stores', '/mikva', '/live-map'];
-  return allowedPrefixes.some(p => pathname.startsWith(p)) || allowedExact.includes(pathname);
+  
+  return publicPaths.some(path => pathname.startsWith(path));
 }
+
+

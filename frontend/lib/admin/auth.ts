@@ -13,7 +13,7 @@ const DEV_AUTH_RATE_LIMIT_STORE: Map<string, { count: number; resetTime: number 
 /**
  * Get user's admin role by querying tables directly (no RPC dependency)
  */
-async function getUserAdminRole(userId: string): Promise<AdminRole> {
+export async function getAdminRole(userId: string): Promise<AdminRole> {
   try {
     return await getUserAdminRoleFallback(userId);
   } catch (error: any) {
@@ -96,15 +96,16 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
       
       const rateLimit = DEV_AUTH_RATE_LIMIT_STORE.get(rateLimitKey);
       
-      if (rateLimit && now < rateLimit.resetTime) {
-        if (rateLimit.count >= 10) { // 10 attempts per minute in dev
-          console.warn(`[ADMIN DEV] Rate limit exceeded for IP: ${clientIP}`);
-          return null;
+        if (rateLimit && now < rateLimit.resetTime) {
+          if (rateLimit.count >= 10) { // 10 attempts per minute in dev
+            // eslint-disable-next-line no-console
+            console.error(`[ADMIN DEV] Rate limit exceeded for IP: ${clientIP}`);
+            return null;
+          }
+          rateLimit.count++;
+        } else {
+          DEV_AUTH_RATE_LIMIT_STORE.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
         }
-        rateLimit.count++;
-      } else {
-        DEV_AUTH_RATE_LIMIT_STORE.set(rateLimitKey, { count: 1, resetTime: now + 60000 });
-      }
     }
 
     // Get user from Supabase
@@ -113,6 +114,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     
     // Development bypass only when explicitly enabled
     if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
+      // eslint-disable-next-line no-console
       console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
@@ -141,7 +143,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     }
 
     // Get admin role from Supabase (source of truth)
-    let adminRole = await getUserAdminRole(user.id);
+    let adminRole = await getAdminRole(user.id);
 
     // Development overrides to ease local testing
     // These overrides only apply in NODE_ENV=development and are ignored in production
@@ -237,6 +239,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     
     // Development bypass only when explicitly enabled
     if ((error || !user) && process.env.NODE_ENV === 'development' && process.env.ADMIN_DEV_MOCK === 'true') {
+      // eslint-disable-next-line no-console
       console.log('[ADMIN DEV] Mock admin enabled via ADMIN_DEV_MOCK=true');
       const mockUser: AdminUser = {
         id: 'dev-admin-user',
@@ -263,7 +266,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     }
 
     // Get admin role from Supabase (source of truth)
-    const adminRole = await getUserAdminRole(user.id);
+    const adminRole = await getAdminRole(user.id);
     const isSuperAdmin = adminRole === 'super_admin';
 
     const permissions = ROLE_PERMISSIONS[adminRole] || [];

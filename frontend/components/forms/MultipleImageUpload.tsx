@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable no-console */
 import Image from 'next/image';
 import React, { useRef, useState, useCallback } from 'react';
 import { X, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';

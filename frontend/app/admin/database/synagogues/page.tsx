@@ -62,7 +62,7 @@ export default function SynagogueDatabasePage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
     (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
   );
-  const csrfToken = useAdminCsrf();
+  const { token: csrfToken } = useAdminCsrf();
 
   // Fetch synagogues
   const fetchSynagogues = async () => {
@@ -317,7 +317,7 @@ export default function SynagogueDatabasePage() {
   // Table actions (read-only)
   const actions = [
     {
-      label: 'View',
+      title: 'View',
       icon: Eye,
       onClick: (_row: FloridaSynagogue) => { /* no-op */ },
     },

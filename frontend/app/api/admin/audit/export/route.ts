@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -31,9 +31,20 @@ export async function GET(request: NextRequest) {
     if (options.startDate) {options.startDate = new Date(options.startDate);}
     if (options.endDate) {options.endDate = new Date(options.endDate);}
 
-    const csvContent = await exportAuditLogs(options);
+    const result = await exportAuditLogs(options);
 
-    return new NextResponse(csvContent, {
+    // Use streaming for large datasets
+    if (result.stream) {
+      return new NextResponse(result.stream, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,
+          'Transfer-Encoding': 'chunked',
+        },
+      });
+    }
+
+    return new NextResponse(result.csvContent, {
       headers: {
         'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,

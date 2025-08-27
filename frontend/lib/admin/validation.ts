@@ -10,7 +10,7 @@ export const FIELD_LIMITS = {
 } as const;
 
 const asDate = z.preprocess((v) => {
-  if (v == null || v instanceof Date) {return v;}
+  if (v === null || v === undefined || v instanceof Date) {return v;}
   if (typeof v === 'string' || typeof v === 'number') {
     const d = new Date(v);
     return isNaN(d.getTime()) ? undefined : d;
@@ -65,9 +65,7 @@ export const restaurantCreateSchema = z.object({
   hours_parsed: z.boolean().optional(),
 });
 
-export const restaurantUpdateSchema = restaurantCreateSchema.extend({
-  id: z.number(),
-});
+export const restaurantUpdateSchema = z.object({ id: z.number() }).merge(restaurantCreateSchema.partial());
 
 // Legacy schema for backward compatibility
 export const restaurantSchema = restaurantCreateSchema;
@@ -89,9 +87,7 @@ export const reviewCreateSchema = z.object({
   report_count: z.number().int().min(0).default(0),
 });
 
-export const reviewUpdateSchema = reviewCreateSchema.extend({
-  id: z.string().min(1, 'Review ID is required').max(50),
-});
+export const reviewUpdateSchema = z.object({ id: z.string().min(1, 'Review ID is required').max(50) }).merge(reviewCreateSchema.partial());
 
 // Legacy schema for backward compatibility
 export const reviewSchema = reviewCreateSchema;

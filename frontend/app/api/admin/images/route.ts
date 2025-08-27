@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     // Log the action
     await logAdminAction(adminUser, 'image_list_view', 'restaurant_image', {
       metadata: { page, pageSize, search, filters },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT_IMAGE,
     });
 
     return NextResponse.json(result);
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -146,7 +147,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -212,7 +213,7 @@ export async function DELETE(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Get image ID from query params

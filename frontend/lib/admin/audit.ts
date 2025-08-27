@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { prisma } from '@/lib/db/prisma';
 import { AdminUser } from './types';
 
@@ -28,6 +29,31 @@ export const AUDIT_LEVELS = {
   INFO: 'info',
   WARNING: 'warning',
   CRITICAL: 'critical',
+} as const;
+
+// Entity types enum for consistent audit logging
+export const ENTITY_TYPES = {
+  RESTAURANT: 'restaurant',
+  REVIEW: 'review',
+  USER: 'user',
+  RESTAURANT_IMAGE: 'restaurant_image',
+  ADMIN_ROLE: 'admin_role',
+  SYSTEM: 'system',
+  SYNAGOGUE: 'synagogue',
+  KOSHER_PLACE: 'kosher_place',
+  AUDIT_LOG: 'audit_log',
+} as const;
+
+// Predefined audit field allowlists for common entities
+export const AUDIT_FIELD_ALLOWLISTS = {
+  RESTAURANT: ['id', 'name', 'city', 'state', 'status', 'submission_status', 'approval_date', 'rejection_reason'] as string[],
+  REVIEW: ['id', 'restaurant_id', 'rating', 'title', 'status', 'moderator_notes'] as string[],
+  USER: ['id', 'email', 'name', 'isSuperAdmin', 'createdAt', 'updatedAt'] as string[],
+  SYSTEM: ['key', 'value', 'updatedAt'] as string[],
+  RESTAURANT_IMAGE: ['id', 'restaurant_id', 'image_order', 'image_url', 'cloudinary_public_id'] as string[],
+  MARKETPLACE: ['id', 'name', 'title', 'vendor_name', 'category', 'status', 'price', 'location'] as string[],
+  SYNAGOGUE: ['id', 'name', 'city', 'state', 'address', 'phone', 'affiliation'] as string[],
+  ADMIN_ROLE: ['id', 'userId', 'role', 'assignedAt', 'expiresAt', 'isActive'] as string[],
 } as const;
 
 // Common audit actions
@@ -82,6 +108,7 @@ export async function logAdminAction(
     correlationId?: string;
     auditLevel?: 'info' | 'warning' | 'critical';
     metadata?: Record<string, any>;
+    whitelistFields?: string[];
   } = {}
 ): Promise<void> {
   try {
@@ -95,11 +122,12 @@ export async function logAdminAction(
       correlationId,
       auditLevel = 'info',
       metadata = {},
+      whitelistFields = [],
     } = options;
 
-    // Sanitize sensitive data
-    const sanitizedOldData = truncateForAudit(sanitizeData(oldData));
-    const sanitizedNewData = truncateForAudit(sanitizeData(newData));
+    // Sanitize sensitive data with optional whitelist
+    const sanitizedOldData = truncateForAudit(sanitizeDataWithWhitelist(oldData, whitelistFields));
+    const sanitizedNewData = truncateForAudit(sanitizeDataWithWhitelist(newData, whitelistFields));
     const sanitizedMetadata = truncateForAudit(sanitizeData(metadata));
 
     // Create audit log entry
@@ -130,7 +158,53 @@ export async function logAdminAction(
 }
 
 /**
- * Sanitize sensitive data for audit logs
+ * Sanitize sensitive data for audit logs with optional whitelist
+ */
+export function sanitizeDataWithWhitelist(data: any, whitelistFields: string[] = []): any {
+  if (!data) {return data;}
+
+  const sensitiveFields = [
+    'password', 'token', 'refresh_token', 'access_token', 'secret',
+    'api_key', 'private_key', 'credit_card', 'ssn', 'social_security',
+    // Common PII fields (extendable)
+    'email', 'user_email', 'owner_email', 'business_email', 'phone', 'owner_phone', 'phone_number'
+  ];
+
+  if (typeof data === 'object') {
+    const sanitized: Record<string, any> = { ...data };
+    
+    // If whitelist is provided, only include those fields and redact the rest
+    if (whitelistFields.length > 0) {
+      const whitelistedData: Record<string, any> = {};
+      for (const field of whitelistFields) {
+        if (sanitized[field] !== undefined) {
+          whitelistedData[field] = sanitized[field];
+        }
+      }
+      return whitelistedData;
+    }
+    
+    // Otherwise, redact known sensitive fields at the top level
+    for (const field of sensitiveFields) {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    }
+    // Do not include nested objects/arrays in audit payloads to avoid leaking data
+    Object.keys(sanitized).forEach((k) => {
+      const v = sanitized[k];
+      if (v && typeof v === 'object') {
+        sanitized[k] = '[REDACTED_OBJECT]';
+      }
+    });
+    return sanitized;
+  }
+
+  return data;
+}
+
+/**
+ * Sanitize sensitive data for audit logs (legacy function)
  */
 export function sanitizeData(data: any): any {
   if (!data) {return data;}
@@ -368,7 +442,7 @@ export async function cleanupAuditLogs(retentionDays: number = 90): Promise<numb
 }
 
 /**
- * Export audit logs to CSV
+ * Export audit logs to CSV with streaming support
  */
 export async function exportAuditLogs(options: {
   startDate?: Date;
@@ -376,7 +450,7 @@ export async function exportAuditLogs(options: {
   userId?: string;
   action?: string;
   entityType?: string;
-} = {}): Promise<string> {
+} = {}): Promise<{ csvContent: string; stream?: ReadableStream }> {
   const { logs } = await queryAuditLogs({ ...options, pageSize: 10000 });
 
   // Convert to CSV format
@@ -410,7 +484,46 @@ export async function exportAuditLogs(options: {
     .map(row => row.map(field => `"${field}"`).join(','))
     .join('\n');
 
-  return csvContent;
+  // For large datasets, return a stream with backpressure control
+  if (logs.length > 1000) {
+    const stream = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(csvHeaders.map(field => `"${field}"`).join(',') + '\n');
+        
+        const CHUNK_SIZE = 100; // Process 100 rows at a time
+        let processed = 0;
+        
+        for (const log of logs) {
+          const row = [
+            log.timestamp.toISOString(),
+            log.userId,
+            log.user?.email || '',
+            log.action,
+            log.entityType,
+            log.entityId || '',
+            log.auditLevel,
+            log.ipAddress || '',
+            log.userAgent || '',
+            log.correlationId || '',
+          ].map(field => `"${field}"`).join(',');
+          
+          controller.enqueue(row + '\n');
+          processed++;
+          
+          // Add backpressure control every CHUNK_SIZE rows
+          if (processed % CHUNK_SIZE === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
+        
+        controller.close();
+      },
+    });
+    
+    return { csvContent, stream };
+  }
+
+  return { csvContent };
 }
 
 /**

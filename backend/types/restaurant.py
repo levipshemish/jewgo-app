@@ -21,7 +21,6 @@ class KosherCategory(str, Enum):
     MEAT = "Meat"
     DAIRY = "Dairy"
     PAREVE = "Pareve"
-    FISH = "Fish"
     UNKNOWN = "Unknown"
 
 

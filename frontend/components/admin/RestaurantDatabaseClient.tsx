@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Building2, Edit, Trash2, Eye, Star, MapPin, Phone } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface Restaurant {
   id: number;
@@ -15,167 +16,247 @@ interface Restaurant {
   kosher_category: string;
   certifying_agency: string;
   status: string;
-  rating: number;
-  review_count: number;
+  submission_status: string;
   created_at: string;
   updated_at: string;
 }
 
-interface Props {
+interface RestaurantDatabaseClientProps {
   initialData: Restaurant[];
-  initialPagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
-  initialSearch?: string;
-  initialSortBy?: string;
-  initialSortOrder?: 'asc' | 'desc';
+  initialPagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  initialSearch: string;
+  initialSortBy: string;
+  initialSortOrder: 'asc' | 'desc';
 }
 
-export default function RestaurantDatabaseClient({ initialData, initialPagination, initialSearch = '', initialSortBy = '', initialSortOrder = 'desc' }: Props) {
-  const searchParams = useSearchParams();
+export default function RestaurantDatabaseClient({
+  initialData,
+  initialPagination,
+  initialSearch,
+  initialSortBy,
+  initialSortOrder,
+}: RestaurantDatabaseClientProps) {
   const router = useRouter();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(initialData);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { token: csrf } = useAdminCsrf();
+  const { showSuccess, showError } = useToast();
+
+  const [rows, setRows] = useState<Restaurant[]>(initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [sortKey, setSortKey] = useState(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  const fetchRestaurants = async () => {
+  // Controlled state derived from URL params
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'created_at';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+  // Fetch server data based on URL params
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('status')) {params.set('status', searchParams.get('status')!);}
-      if (searchParams.get('city')) {params.set('city', searchParams.get('city')!);}
-      if (searchParams.get('state')) {params.set('state', searchParams.get('state')!);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-
-      const response = await fetch(`/api/admin/restaurants?${params.toString()}`, {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-      });
-      if (!response.ok) {throw new Error('Failed to fetch restaurants');}
-      const data = await response.json();
-      setRestaurants(data.data || []);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching restaurants:', error);
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/restaurants?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
+      const json = await res.json();
+      setRows(json.data || []);
+      setPagination(json.pagination);
+    } catch (e) {
+      console.error('[ADMIN] load restaurants error:', e);
+      showError('Failed to load restaurants');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Fetch on client interactions/URL changes
-    fetchRestaurants();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+    fetchData();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/admin/database/restaurants?${params.toString()}`);
+  const onPageChange = (nextPage: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('page', String(nextPage));
+    router.push(`/admin/database/restaurants?${p.toString()}`);
   };
 
-  const handlePageSizeChange = (pageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', pageSize.toString());
-    params.set('page', '1');
-    router.push(`/admin/database/restaurants?${params.toString()}`);
+  const onPageSizeChange = (nextSize: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('pageSize', String(nextSize));
+    p.set('page', '1');
+    router.push(`/admin/database/restaurants?${p.toString()}`);
   };
 
-  const handleSearchQueryChange = (query: string) => setSearchQuery(query);
-
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {params.set('search', query);} else {params.delete('search');}
-    params.set('page', '1');
-    router.push(`/admin/database/restaurants?${params.toString()}`);
+  const onSearch = (query: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (query) { p.set('search', query); } else { p.delete('search'); }
+    p.set('page', '1');
+    router.push(`/admin/database/restaurants?${p.toString()}`);
   };
 
-  const handleSortChange = (key: string, order: 'asc' | 'desc') => { setSortKey(key); setSortOrder(order); };
-  const handleSort = (key: string, order: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sortBy', key);
-    params.set('sortOrder', order);
-    router.push(`/admin/database/restaurants?${params.toString()}`);
+  const onSort = (key: string, order: 'asc' | 'desc') => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('sortBy', key);
+    p.set('sortOrder', order);
+    router.push(`/admin/database/restaurants?${p.toString()}`);
   };
 
-  const handleExport = async () => {
+  const onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
-      const payload: any = {};
-      if (searchQuery) {payload.search = searchQuery;}
-      if (searchParams.get('status')) {payload.status = searchParams.get('status');}
-      if (searchParams.get('city')) {payload.city = searchParams.get('city');}
-      if (searchParams.get('state')) {payload.state = searchParams.get('state');}
-      if (sortKey) {payload.sortBy = sortKey;}
-      if (sortOrder) {payload.sortOrder = sortOrder;}
-      const response = await fetch(`/api/admin/restaurants/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-        body: JSON.stringify(payload),
+      const res = await fetch(`/api/admin/restaurants`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ id, ...data }),
       });
-      if (response.ok) {
-        const blob = await response.blob();
+      
+      if (res.ok) {
+        showSuccess('Restaurant updated successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to update restaurant');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('Failed to update restaurant');
+    }
+  };
+
+  const onDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this restaurant?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/restaurants?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        showSuccess('Restaurant deleted successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to delete restaurant');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showError('Failed to delete restaurant');
+    }
+  };
+
+  const onBulkAction = async (action: string, ids: string[]) => {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/restaurants/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ action, ids }),
+      });
+      
+      if (res.ok) {
+        showSuccess(`${action} completed for ${ids.length} restaurants`);
+        fetchData(); // Refresh data
+      } else {
+        showError(`Failed to ${action} restaurants`);
+      }
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      showError(`Failed to ${action} restaurants`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/restaurants/export?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `restaurants_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `restaurants_export_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        showSuccess('Export completed successfully');
+      } else {
+        showError('Failed to export restaurants');
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export error:', error);
+      showError('Failed to export restaurants');
     }
   };
 
   const columns: Column<Restaurant>[] = [
-    {
-      key: 'name',
-      title: 'Restaurant',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-blue-600" />
-          </div>
-          <div>
-            <div className="font-medium text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">{row.address}</div>
-          </div>
-        </div>
-      ),
-    },
-    { key: 'city', title: 'City', render: (v) => (<div className="flex items-center space-x-2"><MapPin className="h-4 w-4 text-gray-400" /><span>{v}</span></div>) },
-    { key: 'state', title: 'State' },
-    { key: 'phone_number', title: 'Phone', render: (v) => (<div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-400" /><span>{v}</span></div>) },
-    { key: 'kosher_category', title: 'Kosher' },
-    { key: 'certifying_agency', title: 'Agency' },
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'name', title: 'Name', sortable: true },
+    { key: 'city', title: 'City', sortable: true },
+    { key: 'state', title: 'State', sortable: true },
+    { key: 'phone_number', title: 'Phone', sortable: false },
+    { key: 'kosher_category', title: 'Category', sortable: true },
     { key: 'status', title: 'Status', sortable: true },
+    { key: 'submission_status', title: 'Submission', sortable: true },
     { key: 'created_at', title: 'Created', sortable: true },
-    { key: 'updated_at', title: 'Updated', sortable: true },
   ];
 
   return (
-    <div className="space-y-4">
-      <DataTable
-        data={restaurants}
-        columns={columns}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        searchQuery={searchQuery}
-        onSearchQueryChange={handleSearchQueryChange}
-        onSearch={handleSearch}
-        sortKey={sortKey}
-        sortOrder={sortOrder}
-        onSortChange={handleSortChange}
-        onSort={handleSort}
-        onExport={handleExport}
-      />
-    </div>
+    <DataTable
+      data={rows}
+      columns={columns}
+      pagination={pagination}
+      loading={loading}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onSearch={onSearch}
+      onSort={onSort}
+
+
+      onBulkAction={onBulkAction}
+      onExport={onExport}
+      searchPlaceholder="Search restaurants..."
+      bulkActions={[
+        { key: 'delete', title: 'Delete Selected' },
+        { key: 'approve', title: 'Approve Selected' },
+        { key: 'reject', title: 'Reject Selected' },
+      ]}
+    />
   );
 }

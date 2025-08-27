@@ -133,8 +133,8 @@ export const MikvahFilters: React.FC<MikvahFiltersProps> = ({
               disabled={loading}
             >
               <option value="">All Types</option>
-              <option value="women's">Women's Mikvah</option>
-              <option value="men's">Men's Mikvah</option>
+              <option value="women's">Women&apos;s Mikvah</option>
+              <option value="men's">Men&apos;s Mikvah</option>
               <option value="unisex">Unisex Mikvah</option>
             </select>
           </div>

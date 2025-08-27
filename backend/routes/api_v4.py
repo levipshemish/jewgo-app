@@ -190,8 +190,14 @@ def get_service_dependencies():
 
         return db_manager, cache_manager, config
 
+    except ImportError as e:
+        logger.error(f"Failed to import required modules: {e}")
+        raise DatabaseError("Required modules not available")
+    except ConnectionError as e:
+        logger.error(f"Failed to connect to database: {e}")
+        raise DatabaseError("Database connection failed")
     except Exception as e:
-        logger.error("Failed to get service dependencies", error=str(e))
+        logger.error(f"Failed to get service dependencies: {e}")
         raise DatabaseError("Service dependencies not available")
 
 
@@ -202,6 +208,12 @@ def create_restaurant_service():
         return RestaurantServiceV4(
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
+    except DatabaseError as e:
+        logger.error(f"Database error creating restaurant service: {e}")
+        raise
+    except ImportError as e:
+        logger.error(f"Import error creating restaurant service: {e}")
+        raise DatabaseError("Required modules not available")
     except Exception as e:
         logger.error(f"Failed to create restaurant service: {e}")
         # Fallback: create service directly with database manager
@@ -218,9 +230,15 @@ def create_restaurant_service():
             return RestaurantServiceV4(
                 db_manager=db_manager, cache_manager=cache_manager, config=config
             )
+        except ImportError as fallback_error:
+            logger.error(f"Fallback service creation failed - import error: {fallback_error}")
+            raise DatabaseError("Required modules not available")
+        except ConnectionError as fallback_error:
+            logger.error(f"Fallback service creation failed - connection error: {fallback_error}")
+            raise DatabaseError("Database connection failed")
         except Exception as fallback_error:
             logger.error(f"Fallback service creation also failed: {fallback_error}")
-            raise
+            raise DatabaseError("Service creation failed")
 
 
 def create_review_service():
@@ -255,8 +273,14 @@ def create_marketplace_service():
         else:
             logger.error("Failed to create MarketplaceServiceV4")
         return service
+    except DatabaseError as e:
+        logger.error(f"Database error creating marketplace service: {e}")
+        return None
+    except ImportError as e:
+        logger.error(f"Import error creating marketplace service: {e}")
+        return None
     except Exception as e:
-        logger.error(f"Error creating marketplace service: {str(e)}")
+        logger.error(f"Error creating marketplace service: {e}")
         return None
 
 
@@ -264,8 +288,14 @@ def get_marketplace_service():
     """Get or create a MarketplaceServiceV4 instance."""
     try:
         return create_marketplace_service()
+    except DatabaseError as e:
+        logger.error(f"Database error getting marketplace service: {e}")
+        return None
+    except ImportError as e:
+        logger.error(f"Import error getting marketplace service: {e}")
+        return None
     except Exception as e:
-        logger.error(f"Error getting marketplace service: {str(e)}")
+        logger.error(f"Error getting marketplace service: {e}")
         return None
 
 
@@ -461,6 +491,24 @@ def create_restaurant():
     try:
         data = request.get_json(silent=True) or {}
         logger.info("Received restaurant creation request", data=data)
+        
+        # Debug business_images field
+        if 'business_images' in data:
+            logger.info("business_images field details", 
+                       type=type(data['business_images']), 
+                       value=data['business_images'])
+            
+            # Check if it's a JSON string that needs to be parsed
+            if isinstance(data['business_images'], str):
+                try:
+                    import json
+                    parsed_images = json.loads(data['business_images'])
+                    logger.info("Parsed business_images from JSON string", 
+                               parsed_type=type(parsed_images), 
+                               parsed_value=parsed_images)
+                    data['business_images'] = parsed_images
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning("Failed to parse business_images as JSON", error=str(e))
 
         service = create_restaurant_service()
         logger.info("Restaurant service created successfully")
@@ -1161,100 +1209,9 @@ def get_marketplace_categories():
         # Check if marketplace service is available
         if not MarketplaceServiceV4:
             logger.warning("MarketplaceServiceV4 not available, returning fallback categories")
-            fallback_categories = [
-                {
-                    "id": 1,
-                    "name": "Baked Goods",
-                    "slug": "baked-goods",
-                    "sort_order": 1,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 1,
-                            "name": "Bread",
-                            "slug": "bread",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 2,
-                            "name": "Pastries",
-                            "slug": "pastries",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                },
-                {
-                    "id": 2,
-                    "name": "Accessories",
-                    "slug": "accessories",
-                    "sort_order": 2,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 3,
-                            "name": "Jewelry",
-                            "slug": "jewelry",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 4,
-                            "name": "Clothing",
-                            "slug": "clothing",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                },
-                {
-                    "id": 3,
-                    "name": "Vehicles",
-                    "slug": "vehicles",
-                    "sort_order": 3,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 5,
-                            "name": "Cars",
-                            "slug": "cars",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 6,
-                            "name": "Motorcycles",
-                            "slug": "motorcycles",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                },
-                {
-                    "id": 4,
-                    "name": "Appliances",
-                    "slug": "appliances",
-                    "sort_order": 4,
-                    "active": True,
-                    "subcategories": [
-                        {
-                            "id": 7,
-                            "name": "Kitchen",
-                            "slug": "kitchen",
-                            "sort_order": 1,
-                            "active": True,
-                        },
-                        {
-                            "id": 8,
-                            "name": "Laundry",
-                            "slug": "laundry",
-                            "sort_order": 2,
-                            "active": True,
-                        }
-                    ]
-                }
-            ]
+            # Use config manager instead of hardcoded values
+            config = ConfigManager()
+            fallback_categories = config.get_marketplace_categories()
             return success_response(fallback_categories)
         
         # Try to use the marketplace service if available
@@ -1536,20 +1493,10 @@ if api_v4 is not None:
 
 
 @safe_route("/admin/run-marketplace-migration", methods=["POST"])
+@require_admin_auth
 def run_marketplace_migration():
     """Temporary admin endpoint to run marketplace migration."""
     try:
-        # Check for admin token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Unauthorized"}), 401
-        
-        token = auth_header.split(" ")[1]
-        admin_token = os.getenv("ADMIN_TOKEN")
-        
-        if not admin_token or token != admin_token:
-            return jsonify({"error": "Invalid admin token"}), 401
-        
         # Import and run the migration
         from database.migrations.create_marketplace_unified import run_migration
         

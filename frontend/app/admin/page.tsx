@@ -6,8 +6,6 @@ import {
   MessageSquare, 
   Users, 
   Image, 
-  MapPin, 
-  Star, 
   AlertTriangle,
   TrendingUp,
   Activity,

@@ -1,197 +1,254 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { User as UserIcon, Mail, Calendar, Shield, Edit, Trash2, Eye, Activity } from 'lucide-react';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
-interface UserData {
+interface User {
   id: string;
   email: string;
-  name?: string;
-  image?: string;
-  provider?: string;
-  createdAt: string;
-  updatedAt: string;
-  isSuperAdmin: boolean;
+  name: string;
+  issuperadmin: boolean;
+  emailverified: string;
+  createdat: string;
+  updatedat: string;
 }
 
-interface Props {
-  initialData: UserData[];
-  initialPagination: { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
-  initialSearch?: string;
-  initialSortBy?: string;
-  initialSortOrder?: 'asc' | 'desc';
+interface UserDatabaseClientProps {
+  initialData: User[];
+  initialPagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  initialSearch: string;
+  initialSortBy: string;
+  initialSortOrder: 'asc' | 'desc';
 }
 
-export default function UserDatabaseClient({ initialData, initialPagination, initialSearch = '', initialSortBy = '', initialSortOrder = 'desc' }: Props) {
-  const searchParams = useSearchParams();
+export default function UserDatabaseClient({
+  initialData,
+  initialPagination,
+  initialSearch,
+  initialSortBy,
+  initialSortOrder,
+}: UserDatabaseClientProps) {
   const router = useRouter();
-  const [users, setUsers] = useState<UserData[]>(initialData);
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const { token: csrf } = useAdminCsrf();
+  const { showSuccess, showError } = useToast();
+
+  const [rows, setRows] = useState<User[]>(initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [sortKey, setSortKey] = useState(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  const fetchUsers = async () => {
+  // Controlled state derived from URL params
+  const page = Number(searchParams.get('page') || '1');
+  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const search = searchParams.get('search') || '';
+  const sortBy = searchParams.get('sortBy') || 'createdat';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+
+  // Fetch server data based on URL params
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const params = new URLSearchParams();
-      params.set('page', pagination.page.toString());
-      params.set('pageSize', pagination.pageSize.toString());
-      if (searchQuery) {params.set('search', searchQuery);}
-      if (sortKey) {params.set('sortBy', sortKey);}
-      if (sortOrder) {params.set('sortOrder', sortOrder);}
-
-      const response = await fetch(`/api/admin/users?${params.toString()}`, {
-        headers: { 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-      });
-      if (!response.ok) {throw new Error('Failed to fetch users');}
-      const data = await response.json();
-      setUsers(data.data || []);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error('Error fetching users:', error);
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' });
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
+      const json = await res.json();
+      setRows(json.data || []);
+      setPagination(json.pagination);
+    } catch (e) {
+      console.error('[ADMIN] load users error:', e);
+      showError('Failed to load users');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+    fetchData();
+  }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('page', page.toString());
-    router.push(`/admin/database/users?${params.toString()}`);
+  const onPageChange = (nextPage: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('page', String(nextPage));
+    router.push(`/admin/database/users?${p.toString()}`);
   };
 
-  const handlePageSizeChange = (pageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('pageSize', pageSize.toString());
-    params.set('page', '1');
-    router.push(`/admin/database/users?${params.toString()}`);
+  const onPageSizeChange = (nextSize: number) => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('pageSize', String(nextSize));
+    p.set('page', '1');
+    router.push(`/admin/database/users?${p.toString()}`);
   };
 
-  const handleSearchQueryChange = (query: string) => setSearchQuery(query);
-  const handleSearch = (query: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {params.set('search', query);} else {params.delete('search');}
-    params.set('page', '1');
-    router.push(`/admin/database/users?${params.toString()}`);
+  const onSearch = (query: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (query) { p.set('search', query); } else { p.delete('search'); }
+    p.set('page', '1');
+    router.push(`/admin/database/users?${p.toString()}`);
   };
 
-  const handleSortChange = (key: string, order: 'asc' | 'desc') => { setSortKey(key); setSortOrder(order); };
-  const handleSort = (key: string, order: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sortBy', key);
-    params.set('sortOrder', order);
-    router.push(`/admin/database/users?${params.toString()}`);
+  const onSort = (key: string, order: 'asc' | 'desc') => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.set('sortBy', key);
+    p.set('sortOrder', order);
+    router.push(`/admin/database/users?${p.toString()}`);
   };
 
-  const handleExport = async () => {
+  const onEdit = async (id: string, data: Partial<User>) => {
     try {
-      const payload: any = {};
-      if (searchQuery) {payload.search = searchQuery;}
-      if (sortKey) {payload.sortBy = sortKey;}
-      if (sortOrder) {payload.sortOrder = sortOrder;}
-      const response = await fetch(`/api/admin/users/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': window.__CSRF_TOKEN__ || '' },
-        body: JSON.stringify(payload),
+      const res = await fetch(`/api/admin/users`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ id, ...data }),
       });
-      if (response.ok) {
-        const blob = await response.blob();
+      
+      if (res.ok) {
+        showSuccess('User updated successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to update user');
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      showError('Failed to update user');
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/users?id=${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        showSuccess('User deleted successfully');
+        fetchData(); // Refresh data
+      } else {
+        showError('Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      showError('Failed to delete user');
+    }
+  };
+
+  const onBulkAction = async (action: string, ids: string[]) => {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/users/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrf || '',
+        },
+        body: JSON.stringify({ action, ids }),
+      });
+      
+      if (res.ok) {
+        showSuccess(`${action} completed for ${ids.length} users`);
+        fetchData(); // Refresh data
+      } else {
+        showError(`Failed to ${action} users`);
+      }
+    } catch (error) {
+      console.error('Bulk action error:', error);
+      showError(`Failed to ${action} users`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (search) { params.set('search', search); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
+      
+      const res = await fetch(`/api/admin/users/export?${params.toString()}`, {
+        headers: {
+          'x-csrf-token': csrf || '',
+        },
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        showSuccess('Export completed successfully');
+      } else {
+        showError('Failed to export users');
       }
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export error:', error);
+      showError('Failed to export users');
     }
   };
 
-  const columns: Column<UserData>[] = [
-    {
-      key: 'name',
-      title: 'User',
-      render: (value, row) => (
-        <div className="flex items-center space-x-3">
-          {row.image ? (
-            <img src={row.image} alt={value || row.email} className="h-8 w-8 rounded-full" />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <UserIcon className="h-4 w-4 text-gray-500" />
-            </div>
-          )}
-          <div>
-            <div className="font-medium text-gray-900">{value || 'No Name'}</div>
-            <div className="text-sm text-gray-500">{row.email}</div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'provider',
-      title: 'Provider',
-      render: (value) => (
-        <div className="flex items-center space-x-2">
-          <Shield className="h-4 w-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-900 capitalize">{value || 'Unknown'}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'createdAt',
-      title: 'Joined',
-      sortable: true,
-      render: (value) => (
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-500">{new Date(value).toLocaleDateString()}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'updatedAt',
-      title: 'Last Active',
-      sortable: true,
-      render: (value) => (
-        <div className="flex items-center space-x-2">
-          <Activity className="h-4 w-4 text-gray-400" />
-          <span className="text-sm text-gray-500">{new Date(value).toLocaleDateString()}</span>
-        </div>
-      ),
-    },
+  const columns: Column<User>[] = [
+    { key: 'id', title: 'ID', sortable: true },
+    { key: 'email', title: 'Email', sortable: true },
+    { key: 'name', title: 'Name', sortable: true },
+    { key: 'issuperadmin', title: 'Super Admin', sortable: true },
+    { key: 'emailverified', title: 'Email Verified', sortable: true },
+    { key: 'createdat', title: 'Created', sortable: true },
   ];
 
   return (
-          <DataTable
-        data={users}
+    <DataTable
+      data={rows}
       columns={columns}
-      loading={loading}
       pagination={pagination}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-      onSort={handleSort}
-      onSearch={handleSearch}
-      onExport={handleExport}
-      exportHint="Exports up to 10,000 rows"
-      searchPlaceholder="Search users by name or email..."
-      selectable={true}
-      searchQuery={searchQuery}
-      sortKey={sortKey}
-      sortOrder={sortOrder}
-      onSearchQueryChange={handleSearchQueryChange}
-      onSortChange={handleSortChange}
+      loading={loading}
+      onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
+      onSearch={onSearch}
+      onSort={onSort}
+
+
+      onBulkAction={onBulkAction}
+      onExport={onExport}
+      searchPlaceholder="Search users..."
+      bulkActions={[
+        { title: 'Delete Selected', key: 'delete' },
+        { title: 'Make Super Admin', key: 'make_super_admin' },
+        { title: 'Remove Super Admin', key: 'remove_super_admin' },
+      ]}
     />
   );
 }

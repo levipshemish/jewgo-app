@@ -108,11 +108,13 @@ export const restaurantFormSchema = z.object({
   custom_certifying_agency: z.string().max(100, 'Custom certifying agency must be 100 characters or less').optional().or(z.literal('')),
   is_cholov_yisroel: z.boolean().optional().default(false),
   is_pas_yisroel: z.boolean().optional().default(false),
+  cholov_stam: z.boolean().optional().default(false),
   
   // Step 3: Business Details
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
   hours_of_operation: z.string().min(1, 'Hours of operation are required').max(1000, 'Hours of operation must be 1000 characters or less'),
+  hours_open: z.string().optional().or(z.literal('')),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,
@@ -139,12 +141,15 @@ export const restaurantFormSchema = z.object({
   preferred_contact_method: z.enum(['email', 'phone', 'text', 'any']).optional().default('any'),
   preferred_contact_time: z.enum(['morning', 'afternoon', 'evening']).optional().default('afternoon'),
   contact_notes: z.string().max(1000, 'Contact notes must be 1000 characters or less').optional().or(z.literal('')),
+  
+  // User tracking
+  user_email: z.string().email().optional().or(z.literal('')),
 }).refine((data) => {
   // Conditional validation for kosher categories
   if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === undefined) {
     return false;
   }
-  if (['meat', 'pareve', 'dairy'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
+  if (['meat', 'pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
     return false;
   }
   return true;
@@ -198,12 +203,13 @@ export const step2Schema = z.object({
   custom_certifying_agency: z.string().max(100, 'Custom certifying agency must be 100 characters or less').optional().or(z.literal('')),
   is_cholov_yisroel: z.boolean().optional(),
   is_pas_yisroel: z.boolean().optional(),
+  cholov_stam: z.boolean().optional(),
 }).refine((data) => {
   // Conditional validation for kosher categories
   if (data.kosher_category === 'dairy' && data.is_cholov_yisroel === undefined) {
     return false;
   }
-  if (['meat', 'pareve', 'dairy'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
+  if (['meat', 'pareve'].includes(data.kosher_category) && data.is_pas_yisroel === undefined) {
     return false;
   }
   return true;
@@ -225,6 +231,7 @@ export const step3Schema = z.object({
   short_description: z.string().min(1, 'Short description is required').max(80, 'Short description must be 80 characters or less'),
   description: z.string().max(2000, 'Description must be 2000 characters or less').optional().or(z.literal('')),
   hours_of_operation: z.string().min(1, 'Hours of operation are required').max(1000, 'Hours of operation must be 1000 characters or less'),
+  hours_open: z.string().optional().or(z.literal('')),
   google_listing_url: urlSchema,
   instagram_link: urlSchema,
   facebook_link: urlSchema,
@@ -321,11 +328,13 @@ export const defaultFormData: RestaurantFormData = {
   custom_certifying_agency: '',
   is_cholov_yisroel: false,
   is_pas_yisroel: false,
+  cholov_stam: false,
   
   // Step 3
   short_description: '',
   description: '',
   hours_of_operation: '',
+  hours_open: '',
   google_listing_url: '',
   instagram_link: '',
   facebook_link: '',
@@ -345,4 +354,5 @@ export const defaultFormData: RestaurantFormData = {
   preferred_contact_method: 'any',
   preferred_contact_time: 'afternoon',
   contact_notes: '',
+  user_email: '',
 };

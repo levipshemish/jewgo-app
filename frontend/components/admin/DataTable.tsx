@@ -18,7 +18,7 @@ import {
 export interface Column<T> {
   key: string;
   title: string;
-  render?: (value: any, row: T) => React.ReactNode;
+  render?: (key: any, row: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
@@ -43,12 +43,12 @@ export interface DataTableProps<T> {
   onSearch?: (query: string) => void;
   onExport?: () => void;
   onBulkAction?: (action: string, selectedIds: string[]) => void;
-  bulkActions?: { key: string; label: string; variant?: 'default' | 'destructive' | 'success' }[];
+  bulkActions?: { key: string; title: string; variant?: 'default' | 'destructive' | 'success' }[];
   searchPlaceholder?: string;
   loading?: boolean;
   selectable?: boolean;
   actions?: {
-    label: string;
+    title: string;
     icon: React.ComponentType<{ className?: string }>;
     onClick: (row: T) => void;
     variant?: 'default' | 'destructive';
@@ -253,7 +253,7 @@ export default function DataTable<T extends { id: string | number }>({
                 }`}
               >
                 {ba.key === 'delete' ? <Trash2 className="h-4 w-4" /> : null}
-                <span>{ba.label}</span>
+                <span>{ba.title}</span>
               </button>
             ))
           ) : (
@@ -393,7 +393,7 @@ export default function DataTable<T extends { id: string | number }>({
                             }`}
                           >
                             <action.icon className="h-3 w-3" />
-                            <span>{action.label}</span>
+                            <span>{action.title}</span>
                           </button>
                         ))}
                       </div>

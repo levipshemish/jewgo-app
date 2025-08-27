@@ -476,6 +476,24 @@ def create_app():
         logger.error(f"Error registering original API v4 routes: {e}")
         logger.error(traceback.format_exc())
     
+    # Register user API routes
+    try:
+        logger.info("Attempting to import user API routes...")
+        from routes.user_api import user_api
+        logger.info(f"User API blueprint imported: {user_api}")
+        
+        if user_api is not None:
+            app.register_blueprint(user_api)
+            logger.info("User API routes registered successfully")
+        else:
+            logger.warning("User API blueprint is None - not registering routes")
+            
+    except ImportError as e:
+        logger.warning(f"Could not import user API routes: {e}")
+    except Exception as e:
+        logger.error(f"Error registering user API routes: {e}")
+        logger.error(traceback.format_exc())
+    
     # Add a simple test endpoint directly in app_factory to verify routing works
     @app.route('/api/v4/direct-test', methods=['GET'])
     def api_v4_direct_test():

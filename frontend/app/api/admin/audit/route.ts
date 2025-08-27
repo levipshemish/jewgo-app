@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,6 +69,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting for export operations
+    const rateLimitResult = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResult) {
+      return rateLimitResult;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token via header only
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -94,8 +101,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (format === 'csv') {
-      const csvContent = await exportAuditLogs(options);
-      return new NextResponse(csvContent, {
+      const result = await exportAuditLogs(options);
+
+      // Use streaming for large datasets
+      if (result.stream) {
+        return new NextResponse(result.stream, {
+          headers: {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,
+            'Transfer-Encoding': 'chunked',
+          },
+        });
+      }
+
+      return new NextResponse(result.csvContent, {
         headers: {
           'Content-Type': 'text/csv',
           'Content-Disposition': `attachment; filename="audit_logs_${new Date().toISOString().split('T')[0]}.csv"`,

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminLogger } from '@/lib/utils/logger';
+import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction } from '@/lib/admin/audit';
+import { logAdminAction, ENTITY_TYPES, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
@@ -64,8 +65,9 @@ export async function GET(request: NextRequest) {
     );
 
     // Log the action
-    await logAdminAction(adminUser, 'review_list_view', 'review', {
+    await logAdminAction(adminUser, 'review_list_view', ENTITY_TYPES.REVIEW, {
       metadata: { page, pageSize, search, filters },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.REVIEW,
     });
 
     return NextResponse.json(result);
@@ -80,6 +82,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -94,7 +102,7 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -144,6 +152,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -158,7 +172,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Parse request body
@@ -205,6 +219,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -219,7 +239,7 @@ export async function DELETE(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
     // Get review ID from query params
@@ -228,6 +248,16 @@ export async function DELETE(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+    }
+
+    // Check if review exists before deleting
+    const existingReview = await prisma.review.findUnique({
+      where: { id },
+      select: { id: true, title: true, restaurant_id: true }
+    });
+
+    if (!existingReview) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
     // Delete review (hard delete)

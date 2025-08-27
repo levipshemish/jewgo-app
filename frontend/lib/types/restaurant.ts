@@ -1,5 +1,5 @@
 // Kosher category enumeration
-export type KosherCategory = 'Meat' | 'Dairy' | 'Pareve' | 'Fish' | 'Unknown';
+export type KosherCategory = 'Meat' | 'Dairy' | 'Pareve' | 'Unknown';
 
 // Restaurant status enumeration
 export type RestaurantStatus = 'open' | 'closed' | 'unknown';

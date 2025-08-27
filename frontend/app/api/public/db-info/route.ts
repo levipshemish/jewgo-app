@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       for (const table of tables) {
         try {
           const count = await prisma.$queryRaw<{ count: bigint }[]>(
-            Prisma.sql`SELECT COUNT(*)::bigint as count FROM ${Prisma.raw('"' + table.table_name + '"')}`
+            Prisma.sql`SELECT COUNT(*)::bigint as count FROM ${Prisma.raw(`"${table.table_name}"`)}`
           );
           tableInfo.push({
             name: table.table_name,

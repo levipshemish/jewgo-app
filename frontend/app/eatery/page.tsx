@@ -322,7 +322,7 @@ function EateryPageContent() {
   }, [activeFilters.nearMe, clearFilter]);
 
   // Fetch restaurants with mobile optimization and distance sorting
-  const fetchRestaurantsData = useCallback(async (filters?: Filters, resetPage: boolean = true) => {
+  const fetchRestaurantsData = useCallback(async (filters?: Filters) => {
     // Prevent API calls when automatically setting location filters
     if (isSettingLocationFilters) {
       return;
@@ -425,7 +425,7 @@ function EateryPageContent() {
     if (currentPage === 1) {
       // If we're on page 1, use the regular fetchRestaurantsData
       if (typeof fetchRestaurantsData === 'function') {
-        await fetchRestaurantsData(activeFilters, false);
+        await fetchRestaurantsData(activeFilters);
       }
     } else {
       // If we're on a different page, fetch that specific page
