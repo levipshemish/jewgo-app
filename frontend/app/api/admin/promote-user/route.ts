@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check permissions - only super admins can promote users
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_MANAGEMENT)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.USER_EDIT)) {
       adminLogger.warn('Insufficient permissions for user promotion', { 
         userId: adminUser.id,
         permissions: adminUser.permissions 
