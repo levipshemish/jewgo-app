@@ -1,7 +1,7 @@
 import KosherPlacesDatabaseClient from '@/components/admin/KosherPlacesDatabaseClient';
 
-export default async function KosherPlaceDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  const params = searchParams;
+export default async function KosherPlaceDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';

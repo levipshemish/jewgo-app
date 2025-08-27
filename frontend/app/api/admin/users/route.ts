@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     // Reject unknown/unsupported filters to prevent Prisma errors
     const allowedParams = new Set(['page', 'pageSize', 'search', 'sortBy', 'sortOrder']);
     const unknownParams: string[] = [];
-    for (const key of searchParams.keys()) {
+    for (const key of Array.from(searchParams.keys())) {
       if (!allowedParams.has(key)) unknownParams.push(key);
     }
     if (unknownParams.length > 0) {
