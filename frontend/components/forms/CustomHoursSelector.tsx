@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
+import { appLogger } from '@/lib/utils/logger';
 
 interface DayHours {
   day: string;
@@ -58,21 +59,21 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
   // Component lifecycle (minimal logging)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Component mounted, testMode:', testMode);
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector component mounted', { testMode });
     }
     
     return () => {
-      if (process.env.NODE_ENV === 'development' && testMode) {
-        console.log('[CustomHoursSelector] Component unmounting');
+      if (testMode) {
+        appLogger.debug('CustomHoursSelector component unmounting');
       }
     };
   }, [testMode]);
 
   // Initialize or parse existing hours
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Value changed:', value);
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector value changed', { value });
     }
     // Prevent reprocessing the same incoming value repeatedly
     if (prevValueRef.current === value) {return;}
@@ -81,8 +82,8 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
     if (value && value !== 'custom') {
       // Parse existing hours string
       const parsed = parseHoursString(value);
-      if (process.env.NODE_ENV === 'development' && testMode) {
-        console.log('[CustomHoursSelector] Parsed hours:', parsed);
+      if (testMode) {
+        appLogger.debug('CustomHoursSelector parsed hours', { parsed });
       }
       // Only update state if it actually differs in content
       const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
@@ -103,8 +104,8 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
       const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
       const newFormatted = formatHoursString(defaultHours);
       if (currentFormatted !== newFormatted) {
-        if (process.env.NODE_ENV === 'development' && testMode) {
-          console.log('[CustomHoursSelector] Setting default hours:', defaultHours);
+        if (testMode) {
+          appLogger.debug('CustomHoursSelector setting default hours', { defaultHours });
         }
         setDaysHours(defaultHours);
       }
@@ -117,8 +118,8 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
       const hoursString = formatHoursString(daysHours);
       // Only emit when string actually changes to avoid render loops
       if (lastEmittedRef.current !== hoursString) {
-        if (process.env.NODE_ENV === 'development' && testMode) {
-          console.log('[CustomHoursSelector] Updating parent with hours:', hoursString);
+        if (testMode) {
+          appLogger.debug('CustomHoursSelector updating parent with hours', { hoursString });
         }
         lastEmittedRef.current = hoursString;
         onChange(hoursString);
@@ -128,11 +129,11 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
   // Global event listeners for debugging (only in test mode)
   useEffect(() => {
-    if (!testMode || process.env.NODE_ENV !== 'development') {return;}
+    if (!testMode) {return;}
 
     const handleGlobalClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      console.log('[CustomHoursSelector] Global click detected:', {
+      appLogger.debug('CustomHoursSelector global click detected', {
         target: target.tagName,
         className: target.className,
         id: target.id,
@@ -143,7 +144,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
     const handleGlobalFocus = (event: FocusEvent) => {
       const target = event.target as HTMLElement;
-      console.log('[CustomHoursSelector] Global focus detected:', {
+      appLogger.debug('CustomHoursSelector global focus detected', {
         target: target.tagName,
         className: target.className,
         id: target.id,
@@ -153,7 +154,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
     const handleGlobalBlur = (event: FocusEvent) => {
       const target = event.target as HTMLElement;
-      console.log('[CustomHoursSelector] Global blur detected:', {
+      appLogger.debug('CustomHoursSelector global blur detected', {
         target: target.tagName,
         className: target.className,
         id: target.id,
@@ -163,7 +164,7 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
     const handleGlobalMouseDown = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      console.log('[CustomHoursSelector] Global mousedown detected:', {
+      appLogger.debug('CustomHoursSelector global mousedown detected', {
         target: target.tagName,
         className: target.className,
         id: target.id,
@@ -233,8 +234,8 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
   };
 
   const updateDayHours = (index: number, updates: Partial<DayHours>) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Updating day hours:', { index, updates });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector updating day hours', { index, updates });
     }
     const updated = [...daysHours];
     updated[index] = { ...updated[index], ...updates };
@@ -242,15 +243,15 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
   };
 
   const toggleDayClosed = (index: number) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Toggling day closed:', index);
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector toggling day closed', { index });
     }
     updateDayHours(index, { isClosed: !daysHours[index].isClosed });
   };
 
   const setAllDays = (open: string, close: string, isClosed: boolean) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Setting all days:', { open, close, isClosed });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector setting all days', { open, close, isClosed });
     }
     const updated = daysHours.map(day => ({
       ...day,
@@ -262,33 +263,33 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
   };
 
   const handleSelectChange = (index: number, field: 'open' | 'close', value: string) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Select change:', { index, field, value });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector select change', { index, field, value });
     }
     updateDayHours(index, { [field]: value });
   };
 
   const handleSelectFocus = (index: number, field: string) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Select focus:', { index, field });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector select focus', { index, field });
     }
   };
 
   const handleSelectBlur = (index: number, field: string) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Select blur:', { index, field });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector select blur', { index, field });
     }
   };
 
   const handleSelectClick = (index: number, field: string) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Select click:', { index, field });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector select click', { index, field });
     }
   };
 
   const handleShabbatOffsetChange = (index: number, offset: number) => {
-    if (process.env.NODE_ENV === 'development' && testMode) {
-      console.log('[CustomHoursSelector] Shabbat offset change:', { index, offset });
+    if (testMode) {
+      appLogger.debug('CustomHoursSelector shabbat offset change', { index, offset });
     }
     updateDayHours(index, { shabbatOffset: offset });
   };

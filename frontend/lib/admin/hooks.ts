@@ -29,11 +29,15 @@ export function useAdminCsrf(): string {
             (window as any).__CSRF_TOKEN__ = t;
             if (mounted) { setToken(t); }
           }
-        } catch {}
+        } catch {
+          // Silent failure; UI should handle missing token state
+        }
       }, 50 * 60 * 1000);
       return () => {
         mounted = false;
-        if (refreshTimer) clearInterval(refreshTimer);
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
       };
     }
 
@@ -45,7 +49,9 @@ export function useAdminCsrf(): string {
           const json = await res.json();
           const t = json?.token || '';
           (window as any).__CSRF_TOKEN__ = t;
-          if (mounted) setToken(t);
+          if (mounted) {
+            setToken(t);
+          }
           // Schedule periodic refresh
           refreshTimer = setInterval(async () => {
             try {
@@ -56,7 +62,9 @@ export function useAdminCsrf(): string {
                 (window as any).__CSRF_TOKEN__ = t2;
                 if (mounted) { setToken(t2); }
               }
-            } catch {}
+            } catch {
+              // Silent failure; UI should handle missing token state
+            }
           }, 50 * 60 * 1000);
         } else {
           // Silent failure; UI should handle missing token state

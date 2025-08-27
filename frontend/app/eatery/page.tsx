@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchRestaurants } from '@/lib/api/restaurants';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
@@ -37,7 +36,6 @@ function EateryPageContent() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true); // initial load only
-  const [refreshing, setRefreshing] = useState(false); // background refresh state
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -80,7 +78,6 @@ function EateryPageContent() {
   // URL-backed filter state
   const {
     activeFilters,
-    hasActiveFilters,
     setFilter,
     toggleFilter,
     clearFilter,
@@ -201,22 +198,12 @@ function EateryPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
-    toggleFilter(filterType);
-  }, [toggleFilter]);
-
-  const handleClearAllFilters = useCallback(() => {
-    clearAllFilters();
-  }, [clearAllFilters]);
-
   // Handle search functionality
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
-    startTransition(() => {
-      fetchRestaurantsData();
-    });
+    fetchRestaurantsData();
   }, [setSearchQuery, setCurrentPage]);
 
   // Precompute stable card data to avoid re-creating objects every render
@@ -282,14 +269,7 @@ function EateryPageContent() {
 
 
 
-  // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
-    // Use the context's requestLocation
-    requestLocation();
-    
-    // Update filters when location is available (this will be handled by useEffect below)
-    // Send location update via WebSocket when location changes (this will be handled by useEffect below)
-  };
+
 
 
 
@@ -470,7 +450,7 @@ function EateryPageContent() {
       }
       params.set('mobile_optimized', 'true');
 
-      console.log('🔍 FETCHING MORE RESTAURANTS:', {
+      appLogger.debug('Fetching more restaurants', {
         nextPage,
         url: `/api/restaurants-with-images?${params.toString()}`,
         mobileOptimizedItemsPerPage

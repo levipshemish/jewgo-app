@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
 import { googlePlacesAPI } from '@/lib/google/places';
+import { appLogger } from '@/lib/utils/logger';
 
 interface AddressAutofillProps {
   value: string;
@@ -49,20 +50,16 @@ export default function AddressAutofill({
   useEffect(() => {
     const initializeAPI = async () => {
       try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AddressAutofill] Initializing Google Places API...');
-        }
+        appLogger.debug('Initializing Google Places API');
         await googlePlacesAPI.initialize();
         setApiError(null);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AddressAutofill] Google Places API initialized successfully');
-          
-          // Test the API to see what's available
-          const testResult = await googlePlacesAPI.testAPI();
-          console.log('[AddressAutofill] API test result:', testResult);
-        }
+        appLogger.debug('Google Places API initialized successfully');
+        
+        // Test the API to see what's available
+        const testResult = await googlePlacesAPI.testAPI();
+        appLogger.debug('API test result', { testResult });
       } catch (error) {
-        console.error('Failed to initialize Google Places API:', error);
+        appLogger.error('Failed to initialize Google Places API', { error: String(error) });
         setApiError('Failed to initialize address autocomplete. Please check your internet connection and try again.');
       }
     };
@@ -76,12 +73,10 @@ export default function AddressAutofill({
       return;
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[AddressAutofill] Getting suggestions for input:', input);
-    }
+    appLogger.debug('Getting suggestions for input', { input });
 
     if (apiError) {
-      console.warn('Google Places API not available:', apiError);
+      appLogger.warn('Google Places API not available', { apiError });
       return;
     }
 
@@ -94,21 +89,19 @@ export default function AddressAutofill({
         country: 'us'
       });
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AddressAutofill] Predictions received:', {
-          count: predictions.length,
-          predictions: predictions.map(p => ({
-            description: p.description,
-            place_id: p.place_id,
-            place_id_type: typeof p.place_id,
-            place_id_length: p.place_id?.length
-          }))
-        });
-      }
+      appLogger.debug('Predictions received', {
+        count: predictions.length,
+        predictions: predictions.map(p => ({
+          description: p.description,
+          place_id: p.place_id,
+          place_id_type: typeof p.place_id,
+          place_id_length: p.place_id?.length
+        }))
+      });
       
       setSuggestions(predictions);
     } catch (error) {
-      console.error('Error fetching address suggestions:', error);
+      appLogger.error('Error fetching address suggestions', { error: String(error) });
       setSuggestions([]);
       setApiError('Failed to fetch address suggestions');
     } finally {
@@ -133,31 +126,27 @@ export default function AddressAutofill({
 
   const handleSuggestionClick = async (suggestion: PlaceResult) => {
     if (apiError) {
-      console.warn('Google Places API not available:', apiError);
+      appLogger.warn('Google Places API not available', { apiError });
       return;
     }
 
     // Debug logging for suggestion object
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[AddressAutofill] Suggestion clicked:', {
-        suggestion,
-        place_id: suggestion.place_id,
-        place_id_type: typeof suggestion.place_id,
-        place_id_length: suggestion.place_id?.length
-      });
-    }
+    appLogger.debug('Suggestion clicked', {
+      suggestion,
+      place_id: suggestion.place_id,
+      place_id_type: typeof suggestion.place_id,
+      place_id_length: suggestion.place_id?.length
+    });
 
     // Validate that suggestion has a valid place_id
     if (!suggestion.place_id || typeof suggestion.place_id !== 'string' || suggestion.place_id.trim() === '') {
-      console.error('Invalid place_id in suggestion:', suggestion);
+      appLogger.error('Invalid place_id in suggestion', { suggestion });
       setApiError('Invalid address selection');
       return;
     }
 
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AddressAutofill] Getting place details for place_id:', suggestion.place_id);
-      }
+      appLogger.debug('Getting place details for place_id', { place_id: suggestion.place_id });
 
       const placeDetails = await googlePlacesAPI.getPlaceDetails(suggestion.place_id, [
         'name',
@@ -166,32 +155,27 @@ export default function AddressAutofill({
         'geometry'
       ]);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AddressAutofill] Place details received:', placeDetails);
-        console.log('[AddressAutofill] Place details keys:', Object.keys(placeDetails || {}));
-        console.log('[AddressAutofill] formatted_address field:', placeDetails?.formatted_address);
-        console.log('[AddressAutofill] formattedAddress field:', placeDetails?.formattedAddress);
-        console.log('[AddressAutofill] name field:', placeDetails?.name);
-        console.log('[AddressAutofill] displayName field:', placeDetails?.displayName);
-        console.log('[AddressAutofill] address_components field:', placeDetails?.address_components);
-        console.log('[AddressAutofill] addressComponents field:', placeDetails?.addressComponents);
-        console.log('[AddressAutofill] Full place details:', JSON.stringify(placeDetails, null, 2));
-      }
+      appLogger.debug('Place details received', {
+        placeDetails,
+        keys: Object.keys(placeDetails || {}),
+        formatted_address: placeDetails?.formatted_address,
+        formattedAddress: placeDetails?.formattedAddress,
+        name: placeDetails?.name,
+        displayName: placeDetails?.displayName,
+        address_components: placeDetails?.address_components,
+        addressComponents: placeDetails?.addressComponents
+      });
 
       if (placeDetails) {
         // For modern API, we'll use the formatted_address and parse it
         const formattedAddress = placeDetails.formatted_address || placeDetails.formattedAddress || '';
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AddressAutofill] Formatted address:', formattedAddress);
-        }
+        appLogger.debug('Formatted address', { formattedAddress });
         
         // If we don't have a formatted address from place details, use the suggestion description
         const finalAddress = formattedAddress || suggestion.description || '';
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AddressAutofill] Final address to use:', finalAddress);
-        }
+        appLogger.debug('Final address to use', { finalAddress });
         
         onChange(finalAddress);
         
@@ -204,11 +188,11 @@ export default function AddressAutofill({
 
           if (placeDetails.address_components && Array.isArray(placeDetails.address_components)) {
             // Parse address components for more accurate extraction
-            console.log('[AddressAutofill] Processing address components:', placeDetails.address_components);
+            appLogger.debug('Processing address components', { address_components: placeDetails.address_components });
             
             for (const component of placeDetails.address_components) {
               const types = component.types || [];
-              console.log('[AddressAutofill] Processing component:', { types, long_name: component.long_name, short_name: component.short_name });
+              appLogger.debug('Processing component', { types, long_name: component.long_name, short_name: component.short_name });
               
               if (types.includes('street_number') || types.includes('route')) {
                 street += component.long_name + ' ';
@@ -223,7 +207,7 @@ export default function AddressAutofill({
             
             // Clean up street address
             street = street.trim();
-            console.log('[AddressAutofill] After component processing:', { street, city, state, zipCode });
+            appLogger.debug('After component processing', { street, city, state, zipCode });
           }
 
           // Fallback to parsing formatted address if components didn't work
@@ -239,8 +223,12 @@ export default function AddressAutofill({
             if (addressParts.length >= 3 && (!state || !zipCode)) {
               const stateZip = addressParts[2].split(' ');
               if (stateZip.length >= 2) {
-                if (!state) state = stateZip[0];
-                if (!zipCode) zipCode = stateZip[1];
+                if (!state) {
+                  state = stateZip[0];
+                }
+                if (!zipCode) {
+                  zipCode = stateZip[1];
+                }
               } else if (!state) {
                 state = stateZip[0];
               }
@@ -248,16 +236,14 @@ export default function AddressAutofill({
           }
 
           if (process.env.NODE_ENV === 'development') {
-            console.log('[AddressAutofill] Extracted address components:', { street, city, state, zipCode });
+            appLogger.debug('Extracted address components', { street, city, state, zipCode });
           }
 
           onAddressSelect({ street, city, state, zipCode });
         }
       } else {
         // Fallback: use the suggestion description if place details failed
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AddressAutofill] Place details failed, using suggestion description as fallback');
-        }
+        appLogger.debug('Place details failed, using suggestion description as fallback');
         const fallbackAddress = suggestion.description || '';
         onChange(fallbackAddress);
         
@@ -285,20 +271,16 @@ export default function AddressAutofill({
             }
           }
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[AddressAutofill] Fallback extracted address components:', { street, city, state, zipCode });
-          }
+          appLogger.debug('Fallback extracted address components', { street, city, state, zipCode });
 
           onAddressSelect({ street, city, state, zipCode });
         }
       }
     } catch (error) {
-      console.error('Error getting place details:', error);
+      appLogger.error('Error getting place details', { error: String(error) });
       
       // Fallback: use the suggestion description if place details failed
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AddressAutofill] Place details error, using suggestion description as fallback');
-      }
+      appLogger.debug('Place details error, using suggestion description as fallback');
       const fallbackAddress = suggestion.description || '';
       onChange(fallbackAddress);
       
