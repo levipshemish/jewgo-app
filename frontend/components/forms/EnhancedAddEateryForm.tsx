@@ -1131,7 +1131,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <label className="flex items-center">
                               <input
                                 type="checkbox"
-                                {...field}
                                 checked={field.value}
                                 onChange={(e) => field.onChange(e.target.checked)}
                                 className="mr-3"
@@ -1148,7 +1147,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <label className="flex items-center">
                               <input
                                 type="checkbox"
-                                {...field}
                                 checked={field.value}
                                 onChange={(e) => field.onChange(e.target.checked)}
                                 className="mr-3"
@@ -1165,7 +1163,6 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <label className="flex items-center">
                               <input
                                 type="checkbox"
-                                {...field}
                                 checked={field.value}
                                 onChange={(e) => field.onChange(e.target.checked)}
                                 className="mr-3"
