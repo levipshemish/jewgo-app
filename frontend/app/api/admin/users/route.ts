@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(mappedData);
   } catch (error) {
-    console.error('[ADMIN] User list error:', error);
+    adminLogger.error('User list error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: user }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] User create error:', error);
+    adminLogger.error('User create error', { error: String(error) });
     
     // Handle ZodError with instanceof check for better reliability
     if (error instanceof ZodError) {
@@ -215,7 +216,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ data: user });
   } catch (error) {
-    console.error('[ADMIN] User update error:', error);
+    adminLogger.error('User update error', { error: String(error) });
     
     // Handle ZodError with instanceof check for better reliability
     if (error instanceof ZodError) {
@@ -295,7 +296,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ message: 'User deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] User delete error:', error);
+    adminLogger.error('User delete error', { error: String(error) });
     
     // Handle Prisma not found errors
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {

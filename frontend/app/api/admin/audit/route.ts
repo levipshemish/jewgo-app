@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[ADMIN] Audit log query error:', error);
+    adminLogger.error('Audit log query error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch audit logs' },
       { status: 500 }
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Unsupported format' }, { status: 400 });
   } catch (error) {
-    console.error('[ADMIN] Audit log export error:', error);
+    adminLogger.error('Audit log export error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to export audit logs' },
       { status: 500 }
