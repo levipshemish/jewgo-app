@@ -1,10 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingButton } from '@/components/ui/LoadingStates';
 import { Loader2, UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react';
 
 interface SuperAdminManagerProps {
@@ -57,30 +54,30 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
   };
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="w-full max-w-2xl border rounded-lg p-6 bg-white shadow-sm">
+      <div className="mb-6">
+        <h2 className="flex items-center gap-2 text-xl font-semibold mb-2">
           <Shield className="h-5 w-5" />
           Super Admin Management
-        </CardTitle>
-        <CardDescription>
+        </h2>
+        <p className="text-gray-600">
           Promote users to super admin status. Only existing super admins can perform this action.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </p>
+      </div>
+      <div className="space-y-4">
         {/* Current Super Admins */}
         <div>
           <h3 className="text-sm font-medium mb-2">Current Super Admins ({currentAdmins.length})</h3>
           <div className="space-y-2">
             {currentAdmins.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No super admins found</p>
+              <p className="text-sm text-gray-500">No super admins found</p>
             ) : (
               currentAdmins.map((admin) => (
-                <div key={admin.id} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                <div key={admin.id} className="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <div>
                     <p className="text-sm font-medium">{admin.name || 'No name'}</p>
-                    <p className="text-xs text-muted-foreground">{admin.email}</p>
+                    <p className="text-xs text-gray-500">{admin.email}</p>
                   </div>
                 </div>
               ))
@@ -92,50 +89,49 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
         <div className="space-y-3">
           <h3 className="text-sm font-medium">Promote New Super Admin</h3>
           <div className="flex gap-2">
-            <Input
+            <input
               type="email"
               placeholder="Enter user email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <Button 
-              onClick={handlePromoteUser} 
-              disabled={isLoading || !email.trim()}
+            <LoadingButton
+              onClick={handlePromoteUser}
+              loading={isLoading}
+              disabled={!email.trim()}
               className="flex items-center gap-2"
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="h-4 w-4" />
-              )}
+              <UserPlus className="h-4 w-4" />
               Promote
-            </Button>
+            </LoadingButton>
           </div>
         </div>
 
         {/* Messages */}
         {message && (
-          <Alert className={message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+          <div className={`p-3 rounded-md border flex items-center gap-2 ${
+            message.type === 'error' 
+              ? 'border-red-200 bg-red-50 text-red-800' 
+              : 'border-green-200 bg-green-50 text-green-800'
+          }`}>
             {message.type === 'error' ? (
               <XCircle className="h-4 w-4 text-red-600" />
             ) : (
               <CheckCircle className="h-4 w-4 text-green-600" />
             )}
-            <AlertDescription className={message.type === 'error' ? 'text-red-800' : 'text-green-800'}>
-              {message.text}
-            </AlertDescription>
-          </Alert>
+            <span>{message.text}</span>
+          </div>
         )}
 
         {/* Instructions */}
-        <div className="text-xs text-muted-foreground space-y-1">
+        <div className="text-xs text-gray-500 space-y-1">
           <p>• Only existing super admins can promote new super admins</p>
           <p>• The user must already have an account in the system</p>
           <p>• Super admins have full access to all admin features</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
