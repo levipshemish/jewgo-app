@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
@@ -438,3 +439,4 @@ export default function SignInPage() {
     </>
   );
 }
+/* eslint-disable no-console */

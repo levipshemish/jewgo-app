@@ -1,5 +1,7 @@
 # Troubleshooting Guide
 
+Tip: Validate environment and config per `docs/AGENTS.md`. When handing off long/npm commands, follow root `AGENTS.md` guardrails.
+
 ## Table of Contents
 
 1. [General Issues](#general-issues)

@@ -1,5 +1,7 @@
 # Contributing to JewGo
 
+For day-to-day contributor workflow, see `docs/AGENTS.md` (Repository Guidelines). For AI agent guardrails and workflow, see the root `AGENTS.md`.
+
 ## Overview
 
 Thank you for your interest in contributing to JewGo! This guide will help you get started with contributing to the project.

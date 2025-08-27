@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
@@ -71,3 +72,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+/* eslint-disable no-console */

@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600">
-            Welcome back, {adminUser.name || adminUser.email}. Here's an overview of your system.
+            Welcome back, {adminUser.name || adminUser.email}. Here&apos;s an overview of your system.
           </p>
         </div>
 

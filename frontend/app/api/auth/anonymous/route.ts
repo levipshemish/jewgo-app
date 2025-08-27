@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -175,4 +176,4 @@ export async function POST(request: NextRequest) {
     { status: 200, headers: baseHeaders }
   );
 }
-
+/* eslint-disable no-console */

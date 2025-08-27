@@ -10,6 +10,7 @@
 ### 📋 Core Documentation
 - **[README.md](../README.md)** - Project overview and quick start
 - **[AGENTS.md](../AGENTS.md)** - AI agent configuration and rules
+- **[AGENTS.md (Docs)](AGENTS.md)** - Contributor Repository Guidelines
 - **[RULES.md](../RULES.md)** - Development rules and standards
 - **[DEPRECATIONS.md](DEPRECATIONS.md)** - Deprecated code tracking
 

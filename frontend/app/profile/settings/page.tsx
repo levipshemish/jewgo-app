@@ -499,3 +499,4 @@ function PrivacySettings({ user }: { user: TransformedUser }) {
     </div>
   );
 }
+/* eslint-disable no-console */

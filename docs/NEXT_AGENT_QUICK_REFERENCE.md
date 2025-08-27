@@ -1,5 +1,7 @@
 # Next Agent Quick Reference
 
+Anchor docs: Root `AGENTS.md` (agent guardrails/workflow). Contributor guidelines: `docs/AGENTS.md`.
+
 ## 🎯 **MISSION ACCOMPLISHED** ✅
 
 **Status:** API v4 routes are **FULLY WORKING** and production-ready  

@@ -9,6 +9,18 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
+    // Test database connection first
+    try {
+      await prisma.$connect();
+      console.log('[ADMIN] Database connection successful');
+    } catch (dbError) {
+      console.error('[ADMIN] Database connection failed:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        details: process.env.NODE_ENV === 'development' ? String(dbError) : undefined
+      }, { status: 503 });
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -44,6 +56,8 @@ export async function GET(request: NextRequest) {
     if (city) {filters.city = city;}
     if (state) {filters.state = state;}
 
+    console.log('[ADMIN] Fetching restaurants with filters:', { page, pageSize, search, sortBy, sortOrder, status, city, state });
+
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.restaurant,
@@ -54,9 +68,11 @@ export async function GET(request: NextRequest) {
         search,
         filters,
         sortBy,
-        sortOrder,
+        sortOrder: sortOrder as 'asc' | 'desc',
       }
     );
+
+    console.log('[ADMIN] Successfully fetched restaurants:', { count: result.data.length, total: result.pagination.total });
 
     // Log the action
     await logAdminAction(adminUser, 'restaurant_list_view', 'restaurant', {
@@ -66,10 +82,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[ADMIN] Restaurant list error:', error);
+    
+    // Provide more detailed error information in development
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? `Failed to fetch restaurants: ${error instanceof Error ? error.message : String(error)}`
+      : 'Failed to fetch restaurants';
+    
     return NextResponse.json(
-      { error: 'Failed to fetch restaurants' },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
       { status: 500 }
     );
+  } finally {
+    // Always disconnect from database
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('[ADMIN] Error disconnecting from database:', disconnectError);
+    }
   }
 }
 

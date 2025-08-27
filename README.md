@@ -54,6 +54,7 @@ A comprehensive platform for discovering and reviewing kosher restaurants, synag
 - [Admin System](#admin-system)
 - [API Documentation](#api-documentation)
 - [Contributing](#contributing)
+- [Contributor Guide](#contributor-guide)
 - [Troubleshooting](#troubleshooting)
 
 ## ✨ Features
@@ -372,6 +373,11 @@ For detailed admin system documentation, see [Admin Roles Production Setup](docs
 For complete API documentation, see [API Documentation](docs/api/).
 
 ## 🤝 Contributing
+
+### Contributor Guide
+
+- Contributor guidelines: see `docs/AGENTS.md` (Repository Guidelines).
+- Agent operating rules: see `AGENTS.md` (Codex Agent guardrails and workflow).
 
 ### Development Workflow
 

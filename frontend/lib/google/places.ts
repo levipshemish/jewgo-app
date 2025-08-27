@@ -270,6 +270,59 @@ export class ModernGooglePlacesAPI {
           }
         }
       }
+
+      // Try alternative modern API approach - check if AutocompleteSuggestion is directly available
+      if ((window.google.maps.places as any).AutocompleteSuggestion) {
+        try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Trying direct AutocompleteSuggestion access');
+          }
+          
+          const AutocompleteSuggestion = (window.google.maps.places as any).AutocompleteSuggestion;
+          const autocompleteSuggestion = new AutocompleteSuggestion();
+          
+          const request: any = {
+            input,
+            types: options.types || ['establishment', 'geocode'],
+            componentRestrictions: options.country ? { country: options.country } : undefined
+          };
+
+          if (options.location && options.radius) {
+            request.locationBias = {
+              center: options.location,
+              radius: options.radius
+            };
+          }
+
+          // Try both sync and async methods
+          if (typeof autocompleteSuggestion.getPlacePredictionsAsync === 'function') {
+            const result = await autocompleteSuggestion.getPlacePredictionsAsync(request);
+            if (result && result.predictions) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ModernGooglePlacesAPI] Direct access async method worked:', result.predictions.length);
+              }
+              return result.predictions;
+            }
+          } else if (typeof autocompleteSuggestion.getPlacePredictions === 'function') {
+            return new Promise((resolve) => {
+              autocompleteSuggestion.getPlacePredictions(request, (predictions: any[], status: any) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Direct access sync method worked:', predictions.length);
+                  }
+                  resolve(predictions);
+                } else {
+                  resolve([]);
+                }
+              });
+            });
+          }
+        } catch (directError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[ModernGooglePlacesAPI] Direct AutocompleteSuggestion access failed:', directError);
+          }
+        }
+      }
       return new Promise((resolve) => {
         // Debug: log what's available in the Google Maps API
         if (process.env.NODE_ENV === 'development') {
@@ -398,10 +451,18 @@ export class ModernGooglePlacesAPI {
       return null;
     }
 
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ModernGooglePlacesAPI] Getting place details for:', trimmedPlaceId, 'with fields:', fields);
+    }
+
     try {
       // Use the modern Place API
       if ((window.google.maps.places as any).Place) {
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Using modern Place API');
+          }
+          
           const PlaceCtor = (window.google.maps.places as any).Place;
           const place = new PlaceCtor({ id: trimmedPlaceId });
           
@@ -429,9 +490,17 @@ export class ModernGooglePlacesAPI {
             }
           });
           
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Modern fields mapped:', modernFields);
+          }
+          
           // Modern API: fetchFields returns a Promise with requested fields
           const result = await place.fetchFields({ fields: modernFields });
           if (result) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Modern API result:', result);
+            }
+            
             // Map modern field names back to legacy format for compatibility
             const legacyResult = { ...result };
             if (result.displayName) {legacyResult.name = result.displayName;}
@@ -443,6 +512,10 @@ export class ModernGooglePlacesAPI {
             if (result.location) {legacyResult.geometry = result.location;}
             if (result.addressComponents) {legacyResult.address_components = result.addressComponents;}
             
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Legacy result mapped:', legacyResult);
+            }
+            
             return legacyResult;
           }
           return null;
@@ -453,6 +526,10 @@ export class ModernGooglePlacesAPI {
           
           // Try legacy PlacesService as fallback
           try {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Using legacy PlacesService fallback');
+            }
+            
             const dummyDiv = document.createElement('div');
             const placesService = new window.google.maps.places.PlacesService(dummyDiv);
             const request: google.maps.places.PlaceDetailsRequest = {
@@ -463,6 +540,9 @@ export class ModernGooglePlacesAPI {
             const legacyResult = await new Promise((resolve) => {
               placesService.getDetails(request, (result: any, status: any) => {
                 if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('[ModernGooglePlacesAPI] Legacy API result:', result);
+                  }
                   resolve(result);
                 } else {
                   if (process.env.NODE_ENV === 'development') {
@@ -483,7 +563,7 @@ export class ModernGooglePlacesAPI {
         }
       } else {
         if (process.env.NODE_ENV === 'development') {
-          console.log('[ModernGooglePlacesAPI] Modern Place API not available, trying legacy fallback');
+          console.log('[ModernGooglePlacesAPI] Modern Place API not available, using legacy fallback');
         }
         
         // Try legacy PlacesService as fallback
@@ -498,6 +578,9 @@ export class ModernGooglePlacesAPI {
           const legacyResult = await new Promise((resolve) => {
             placesService.getDetails(request, (result: any, status: any) => {
               if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[ModernGooglePlacesAPI] Legacy API result:', result);
+                }
                 resolve(result);
               } else {
                 if (process.env.NODE_ENV === 'development') {

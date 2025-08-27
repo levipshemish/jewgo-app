@@ -1,5 +1,7 @@
 # Development Workflow - Global Rule
 
+Quick links: Contributor guidelines live in `docs/AGENTS.md`. Agent guardrails/workflow live in the root `AGENTS.md`.
+
 ## 🚨 Mandatory Development Rule
 
 **ALWAYS test, commit, and push changes after making any modifications to the system.**

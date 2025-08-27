@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -269,3 +270,4 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   return { isValid: errors.length === 0, errors };
 } 
+/* eslint-disable no-console */

@@ -801,3 +801,4 @@ export default function EateryPage() {
     </Suspense>
   );
 }
+/* eslint-disable no-console */

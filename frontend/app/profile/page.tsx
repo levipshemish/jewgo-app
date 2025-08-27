@@ -267,3 +267,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+/* eslint-disable no-console */

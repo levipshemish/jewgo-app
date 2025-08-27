@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use server";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -38,3 +39,4 @@ export async function testStorage() {
     return { success: false, error: 'Storage test failed' };
   }
 }
+/* eslint-disable no-console */

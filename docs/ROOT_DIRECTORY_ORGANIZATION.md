@@ -1,5 +1,7 @@
 # 📁 Root Directory Organization
 
+See also: `docs/AGENTS.md` (Contributor Repository Guidelines) and root `AGENTS.md` (Agent guardrails/workflow).
+
 ## 🎯 **Overview**
 The JewGo project root directory has been organized for better maintainability and clarity. This document explains the structure and where to find different types of files.
 

@@ -210,6 +210,11 @@ function isProtectedPath(pathname: string): boolean {
     return false;
   }
   
+  // Allow health endpoint without authentication
+  if (pathname === '/api/admin/health') {
+    return false;
+  }
+  
   // Protect admin UI routes and admin API routes
   const protectedPrefixes = [
     '/admin/',

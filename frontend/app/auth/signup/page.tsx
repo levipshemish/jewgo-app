@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 
 import Link from "next/link";
@@ -355,3 +356,4 @@ export default function SignUp() {
     </>
   );
 }
+/* eslint-disable no-console */

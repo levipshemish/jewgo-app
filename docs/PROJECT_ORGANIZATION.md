@@ -1,5 +1,7 @@
 # Project Organization Guide
 
+For contributor guidelines and day‑to‑day commands, see `docs/AGENTS.md`. For agent guardrails/workflow, see the root `AGENTS.md`.
+
 ## 🏗️ **Project Structure Overview**
 
 After the Oracle Cloud PostgreSQL migration and cleanup, the JewGo project has been organized into a clean, maintainable structure.

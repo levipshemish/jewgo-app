@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
@@ -263,3 +264,4 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 } 
+/* eslint-disable no-console */

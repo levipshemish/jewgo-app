@@ -46,7 +46,7 @@ export default function AdminRestaurantsPage() {
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       const res = await fetch(`/api/admin/submissions/restaurants?${params.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Failed: ${res.status}`);
+      if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
       const json = await res.json();
       setRows(json.data || []);
       setPagination(json.pagination);
@@ -95,7 +95,7 @@ export default function AdminRestaurantsPage() {
   };
 
   const onBulkAction = async (action: string, ids: string[]) => {
-    if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0) { return; }
     setLoading(true);
     try {
       if (action === 'approve') {

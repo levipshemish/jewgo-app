@@ -1,5 +1,7 @@
 # Deployment Guide
 
+For contributor workflow see `docs/AGENTS.md`. For agent guardrails and safe operations, see root `AGENTS.md`.
+
 ## Table of Contents
 
 1. [Overview](#overview)
