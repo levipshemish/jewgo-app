@@ -1,6 +1,6 @@
-import { appLogger } from '@/lib/utils/logger';
 "use client";
 
+import { appLogger } from '@/lib/utils/logger';
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
 import Script from "next/script";
 import { signInAction } from "./actions";

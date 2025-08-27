@@ -1,6 +1,6 @@
-import { appLogger } from '@/lib/utils/logger';
 "use client";
 
+import { appLogger } from '@/lib/utils/logger';
 import Link from "next/link";
 import { FormEvent, useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
