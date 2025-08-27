@@ -162,7 +162,8 @@ export default function AddressAutofill({
       const placeDetails = await googlePlacesAPI.getPlaceDetails(suggestion.place_id, [
         'name',
         'formatted_address',
-        'address_components'
+        'address_components',
+        'geometry'
       ]);
 
       if (process.env.NODE_ENV === 'development') {

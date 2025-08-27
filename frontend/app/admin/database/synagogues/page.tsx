@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { Building2, MapPin, Phone, Mail, Globe, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Globe, Eye, Star } from 'lucide-react';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 
 interface FloridaSynagogue {
@@ -192,9 +192,9 @@ export default function SynagogueDatabasePage() {
   };
 
   // Handle bulk actions (read-only - disabled)
-  const handleBulkAction = async (action: string, selectedIds: string[]) => {
-    // Synagogues are read-only due to database schema constraints
-    console.warn('Bulk actions are disabled for synagogues (read-only data)');
+  const handleBulkAction = async (_action: string, _selectedIds: string[]) => {
+    // Synagogues are read-only; bulk actions intentionally disabled.
+    return;
   };
 
   // Table columns
@@ -319,10 +319,7 @@ export default function SynagogueDatabasePage() {
     {
       label: 'View',
       icon: Eye,
-      onClick: (row: FloridaSynagogue) => {
-        // Navigate to synagogue detail page
-        console.log('View synagogue:', row.id);
-      },
+      onClick: (_row: FloridaSynagogue) => { /* no-op */ },
     },
   ];
 

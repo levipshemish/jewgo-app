@@ -35,7 +35,11 @@ export async function GET(request: NextRequest) {
     // Reject unknown filters/params that could break Prisma
     const allowedParams = new Set(['search', 'sortBy', 'sortOrder']);
     const unknownParams: string[] = [];
-    for (const key of Array.from(searchParams.keys())) { if (!allowedParams.has(key)) unknownParams.push(key); }
+    for (const key of Array.from(searchParams.keys())) {
+      if (!allowedParams.has(key)) {
+        unknownParams.push(key);
+      }
+    }
     if (unknownParams.length) {
       return NextResponse.json({ error: `Unsupported filters: ${unknownParams.join(', ')}` }, { status: 400 });
     }
@@ -122,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // Validate that no unsupported filters are passed
     const allowedBodyKeys = new Set(['search', 'sortBy', 'sortOrder', 'format', 'fields']);
-    const unknownBodyKeys = Object.keys(body || {}).filter(k => !allowedBodyKeys.has(k));
+    const unknownBodyKeys = Object.keys(body || {}).filter((k) => !allowedBodyKeys.has(k));
     if (unknownBodyKeys.length) {
       return NextResponse.json({ error: `Unsupported filters: ${unknownBodyKeys.join(', ')}` }, { status: 400 });
     }

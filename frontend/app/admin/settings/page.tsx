@@ -2,24 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Settings, 
   Database, 
-  Shield, 
   Activity, 
   Users, 
-  Bell, 
-  Globe, 
-  Key,
   Save,
   RefreshCw,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  UserPlus,
-  UserMinus,
   Crown
 } from 'lucide-react';
-import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { AdminUser } from '@/lib/admin/types';
 import { useToast, ToastContainer } from '@/lib/ui/toast';
 
 interface SystemStats {
@@ -219,39 +212,7 @@ export default function SystemSettingsPage() {
     }
   };
 
-  // Handle role assignment
-  const assignRole = async (userId: string, role: string, expiresAt?: string, notes?: string) => {
-    try {
-      const response = await fetch('/api/admin/roles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': window.__CSRF_TOKEN__ || '',
-        },
-        body: JSON.stringify({
-          userId,
-          role,
-          expiresAt,
-          notes,
-        }),
-      });
-
-      if (response.ok) {
-        // Refresh admin roles
-        const rolesResponse = await fetch('/api/admin/roles');
-        if (rolesResponse.ok) {
-          const rolesData = await rolesResponse.json();
-          setAdminRoles(rolesData);
-        }
-        showSuccess('Role assigned successfully');
-      } else {
-        showError('Failed to assign role');
-      }
-    } catch (error) {
-      console.error('Error assigning role:', error);
-      showError('An error occurred while assigning role');
-    }
-  };
+  // Role assignment UI omitted; API available via Roles tab actions
 
   // Handle role removal
   const removeRole = async (userId: string, role: string) => {

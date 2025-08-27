@@ -143,14 +143,20 @@ export function sanitizeData(data: any): any {
   ];
 
   if (typeof data === 'object') {
-    const sanitized = { ...data };
-    
+    const sanitized: Record<string, any> = { ...data };
+    // Redact known sensitive fields at the top level
     for (const field of sensitiveFields) {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
       }
     }
-    
+    // Do not include nested objects/arrays in audit payloads to avoid leaking data
+    Object.keys(sanitized).forEach((k) => {
+      const v = sanitized[k];
+      if (v && typeof v === 'object') {
+        sanitized[k] = '[REDACTED_OBJECT]';
+      }
+    });
     return sanitized;
   }
 

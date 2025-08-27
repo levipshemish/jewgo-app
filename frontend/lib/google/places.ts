@@ -229,8 +229,16 @@ export class ModernGooglePlacesAPI {
       // Try modern API first using importLibrary
       if ((window.google.maps as any).importLibrary) {
         try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Attempting to use importLibrary approach');
+          }
+          
           const { AutocompleteSuggestion } = await (window.google.maps as any).importLibrary('places');
           if (AutocompleteSuggestion) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Successfully imported AutocompleteSuggestion');
+            }
+            
             const autocompleteSuggestion = new AutocompleteSuggestion();
             
             const request: any = {
@@ -249,6 +257,9 @@ export class ModernGooglePlacesAPI {
             // Modern API uses async method
             const result = await autocompleteSuggestion.getPlacePredictionsAsync(request);
             if (result && result.predictions) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ModernGooglePlacesAPI] Successfully got predictions from modern API:', result.predictions.length);
+              }
               return result.predictions;
             }
             return [];
@@ -327,6 +338,10 @@ export class ModernGooglePlacesAPI {
   private tryLegacyAutocomplete(input: string, options: any, resolve: (predictions: any[]) => void) {
     // Fallback to legacy AutocompleteService if modern API is not available
     if (window.google.maps.places.AutocompleteService) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ModernGooglePlacesAPI] Using legacy AutocompleteService as fallback');
+      }
+      
       const autocompleteService = new window.google.maps.places.AutocompleteService();
       
       const request: any = {
@@ -344,12 +359,21 @@ export class ModernGooglePlacesAPI {
 
       autocompleteService.getPlacePredictions(request, (predictions: any[], status: any) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Legacy API returned predictions:', predictions.length);
+          }
           resolve(predictions);
         } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Legacy API failed with status:', status);
+          }
           resolve([]);
         }
       });
     } else {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ModernGooglePlacesAPI] No legacy AutocompleteService available');
+      }
       resolve([]);
     }
   }

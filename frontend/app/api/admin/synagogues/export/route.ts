@@ -209,8 +209,8 @@ export async function POST(request: NextRequest) {
     const header = exportFields.map(f => `"${f}"`).join(',');
     const lines = rows.map((r: any) => exportFields.map((f) => {
       const v = r[f];
-      if (v === null || v === undefined) return '""';
-      if (typeof v === 'object') return `"${JSON.stringify(v).replace(/"/g, '""')}"`;
+      if (v === null || v === undefined) { return '""'; }
+      if (typeof v === 'object') { return `"${JSON.stringify(v).replace(/"/g, '""')}"`; }
       return `"${String(v).replace(/"/g, '""')}"`;
     }).join(','));
     const csv = [header, ...lines].join('\n');

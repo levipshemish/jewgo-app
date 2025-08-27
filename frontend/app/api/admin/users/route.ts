@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
     const allowedParams = new Set(['page', 'pageSize', 'search', 'sortBy', 'sortOrder']);
     const unknownParams: string[] = [];
     for (const key of Array.from(searchParams.keys())) {
-      if (!allowedParams.has(key)) unknownParams.push(key);
+      if (!allowedParams.has(key)) {
+        unknownParams.push(key);
+      }
     }
     if (unknownParams.length > 0) {
       return NextResponse.json({ error: `Unsupported filters: ${unknownParams.join(', ')}` }, { status: 400 });

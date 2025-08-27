@@ -41,10 +41,10 @@ export default function AdminRestaurantsPage() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('pageSize', String(pageSize));
-      if (search) params.set('search', search);
-      if (status) params.set('status', status);
-      if (sortBy) params.set('sortBy', sortBy);
-      if (sortOrder) params.set('sortOrder', sortOrder);
+      if (search) { params.set('search', search); }
+      if (status) { params.set('status', status); }
+      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortOrder) { params.set('sortOrder', sortOrder); }
       const res = await fetch(`/api/admin/submissions/restaurants?${params.toString()}`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`Failed: ${res.status}`);
       const json = await res.json();
@@ -76,7 +76,7 @@ export default function AdminRestaurantsPage() {
   };
   const onSearch = (query: string) => {
     const p = new URLSearchParams(searchParams.toString());
-    if (query) p.set('search', query); else p.delete('search');
+    if (query) { p.set('search', query); } else { p.delete('search'); }
     p.set('page', '1');
     router.push(`/admin/restaurants?${p.toString()}`);
   };
@@ -168,4 +168,3 @@ export default function AdminRestaurantsPage() {
     </div>
   );
 }
-
