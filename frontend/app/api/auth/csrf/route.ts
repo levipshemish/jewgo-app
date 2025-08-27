@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSignedCSRFToken } from '@/lib/utils/auth-utils.server';
 import { getCORSHeaders } from '@/lib/config/environment';
@@ -41,4 +42,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'TOKEN_GENERATION_FAILED' }, { status: 500, headers: baseHeaders });
   }
 }
-

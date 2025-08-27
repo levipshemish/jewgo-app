@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 
 import Link from "next/link";
