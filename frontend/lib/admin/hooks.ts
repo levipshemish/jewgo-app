@@ -27,7 +27,7 @@ export function useAdminCsrf(): string {
             const json = await res.json();
             const t = json?.token || '';
             (window as any).__CSRF_TOKEN__ = t;
-            if (mounted) setToken(t);
+            if (mounted) { setToken(t); }
           }
         } catch {}
       }, 50 * 60 * 1000);
@@ -54,21 +54,21 @@ export function useAdminCsrf(): string {
                 const json2 = await res2.json();
                 const t2 = json2?.token || '';
                 (window as any).__CSRF_TOKEN__ = t2;
-                if (mounted) setToken(t2);
+                if (mounted) { setToken(t2); }
               }
             } catch {}
           }, 50 * 60 * 1000);
         } else {
-          console.warn('[ADMIN] Failed to fetch CSRF token:', res.status);
+          // Silent failure; UI should handle missing token state
         }
       } catch (err) {
-        console.error('[ADMIN] Error fetching CSRF token:', err);
+        // Silent failure; UI should handle missing token state
       }
     };
     fetchToken();
     return () => {
       mounted = false;
-      if (refreshTimer) clearInterval(refreshTimer);
+      if (refreshTimer) { clearInterval(refreshTimer); }
     };
   }, []);
 

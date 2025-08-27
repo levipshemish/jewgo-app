@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import { appLogger } from '@/lib/utils/logger';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -408,7 +409,7 @@ function MikvahPageContent() {
       setMikvah(response.mikvah);
       setCurrentPage(page);
     } catch (err) {
-      console.error('Error fetching page:', err);
+      appLogger.error('Mikvah page load error', { error: String(err) });
     } finally {
       setLoading(false);
     }
@@ -509,7 +510,7 @@ function MikvahPageContent() {
       const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching mikvah:', err);
+      appLogger.error('Mikvah fetch error', { error: String(err) });
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -555,7 +556,7 @@ function MikvahPageContent() {
       const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
     } catch (err) {
-      console.error('Error fetching more mikvah:', err);
+      appLogger.error('Mikvah fetch more error', { error: String(err) });
     }
   };
 

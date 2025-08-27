@@ -3,6 +3,7 @@
 // Temporarily disable Sentry to fix Edge Runtime module conflicts
 // import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
+import { appLogger } from '@/lib/utils/logger';
 
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
@@ -16,7 +17,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     // }
     
     // Simple error logging for now
-    console.error('Global error caught:', error);
+    appLogger.error('Global error caught', { error: String(error) });
   }, [error]);
 
   return (

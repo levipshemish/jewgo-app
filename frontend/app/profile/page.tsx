@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { appLogger } from '@/lib/utils/logger';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth";
@@ -48,7 +49,7 @@ export default function ProfilePage() {
             // console.log('Profile page: Is guest?', isGuest);
             
             if (isGuest) {
-              console.log('Profile page: Redirecting guest user');
+              appLogger.info('Profile page: Redirecting guest user');
               setRedirectStatus('Guest users must sign in to access protected pages. Redirecting to /auth/signin...');
               redirected = true;
               router.push('/auth/signin?redirectTo=/profile');
@@ -64,7 +65,7 @@ export default function ProfilePage() {
             }
             return;
           } else {
-            console.log('Profile page: No user data, redirecting');
+            appLogger.info('Profile page: No user data, redirecting');
             // userData.user is null - user is not authenticated
             setRedirectStatus('Redirecting to /auth/signin...');
             redirected = true;

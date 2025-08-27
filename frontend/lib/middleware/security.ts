@@ -7,8 +7,12 @@ export function buildSecurityHeaders(req: NextRequest): HeadersInit {
 
   // Configure allowed origins
   const allowlist: string[] = [];
-  if (process.env.NEXT_PUBLIC_APP_URL) allowlist.push(process.env.NEXT_PUBLIC_APP_URL);
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) allowlist.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`);
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    allowlist.push(process.env.NEXT_PUBLIC_APP_URL);
+  }
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    allowlist.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`);
+  }
   // Always allow same-origin
   allowlist.push(requestOrigin);
 

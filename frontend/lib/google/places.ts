@@ -226,6 +226,17 @@ export class ModernGooglePlacesAPI {
     }
 
     try {
+      // Debug: log what's available in the Google Maps API
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ModernGooglePlacesAPI] Available Google Maps objects:', {
+          hasImportLibrary: !!(window.google.maps as any).importLibrary,
+          hasPlaces: !!window.google.maps.places,
+          placesKeys: window.google.maps.places ? Object.keys(window.google.maps.places) : [],
+          hasAutocompleteService: !!window.google.maps.places?.AutocompleteService,
+          hasAutocompleteSuggestion: !!(window.google.maps.places as any)?.AutocompleteSuggestion
+        });
+      }
+      
       // Try modern API first using importLibrary
       if ((window.google.maps as any).importLibrary) {
         try {
@@ -233,13 +244,18 @@ export class ModernGooglePlacesAPI {
             console.log('[ModernGooglePlacesAPI] Attempting to use importLibrary approach');
           }
           
-          const { AutocompleteSuggestion } = await (window.google.maps as any).importLibrary('places');
-          if (AutocompleteSuggestion) {
+          // Try to get the places library first
+          const places = await (window.google.maps as any).importLibrary('places');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ModernGooglePlacesAPI] Places library imported:', places);
+          }
+          
+          if (places && places.AutocompleteSuggestion) {
             if (process.env.NODE_ENV === 'development') {
               console.log('[ModernGooglePlacesAPI] Successfully imported AutocompleteSuggestion');
             }
             
-            const autocompleteSuggestion = new AutocompleteSuggestion();
+            const autocompleteSuggestion = new places.AutocompleteSuggestion();
             
             const request: any = {
               input,
@@ -254,6 +270,10 @@ export class ModernGooglePlacesAPI {
               };
             }
 
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[ModernGooglePlacesAPI] Making request with:', request);
+            }
+
             // Modern API uses async method
             const result = await autocompleteSuggestion.getPlacePredictionsAsync(request);
             if (result && result.predictions) {
@@ -263,6 +283,10 @@ export class ModernGooglePlacesAPI {
               return result.predictions;
             }
             return [];
+          } else {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('[ModernGooglePlacesAPI] AutocompleteSuggestion not available in places library');
+            }
           }
         } catch (modernError) {
           if (process.env.NODE_ENV === 'development') {

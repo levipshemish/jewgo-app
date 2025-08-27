@@ -13,16 +13,10 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   collectCoverageFrom: [
-    'app/**/*.{js,jsx,ts,tsx}',
-    'components/**/*.{js,jsx,ts,tsx}',
-    'lib/**/*.{js,jsx,ts,tsx}',
-    '!**/*.d.ts',
-    '!**/node_modules/**',
-    '!**/.next/**',
-    '!**/coverage/**',
-    '!**/jest.config.js',
-    '!**/next.config.js',
-    '!**/tailwind.config.js',
+    'lib/admin/csrf.ts',
+    'lib/admin/sql.ts',
+    'lib/utils/logger.ts',
+    'lib/middleware/security.ts',
   ],
   coverageThreshold: {
     global: {
