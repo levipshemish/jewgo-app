@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     if (city) {filters.city = city;}
     if (state) {filters.state = state;}
 
-    console.log('[ADMIN] Fetching restaurants with filters:', { page, pageSize, search, sortBy, sortOrder, status, city, state });
+    adminLogger.info('Fetching restaurants with filters', { page, pageSize, search, sortBy, sortOrder, status, city, state });
 
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log('[ADMIN] Successfully fetched restaurants:', { count: result.data.length, total: result.pagination.total });
+    adminLogger.info('Successfully fetched restaurants', { count: result.data.length, total: result.pagination.total });
 
     // Log the action
     await logAdminAction(adminUser, 'restaurant_list_view', 'restaurant', {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Restaurant list error:', error);
+    adminLogger.error('Restaurant list error', { error: String(error) });
     
     // Provide more detailed error information in development
     const errorMessage = process.env.NODE_ENV === 'development' 

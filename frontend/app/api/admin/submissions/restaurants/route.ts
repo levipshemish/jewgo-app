@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { AdminDatabaseService } from '@/lib/admin/database';
@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
     // Test database connection first
     try {
       await prisma.$connect();
-      console.log('[ADMIN] Database connection successful');
+      adminLogger.info('Database connection successful');
     } catch (dbError) {
-      console.error('[ADMIN] Database connection failed:', dbError);
+      adminLogger.error('Database connection failed', { error: String(dbError) });
       return NextResponse.json({ 
         error: 'Database connection failed',
         details: process.env.NODE_ENV === 'development' ? String(dbError) : undefined
@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
       filters.submission_status = status;
     }
 
-    console.log('[ADMIN] Fetching submissions with filters:', { page, pageSize, search, sortBy, sortOrder, status });
+    adminLogger.info('Fetching submissions with filters', { page, pageSize, search, sortBy, sortOrder, status });
 
     // Get submissions
-    console.log('[ADMIN SUBMISSIONS] Getting submissions from database...');
+    adminLogger.debug('Getting submissions from database...');
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.restaurant,
       'restaurant',
@@ -59,11 +59,11 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log('[ADMIN SUBMISSIONS] Successfully retrieved submissions:', result.data.length);
+    adminLogger.info('Successfully retrieved submissions', { count: result.data.length });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Submissions restaurants error:', error);
+    adminLogger.error('Submissions restaurants error', { error: String(error) });
     
     // Provide more detailed error information in development
     const errorMessage = process.env.NODE_ENV === 'development' 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     try {
       await prisma.$disconnect();
     } catch (disconnectError) {
-      console.error('[ADMIN] Error disconnecting from database:', disconnectError);
+      adminLogger.error('Error disconnecting from database', { error: String(disconnectError) });
     }
   }
 }

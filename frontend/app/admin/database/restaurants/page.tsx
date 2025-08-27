@@ -1,7 +1,7 @@
 import RestaurantDatabaseClient from '@/components/admin/RestaurantDatabaseClient';
 
-export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+export default async function RestaurantDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const params = searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';

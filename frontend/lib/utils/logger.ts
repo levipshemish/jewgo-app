@@ -75,5 +75,6 @@ class Logger {
 export const authLogger = new Logger('AUTH', process.env.LOG_LEVEL || 'info');
 export const oauthLogger = new Logger('OAUTH', process.env.LOG_LEVEL || 'info');
 export const appLogger = new Logger('APP', process.env.LOG_LEVEL || 'info');
+export const adminLogger = new Logger('ADMIN', process.env.LOG_LEVEL || 'info');
 
 export default Logger;
