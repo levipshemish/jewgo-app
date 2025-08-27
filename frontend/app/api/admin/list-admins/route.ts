@@ -41,18 +41,18 @@ export async function GET(request: NextRequest) {
       console.log('[ADMIN LIST] Querying admin roles...');
       const adminRoles = await prisma.adminRole.findMany({
         where: {
-          is_active: true
+          isActive: true
         },
         select: {
           id: true,
-          user_id: true,
+          userId: true,
           role: true,
-          is_active: true,
-          created_at: true,
-          expires_at: true
+          isActive: true,
+          createdAt: true,
+          expiresAt: true
         },
         orderBy: {
-          created_at: 'desc'
+          createdAt: 'desc'
         }
       });
       
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
       // Get user details for admin roles
       if (adminRoles.length > 0) {
-        const userIds = adminRoles.map(role => role.user_id);
+        const userIds = adminRoles.map(role => role.userId);
         const users = await prisma.user.findMany({
           where: {
             id: {
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         
         // Combine admin roles with user details
         result.admin_roles_with_users = adminRoles.map(role => {
-          const user = users.find(u => u.id === role.user_id);
+          const user = users.find(u => u.id === role.userId);
           return {
             ...role,
             user: user || null

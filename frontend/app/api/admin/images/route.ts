@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Image list error:', error);
+    adminLogger.error('Image list error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch images' },
       { status: 500 }
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: image }, { status: 201 });
   } catch (error) {
-    console.error('[ADMIN] Image create error:', error);
+    adminLogger.error('Image create error', { error: String(error) });
     
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
@@ -179,7 +180,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ data: image });
   } catch (error) {
-    console.error('[ADMIN] Image update error:', error);
+    adminLogger.error('Image update error', { error: String(error) });
     
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json(
@@ -237,7 +238,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error('[ADMIN] Image delete error:', error);
+    adminLogger.error('Image delete error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to delete image' },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { AdminDatabaseService } from '@/lib/admin/database';
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('[ADMIN] System stats error:', error);
+    adminLogger.error('System stats error', { error: String(error) });
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 }

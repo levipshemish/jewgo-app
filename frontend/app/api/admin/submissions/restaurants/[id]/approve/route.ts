@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logAdminAction } from '@/lib/admin/audit';
 
@@ -57,7 +58,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[ADMIN] Restaurant approve error:', error);
+    adminLogger.error('Restaurant approve error', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to approve restaurant' },
       { status: 500 }

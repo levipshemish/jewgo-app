@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
@@ -60,7 +61,7 @@ export async function PUT(request: NextRequest) {
     });
     await logAdminAction(adminUser, 'system_config_update', 'system', { newData: nextConfig });
   } catch (e) {
-    console.error('[ADMIN] Failed to persist system config:', e);
+    adminLogger.error('Failed to persist system config', { error: String(e) });
   }
 
   return NextResponse.json(nextConfig);

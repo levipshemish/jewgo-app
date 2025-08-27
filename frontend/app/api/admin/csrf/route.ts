@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
+import { adminLogger } from '@/lib/utils/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ token }, { headers });
   } catch (error) {
-    console.error('[ADMIN CSRF] Error generating CSRF token:', error);
+    adminLogger.error('CSRF token generation error', { error: String(error) });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders(request) });
   }
 }
