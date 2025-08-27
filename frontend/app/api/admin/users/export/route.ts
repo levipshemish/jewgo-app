@@ -29,20 +29,25 @@ export async function GET(request: NextRequest) {
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;
-    const provider = searchParams.get('provider') || undefined;
     const sortBy = searchParams.get('sortBy') || 'createdat';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
-    // Build filters
+    // Reject unknown filters/params that could break Prisma
+    const allowedParams = new Set(['search', 'sortBy', 'sortOrder']);
+    const unknownParams: string[] = [];
+    for (const key of searchParams.keys()) { if (!allowedParams.has(key)) unknownParams.push(key); }
+    if (unknownParams.length) {
+      return NextResponse.json({ error: `Unsupported filters: ${unknownParams.join(', ')}` }, { status: 400 });
+    }
+
+    // Build filters (none currently supported)
     const filters: any = {};
-    if (provider) { filters.provider = provider; }
 
     // Define export fields
     const exportFields = [
       'id',
       'email',
       'name',
-      'provider',
       'issuperadmin',
       'createdat',
       'updatedat',
@@ -112,15 +117,20 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const search = body.search as string | undefined;
-    const provider = body.provider as string | undefined;
     const sortBy = (body.sortBy as string) || 'createdat';
     const sortOrder = (body.sortOrder as 'asc' | 'desc') || 'desc';
 
+    // Validate that no unsupported filters are passed
+    const allowedBodyKeys = new Set(['search', 'sortBy', 'sortOrder', 'format', 'fields']);
+    const unknownBodyKeys = Object.keys(body || {}).filter(k => !allowedBodyKeys.has(k));
+    if (unknownBodyKeys.length) {
+      return NextResponse.json({ error: `Unsupported filters: ${unknownBodyKeys.join(', ')}` }, { status: 400 });
+    }
+
     const filters: any = {};
-    if (provider) { filters.provider = provider; }
 
     const exportFields = [
-      'id','email','name','provider','issuperadmin','createdat','updatedat'
+      'id','email','name','issuperadmin','createdat','updatedat'
     ];
 
     const result = await AdminDatabaseService.exportToCSV(

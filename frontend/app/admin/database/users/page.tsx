@@ -1,7 +1,7 @@
 import UserDatabaseClient from '@/components/admin/UserDatabaseClient';
 
-export default async function UserDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = await searchParams;
+export default async function UserDatabasePage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
+  const params = searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
@@ -11,7 +11,7 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
   urlParams.set('page', String(page));
   urlParams.set('pageSize', String(pageSize));
   if (search) {urlParams.set('search', search);}
-  if (params.provider) {urlParams.set('provider', String(params.provider));}
+  // Provider filtering is not supported until a join/source is implemented
   if (sortBy) {urlParams.set('sortBy', sortBy);}
   if (sortOrder) {urlParams.set('sortOrder', sortOrder);}
 

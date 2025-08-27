@@ -107,35 +107,42 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Admin RBAC gate: block non-admins for /admin and /api/admin paths
+    // Admin RBAC gate: prefer route-level RBAC; fail open if RBAC lookup fails (e.g., RLS)
     if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
+      let rbacLookupFailed = false;
+      let isAdmin = false;
       try {
         // Check admin role via database tables (no RPC dependency)
-        const { data: userRow } = await supabase
+        const { data: userRow, error: userRowError } = await supabase
           .from('users')
           .select('issuperadmin')
           .eq('id', user.id)
           .single();
 
-        let isAdmin = Boolean(userRow?.issuperadmin);
+        if (userRowError) {
+          rbacLookupFailed = true;
+        }
+        isAdmin = Boolean(userRow?.issuperadmin);
+
         if (!isAdmin) {
-          const { data: roles } = await supabase
+          const { data: roles, error: rolesError } = await supabase
             .from('admin_roles')
             .select('role,is_active,expires_at')
             .eq('user_id', user.id)
             .eq('is_active', true)
             .or('expires_at.is.null,expires_at.gt.now()');
-          isAdmin = Array.isArray(roles) && roles.length > 0;
-        }
-
-        if (!isAdmin) {
-          if (isApi) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
+          if (rolesError) {
+            rbacLookupFailed = true;
           }
-          return redirectToSignin(request, response);
+          isAdmin = Array.isArray(roles) && roles.length > 0;
         }
       } catch (rbacError) {
         console.error('Middleware RBAC check error:', rbacError);
+        rbacLookupFailed = true;
+      }
+
+      // If lookup conclusively says "not an admin" then block, otherwise fail open
+      if (!rbacLookupFailed && !isAdmin) {
         if (isApi) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403, headers: corsHeaders(request) });
         }

@@ -31,11 +31,19 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'createdat';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-    const provider = searchParams.get('provider') || undefined;
 
-    // Build filters
+    // Reject unknown/unsupported filters to prevent Prisma errors
+    const allowedParams = new Set(['page', 'pageSize', 'search', 'sortBy', 'sortOrder']);
+    const unknownParams: string[] = [];
+    for (const key of searchParams.keys()) {
+      if (!allowedParams.has(key)) unknownParams.push(key);
+    }
+    if (unknownParams.length > 0) {
+      return NextResponse.json({ error: `Unsupported filters: ${unknownParams.join(', ')}` }, { status: 400 });
+    }
+
+    // Build filters (none currently supported beyond soft-delete and search)
     const filters: any = {};
-    if (provider) {filters.provider = provider;}
 
     // Get paginated data
     const result = await AdminDatabaseService.getPaginatedData(
@@ -185,7 +193,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate data
-    const validatedData = validationUtils.validateUser(data);
+    const validatedData = validationUtils.validateUserUpdate(data);
 
     // Sanitize data
     const sanitizedData = validationUtils.sanitizeData(validatedData);

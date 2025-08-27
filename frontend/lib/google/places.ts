@@ -341,6 +341,8 @@ export class ModernGooglePlacesAPI {
                 return 'userRatingCount';
               case 'geometry':
                 return 'location';
+              case 'address_components':
+                return 'addressComponents';
               default:
                 return field;
             }
@@ -358,6 +360,7 @@ export class ModernGooglePlacesAPI {
             if (result.priceLevel) {legacyResult.price_level = result.priceLevel;}
             if (result.userRatingCount) {legacyResult.user_ratings_total = result.userRatingCount;}
             if (result.location) {legacyResult.geometry = result.location;}
+            if (result.addressComponents) {legacyResult.address_components = result.addressComponents;}
             
             return legacyResult;
           }

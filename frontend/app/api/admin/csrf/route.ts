@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
+import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin access
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders(request) });
     }
 
-    // Generate signed CSRF token bound to the admin user's ID
     const token = generateSignedCSRFToken(adminUser.id);
+    const headers = {
+      ...buildSecurityHeaders(request),
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+    } as HeadersInit;
 
-    // Return the token
-    return NextResponse.json({ token });
+    return NextResponse.json({ token }, { headers });
   } catch (error) {
     console.error('[ADMIN CSRF] Error generating CSRF token:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders(request) });
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
 }

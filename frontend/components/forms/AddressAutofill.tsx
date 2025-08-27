@@ -161,7 +161,8 @@ export default function AddressAutofill({
 
       const placeDetails = await googlePlacesAPI.getPlaceDetails(suggestion.place_id, [
         'name',
-        'formatted_address'
+        'formatted_address',
+        'address_components'
       ]);
 
       if (process.env.NODE_ENV === 'development') {
@@ -171,6 +172,8 @@ export default function AddressAutofill({
         console.log('[AddressAutofill] formattedAddress field:', placeDetails?.formattedAddress);
         console.log('[AddressAutofill] name field:', placeDetails?.name);
         console.log('[AddressAutofill] displayName field:', placeDetails?.displayName);
+        console.log('[AddressAutofill] address_components field:', placeDetails?.address_components);
+        console.log('[AddressAutofill] addressComponents field:', placeDetails?.addressComponents);
       }
 
       if (placeDetails) {
@@ -191,27 +194,55 @@ export default function AddressAutofill({
         onChange(finalAddress);
         
         if (onAddressSelect) {
-          // Parse the formatted address to extract components
-          const addressParts = finalAddress.split(',').map((part: string) => part.trim());
+          // Try to extract address components from place details first
           let street = '';
           let city = '';
           let state = '';
           let zipCode = '';
 
-          if (addressParts.length >= 1) {
-            street = addressParts[0];
-          }
-          if (addressParts.length >= 2) {
-            city = addressParts[1];
-          }
-          if (addressParts.length >= 3) {
-            const stateZip = addressParts[2].split(' ');
-            if (stateZip.length >= 2) {
-              state = stateZip[0];
-              zipCode = stateZip[1];
-            } else {
-              state = stateZip[0];
+          if (placeDetails.address_components && Array.isArray(placeDetails.address_components)) {
+            // Parse address components for more accurate extraction
+            for (const component of placeDetails.address_components) {
+              const types = component.types || [];
+              
+              if (types.includes('street_number') || types.includes('route')) {
+                street += component.long_name + ' ';
+              } else if (types.includes('locality')) {
+                city = component.long_name;
+              } else if (types.includes('administrative_area_level_1')) {
+                state = component.short_name;
+              } else if (types.includes('postal_code')) {
+                zipCode = component.long_name;
+              }
             }
+            
+            // Clean up street address
+            street = street.trim();
+          }
+
+          // Fallback to parsing formatted address if components didn't work
+          if (!city || !state || !zipCode) {
+            const addressParts = finalAddress.split(',').map((part: string) => part.trim());
+            
+            if (addressParts.length >= 1 && !street) {
+              street = addressParts[0];
+            }
+            if (addressParts.length >= 2 && !city) {
+              city = addressParts[1];
+            }
+            if (addressParts.length >= 3 && (!state || !zipCode)) {
+              const stateZip = addressParts[2].split(' ');
+              if (stateZip.length >= 2) {
+                if (!state) state = stateZip[0];
+                if (!zipCode) zipCode = stateZip[1];
+              } else if (!state) {
+                state = stateZip[0];
+              }
+            }
+          }
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AddressAutofill] Extracted address components:', { street, city, state, zipCode });
           }
 
           onAddressSelect({ street, city, state, zipCode });
@@ -225,7 +256,7 @@ export default function AddressAutofill({
         onChange(fallbackAddress);
         
         if (onAddressSelect) {
-          // Parse the fallback address
+          // Parse the fallback address with improved logic
           const addressParts = fallbackAddress.split(',').map((part: string) => part.trim());
           let street = '';
           let city = '';
@@ -246,6 +277,10 @@ export default function AddressAutofill({
             } else {
               state = stateZip[0];
             }
+          }
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[AddressAutofill] Fallback extracted address components:', { street, city, state, zipCode });
           }
 
           onAddressSelect({ street, city, state, zipCode });

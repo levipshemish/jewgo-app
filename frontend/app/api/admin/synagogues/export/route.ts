@@ -150,3 +150,89 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYNAGOGUE_VIEW) ||
+        !hasPermission(adminUser, ADMIN_PERMISSIONS.DATA_EXPORT)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 419 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const search: string | undefined = body?.search || undefined;
+    const filters: Record<string, string | undefined> = body?.filters || {};
+    const city = filters.city || undefined;
+    const state = filters.state || undefined;
+    const affiliation = filters.affiliation || undefined;
+
+    // Build WHERE clause safely
+    const conditions: Prisma.Sql[] = [];
+    if (search) {
+      const like = `%${search}%`;
+      conditions.push(Prisma.sql`(name ILIKE ${like} OR address ILIKE ${like} OR city ILIKE ${like} OR rabbi ILIKE ${like})`);
+    }
+    if (city) {
+      const like = `%${city}%`;
+      conditions.push(Prisma.sql`city ILIKE ${like}`);
+    }
+    if (state) {
+      const like = `%${state}%`;
+      conditions.push(Prisma.sql`state ILIKE ${like}`);
+    }
+    if (affiliation) {
+      const like = `%${affiliation}%`;
+      conditions.push(Prisma.sql`affiliation ILIKE ${like}`);
+    }
+    const whereClause = conditions.length ? Prisma.sql`WHERE ${conditions.reduce((acc, condition, index) => index === 0 ? condition : Prisma.sql`${acc} AND ${condition}`)}` : Prisma.sql``;
+
+    // Fetch up to 10k rows for export
+    const rows = await prisma.$queryRaw<any[]>`
+      SELECT id, name, address, city, state, zip_code, phone, website, email, affiliation, created_at, updated_at
+      FROM florida_synagogues
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT 10000
+    `;
+
+    // Generate CSV
+    const exportFields = ['id','name','address','city','state','zip_code','phone','website','email','affiliation','created_at','updated_at'];
+    const header = exportFields.map(f => `"${f}"`).join(',');
+    const lines = rows.map((r: any) => exportFields.map((f) => {
+      const v = r[f];
+      if (v === null || v === undefined) return '""';
+      if (typeof v === 'object') return `"${JSON.stringify(v).replace(/"/g, '""')}"`;
+      return `"${String(v).replace(/"/g, '""')}"`;
+    }).join(','));
+    const csv = [header, ...lines].join('\n');
+
+    await logAdminAction(adminUser, AUDIT_ACTIONS.DATA_EXPORT, 'synagogue', {
+      metadata: {
+        search,
+        filters: { city, state, affiliation },
+        exportedCount: rows.length,
+        limited: rows.length >= 10000,
+      },
+    });
+
+    return new NextResponse(csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="florida_synagogues_${new Date().toISOString().split('T')[0]}.csv"`,
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    console.error('[ADMIN] Synagogue export (POST) error:', error);
+    return NextResponse.json({ error: 'Failed to export synagogues' }, { status: 500 });
+  }
+}

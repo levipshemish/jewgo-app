@@ -110,6 +110,20 @@ export default function SystemSettingsPage() {
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData.data || statsData);
+      } else {
+        // Graceful fallback
+        setStats({
+          totalUsers: 0,
+          totalRestaurants: 0,
+          totalReviews: 0,
+          totalSynagogues: 0,
+          totalKosherPlaces: 0,
+          pendingApprovals: 0,
+          systemHealth: 'warning',
+          lastBackup: 'unknown',
+          uptime: 'unknown',
+          activeSessions: 0,
+        });
       }
 
       // Fetch system config
@@ -117,6 +131,18 @@ export default function SystemSettingsPage() {
       if (configResponse.ok) {
         const configData = await configResponse.json();
         setConfig(configData);
+      } else {
+        // Default configuration fallback
+        setConfig({
+          maintenanceMode: false,
+          debugMode: false,
+          emailNotifications: true,
+          auditLogging: true,
+          rateLimiting: true,
+          backupFrequency: 'daily',
+          sessionTimeout: 60,
+          maxFileSize: 10,
+        });
       }
 
       // Fetch admin roles (only if user has permission)
@@ -129,6 +155,33 @@ export default function SystemSettingsPage() {
       }
     } catch (error) {
       console.error('Error fetching system data:', error);
+      // Ensure minimal UI state to avoid broken page
+      if (!stats) {
+        setStats({
+          totalUsers: 0,
+          totalRestaurants: 0,
+          totalReviews: 0,
+          totalSynagogues: 0,
+          totalKosherPlaces: 0,
+          pendingApprovals: 0,
+          systemHealth: 'warning',
+          lastBackup: 'unknown',
+          uptime: 'unknown',
+          activeSessions: 0,
+        });
+      }
+      if (!config) {
+        setConfig({
+          maintenanceMode: false,
+          debugMode: false,
+          emailNotifications: true,
+          auditLogging: true,
+          rateLimiting: true,
+          backupFrequency: 'daily',
+          sessionTimeout: 60,
+          maxFileSize: 10,
+        });
+      }
     } finally {
       setLoading(false);
     }

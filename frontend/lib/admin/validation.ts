@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+// Centralized field length limits to avoid drift with DB schema
+export const FIELD_LIMITS = {
+  restaurant: {
+    kosher_category: 20, // prisma: @db.VarChar(20)
+    certifying_agency: 100, // prisma: @db.VarChar(100)
+    price_range: 20, // prisma: @db.VarChar(20)
+  },
+} as const;
+
 const asDate = z.preprocess((v) => {
   if (v == null || v instanceof Date) {return v;}
   if (typeof v === 'string' || typeof v === 'number') {
@@ -25,7 +34,7 @@ export const restaurantCreateSchema = z.object({
   state: z.string().min(1, 'State is required').max(50, 'State too long'),
   zip_code: z.string().min(1, 'Zip code is required').max(20, 'Zip code too long'),
   website: z.string().url().optional().or(z.literal('')),
-  price_range: z.string().max(50).optional(),
+  price_range: z.string().max(FIELD_LIMITS.restaurant.price_range).optional(),
   image_url: z.string().url().optional().or(z.literal('')),
   is_cholov_yisroel: z.boolean().optional(),
   is_pas_yisroel: z.boolean().optional(),
@@ -41,7 +50,7 @@ export const restaurantCreateSchema = z.object({
   google_rating: z.number().min(0).max(5).optional(),
   google_review_count: z.number().int().min(0).optional(),
   google_reviews: z.string().optional(),
-  certifying_agency: z.string().min(1, 'Certifying agency is required').max(255),
+  certifying_agency: z.string().min(1, 'Certifying agency is required').max(FIELD_LIMITS.restaurant.certifying_agency),
   timezone: z.string().max(100).optional(),
   phone_number: z.string().min(1, 'Phone number is required').max(50),
   listing_type: z.string().min(1, 'Listing type is required').max(100),
@@ -49,7 +58,7 @@ export const restaurantCreateSchema = z.object({
   specials: z.string().max(1000).optional(),
   hours_json: z.string().optional(),
   hours_last_updated: asDate.optional(),
-  kosher_category: z.string().min(1, 'Kosher category is required').max(100),
+  kosher_category: z.string().min(1, 'Kosher category is required').max(FIELD_LIMITS.restaurant.kosher_category),
   cholov_stam: z.boolean().optional(),
   user_email: z.string().email().optional().or(z.literal('')),
   current_time_local: asDate.optional(),
@@ -184,6 +193,15 @@ export const userSchema = z.object({
   adminRole: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']).optional(),
 });
 
+// User update schema allows partial updates (all fields optional)
+export const userUpdateSchema = z.object({
+  email: z.string().email('Invalid email address').optional(),
+  name: z.string().max(255).optional(),
+  avatar_url: z.string().url().optional().or(z.literal('')),
+  isSuperAdmin: z.boolean().optional(),
+  adminRole: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']).optional(),
+});
+
 // User validation schema for database operations - matches Prisma schema
 export const userDbSchema = z.object({
   id: z.string().min(1, 'User ID is required').optional(),
@@ -284,6 +302,13 @@ export const validationUtils = {
    */
   validateUser: (data: any) => {
     return userSchema.parse(data);
+  },
+
+  /**
+   * Validate user update data (partial)
+   */
+  validateUserUpdate: (data: any) => {
+    return userUpdateSchema.parse(data);
   },
 
   /**

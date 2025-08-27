@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
+import { logAdminAction } from '@/lib/admin/audit';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,10 +34,14 @@ export async function GET(request: NextRequest) {
       activeSessions: 0,
     };
 
+    // Audit read (low volume; safe to log)
+    await logAdminAction(adminUser, 'system_stats_view', 'system', {
+      metadata: { viewer: adminUser.id },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('[ADMIN] System stats error:', error);
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 }
-

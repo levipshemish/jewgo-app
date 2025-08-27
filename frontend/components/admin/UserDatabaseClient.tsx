@@ -41,7 +41,6 @@ export default function UserDatabaseClient({ initialData, initialPagination, ini
       params.set('page', pagination.page.toString());
       params.set('pageSize', pagination.pageSize.toString());
       if (searchQuery) {params.set('search', searchQuery);}
-      if (searchParams.get('provider')) {params.set('provider', searchParams.get('provider')!);}
       if (sortKey) {params.set('sortBy', sortKey);}
       if (sortOrder) {params.set('sortOrder', sortOrder);}
 
@@ -97,7 +96,6 @@ export default function UserDatabaseClient({ initialData, initialPagination, ini
     try {
       const payload: any = {};
       if (searchQuery) {payload.search = searchQuery;}
-      if (searchParams.get('provider')) {payload.provider = searchParams.get('provider');}
       if (sortKey) {payload.sortBy = sortKey;}
       if (sortOrder) {payload.sortOrder = sortOrder;}
       const response = await fetch(`/api/admin/users/export`, {
