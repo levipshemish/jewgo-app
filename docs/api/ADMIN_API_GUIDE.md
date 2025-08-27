@@ -14,6 +14,33 @@ This document covers the Admin API endpoints implemented in the Next.js frontend
 - Admin roles are stored in Supabase `admin_roles` table with Row Level Security (RLS) policies.
 - Middleware verifies authentication and applies security headers only; it does not require any `admin_role` cookie. All RBAC checks happen in the route handlers via `requireAdmin()`. Admin layout redirects unauthenticated users to `/auth/signin?redirectTo=/admin&message=admin_access_required` to reduce flicker.
 
+### Recommended RLS Policies (for middleware lookups)
+
+While middleware now fails open to route-level RBAC if role lookups fail (e.g., due to RLS restrictions), you can enable reliable middleware role checks by adding the following RLS policies in Supabase:
+
+```sql
+-- Allow authenticated users to read their own admin flags
+alter table public.users enable row level security;
+create policy users_self_select on public.users
+  for select using (auth.uid() = id);
+
+-- Allow authenticated users to read their own active admin_roles rows
+alter table public.admin_roles enable row level security;
+create policy admin_roles_self_select on public.admin_roles
+  for select using (auth.uid() = user_id);
+
+-- Optionally allow super admins to read all
+create policy admin_roles_super_read on public.admin_roles
+  for select using (
+    exists (
+      select 1 from public.users u
+      where u.id = auth.uid() and u.issuperadmin = true
+    )
+  );
+```
+
+If you prefer not to add these policies, keep the default fail-open middleware and rely on the route-level RBAC enforced by `requireAdmin()` and permission checks.
+
 ## Endpoints
 
 All routes live under `/api/admin/*`. All state-changing routes require `x-csrf-token` and appropriate permissions (see `ADMIN_PERMISSIONS`).

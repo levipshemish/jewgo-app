@@ -42,6 +42,7 @@ export async function loadMaps(): Promise<typeof window.google> {
         await Promise.all([
           importer.importLibrary('maps'),
           importer.importLibrary('marker'),
+          importer.importLibrary('places'),
         ]);
       }
     } catch (importError) {

@@ -226,9 +226,50 @@ export class ModernGooglePlacesAPI {
     }
 
     try {
+      // Try modern API first using importLibrary
+      if ((window.google.maps as any).importLibrary) {
+        try {
+          const { AutocompleteSuggestion } = await (window.google.maps as any).importLibrary('places');
+          if (AutocompleteSuggestion) {
+            const autocompleteSuggestion = new AutocompleteSuggestion();
+            
+            const request: any = {
+              input,
+              types: options.types || ['establishment', 'geocode'],
+              componentRestrictions: options.country ? { country: options.country } : undefined
+            };
+
+            if (options.location && options.radius) {
+              request.locationBias = {
+                center: options.location,
+                radius: options.radius
+              };
+            }
+
+            // Modern API uses async method
+            const result = await autocompleteSuggestion.getPlacePredictionsAsync(request);
+            if (result && result.predictions) {
+              return result.predictions;
+            }
+            return [];
+          }
+        } catch (modernError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[ModernGooglePlacesAPI] Modern importLibrary approach failed:', modernError);
+          }
+        }
+      }
       return new Promise((resolve) => {
+        // Debug: log what's available in the Google Maps API
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[ModernGooglePlacesAPI] Available in google.maps.places:', Object.keys(window.google.maps.places || {}));
+          console.log('[ModernGooglePlacesAPI] AutocompleteSuggestion available:', !!(window.google.maps.places as any).AutocompleteSuggestion);
+          console.log('[ModernGooglePlacesAPI] AutocompleteSuggestion type:', typeof (window.google.maps.places as any).AutocompleteSuggestion);
+        }
+        
         // Use the modern AutocompleteSuggestion API instead of deprecated AutocompleteService
-        if ((window.google.maps.places as any).AutocompleteSuggestion) {
+        if ((window.google.maps.places as any).AutocompleteSuggestion && 
+            typeof (window.google.maps.places as any).AutocompleteSuggestion === 'function') {
           try {
             const AutocompleteSuggestion = (window.google.maps.places as any).AutocompleteSuggestion;
             const autocompleteSuggestion = new AutocompleteSuggestion();
