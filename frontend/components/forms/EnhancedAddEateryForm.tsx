@@ -261,6 +261,8 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
         };
 
         console.log('[EnhancedAddEateryForm] Submitting to API:', submissionData);
+        console.log('[EnhancedAddEateryForm] Zip code value:', submissionData.zip_code);
+        console.log('[EnhancedAddEateryForm] Seating capacity value:', submissionData.seating_capacity);
         
         const response = await fetch('/api/restaurants', {
           method: 'POST',
@@ -1026,7 +1028,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <input
                               {...field}
                               type="number"
-                              min="1"
+                              min="0"
                               max="10000"
                               className={cn(
                                 "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
