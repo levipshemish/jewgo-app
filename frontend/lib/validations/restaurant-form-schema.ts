@@ -130,7 +130,7 @@ export const restaurantFormSchema = z.object({
   business_license: z.string().max(100, 'Business license must be 100 characters or less').optional().or(z.literal('')),
   tax_id: z.string().max(100, 'Tax ID must be 100 characters or less').optional().or(z.literal('')),
   years_in_business: z.number().int().min(0, 'Years in business must be 0 or greater').max(100, 'Years in business must be 100 or less').optional(),
-  seating_capacity: z.number().int().min(1, 'Seating capacity must be 1 or greater').max(10000, 'Seating capacity must be 10000 or less').optional(),
+  seating_capacity: z.number().int().min(1, 'Seating capacity must be 1 or greater').max(10000, 'Seating capacity must be 10000 or less').optional().or(z.literal(0)),
   delivery_available: z.boolean().default(false),
   takeout_available: z.boolean().default(false),
   catering_available: z.boolean().default(false),

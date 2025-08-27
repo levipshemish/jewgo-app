@@ -121,23 +121,39 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     setValue('zip_code', address.zipCode);
   };
 
-  // Fetch filter options
+  // Fetch filter options with timeout and error handling
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const response = await fetch('/api/restaurants/filter-options');
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch('/api/restaurants/filter-options', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
         if (data.success) {
-                            setFilterOptions({
+          setFilterOptions({
             agencies: data.data.agencies || ['ORB', 'Kosher Miami', 'KM'],
             kosherCategories: data.data.kosherCategories || ['Dairy', 'Meat', 'Pareve'],
             listingTypes: data.data.listingTypes || ['Restaurant', 'Catering', 'Food Truck'],
             priceRanges: data.data.priceRanges || ['$', '$$', '$$$', '$$$$']
           });
+        } else {
+          throw new Error(data.message || 'Failed to fetch filter options');
         }
       } catch (error) {
         console.error('Error fetching filter options:', error);
-        // Set default options
+        
+        // Set default options on any error
         setFilterOptions({
           agencies: ['ORB', 'Kosher Miami', 'Other'],
           kosherCategories: ['Dairy', 'Meat', 'Pareve'],
@@ -994,6 +1010,174 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                     )}
                   </div>
 
+                  {/* Business Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Business Details</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Seating Capacity (optional)
+                        </label>
+                        <Controller
+                          name="seating_capacity"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="number"
+                              min="1"
+                              max="10000"
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                                errors.seating_capacity ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                              placeholder="50 (optional)"
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
+                            />
+                          )}
+                        />
+                        {errors.seating_capacity && (
+                          <p className="text-red-500 text-sm mt-1">{errors.seating_capacity.message}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Years in Business
+                        </label>
+                        <Controller
+                          name="years_in_business"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="number"
+                              min="0"
+                              max="100"
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                                errors.years_in_business ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                              placeholder="5"
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
+                            />
+                          )}
+                        />
+                        {errors.years_in_business && (
+                          <p className="text-red-500 text-sm mt-1">{errors.years_in_business.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Business License
+                        </label>
+                        <Controller
+                          name="business_license"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                                errors.business_license ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                              placeholder="License number (optional)"
+                            />
+                          )}
+                        />
+                        {errors.business_license && (
+                          <p className="text-red-500 text-sm mt-1">{errors.business_license.message}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tax ID
+                        </label>
+                        <Controller
+                          name="tax_id"
+                          control={control}
+                          render={({ field }) => (
+                            <input
+                              {...field}
+                              type="text"
+                              className={cn(
+                                "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2",
+                                errors.tax_id ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-green-400"
+                              )}
+                              placeholder="Tax ID (optional)"
+                            />
+                          )}
+                        />
+                        {errors.tax_id && (
+                          <p className="text-red-500 text-sm mt-1">{errors.tax_id.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Service Options */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-700 mb-3">Service Options</h4>
+                      <div className="space-y-3">
+                        <Controller
+                          name="delivery_available"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                {...field}
+                                checked={field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                className="mr-3"
+                              />
+                              <span>Delivery Available</span>
+                            </label>
+                          )}
+                        />
+                        
+                        <Controller
+                          name="takeout_available"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                {...field}
+                                checked={field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                className="mr-3"
+                              />
+                              <span>Takeout Available</span>
+                            </label>
+                          )}
+                        />
+                        
+                        <Controller
+                          name="catering_available"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center">
+                              <input
+                                type="checkbox"
+                                {...field}
+                                checked={field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                className="mr-3"
+                              />
+                              <span>Catering Available</span>
+                            </label>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Social Media Links */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Social Media Links</h3>
@@ -1216,6 +1400,34 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                             <span className="font-medium">Pas Yisroel:</span> {getValues('is_pas_yisroel') ? 'Yes' : 'No'}
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Business Details Preview */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Business Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Seating Capacity:</span> {getValues('seating_capacity') || 'Not specified'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Years in Business:</span> {getValues('years_in_business') || 'Not specified'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Business License:</span> {getValues('business_license') || 'Not provided'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Tax ID:</span> {getValues('tax_id') || 'Not provided'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Delivery:</span> {getValues('delivery_available') ? 'Available' : 'Not available'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Takeout:</span> {getValues('takeout_available') ? 'Available' : 'Not available'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Catering:</span> {getValues('catering_available') ? 'Available' : 'Not available'}
+                        </div>
                       </div>
                     </div>
 

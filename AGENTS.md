@@ -39,3 +39,20 @@
 - Validate via existing scripts: `npm run env:check`, `cd backend && pytest`, `cd frontend && npm test`.
 - Never touch secrets; update docs when behavior or commands change.
 
+### Running Tool Commands Directly
+- Shell: run commands via the `shell` tool by sending an action preamble, then invoking with an array of arguments, for example: `shell {"command": ["bash", "-lc", "cd backend && pytest" ]}`.
+- Escalation: if a command needs network access or writes outside the workspace, include `with_escalated_permissions: true` and a short `justification`, for example: `shell {"command":["bash","-lc","npm install"], "with_escalated_permissions": true, "justification": "Install dependencies requires network access"}`.
+- File edits: use `apply_patch` with the patch envelope. Example: `apply_patch << 'PATCH' ... PATCH` with Add/Update/Delete file ops and minimal diff hunks.
+- Plans: update progress using `update_plan` with one `in_progress` step at a time. Mark finished steps as `completed` before starting the next.
+- Output discipline: prefer `rg` for searches; read files in chunks (≤250 lines) with `sed -n` or similar to avoid truncation.
+- Safety: avoid destructive commands unless explicitly requested. For long operations, inform the user with a concise preamble first.
+
+#### Common Workflow Examples
+- Run backend tests: preamble “Running backend tests,” then `shell {"command":["bash","-lc","cd backend && pytest" ]}`.
+- Run backend tests with coverage: `shell {"command":["bash","-lc","cd backend && pytest --cov" ]}`.
+- Start backend dev server (virtualenv assumed set up): `shell {"command":["bash","-lc","cd backend && python app.py" ]}`.
+- Install frontend deps (needs network): `shell {"command":["bash","-lc","cd frontend && npm install"], "with_escalated_permissions": true, "justification": "Install dependencies requires network access"}`.
+- Run frontend dev server: `shell {"command":["bash","-lc","cd frontend && npm run dev" ]}`.
+- Frontend QA suite: `shell {"command":["bash","-lc","cd frontend && npm run build && npm test && npm run lint && npm run type-check" ]}`.
+- Env check at root: `shell {"command":["bash","-lc","npm run env:check" ]}`.
+- Edit a file: `apply_patch << 'PATCH'` … patch diff … `PATCH`.

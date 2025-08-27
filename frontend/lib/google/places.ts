@@ -221,121 +221,79 @@ export class ModernGooglePlacesAPI {
   } = {}): Promise<google.maps.places.AutocompletePrediction[]> {
     await this.initialize();
 
-    // Validate input parameter
-    if (!input || typeof input !== 'string' || input.trim() === '') {
+    if (!input || input.length < 2) {
       return [];
     }
 
     try {
-      const request: google.maps.places.AutocompletionRequest = {
-        input: input.trim(),
-        types: options.types || ['establishment'],
-        location: options.location ? new google.maps.LatLng(options.location.lat, options.location.lng) : undefined,
-        radius: options.radius,
+      return new Promise((resolve) => {
+        // Use the modern AutocompleteSuggestion API instead of deprecated AutocompleteService
+        if ((window.google.maps.places as any).AutocompleteSuggestion) {
+          try {
+            const AutocompleteSuggestion = (window.google.maps.places as any).AutocompleteSuggestion;
+            const autocompleteSuggestion = new AutocompleteSuggestion();
+            
+            const request: any = {
+              input,
+              types: options.types || ['establishment', 'geocode'],
+              componentRestrictions: options.country ? { country: options.country } : undefined
+            };
+
+            if (options.location && options.radius) {
+              request.locationBias = {
+                center: options.location,
+                radius: options.radius
+              };
+            }
+
+            autocompleteSuggestion.getPlacePredictions(request, (predictions: any[], status: any) => {
+              if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+                resolve(predictions);
+              } else {
+                resolve([]);
+              }
+            });
+          } catch (error) {
+            console.warn('[ModernGooglePlacesAPI] Modern AutocompleteSuggestion failed, falling back to legacy:', error);
+            this.tryLegacyAutocomplete(input, options, resolve);
+          }
+        } else {
+          this.tryLegacyAutocomplete(input, options, resolve);
+        }
+      });
+    } catch (error) {
+      console.error('[ModernGooglePlacesAPI] Error in getPlacePredictions:', error);
+      return [];
+    }
+  }
+
+  private tryLegacyAutocomplete(input: string, options: any, resolve: (predictions: any[]) => void) {
+    // Fallback to legacy AutocompleteService if modern API is not available
+    if (window.google.maps.places.AutocompleteService) {
+      const autocompleteService = new window.google.maps.places.AutocompleteService();
+      
+      const request: any = {
+        input,
+        types: options.types || ['establishment', 'geocode'],
         componentRestrictions: options.country ? { country: options.country } : undefined
       };
 
-      return new Promise((resolve, _reject) => {
-        try {
-          // Check if Google Maps and Places are properly loaded
-          if (!window.google || !window.google.maps || !window.google.maps.places) {
-            console.error('[ModernGooglePlacesAPI] Google Maps Places not available');
-            resolve([]);
-            return;
-          }
+      if (options.location && options.radius) {
+        request.locationBias = {
+          center: options.location,
+          radius: options.radius
+        };
+      }
 
-          // Helper function to try legacy AutocompleteService as fallback
-          const tryLegacyAutocomplete = () => {
-            try {
-              if (!window.google?.maps?.places?.AutocompleteService) {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService not available');
-                }
-                resolve([]);
-                return;
-              }
-              
-              const legacy = new window.google.maps.places.AutocompleteService();
-              if (typeof legacy.getPlacePredictions !== 'function') {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService.getPlacePredictions not available');
-                }
-                resolve([]);
-                return;
-              }
-              
-              legacy.getPlacePredictions(request, (predictions: any, status: any) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService returned predictions:', predictions.length);
-                  }
-                  resolve(predictions);
-                } else {
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService status:', status);
-                  }
-                  resolve([]);
-                }
-              });
-            } catch (error) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[ModernGooglePlacesAPI] Legacy AutocompleteService error:', error);
-              }
-              resolve([]);
-            }
-          };
-
-          // Try the modern AutocompleteSuggestion API first
-          if (window.google.maps.places.AutocompleteSuggestion) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[ModernGooglePlacesAPI] Trying modern AutocompleteSuggestion API');
-            }
-            
-            const autocompleteService = new window.google.maps.places.AutocompleteSuggestion();
-            
-            if (typeof autocompleteService.getPlacePredictions === 'function') {
-              autocompleteService.getPlacePredictions(request)
-                .then((response: any) => {
-                  if (response && response.predictions && response.predictions.length > 0) {
-                    if (process.env.NODE_ENV === 'development') {
-                      console.log('[ModernGooglePlacesAPI] Modern API returned predictions:', response.predictions.length);
-                    }
-                    resolve(response.predictions);
-                  } else {
-                    if (process.env.NODE_ENV === 'development') {
-                      console.log('[ModernGooglePlacesAPI] Modern API returned no predictions, trying legacy fallback');
-                    }
-                    // Fallback to legacy API
-                    tryLegacyAutocomplete();
-                  }
-                })
-                .catch((error: any) => {
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('[ModernGooglePlacesAPI] Modern API error, trying legacy fallback:', error);
-                  }
-                  // Fallback to legacy API
-                  tryLegacyAutocomplete();
-                });
-            } else {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[ModernGooglePlacesAPI] Modern API getPlacePredictions method not available, using legacy');
-              }
-              tryLegacyAutocomplete();
-            }
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[ModernGooglePlacesAPI] Modern AutocompleteSuggestion not available, using legacy');
-            }
-            tryLegacyAutocomplete();
-          }
-        } catch (error) {
-          console.error('[ModernGooglePlacesAPI] Error in getPlacePredictions:', error);
+      autocompleteService.getPlacePredictions(request, (predictions: any[], status: any) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+          resolve(predictions);
+        } else {
           resolve([]);
         }
       });
-    } catch (_error) {
-      // console.error('Error getting place predictions:', _error);
-      return [];
+    } else {
+      resolve([]);
     }
   }
 
