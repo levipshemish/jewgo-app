@@ -18,6 +18,7 @@ import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { LocationPromptPopup } from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+import { appLogger } from '@/lib/utils/logger';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters, toSearchParams } from '@/lib/filters/schema';

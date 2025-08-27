@@ -7,6 +7,7 @@ This document covers the Admin API endpoints implemented in the Next.js frontend
 - Admin CSRF token is either generated in `app/admin/layout.tsx` and exposed via `window.__CSRF_TOKEN__`, or fetched from `GET /api/admin/csrf`.
 - Clients must include `x-csrf-token: window.__CSRF_TOKEN__` on all state-changing requests (POST/PUT/PATCH/DELETE). The server validates with `validateSignedCSRFToken(adminUser.id)`.
 - Tokens are stateless (HMAC) with a 1-hour TTL. The hook `useAdminCsrf()` schedules an automatic refresh every ~50 minutes to avoid expiry. Consider a central fetch wrapper to auto-retry once on HTTP 419 by first refreshing `/api/admin/csrf`.
+- The `/api/admin/csrf` endpoint applies strict CORS/security headers and returns `{ token }`. It requires the caller to be authenticated as an admin.
 
 ## RBAC Summary
 
