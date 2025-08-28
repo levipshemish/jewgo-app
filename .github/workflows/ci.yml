@@ -262,6 +262,14 @@ jobs:
         
     - name: Environment Consistency Check
       run: |
+        # Create .env file from template for CI
+        if [ ! -f .env ]; then
+          echo "Creating .env file from template for CI..."
+          cp config/environment/templates/frontend.env.example .env
+          # Add some basic CI values
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
+        fi
         node scripts/env-consistency-check.js
         
     - name: Database Separation Validation (Backend)
