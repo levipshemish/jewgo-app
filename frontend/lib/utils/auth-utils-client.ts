@@ -35,6 +35,11 @@ export interface TransformedUser {
   };
   createdAt?: string;
   updatedAt?: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  role: string;
+  permissions: string[];
+  subscriptionTier: string;
 }
 
 /**
@@ -110,16 +115,15 @@ export function createMockUser(): TransformedUser {
       name: 'Email',
       icon: '📧',
       color: 'text-gray-600',
-      displayName: "Email"
-    },
+      },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isEmailVerified: true,
     isPhoneVerified: false,
     role: 'user',
-    permissions: [],
-    subscriptionTier: 'free'
-  };
+    permissions: ['read', 'write'],
+    subscriptionTier: 'free',
+    };
 }
 
 /**
