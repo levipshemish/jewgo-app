@@ -42,6 +42,38 @@
   - [ ] Fix unused variable warnings in `app/marketplace/` pages
 - **Reference**: See `frontend_issues.md` for complete list of warnings
 
+### 3. **CI Pipeline Issues** ⚠️
+- **Priority**: High
+- **Issue**: Multiple CI pipeline failures preventing automated deployments
+- **Impact**: Blocking automated testing and deployment processes
+- **Status**: Documented, needs implementation
+- **Reference**: PR #46 - CI Pipeline Fixes
+- **Tasks**:
+  - [ ] **Backend Script Safety Validation** - Install missing Python dependencies
+    - [ ] Add `requests` module installation to CI workflow
+    - [ ] Add `click` module installation to CI workflow
+    - [ ] Add `python-dotenv` module installation to CI workflow
+    - [ ] Add `python-dateutil` module installation to CI workflow
+    - [ ] Add `pyyaml` module installation to CI workflow
+  - [ ] **Environment Consistency Check** - Fix missing `.env` file in CI
+    - [ ] Update CI workflow to create `.env` file from template
+    - [ ] Add basic CI environment variables (`NODE_ENV=test`, `CI=true`)
+    - [ ] Test environment consistency check in CI
+  - [ ] **Frontend Build Issues** - Make build more resilient to TypeScript errors
+    - [ ] Update frontend build step to handle TypeScript warnings gracefully
+    - [ ] Add build continuation on non-critical errors
+    - [ ] Improve error reporting for build issues
+  - [ ] **Vercel Deployment Issues** - Fix deployment configuration
+    - [ ] Review and update `vercel.json` configuration
+    - [ ] Ensure proper environment variable handling in deployment
+    - [ ] Add build-time environment variable validation
+  - [ ] **CI Workflow Updates** - Update `.github/workflows/ci.yml`
+    - [ ] Add Python dependency installation step
+    - [ ] Update environment consistency check step
+    - [ ] Make frontend build step more resilient
+    - [ ] Add better error handling and reporting
+- **Notes**: These issues were identified during PR #40 review and separated into PR #46 to avoid blocking core functionality fixes
+
 ---
 
 ## 🔄 In Progress
@@ -106,6 +138,7 @@
 ### **Immediate (This Week)**
 1. **Fix Feature Flags System** - Resolve environment variable loading issue
 2. **Clean Up Linting Warnings** - Fix unused variable warnings in frontend
+3. **Implement CI Pipeline Fixes** - Address CI failures from PR #46
 
 ### **Short-term (Next 2 Weeks)**
 1. **Performance Optimization** - Database query and API response time improvements
@@ -127,6 +160,7 @@
 - **Search System**: Fully operational with hybrid search
 - **Authentication**: Supabase auth working correctly
 - **Monitoring**: Sentry integration active
+- **CI Pipeline**: ⚠️ Issues identified, needs fixes (see PR #46)
 
 ### **Performance Metrics** ✅
 - **API Response Times**: < 200ms average
