@@ -66,8 +66,13 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
     provider,
     avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
     providerInfo,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
+    createdAt: user.created_at || new Date().toISOString(),
+    updatedAt: user.updated_at || new Date().toISOString(),
+    isEmailVerified: user.email_confirmed_at !== null,
+    isPhoneVerified: user.phone_confirmed_at !== null,
+    role: user.app_metadata?.role || 'user',
+    permissions: user.app_metadata?.permissions || ['read', 'write'],
+    subscriptionTier: user.app_metadata?.subscription_tier || 'free',
   };
 }
 
