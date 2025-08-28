@@ -71,7 +71,8 @@ export function EateryPageClient() {
   const {
     activeFilters,
     setFilter,
-    clearFilter
+    clearFilter,
+    clearAllFilters
   } = useAdvancedFilters();
 
   // Create a stable key for filters to prevent effect loops due to object identity
@@ -170,9 +171,9 @@ export function EateryPageClient() {
 
   // Handle filter clear
   const handleFilterClear = useCallback(() => {
-    clearFilter();
+    clearAllFilters();
     setCurrentPage(1);
-  }, [clearFilter]);
+  }, [clearAllFilters]);
 
   // Infinite scroll setup
   const { loadMore, hasMore, isLoadingMore } = useInfiniteScroll(
@@ -181,7 +182,7 @@ export function EateryPageClient() {
         setCurrentPage(prev => prev + 1);
       }
     },
-    currentPage < totalPages
+    { disabled: currentPage >= totalPages }
   );
 
   // Render loading state with SafeLoader
