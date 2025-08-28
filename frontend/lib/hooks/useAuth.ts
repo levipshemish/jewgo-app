@@ -77,7 +77,9 @@ export function useAuth(): UseAuthReturn {
 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, session: { user?: Record<string, unknown> } | null) => {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         try {
           setError(null);

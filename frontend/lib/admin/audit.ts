@@ -259,7 +259,9 @@ export async function logAdminAction(
  * Sanitize sensitive data for audit logs with optional whitelist
  */
 export function sanitizeDataWithWhitelist(data: any, whitelistFields: string[] = []): any {
-  if (!data) {return data;}
+  if (!data) {
+    return data;
+  }
 
   const sensitiveFields = [
     'password', 'token', 'refresh_token', 'access_token', 'secret',

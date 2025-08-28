@@ -15,9 +15,12 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    ForeignKey,
+    JSON,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 # SQLAlchemy Base
 Base = declarative_base()
@@ -98,53 +101,100 @@ class Restaurant(Base):
     )  # Optional — fallback to placeholder (increased for multiple images)
     specials = Column(
         Text,
-    )  # JSONB for specials data (paid and unpaid) — keep as JSONB for flexibility
+    )  # Optional — special offers or announcements
+    status = Column(
+        String(20),
+        default="active",
+        nullable=False,
+    )  # ENUM('active', 'inactive', 'pending', 'closed')
+
+    # 🔗 Relationships
+    orders = relationship("Order", back_populates="restaurant")
+
+    def __repr__(self):
+        return f"<Restaurant(id={self.id}, name='{self.name}', city='{self.city}')>"
+
+
+class Order(Base):
+    """Order model for tracking customer orders.
+
+    This model represents customer orders placed through the JewGo platform.
+    It tracks order details, customer information, and order status.
+    """
+
+    __tablename__ = "orders"
+
+    # 🔒 System-Generated / Controlled
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
+    order_number = Column(String(50), unique=True, nullable=False)  # Human-readable order number
+
+    # 🏪 Restaurant Information
+    restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
+    restaurant = relationship("Restaurant", back_populates="orders")
+
+    # 👤 Customer Information
+    customer_name = Column(String(255), nullable=False)
+    customer_phone = Column(String(50), nullable=False)
+    customer_email = Column(String(255), nullable=False)
+    delivery_address = Column(Text)  # Optional for pickup orders
+    delivery_instructions = Column(Text)  # Optional delivery notes
+
+    # 📋 Order Details
+    order_type = Column(String(20), nullable=False)  # 'pickup' or 'delivery'
+    payment_method = Column(String(20), nullable=False)  # 'cash', 'card', 'online'
+    estimated_time = Column(String(100))  # Estimated pickup/delivery time
+    subtotal = Column(Float, nullable=False, default=0.0)
+    tax = Column(Float, nullable=False, default=0.0)
+    delivery_fee = Column(Float, nullable=False, default=0.0)
+    total = Column(Float, nullable=False, default=0.0)
+
+    # 📊 Order Status
     status = Column(
         String(20),
         default="pending",
-    )  # ENUM('active', 'inactive', 'pending')
+        nullable=False,
+    )  # 'pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'
 
-    # 📊 Google Places Data (enriched via API)
-    google_rating = Column(Float)  # Optional
-    google_review_count = Column(Integer)  # Optional
-    google_reviews = Column(Text)  # JSONB for recent reviews (limited)
-    user_email = Column(String(255))  # Optional — for contact form
+    # 🔗 Relationships
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
-    # 👤 Owner Management Fields
-    owner_name = Column(String(255))  # Optional
-    owner_email = Column(String(255))  # Optional
-    owner_phone = Column(String(50))  # Optional
-    is_owner_submission = Column(Boolean, default=False)  # Optional
+    def __repr__(self):
+        return f"<Order(id={self.id}, order_number='{self.order_number}', status='{self.status}')>"
 
-    # 📧 Business Contact Fields
-    business_email = Column(String(255))  # Optional
-    instagram_link = Column(String(500))  # Optional
-    facebook_link = Column(String(500))  # Optional
-    tiktok_link = Column(String(500))  # Optional
 
-    # 🖼️ Multiple Images Support
-    business_images = Column(ARRAY(String))  # Array of image URLs
+class OrderItem(Base):
+    """OrderItem model for individual items in an order.
 
-    # 📋 Enhanced Status Tracking
-    submission_status = Column(String(50), default="pending_approval")  # Optional
-    submission_date = Column(DateTime)  # Optional
-    approval_date = Column(DateTime)  # Optional
-    approved_by = Column(String(255))  # Optional
-    rejection_reason = Column(Text)  # Optional
+    This model represents individual menu items that are part of a customer order.
+    """
 
-    # 🏢 Additional Business Details
-    business_license = Column(String(255))  # Optional
-    tax_id = Column(String(255))  # Optional
-    years_in_business = Column(Integer)  # Optional
-    seating_capacity = Column(Integer)  # Optional
-    delivery_available = Column(Boolean, default=False)  # Optional
-    takeout_available = Column(Boolean, default=False)  # Optional
-    catering_available = Column(Boolean, default=False)  # Optional
+    __tablename__ = "order_items"
 
-    # 📞 Contact Preferences
-    preferred_contact_method = Column(String(50))  # email, phone, text
-    preferred_contact_time = Column(String(50))  # morning, afternoon, evening
-    contact_notes = Column(Text)  # Optional
+    # 🔒 System-Generated / Controlled
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # 🔗 Order Relationship
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    order = relationship("Order", back_populates="items")
+
+    # 📋 Item Details
+    item_id = Column(String(100), nullable=False)  # Menu item ID
+    name = Column(String(255), nullable=False)  # Menu item name
+    price = Column(Float, nullable=False)  # Unit price
+    quantity = Column(Integer, nullable=False, default=1)  # Quantity ordered
+    special_instructions = Column(Text)  # Special instructions for this item
+    subtotal = Column(Float, nullable=False)  # Price * quantity
+
+    def __repr__(self):
+        return f"<OrderItem(id={self.id}, name='{self.name}', quantity={self.quantity})>"
 
 
 class Review(Base):

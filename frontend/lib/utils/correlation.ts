@@ -38,7 +38,9 @@ export function createCorrelationContext(correlationId?: string) {
  * Extract correlation ID from headers or context
  */
 export function extractCorrelationId(headers?: Record<string, string>): string | null {
-  if (!headers) return null;
+  if (!headers) {
+    return null;
+  }
   
   // Check common correlation ID header names
   const correlationHeaders = [

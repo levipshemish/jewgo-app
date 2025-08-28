@@ -33,7 +33,9 @@ export default function LocationPromptPopup({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -55,7 +57,7 @@ export default function LocationPromptPopup({
 
         <div className="space-y-4">
           <p className="text-gray-600">
-            To provide you with the best experience, we'd like to access your location to show nearby kosher restaurants and services.
+            To provide you with the best experience, we&apos;d like to access your location to show nearby kosher restaurants and services.
           </p>
 
           {error && (
@@ -81,7 +83,7 @@ export default function LocationPromptPopup({
               <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
                 <span className="text-sm text-yellow-800">
-                  Location access was denied. You can still use the app, but won't see nearby places.
+                  Location access was denied. You can still use the app, but won&apos;t see nearby places.
                 </span>
               </div>
               <button
@@ -114,7 +116,7 @@ export default function LocationPromptPopup({
 
           <div className="text-xs text-gray-500 space-y-1">
             <p>• Your location is only used to show nearby kosher places</p>
-            <p>• We don't store or share your location data</p>
+            <p>• We don&apos;t store or share your location data</p>
             <p>• You can change this setting anytime in your browser</p>
           </div>
         </div>

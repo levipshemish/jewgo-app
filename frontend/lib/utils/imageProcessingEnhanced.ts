@@ -711,10 +711,18 @@ export const imageUtilsEnhanced: ImageUtils = {
   // Validation
   validateImage: validateImageEnhanced,
   validateImageDimensions: (width: number, height: number, config?: ImageValidationConfig) => {
-    if (config?.maxWidth && width > config.maxWidth) return false;
-    if (config?.maxHeight && height > config.maxHeight) return false;
-    if (config?.minWidth && width < config.minWidth) return false;
-    if (config?.minHeight && height < config.minHeight) return false;
+    if (config?.maxWidth && width > config.maxWidth) {
+      return false;
+    }
+    if (config?.maxHeight && height > config.maxHeight) {
+      return false;
+    }
+    if (config?.minWidth && width < config.minWidth) {
+      return false;
+    }
+    if (config?.minHeight && height < config.minHeight) {
+      return false;
+    }
     return true;
   },
   validateImageFormat: (format: ImageFormat, allowedFormats?: ImageFormat[]) => {

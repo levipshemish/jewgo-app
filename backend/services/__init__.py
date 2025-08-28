@@ -13,6 +13,7 @@ from typing import Dict, Type
 from .base_service import BaseService
 from .google_places_service import GooglePlacesService
 from .health_service import HealthService
+from .order_service_v4 import OrderServiceV4
 from .restaurant_service import RestaurantService
 from .restaurant_status_service import RestaurantStatusService
 from .scraper_service import ScraperService
@@ -29,6 +30,7 @@ from .scraper_service import ScraperService
 SERVICE_REGISTRY: Dict[str, Type[BaseService]] = {
     "restaurant": RestaurantService,
     "google_places": GooglePlacesService,
+    "order": OrderServiceV4,
     "restaurant_status": RestaurantStatusService,
     "scraper": ScraperService,
     "health": HealthService,
@@ -41,6 +43,7 @@ __all__ = [
     "BaseService",
     "RestaurantService",
     "GooglePlacesService",
+    "OrderServiceV4",
     "RestaurantStatusService",
     "ScraperService",
     "HealthService",

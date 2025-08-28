@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       // If backend is not available, return sample community data
-      console.warn(`Backend marketplace API error: ${response.status}`);
+      // console.warn(`Backend marketplace API error: ${response.status}`);
       
       const sampleCommunityData = {
         success: true,
@@ -258,20 +258,36 @@ export async function GET(request: NextRequest) {
       // Sort by community priority (community items first, then by distance/date)
       enhancedListings.sort((a, b) => {
         // Gemach items first
-        if (a.is_gemach && !b.is_gemach) return -1;
-        if (!a.is_gemach && b.is_gemach) return 1;
+        if (a.is_gemach && !b.is_gemach) {
+          return -1;
+        }
+        if (!a.is_gemach && b.is_gemach) {
+          return 1;
+        }
         
         // Community verified items next
-        if (a.community_verified && !b.community_verified) return -1;
-        if (!a.community_verified && b.community_verified) return 1;
+        if (a.community_verified && !b.community_verified) {
+          return -1;
+        }
+        if (!a.community_verified && b.community_verified) {
+          return 1;
+        }
         
         // Rabbi endorsed items
-        if (a.rabbi_endorsed && !b.rabbi_endorsed) return -1;
-        if (!a.rabbi_endorsed && b.rabbi_endorsed) return 1;
+        if (a.rabbi_endorsed && !b.rabbi_endorsed) {
+          return -1;
+        }
+        if (!a.rabbi_endorsed && b.rabbi_endorsed) {
+          return 1;
+        }
         
         // Kosher verified items
-        if (a.kosher_verified && !b.kosher_verified) return -1;
-        if (!a.kosher_verified && b.kosher_verified) return 1;
+        if (a.kosher_verified && !b.kosher_verified) {
+          return -1;
+        }
+        if (!a.kosher_verified && b.kosher_verified) {
+          return 1;
+        }
         
         // Default to date order (newest first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

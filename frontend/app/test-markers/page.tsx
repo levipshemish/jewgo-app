@@ -26,8 +26,8 @@ export default function TestMarkersPage() {
         });
 
         setStatus('Checking AdvancedMarkerElement availability...');
-        console.log('google.maps.marker:', google.maps.marker);
-        console.log('google.maps.marker?.AdvancedMarkerElement:', google.maps.marker?.AdvancedMarkerElement);
+        // console.log('google.maps.marker:', google.maps.marker);
+        // console.log('google.maps.marker?.AdvancedMarkerElement:', google.maps.marker?.AdvancedMarkerElement);
 
         if (google.maps.marker?.AdvancedMarkerElement) {
           setStatus('Creating AdvancedMarkerElement markers...');
@@ -61,7 +61,7 @@ export default function TestMarkersPage() {
 
             // Add click listener
             marker.addListener('click', () => {
-              console.log('Clicked on:', restaurant.name);
+              // console.log('Clicked on:', restaurant.name);
               alert(`Clicked on ${restaurant.name}`);
             });
 
@@ -90,7 +90,7 @@ export default function TestMarkersPage() {
             });
 
             marker.addListener('click', () => {
-              console.log('Clicked on:', restaurant.name);
+              // console.log('Clicked on:', restaurant.name);
               alert(`Clicked on ${restaurant.name}`);
             });
 

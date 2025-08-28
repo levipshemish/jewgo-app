@@ -268,7 +268,9 @@ export function useMarkerManagement({
 
   // Update markers when restaurants change
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
     // Clean up existing markers
     cleanupMarkers();
@@ -287,7 +289,7 @@ export function useMarkerManagement({
           map,
         });
       } catch (error) {
-        console.warn(`Failed to create marker for restaurant ${restaurant.id}:`, error);
+        // console.warn(`Failed to create marker for restaurant ${restaurant.id}:`, error);
       }
     });
 

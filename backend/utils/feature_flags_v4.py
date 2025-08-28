@@ -85,6 +85,11 @@ class APIV4FeatureFlags:
                 "description": "Enable v4 review endpoints",
                 "stage": MigrationStage.DISABLED,
             },
+            "api_v4_orders": {
+                "default": True,
+                "description": "Enable v4 order endpoints",
+                "stage": MigrationStage.TESTING,
+            },
             "api_v4_users": {
                 "default": False,
                 "description": "Enable v4 user endpoints",

@@ -35,6 +35,12 @@ except ImportError as e:
     MarketplaceServiceV4 = None
 
 try:
+    from services.order_service_v4 import OrderServiceV4
+except ImportError as e:
+    logger.warning(f"Could not import OrderServiceV4: {e}")
+    OrderServiceV4 = None
+
+try:
     from utils.unified_search_service import (
         SearchFilters,
         SearchType,
@@ -1611,6 +1617,191 @@ def create_marketplace_tables():
             "success": False,
             "message": f"Error creating tables: {str(e)}"
         }), 500
+
+
+def create_order_service():
+    """Create and return an OrderServiceV4 instance."""
+    try:
+        db_manager, cache_manager, config = get_service_dependencies()
+        return OrderServiceV4(db_session=db_manager.get_session())
+    except DatabaseError as e:
+        logger.error(f"Database error creating order service: {e}")
+        raise
+    except ImportError as e:
+        logger.error(f"Import error creating order service: {e}")
+        raise DatabaseError("Required modules not available")
+    except Exception as e:
+        logger.error(f"Failed to create order service: {e}")
+        raise DatabaseError("Failed to create order service")
+
+
+# Order Routes
+@safe_route("/orders", methods=["POST"])
+@require_api_v4_flag("api_v4_orders")
+def create_order():
+    """Create a new order."""
+    try:
+        if not request.is_json:
+            return error_response("Content-Type must be application/json", 400)
+
+        order_data = request.get_json()
+        
+        # Validate required fields
+        required_fields = [
+            "restaurant_id", "customer_name", "customer_phone", "customer_email",
+            "order_type", "payment_method", "items"
+        ]
+        
+        for field in required_fields:
+            if field not in order_data:
+                return error_response(f"Missing required field: {field}", 400)
+
+        # Create order service and submit order
+        service = create_order_service()
+        order = service.create_order(order_data)
+
+        return success_response(
+            {
+                "order": order,
+                "message": f"Order {order['order_number']} created successfully"
+            }
+        )
+
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except NotFoundError as e:
+        return not_found_response(str(e), "restaurant")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error creating order", error=str(e))
+        return error_response("Failed to create order", 500)
+
+
+@safe_route("/orders/<int:order_id>", methods=["GET"])
+@require_api_v4_flag("api_v4_orders")
+def get_order(order_id: int):
+    """Get order by ID."""
+    try:
+        service = create_order_service()
+        order = service.get_order_by_id(order_id)
+
+        return success_response({"order": order})
+
+    except NotFoundError as e:
+        return not_found_response(str(e), "order")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error retrieving order", error=str(e))
+        return error_response("Failed to retrieve order", 500)
+
+
+@safe_route("/orders/number/<order_number>", methods=["GET"])
+@require_api_v4_flag("api_v4_orders")
+def get_order_by_number(order_number: str):
+    """Get order by order number."""
+    try:
+        service = create_order_service()
+        order = service.get_order_by_number(order_number)
+
+        return success_response({"order": order})
+
+    except NotFoundError as e:
+        return not_found_response(str(e), "order")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error retrieving order", error=str(e))
+        return error_response("Failed to retrieve order", 500)
+
+
+@safe_route("/orders/restaurant/<int:restaurant_id>", methods=["GET"])
+@require_api_v4_flag("api_v4_orders")
+def get_restaurant_orders(restaurant_id: int):
+    """Get orders for a specific restaurant."""
+    try:
+        limit = min(int(request.args.get("limit", 50)), 100)
+        offset = max(int(request.args.get("offset", 0)), 0)
+
+        service = create_order_service()
+        orders = service.get_orders_by_restaurant(restaurant_id, limit, offset)
+
+        return success_response({
+            "orders": orders,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "count": len(orders)
+            }
+        })
+
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error retrieving restaurant orders", error=str(e))
+        return error_response("Failed to retrieve restaurant orders", 500)
+
+
+@safe_route("/orders/customer/<email>", methods=["GET"])
+@require_api_v4_flag("api_v4_orders")
+def get_customer_orders(email: str):
+    """Get orders for a specific customer."""
+    try:
+        limit = min(int(request.args.get("limit", 50)), 100)
+        offset = max(int(request.args.get("offset", 0)), 0)
+
+        service = create_order_service()
+        orders = service.get_orders_by_customer(email, limit, offset)
+
+        return success_response({
+            "orders": orders,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "count": len(orders)
+            }
+        })
+
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error retrieving customer orders", error=str(e))
+        return error_response("Failed to retrieve customer orders", 500)
+
+
+@safe_route("/orders/<int:order_id>/status", methods=["PUT"])
+@require_api_v4_flag("api_v4_orders")
+def update_order_status(order_id: int):
+    """Update order status."""
+    try:
+        if not request.is_json:
+            return error_response("Content-Type must be application/json", 400)
+
+        data = request.get_json()
+        status = data.get("status")
+        
+        if not status:
+            return error_response("Status field is required", 400)
+
+        service = create_order_service()
+        order = service.update_order_status(order_id, status)
+
+        return success_response({
+            "order": order,
+            "message": f"Order status updated to {status}"
+        })
+
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except NotFoundError as e:
+        return not_found_response(str(e), "order")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error updating order status", error=str(e))
+        return error_response("Failed to update order status", 500)
+
 
 # Error handlers - only register if api_v4 blueprint is available
 if api_v4 is not None:

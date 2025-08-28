@@ -59,7 +59,7 @@ export async function executeReCaptcha(siteKey: string, action: string): Promise
   try {
     const recaptcha = safeGetReCaptcha();
     if (!recaptcha) {
-      console.warn('ReCAPTCHA not available');
+      // console.warn('ReCAPTCHA not available');
       return null;
     }
 

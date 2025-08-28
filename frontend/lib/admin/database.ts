@@ -658,7 +658,7 @@ export class AdminDatabaseService {
 
           if (allFields.length > 0) {
             const csvHeaders = allFields.map(field => `"${field}"`).join(',');
-            controller.enqueue(new TextEncoder().encode(csvHeaders + '\n'));
+            controller.enqueue(new TextEncoder().encode(`${csvHeaders}\n`));
           }
 
           // Stream data in batches
@@ -692,7 +692,7 @@ export class AdminDatabaseService {
                 return `"${String(value).replace(/"/g, '""')}"`;
               }).join(',');
               
-              controller.enqueue(new TextEncoder().encode(csvRow + '\n'));
+              controller.enqueue(new TextEncoder().encode(`${csvRow}\n`));
             }
 
             exportedCount += batch.length;

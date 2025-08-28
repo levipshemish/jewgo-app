@@ -171,7 +171,9 @@ function ShtełPageContent() {
     
     // Format price from cents to dollars
     const formatPrice = (priceCents: number) => {
-      if (priceCents === 0) return 'Free'; // For Gemach items
+      if (priceCents === 0) {
+        return 'Free'; // For Gemach items
+      }
       return `$${(priceCents / 100).toFixed(0)}`;
     };
 
@@ -193,10 +195,18 @@ function ShtełPageContent() {
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays === 1) return '1d';
-      if (diffDays < 7) return `${diffDays}d`;
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)}w`;
-      if (diffDays < 365) return `${Math.floor(diffDays / 30)}m`;
+      if (diffDays === 1) {
+        return '1d';
+      }
+      if (diffDays < 7) {
+        return `${diffDays}d`;
+      }
+      if (diffDays < 30) {
+        return `${Math.floor(diffDays / 7)}w`;
+      }
+      if (diffDays < 365) {
+        return `${Math.floor(diffDays / 30)}m`;
+      }
       return `${Math.floor(diffDays / 365)}y`;
     };
 
@@ -335,7 +345,9 @@ function ShtełPageContent() {
           }
           return listing;
         }).sort((a: any, b: any) => {
-          if (!a.distance || !b.distance) return 0;
+          if (!a.distance || !b.distance) {
+            return 0;
+          }
           const aNum = parseFloat(a.distance.replace(/[^\d.]/g, ''));
           const bNum = parseFloat(b.distance.replace(/[^\d.]/g, ''));
           return aNum - bNum;
@@ -456,7 +468,7 @@ function ShtełPageContent() {
 
   const handleShowFilters = () => {
     // TODO: Implement shtel-specific filters
-    console.log('Show shtel filters');
+    // console.log('Show shtel filters');
   };
 
   const handleShowMap = () => {

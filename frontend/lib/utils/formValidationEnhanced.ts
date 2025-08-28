@@ -463,7 +463,9 @@ export async function submitFormEnhanced<T>(
  * Enhanced phone validation with international format support
  */
 export function validatePhoneEnhanced(phone: string): string | null {
-  if (!phone) return 'Phone number is required';
+  if (!phone) {
+    return 'Phone number is required';
+  }
   
   // Remove all non-digit characters for validation
   const digitsOnly = phone.replace(/\D/g, '');
@@ -489,7 +491,9 @@ export function validatePhoneEnhanced(phone: string): string | null {
  * Enhanced email validation with domain checking
  */
 export function validateEmailEnhanced(email: string): string | null {
-  if (!email) return 'Email is required';
+  if (!email) {
+    return 'Email is required';
+  }
   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
@@ -517,7 +521,9 @@ export function validateEmailEnhanced(email: string): string | null {
  * Enhanced URL validation with protocol checking
  */
 export function validateUrlEnhanced(url: string): string | null {
-  if (!url) return null; // URLs are optional in most cases
+  if (!url) {
+    return null; // URLs are optional in most cases
+  }
   
   try {
     const urlObj = new URL(url);
@@ -555,7 +561,9 @@ export function validateLengthEnhanced(
   max: number, 
   fieldName: string
 ): string | null {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   
   if (value.length < min) {
     return `${fieldName} must be at least ${min} characters`;

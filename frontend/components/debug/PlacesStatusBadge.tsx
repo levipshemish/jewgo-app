@@ -7,8 +7,8 @@ type Diagnostics = ReturnType<typeof googlePlacesAPI.getDiagnostics>;
 
 function colorFor(diag: Diagnostics) {
       if (!diag.ready || !diag.hasPlaces) {
-      return 'bg-red-600 text-white';
-    }
+        return 'bg-red-600 text-white';
+      }
       const modernPred = diag.predictionStrategy === 'modern-async' || diag.predictionStrategy === 'modern-sync';
     const modernDetails = diag.detailsStrategy === 'modern';
     if (modernPred && modernDetails) {
@@ -22,7 +22,9 @@ export default function PlacesStatusBadge() {
   const [diag, setDiag] = useState<Diagnostics>(() => googlePlacesAPI.getDiagnostics());
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
     // poll periodically since we don't have an event bus here
     const id = setInterval(() => {
       try { setDiag(googlePlacesAPI.getDiagnostics()); } catch { /* noop */ }

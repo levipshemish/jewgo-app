@@ -86,7 +86,9 @@ export function InteractiveRestaurantMap({
       try {
         await loadMaps();
         
-        if (!isMounted || !mapRef.current) return;
+        if (!isMounted || !mapRef.current) {
+          return;
+        }
 
         const map = new google.maps.Map(mapRef.current, {
           center: mapCenter || { lat: 25.7617, lng: -80.1918 }, // Miami default
@@ -100,7 +102,9 @@ export function InteractiveRestaurantMap({
           gestureHandling: 'cooperative',
         });
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         mapInstanceRef.current = map;
 
@@ -124,7 +128,9 @@ export function InteractiveRestaurantMap({
         }));
 
       } catch (error) {
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
         
         console.error('Failed to initialize map:', error);
         setMapState(prev => ({

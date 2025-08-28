@@ -138,7 +138,9 @@ export default function KosherPlacesDatabaseClient({
   };
 
   const onDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this kosher place?')) return;
+    if (!confirm('Are you sure you want to delete this kosher place?')) {
+      return;
+    }
 
     try {
       const res = await fetch(`/api/admin/kosher-places/${id}`, {

@@ -133,7 +133,9 @@ export default function ImageDatabaseClient({
   };
 
   const onDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+    if (!confirm('Are you sure you want to delete this image?')) {
+      return;
+    }
 
     try {
       const res = await fetch(`/api/admin/images/${id}`, {

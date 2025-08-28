@@ -16,7 +16,7 @@ export default function EnvCheck() {
     
     setEnvVars(vars);
     
-    console.log('Environment variables check:', vars);
+    // console.log('Environment variables check:', vars);
   }, []);
 
   if (process.env.NODE_ENV === 'production') {

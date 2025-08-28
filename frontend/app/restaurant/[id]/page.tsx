@@ -262,7 +262,7 @@ const RestaurantDetailPage: React.FC = () => {
     }
   };
 
-  const handleOrderSubmit = async (_orderData: {
+  const handleOrderSubmit = async (orderData: {
     customerName: string;
     customerPhone: string;
     customerEmail: string;
@@ -280,22 +280,52 @@ const RestaurantDetailPage: React.FC = () => {
     }>;
   }) => {
     try {
-      // TODO: Implement actual order submission to backend API endpoint
-// This will be implemented when the order system is ready
-      if (process.env.NODE_ENV === 'development') {
-        // Log order submission for debugging
-        // console.log('Order submission (dev mode):', orderData);
+      if (!restaurant) {
+        throw new Error('Restaurant not found');
       }
+
+      // Prepare order data for API
+      const apiOrderData = {
+        restaurant_id: restaurant.id,
+        customer_name: orderData.customerName,
+        customer_phone: orderData.customerPhone,
+        customer_email: orderData.customerEmail,
+        delivery_address: orderData.deliveryAddress || null,
+        delivery_instructions: orderData.deliveryInstructions || null,
+        order_type: orderData.orderType,
+        payment_method: orderData.paymentMethod,
+        estimated_time: orderData.estimatedTime || null,
+        items: orderData.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          special_instructions: item.specialInstructions || null
+        }))
+      };
+
+      // Submit order to backend API
+      const response = await fetch('/api/v4/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiOrderData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Show success message
-      alert('Order submitted successfully! You will receive a confirmation shortly.');
+      // Show success message with order number
+      alert(`Order ${result.data.order.order_number} submitted successfully! You will receive a confirmation shortly.`);
       setShowOrderForm(false);
-    } catch {
-      // // console.error('Order submission error:', error);
-      throw new Error('Failed to submit order. Please try again.');
+    } catch (error) {
+      console.error('Order submission error:', error);
+      throw new Error(error instanceof Error ? error.message : 'Failed to submit order. Please try again.');
     }
   };
 
