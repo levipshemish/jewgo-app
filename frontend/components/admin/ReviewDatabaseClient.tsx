@@ -240,7 +240,7 @@ export default function ReviewDatabaseClient({
       columns={columns}
       pagination={pagination}
       loading={loading}
-      onPageChange={_onPageChange}
+      onPageChange={onPageChange}
       onPageSizeChange={onPageSizeChange}
       onSearch={onSearch}
       onSort={onSort}

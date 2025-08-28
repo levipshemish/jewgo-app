@@ -81,7 +81,7 @@ const fetchStores = async (limit: number, params?: string) => {
       accepts_credit_cards: true,
       accepts_cash: true,
       is_active: true,
-      isverified: true
+      is_verified: true
     },
     {
       id: 2,
@@ -100,7 +100,7 @@ const fetchStores = async (limit: number, params?: string) => {
       accepts_credit_cards: true,
       accepts_cash: true,
       is_active: true,
-      isverified: true
+      is_verified: true
     },
     {
       id: 3,
@@ -119,7 +119,7 @@ const fetchStores = async (limit: number, params?: string) => {
       accepts_credit_cards: true,
       accepts_cash: true,
       is_active: true,
-      isverified: true
+      is_verified: true
     },
     {
       id: 4,
@@ -138,7 +138,7 @@ const fetchStores = async (limit: number, params?: string) => {
       accepts_credit_cards: true,
       accepts_cash: true,
       is_active: true,
-      isverified: true
+      is_verified: true
     }
   ];
 
