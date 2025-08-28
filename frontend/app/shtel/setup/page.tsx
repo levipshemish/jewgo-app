@@ -238,7 +238,7 @@ export default function ShtelSetupPage() {
         const result = await response.json();
         
         // Navigate to store dashboard
-        router.push(`/shtel/dashboard/${result.data.id}`);
+        router.push(`/shtel/dashboard`);
       } else {
         throw new Error('Failed to create store');
       }

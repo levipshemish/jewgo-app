@@ -35,8 +35,7 @@ export async function GET(request: NextRequest) {
       adminRole: adminUser.adminRole,
       permissions: adminUser.permissions,
       isSuperAdmin: adminUser.isSuperAdmin,
-      createdAt: adminUser.createdAt,
-      lastLogin: adminUser.lastLogin
+      createdAt: adminUser.createdAt
     });
   } catch (error) {
     console.error('[ADMIN] Get current user error:', error);

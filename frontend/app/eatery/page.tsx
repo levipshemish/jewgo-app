@@ -1,5 +1,6 @@
 'use client';
 
+/// <reference types="node" />
 import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';

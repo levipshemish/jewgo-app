@@ -1,6 +1,7 @@
 'use client';
 
 import { MapPin, X, CheckCircle, AlertCircle } from 'lucide-react';
+import React from 'react';
 import { useState } from 'react';
 
 interface LocationPermissionPromptProps {

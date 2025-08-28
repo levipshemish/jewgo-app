@@ -169,7 +169,10 @@ export class AdminDatabaseService {
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
-    const { page, pageSize, search, filters, sortBy, sortOrder } = options;
+    const { page, pageSize: rawPageSize, search, filters, sortBy, sortOrder } = options;
+    
+    // Validate and clamp pageSize
+    const pageSize = Math.min(Math.max(1, rawPageSize || 20), 100);
 
     // Build where clause
     const where: any = {};
@@ -199,9 +202,13 @@ export class AdminDatabaseService {
     if (sortBy) {
       // Validate sort field
       if (!this.validateSortField(modelKey, sortBy)) {
-        throw new Error(`Invalid sort field: ${sortBy} for model: ${modelKey}`);
+        // Log warning and fallback to default sort instead of throwing error
+        console.warn(`[ADMIN] Invalid sort field: ${sortBy} for model: ${modelKey}, falling back to default`);
+        const defaultSortField = this.getDefaultSortField(modelKey);
+        orderBy[defaultSortField] = sortOrder || 'desc';
+      } else {
+        orderBy[sortBy] = sortOrder || 'desc';
       }
-      orderBy[sortBy] = sortOrder || 'desc';
     } else {
       // Use default sort field based on model
       const defaultSortField = this.getDefaultSortField(modelKey);

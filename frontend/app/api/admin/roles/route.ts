@@ -43,16 +43,9 @@ export async function GET(request: NextRequest) {
             name: true,
             issuperadmin: true,
           }
-        },
-        assignedBy: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          }
         }
       },
-      orderBy: { assigned_at: 'desc' }
+      orderBy: { assignedAt: 'desc' }
     });
 
     const totalPages = Math.ceil(total / pageSize);
@@ -115,9 +108,8 @@ export async function PUT(request: NextRequest) {
     const updatedRole = await prisma.adminRole.update({
       where: { id: parseInt(id) },
       data: {
-        is_active: isActive,
-        expires_at: expiresAt ? new Date(expiresAt) : null,
-        updated_at: new Date(),
+        isActive: isActive,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
       },
       include: {
         user: {
@@ -126,13 +118,6 @@ export async function PUT(request: NextRequest) {
             email: true,
             name: true,
             issuperadmin: true,
-          }
-        },
-        assignedBy: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
           }
         }
       }
@@ -145,7 +130,7 @@ export async function PUT(request: NextRequest) {
         roleId: id,
         isActive,
         expiresAt,
-        targetUserId: updatedRole.user_id
+        targetUserId: updatedRole.userId
       }
     });
 
@@ -196,7 +181,7 @@ export async function DELETE(request: NextRequest) {
     // Find and delete the role
     const roleToDelete = await prisma.adminRole.findFirst({
       where: {
-        user_id: userId,
+        userId: userId,
         role: role
       }
     });

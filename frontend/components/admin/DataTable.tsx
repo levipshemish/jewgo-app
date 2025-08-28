@@ -1,5 +1,7 @@
 'use client';
 
+/// <reference types="node" />
+import React from 'react';
 import { useState, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, Download, Trash2} from 'lucide-react';

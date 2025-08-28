@@ -6,6 +6,17 @@ import { prisma } from '@/lib/db/prisma';
 import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
+// CORS headers helper
+const corsHeaders = (request: NextRequest) => {
+  const origin = request.headers.get('origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Apply rate limiting
@@ -26,7 +37,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get system configuration from database
-    const config = await prisma.adminConfig.findFirst();
+    const config = await prisma.adminConfig.findUnique({
+      where: { key: 'system_config' }
+    });
     
     if (!config) {
       // Return default configuration if none exists
@@ -42,7 +55,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(config);
+    return NextResponse.json(config.value);
   } catch (error) {
     console.error('[ADMIN] System config GET error:', error);
     return NextResponse.json(
@@ -95,30 +108,17 @@ export async function PUT(request: NextRequest) {
 
     // Update or create configuration
     const updatedConfig = await prisma.adminConfig.upsert({
-      where: { id: 1 }, // Assuming single config record
+      where: { key: 'system_config' },
       update: {
-        maintenanceMode: configData.maintenanceMode,
-        debugMode: configData.debugMode,
-        emailNotifications: configData.emailNotifications,
-        auditLogging: configData.auditLogging,
-        rateLimiting: configData.rateLimiting,
-        backupFrequency: configData.backupFrequency,
-        sessionTimeout: configData.sessionTimeout,
-        maxFileSize: configData.maxFileSize,
-        updatedAt: new Date(),
+        value: configData,
+        updated_at: new Date(),
+        updated_by: adminUser.id,
       },
       create: {
-        id: 1,
-        maintenanceMode: configData.maintenanceMode,
-        debugMode: configData.debugMode,
-        emailNotifications: configData.emailNotifications,
-        auditLogging: configData.auditLogging,
-        rateLimiting: configData.rateLimiting,
-        backupFrequency: configData.backupFrequency,
-        sessionTimeout: configData.sessionTimeout,
-        maxFileSize: configData.maxFileSize,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        key: 'system_config',
+        value: configData,
+        updated_at: new Date(),
+        updated_by: adminUser.id,
       },
     });
 
@@ -126,11 +126,11 @@ export async function PUT(request: NextRequest) {
     await logAdminAction(adminUser, AUDIT_ACTIONS.SYSTEM_SETTING_CHANGE, 'system', {
       metadata: {
         changes: configData,
-        previousConfig: await prisma.adminConfig.findFirst()
+        previousConfig: await prisma.adminConfig.findUnique({ where: { key: 'system_config' } })
       }
     });
 
-    return NextResponse.json(updatedConfig);
+    return NextResponse.json(updatedConfig.value);
   } catch (error) {
     console.error('[ADMIN] System config PUT error:', error);
     return NextResponse.json(

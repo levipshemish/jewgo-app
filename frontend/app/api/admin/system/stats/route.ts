@@ -28,15 +28,11 @@ export async function GET(request: NextRequest) {
       totalUsers,
       totalRestaurants,
       totalReviews,
-      totalSynagogues,
-      totalKosherPlaces,
       pendingApprovals
     ] = await Promise.all([
       prisma.user.count(),
       prisma.restaurant.count({ where: { deleted_at: null } }),
       prisma.review.count(),
-      prisma.synagogue.count(),
-      prisma.kosherPlace.count(),
       prisma.restaurant.count({ 
         where: { 
           submission_status: 'pending_approval',
@@ -44,6 +40,10 @@ export async function GET(request: NextRequest) {
         } 
       })
     ]);
+
+    // Mock data for non-existent models
+    const totalSynagogues = 0;
+    const totalKosherPlaces = 0;
 
     // Calculate system health (simplified)
     const systemHealth = pendingApprovals > 100 ? 'warning' : 'healthy';

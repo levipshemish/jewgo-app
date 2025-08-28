@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf} from '@/lib/admin/hooks';
+import { useAdminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams} from 'next/navigation';
 import { useToast} from '@/lib/ui/toast';
 
@@ -46,6 +47,7 @@ export default function RestaurantDatabaseClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token: csrf } = useAdminCsrf();
+  const adminFetch = useAdminFetch();
   const { showSuccess, showError } = useToast();
 
   const [rows, setRows] = useState<Restaurant[]>(initialData);
@@ -116,13 +118,9 @@ export default function RestaurantDatabaseClient({
 
   const _onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
-      const res = await fetch(`/api/admin/restaurants`, {
+      const res = await adminFetch(`/api/admin/restaurants/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
-        },
-        body: JSON.stringify({ id, ...data }),
+        body: JSON.stringify(data),
       });
       
       if (res.ok) {
@@ -143,11 +141,8 @@ export default function RestaurantDatabaseClient({
     }
     
     try {
-      const res = await fetch(`/api/admin/restaurants?id=${id}`, {
+      const res = await adminFetch(`/api/admin/restaurants/${id}`, {
         method: 'DELETE',
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
       });
       
       if (res.ok) {
@@ -169,12 +164,8 @@ export default function RestaurantDatabaseClient({
     
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/restaurants/bulk', {
+      const res = await adminFetch('/api/admin/restaurants/bulk', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
-        },
         body: JSON.stringify({ action, ids }),
       });
       
