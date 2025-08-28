@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { FormEvent, useState } from "react";
 // Use SSR-aware browser client so PKCE + cookies work with server callback
 import { supabaseClient } from "@/lib/supabase/client-secure";

@@ -116,23 +116,23 @@ const RestaurantDetailPage: React.FC = () => {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _getAllTags = (restaurant: Restaurant) => {
+  const _getAllTags = (restaurantItem: Restaurant) => {
     const tags = [];
     
     // Certification agency
-    if (restaurant.certifying_agency && restaurant.certifying_agency !== 'Unknown') {
+    if (restaurantItem.certifying_agency && restaurantItem.certifying_agency !== 'Unknown') {
       tags.push({
-        text: restaurant.certifying_agency,
+        text: restaurantItem.certifying_agency,
         className: 'text-blue-600'
       });
     }
     
     // Kosher category
-    if (restaurant.kosher_category) {
-      const category = restaurant.kosher_category.charAt(0).toUpperCase() + restaurant.kosher_category.slice(1);
+    if (restaurantItem.kosher_category) {
+      const category = restaurantItem.kosher_category.charAt(0).toUpperCase() + restaurantItem.kosher_category.slice(1);
       let categoryColor = 'text-gray-600';
       
-      switch (restaurant.kosher_category.toLowerCase()) {
+      switch (restaurantItem.kosher_category.toLowerCase()) {
         case 'dairy':
           categoryColor = 'text-blue-600';
           break;
@@ -151,19 +151,19 @@ const RestaurantDetailPage: React.FC = () => {
     }
     
     // Dietary restrictions
-    if (restaurant.is_cholov_yisroel) {
+    if (restaurantItem.is_cholov_yisroel) {
       tags.push({
         text: 'Chalav Yisroel',
         className: 'text-[#8a4a4a]'
       });
-    } else if (restaurant.cholov_stam) {
+    } else if (restaurantItem.cholov_stam) {
       tags.push({
         text: 'Chalav Stam',
         className: 'text-[#8B4513]'
       });
     }
     
-    if (restaurant.is_pas_yisroel) {
+    if (restaurantItem.is_pas_yisroel) {
       tags.push({
         text: 'Pas Yisroel',
         className: 'text-[#1a4a2a]'
@@ -173,38 +173,38 @@ const RestaurantDetailPage: React.FC = () => {
     return tags;
   };
 
-  const formatCompleteAddress = (restaurant: Restaurant) => {
+  const formatCompleteAddress = (restaurantItem: Restaurant) => {
     const parts: string[] = [];
-    if (restaurant.address) {
-      parts.push(restaurant.address);
+    if (restaurantItem.address) {
+      parts.push(restaurantItem.address);
     }
-    if (restaurant.city) {
-      parts.push(restaurant.city);
+    if (restaurantItem.city) {
+      parts.push(restaurantItem.city);
     }
-    if (restaurant.state) {
-      parts.push(restaurant.state);
+    if (restaurantItem.state) {
+      parts.push(restaurantItem.state);
     }
-    if (restaurant.zip_code) {
-      parts.push(restaurant.zip_code);
+    if (restaurantItem.zip_code) {
+      parts.push(restaurantItem.zip_code);
     }
     
     return parts.length > 0 ? parts.join(', ') : 'Address not available';
   };
 
-  const getRestaurantImages = (restaurant: Restaurant) => {
+  const getRestaurantImages = (restaurantItem: Restaurant) => {
     const images: string[] = [];
     
     // Add main image if available (sanitize the URL first)
-    if (restaurant.image_url) {
-      const safeImageUrl = getSafeImageUrl(restaurant.image_url);
+    if (restaurantItem.image_url) {
+      const safeImageUrl = getSafeImageUrl(restaurantItem.image_url);
       if (safeImageUrl && !safeImageUrl.endsWith('/default-restaurant.webp')) {
         images.push(safeImageUrl);
       }
     }
     
     // Add additional images if available (sanitize each URL)
-    if (restaurant.additional_images && Array.isArray(restaurant.additional_images)) {
-      const safeAdditionalImages = restaurant.additional_images
+    if (restaurantItem.additional_images && Array.isArray(restaurantItem.additional_images)) {
+      const safeAdditionalImages = restaurantItem.additional_images
         .map(url => getSafeImageUrl(url))
         .filter(url => !!url && !url.endsWith('/default-restaurant.webp'));
       images.push(...safeAdditionalImages);

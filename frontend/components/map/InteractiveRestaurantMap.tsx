@@ -1,5 +1,6 @@
 'use client';
 
+/// <reference types="@types/google.maps" />
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 
 import { loadMaps } from '@/lib/maps/loader';

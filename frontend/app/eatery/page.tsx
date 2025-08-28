@@ -273,8 +273,8 @@ function EateryPageContent() {
       setCurrentPage(page);
       // Keep URL filter state in sync with current page
       setFilter('page', page as any);
-    } catch (err) {
-      appLogger.error('Eatery page load error', { error: String(err) });
+    } catch (loadError) {
+      appLogger.error('Eatery page load error', { error: String(loadError) });
     } finally {
       setLoading(false);
     }
@@ -394,10 +394,10 @@ function EateryPageContent() {
       // Update hasMore state for infinite scroll (mobile only)
       const hasMoreContent = processedRestaurants.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
-    } catch (err) {
-      appLogger.error('Eatery fetch error', { error: String(err) });
-      if (err instanceof Error) {
-        setError(err.message);
+    } catch (fetchError) {
+      appLogger.error('Eatery fetch error', { error: String(fetchError) });
+      if (fetchError instanceof Error) {
+        setError(fetchError.message);
       } else {
         setError('Unable to load restaurants. Please try again later.');
       }
@@ -521,8 +521,8 @@ function EateryPageContent() {
       // Update hasMore state based on response
       const hasMoreContent = processedNewRestaurants.length >= mobileOptimizedItemsPerPage;
       setHasMore(hasMoreContent);
-    } catch (err) {
-      appLogger.error('Eatery fetch more error', { error: String(err) });
+    } catch (fetchMoreError) {
+      appLogger.error('Eatery fetch more error', { error: String(fetchMoreError) });
     } finally {
       setIsLoadingMore(false);
     }

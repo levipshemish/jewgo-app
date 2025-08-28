@@ -178,18 +178,18 @@ export async function POST(request: NextRequest) {
                 return -1;
               }
               
-              let hours = parseInt(match[1]);
+              let parsedHours = parseInt(match[1]);
               const minutes = match[2] ? parseInt(match[2]) : 0;
               const period = match[3];
               
-              if (period === 'pm' && hours !== 12) {
-                hours += 12;
+              if (period === 'pm' && parsedHours !== 12) {
+                parsedHours += 12;
               }
-              if (period === 'am' && hours === 12) {
-                hours = 0;
+              if (period === 'am' && parsedHours === 12) {
+                parsedHours = 0;
               }
               
-              return hours * 60 + minutes;
+              return parsedHours * 60 + minutes;
           }
           
           const openM = timeToMinutes(today.open);

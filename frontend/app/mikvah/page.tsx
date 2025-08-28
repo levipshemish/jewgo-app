@@ -296,32 +296,32 @@ function MikvahPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize mikvah transformation to prevent unnecessary re-renders
-  const transformMikvahToCardData = useCallback((mikvah: Mikvah) => {
+  const transformMikvahToCardData = useCallback((mikvahItem: Mikvah) => {
     // Enhanced rating logic with better fallbacks
-    const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating;
+    const rating = mikvahItem.rating || mikvahItem.star_rating || mikvahItem.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
     
     // Enhanced distance logic - ensure we have a valid distance string
-    const distanceText = mikvah.distance && mikvah.distance.trim() !== '' ? mikvah.distance : '';
+    const distanceText = mikvahItem.distance && mikvahItem.distance.trim() !== '' ? mikvahItem.distance : '';
     
     // Mikvah type as subtitle
-    const mikvahType = mikvah.mikvah_type && mikvah.mikvah_type.trim() !== '' ? mikvah.mikvah_type : '';
+    const mikvahType = mikvahItem.mikvah_type && mikvahItem.mikvah_type.trim() !== '' ? mikvahItem.mikvah_type : '';
     
     return {
-      id: String(mikvah.id),
-      imageUrl: mikvah.image_url,
-      imageTag: mikvah.kosher_certification,
-      title: mikvah.name,
+      id: String(mikvahItem.id),
+      imageUrl: mikvahItem.image_url,
+      imageTag: mikvahItem.kosher_certification,
+      title: mikvahItem.name,
       badge: ratingText, // Use the enhanced rating text
       subtitle: mikvahType,
       additionalText: distanceText,
       showHeart: true,
       isLiked: false, // Will be set by the component based on favorites state
-      kosherCategory: mikvah.kosher_certification,
+      kosherCategory: mikvahItem.kosher_certification,
       rating,
-      reviewCount: mikvah.reviewcount,
-      city: mikvah.city,
-      distance: mikvah.distance,
+      reviewCount: mikvahItem.reviewcount,
+      city: mikvahItem.city,
+      distance: mikvahItem.distance,
     };
   }, []); // Empty dependency array to prevent recreation
 
