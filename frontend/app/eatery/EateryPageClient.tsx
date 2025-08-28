@@ -92,7 +92,7 @@ export function EateryPageClient() {
   } = useLocation();
 
   // Scroll detection for header behavior
-  const { isScrolled, scrollDirection } = useScrollDetection();
+  const { isScrolling } = useScrollDetection();
 
   // Fetch restaurants based on filters and location
   const fetchRestaurants = useCallback(async (filters: Filters, location?: { latitude: number; longitude: number }) => {
@@ -189,9 +189,6 @@ export function EateryPageClient() {
     return (
       <div className="min-h-screen bg-[#f4f4f4]">
         <Header 
-          isScrolled={isScrolled} 
-          scrollDirection={scrollDirection}
-          searchQuery={searchQuery}
           onSearch={handleSearch}
         />
         <SafeLoader 
@@ -224,9 +221,6 @@ export function EateryPageClient() {
     return (
       <div className="min-h-screen bg-[#f4f4f4]">
         <Header 
-          isScrolled={isScrolled} 
-          scrollDirection={scrollDirection}
-          searchQuery={searchQuery}
           onSearch={handleSearch}
         />
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -254,9 +248,6 @@ export function EateryPageClient() {
       style={mobileStyles}
     >
       <Header 
-        isScrolled={isScrolled} 
-        scrollDirection={scrollDirection}
-        searchQuery={searchQuery}
         onSearch={handleSearch}
       />
       
