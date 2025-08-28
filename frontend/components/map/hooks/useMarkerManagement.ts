@@ -311,7 +311,7 @@ export function useMarkerManagement({
       if (prevData?.marker) {
         // Reset marker to default appearance
         if ('setZIndex' in prevData.marker) {
-          prevData.marker.setZIndex(1);
+          (prevData.marker as any).setZIndex(1);
         }
       }
     }
@@ -322,7 +322,7 @@ export function useMarkerManagement({
       if (data?.marker) {
         // Highlight the selected marker
         if ('setZIndex' in data.marker) {
-          data.marker.setZIndex(1000);
+          (data.marker as any).setZIndex(1000);
         }
       }
     }
