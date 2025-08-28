@@ -43,23 +43,47 @@ export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAd
   useEffect(() => {
     if (!pendingURLUpdate) return;
 
-    const params = toSearchParams(pendingURLUpdate);
-    const nextQueryString = params.toString();
-    const currentQueryString = searchParams.toString();
+    try {
+      const params = toSearchParams(pendingURLUpdate);
+      const nextQueryString = params.toString();
+      const currentQueryString = searchParams.toString();
 
-    // Skip if no actual change
-    if (nextQueryString === currentQueryString) {
-      setPendingURLUpdate(null);
-      return;
-    }
+      // Skip if no actual change
+      if (nextQueryString === currentQueryString) {
+        setPendingURLUpdate(null);
+        return;
+      }
 
-    // Debounce updates to prevent churn (e.g., range sliders)
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
+      // Debounce updates to prevent churn (e.g., range sliders)
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
     const timer = setTimeout(() => {
-      const newURL = nextQueryString ? `?${nextQueryString}` : '';
-      router.replace(newURL, { scroll: false });
+      try {
+        // Validate the query string to prevent malformed URLs
+        if (nextQueryString && !/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(nextQueryString)) {
+          console.warn('Invalid characters in query string, skipping URL update:', nextQueryString);
+          setPendingURLUpdate(null);
+          return;
+        }
+
+        // Additional safety check to prevent URLs that could be interpreted as JavaScript
+        if (nextQueryString && (
+          nextQueryString.includes('<script') || 
+          nextQueryString.includes('javascript:') ||
+          nextQueryString.includes('data:text/html') ||
+          nextQueryString.includes('vbscript:')
+        )) {
+          console.warn('Potentially dangerous URL content detected, skipping URL update:', nextQueryString);
+          setPendingURLUpdate(null);
+          return;
+        }
+
+        const newURL = nextQueryString ? `?${nextQueryString}` : '';
+        router.replace(newURL, { scroll: false });
+      } catch (error) {
+        console.error('Failed to update URL:', error);
+      }
       setPendingURLUpdate(null);
     }, 200);
     setDebounceTimer(timer);
@@ -67,17 +91,29 @@ export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAd
     return () => {
       if (timer) clearTimeout(timer);
     };
+    } catch (error) {
+      console.error('Error in URL update effect:', error);
+      setPendingURLUpdate(null);
+    }
   }, [pendingURLUpdate, router, searchParams]); // Removed debounceTimer from dependencies
 
   // Sync URL with filter state
   useEffect(() => {
     try {
       if (searchParams.toString()) {
+        // Validate the search params before parsing
+        const queryString = searchParams.toString();
+        if (!/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(queryString)) {
+          console.warn('Invalid characters in search params, skipping sync:', queryString);
+          return;
+        }
+        
         const urlFilters = fromSearchParams(searchParams);
         setActiveFilters(prev => ({ ...prev, ...urlFilters }));
       }
     } catch (error) {
       console.warn('Failed to sync filters from URL:', error);
+      // Don't update filters if URL parsing fails to prevent cascading errors
     }
   }, [searchParams]);
 

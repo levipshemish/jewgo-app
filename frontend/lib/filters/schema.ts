@@ -104,7 +104,8 @@ export const toSearchParams = (filters: Filters): URLSearchParams => {
         });
       }
     } else {
-      params.set(String(key), String(value));
+      // Ensure proper URL encoding for all string values
+      params.set(String(key), encodeURIComponent(String(value)));
     }
   });
   
@@ -135,6 +136,9 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
 
   // Convert URLSearchParams to object, with safe boolean conversion only for boolean keys
   searchParams.forEach((value, key) => {
+    // Properly decode the value
+    const decodedValue = decodeURIComponent(value);
+    
     // For dietary parameter, only take the first value to avoid array issues
     if (key === 'dietary' && obj[key] !== undefined) {
       return; // Skip additional dietary values
@@ -143,25 +147,25 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
     // Handle multiple values for the same parameter (except dietary)
     if (obj[key] !== undefined) {
       if (Array.isArray(obj[key])) {
-        (obj[key] as unknown[]).push(value);
+        (obj[key] as unknown[]).push(decodedValue);
       } else {
-        obj[key] = [obj[key], value];
+        obj[key] = [obj[key], decodedValue];
       }
       return;
     }
 
     if (booleanKeys.has(key)) {
-      if (value === '1') {
+      if (decodedValue === '1') {
         obj[key] = true;
         return;
       }
-      if (value === '0') {
+      if (decodedValue === '0') {
         obj[key] = false;
         return;
       }
       // Fall through to string to allow z.coerce.boolean to handle other truthy strings
     }
-    obj[key] = value;
+    obj[key] = decodedValue;
   });
 
   return FiltersSchema.parse(obj);

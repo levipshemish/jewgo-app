@@ -79,9 +79,7 @@ function EateryPageContent() {
   const {
     activeFilters,
     setFilter,
-    toggleFilter,
-    clearFilter,
-    clearAllFilters
+    clearFilter
   } = useAdvancedFilters();
 
   // Create a stable key for filters to prevent effect loops due to object identity
@@ -95,8 +93,7 @@ function EateryPageContent() {
   // Location state from context
   const {
     userLocation,
-    isLoading: locationLoading,
-    requestLocation
+    isLoading: locationLoading
   } = useLocation();
 
   // Location prompt popup state
@@ -242,8 +239,24 @@ function EateryPageContent() {
       }
       params.set('mobile_optimized', 'true');
 
+      // Validate the query string to prevent malformed URLs
+      const queryString = params.toString();
+      if (queryString && !/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(queryString)) {
+        throw new Error('Invalid characters in query parameters');
+      }
+
+      // Additional safety check to prevent URLs that could be interpreted as JavaScript
+      if (queryString && (
+        queryString.includes('<script') || 
+        queryString.includes('javascript:') ||
+        queryString.includes('data:text/html') ||
+        queryString.includes('vbscript:')
+      )) {
+        throw new Error('Potentially dangerous URL content detected');
+      }
+
       // Call the working API endpoint directly
-      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const response = await fetch(`/api/restaurants-with-images?${queryString}`);
       const data = await response.json();
 
       if (!data.success) {
@@ -339,8 +352,24 @@ function EateryPageContent() {
       }
       params.set('mobile_optimized', 'true');
 
+      // Validate the query string to prevent malformed URLs
+      const queryString = params.toString();
+      if (queryString && !/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(queryString)) {
+        throw new Error('Invalid characters in query parameters');
+      }
+
+      // Additional safety check to prevent URLs that could be interpreted as JavaScript
+      if (queryString && (
+        queryString.includes('<script') || 
+        queryString.includes('javascript:') ||
+        queryString.includes('data:text/html') ||
+        queryString.includes('vbscript:')
+      )) {
+        throw new Error('Potentially dangerous URL content detected');
+      }
+
       // Call the working API endpoint directly
-      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const response = await fetch(`/api/restaurants-with-images?${queryString}`);
       const data = await response.json();
 
       if (!data.success) {
@@ -450,14 +479,30 @@ function EateryPageContent() {
       }
       params.set('mobile_optimized', 'true');
 
+      // Validate the query string to prevent malformed URLs
+      const queryString = params.toString();
+      if (queryString && !/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(queryString)) {
+        throw new Error('Invalid characters in query parameters');
+      }
+
+      // Additional safety check to prevent URLs that could be interpreted as JavaScript
+      if (queryString && (
+        queryString.includes('<script') || 
+        queryString.includes('javascript:') ||
+        queryString.includes('data:text/html') ||
+        queryString.includes('vbscript:')
+      )) {
+        throw new Error('Potentially dangerous URL content detected');
+      }
+
       appLogger.debug('Fetching more restaurants', {
         nextPage,
-        url: `/api/restaurants-with-images?${params.toString()}`,
+        url: `/api/restaurants-with-images?${queryString}`,
         mobileOptimizedItemsPerPage
       });
 
       // Call the working API endpoint directly
-      const response = await fetch(`/api/restaurants-with-images?${params.toString()}`);
+      const response = await fetch(`/api/restaurants-with-images?${queryString}`);
       const data = await response.json();
 
       if (!data.success) {
