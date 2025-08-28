@@ -227,14 +227,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid image ID. Must be an integer.' }, { status: 400 });
     }
 
-    // Delete image record (soft delete)
+    // Delete image record (hard delete since restaurantImage doesn't support soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.restaurantImage,
       'restaurantImage',
       coercedId,
       adminUser,
       'restaurant_image',
-      true // soft delete
+      false // hard delete
     );
 
     return NextResponse.json({ message: 'Image deleted successfully' });

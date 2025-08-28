@@ -21,6 +21,28 @@ export default async function AdminDashboardPage() {
       return null; // Layout will handle redirect
     }
 
+    // Check minimum role requirement (configurable via env)
+    const minRole = process.env.ADMIN_MIN_ROLE || 'moderator';
+    const roleHierarchy = ['moderator', 'data_admin', 'system_admin', 'super_admin'];
+    const userRoleIndex = roleHierarchy.indexOf(adminUser.adminRole || '');
+    const minRoleIndex = roleHierarchy.indexOf(minRole);
+    
+    if (userRoleIndex < minRoleIndex) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+            <p className="text-gray-600 mb-4">
+              Your current role ({adminUser.adminRole}) does not meet the minimum requirement ({minRole}).
+            </p>
+            <p className="text-sm text-gray-500">
+              Please contact a system administrator for assistance.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // Fetch comprehensive metrics with error handling
     let dbStats, auditStats;
     try {

@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
+
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
@@ -12,7 +12,7 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = await context.params;
+  const params = await context.params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.DEFAULT)(request);
@@ -58,7 +58,7 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = await context.params;
+  const params = await context.params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -118,7 +118,7 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = await context.params;
+  const params = await context.params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);

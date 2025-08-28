@@ -7,6 +7,17 @@ import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
 
+// CORS headers helper
+const corsHeaders = (request: NextRequest) => {
+  const origin = request.headers.get('origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+};
+
 export async function GET(request: NextRequest) {
   try {
     // Apply rate limiting
@@ -67,7 +78,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Parse request body

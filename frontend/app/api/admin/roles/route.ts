@@ -55,15 +55,8 @@ export async function GET(request: NextRequest) {
               issuperadmin: true,
             },
           },
-          assignedBy: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-            },
-          },
         },
-        orderBy: { assigned_at: 'desc' },
+        orderBy: { assignedAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -112,58 +105,51 @@ export async function POST(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Parse request body
     const body = await request.json();
-    const { user_id, role, expires_at, notes } = body;
+    const { userId, role, expiresAt, notes } = body;
 
     // Validate required fields
-    if (!user_id || !role) {
-      return AdminErrors.INVALID_REQUEST('User ID and role are required');
+    if (!userId || !role) {
+      return AdminErrors.VALIDATION_ERROR('User ID and role are required');
     }
 
     // Validate role
     const validRoles = ['moderator', 'data_admin', 'system_admin'];
     if (!validRoles.includes(role)) {
-      return AdminErrors.INVALID_REQUEST('Invalid role');
+      return AdminErrors.VALIDATION_ERROR('Invalid role');
     }
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { id: user_id },
+      where: { id: userId },
       select: { id: true, email: true, issuperadmin: true },
     });
 
     if (!user) {
-      return AdminErrors.NOT_FOUND('User not found');
+      return AdminErrors.NOT_FOUND('User', 'User not found');
     }
 
     if (user.issuperadmin) {
-      return AdminErrors.INVALID_REQUEST('Cannot assign roles to super admin users');
+      return AdminErrors.VALIDATION_ERROR('Cannot assign roles to super admin users');
     }
 
     // Create admin role
     const adminRole = await prisma.adminRole.create({
       data: {
-        user_id,
+        userId,
         role,
-        assigned_by: adminUser.id,
-        assigned_at: new Date(),
-        expires_at: expires_at ? new Date(expires_at) : null,
+        assignedBy: adminUser.id,
+        assignedAt: new Date(),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
         notes,
-        is_active: true,
+        isActive: true,
       },
       include: {
         user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        assignedBy: {
           select: {
             id: true,
             email: true,
@@ -177,10 +163,10 @@ export async function POST(request: NextRequest) {
     await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, ENTITY_TYPES.ADMIN_ROLE, {
       entityId: String(adminRole.id),
       newData: {
-        user_id,
+        userId,
         role,
-        assigned_by: adminUser.id,
-        expires_at,
+        assignedBy: adminUser.id,
+        expiresAt,
         notes,
       },
     });
@@ -219,7 +205,7 @@ export async function PUT(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Parse request body
@@ -227,7 +213,7 @@ export async function PUT(request: NextRequest) {
     const { id, ...updateData } = body;
 
     if (!id) {
-      return AdminErrors.INVALID_REQUEST('Role ID is required');
+      return AdminErrors.VALIDATION_ERROR('Role ID is required');
     }
 
     // Get current role for audit
@@ -245,11 +231,11 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!currentRole) {
-      return AdminErrors.NOT_FOUND('Admin role not found');
+      return AdminErrors.NOT_FOUND('Admin role', 'Admin role not found');
     }
 
     if (currentRole.user.issuperadmin) {
-      return AdminErrors.INVALID_REQUEST('Cannot modify roles for super admin users');
+      return AdminErrors.VALIDATION_ERROR('Cannot modify roles for super admin users');
     }
 
     // Update admin role
@@ -257,17 +243,10 @@ export async function PUT(request: NextRequest) {
       where: { id: parseInt(id) },
       data: {
         ...updateData,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
       include: {
         user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        assignedBy: {
           select: {
             id: true,
             email: true,
@@ -318,14 +297,14 @@ export async function DELETE(request: NextRequest) {
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Get role ID from query params
     const { searchParams } = new URL(request.url);
     const idParam = searchParams.get('id');
     if (!idParam || isNaN(Number(idParam))) {
-      return AdminErrors.INVALID_REQUEST('Valid role ID is required');
+      return AdminErrors.VALIDATION_ERROR('Valid role ID is required');
     }
 
     const id = parseInt(idParam);
@@ -345,11 +324,11 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!currentRole) {
-      return AdminErrors.NOT_FOUND('Admin role not found');
+      return AdminErrors.NOT_FOUND('Admin role', 'Admin role not found');
     }
 
     if (currentRole.user.issuperadmin) {
-      return AdminErrors.INVALID_REQUEST('Cannot delete roles for super admin users');
+      return AdminErrors.VALIDATION_ERROR('Cannot delete roles for super admin users');
     }
 
     // Delete admin role

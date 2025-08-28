@@ -45,7 +45,6 @@ export default async function KosherPlaceDatabasePage({ searchParams }: { search
       <KosherPlacesDatabaseClient
         initialData={initialData}
         initialPagination={initialPagination}
-        initialSearch={search}
         initialSortBy={sortBy}
         initialSortOrder={sortOrder as 'asc' | 'desc'}
       />

@@ -46,7 +46,6 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
       <ReviewDatabaseClient
         initialData={initialData}
         initialPagination={initialPagination}
-        initialSearch={search}
         initialSortBy={sortBy}
         initialSortOrder={sortOrder as 'asc' | 'desc'}
       />

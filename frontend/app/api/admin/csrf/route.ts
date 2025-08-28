@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
+import { corsHeaders } from '@/lib/middleware/security';
 
 export async function GET(request: NextRequest) {
   try {

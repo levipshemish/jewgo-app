@@ -112,18 +112,22 @@ export interface AuditLogOptions {
   maxDetailLength?: number;
 }
 
-// In-memory audit log for development (use database in production)
+// In-memory audit log for development only
 const auditLog: AuditLogEntry[] = [];
 
-
-
 /**
- * Get audit logs for a user
+ * Get audit logs for a user (development only)
+ * In production, use queryAuditLogs() which queries the database
  */
 export async function getAuditLogs(
   userId?: string,
   limit: number = 100
 ): Promise<AuditLogEntry[]> {
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[AUDIT] getAuditLogs() is deprecated in production. Use queryAuditLogs() instead.');
+    return [];
+  }
+  
   try {
     let logs = [...auditLog];
     
@@ -179,9 +183,13 @@ function sanitizeData(data: Record<string, any>, sensitiveFields: string[]): Rec
 // }
 
 /**
- * Clear audit logs (for testing)
+ * Clear audit logs (for testing - development only)
  */
 export function clearAuditLogs(): void {
+  if (process.env.NODE_ENV !== 'development') {
+    console.warn('[AUDIT] clearAuditLogs() is only available in development mode.');
+    return;
+  }
   auditLog.length = 0;
 }
 
