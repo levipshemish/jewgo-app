@@ -134,11 +134,17 @@ class AdminAuthManager:
 admin_auth_manager = AdminAuthManager()
 
 
-def require_admin_auth(permission: str = "read"):
-    """Decorator to require admin authentication with specific permission."""
-    def decorator(f):
+class AdminAuthDecorator:
+    """Class-based decorator to avoid Flask endpoint naming conflicts."""
+    
+    def __init__(self, permission: str = "read"):
+        self.permission = permission
+        # Add __name__ attribute to avoid conflicts with other decorators
+        self.__name__ = f"admin_auth_{permission}"
+    
+    def __call__(self, f):
         @wraps(f)
-        def decorated_function(*args, **kwargs):
+        def auth_wrapper(*args, **kwargs):
             try:
                 # Get token from Authorization header
                 auth_header = request.headers.get("Authorization")
@@ -153,7 +159,7 @@ def require_admin_auth(permission: str = "read"):
                     return jsonify({"error": "Invalid or expired token"}), 401
                 
                 # Check permission
-                if not admin_auth_manager.has_permission(user_info, permission):
+                if not admin_auth_manager.has_permission(user_info, self.permission):
                     return jsonify({"error": "Insufficient permissions"}), 403
                 
                 # Add user info to request context
@@ -165,8 +171,15 @@ def require_admin_auth(permission: str = "read"):
                 logger.error(f"Admin authentication error: {e}")
                 return jsonify({"error": "Authentication failed"}), 500
         
-        return decorated_function
-    return decorator
+        # Ensure the wrapper has the same name as the original function
+        auth_wrapper.__name__ = f.__name__
+        auth_wrapper.__module__ = f.__module__
+        return auth_wrapper
+
+
+def require_admin_auth(permission: str = "read"):
+    """Decorator to require admin authentication with specific permission."""
+    return AdminAuthDecorator(permission)
 
 
 def require_admin_migrate():
@@ -184,12 +197,16 @@ def require_admin_delete():
     return require_admin_auth("delete")
 
 
-# Legacy compatibility - simple token check for backward compatibility
-def require_simple_admin_token():
-    """Legacy decorator for simple token-based authentication."""
-    def decorator(f):
+class SimpleAdminTokenDecorator:
+    """Class-based decorator for simple token authentication."""
+    
+    def __init__(self):
+        # Add __name__ attribute to avoid conflicts with other decorators
+        self.__name__ = "simple_admin_token"
+    
+    def __call__(self, f):
         @wraps(f)
-        def decorated_function(*args, **kwargs):
+        def simple_auth_wrapper(*args, **kwargs):
             try:
                 auth_header = request.headers.get("Authorization")
                 if not auth_header or not auth_header.startswith("Bearer "):
@@ -207,5 +224,13 @@ def require_simple_admin_token():
                 logger.error(f"Simple admin authentication error: {e}")
                 return jsonify({"error": "Authentication failed"}), 500
         
-        return decorated_function
-    return decorator
+        # Ensure the wrapper has the same name as the original function
+        simple_auth_wrapper.__name__ = f.__name__
+        simple_auth_wrapper.__module__ = f.__module__
+        return simple_auth_wrapper
+
+
+# Legacy compatibility - simple token check for backward compatibility
+def require_simple_admin_token():
+    """Legacy decorator for simple token-based authentication."""
+    return SimpleAdminTokenDecorator()

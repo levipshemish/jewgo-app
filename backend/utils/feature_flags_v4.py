@@ -280,7 +280,7 @@ api_v4_flags = APIV4FeatureFlags()
 def require_api_v4_flag(flag_name: str, default: bool = False):
     """Decorator to require a v4 API feature flag."""
 
-    def decorator(f):
+    def flag_decorator(f):
         def wrapper(*args, **kwargs):
             try:
                 from flask import request
@@ -305,7 +305,7 @@ def require_api_v4_flag(flag_name: str, default: bool = False):
         wrapper.__name__ = f.__name__
         return wrapper
 
-    return decorator
+    return flag_decorator
 
 
 def _handle_fallback(flag_name: str, default: bool):
