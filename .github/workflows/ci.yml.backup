@@ -1,4 +1,4 @@
-name: CI/CD Pipeline v2 - Fixed
+name: CI/CD Pipeline v2
 
 on:
   push:
@@ -63,7 +63,16 @@ jobs:
         # Create .env file from template for CI if it doesn't exist
         if [ ! -f .env ]; then
           echo "Creating .env file from template for CI..."
-          cp config/environment/templates/ci.env.example .env
+          cp config/environment/templates/frontend.env.example .env
+          # Add basic CI environment variables
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
+          echo "NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-build-anon-key-for-testing-only" >> .env
+          echo "NEXTAUTH_SECRET=ci-build-secret-key-for-testing-only" >> .env
+          echo "NEXTAUTH_URL=https://jewgo-app.vercel.app" >> .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_jewgo" >> .env
         fi
         node scripts/env-consistency-check.js
         
@@ -278,7 +287,16 @@ jobs:
         # Create .env file from template for CI if it doesn't exist
         if [ ! -f .env ]; then
           echo "Creating .env file from template for CI..."
-          cp config/environment/templates/ci.env.example .env
+          cp config/environment/templates/frontend.env.example .env
+          # Add basic CI environment variables
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
+          echo "NEXT_PUBLIC_BACKEND_URL=https://jewgo-app-oyoh.onrender.com" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://lgsfyrxkqpipaumngvfi.supabase.co" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-build-anon-key-for-testing-only" >> .env
+          echo "NEXTAUTH_SECRET=ci-build-secret-key-for-testing-only" >> .env
+          echo "NEXTAUTH_URL=https://jewgo-app.vercel.app" >> .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_jewgo" >> .env
         fi
         node scripts/env-consistency-check.js
         
@@ -444,7 +462,10 @@ jobs:
         # Create .env file from template for CI if it doesn't exist
         if [ ! -f .env ]; then
           echo "Creating .env file from template for CI..."
-          cp config/environment/templates/ci.env.example .env
+          cp config/environment/templates/frontend.env.example .env
+          # Add basic CI environment variables
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
         fi
         node scripts/env-consistency-check.js
         
@@ -506,7 +527,10 @@ jobs:
         # Create .env file from template for CI if it doesn't exist
         if [ ! -f .env ]; then
           echo "Creating .env file from template for CI..."
-          cp config/environment/templates/ci.env.example .env
+          cp config/environment/templates/frontend.env.example .env
+          # Add basic CI environment variables
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
         fi
         node scripts/env-consistency-check.js
       
@@ -552,7 +576,10 @@ jobs:
         # Create .env file from template for CI if it doesn't exist
         if [ ! -f .env ]; then
           echo "Creating .env file from template for CI..."
-          cp config/environment/templates/ci.env.example .env
+          cp config/environment/templates/frontend.env.example .env
+          # Add basic CI environment variables
+          echo "NODE_ENV=test" >> .env
+          echo "CI=true" >> .env
         fi
         node scripts/env-consistency-check.js
         
@@ -702,4 +729,4 @@ jobs:
         EVENT_PATH: ${{ github.event_path }}
       run: |
         cd $GITHUB_WORKSPACE
-        bash ci-scripts/context7_guard.sh "$EVENT_PATH"
+        bash ci-scripts/context7_guard.sh "$EVENT_PATH" 
