@@ -10,7 +10,7 @@ import { fetchRestaurants } from '@/lib/api/restaurants';
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
 import { Restaurant } from '@/lib/types/restaurant';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
-import { throttleTyped as throttleFn } from '@/lib/utils/touchUtils';
+import { throttleFn } from '@/lib/utils/touchUtils';
 import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';

@@ -12,7 +12,7 @@ import {
   _ALLOWED_ORIGINS, _getCORSHeaders, _FEATURE_FLAGS} from '@/lib/config/environment';
 import { _initializeServer} from '@/lib/server-init';
 
-export const _runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 /**
  * Merge anonymous user API with versioned HMAC cookie verification
