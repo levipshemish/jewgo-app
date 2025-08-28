@@ -171,7 +171,7 @@ export default function ShtelSetupPage() {
       setTotalPoints(prev => prev + stepPoints);
       
       // Check for achievements
-      checkAchievements(newStep, stepPoints);
+      checkAchievements(newStep);
     }
   };
 
