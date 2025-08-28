@@ -339,7 +339,7 @@ export class RestaurantsAPI {
       );
       
       const validRestaurants = restaurants.filter((restaurant): restaurant is Restaurant => restaurant !== null);
-      return sanitizeRestaurantData(validRestaurants);
+      return sanitizeRestaurantData(validRestaurants) as Restaurant[];
     } catch {
       // // console.error('Error fetching restaurants by IDs:', error);
       return [];
