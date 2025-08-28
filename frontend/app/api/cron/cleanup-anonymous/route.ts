@@ -189,15 +189,15 @@ export async function GET(request: NextRequest) {
       userids: results.userIds
     });
 
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
-    // console.error(`[Cleanup Cron] Unexpected error (${correlationId})`, error);
+    // console.error(`[Cleanup Cron] Unexpected error (${correlationId})`, _error);
     
     // Log to Sentry if available
     if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error, {
+      (window as any).Sentry.captureException(_error, {
         tags: { correlationId, component: 'cleanup_cron' },
-        extra: { error: scrubPII(error) }
+        extra: { error: scrubPII(_error) }
       });
     }
     
