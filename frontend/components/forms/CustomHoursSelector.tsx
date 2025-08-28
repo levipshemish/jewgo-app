@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { appLogger } from '@/lib/utils/logger';
 
@@ -52,7 +52,6 @@ const SHABBAT_OFFSET_OPTIONS = [
 
 export default function CustomHoursSelector({ value, onChange, error, testMode = false }: CustomHoursSelectorProps) {
   const [daysHours, setDaysHours] = useState<DayHours[]>([]);
-  const [dropdownStates, setDropdownStates] = useState<{ [key: string]: boolean }>({});
   const componentRef = useRef<HTMLDivElement>(null);
   const lastEmittedRef = useRef<string>('');
   const prevValueRef = useRef<string | null>(null);
@@ -83,7 +82,11 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
       // Parse existing hours string
       const parsed = parseHoursString(value);
       if (testMode) {
-        appLogger.debug('CustomHoursSelector parsed hours', { parsed });
+        appLogger.debug('CustomHoursSelector parsed hours', { 
+          parsedLength: parsed.length,
+          firstDay: parsed[0]?.day,
+          lastDay: parsed[parsed.length - 1]?.day
+        } as any);
       }
       // Only update state if it actually differs in content
       const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
@@ -99,13 +102,17 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
         close: '10:00 PM',
         isClosed: day.key === 'saturday', // Default to closed on Saturday
         isShabbatRelative: day.key === 'saturday',
-        shabbatOffset: day.key === 'saturday' ? 30 : undefined // Default to 30 minutes after Shabbat
+        shabbatOffset: day.key === 'saturday' ? 30 : 0 // Default to 30 minutes after Shabbat
       }));
       const currentFormatted = daysHours.length ? formatHoursString(daysHours) : '';
       const newFormatted = formatHoursString(defaultHours);
       if (currentFormatted !== newFormatted) {
         if (testMode) {
-          appLogger.debug('CustomHoursSelector setting default hours', { defaultHours });
+          appLogger.debug('CustomHoursSelector setting default hours', { 
+            defaultHoursLength: defaultHours.length,
+            firstDay: defaultHours[0]?.day,
+            lastDay: defaultHours[defaultHours.length - 1]?.day
+          });
         }
         setDaysHours(defaultHours);
       }
@@ -200,8 +207,8 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
           if (timeMatch) {
             parsed.push({
               day: label,
-              open: timeMatch[1].trim(),
-              close: timeMatch[2].trim(),
+              open: timeMatch[1]?.trim() || '10:00 AM',
+              close: timeMatch[2]?.trim() || '10:00 PM',
               isClosed: false
             });
           } else {
@@ -235,10 +242,18 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
 
   const updateDayHours = (index: number, updates: Partial<DayHours>) => {
     if (testMode) {
-      appLogger.debug('CustomHoursSelector updating day hours', { index, updates });
+      appLogger.debug('CustomHoursSelector updating day hours', { index, updates: updates as any });
     }
     const updated = [...daysHours];
-    updated[index] = { ...updated[index], ...updates };
+    if (updated[index]) {
+      updated[index] = { 
+        day: updated[index].day,
+        open: updated[index].open,
+        close: updated[index].close,
+        isClosed: updated[index].isClosed,
+        ...updates 
+      };
+    }
     setDaysHours(updated);
   };
 
@@ -246,7 +261,10 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
     if (testMode) {
       appLogger.debug('CustomHoursSelector toggling day closed', { index });
     }
-    updateDayHours(index, { isClosed: !daysHours[index].isClosed });
+    const day = daysHours[index];
+    if (day) {
+      updateDayHours(index, { isClosed: !day.isClosed });
+    }
   };
 
   const setAllDays = (open: string, close: string, isClosed: boolean) => {
