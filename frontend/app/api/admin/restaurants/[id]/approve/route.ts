@@ -8,9 +8,9 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
   try {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);

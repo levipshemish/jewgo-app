@@ -71,7 +71,7 @@ export default function RestaurantDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/restaurants?${params.toString()}`, { cache: 'no-store' });
+      const res = await adminFetch(`/api/admin/restaurants?${params.toString()}`, csrf || '', { cache: 'no-store' });
       if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
       const json = await res.json();
       setRows(json.data || []);

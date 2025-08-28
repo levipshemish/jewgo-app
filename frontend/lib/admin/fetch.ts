@@ -8,5 +8,5 @@ export async function adminFetch(
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     headers.set('x-csrf-token', csrfToken);
   }
-  return fetch(url, { ...options, headers });
+  return fetch(url, { ...options, headers, credentials: 'include' });
 }
