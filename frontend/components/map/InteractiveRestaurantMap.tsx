@@ -13,8 +13,8 @@ import { MapPerformanceMonitor } from '../monitoring/MapPerformanceMonitor';
 // Optional globals for clustering when available at runtime
 declare global {
   interface Window {
-    MarkerClusterer?: typeof MarkerClusterer;
-    SuperClusterAlgorithm?: typeof SuperClusterAlgorithm;
+    MarkerClusterer?: any;
+    SuperClusterAlgorithm?: any;
   }
 }
 
@@ -96,7 +96,6 @@ export function InteractiveRestaurantMap({
           streetViewControl: true,
           fullscreenControl: true,
           zoomControl: true,
-          scrollwheel: true,
           draggable: true,
           disableDoubleClickZoom: false,
           clickableIcons: true,
@@ -235,7 +234,10 @@ export function InteractiveRestaurantMap({
   // Clear directions
   const clearDirections = useCallback(() => {
     if (directionsRendererRef.current) {
-      directionsRendererRef.current.setDirections({ routes: [] });
+      directionsRendererRef.current.setDirections({ 
+        routes: [],
+        geocoded_waypoints: []
+      });
     }
   }, []);
 
@@ -321,3 +323,5 @@ export function InteractiveRestaurantMap({
     </div>
   );
 }
+
+export default InteractiveRestaurantMap;

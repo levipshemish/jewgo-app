@@ -115,7 +115,7 @@ function SignInForm() {
   // Anonymous success handled inline in handler
 
   // Handle form submission
-  const handleEmailSignIn = async (_formData: FormData) => {
+  const handleEmailSignIn = async (formData: FormData) => {
     setIsEmailSigningIn(true);
     try {
       // Execute reCAPTCHA v3 for 'login' action if site key is present and properly configured
@@ -124,8 +124,8 @@ function SignInForm() {
         
         try {
           // Use grecaptcha.ready() to ensure it's fully loaded, then execute
-          const token = await new Promise<string>(_(resolve, _reject) => {
-            (window as any).grecaptcha.ready(_async () => {
+          const token = await new Promise<string>((resolve, reject) => {
+            (window as any).grecaptcha.ready(async () => {
               try {
                 const result = await (window as any).grecaptcha.execute(siteKey, { action: 'login' });
                 resolve(result);
@@ -167,7 +167,7 @@ function SignInForm() {
   };
 
   // Start OAuth flow (Google/Apple) via Supabase
-  const handleOAuthSignIn = useCallback(_async (provider: 'google' | 'apple') => {
+  const handleOAuthSignIn = useCallback(async (provider: 'google' | 'apple') => {
     try {
       const nextUrl = redirectTo || '/eatery';
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -179,7 +179,7 @@ function SignInForm() {
           redirectTo: redirectUrl,
         },
       });
-    } catch (_err) {
+    } catch (err) {
       // surface basic error via URL
       router.push(`/auth/signin?error=oauth_init_failed&provider=${provider}`);
     }
@@ -199,7 +199,7 @@ function SignInForm() {
     }
   }, [magicLinkCooldown]);
 
-  const handleSendMagicLink = useCallback(_async () => {
+  const handleSendMagicLink = useCallback(async () => {
     setMagicStatus(null);
     
     // Check rate limiting
@@ -241,14 +241,14 @@ function SignInForm() {
       }
       
       setMagicStatus('Check your email for a sign-in link.');
-    } catch (_err) {
+    } catch (err) {
       setMagicStatus('Failed to send magic link.');
       // Reset cooldown on errors
       setMagicLinkCooldown(0);
     }
   }, [email, redirectTo, magicLinkCooldown]);
 
-  const handleAnonymousSignIn = useCallback(_async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAnonymousSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setAnonError(null);
     setAnonLoading(true);
@@ -288,7 +288,7 @@ function SignInForm() {
         return;
       }
       router.push(redirectTo);
-    } catch (_err) {
+    } catch (err) {
       setAnonError('Guest sign-in failed. Please try again.');
       setAnonLoading(false);
     }
@@ -477,7 +477,7 @@ function SignInForm() {
 export default function SignInPage() {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
   
-  return (_<>
+  return (<>
       {siteKey && siteKey !== 'your-recaptcha-site-key-here' && (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${siteKey}`}
@@ -485,7 +485,7 @@ export default function SignInPage() {
           onLoad={() => {
             appLogger.info('reCAPTCHA script loaded successfully');
           }}
-          onError={(_error) => {
+          onError={(error) => {
             appLogger.error('reCAPTCHA script failed to load', { error: String(error) });
           }}
         />

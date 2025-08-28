@@ -10,7 +10,7 @@ import { supabaseClient } from "@/lib/supabase/client-secure";
 import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
-  const [_isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function HomePage() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(_async (event: string, _session: any) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event: string, session: any) => {
 
         if (event === 'SIGNED_IN') {
           const { data: { user } } = await supabaseClient.auth.getUser();

@@ -36,7 +36,7 @@ interface Store {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  review_count?: number;
+  reviewcount?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -69,12 +69,12 @@ const fetchStores = async (limit: number, params?: string) => {
       name: "Kosher Market Plus",
       description: "Your one-stop shop for all kosher groceries",
       city: "Miami",
-      storetype: "grocery",
-      storecategory: "kosher",
+      store_type: "grocery",
+      store_category: "kosher",
       rating: 4.5,
       reviewcount: 127,
       distance: "2.3 mi",
-      imageurl: "/api/placeholder/300/200",
+      image_url: "/api/placeholder/300/200",
       koshercategory: "Glatt Kosher",
       hasparking: true,
       hasdelivery: true,
@@ -88,12 +88,12 @@ const fetchStores = async (limit: number, params?: string) => {
       name: "Jewish Book Center",
       description: "Specialized bookstore with religious texts and literature",
       city: "Miami",
-      storetype: "bookstore",
-      storecategory: "specialty",
+      store_type: "bookstore",
+      store_category: "specialty",
       rating: 4.2,
       reviewcount: 89,
       distance: "1.8 mi",
-      imageurl: "/api/placeholder/300/200",
+      image_url: "/api/placeholder/300/200",
       koshercategory: "General",
       hasparking: false,
       hasdelivery: false,
@@ -107,12 +107,12 @@ const fetchStores = async (limit: number, params?: string) => {
       name: "Judaica World",
       description: "Complete selection of Judaica items and gifts",
       city: "Miami",
-      storetype: "judaica",
-      storecategory: "specialty",
+      store_type: "judaica",
+      store_category: "specialty",
       rating: 4.7,
       reviewcount: 156,
       distance: "3.1 mi",
-      imageurl: "/api/placeholder/300/200",
+      image_url: "/api/placeholder/300/200",
       koshercategory: "General",
       hasparking: true,
       hasdelivery: true,
@@ -126,12 +126,12 @@ const fetchStores = async (limit: number, params?: string) => {
       name: "Kosher Deli Express",
       description: "Fresh kosher deli meats and prepared foods",
       city: "Miami",
-      storetype: "deli",
-      storecategory: "kosher",
+      store_type: "deli",
+      store_category: "kosher",
       rating: 4.3,
       reviewcount: 94,
       distance: "2.7 mi",
-      imageurl: "/api/placeholder/300/200",
+      image_url: "/api/placeholder/300/200",
       koshercategory: "Glatt Kosher",
       hasparking: false,
       hasdelivery: true,
@@ -271,7 +271,7 @@ function StoresPageContent() {
       isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: store.kosher_category,
       rating,
-      reviewCount: store.review_count,
+      reviewCount: store.reviewcount,
       city: store.city,
       distance: store.distance,
       isCholovYisroel: store.is_cholov_yisroel,
@@ -520,7 +520,7 @@ function StoresPageContent() {
       // Subscribe to store updates
       sendMessage({
         type: 'subscribe',
-        data: { roomid: 'store_updates' }
+        data: { room_id: 'store_updates' }
       });
     }
   }, [isConnected, sendMessage]);
@@ -755,7 +755,7 @@ function StoresPageContent() {
       <LocationPromptPopup
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onLocationGranted={() => {
+        onSkip={() => {
           setShowLocationPrompt(false);
         }}
       />

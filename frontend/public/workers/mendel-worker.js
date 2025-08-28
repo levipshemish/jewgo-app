@@ -18,7 +18,7 @@ self.onmessage = function(e){
   }
   function openNow(_r){
     const raw=r.hours_of_operation;if(!raw) {return false;}let hours;try{hours=typeof raw==='string'?JSON.parse(raw):raw;}catch(e){return false}
-    if(!Array.isArray(hours)){return false;}const now=new Date();const day=now.toLocaleDateString('en-US',{weekday:'long'}).toLowerCase();const t=now.getHours()*60+now.getMinutes();const today=hours.find((h) =>{return h&&toLower(h.day)===day});if(!today){return false;}const o=timeToMinutes(today.open||'');const c=timeToMinutes(today.close||'');if(o===-1||c===-1){return false;}return c<o?(t>=o||t<=c):(t>=o&&t<=c);
+    if(!Array.isArray(hours)){return false;}const now=new Date();const day=now.toLocaleDateString('en-US',{weekday:'long'}).toLowerCase();const t=now.getHours()*60+now.getMinutes();const today=hours.find((h) =>{return h&&toLower(h.day)===day});if(!today){return false;}const o=timeToMinute_s(today.open||'');const c=timeToMinute_s(today.close||'');if(o===-1||c===-1){return false;}return c<o?(t>=o||t<=c):(t>=o&&t<=c);
   }
   const agency = toLower(activeFilters.agency);
   const dietary = toLower(activeFilters.dietary);

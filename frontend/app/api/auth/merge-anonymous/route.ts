@@ -1,16 +1,16 @@
-import { _NextRequest, _NextResponse} from 'next/server';
-import { _createServerClient} from '@supabase/ssr';
-import { _createClient} from '@supabase/supabase-js';
-import { _cookies} from 'next/headers';
+import { NextRequest, NextResponse} from 'next/server';
+import { createServerClient} from '@supabase/ssr';
+import { createClient} from '@supabase/supabase-js';
+import { cookies} from 'next/headers';
 import { 
-  _checkRateLimit} from '@/lib/rate-limiting';
+  checkRateLimit} from '@/lib/rate-limiting';
 import { 
-  _validateTrustedIP, _generateCorrelationId, _extractIsAnonymous} from '@/lib/utils/auth-utils';
+  validateTrustedIP, generateCorrelationId, extractIsAnonymous} from '@/lib/utils/auth-utils';
 import { 
-  _verifyMergeCookieVersioned, _hashIPForPrivacy, _validateCSRFServer} from '@/lib/utils/auth-utils.server';
+  verifyMergeCookieVersioned, hashIPForPrivacy, validateCSRFServer} from '@/lib/utils/auth-utils.server';
 import { 
-  _ALLOWED_ORIGINS, _getCORSHeaders, _FEATURE_FLAGS} from '@/lib/config/environment';
-import { _initializeServer} from '@/lib/server-init';
+  ALLOWED_ORIGINS, getCORSHeaders, FEATURE_FLAGS} from '@/lib/config/environment';
+import { initializeServer} from '@/lib/server-init';
 
 // export const runtime = 'nodejs';
 
@@ -19,7 +19,7 @@ import { _initializeServer} from '@/lib/server-init';
  * Handles OPTIONS/CORS preflight and POST requests for user merging
  */
 export async function OPTIONS(request: NextRequest) {
-  const _origin = request.headers.get('origin');
+  const origin = request.headers.get('origin');
   
   return new Response(null, {
     status: 204,
@@ -28,11 +28,11 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const _correlationId = generateCorrelationId();
-  // const _startTime = Date.now();
+  const correlationId = generateCorrelationId();
+  // const startTime = Date.now();
   
   // Initialize server-side functionality
-  const _serverInitialized = await initializeServer();
+  const serverInitialized = await initializeServer();
   if (!serverInitialized) {
     console.error(`Server initialization failed for correlation ID: ${correlationId}`, {
       correlationId
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Validate origin against allowlist
-  const _origin = request.headers.get('origin');
+  const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
       { error: 'CSRF' },
@@ -79,14 +79,14 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const _referer = request.headers.get('referer');
-    const _csrfToken = request.headers.get('x-csrf-token');
-    const _forwardedFor = request.headers.get('x-forwarded-for');
-    const _realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const referer = request.headers.get('referer');
+    const csrfToken = request.headers.get('x-csrf-token');
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Trusted IP validation with left-most X-Forwarded-For parsing
-    const _validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
-    const _ipHash = hashIPForPrivacy(validatedIP);
+    const validatedIP = validateTrustedIP(realIP, forwardedFor || undefined);
+    const ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
     if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
@@ -102,14 +102,17 @@ export async function POST(request: NextRequest) {
         { error: 'CSRF' },
         { 
           status: 403,
-          headers: getCORSHeaders(origin || undefined)
+          headers: {
+            ...getCORSHeaders(origin || undefined),
+            'Cache-Control': 'no-store'
+          }
         }
       );
     }
     
     // Rate limiting for merge operations
-    const _rateLimitResult = await checkRateLimit(
-      `merge_anonymous:${ipHash}`,
+    const rateLimitResult = await checkRateLimit(
+      `mergeanonymous:${ipHash}`,
       'merge_operations',
       validatedIP,
       forwardedFor || undefined
@@ -142,8 +145,8 @@ export async function POST(request: NextRequest) {
     // const _body = await request.json().catch(() => ({}));
     
     // Get merge token from cookies
-    const _cookieStore = await cookies();
-    const _mergeToken = cookieStore.get('merge_token')?.value;
+    const cookieStore = await cookies();
+    const mergeToken = cookieStore.get('merge_token')?.value;
     
     if (!mergeToken) {
       return NextResponse.json(
@@ -156,7 +159,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify merge token
-    const _tokenVerification = verifyMergeCookieVersioned(mergeToken);
+    const tokenVerification = verifyMergeCookieVersioned(mergeToken);
     if (!tokenVerification.valid) {
       // Invalid merge token - log for security monitoring
       // console.error(`Invalid merge token for correlation ID: ${correlationId}`, {
@@ -176,12 +179,12 @@ export async function POST(request: NextRequest) {
     const { anon_uid } = tokenVerification.payload;
     
     // Create Supabase SSR client
-    const _supabase = createServerClient(
+    const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(_name: string) {
+          get(name: string) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
@@ -211,7 +214,7 @@ export async function POST(request: NextRequest) {
     if (extractIsAnonymous(user)) {
       // Anonymous user attempted merge - log for security monitoring
       // console.error(`Anonymous user attempted merge for correlation ID: ${correlationId}`, {
-      //   user_id: user.id,
+      //   userid: user.id,
       //   correlationId
       // });
       
@@ -228,7 +231,7 @@ export async function POST(request: NextRequest) {
     if (user.id === anon_uid) {
       // Self-merge attempt - log for security monitoring
       // console.error(`Current user ID matches anon_uid for correlation ID: ${correlationId}`, {
-      //   user_id: user.id,
+      //   userid: user.id,
       //   anon_uid,
       //   correlationId
       // });
@@ -243,7 +246,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create service role client for database operations
-    const _supabaseService = createClient(
+    const supabaseService = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
@@ -252,16 +255,16 @@ export async function POST(request: NextRequest) {
     const { data: existingJob } = await supabaseService
       .from('merge_jobs')
       .select('*')
-      .eq('correlation_id', correlationId)
+      .eq('correlationid', correlationId)
       .single();
     
     if (existingJob) {
 
-      const _response = NextResponse.json(
+      const response = NextResponse.json(
         { 
           ok: true,
-          moved: existingJob.moved_data || {},
-          correlation_id: correlationId,
+          moved: existingJob.moveddata || {},
+          correlationid: correlationId,
           message: 'Merge already completed'
         },
         { 
@@ -280,10 +283,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Perform the merge operation in a transaction
-    const { data: movedData, error: mergeError } = await supabaseService.rpc('merge_anonymous_user_data', {
-      p_anon_uid: anon_uid,
-      p_auth_uid: user.id,
-      p_correlation_id: correlationId
+    const { data: movedData, error: mergeError } = await supabaseService.rpc('mergeanonymous_userdata', {
+      panon_uid: anon_uid,
+      pauth_uid: user.id,
+      p_correlationid: correlationId
     });
     
     if (mergeError) {
@@ -299,7 +302,7 @@ export async function POST(request: NextRequest) {
         { 
           error: 'MERGE_FAILED',
           details: mergeError.message,
-          correlation_id: correlationId
+          correlationid: correlationId
         },
         { 
           status: 500,
@@ -312,12 +315,12 @@ export async function POST(request: NextRequest) {
     const { error: jobError } = await supabaseService
       .from('merge_jobs')
       .insert({
-        correlation_id: correlationId,
+        correlationid: correlationId,
         anon_uid,
         auth_uid: user.id,
-        moved_data: movedData,
+        moveddata: movedData,
         status: 'completed',
-        completed_at: new Date().toISOString()
+        completedat: new Date().toISOString()
       });
     
     if (jobError) {
@@ -333,17 +336,17 @@ export async function POST(request: NextRequest) {
     // console.log(`Merge operation successful for correlation ID: ${correlationId}`, {
     //   anon_uid,
     //   auth_uid: user.id,
-    //   moved_data: movedData,
+    //   moveddata: movedData,
     //   correlationId,
     //   duration_ms: Date.now() - startTime
     // });
     
     // Clear merge token and return success
-    const _response = NextResponse.json(
+    const response = NextResponse.json(
       { 
         ok: true,
         moved: movedData,
-        correlation_id: correlationId,
+        correlationid: correlationId,
         message: 'Merge completed successfully'
       },
       { 
@@ -359,10 +362,10 @@ export async function POST(request: NextRequest) {
     
     return response;
     
-  } catch (_error) {
+  } catch (error) {
     // Unexpected error - log for debugging
     // console.error(`Unexpected error in merge anonymous for correlation ID: ${correlationId}`, {
-    //   error: scrubPII(_error),
+    //   error: scrubPII(error),
     //   correlationId,
     //   duration_ms: Date.now() - startTime
     // });
@@ -370,7 +373,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'INTERNAL_ERROR',
-        correlation_id: correlationId
+        correlationid: correlationId
       },
       { 
         status: 500,

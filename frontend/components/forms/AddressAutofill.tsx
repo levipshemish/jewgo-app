@@ -277,7 +277,8 @@ export default function AddressAutofill({
             city = addressParts[1] || '';
           }
           if (addressParts.length >= 3) {
-            const stateZip = (addressParts[2] || '').split(' ');
+            const stateZipStr = addressParts[2] || '';
+            const stateZip = stateZipStr.split(' ');
             if (stateZip.length >= 2) {
               state = stateZip[0] || '';
               zipCode = stateZip[1] || '';

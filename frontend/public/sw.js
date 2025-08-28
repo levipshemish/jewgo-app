@@ -108,9 +108,9 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname === '/api/restaurants') {
     event.respondWith(
       caches.open(RESTAURANTS_CACHE)
-        .then((_cache) => {
+        .then((cache) => {
           return cache.match(request)
-            .then((_response) => {
+            .then((response) => {
               // Return cached response if available
               if (response) {
                 return response;
@@ -118,7 +118,7 @@ self.addEventListener('fetch', (event) => {
 
               // Fetch from network and cache
               return fetch(request)
-                .then((_networkResponse) => {
+                .then((networkResponse) => {
                   // Only cache successful responses
                   if (networkResponse.ok) {
                     // Clone the response before caching
@@ -158,7 +158,7 @@ self.addEventListener('fetch', (event) => {
   // Handle other requests with cache-first strategy
   event.respondWith(
     caches.match(request)
-      .then((_response) => {
+      .then((response) => {
         // Return cached response if available
         if (response) {
           return response;
@@ -198,15 +198,15 @@ self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync-restaurants') {
     event.waitUntil(
       fetch('/api/restaurants')
-        .then((_response) => {
+        .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
           return response.json();
         })
-        .then((_data) => {
+        .then((data) => {
           return caches.open(RESTAURANTS_CACHE)
-            .then((_cache) => {
+            .then((cache) => {
               return cache.put('/api/restaurants', new Response(JSON.stringify(data)));
             });
         })

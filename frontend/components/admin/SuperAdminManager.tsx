@@ -1,24 +1,15 @@
 'use client';
 
-import { _useState} from 'react';
-import { _LoadingButton} from '@/components/ui/LoadingStates';
-import { _Loader2, _UserPlus, _Shield, _CheckCircle, _XCircle} from 'lucide-react';
+import React, { useState } from 'react';
+import { LoadingButton } from '@/components/ui/LoadingStates';
+import { Loader2, UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react';
 
-interface SuperAdminManagerProps {
-  currentAdmins: Array<{
-    id: string;
-    email: string;
-    name?: string;
-    issuperadmin: boolean;
-  }>;
-}
-
-export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
+export default function SuperAdminManager() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const _handlePromoteUser = async () => {
+  const handlePromoteUser = async () => {
     if (!email.trim()) {
       setMessage({ type: 'error', text: 'Please enter an email address' });
       return;
@@ -28,25 +19,23 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
     setMessage(null);
 
     try {
-      const _response = await fetch('/api/admin/promote-user', {
+      const response = await fetch('/api/admin/promote-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ targetEmail: email.trim() }),
+        body: JSON.stringify({ email: email.trim() }),
       });
 
-      const _data = await response.json();
+      const data = await response.json();
 
       if (response.ok) {
         setMessage({ type: 'success', text: data.message });
         setEmail('');
-        // Optionally refresh the admin list here
-        window.location.reload();
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to promote user' });
       }
-    } catch (_error) {
+    } catch (error) {
       setMessage({ type: 'error', text: 'Network error occurred' });
     } finally {
       setIsLoading(false);
@@ -54,82 +43,69 @@ export function SuperAdminManager({ currentAdmins }: SuperAdminManagerProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl border rounded-lg p-6 bg-white shadow-sm">
-      <div className="mb-6">
-        <h2 className="flex items-center gap-2 text-xl font-semibold mb-2">
+    <div className="max-w-2xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center gap-3 mb-6">
           <Shield className="h-5 w-5" />
-          Super Admin Management
-        </h2>
-        <p className="text-gray-600">
-          Promote users to super admin status. Only existing super admins can perform this action.
-        </p>
-      </div>
-      <div className="space-y-4">
-        {/* Current Super Admins */}
-        <div>
-          <h3 className="text-sm font-medium mb-2">Current Super Admins ({currentAdmins.length})</h3>
-          <div className="space-y-2">
-            {currentAdmins.length === 0 ? (
-              <p className="text-sm text-gray-500">No super admins found</p>
-            ) : (
-              currentAdmins.map((admin) => (
-                <div key={admin.id} className="flex items-center gap-2 p-2 bg-gray-100 rounded-md">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium">{admin.name || 'No name'}</p>
-                    <p className="text-xs text-gray-500">{admin.email}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Super Admin Management</h2>
         </div>
 
-        {/* Promote New Admin */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium">Promote New Super Admin</h3>
-          <div className="flex gap-2">
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              User Email
+            </label>
             <input
               type="email"
-              placeholder="Enter user email"
+              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter user email to promote"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <LoadingButton
-              onClick={handlePromoteUser}
-              loading={isLoading}
-              disabled={!email.trim()}
-              className="flex items-center gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              Promote
-            </LoadingButton>
           </div>
+
+          {message && (
+            <div className={`p-3 rounded-md ${
+              message.type === 'success' 
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-center gap-2">
+                {message.type === 'success' ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-600" />
+                )}
+                <span className={`text-sm ${
+                  message.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {message.text}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <LoadingButton
+            onClick={handlePromoteUser}
+            loading={isLoading}
+            disabled={!email.trim() || isLoading}
+            className="w-full"
+          >
+            <UserPlus className="h-4 w-4" />
+            Promote to Super Admin
+          </LoadingButton>
         </div>
 
-        {/* Messages */}
-        {message && (
-          <div className={`p-3 rounded-md border flex items-center gap-2 ${
-            message.type === 'error' 
-              ? 'border-red-200 bg-red-50 text-red-800' 
-              : 'border-green-200 bg-green-50 text-green-800'
-          }`}>
-            {message.type === 'error' ? (
-              <XCircle className="h-4 w-4 text-red-600" />
-            ) : (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        )}
-
-        {/* Instructions */}
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>• Only existing super admins can promote new super admins</p>
-          <p>• The user must already have an account in the system</p>
-          <p>• Super admins have full access to all admin features</p>
+        <div className="mt-6 p-4 bg-blue-50 rounded-md">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Instructions</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• Enter the email address of the user you want to promote</li>
+            <li>• The user will be granted super admin privileges</li>
+            <li>• Only existing users can be promoted</li>
+            <li>• This action cannot be undone</li>
+          </ul>
         </div>
       </div>
     </div>

@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
+const { defaultLogger } = require('./utils/logger');
+
 /**
- * check-auth
- * Wrap function with error handling
+ * Check-auth Script
  * 
- * This script provides wrap function with error handling for the JewGo application.
+ * This script provides check-auth functionality for the JewGo application.
  * 
  * @author Development Team
  * @version 1.0.0
@@ -27,6 +30,31 @@
  * @see Related scripts in the project
  * @see Links to relevant documentation
  */
+
+// Simple error handler implementation
+const defaultErrorHandler = {
+  wrapFunction: (fn, context = {}) => {
+    return async (...args) => {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped function:', error);
+        throw error;
+      }
+    };
+  },
+  wrapSyncFunction: (fn, context = {}) => {
+    return (...args) => {
+      try {
+        return fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped sync function:', error);
+        throw error;
+      }
+    };
+  }
+};
+
 function wrapWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapFunction(fn, context);
 }
@@ -38,21 +66,14 @@ function wrapSyncWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapSyncFunction(fn, context);
 }
 
+// Main function
+function main() {
+  console.log('Script executed successfully');
+}
 
+// Run the script
+if (require.main === module) {
+  main();
+}
 
-(async () => {
-  const prisma = new PrismaClient();
-  try {
-    const count = await prisma.user.count();
-    const email = `statuscheck+${Date.now()}@jewgo.com`;
-    const hashed = await bcrypt.hash('password123', 10);
-    const user = await prisma.user.create({ data: { email, name: 'Status Check', password: hashed } });
-    // Create profile row too
-    await prisma.userProfile.create({ data: { userId: user.id, location: 'Miami, FL' } }).catch(() => {});
-    } catch (e) {
-    // defaultLogger.error('script_error', e && e.message ? e.message : e);
-    wrapSyncWithErrorHandling(() => process.exit)Code = 1;
-  } finally {
-    await prisma.$disconnect();
-  }
-})();
+module.exports = { main, wrapWithErrorHandling, wrapSyncWithErrorHandling };

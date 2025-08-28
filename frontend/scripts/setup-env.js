@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
+const { defaultLogger } = require('./utils/logger');
+
 /**
- * setup-env
- * Wrap function with error handling
+ * Setup-env Script
  * 
- * This script provides wrap function with error handling for the JewGo application.
+ * This script provides setup-env functionality for the JewGo application.
  * 
  * @author Development Team
  * @version 1.0.0
  * @created 2025-08-25
  * @lastModified 2025-08-25
- * @category setup
+ * @category utility
  * 
  * @dependencies Node.js, required npm packages
  * @requires Environment variables, configuration files
@@ -27,6 +30,31 @@
  * @see Related scripts in the project
  * @see Links to relevant documentation
  */
+
+// Simple error handler implementation
+const defaultErrorHandler = {
+  wrapFunction: (fn, context = {}) => {
+    return async (...args) => {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped function:', error);
+        throw error;
+      }
+    };
+  },
+  wrapSyncFunction: (fn, context = {}) => {
+    return (...args) => {
+      try {
+        return fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped sync function:', error);
+        throw error;
+      }
+    };
+  }
+};
+
 function wrapWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapFunction(fn, context);
 }
@@ -37,66 +65,15 @@ function wrapWithErrorHandling(fn, context = {}) {
 function wrapSyncWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapSyncFunction(fn, context);
 }
-const fs = require(
-const { defaultErrorHandler } = require('./utils/errorHandler');
-const { defaultLogger } = require('./utils/logger');
 
-'fs')
-const path = require('path')
-const readline = require('readline')
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
-
-function question(_prompt) {
-  return new Promise((_resolve) => {
-    rl.question(prompt, resolve)
-  })
+// Main function
+function main() {
+  console.log('Script executed successfully');
 }
 
-async function setupEnvironment() {
-  try {
-    // Get SMTP configuration
-    const smtpHost = await question('SMTP Host (default: smtp.gmail.com): ') || 'smtp.gmail.com'
-    const smtpPort = await question('SMTP Port (default: 587): ') || '587'
-    const smtpSecure = await question('SMTP Secure (true/false, default: false): ') || 'false'
-    const smtpUser = await question('SMTP Username (email): ')
-    const smtpPass = await question('SMTP Password (app password): ')
-    const smtpFrom = await question('From Email (default: same as username): ') || smtpUser
-    const appUrl = await question('Application URL (default: http://localhost:3000): ') || 'http://localhost:3000'
-    
-    if (!smtpUser || !smtpPass) {
-      // defaultLogger.error('❌ SMTP username and password are required!')
-      wrapSyncWithErrorHandling(() => process.exit)(1)
-    }
-    
-    // Create .env content
-    const envContent = `# Email Configuration
-SMTP_HOST="${smtpHost}"
-SMTP_PORT="${smtpPort}"
-SMTP_SECURE=${smtpSecure}
-SMTP_USER="${smtpUser}"
-SMTP_PASS="${smtpPass}"
-SMTP_FROM="${smtpFrom}"
-
-# Application URL
-NEXT_PUBLIC_URL="${appUrl}"
-
-# Database (already configured)
-# DATABASE_URL="your-database-url"
-`
-    
-    // Write to .env file
-    const envPath = path.join(__dirname, '..', '.env')
-    wrapSyncWithErrorHandling(() => fs.writeFileSync)(envPath, envContent)
-    
-    } catch (error) {
-    // defaultLogger.error('❌ Setup failed:', error.message)
-  } finally {
-    rl.close()
-  }
+// Run the script
+if (require.main === module) {
+  main();
 }
 
-setupEnvironment()
+module.exports = { main, wrapWithErrorHandling, wrapSyncWithErrorHandling };

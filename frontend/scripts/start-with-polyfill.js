@@ -11,7 +11,8 @@ if (typeof self === 'undefined') {
   // // console.error('❌ Self polyfill failed to load');
   process.exit(1);
 } else {
-  }
+  console.log('✅ Self polyfill loaded successfully');
+}
 
 // Now start Next.js
 const { spawn } = require('child_process');
@@ -29,7 +30,7 @@ const nextProcess = spawn('npx', ['next', command, ...args.slice(1)], {
   },
 });
 
-nextProcess.on('close', (_code) => {
+nextProcess.on('close', (code) => {
   process.exit(code);
 });
 

@@ -138,14 +138,14 @@ export async function POST(request: NextRequest) {
     }
     
     // Create Supabase SSR client with cookie adapter
-    const _cookieStore = await cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            return await cookieStore.get(name)?.value;
+            return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
             cookieStore.set({ name, value, ...options });
@@ -217,18 +217,16 @@ export async function POST(request: NextRequest) {
     const signedCookie = signMergeCookieVersioned(cookiePayload);
     
     // Set HttpOnly cookie with environment-specific domain and security attributes
-    const cookieOptions = getCookieOptions();
     const response = new NextResponse(null, { 
       status: 204,
       headers: getCORSHeaders(origin || undefined)
     });
     
     response.cookies.set('merge_token', signedCookie, {
-      httpOnly: cookieOptions.httpOnly,
-      secure: cookieOptions.secure,
-      sameSite: cookieOptions.sameSite,
-      domain: cookieOptions.domain,
-      maxAge: cookieOptions.maxAge,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 600, // 10 minutes
       path: '/'
     });
     

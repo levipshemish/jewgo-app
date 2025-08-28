@@ -42,7 +42,7 @@ interface Mikvah {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  review_count?: number;
+  reviewcount?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -83,13 +83,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       name: "Community Mikvah Center",
       description: "Beautiful and well-maintained mikvah facility for the community",
       city: "Miami",
-      mikvahtype: "women's",
-      mikvahcategory: "community",
+      mikvah_type: "women's",
+      mikvah_category: "community",
       rating: 4.8,
       reviewcount: 203,
       distance: "1.2 mi",
-      imageurl: "/api/placeholder/300/200",
-      requiresappointment: true,
+      image_url: "/api/placeholder/300/200",
+      requires_appointment: true,
       appointmentphone: "305-555-0123",
       walk_inavailable: false,
       has_changingrooms: true,
@@ -111,13 +111,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       name: "Private Mikvah Suite",
       description: "Luxury private mikvah with premium amenities",
       city: "Miami",
-      mikvahtype: "women's",
-      mikvahcategory: "private",
+      mikvah_type: "women's",
+      mikvah_category: "private",
       rating: 4.9,
       reviewcount: 156,
       distance: "2.8 mi",
-      imageurl: "/api/placeholder/300/200",
-      requiresappointment: true,
+      image_url: "/api/placeholder/300/200",
+      requires_appointment: true,
       appointmentphone: "305-555-0456",
       walk_inavailable: false,
       advance_bookingdays: 7,
@@ -141,13 +141,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       name: "Hotel Mikvah",
       description: "Convenient mikvah located within the hotel complex",
       city: "Miami",
-      mikvahtype: "women's",
-      mikvahcategory: "hotel",
+      mikvah_type: "women's",
+      mikvah_category: "hotel",
       rating: 4.3,
       reviewcount: 89,
       distance: "3.5 mi",
-      imageurl: "/api/placeholder/300/200",
-      requiresappointment: false,
+      image_url: "/api/placeholder/300/200",
+      requires_appointment: false,
       walk_inavailable: true,
       has_changingrooms: true,
       has_showerfacilities: true,
@@ -168,13 +168,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       name: "Men's Mikvah",
       description: "Traditional men's mikvah for daily use",
       city: "Miami",
-      mikvahtype: "men's",
-      mikvahcategory: "community",
+      mikvah_type: "men's",
+      mikvah_category: "community",
       rating: 4.5,
       reviewcount: 67,
       distance: "1.8 mi",
-      imageurl: "/api/placeholder/300/200",
-      requiresappointment: false,
+      image_url: "/api/placeholder/300/200",
+      requires_appointment: false,
       walk_inavailable: true,
       has_changingrooms: true,
       has_showerfacilities: true,
@@ -319,7 +319,7 @@ function MikvahPageContent() {
       isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: mikvah.kosher_certification,
       rating,
-      reviewCount: mikvah.review_count,
+      reviewCount: mikvah.reviewcount,
       city: mikvah.city,
       distance: mikvah.distance,
     };
@@ -566,7 +566,7 @@ function MikvahPageContent() {
       // Subscribe to mikvah updates
       sendMessage({
         type: 'subscribe',
-        data: { roomid: 'mikvah_updates' }
+        data: { room_id: 'mikvah_updates' }
       });
     }
   }, [isConnected, sendMessage]);
@@ -801,7 +801,7 @@ function MikvahPageContent() {
       <LocationPromptPopup
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onLocationGranted={() => {
+        onSkip={() => {
           setShowLocationPrompt(false);
         }}
       />

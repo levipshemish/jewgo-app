@@ -767,7 +767,7 @@ function EateryPageContent() {
       <LocationPromptPopup
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onLocationGranted={() => {
+        onSkip={() => {
           setShowLocationPrompt(false);
         }}
       />

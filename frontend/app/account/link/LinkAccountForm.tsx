@@ -1,7 +1,7 @@
 "use client";
 
-import { _useState} from 'react';
-import { _useRouter} from 'next/navigation';
+import { useState} from 'react';
+import { useRouter} from 'next/navigation';
 
 interface Identity {
   id: string;
@@ -21,15 +21,15 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const _router = useRouter();
+  const router = useRouter();
 
-  const _handleLinkAccounts = async () => {
+  const handleLinkAccounts = async () => {
     setPending(true);
     setError(null);
     setSuccess(null);
     
     try {
-      const _response = await fetch('/api/auth/prepare-merge', {
+      const response = await fetch('/api/auth/prepare-merge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
         }),
       });
 
-      const _result = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
         setError(result.error || 'Failed to link accounts');
@@ -67,12 +67,12 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     }
   };
 
-  const _handleReAuthenticate = async (_provider: string) => {
+  const handleReAuthenticate = async (provider: string) => {
     setPending(true);
     setError(null);
     
     try {
-      const _response = await fetch('/api/auth/prepare-merge', {
+      const response = await fetch('/api/auth/prepare-merge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
         }),
       });
 
-      const _result = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
         setError(result.error || 'Failed to initiate re-authentication');
@@ -101,12 +101,12 @@ export default function LinkAccountForm({ user: _user, identities }: LinkAccount
     }
   };
 
-  const _handleSkipLinking = () => {
+  const handleSkipLinking = () => {
     // Redirect to account page without linking
     router.push('/account');
   };
 
-  const _getProviderDisplayName = (_provider: string) => {
+  const getProviderDisplayName = (provider: string) => {
     switch (provider) {
       case 'apple':
         return 'Apple';

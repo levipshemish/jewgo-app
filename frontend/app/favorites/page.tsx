@@ -38,11 +38,11 @@ function FavoritesPageContent() {
     setFilter
   } = useAdvancedFilters();
 
-  const handleSearch = (_query: string) => {
+  const handleSearch = (query: string) => {
     // Search disabled on this page; no-op to satisfy types
   };
 
-  const handleTabChange = (_tab: string) => {
+  const handleTabChange = (tab: string) => {
     setActiveTab(tab);
   };
 
@@ -50,7 +50,7 @@ function FavoritesPageContent() {
     setShowFilters(true);
   };
 
-  const handleFilterChange = (_filterType: keyof typeof activeFilters, _value: any) => {
+  const handleFilterChange = (filterType: keyof typeof activeFilters, value: any) => {
     setFilter(filterType, value);
   };
 
@@ -58,7 +58,7 @@ function FavoritesPageContent() {
     setShowFilters(false);
   };
 
-  const handleCardClick = (_restaurantId: string) => {
+  const handleCardClick = (restaurantId: string) => {
     router.push(`/restaurant/${restaurantId}`);
   };
 
@@ -168,7 +168,7 @@ function FavoritesPageContent() {
                             {restaurant.name}
                           </h3>
                           <button
-                            onClick={(_e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               // Remove favorite is handled by useFavorites elsewhere; placeholder
                             }}

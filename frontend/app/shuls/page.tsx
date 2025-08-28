@@ -43,7 +43,7 @@ interface Shul {
   distance?: string;
   distance_miles?: number;
   rating?: number;
-  review_count?: number;
+  reviewcount?: number;
   star_rating?: number;
   google_rating?: number;
   image_url?: string;
@@ -87,14 +87,14 @@ const fetchShuls = async (limit: number, params?: string) => {
       name: "Young Israel of Miami",
       description: "Modern Orthodox synagogue with daily minyan and vibrant community",
       city: "Miami",
-      shultype: "orthodox",
-      shulcategory: "ashkenazi",
+      shul_type: "orthodox",
+      shul_category: "ashkenazi",
       denomination: "orthodox",
       rating: 4.7,
       reviewcount: 234,
       distance: "0.8 mi",
-      imageurl: "/api/placeholder/300/200",
-      has_dailyminyan: true,
+      image_url: "/api/placeholder/300/200",
+      has_daily_minyan: true,
       has_shabbatservices: true,
       has_holidayservices: true,
       has_womensection: true,
@@ -119,14 +119,14 @@ const fetchShuls = async (limit: number, params?: string) => {
       name: "Temple Beth Sholom",
       description: "Conservative synagogue with warm community and excellent programming",
       city: "Miami",
-      shultype: "conservative",
-      shulcategory: "ashkenazi",
+      shul_type: "conservative",
+      shul_category: "ashkenazi",
       denomination: "conservative",
       rating: 4.5,
       reviewcount: 189,
       distance: "1.5 mi",
-      imageurl: "/api/placeholder/300/200",
-      has_dailyminyan: false,
+      image_url: "/api/placeholder/300/200",
+      has_daily_minyan: false,
       has_shabbatservices: true,
       has_holidayservices: true,
       has_womensection: true,
@@ -153,14 +153,14 @@ const fetchShuls = async (limit: number, params?: string) => {
       name: "Chabad of Miami Beach",
       description: "Chabad house with daily services and community outreach",
       city: "Miami Beach",
-      shultype: "chabad",
-      shulcategory: "chabad",
+      shul_type: "chabad",
+      shul_category: "chabad",
       denomination: "orthodox",
       rating: 4.8,
       reviewcount: 156,
       distance: "2.3 mi",
-      imageurl: "/api/placeholder/300/200",
-      has_dailyminyan: true,
+      image_url: "/api/placeholder/300/200",
+      has_daily_minyan: true,
       has_shabbatservices: true,
       has_holidayservices: true,
       has_womensection: true,
@@ -185,14 +185,14 @@ const fetchShuls = async (limit: number, params?: string) => {
       name: "Temple Emanu-El",
       description: "Reform synagogue with progressive values and inclusive community",
       city: "Miami",
-      shultype: "reform",
-      shulcategory: "ashkenazi",
+      shul_type: "reform",
+      shul_category: "ashkenazi",
       denomination: "reform",
       rating: 4.3,
       reviewcount: 98,
       distance: "3.1 mi",
-      imageurl: "/api/placeholder/300/200",
-      has_dailyminyan: false,
+      image_url: "/api/placeholder/300/200",
+      has_daily_minyan: false,
       has_shabbatservices: true,
       has_holidayservices: true,
       has_womensection: true,
@@ -345,7 +345,7 @@ function ShulsPageContent() {
       isLiked: false, // Will be set by the component based on favorites state
       kosherCategory: shul.denomination,
       rating,
-      reviewCount: shul.review_count,
+      reviewCount: shul.reviewcount,
       city: shul.city,
       distance: shul.distance,
     };
@@ -592,7 +592,7 @@ function ShulsPageContent() {
       // Subscribe to shul updates
       sendMessage({
         type: 'subscribe',
-        data: { roomid: 'shul_updates' }
+        data: { room_id: 'shul_updates' }
       });
     }
   }, [isConnected, sendMessage]);
@@ -827,7 +827,7 @@ function ShulsPageContent() {
       <LocationPromptPopup
         isOpen={showLocationPrompt}
         onClose={() => setShowLocationPrompt(false)}
-        onLocationGranted={() => {
+        onSkip={() => {
           setShowLocationPrompt(false);
         }}
       />

@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * update-hours-cron
- * Wrap function with error handling
+ * CRON Job: Update Restaurant Hours
  * 
- * This script provides wrap function with error handling for the JewGo application.
+ * This script updates restaurant hours for records that haven't been updated
+ * in the last 7 days. It can be run manually or scheduled via CRON.
+ * 
+ * Usage:
+ * - Manual: node scripts/update-hours-cron.js
+ * - CRON: 0 2 * * 0 node scripts/update-hours-cron.js (every Sunday at 2 AM)
  * 
  * @author Development Team
  * @version 1.0.0
@@ -15,43 +19,11 @@
  * @dependencies Node.js, required npm packages
  * @requires Environment variables, configuration files
  * 
- * @usage * - Manual: node scripts/update-hours-cron.js
- * - CRON: 0 2 * * 0 node scripts/update-hours-cron.js (every Sunday at 2 AM)
- */
- * @options --help, --verbose, --config
- * 
- * @example
- * node update-hours-cron.js --verbose --config=production
- * 
  * @returns Exit code 0 for success, non-zero for errors
  * @throws Common error conditions and their meanings
  * 
  * @see Related scripts in the project
  * @see Links to relevant documentation
- */
-function wrapWithErrorHandling(fn, context = {}) {
-  return defaultErrorHandler.wrapFunction(fn, context);
-}
-
-/**
- * Wrap synchronous function with error handling
- */
-function wrapSyncWithErrorHandling(fn, context = {}) {
-  return defaultErrorHandler.wrapSyncFunction(fn, context);
-}
-
-
-#!/usr/bin/env node
-
-/**
- * CRON Job: Update Restaurant Hours
- * 
- * This script updates restaurant hours for records that haven't been updated
- * in the last 7 days. It can be run manually or scheduled via CRON.
- * 
- * Usage:
- * - Manual: node scripts/update-hours-cron.js
- * - CRON: 0 2 * * 0 node scripts/update-hours-cron.js (every Sunday at 2 AM)
  */
 
 import { db } from '@/lib/db';

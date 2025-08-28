@@ -1,8 +1,8 @@
 'use client';
 
-import { _useState, _useMemo, _useCallback} from 'react';
+import { useState, useMemo, useCallback} from 'react';
 import { 
-  _ChevronLeft, _ChevronRight, _ChevronUp, _ChevronDown, _Search, _Filter, _Download, _MoreHorizontal, _Edit, _Trash2, _Eye} from 'lucide-react';
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, Filter, Download, MoreHorizontal, Edit, Trash2, Eye} from 'lucide-react';
 
 export interface Column<T> {
   key: string;
@@ -29,7 +29,7 @@ export interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   onSort?: (key: string, order: 'asc' | 'desc') => void;
-  onSearch?: (_query: string) => void;
+  onSearch?: (query: string) => void;
   onExport?: () => void;
   onBulkAction?: (action: string, selectedIds: string[]) => void;
   bulkActions?: { key: string; title: string; variant?: 'default' | 'destructive' | 'success' }[];
@@ -46,7 +46,7 @@ export interface DataTableProps<T> {
   searchQuery?: string;
   sortKey?: string;
   sortOrder?: 'asc' | 'desc';
-  onSearchQueryChange?: (_query: string) => void;
+  onSearchQueryChange?: (query: string) => void;
   onSortChange?: (key: string, order: 'asc' | 'desc') => void;
 }
 
@@ -81,14 +81,14 @@ export default function DataTable<T extends { id: string | number }>({
   const [internalSortKey, setInternalSortKey] = useState<string>('');
   const [internalSortOrder, setInternalSortOrder] = useState<'asc' | 'desc'>('desc');
   
-  const _searchQuery = controlledSearchQuery !== undefined ? controlledSearchQuery : internalSearchQuery;
-  const _sortKey = controlledSortKey !== undefined ? controlledSortKey : internalSortKey;
-  const _sortOrder = controlledSortOrder !== undefined ? controlledSortOrder : internalSortOrder;
+  const searchQuery = controlledSearchQuery !== undefined ? controlledSearchQuery : internalSearchQuery;
+  const sortKey = controlledSortKey !== undefined ? controlledSortKey : internalSortKey;
+  const sortOrder = controlledSortOrder !== undefined ? controlledSortOrder : internalSortOrder;
 
   // Debounced search function
-  const _debouncedSearch = useMemo(() => {
+  const debouncedSearch = useMemo(() => {
     let timeoutId: NodeJS.Timeout;
-    return (_query: string) => {
+    return (query: string) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         onSearch?.(query);
@@ -97,7 +97,7 @@ export default function DataTable<T extends { id: string | number }>({
   }, [onSearch]);
 
   // Handle row selection
-  const _handleSelectRow = (id: string | number) => {
+  const handleSelectRow = (id: string | number) => {
     const newSelected = new Set(selectedRows);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -108,7 +108,7 @@ export default function DataTable<T extends { id: string | number }>({
   };
 
   // Handle select all
-  const _handleSelectAll = () => {
+  const handleSelectAll = () => {
     if (selectedRows.size === data.length) {
       setSelectedRows(new Set());
     } else {
@@ -117,7 +117,7 @@ export default function DataTable<T extends { id: string | number }>({
   };
 
   // Handle search input change
-  const _handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     
     if (onSearchQueryChange) {
@@ -133,13 +133,13 @@ export default function DataTable<T extends { id: string | number }>({
   };
 
   // Handle search form submit
-  const _handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(searchQuery);
   };
 
   // Handle sort
-  const _handleSort = (_key: string) => {
+  const handleSort = (key: string) => {
     const newOrder = sortKey === key && sortOrder === 'asc' ? 'desc' : 'asc';
     
     if (onSortChange) {
@@ -155,14 +155,14 @@ export default function DataTable<T extends { id: string | number }>({
   };
 
   // Handle bulk action
-  const _handleBulkAction = (_action: string) => {
+  const handleBulkAction = (action: string) => {
     const selectedIds = Array.from(selectedRows).map(id => id.toString());
     onBulkAction?.(action, selectedIds);
     setSelectedRows(new Set()); // Clear selection after action
   };
 
   // Get selected count
-  const _selectedCount = selectedRows.size;
+  const selectedCount = selectedRows.size;
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -274,8 +274,8 @@ export default function DataTable<T extends { id: string | number }>({
               )}
               
               {columns.map((column) => {
-                const _isSorted = sortKey === column.key;
-                const _ariaSort = column.sortable ? (isSorted ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined;
+                const isSorted = sortKey === column.key;
+                const ariaSort = column.sortable ? (isSorted ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined;
                 return (
                   <th
                     key={column.key}

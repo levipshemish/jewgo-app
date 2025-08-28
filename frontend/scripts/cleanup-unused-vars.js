@@ -27,6 +27,31 @@
  * @see Related scripts in the project
  * @see Links to relevant documentation
  */
+
+// Simple error handler implementation
+const defaultErrorHandler = {
+  wrapFunction: (fn, context = {}) => {
+    return async (...args) => {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped function:', error);
+        throw error;
+      }
+    };
+  },
+  wrapSyncFunction: (fn, context = {}) => {
+    return (...args) => {
+      try {
+        return fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped sync function:', error);
+        throw error;
+      }
+    };
+  }
+};
+
 function wrapWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapFunction(fn, context);
 }

@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import { _NextRequest, _NextResponse} from 'next/server';
-import { _prisma} from '@/lib/db/prisma';
+import { NextRequest, NextResponse} from 'next/server';
+import { prisma} from '@/lib/db/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
       environment: process.env.NODE_ENV,
       database: 'unknown',
       admin_structure: {
-        super_admins_count: 0,
-        admin_roles_count: 0,
-        total_admins: 0
+        superadminscount: 0,
+        admin_rolescount: 0,
+        totaladmins: 0
       }
     };
 
@@ -24,26 +24,26 @@ export async function GET(request: NextRequest) {
       
       // Count super admins
 
-      const _superAdminsCount = await prisma.user.count({
+      const superAdminsCount = await prisma.user.count({
         where: {
           issuperadmin: true
         }
       });
       
-      result.admin_structure.super_admins_count = superAdminsCount;
+      result.admin_structure.superadminscount = superAdminsCount;
 
       // Count admin roles
 
-      const _adminRolesCount = await prisma.adminRole.count({
+      const adminRolesCount = await prisma.adminRole.count({
         where: {
           isActive: true
         }
       });
       
-      result.admin_structure.admin_roles_count = adminRolesCount;
+      result.admin_structure.admin_rolescount = adminRolesCount;
 
       // Get unique admin user IDs
-      const _adminRoleUserIds = await prisma.adminRole.findMany({
+      const adminRoleUserIds = await prisma.adminRole.findMany({
         where: {
           isActive: true
         },
@@ -52,12 +52,12 @@ export async function GET(request: NextRequest) {
         }
       });
       
-      const _adminUserIds = new Set([
+      const adminUserIds = new Set([
         ...adminRoleUserIds.map(role => role.userId)
       ]);
       
       // Add super admin IDs
-      const _superAdmins = await prisma.user.findMany({
+      const superAdmins = await prisma.user.findMany({
         where: {
           issuperadmin: true
         },
@@ -68,18 +68,18 @@ export async function GET(request: NextRequest) {
       
       superAdmins.forEach(admin => adminUserIds.add(admin.id));
       
-      result.admin_structure.total_admins = adminUserIds.size;
+      result.admin_structure.totaladmins = adminUserIds.size;
 
       await prisma.$disconnect();
 
-    } catch (_dbError) {
+    } catch (dbError) {
       console.error('[PUBLIC ADMIN INFO] Database error:', dbError);
       result.database = 'error';
-      result.database_error = String(dbError);
+      result.databaseerror = String(dbError);
     }
 
     return NextResponse.json(result);
-  } catch (_error) {
+  } catch (error) {
     console.error('[PUBLIC ADMIN INFO] Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Failed to get admin info',

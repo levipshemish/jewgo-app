@@ -1,13 +1,13 @@
-
-const { defaultLogger } = require('./utils/logger');
-
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
+const { defaultLogger } = require('./utils/logger');
+
 /**
- * rotate-logs
- * Wrap function with error handling
+ * Rotate Logs Script
  * 
- * This script provides wrap function with error handling for the JewGo application.
+ * This script rotates log files when they exceed a certain size.
  * 
  * @author Development Team
  * @version 1.0.0
@@ -30,6 +30,31 @@ const { defaultLogger } = require('./utils/logger');
  * @see Related scripts in the project
  * @see Links to relevant documentation
  */
+
+// Simple error handler implementation
+const defaultErrorHandler = {
+  wrapFunction: (fn, context = {}) => {
+    return async (...args) => {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped function:', error);
+        throw error;
+      }
+    };
+  },
+  wrapSyncFunction: (fn, context = {}) => {
+    return (...args) => {
+      try {
+        return fn(...args);
+      } catch (error) {
+        console.error('Error in wrapped sync function:', error);
+        throw error;
+      }
+    };
+  }
+};
+
 function wrapWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapFunction(fn, context);
 }
@@ -41,6 +66,13 @@ function wrapSyncWithErrorHandling(fn, context = {}) {
   return defaultErrorHandler.wrapSyncFunction(fn, context);
 }
 
+function rotateLogs() {
+  const config = {
+    logs: [
+      { path: path.join(__dirname, '../logs/app.log'), maxSize: 10 },
+      { path: path.join(__dirname, '../logs/error.log'), maxSize: 10 }
+    ]
+  };
   
   config.logs.forEach(logConfig => {
     if (wrapSyncWithErrorHandling(() => fs.existsSync)(logConfig.path)) {
@@ -53,7 +85,7 @@ function wrapSyncWithErrorHandling(fn, context = {}) {
         const rotatedPath = `${logConfig.path}.${timestamp}`;
         
         fs.renameSync(logConfig.path, rotatedPath);
-        }
+      }
     }
   });
 }

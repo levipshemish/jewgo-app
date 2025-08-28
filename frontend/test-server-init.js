@@ -48,15 +48,13 @@ async function testServerInit() {
 }
 
 async function runTests() {
-
   const featureGuardResult = await testFeatureGuard();
-
   const serverResult = await testServerInit();
   
   if (featureGuardResult && serverResult) {
-
+    console.log('✅ All tests passed');
   } else {
-
+    console.error('❌ Some tests failed');
     process.exit(1);
   }
 }
