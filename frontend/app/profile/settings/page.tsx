@@ -9,10 +9,9 @@ import { useEffect, useState } from "react";
 import { supabaseClient } from "@/lib/supabase/client-secure";
 import { 
   isSupabaseConfigured, 
-  handleUserLoadError,
-  createMockUser,
-  type TransformedUser 
+  createMockUser
 } from "@/lib/utils/auth-utils-client";
+import { type TransformedUser } from "@/lib/types/supabase-auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 import ProfileEditForm from "@/components/profile/ProfileEditForm";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -181,12 +180,12 @@ export default function SettingsPage() {
             {activeTab === "profile" && (
               <ProfileSettings user={user} />
             )}
-            {activeTab === "security" && (
-              <SecuritySettings user={user} />
-            )}
-            {activeTab === "notifications" && (
-              <NotificationSettings user={user} />
-            )}
+                          {activeTab === "security" && (
+                <SecuritySettings />
+              )}
+              {activeTab === "notifications" && (
+                <NotificationSettings />
+              )}
             {activeTab === "privacy" && (
               <PrivacySettings user={user} />
             )}
@@ -230,7 +229,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
   };
 
   const handleAvatarChange = (_avatarUrl: string) => {
-    setCurrentUser(prev => ({ ...prev, avatar_url: avatarUrl || null }));
+    setCurrentUser(prev => ({ ...prev, avatar_url: _avatarUrl || null }));
   };
 
   return (
@@ -305,7 +304,7 @@ function AccountSettings({ user }: { user: TransformedUser }) {
 }
 
 function ProfileSettings({ user }: { user: TransformedUser }) {
-  return (_<div className="space-y-6">
+  return (<div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
         <p className="text-sm text-gray-500">Update your profile details and preferences.</p>
@@ -351,7 +350,7 @@ function ProfileSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function SecuritySettings({ user }: { user: TransformedUser }) {
+function SecuritySettings() {
   return (
     <div className="space-y-6">
       <div>
@@ -403,7 +402,7 @@ function SecuritySettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function NotificationSettings({ user }: { user: TransformedUser }) {
+function NotificationSettings() {
   const [preferences, setPreferences] = useState({
     specials: true,
     newRestaurants: true,
@@ -413,7 +412,7 @@ function NotificationSettings({ user }: { user: TransformedUser }) {
   });
 
   const handlePreferenceChange = (_key: string, _value: boolean) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
+    setPreferences(prev => ({ ...prev, [_key]: _value }));
   };
 
   return (
@@ -462,7 +461,7 @@ function NotificationSettings({ user }: { user: TransformedUser }) {
   );
 }
 
-function PrivacySettings({ user }: { user: TransformedUser }) {
+function PrivacySettings({ user: _user }: { user: TransformedUser }) {
   return (
     <div className="space-y-6">
       <div>
