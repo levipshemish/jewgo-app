@@ -24,54 +24,54 @@ export class RestaurantsAPI {
   private static cache = new Map<string, { ts: number; data: RestaurantsResponse }>();
   private static CACHE_TTL_MS = 30_000; // 30 seconds
   
-  private static async checkNetworkConnectivity(): Promise<boolean> {
-    try {
-      // Simple connectivity check - try to fetch a small resource
-      // Use a simple endpoint that doesn't depend on the backend
-      const response = await fetch('/api/connectivity-test', {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000) // 3 second timeout
-      });
-      return response.ok;
-    } catch (error) {
-      // console.warn('Network connectivity check failed:', error);
-      // If connectivity check fails, we'll still try the main API
-      // but with shorter timeouts and better fallback handling
-      return false;
-    }
-  }
+  // private static async checkNetworkConnectivity(): Promise<boolean> {
+  //   try {
+  //     // Simple connectivity check - try to fetch a small resource
+  //     // Use a simple endpoint that doesn't depend on the backend
+  //     const response = await fetch('/api/connectivity-test', {
+  //       method: 'GET',
+  //       signal: AbortSignal.timeout(3000) // 3 second timeout
+  //     });
+  //     return response.ok;
+  //   } catch (error) {
+  //     // console.warn('Network connectivity check failed:', error);
+  //     // If connectivity check fails, we'll still try the main API
+  //     // but with shorter timeouts and better fallback handling
+  //     return false;
+  //   }
+  // }
   
-  private static async wakeUpBackend(): Promise<boolean> {
-    try {
-      // Use a longer timeout for wake-up attempts on production
-      const timeout = process.env.NODE_ENV === 'production' ? 15000 : 3000;
-      
-      // In production, use the health endpoint through the proxy
-      const healthUrl = process.env.NODE_ENV === 'production' 
-        ? '/api/health-check' 
-        : `${API_BASE_URL}/health`;
-      
-      const response = await fetch(healthUrl, {
-        method: 'GET',
-        signal: AbortSignal.timeout(timeout)
-      });
-      
-      if (response.ok) {
-        // Check if the backend is actually healthy or just degraded
-        const healthData = await response.json();
-        
-        // Consider it "awake" if frontend is working, even if backend is degraded
-        if (healthData.overall === 'healthy' || 
-            (healthData.overall === 'degraded' && healthData.frontend?.status === 'healthy')) {
-          return true;
-        }
-      }
-      
-      return false;
-    } catch {
-      return false;
-    }
-  }
+  // private static async wakeUpBackend(): Promise<boolean> {
+  //   try {
+  //     // Use a longer timeout for wake-up attempts on production
+  //     const timeout = process.env.NODE_ENV === 'production' ? 15000 : 3000;
+  //     
+  //     // In production, use the health endpoint through the proxy
+  //     const healthUrl = process.env.NODE_ENV === 'production' 
+  //       ? '/api/health-check' 
+  //       : `${API_BASE_URL}/health`;
+  //     
+  //     const response = await fetch(healthUrl, {
+  //       method: 'GET',
+  //       signal: AbortSignal.timeout(timeout)
+  //     });
+  //     
+  //     if (response.ok) {
+  //       // Check if the backend is actually healthy or just degraded
+  //       const healthData = await response.json();
+  //       
+  //       // Consider it "awake" if frontend is working, even if backend is degraded
+  //       if (healthData.overall === 'healthy' || 
+  //           (healthData.overall === 'degraded' && healthData.frontend?.status === 'healthy')) {
+  //         return true;
+  //       }
+  //     }
+  //     
+  //     return false;
+  //   } catch {
+  //     return false;
+  //   }
+  // }
 
   private static async makeRequest<T>(
     endpoint: string, 
@@ -243,7 +243,7 @@ export class RestaurantsAPI {
         // If we got valid data, return it
         if (Array.isArray(restaurants) && restaurants.length > 0) {
           return {
-            restaurants: sanitizeRestaurantData(restaurants),
+            restaurants: sanitizeRestaurantData(restaurants) as Restaurant[],
             total,
           };
         }
