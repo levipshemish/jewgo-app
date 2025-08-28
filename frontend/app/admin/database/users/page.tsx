@@ -27,7 +27,7 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-      } catch (e) {
+      } catch {
     // ignore; client-side will fetch
   }
 

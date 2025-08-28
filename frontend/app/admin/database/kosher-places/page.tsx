@@ -32,7 +32,7 @@ export default async function KosherPlaceDatabasePage({ searchParams }: { search
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-      } catch (e) {
+      } catch {
     // ignore; client-side will fetch
   }
 

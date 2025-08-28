@@ -179,7 +179,7 @@ function SignInForm() {
           redirectTo: redirectUrl,
         },
       });
-    } catch (err) {
+    } catch {
       // surface basic error via URL
       router.push(`/auth/signin?error=oauth_init_failed&provider=${provider}`);
     }

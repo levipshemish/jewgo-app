@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn';
 import { appLogger } from '@/lib/utils/logger';
 import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
-import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
+// import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 
 // TypeScript Interfaces

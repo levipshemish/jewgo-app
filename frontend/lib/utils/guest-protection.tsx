@@ -52,22 +52,23 @@ export function useGuestProtection(redirectTo?: string): GuestProtectionResult {
               setUser(userData.user);
             }
           } else {
-            // No user found
-            setIsGuest(false);
+            // No user found - allow access but mark as guest
+            setIsGuest(true);
             setUser(null);
             const redirectPath = redirectTo ? `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}` : '/auth/signin';
             router.push(redirectPath);
           }
         } else {
-          // API error, redirect to sign-in
-          setIsGuest(false);
+          // API error, allow access but mark as guest
+          setIsGuest(true);
           setUser(null);
           const redirectPath = redirectTo ? `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}` : '/auth/signin';
           router.push(redirectPath);
         }
       } catch (error) {
         console.error('Error checking user authentication:', error);
-        setIsGuest(false);
+        // On error, allow access but mark as guest
+        setIsGuest(true);
         setUser(null);
         const redirectPath = redirectTo ? `/auth/signin?redirectTo=${encodeURIComponent(redirectTo)}` : '/auth/signin';
         router.push(redirectPath);

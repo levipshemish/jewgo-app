@@ -93,8 +93,16 @@ export function useAuth() {
           dispatch({ type: 'SET_USER', payload: transformedUser });
           dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
         } else if (error) {
-          dispatch({ type: 'SET_ERROR', payload: error.message });
-          handleUserLoadError(error, router);
+          // Handle specific auth session missing error
+          if (error.message.includes('Auth session missing')) {
+            console.warn('Auth session missing, user needs to sign in');
+            dispatch({ type: 'SET_USER', payload: null });
+            dispatch({ type: 'SET_ANONYMOUS', payload: false });
+            // Don't redirect immediately, let the component handle it
+          } else {
+            dispatch({ type: 'SET_ERROR', payload: error.message });
+            handleUserLoadError(error, router);
+          }
         } else {
           dispatch({ type: 'SET_USER', payload: null });
           dispatch({ type: 'SET_ANONYMOUS', payload: false });

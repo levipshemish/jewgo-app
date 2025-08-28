@@ -70,7 +70,7 @@ export default function ServiceWorkerRegistration() {
                     // Handle restaurant data updates - limit payload size
                     if (data.payload && Array.isArray(data.payload)) {
                       // Only process first 50 items to prevent blocking
-                      const limitedPayload = data.payload.slice(0, 50);
+                      const _limitedPayload = data.payload.slice(0, 50);
                       // Process limited payload
                     }
                     return;

@@ -31,7 +31,7 @@ export default async function ImageDatabasePage({ searchParams }: { searchParams
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-      } catch (e) {
+      } catch {
     // ignore; client-side will fetch
   }
 

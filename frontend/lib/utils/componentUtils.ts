@@ -64,7 +64,7 @@ export const handleMapClick = (
   // Extract coordinates from map click event
   // This is a generic implementation - specific map libraries may need different handling
   const target = event.target as HTMLElement;
-  const rect = target.getBoundingClientRect();
+  const _rect = target.getBoundingClientRect();
   // const x = event.clientX - rect.left;
   // const y = event.clientY - rect.top;
   
@@ -384,7 +384,7 @@ export const handleDragAndDrop = (
   };
 };
 
-export default {
+const componentUtils = {
   handleEscape,
   handleSubmit,
   handleMapClick,
@@ -408,3 +408,5 @@ export default {
   handleTouch,
   handleDragAndDrop
 };
+
+export default componentUtils;

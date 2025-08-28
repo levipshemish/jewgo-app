@@ -16,8 +16,7 @@ import {
   formatPriceRange,
   formatPriceDollarSigns, 
   titleCase, 
-  getSafeImageUrl,
-  cardStyles
+  getSafeImageUrl
 } from '@/lib/utils/cardUtils';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
 import { 
@@ -163,11 +162,11 @@ export default function UnifiedRestaurantCard({
       case 'eatery':
         return 'w-full text-left bg-transparent border-0 p-0 m-0 transition-all duration-300 cursor-pointer touch-manipulation restaurant-card flex flex-col';
       case 'compact':
-        return cn(cardStyles.compact, 'hover:scale-[1.02]');
+        return cn('bg-white rounded-xl shadow-sm border border-gray-200 p-2', 'hover:scale-[1.02]');
       case 'detailed':
-        return cn(cardStyles.base, 'hover:scale-[1.02]');
+        return cn('bg-white rounded-xl shadow-md border border-gray-200', 'hover:scale-[1.02]');
       default:
-        return cn(cardStyles.base, 'hover:scale-[1.02]');
+        return cn('bg-white rounded-xl shadow-md border border-gray-200', 'hover:scale-[1.02]');
     }
   };
 

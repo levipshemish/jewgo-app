@@ -29,7 +29,7 @@ const nextConfig = {
     // Disable webpackBuildWorker to avoid flaky missing vendor-chunks during dev
     webpackBuildWorker: false,
     // Disable CSS script injection to prevent CSS files from being loaded as scripts
-    optimizeCss: false,
+    optimizeCss: false
     // Optimize webpack cache performance
     // Note: turbo config moved to turbopack (stable in Next.js 15)
   },

@@ -273,7 +273,7 @@ export function UnifiedCategoryNav({
     if (variant !== 'scrollable' || !scrollerRef.current) {return;}
     
     const scroller = scrollerRef.current;
-    const { scrollLeft, scrollWidth, clientWidth } = scroller;
+    const { scrollLeft: _scrollLeft, scrollWidth: _scrollWidth, clientWidth: _clientWidth } = scroller;
     
     // setCanScrollLeft(scrollLeft > 0);
     // setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);

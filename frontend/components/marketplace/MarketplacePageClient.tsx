@@ -203,7 +203,7 @@ export default function MarketplacePageClient() {
     region: "",
   })
   const [loading, setLoading] = useState(true)
-  const [cart, setCart] = useState<MarketplaceListing[]>([])
+
   const [wishlist, setWishlist] = useState<MarketplaceListing[]>([])
 
   // Filter modal states
@@ -264,33 +264,9 @@ export default function MarketplacePageClient() {
     }
   }
 
-  const _handleTabChange = (tab: string) => {
-    setActiveTab(tab)
 
-    switch (tab) {
-              case "mikvah":
-          router.push("/mikvah")
-        break
-      case "shuls":
-        router.push("/shuls")
-        break
-      case "marketplace":
-        // Already on marketplace page
-        break
-      case "eatery":
-        router.push("/eatery")
-        break
-      case "stores":
-        router.push("/stores")
-        break
-      default:
-        break
-    }
-  }
 
-  const handleAddToCart = (product: MarketplaceListing) => {
-    setCart((prev) => [...prev, product])
-  }
+
 
   const handleAddToWishlist = (product: MarketplaceListing) => {
     setWishlist((prev) => {

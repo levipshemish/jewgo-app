@@ -33,7 +33,7 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-      } catch (e) {
+      } catch {
     // ignore; client-side will fetch
   }
 

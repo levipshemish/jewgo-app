@@ -26,7 +26,7 @@ export default function AddEateryPage() {
         <div className="text-center">
           <div className="text-4xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
-          <p className="text-gray-600 mb-4">Guest users must sign in to add eateries.</p>
+          <p className="text-gray-600 mb-4">Please sign in to add eateries.</p>
           <p className="text-sm text-gray-500">Redirecting to sign-in...</p>
         </div>
       </div>

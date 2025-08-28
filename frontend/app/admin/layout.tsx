@@ -29,14 +29,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   // CSRF token provisioning with safe fallback to avoid SSR crash on missing secret
-  let _signedToken = '';
   if (adminUser) {
     try {
-      _signedToken = generateSignedCSRFToken(adminUser.id);
-    } catch (e) {
+      generateSignedCSRFToken(adminUser.id);
+    } catch (_e) {
       // In production missing CSRF_SECRET should not crash SSR; show warning in UI
-      console.error('[ADMIN] CSRF token generation failed:', e);
-      _signedToken = '';
+      console.error('[ADMIN] CSRF token generation failed:', _e);
     }
   }
 

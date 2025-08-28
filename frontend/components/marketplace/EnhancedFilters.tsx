@@ -93,7 +93,7 @@ export default function EnhancedFilters({
     return Object.values(localFilters).filter(value => value !== '').length;
   };
 
-  const isFilterActive = (key: keyof MarketplaceFilters) => {
+  const _isFilterActive = (key: keyof MarketplaceFilters) => {
     return localFilters[key] !== '';
   };
 

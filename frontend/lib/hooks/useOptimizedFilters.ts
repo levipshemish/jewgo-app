@@ -375,7 +375,7 @@ export const useOptimizedFilters = (
 
   // New: Apply draft filters to data for preview
   const applyDraftFiltersToData = useCallback((restaurants: Restaurant[]) => {
-    const startTime = performance.now();
+    const _startTime = performance.now();
 
     try {
       let filtered = [...restaurants];

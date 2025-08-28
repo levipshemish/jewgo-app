@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Parse body (no CAPTCHA token required)
-  const body = await request.json().catch(() => ({} as any));
+  await request.json().catch(() => ({} as any));
 
   // Create SSR Supabase client bound to response cookies
   const cookieStore = await cookies();

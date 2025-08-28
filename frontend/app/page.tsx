@@ -10,7 +10,7 @@ import { supabaseClient } from "@/lib/supabase/client-secure";
 // import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
-  const [_isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
