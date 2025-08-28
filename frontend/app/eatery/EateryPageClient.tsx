@@ -163,7 +163,7 @@ export function EateryPageClient() {
   }, []);
 
   // Handle filter changes
-  const handleFilterChange = useCallback((filterName: string, value: any) => {
+  const handleFilterChange = useCallback((filterName: keyof Filters, value: any) => {
     setFilter(filterName, value);
     setCurrentPage(1); // Reset to first page when filters change
   }, [setFilter]);
