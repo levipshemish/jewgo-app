@@ -98,13 +98,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       has_soap_provided: true,
       has_hair_dryers: true,
       has_parking: true,
-      rabbinicalsupervision: "Rabbi Cohen",
-      koshercertification: "OU",
-      feeamount: 25.00,
-      acceptscash: true,
-      acceptschecks: true,
-      isactive: true,
-      isverified: true
+      rabbinical_supervision: "Rabbi Cohen",
+      kosher_certification: "OU",
+      fee_amount: 25.00,
+      accepts_cash: true,
+      accepts_checks: true,
+      is_active: true,
+      is_verified: true
     },
     {
       id: 2,
@@ -128,13 +128,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       has_hair_dryers: true,
       has_private_entrance: true,
       has_parking: true,
-      rabbinicalsupervision: "Rabbi Goldstein",
-      koshercertification: "OU",
-      feeamount: 50.00,
-      accepts_creditcards: true,
-      acceptscash: true,
-      isactive: true,
-      isverified: true
+      rabbinical_supervision: "Rabbi Goldstein",
+      kosher_certification: "OU",
+      fee_amount: 50.00,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
     },
     {
       id: 3,
@@ -155,13 +155,13 @@ const fetchMikvah = async (limit: number, params?: string) => {
       has_soap_provided: false,
       has_hair_dryers: true,
       has_parking: true,
-      rabbinicalsupervision: "Hotel Rabbi",
-      koshercertification: "OU",
-      feeamount: 35.00,
-      accepts_creditcards: true,
-      acceptscash: true,
-      isactive: true,
-      isverified: true
+      rabbinical_supervision: "Hotel Rabbi",
+      kosher_certification: "OU",
+      fee_amount: 35.00,
+      accepts_credit_cards: true,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
     },
     {
       id: 4,
@@ -181,12 +181,12 @@ const fetchMikvah = async (limit: number, params?: string) => {
       has_towels_provided: false,
       has_soap_provided: false,
       has_parking: false,
-      rabbinicalsupervision: "Rabbi Schwartz",
-      koshercertification: "OU",
-      feeamount: 15.00,
-      acceptscash: true,
-      isactive: true,
-      isverified: true
+      rabbinical_supervision: "Rabbi Schwartz",
+      kosher_certification: "OU",
+      fee_amount: 15.00,
+      accepts_cash: true,
+      is_active: true,
+      is_verified: true
     }
   ];
 
