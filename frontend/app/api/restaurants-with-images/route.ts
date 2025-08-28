@@ -104,6 +104,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     
+    // Validate and sanitize search parameters to prevent malformed URLs
+    const sanitizeParam = (value: string | null): string | null => {
+      if (!value) return null;
+      // Remove any potentially dangerous characters
+      return value.replace(/[<>\"'&]/g, '').trim();
+    };
+    
     // Pagination
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
@@ -112,24 +119,41 @@ export async function GET(request: NextRequest) {
     // Convert page to offset if page is provided
     const calculatedOffset = page > 1 ? (page - 1) * limit : offset;
     
-    // Filter parameters
-    const search = searchParams.get('search') || searchParams.get('q');
-    const city = searchParams.get('city');
-    const state = searchParams.get('state');
-    const certifying_agency = searchParams.get('certifying_agency') || searchParams.get('agency');
-    const kosher_category = searchParams.get('kosher_category') || searchParams.get('dietary');
-    const listing_type = searchParams.get('listing_type') || searchParams.get('category');
-    const is_cholov_yisroel = searchParams.get('is_cholov_yisroel');
-    const price_range = searchParams.get('price_range');
-    const min_rating = searchParams.get('min_rating') || searchParams.get('ratingMin');
-    const has_reviews = searchParams.get('has_reviews');
-    const open_now = searchParams.get('open_now') || searchParams.get('openNow');
-    const status = searchParams.get('status');
+    // Filter parameters with sanitization
+    const search = sanitizeParam(searchParams.get('search') || searchParams.get('q'));
+    const city = sanitizeParam(searchParams.get('city'));
+    const state = sanitizeParam(searchParams.get('state'));
+    const certifying_agency = sanitizeParam(searchParams.get('certifying_agency') || searchParams.get('agency'));
+    const kosher_category = sanitizeParam(searchParams.get('kosher_category') || searchParams.get('dietary'));
+    const listing_type = sanitizeParam(searchParams.get('listing_type') || searchParams.get('category'));
+    const is_cholov_yisroel = sanitizeParam(searchParams.get('is_cholov_yisroel'));
+    const price_range = sanitizeParam(searchParams.get('price_range'));
+    const min_rating = sanitizeParam(searchParams.get('min_rating') || searchParams.get('ratingMin'));
+    const has_reviews = sanitizeParam(searchParams.get('has_reviews'));
+    const open_now = sanitizeParam(searchParams.get('open_now') || searchParams.get('openNow'));
+    const status = sanitizeParam(searchParams.get('status'));
     
-    // Location-based filtering
+    // Location-based filtering with validation
     const lat = searchParams.get('lat');
     const lng = searchParams.get('lng');
     const radius = searchParams.get('radius') || searchParams.get('maxDistanceMi');
+    
+    // Validate lat/lng if provided
+    if (lat && (isNaN(parseFloat(lat)) || parseFloat(lat) < -90 || parseFloat(lat) > 90)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid latitude value',
+        error: 'Latitude must be between -90 and 90'
+      }, { status: 400 });
+    }
+    
+    if (lng && (isNaN(parseFloat(lng)) || parseFloat(lng) < -180 || parseFloat(lng) > 180)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid longitude value',
+        error: 'Longitude must be between -180 and 180'
+      }, { status: 400 });
+    }
     
     // Build query parameters for backend API
     const queryParams = new URLSearchParams();
@@ -233,7 +257,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: restaurantsWithImages,
-      total: data.total || data.count || 0, // Use backend total, not filtered length
+      total: data.total || data.count || restaurantsWithImages.length, // Use backend total, not filtered length
       limit,
       offset: calculatedOffset,
       message: 'Restaurants with images only'

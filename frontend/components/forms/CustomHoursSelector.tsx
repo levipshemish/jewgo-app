@@ -1,5 +1,6 @@
 'use client';
 
+/// <reference types="node" />
 import { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { appLogger } from '@/lib/utils/logger';

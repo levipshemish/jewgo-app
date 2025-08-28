@@ -263,8 +263,21 @@ function EateryPageContent() {
         throw new Error(data.error || 'Failed to fetch restaurants');
       }
 
+      // Ensure data.data is always an array to prevent "e.map is not a function" error
+      let processedRestaurants = [];
+      if (data.data && Array.isArray(data.data)) {
+        processedRestaurants = data.data;
+      } else if (data.restaurants && Array.isArray(data.restaurants)) {
+        processedRestaurants = data.restaurants;
+      } else if (Array.isArray(data)) {
+        processedRestaurants = data;
+      } else {
+        // If no valid array found, use empty array
+        processedRestaurants = [];
+        appLogger.warn('API returned non-array data in handlePageChange', { data });
+      }
+
       // Apply distance calculation to new restaurants if location is available
-      let processedRestaurants = data.data || [];
       if (userLocation) {
         processedRestaurants = sortRestaurantsByDistance(processedRestaurants, userLocation);
       }
@@ -376,8 +389,21 @@ function EateryPageContent() {
         throw new Error(data.error || 'Failed to fetch restaurants');
       }
 
+      // Ensure data.data is always an array to prevent "e.map is not a function" error
+      let processedRestaurants = [];
+      if (data.data && Array.isArray(data.data)) {
+        processedRestaurants = data.data;
+      } else if (data.restaurants && Array.isArray(data.restaurants)) {
+        processedRestaurants = data.restaurants;
+      } else if (Array.isArray(data)) {
+        processedRestaurants = data;
+      } else {
+        // If no valid array found, use empty array
+        processedRestaurants = [];
+        appLogger.warn('API returned non-array data in fetchRestaurantsData', { data });
+      }
+
       // Apply distance calculation to new restaurants if location is available
-      let processedRestaurants = data.data || [];
       if (userLocation) {
         processedRestaurants = sortRestaurantsByDistance(processedRestaurants, userLocation);
       }
@@ -386,7 +412,7 @@ function EateryPageContent() {
       setCurrentPage(1);
       
       // Update pagination state
-      const total = data.total || processedRestaurants.length;
+      const total = data.total || data.count || processedRestaurants.length;
       setTotalRestaurants(total);
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
@@ -509,8 +535,21 @@ function EateryPageContent() {
         throw new Error(data.error || 'Failed to fetch restaurants');
       }
 
+      // Ensure data.data is always an array to prevent "e.map is not a function" error
+      let processedNewRestaurants = [];
+      if (data.data && Array.isArray(data.data)) {
+        processedNewRestaurants = data.data;
+      } else if (data.restaurants && Array.isArray(data.restaurants)) {
+        processedNewRestaurants = data.restaurants;
+      } else if (Array.isArray(data)) {
+        processedNewRestaurants = data;
+      } else {
+        // If no valid array found, use empty array
+        processedNewRestaurants = [];
+        appLogger.warn('API returned non-array data for more restaurants', { data });
+      }
+
       // Apply distance calculation to new restaurants if location is available
-      let processedNewRestaurants = data.data || [];
       if (userLocation) {
         processedNewRestaurants = sortRestaurantsByDistance(processedNewRestaurants, userLocation);
       }

@@ -87,8 +87,8 @@ function SignInForm() {
         
         // User is not authenticated, show sign-in form
         setIsCheckingAuth(false);
-      } catch (error) {
-        appLogger.error('Error checking auth status', { error: String(error) });
+      } catch (authError) {
+        appLogger.error('Error checking auth status', { error: String(authError) });
         // On error, show sign-in form
         setIsCheckingAuth(false);
       }
@@ -129,8 +129,8 @@ function SignInForm() {
               try {
                 const result = await (window as any).grecaptcha.execute(siteKey, { action: 'login' });
                 resolve(result);
-              } catch (error) {
-                reject(error);
+              } catch (recaptchaError) {
+                reject(recaptchaError);
               }
             });
           });

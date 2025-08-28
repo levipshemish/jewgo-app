@@ -57,8 +57,9 @@ export function createClientSupabaseClient() {
   );
 }
 
-// Singleton pattern to prevent multiple instances
+// Global variable to track if we've already created a client
 let supabaseClientInstance: ReturnType<typeof createClientSupabaseClient> | null = null;
+let isCreatingClient = false;
 
 // Export a singleton instance for client components
 export const supabaseClient = (() => {
@@ -72,6 +73,8 @@ export const supabaseClient = (() => {
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
         signInWithOAuth: async () => ({ data: null, error: null }),
         signInWithOtp: async () => ({ data: null, error: null }),
+        getUser: async () => ({ data: { user: null }, error: null }),
+        signInAnonymously: async () => ({ data: { user: null }, error: null }),
       },
       from: () => ({
         select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
@@ -86,7 +89,28 @@ export const supabaseClient = (() => {
     return supabaseClientInstance;
   }
 
-  // Create new instance
-  supabaseClientInstance = createClientSupabaseClient();
-  return supabaseClientInstance;
+  // Prevent multiple simultaneous client creation
+  if (isCreatingClient) {
+    // Wait a bit and return the instance once it's created
+    return new Promise((resolve) => {
+      const checkInstance = () => {
+        if (supabaseClientInstance) {
+          resolve(supabaseClientInstance);
+        } else {
+          setTimeout(checkInstance, 10);
+        }
+      };
+      checkInstance();
+    }) as any;
+  }
+
+  isCreatingClient = true;
+
+  try {
+    // Create new instance
+    supabaseClientInstance = createClientSupabaseClient();
+    return supabaseClientInstance;
+  } finally {
+    isCreatingClient = false;
+  }
 })();

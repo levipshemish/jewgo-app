@@ -57,8 +57,8 @@ export default function AddressAutofill({
         appLogger.debug('Google Places API initialized successfully');
         
 
-      } catch (error) {
-        appLogger.error('Failed to initialize Google Places API', { error: String(error) });
+      } catch (initError) {
+        appLogger.error('Failed to initialize Google Places API', { error: String(initError) });
         setApiError('Failed to initialize address autocomplete. Please check your internet connection and try again.');
       }
     };
@@ -100,8 +100,8 @@ export default function AddressAutofill({
       }
       
       setSuggestions(predictions);
-    } catch (error) {
-      appLogger.error('Error fetching address suggestions', { error: String(error) });
+    } catch (suggestionError) {
+      appLogger.error('Error fetching address suggestions', { error: String(suggestionError) });
       setSuggestions([]);
       setApiError('Failed to fetch address suggestions');
     } finally {
