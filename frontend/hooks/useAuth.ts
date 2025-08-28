@@ -9,9 +9,9 @@ import {
   createMockUser,
   extractIsAnonymous,
   verifyTokenRotation,
-  extractJtiFromToken,
-  type TransformedUser
+  extractJtiFromToken
 } from '@/lib/utils/auth-utils-client';
+import { type TransformedUser } from '@/lib/types/supabase-auth';
 
 // Define action types for the reducer
 type AuthAction = 
