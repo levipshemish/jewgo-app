@@ -119,7 +119,7 @@ export function EateryPageClient() {
         
         // Sort by distance if location is available
         if (location && data.restaurants.length > 0) {
-          sortedRestaurants = sortRestaurantsByDistance(data.restaurants, location.latitude, location.longitude);
+          sortedRestaurants = sortRestaurantsByDistance(data.restaurants, location);
         }
         
         setRestaurants(sortedRestaurants);

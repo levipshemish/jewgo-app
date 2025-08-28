@@ -23,20 +23,50 @@ export async function POST(
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const id = Number(resolvedParams.id);
-    if (!Number.isInteger(id)) {
+    const { id } = await params;
+    const restaurantId = Number(id);
+    if (!Number.isInteger(restaurantId)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    await AdminDatabaseService.updateRecord(
-      prisma.restaurant,
-      'restaurant',
-      id,
-      { status: 'rejected' },
-      adminUser,
-      'restaurant'
-    );
-    return NextResponse.json({ message: 'Restaurant rejected successfully' });
+    // Get request body for rejection reason
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const rejectionReason = body.reason || 'Rejected by admin';
+
+    // Update restaurant status
+    const now = new Date();
+    const updatedRestaurant = await prisma.restaurant.update({
+      where: { id: restaurantId },
+      data: {
+        submission_status: 'rejected',
+        rejection_reason: rejectionReason,
+        approved_by: null,
+        approval_date: null,
+        updated_at: now,
+      },
+    });
+
+    // Log the admin action
+    await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_REJECT, ENTITY_TYPES.RESTAURANT, {
+      entityId: String(restaurantId),
+      newData: {
+        submission_status: 'rejected',
+        rejection_reason: rejectionReason,
+        approved_by: null,
+      },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT,
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Restaurant rejected successfully',
+      data: updatedRestaurant 
+    });
   } catch (error) {
     console.error('[ADMIN] Restaurant reject error:', error);
     return NextResponse.json(

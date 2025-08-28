@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await requireAdmin(request);
@@ -21,15 +21,16 @@ export async function DELETE(
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const resolvedParams = await params;
-    const id = Number(resolvedParams.id);
-    if (!Number.isInteger(id)) {
+    const { params } = await context;
+    const { id } = await params;
+    const imageId = Number(id);
+    if (!Number.isInteger(imageId)) {
       return NextResponse.json({ error: 'Invalid image ID' }, { status: 400 });
     }
     await AdminDatabaseService.deleteRecord(
       prisma.restaurantImage,
       'restaurantImage',
-      id,
+      imageId,
       adminUser,
       'restaurant_image',
       true

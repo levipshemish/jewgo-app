@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import { FormEvent, useState } from "react";
 // Use SSR-aware browser client so PKCE + cookies work with server callback
 import { supabaseClient } from "@/lib/supabase/client-secure";
@@ -42,7 +41,7 @@ export default function SupabaseSignUp() {
       }
       
       // If we get "User not found" or similar, user doesn't exist, proceed with signup
-      const { error } = await supabaseClient.auth.signUp({
+      const { error: signUpError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -51,14 +50,14 @@ export default function SupabaseSignUp() {
         },
       });
       
-      if (error) {
+      if (signUpError) {
         // Handle specific error cases
-        if (error.message.includes("User already registered")) {
+        if (signUpError.message.includes("User already registered")) {
           setError("An account with this email already exists. Please sign in instead.");
-        } else if (error.message.includes("already been registered")) {
+        } else if (signUpError.message.includes("already been registered")) {
           setError("An account with this email already exists. Please sign in instead.");
         } else {
-          setError(error.message);
+          setError(signUpError.message);
         }
       } else {
         setSuccess(true);
@@ -74,14 +73,14 @@ export default function SupabaseSignUp() {
     setPending(true);
     setError(null);
     
-    const { error } = await supabaseClient.auth.signInWithOAuth({
+    const { error: oauthError } = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     
     setPending(false);
-    if (error) {
-      setError(error.message);
+    if (oauthError) {
+      setError(oauthError.message);
     }
   };
 

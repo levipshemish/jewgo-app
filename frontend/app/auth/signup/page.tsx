@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import Link from "next/link";
 import { FormEvent, useState, Suspense, useEffect } from "react";
@@ -86,7 +85,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
     }
     
     try {
-      const { data, error } = await supabaseClient.auth.signUp({
+      const { data, error: signUpError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -94,8 +93,8 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         },
       });
       
-      if (error) {
-        setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
         setPending(false);
         return;
       }
@@ -127,7 +126,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
-      const { error } = await supabaseClient.auth.signInWithOAuth({
+      const { error: appleOAuthError } = await supabaseClient.auth.signInWithOAuth({
         provider: 'apple',
         options: {
           scopes: 'email name',
@@ -135,8 +134,8 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         },
       });
 
-      if (error) {
-        setError(mapAppleOAuthError(error.message));
+      if (appleOAuthError) {
+        setError(mapAppleOAuthError(appleOAuthError.message));
       }
     } catch (err) {
       appLogger.error('Apple sign up error', { error: String(err) });
@@ -162,7 +161,7 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       // Compute safe redirect URL using corrected validation
       const safeNext = validateRedirectUrl(redirectTo);
       
-      const { error } = await supabaseClient.auth.signInWithOAuth({
+      const { error: googleOAuthError } = await supabaseClient.auth.signInWithOAuth({
         provider: "google",
         options: { 
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}&provider=google&state=${encodeURIComponent(oauthState)}`,
@@ -173,8 +172,8 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
         },
       });
       
-      if (error) {
-        setError(`Google OAuth failed: ${error.message}`);
+      if (googleOAuthError) {
+        setError(`Google OAuth failed: ${googleOAuthError.message}`);
       }
     } catch (err) {
       setError(`Unexpected error: ${err instanceof Error ? err.message : 'Unknown error'}`);
