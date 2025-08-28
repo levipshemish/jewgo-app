@@ -263,7 +263,7 @@ export class RestaurantsAPI {
               : [];
         if (withImagesData.length > 0) {
           return {
-            restaurants: sanitizeRestaurantData(withImagesData),
+            restaurants: sanitizeRestaurantData(withImagesData) as Restaurant[],
             total: withImagesData.length,
           };
         }
