@@ -95,12 +95,7 @@ export default function AddressAutofill({
       if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
         appLogger.debug('Predictions received', {
           count: predictions.length,
-          predictions: predictions.map(p => ({
-            description: p.description,
-            place_id: p.place_id,
-            place_id_type: typeof p.place_id,
-            place_id_length: p.place_id?.length
-          }))
+          predictions: predictions.map((p: any) => p.description).join(', ')
         });
       }
       
@@ -137,11 +132,11 @@ export default function AddressAutofill({
 
     // Debug logging for suggestion object
     appLogger.debug('Suggestion clicked', {
-      suggestion,
       place_id: suggestion.place_id,
       place_id_type: typeof suggestion.place_id,
-      place_id_length: suggestion.place_id?.length
-    });
+      place_id_length: suggestion.place_id?.length,
+      description: suggestion.description
+    } as any);
 
     // Validate that suggestion has a valid place_id
     if (!suggestion.place_id || typeof suggestion.place_id !== 'string' || suggestion.place_id.trim() === '') {
@@ -276,18 +271,18 @@ export default function AddressAutofill({
           let zipCode = '';
 
           if (addressParts.length >= 1) {
-            street = addressParts[0];
+            street = addressParts[0] || '';
           }
           if (addressParts.length >= 2) {
-            city = addressParts[1];
+            city = addressParts[1] || '';
           }
           if (addressParts.length >= 3) {
-            const stateZip = addressParts[2].split(' ');
+            const stateZip = (addressParts[2] || '').split(' ');
             if (stateZip.length >= 2) {
-              state = stateZip[0];
-              zipCode = stateZip[1];
+              state = stateZip[0] || '';
+              zipCode = stateZip[1] || '';
             } else {
-              state = stateZip[0];
+              state = stateZip[0] || '';
             }
           }
 
@@ -313,27 +308,27 @@ export default function AddressAutofill({
         let zipCode = '';
 
         if (addressParts.length >= 1) {
-          street = addressParts[0];
+          street = addressParts[0] || '';
         }
         if (addressParts.length >= 2) {
-          city = addressParts[1];
+          city = addressParts[1] || '';
         }
         if (addressParts.length >= 3) {
-          const stateZipStr = addressParts[2];
+          const stateZipStr = addressParts[2] || '';
           const m = stateZipStr.match(/^([A-Z]{2})\s+(\d{5})(?:-(\d{4}))?$/);
           if (m) {
             const st = m[1];
             const zip = m[2];
             const suf = m[3];
-            state = st;
-            zipCode = suf ? `${zip}-${suf}` : zip;
+            state = st || '';
+            zipCode = suf ? `${zip}-${suf}` : (zip || '');
           } else {
             const stateZip = stateZipStr.split(' ').filter(Boolean);
             if (stateZip.length >= 2) {
-              state = stateZip[0];
-              zipCode = stateZip[1];
+              state = stateZip[0] || '';
+              zipCode = stateZip[1] || '';
             } else {
-              state = stateZip[0];
+              state = stateZip[0] || '';
             }
           }
         }
@@ -365,7 +360,10 @@ export default function AddressAutofill({
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0) {
-          handleSuggestionClick(suggestions[selectedIndex]);
+          const suggestion = suggestions[selectedIndex];
+          if (suggestion) {
+            handleSuggestionClick(suggestion);
+          }
         }
         break;
       case 'Escape':
