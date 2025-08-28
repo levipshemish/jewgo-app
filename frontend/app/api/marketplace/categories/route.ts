@@ -1,6 +1,6 @@
 import { _NextRequest, _NextResponse} from 'next/server';
 
-export const _dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic';
 
 /**
  * API Route: GET /api/marketplace/categories
