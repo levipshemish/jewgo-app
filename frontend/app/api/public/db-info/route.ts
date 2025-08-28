@@ -3,7 +3,7 @@ import { NextRequest, NextResponse} from 'next/server';
 import { prisma} from '@/lib/db/prisma';
 import { Prisma} from '@prisma/client';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
 
     const result: any = {

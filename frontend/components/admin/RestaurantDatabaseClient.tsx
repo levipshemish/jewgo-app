@@ -114,7 +114,7 @@ export default function RestaurantDatabaseClient({
     router.push(`/admin/database/restaurants?${p.toString()}`);
   };
 
-  const onEdit = async (id: number, data: Partial<Restaurant>) => {
+  const _onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
       const res = await fetch(`/api/admin/restaurants`, {
         method: 'PUT',
@@ -137,7 +137,7 @@ export default function RestaurantDatabaseClient({
     }
   };
 
-  const onDelete = async (id: number) => {
+  const _onDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this restaurant?')) {
       return;
     }

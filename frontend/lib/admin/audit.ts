@@ -565,7 +565,7 @@ export async function exportAuditLogs(options: {
   if (logs.length > 1000) {
     const stream = new ReadableStream({
       async start(controller) {
-        controller.enqueue(csvHeaders.map(field => `"${field}"`).join(',') + '\n');
+        controller.enqueue(`${csvHeaders.map(field => `"${field}"`).join(',')}\n`);
         
         const CHUNK_SIZE = 100; // Process 100 rows at a time
         let processed = 0;
@@ -584,7 +584,7 @@ export async function exportAuditLogs(options: {
             log.correlationId || '',
           ].map(field => `"${field}"`).join(',');
           
-          controller.enqueue(row + '\n');
+          controller.enqueue(`${row}\n`);
           processed++;
           
           // Add backpressure control every CHUNK_SIZE rows

@@ -113,7 +113,7 @@ export default function ReviewDatabaseClient({
     router.push(`/admin/database/reviews?${p.toString()}`);
   };
 
-  const onEdit = async (id: string, data: Partial<Review>) => {
+  const _onEdit = async (id: string, data: Partial<Review>) => {
     try {
       const res = await fetch(`/api/admin/reviews`, {
         method: 'PUT',
@@ -136,7 +136,7 @@ export default function ReviewDatabaseClient({
     }
   };
 
-  const onDelete = async (id: string) => {
+  const _onDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this review?')) {
       return;
     }

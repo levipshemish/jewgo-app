@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     };
     
     // Remove fields that don't match database schema
-    const { phone, hours_open, description, ...restaurantDataWithoutPhone } = restaurantData;
+    const { phone: _phone, hours_open: _hours_open, description: _description, ...restaurantDataWithoutPhone } = restaurantData;
     
     // Use API v4 endpoint
     const backendUrl = 'http://localhost:8082';

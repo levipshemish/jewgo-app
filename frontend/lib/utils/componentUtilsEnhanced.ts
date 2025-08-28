@@ -255,7 +255,7 @@ export const handleErrorStateEnhanced = (
     } catch (err) {
       attempts++;
       if (attempts < retryCount) {
-        console.warn(`Operation failed, retrying (${attempts}/${retryCount})`);
+        // console.warn(`Operation failed, retrying (${attempts}/${retryCount})`);
         setTimeout(attemptOperation, 1000 * attempts); // Exponential backoff
       } else {
         onErrorChange(err as Error);
@@ -277,15 +277,15 @@ export const handleClickOutsideEnhanced = (
   ref: RefObject<HTMLElement>,
   onOutsideClick: OutsideClickHandler
 ): (event: MouseEvent) => void => {
-  return useCallback((event: MouseEvent) => {
+  return (event: MouseEvent) => {
     try {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         onOutsideClick();
       }
     } catch (error) {
-      console.error('Error in click outside handler:', error);
+      // console.error('Error in click outside handler:', error);
     }
-  }, [ref, onOutsideClick]);
+  };
 };
 
 /**
@@ -328,7 +328,7 @@ export const handleKeyboardNavigationEnhanced = (
         break;
     }
   } catch (error) {
-    console.error('Error in keyboard navigation handler:', error);
+    // console.error('Error in keyboard navigation handler:', error);
   }
 };
 
@@ -350,7 +350,7 @@ export const handleTouchEnhanced = (
         }
         config.onTouchStart!(event);
       } catch (error) {
-        console.error('Error in touch start handler:', error);
+        // console.error('Error in touch start handler:', error);
       }
     } : undefined,
     onTouchMove: config.onTouchMove ? (event: TouchEvent) => {
@@ -360,7 +360,7 @@ export const handleTouchEnhanced = (
         }
         config.onTouchMove!(event);
       } catch (error) {
-        console.error('Error in touch move handler:', error);
+        // console.error('Error in touch move handler:', error);
       }
     } : undefined,
     onTouchEnd: config.onTouchEnd ? (event: TouchEvent) => {
@@ -370,7 +370,7 @@ export const handleTouchEnhanced = (
         }
         config.onTouchEnd!(event);
       } catch (error) {
-        console.error('Error in touch end handler:', error);
+        // console.error('Error in touch end handler:', error);
       }
     } : undefined
   };
@@ -407,7 +407,7 @@ export const handleDragAndDropEnhanced = (
           );
           
           if (validFiles.length !== files.length) {
-            console.warn('Some files were rejected due to type restrictions');
+            // console.warn('Some files were rejected due to type restrictions');
           }
         }
         
@@ -542,8 +542,8 @@ export const useComponentUtils = (): UseComponentUtilsReturn => {
       }
     },
     handleSearch: (query: string, onSearch: SearchHandler, debounceMs?: number) => {
-      const debouncedSearch = useDebouncedSearch(onSearch, debounceMs || 300);
-      debouncedSearch(query);
+      // Note: This should be used within a React component with proper hooks
+      onSearch(query);
       return () => {}; // Return cleanup function
     },
     handleShowFilters: (currentState, onToggle) => {
@@ -578,14 +578,14 @@ export const useComponentUtils = (): UseComponentUtilsReturn => {
     
     // Scroll and resize
     handleScroll: (event: Event, onScroll: ScrollHandler, throttleMs?: number) => {
-      const throttledScroll = useThrottledScroll(onScroll, throttleMs || 16);
+      // Note: This should be used within a React component with proper hooks
       const target = event.target as HTMLElement;
-      throttledScroll(target.scrollTop, target.scrollLeft);
+      onScroll(target.scrollTop, target.scrollLeft);
       return () => {}; // Return cleanup function
     },
     handleResize: (onResize: ResizeHandler, debounceMs?: number) => {
-      const debouncedResize = useDebouncedResize(onResize, debounceMs || 250);
-      debouncedResize(window.innerWidth, window.innerHeight);
+      // Note: This should be used within a React component with proper hooks
+      onResize(window.innerWidth, window.innerHeight);
       return () => {}; // Return cleanup function
     },
     

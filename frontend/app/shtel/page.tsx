@@ -7,7 +7,7 @@ import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
-import { EateryFilters } from '@/components/eatery/EateryFilters';
+// import { EateryFilters } from '@/components/eatery/EateryFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
@@ -18,7 +18,7 @@ import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { appLogger } from '@/lib/utils/logger';
 
-import { MarketplaceListing, MarketplaceFilters } from '@/lib/types/marketplace';
+import { MarketplaceListing } from '@/lib/types/marketplace';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
 
 // Loading component for Suspense fallback
@@ -126,7 +126,7 @@ function ShtełPageContent() {
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
-  const [isSettingLocationFilters, setIsSettingLocationFilters] = useState(false);
+  const [isSettingLocationFilters, _setIsSettingLocationFilters] = useState(false);
   const [fetchTimeout, setFetchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Standard 4-rows pagination - always show exactly 4 rows
@@ -270,7 +270,7 @@ function ShtełPageContent() {
   }, [listings, userLocation]);
 
   // Infinite scroll with proper mobile detection
-  const { hasMore: infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
+  const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
     () => fetchMoreListings(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
@@ -280,10 +280,10 @@ function ShtełPageContent() {
   );
 
   // Mobile-optimized state
-  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
+  const { isScrolling: _isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
+  const _handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
     // Apply all the new filters
     Object.entries(newFilters).forEach(([key, value]) => {
       if (key in activeFilters || value !== undefined) {
@@ -385,7 +385,7 @@ function ShtełPageContent() {
     }
 
     try {
-      const nextPage = currentPage + 1;
+      const _nextPage = currentPage + 1;
       // Implementation for loading more listings
       // This would call the API with pagination parameters
     } catch (err) {

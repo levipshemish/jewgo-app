@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true }, { status: 200, headers: baseHeaders });
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: 'INTERNAL_ERROR' }, { status: 500, headers: baseHeaders });
   }
 }

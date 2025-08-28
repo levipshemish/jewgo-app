@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGuestProtection } from '@/lib/utils/guest-protection';
 import { fetchMarketplaceListings } from '@/lib/api/marketplace';
@@ -14,7 +14,7 @@ import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
-import { sortRestaurantsByDistance } from '@/lib/utils/distance';
+// import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
@@ -537,7 +537,7 @@ function MarketplacePageContent() {
   }, [listings, permissionStatus, userLocation]);
 
   // Infinite scroll with proper mobile detection
-  const { hasMore: infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
+  const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
     () => fetchMoreListings(),
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
@@ -597,7 +597,7 @@ function MarketplacePageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };

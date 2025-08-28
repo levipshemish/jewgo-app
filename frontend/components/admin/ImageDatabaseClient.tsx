@@ -109,7 +109,7 @@ export default function ImageDatabaseClient({
     router.push(`/admin/database/images?${p.toString()}`);
   };
 
-  const onUpdate = async (id: number, updates: Partial<RestaurantImage>) => {
+  const _onUpdate = async (id: number, updates: Partial<RestaurantImage>) => {
     try {
       const res = await fetch(`/api/admin/images/${id}`, {
         method: 'PATCH',
@@ -132,7 +132,7 @@ export default function ImageDatabaseClient({
     }
   };
 
-  const onDelete = async (id: number) => {
+  const _onDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this image?')) {
       return;
     }

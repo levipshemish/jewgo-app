@@ -362,7 +362,7 @@ export async function POST(request: NextRequest) {
     
     return response;
     
-  } catch (error) {
+  } catch (_error) {
     // Unexpected error - log for debugging
     // console.error(`Unexpected error in merge anonymous for correlation ID: ${correlationId}`, {
     //   error: scrubPII(error),

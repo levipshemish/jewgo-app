@@ -585,7 +585,9 @@ export function validatePatternEnhanced(
   fieldName: string, 
   message?: string
 ): string | null {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   
   if (!pattern.test(value)) {
     return message || `${fieldName} format is invalid`;

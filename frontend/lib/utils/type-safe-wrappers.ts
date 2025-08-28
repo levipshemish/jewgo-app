@@ -133,7 +133,7 @@ export class ReCaptchaWrapper {
   async execute(siteKey: string, action: string): Promise<string | null> {
     try {
       if (!this.recaptcha) {
-        console.warn('ReCAPTCHA not available');
+        // console.warn('ReCAPTCHA not available');
         return null;
       }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { transformSupabaseUser, isSupabaseConfigured } from '@/lib/utils/auth-utils';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {

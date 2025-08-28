@@ -114,7 +114,7 @@ export default function KosherPlacesDatabaseClient({
     router.push(`/admin/database/kosher-places?${p.toString()}`);
   };
 
-  const onUpdate = async (id: number, updates: Partial<KosherPlace>) => {
+  const _onUpdate = async (id: number, updates: Partial<KosherPlace>) => {
     try {
       const res = await fetch(`/api/admin/kosher-places/${id}`, {
         method: 'PATCH',
@@ -137,7 +137,7 @@ export default function KosherPlacesDatabaseClient({
     }
   };
 
-  const onDelete = async (id: number) => {
+  const _onDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this kosher place?')) {
       return;
     }

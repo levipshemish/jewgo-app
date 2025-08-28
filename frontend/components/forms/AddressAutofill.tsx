@@ -197,7 +197,7 @@ export default function AddressAutofill({
               appLogger.debug('Processing component', { types, long_name: longName, short_name: shortName });
 
               if (types.includes('street_number') || types.includes('route')) {
-                street += longName + ' ';
+                street += `${longName} `;
               } else if (types.includes('locality')) {
                 city = longName;
               } else if (types.includes('administrative_area_level_1')) {

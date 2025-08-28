@@ -16,48 +16,21 @@ import {
   isImageFormat,
   isImageData,
   isImageError,
-  isImageValidationResult
-} from '../types/image-processing';
-import type {
-  ImageData,
-  ImageMetadata,
-  ExifData,
-  GpsData,
-  ImageFormat,
-  ImageUrlConfig,
-  ImageUrlValidationResult,
-  ImageUrlTransform,
-  ImageEffect,
-  ImageProvider,
-  RateLimit,
-  CloudinaryConfig,
-  GooglePlacesConfig,
-  UnsplashConfig,
+  isImageValidationResult,
   ImageValidationConfig,
-  ImageValidationResult,
+  ImageFormat,
+  ImageUrlValidationResult,
   ImageAccessibilityResult,
-  ImageUrlPattern,
+  ImageValidationResult,
+  ImageMetadata,
+  ImageData,
+  ImageUrlTransform,
+  ImageUtils,
   ImageProcessingConfig,
   ResizeConfig,
-  CropConfig,
-  CompressConfig,
-  FormatConfig,
-  EffectConfig,
-  ImageApiResponse,
-  ImageUploadResponse,
-  ImageSearchResponse,
-  ImageCacheConfig,
-  CachedImage,
-  ImageCacheStats,
-  ImageError,
-  ImageErrorCode,
-  ImageUtils,
-  UseImageReturn,
-  UseImageUploadReturn,
-  UseImageValidationReturn,
-  ImageComponentProps,
-  ImageGalleryProps
+  CompressConfig
 } from '../types/image-processing';
+
 
 // ============================================================================
 // Enhanced Image URL Validation
@@ -619,8 +592,12 @@ function transformCloudinaryUrl(url: string, transforms: ImageUrlTransform): str
   // Add width and height
   if (transforms.width || transforms.height) {
     const sizeParams = [];
-    if (transforms.width) sizeParams.push(`w_${transforms.width}`);
-    if (transforms.height) sizeParams.push(`h_${transforms.height}`);
+    if (transforms.width) {
+      sizeParams.push(`w_${transforms.width}`);
+    }
+    if (transforms.height) {
+      sizeParams.push(`h_${transforms.height}`);
+    }
     
     if (transforms.crop) {
       sizeParams.push(`c_${transforms.crop}`);
@@ -726,11 +703,15 @@ export const imageUtilsEnhanced: ImageUtils = {
     return true;
   },
   validateImageFormat: (format: ImageFormat, allowedFormats?: ImageFormat[]) => {
-    if (!allowedFormats) return true;
+    if (!allowedFormats) {
+      return true;
+    }
     return allowedFormats.includes(format);
   },
   validateImageSize: (size: number, maxSize?: number) => {
-    if (!maxSize) return true;
+    if (!maxSize) {
+      return true;
+    }
     return size <= maxSize;
   },
   

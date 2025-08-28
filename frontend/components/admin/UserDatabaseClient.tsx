@@ -109,7 +109,7 @@ export default function UserDatabaseClient({
     router.push(`/admin/database/users?${p.toString()}`);
   };
 
-  const onEdit = async (id: string, data: Partial<User>) => {
+  const _onEdit = async (id: string, data: Partial<User>) => {
     try {
       const res = await fetch(`/api/admin/users`, {
         method: 'PUT',
@@ -132,7 +132,7 @@ export default function UserDatabaseClient({
     }
   };
 
-  const onDelete = async (id: string) => {
+  const _onDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this user?')) {
       return;
     }
