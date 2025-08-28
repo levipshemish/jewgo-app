@@ -7,7 +7,7 @@ import {
   validateTrustedIP, generateCorrelationId, extractIsAnonymous} from '@/lib/utils/auth-utils';
 import { validateCSRFServer, signMergeCookieVersioned, hashIPForPrivacy} from '@/lib/utils/auth-utils.server';
 import { 
-  ALLOWED_ORIGINS, getCORSHeaders, getCookieOptions, FEATURE_FLAGS} from '@/lib/config/environment';
+  ALLOWED_ORIGINS, getCORSHeaders, FEATURE_FLAGS} from '@/lib/config/environment';
 import { initializeServer} from '@/lib/server-init';
 
 // export const runtime = 'nodejs';
@@ -17,7 +17,7 @@ import { initializeServer} from '@/lib/server-init';
  * Handles OPTIONS/CORS preflight and POST requests for merge preparation
  */
 export async function OPTIONS(request: NextRequest) {
-  const _origin = request.headers.get('origin');
+  const origin = request.headers.get('origin');
   
   return new Response(null, {
     status: 204,
@@ -27,7 +27,7 @@ export async function OPTIONS(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
-  // const _startTime = Date.now();
+  // const startTime = Date.now();
   
   // Initialize server-side functionality
   const serverInitialized = await initializeServer();
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Validate origin against allowlist
-  const _origin = request.headers.get('origin');
+  const origin = request.headers.get('origin');
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
       { error: 'CSRF' },
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const _origin = request.headers.get('origin');
+    const origin = request.headers.get('origin');
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
@@ -144,8 +144,8 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(_name: string) {
-            return cookieStore.get(name)?.value;
+          get(name: string) {
+            return await cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
             cookieStore.set({ name, value, ...options });
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
       exp: Math.floor(Date.now() / 1000) + 600 // 10 minutes expiration
     };
     
-    const _signedCookie = signMergeCookieVersioned(cookiePayload);
+    const signedCookie = signMergeCookieVersioned(cookiePayload);
     
     // Set HttpOnly cookie with environment-specific domain and security attributes
     const cookieOptions = getCookieOptions();
