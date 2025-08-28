@@ -48,7 +48,7 @@ export async function signInAction(prevState: any, formData: FormData) {
     }
 
     return { ok: false, message: "Sign in failed" };
-  } catch (error) {
+  } catch (_error) {
     return { ok: false, message: "An error occurred during sign in" };
   }
 }
