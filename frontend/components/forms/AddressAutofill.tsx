@@ -292,8 +292,8 @@ export default function AddressAutofill({
           onAddressSelect({ street, city, state, zipCode });
         }
       }
-    } catch (error) {
-      appLogger.error('Error getting place details', { error: String(error) });
+    } catch (placeError) {
+      appLogger.error('Error getting place details', { error: String(placeError) });
       
       // Fallback: use the suggestion description if place details failed
       appLogger.debug('Place details error, using suggestion description as fallback');

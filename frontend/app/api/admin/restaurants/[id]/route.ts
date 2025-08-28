@@ -3,17 +3,60 @@ import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
-import { logAdminAction, ENTITY_TYPES } from '@/lib/admin/audit';
-import { validationUtils } from '@/lib/admin/validation';
+import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
-import { AdminErrors, handlePrismaError } from '@/lib/admin/errors';
+import { AdminErrors } from '@/lib/admin/errors';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.DEFAULT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    // Authenticate admin user
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return AdminErrors.UNAUTHORIZED();
+    }
+
+    // Check permissions
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_VIEW)) {
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
+    }
+
+    // Parse and validate restaurant ID
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return AdminErrors.INVALID_ID('Restaurant ID must be a valid number');
+    }
+
+    // Get restaurant data
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id },
+    });
+
+    if (!restaurant) {
+      return AdminErrors.NOT_FOUND('Restaurant not found');
+    }
+
+    return NextResponse.json({ data: restaurant });
+
+  } catch (error) {
+    console.error('[ADMIN] Get restaurant error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to get restaurant: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -24,68 +67,55 @@ export async function PUT(
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return AdminErrors.CSRF_ERROR();
     }
 
-    // Parse and validate ID
-    const restaurantId = parseInt(id);
-    if (isNaN(restaurantId)) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+    // Parse and validate restaurant ID
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return AdminErrors.INVALID_ID('Restaurant ID must be a valid number');
     }
 
     // Parse request body
-    const data = await request.json();
+    const body = await request.json();
 
-    // Validate data (update operation)
-    const validatedData = validationUtils.validateRestaurant(data, true);
-
-    // Sanitize data
-    const sanitizedData = validationUtils.sanitizeData(validatedData);
-
-    // Update restaurant
-    const restaurant = await AdminDatabaseService.updateRecord(
+    // Update restaurant using AdminDatabaseService
+    const updatedRestaurant = await AdminDatabaseService.updateRecord(
       prisma.restaurant,
       'restaurant',
-      restaurantId,
-      sanitizedData,
+      id,
+      body,
       adminUser,
       'restaurant'
     );
 
-    return NextResponse.json({ data: restaurant });
-  } catch (error) {
-    console.error('[ADMIN] Restaurant update error:', error);
-    
-    if ((error as any).name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
-        { status: 400 }
-      );
-    }
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Restaurant updated successfully',
+      data: updatedRestaurant 
+    });
 
-    return NextResponse.json(
-      { error: 'Failed to update restaurant' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('[ADMIN] Update restaurant error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to update restaurant: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -96,42 +126,43 @@ export async function DELETE(
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return AdminErrors.CSRF_ERROR();
     }
 
-    // Parse and validate ID
-    const restaurantId = parseInt(id);
-    if (isNaN(restaurantId)) {
-      return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
+    // Parse and validate restaurant ID
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
+      return AdminErrors.INVALID_ID('Restaurant ID must be a valid number');
     }
 
-    // Delete restaurant (soft delete)
+    // Delete restaurant using AdminDatabaseService (soft delete)
     await AdminDatabaseService.deleteRecord(
       prisma.restaurant,
       'restaurant',
-      restaurantId,
+      id,
       adminUser,
       'restaurant',
       true // soft delete
     );
 
-    return NextResponse.json({ message: 'Restaurant deleted successfully' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Restaurant deleted successfully' 
+    });
+
   } catch (error) {
-    console.error('[ADMIN] Restaurant delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete restaurant' },
-      { status: 500 }
-    );
+    console.error('[ADMIN] Delete restaurant error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to delete restaurant: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

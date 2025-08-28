@@ -19,7 +19,7 @@ class AdminLogger {
 
   info(message: string, data?: any) {
     const log = this.formatLog('info', message, data);
-
+    console.log(`[ADMIN INFO] ${log.timestamp}: ${message}`, data || '');
   }
 
   warn(message: string, data?: any) {
@@ -35,7 +35,7 @@ class AdminLogger {
   debug(message: string, data?: any) {
     if (process.env.NODE_ENV === 'development') {
       const log = this.formatLog('debug', message, data);
-
+      console.log(`[ADMIN DEBUG] ${log.timestamp}: ${message}`, data || '');
     }
   }
 }

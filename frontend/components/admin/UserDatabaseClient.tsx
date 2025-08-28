@@ -26,7 +26,7 @@ interface UserDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
+
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -34,7 +34,7 @@ interface UserDatabaseClientProps {
 export default function UserDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
+
   initialSortBy,
   initialSortOrder,
 }: UserDatabaseClientProps) {

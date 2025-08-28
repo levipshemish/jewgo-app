@@ -32,7 +32,7 @@ interface RestaurantDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
+
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -40,7 +40,7 @@ interface RestaurantDatabaseClientProps {
 export default function RestaurantDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
+
   initialSortBy,
   initialSortOrder,
 }: RestaurantDatabaseClientProps) {

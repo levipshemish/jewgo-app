@@ -2,20 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
+import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
-import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
-
-// CORS headers helper
-const corsHeaders = (request: NextRequest) => {
-  const origin = request.headers.get('origin') || '*';
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-};
+import { AdminErrors } from '@/lib/admin/errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,40 +18,30 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYSTEM_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
     }
 
-    // Get system configuration from database
-    const config = await prisma.adminConfig.findUnique({
-      where: { key: 'system_config' }
+    // Get system configuration
+    const configs = await prisma.adminConfig.findMany({
+      orderBy: { key: 'asc' },
     });
-    
-    if (!config) {
-      // Return default configuration if none exists
-      return NextResponse.json({
-        maintenanceMode: false,
-        debugMode: false,
-        emailNotifications: true,
-        auditLogging: true,
-        rateLimiting: true,
-        backupFrequency: 'daily',
-        sessionTimeout: 60,
-        maxFileSize: 10,
-      });
-    }
 
-    return NextResponse.json(config.value);
+    // Convert to key-value object
+    const configObject = configs.reduce((acc, config) => {
+      acc[config.key] = config.value;
+      return acc;
+    }, {} as Record<string, any>);
+
+    return NextResponse.json(configObject);
+
   } catch (error) {
-    console.error('[ADMIN] System config GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch system configuration' },
-      { status: 500 }
-    );
+    console.error('[ADMIN] Get system config error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to get system config: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -76,67 +56,58 @@ export async function PUT(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYSTEM_SETTINGS)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.SYSTEM_EDIT)) {
+      return AdminErrors.INSUFFICIENT_PERMISSIONS();
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return AdminErrors.CSRF_ERROR();
     }
 
     // Parse request body
-    const configData = await request.json();
+    const body = await request.json();
+    const configUpdates = body.config || {};
 
-    // Validate required fields
-    const requiredFields = [
-      'maintenanceMode', 'debugMode', 'emailNotifications', 
-      'auditLogging', 'rateLimiting', 'backupFrequency', 
-      'sessionTimeout', 'maxFileSize'
-    ];
+    // Get current config for audit
+    const currentConfigs = await prisma.adminConfig.findMany();
+    const currentConfigObject = currentConfigs.reduce((acc, config) => {
+      acc[config.key] = config.value;
+      return acc;
+    }, {} as Record<string, any>);
 
-    for (const field of requiredFields) {
-      if (!(field in configData)) {
-        return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 });
-      }
+    // Update configurations
+    const updatedConfigs = [];
+    for (const [key, value] of Object.entries(configUpdates)) {
+      const updatedConfig = await prisma.adminConfig.upsert({
+        where: { key },
+        update: { value: String(value), updated_at: new Date() },
+        create: { key, value: String(value) },
+      });
+      updatedConfigs.push(updatedConfig);
     }
 
-    // Update or create configuration
-    const updatedConfig = await prisma.adminConfig.upsert({
-      where: { key: 'system_config' },
-      update: {
-        value: configData,
-        updated_at: new Date(),
-        updated_by: adminUser.id,
-      },
-      create: {
-        key: 'system_config',
-        value: configData,
-        updated_at: new Date(),
-        updated_by: adminUser.id,
-      },
+    // Log the config changes
+    await logAdminAction(adminUser, AUDIT_ACTIONS.SYSTEM_SETTING_CHANGE, ENTITY_TYPES.SYSTEM, {
+      oldData: currentConfigObject,
+      newData: { ...currentConfigObject, ...configUpdates },
+      metadata: { changedKeys: Object.keys(configUpdates) },
     });
 
-    // Log the action
-    await logAdminAction(adminUser, AUDIT_ACTIONS.SYSTEM_SETTING_CHANGE, 'system', {
-      metadata: {
-        changes: configData,
-        previousConfig: await prisma.adminConfig.findUnique({ where: { key: 'system_config' } })
-      }
+    return NextResponse.json({ 
+      success: true, 
+      message: 'System configuration updated successfully',
+      data: updatedConfigs 
     });
 
-    return NextResponse.json(updatedConfig.value);
   } catch (error) {
-    console.error('[ADMIN] System config PUT error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update system configuration' },
-      { status: 500 }
-    );
+    console.error('[ADMIN] Update system config error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to update system config: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

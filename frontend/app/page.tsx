@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Force dynamic rendering to avoid SSR issues with Supabase client
@@ -10,7 +10,6 @@ import { supabaseClient } from "@/lib/supabase/client-secure";
 // import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -21,7 +20,6 @@ export default function HomePage() {
         
         if (error) {
           // console.error('Session check error:', error);
-          setIsAuthenticated(false);
           // Redirect unauthenticated users to signin page
           router.push('/auth/signin');
           return;
@@ -38,19 +36,14 @@ export default function HomePage() {
           // Check if user is anonymous or regular user
           // const isAnonymous = extractIsAnonymous(session.user);
 
-          setIsAuthenticated(true);
-          
           // Redirect both anonymous and regular users to eatery page
           router.push('/eatery');
         } else {
-
-          setIsAuthenticated(false);
           // Redirect unauthenticated users to signin page
           router.push('/auth/signin');
         }
       } catch (_error) {
         // console.error('Auth check failed:', error);
-        setIsAuthenticated(false);
         // Redirect unauthenticated users to signin page
         router.push('/auth/signin');
       }
@@ -66,13 +59,9 @@ export default function HomePage() {
           if (!user) { return; }
           // const isAnonymous = extractIsAnonymous(session.user);
 
-          setIsAuthenticated(true);
-          
           // Redirect to eatery page
           router.push('/eatery');
         } else if (event === 'SIGNED_OUT') {
-
-          setIsAuthenticated(false);
           // Redirect to signin page when user signs out
           router.push('/auth/signin');
         }

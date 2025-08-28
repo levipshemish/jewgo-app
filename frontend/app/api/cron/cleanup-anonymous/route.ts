@@ -138,9 +138,9 @@ export async function GET(request: NextRequest) {
             }
           }
           
-        } catch (error) {
+        } catch {
           // Error processing user - log for debugging
-          // console.error(`[Cleanup Cron] Error processing user ${user.id} (${correlationId})`, error);
+          // console.error(`[Cleanup Cron] Error processing user ${user.id} (${correlationId})`);
           results.errors++;
         }
       }

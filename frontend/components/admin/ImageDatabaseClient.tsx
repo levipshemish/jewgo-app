@@ -26,7 +26,6 @@ interface ImageDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -34,7 +33,6 @@ interface ImageDatabaseClientProps {
 export default function ImageDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
   initialSortBy,
   initialSortOrder,
 }: ImageDatabaseClientProps) {

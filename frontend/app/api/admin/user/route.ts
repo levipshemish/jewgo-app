@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
+import { AdminErrors } from '@/lib/admin/errors';
 
 // CORS headers helper
 const corsHeaders = (request: NextRequest) => {
@@ -24,25 +25,14 @@ export async function GET(request: NextRequest) {
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return AdminErrors.UNAUTHORIZED();
     }
 
-    // Return current admin user data
-    return NextResponse.json({
-      id: adminUser.id,
-      email: adminUser.email,
-      name: adminUser.name,
-      adminRole: adminUser.adminRole,
-      permissions: adminUser.permissions,
-      isSuperAdmin: adminUser.isSuperAdmin,
-      createdAt: adminUser.createdAt
-    });
+    return NextResponse.json(adminUser);
+
   } catch (error) {
-    console.error('[ADMIN] Get current user error:', error);
-    return NextResponse.json(
-      { error: 'Failed to get user data' },
-      { status: 500 }
-    );
+    console.error('[ADMIN] Get admin user error:', error);
+    return AdminErrors.INTERNAL_ERROR(`Failed to get admin user: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

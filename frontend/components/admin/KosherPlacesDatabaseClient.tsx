@@ -31,7 +31,7 @@ interface KosherPlacesDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
+
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -39,7 +39,7 @@ interface KosherPlacesDatabaseClientProps {
 export default function KosherPlacesDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
+
   initialSortBy,
   initialSortOrder,
 }: KosherPlacesDatabaseClientProps) {
