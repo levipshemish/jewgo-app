@@ -14,7 +14,7 @@ import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Filters } from '@/lib/filters/schema';
@@ -61,7 +61,7 @@ interface Store {
 }
 
 // Mock API function for stores - will be replaced with actual API
-const fetchStores = async (_limit: number, _params?: string) => {
+const fetchStores = async (limit: number, params?: string) => {
   // For now, return mock data
   const mockStores: Store[] = [
     {
@@ -69,76 +69,76 @@ const fetchStores = async (_limit: number, _params?: string) => {
       name: "Kosher Market Plus",
       description: "Your one-stop shop for all kosher groceries",
       city: "Miami",
-      store_type: "grocery",
-      store_category: "kosher",
+      storetype: "grocery",
+      storecategory: "kosher",
       rating: 4.5,
-      review_count: 127,
+      reviewcount: 127,
       distance: "2.3 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "Glatt Kosher",
-      has_parking: true,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      koshercategory: "Glatt Kosher",
+      hasparking: true,
+      hasdelivery: true,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 2,
       name: "Jewish Book Center",
       description: "Specialized bookstore with religious texts and literature",
       city: "Miami",
-      store_type: "bookstore",
-      store_category: "specialty",
+      storetype: "bookstore",
+      storecategory: "specialty",
       rating: 4.2,
-      review_count: 89,
+      reviewcount: 89,
       distance: "1.8 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "General",
-      has_parking: false,
-      has_delivery: false,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      koshercategory: "General",
+      hasparking: false,
+      hasdelivery: false,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 3,
       name: "Judaica World",
       description: "Complete selection of Judaica items and gifts",
       city: "Miami",
-      store_type: "judaica",
-      store_category: "specialty",
+      storetype: "judaica",
+      storecategory: "specialty",
       rating: 4.7,
-      review_count: 156,
+      reviewcount: 156,
       distance: "3.1 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "General",
-      has_parking: true,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      koshercategory: "General",
+      hasparking: true,
+      hasdelivery: true,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 4,
       name: "Kosher Deli Express",
       description: "Fresh kosher deli meats and prepared foods",
       city: "Miami",
-      store_type: "deli",
-      store_category: "kosher",
+      storetype: "deli",
+      storecategory: "kosher",
       rating: 4.3,
-      review_count: 94,
+      reviewcount: 94,
       distance: "2.7 mi",
-      image_url: "/api/placeholder/300/200",
-      kosher_category: "Glatt Kosher",
-      has_parking: false,
-      has_delivery: true,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      koshercategory: "Glatt Kosher",
+      hasparking: false,
+      hasdelivery: true,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     }
   ];
 
@@ -248,7 +248,7 @@ function StoresPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize store transformation to prevent unnecessary re-renders
-  const transformStoreToCardData = useCallback(_(store: Store) => {
+  const transformStoreToCardData = useCallback((store: Store) => {
     // Enhanced rating logic with better fallbacks
     const rating = store.rating || store.star_rating || store.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -280,9 +280,9 @@ function StoresPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(_([key, _value]) => {
+    Object.entries(newFilters).forEach(([key, value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -300,7 +300,7 @@ function StoresPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -309,7 +309,7 @@ function StoresPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback(_(query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -333,7 +333,7 @@ function StoresPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (_page: number) => {
+  const handlePageChange = async (page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -348,7 +348,7 @@ function StoresPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -370,7 +370,7 @@ function StoresPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const _handleRequestLocation = async () => {
+  const handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -417,7 +417,7 @@ function StoresPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch stores with mobile optimization
-  const fetchStoresData = async (_filters: Filters = activeFilters) => {
+  const fetchStoresData = async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -431,7 +431,7 @@ function StoresPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(_([key, _value]) => {
+      Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -491,7 +491,7 @@ function StoresPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -520,7 +520,7 @@ function StoresPageContent() {
       // Subscribe to store updates
       sendMessage({
         type: 'subscribe',
-        data: { room_id: 'store_updates' }
+        data: { roomid: 'store_updates' }
       });
     }
   }, [isConnected, sendMessage]);

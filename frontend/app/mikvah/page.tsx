@@ -15,7 +15,7 @@ import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Filters } from '@/lib/filters/schema';
@@ -75,7 +75,7 @@ interface Mikvah {
 }
 
 // Mock API function for mikvah - will be replaced with actual API
-const fetchMikvah = async (_limit: number, _params?: string) => {
+const fetchMikvah = async (limit: number, params?: string) => {
   // For now, return mock data
   const mockMikvah: Mikvah[] = [
     {
@@ -83,110 +83,110 @@ const fetchMikvah = async (_limit: number, _params?: string) => {
       name: "Community Mikvah Center",
       description: "Beautiful and well-maintained mikvah facility for the community",
       city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "community",
+      mikvahtype: "women's",
+      mikvahcategory: "community",
       rating: 4.8,
-      review_count: 203,
+      reviewcount: 203,
       distance: "1.2 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: true,
-      appointment_phone: "305-555-0123",
-      walk_in_available: false,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: true,
-      has_soap_provided: true,
-      has_hair_dryers: true,
-      has_parking: true,
-      rabbinical_supervision: "Rabbi Cohen",
-      kosher_certification: "OU",
-      fee_amount: 25.00,
-      accepts_cash: true,
-      accepts_checks: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      requiresappointment: true,
+      appointmentphone: "305-555-0123",
+      walk_inavailable: false,
+      has_changingrooms: true,
+      has_showerfacilities: true,
+      has_towelsprovided: true,
+      has_soapprovided: true,
+      has_hairdryers: true,
+      hasparking: true,
+      rabbinicalsupervision: "Rabbi Cohen",
+      koshercertification: "OU",
+      feeamount: 25.00,
+      acceptscash: true,
+      acceptschecks: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 2,
       name: "Private Mikvah Suite",
       description: "Luxury private mikvah with premium amenities",
       city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "private",
+      mikvahtype: "women's",
+      mikvahcategory: "private",
       rating: 4.9,
-      review_count: 156,
+      reviewcount: 156,
       distance: "2.8 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: true,
-      appointment_phone: "305-555-0456",
-      walk_in_available: false,
-      advance_booking_days: 7,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: true,
-      has_soap_provided: true,
-      has_hair_dryers: true,
-      has_private_entrance: true,
-      has_parking: true,
-      rabbinical_supervision: "Rabbi Goldstein",
-      kosher_certification: "OU",
-      fee_amount: 50.00,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      requiresappointment: true,
+      appointmentphone: "305-555-0456",
+      walk_inavailable: false,
+      advance_bookingdays: 7,
+      has_changingrooms: true,
+      has_showerfacilities: true,
+      has_towelsprovided: true,
+      has_soapprovided: true,
+      has_hairdryers: true,
+      has_privateentrance: true,
+      hasparking: true,
+      rabbinicalsupervision: "Rabbi Goldstein",
+      koshercertification: "OU",
+      feeamount: 50.00,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 3,
       name: "Hotel Mikvah",
       description: "Convenient mikvah located within the hotel complex",
       city: "Miami",
-      mikvah_type: "women's",
-      mikvah_category: "hotel",
+      mikvahtype: "women's",
+      mikvahcategory: "hotel",
       rating: 4.3,
-      review_count: 89,
+      reviewcount: 89,
       distance: "3.5 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: false,
-      walk_in_available: true,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: false,
-      has_soap_provided: false,
-      has_hair_dryers: true,
-      has_parking: true,
-      rabbinical_supervision: "Hotel Rabbi",
-      kosher_certification: "OU",
-      fee_amount: 35.00,
-      accepts_credit_cards: true,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      requiresappointment: false,
+      walk_inavailable: true,
+      has_changingrooms: true,
+      has_showerfacilities: true,
+      has_towelsprovided: false,
+      has_soapprovided: false,
+      has_hairdryers: true,
+      hasparking: true,
+      rabbinicalsupervision: "Hotel Rabbi",
+      koshercertification: "OU",
+      feeamount: 35.00,
+      accepts_creditcards: true,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     },
     {
       id: 4,
       name: "Men's Mikvah",
       description: "Traditional men's mikvah for daily use",
       city: "Miami",
-      mikvah_type: "men's",
-      mikvah_category: "community",
+      mikvahtype: "men's",
+      mikvahcategory: "community",
       rating: 4.5,
-      review_count: 67,
+      reviewcount: 67,
       distance: "1.8 mi",
-      image_url: "/api/placeholder/300/200",
-      requires_appointment: false,
-      walk_in_available: true,
-      has_changing_rooms: true,
-      has_shower_facilities: true,
-      has_towels_provided: false,
-      has_soap_provided: false,
-      has_parking: false,
-      rabbinical_supervision: "Rabbi Schwartz",
-      kosher_certification: "OU",
-      fee_amount: 15.00,
-      accepts_cash: true,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      requiresappointment: false,
+      walk_inavailable: true,
+      has_changingrooms: true,
+      has_showerfacilities: true,
+      has_towelsprovided: false,
+      has_soapprovided: false,
+      hasparking: false,
+      rabbinicalsupervision: "Rabbi Schwartz",
+      koshercertification: "OU",
+      feeamount: 15.00,
+      acceptscash: true,
+      isactive: true,
+      isverified: true
     }
   ];
 
@@ -296,7 +296,7 @@ function MikvahPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize mikvah transformation to prevent unnecessary re-renders
-  const transformMikvahToCardData = useCallback(_(mikvah: Mikvah) => {
+  const transformMikvahToCardData = useCallback((mikvah: Mikvah) => {
     // Enhanced rating logic with better fallbacks
     const rating = mikvah.rating || mikvah.star_rating || mikvah.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -326,9 +326,9 @@ function MikvahPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(_([key, _value]) => {
+    Object.entries(newFilters).forEach(([key, value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -346,7 +346,7 @@ function MikvahPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -355,7 +355,7 @@ function MikvahPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback(_(query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -379,7 +379,7 @@ function MikvahPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (_page: number) => {
+  const handlePageChange = async (page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -394,7 +394,7 @@ function MikvahPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -416,7 +416,7 @@ function MikvahPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const _handleRequestLocation = async () => {
+  const handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -463,7 +463,7 @@ function MikvahPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch mikvah with mobile optimization
-  const fetchMikvahData = async (_filters: Filters = activeFilters) => {
+  const fetchMikvahData = async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -477,7 +477,7 @@ function MikvahPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(_([key, _value]) => {
+      Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -537,7 +537,7 @@ function MikvahPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -566,7 +566,7 @@ function MikvahPageContent() {
       // Subscribe to mikvah updates
       sendMessage({
         type: 'subscribe',
-        data: { room_id: 'mikvah_updates' }
+        data: { roomid: 'mikvah_updates' }
       });
     }
   }, [isConnected, sendMessage]);

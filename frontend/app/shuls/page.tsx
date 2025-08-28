@@ -14,7 +14,7 @@ import { scrollToTop } from '@/lib/utils/scrollUtils';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 
 import { Filters } from '@/lib/filters/schema';
@@ -79,7 +79,7 @@ interface Shul {
 }
 
 // Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (_limit: number, _params?: string) => {
+const fetchShuls = async (limit: number, params?: string) => {
   // For now, return mock data
   const mockShuls: Shul[] = [
     {
@@ -87,132 +87,132 @@ const fetchShuls = async (_limit: number, _params?: string) => {
       name: "Young Israel of Miami",
       description: "Modern Orthodox synagogue with daily minyan and vibrant community",
       city: "Miami",
-      shul_type: "orthodox",
-      shul_category: "ashkenazi",
+      shultype: "orthodox",
+      shulcategory: "ashkenazi",
       denomination: "orthodox",
       rating: 4.7,
-      review_count: 234,
+      reviewcount: 234,
       distance: "0.8 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi David Cohen",
-      rabbi_phone: "305-555-0123",
-      religious_authority: "OU",
-      accepts_visitors: true,
-      membership_required: false,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      has_dailyminyan: true,
+      has_shabbatservices: true,
+      has_holidayservices: true,
+      has_womensection: true,
+      hasmechitza: true,
+      hasparking: true,
+      has_kiddushfacilities: true,
+      has_socialhall: true,
+      haslibrary: true,
+      has_hebrewschool: true,
+      has_adulteducation: true,
+      has_youthprograms: true,
+      rabbiname: "Rabbi David Cohen",
+      rabbiphone: "305-555-0123",
+      religiousauthority: "OU",
+      acceptsvisitors: true,
+      membershiprequired: false,
+      isactive: true,
+      isverified: true
     },
     {
       id: 2,
       name: "Temple Beth Sholom",
       description: "Conservative synagogue with warm community and excellent programming",
       city: "Miami",
-      shul_type: "conservative",
-      shul_category: "ashkenazi",
+      shultype: "conservative",
+      shulcategory: "ashkenazi",
       denomination: "conservative",
       rating: 4.5,
-      review_count: 189,
+      reviewcount: 189,
       distance: "1.5 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Sarah Goldstein",
-      rabbi_phone: "305-555-0456",
-      religious_authority: "USCJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1200.00,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      has_dailyminyan: false,
+      has_shabbatservices: true,
+      has_holidayservices: true,
+      has_womensection: true,
+      hasmechitza: false,
+      hasparking: true,
+      has_kiddushfacilities: true,
+      has_socialhall: true,
+      haslibrary: true,
+      has_hebrewschool: true,
+      has_adulteducation: true,
+      has_youthprograms: true,
+      has_seniorprograms: true,
+      rabbiname: "Rabbi Sarah Goldstein",
+      rabbiphone: "305-555-0456",
+      religiousauthority: "USCJ",
+      acceptsvisitors: true,
+      membershiprequired: true,
+      membershipfee: 1200.00,
+      isactive: true,
+      isverified: true
     },
     {
       id: 3,
       name: "Chabad of Miami Beach",
       description: "Chabad house with daily services and community outreach",
       city: "Miami Beach",
-      shul_type: "chabad",
-      shul_category: "chabad",
+      shultype: "chabad",
+      shulcategory: "chabad",
       denomination: "orthodox",
       rating: 4.8,
-      review_count: 156,
+      reviewcount: 156,
       distance: "2.3 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: true,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: true,
-      has_parking: false,
-      has_kiddush_facilities: true,
-      has_social_hall: false,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      rabbi_name: "Rabbi Menachem Mendel",
-      rabbi_phone: "305-555-0789",
-      religious_authority: "Chabad",
-      accepts_visitors: true,
-      membership_required: false,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      has_dailyminyan: true,
+      has_shabbatservices: true,
+      has_holidayservices: true,
+      has_womensection: true,
+      hasmechitza: true,
+      hasparking: false,
+      has_kiddushfacilities: true,
+      has_socialhall: false,
+      haslibrary: true,
+      has_hebrewschool: true,
+      has_adulteducation: true,
+      has_youthprograms: true,
+      rabbiname: "Rabbi Menachem Mendel",
+      rabbiphone: "305-555-0789",
+      religiousauthority: "Chabad",
+      acceptsvisitors: true,
+      membershiprequired: false,
+      isactive: true,
+      isverified: true
     },
     {
       id: 4,
       name: "Temple Emanu-El",
       description: "Reform synagogue with progressive values and inclusive community",
       city: "Miami",
-      shul_type: "reform",
-      shul_category: "ashkenazi",
+      shultype: "reform",
+      shulcategory: "ashkenazi",
       denomination: "reform",
       rating: 4.3,
-      review_count: 98,
+      reviewcount: 98,
       distance: "3.1 mi",
-      image_url: "/api/placeholder/300/200",
-      has_daily_minyan: false,
-      has_shabbat_services: true,
-      has_holiday_services: true,
-      has_women_section: true,
-      has_mechitza: false,
-      has_parking: true,
-      has_kiddush_facilities: true,
-      has_social_hall: true,
-      has_library: true,
-      has_hebrew_school: true,
-      has_adult_education: true,
-      has_youth_programs: true,
-      has_senior_programs: true,
-      rabbi_name: "Rabbi Rachel Green",
-      rabbi_phone: "305-555-0321",
-      religious_authority: "URJ",
-      accepts_visitors: true,
-      membership_required: true,
-      membership_fee: 1000.00,
-      is_active: true,
-      is_verified: true
+      imageurl: "/api/placeholder/300/200",
+      has_dailyminyan: false,
+      has_shabbatservices: true,
+      has_holidayservices: true,
+      has_womensection: true,
+      hasmechitza: false,
+      hasparking: true,
+      has_kiddushfacilities: true,
+      has_socialhall: true,
+      haslibrary: true,
+      has_hebrewschool: true,
+      has_adulteducation: true,
+      has_youthprograms: true,
+      has_seniorprograms: true,
+      rabbiname: "Rabbi Rachel Green",
+      rabbiphone: "305-555-0321",
+      religiousauthority: "URJ",
+      acceptsvisitors: true,
+      membershiprequired: true,
+      membershipfee: 1000.00,
+      isactive: true,
+      isverified: true
     }
   ];
 
@@ -322,7 +322,7 @@ function ShulsPageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize shul transformation to prevent unnecessary re-renders
-  const transformShulToCardData = useCallback(_(shul: Shul) => {
+  const transformShulToCardData = useCallback((shul: Shul) => {
     // Enhanced rating logic with better fallbacks
     const rating = shul.rating || shul.star_rating || shul.google_rating;
     const ratingText = rating ? rating.toFixed(1) : undefined;
@@ -352,9 +352,9 @@ function ShulsPageContent() {
   }, []); // Empty dependency array to prevent recreation
 
   // Memoize filter change handlers to prevent unnecessary re-renders
-  const handleFilterChange = useCallback(_(newFilters: Partial<Filters>) => {
+  const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
     // Apply all the new filters
-    Object.entries(newFilters).forEach(_([key, _value]) => {
+    Object.entries(newFilters).forEach(([key, value]) => {
       if (key in activeFilters || value !== undefined) {
         setFilter(key as keyof Filters, value);
       }
@@ -372,7 +372,7 @@ function ShulsPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback(_(filterType: keyof Filters) => {
+  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
@@ -381,7 +381,7 @@ function ShulsPageContent() {
   }, [clearAllFilters]);
 
   // Handle search functionality
-  const handleSearch = useCallback(_(query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     // Trigger data fetch with search query
@@ -405,7 +405,7 @@ function ShulsPageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (_page: number) => {
+  const handlePageChange = async (page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -420,7 +420,7 @@ function ShulsPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -442,7 +442,7 @@ function ShulsPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const _handleRequestLocation = async () => {
+  const handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -489,7 +489,7 @@ function ShulsPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch shuls with mobile optimization
-  const fetchShulsData = async (_filters: Filters = activeFilters) => {
+  const fetchShulsData = async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -503,7 +503,7 @@ function ShulsPageContent() {
       }
 
       // Add filter parameters
-      Object.entries(filters).forEach(_([key, _value]) => {
+      Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -563,7 +563,7 @@ function ShulsPageContent() {
       }
       
       // Add current filters
-      Object.entries(activeFilters).forEach(_([key, _value]) => {
+      Object.entries(activeFilters).forEach(([key, value]) => {
         if (value !== undefined && value !== '' && value !== null) {
           params.append(key, String(value));
         }
@@ -592,7 +592,7 @@ function ShulsPageContent() {
       // Subscribe to shul updates
       sendMessage({
         type: 'subscribe',
-        data: { room_id: 'shul_updates' }
+        data: { roomid: 'shul_updates' }
       });
     }
   }, [isConnected, sendMessage]);

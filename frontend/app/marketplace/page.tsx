@@ -18,7 +18,7 @@ import { sortRestaurantsByDistance } from '@/lib/utils/distance';
 import { useMobileOptimization, useMobileGestures, useMobilePerformance, mobileStyles } from '@/lib/mobile-optimization';
 import { useWebSocket } from '@/lib/hooks/useWebSocket';
 import { useLocation } from '@/lib/contexts/LocationContext';
-import { LocationPromptPopup } from '@/components/LocationPromptPopup';
+import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { appLogger } from '@/lib/utils/logger';
 
