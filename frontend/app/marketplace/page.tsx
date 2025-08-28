@@ -35,7 +35,7 @@ function MarketplacePageLoading() {
 }
 
 // Calculate distance between two coordinates using Haversine formula
-const calculateDistance = (_lat1: number, _lon1: number, _lat2: number, _lon2: number) => {
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 3959; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -47,7 +47,7 @@ const calculateDistance = (_lat1: number, _lon1: number, _lat2: number, _lon2: n
 };
 
 // Utility function to format distance for display
-const formatDistance = (_distance: number) => {
+const formatDistance = (distance: number) => {
   if (distance < 0.1) {
     return `${Math.round(distance * 5280)}ft`; // Convert to feet
   } else if (distance < 1) {
@@ -62,24 +62,24 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-1",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "2004 Toyota Sienna - Great Family Car",
     description: "Excellent condition family car with low mileage. Perfect for large families.",
-    price_cents: 240000,
+    pricecents: 240000,
     originalPrice: 310000,
     currency: "USD",
     condition: 'used_good',
-    category_id: 1,
-    category_name: "Vehicles",
+    categoryid: 1,
+    categoryname: "Vehicles",
     city: "Miami Gardens",
     region: "FL",
     country: "US",
-    seller_name: "John Doe",
-    endorse_up: 12,
-    endorse_down: 1,
+    sellername: "John Doe",
+    endorseup: 12,
+    endorsedown: 1,
     status: "active",
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    createdat: "2024-01-15T10:30:00Z",
+    updatedat: "2024-01-15T10:30:00Z",
     views: 127,
     rating: 4.5,
     images: ["/images/default-restaurant.webp"],
@@ -88,23 +88,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-2",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Box of small legos - Mixed colors and pieces",
     description: "Large collection of LEGO pieces in various colors. Great for creative building.",
-    price_cents: 0,
+    pricecents: 0,
     currency: "USD",
     condition: 'used_good',
-    category_id: 2,
-    category_name: "Toys",
+    categoryid: 2,
+    categoryname: "Toys",
     city: "Miami Gardens",
     region: "FL",
     country: "US",
-    seller_name: "Sarah Smith",
-    endorse_up: 8,
-    endorse_down: 0,
+    sellername: "Sarah Smith",
+    endorseup: 8,
+    endorsedown: 0,
     status: "active",
-    created_at: "2024-01-15T08:15:00Z",
-    updated_at: "2024-01-15T08:15:00Z",
+    createdat: "2024-01-15T08:15:00Z",
+    updatedat: "2024-01-15T08:15:00Z",
     views: 89,
     rating: 4.8,
     images: ["/images/default-restaurant.webp"],
@@ -113,23 +113,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-3",
     kind: 'appliance',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Kosher fleishig oven - Excellent condition",
     description: "Dedicated meat oven in perfect condition. Never mixed with dairy.",
-    price_cents: 0,
+    pricecents: 0,
     currency: "USD",
     condition: 'used_like_new',
-    category_id: 3,
-    category_name: "Appliances",
+    categoryid: 3,
+    categoryname: "Appliances",
     city: "Miami Gardens",
     region: "FL",
     country: "US",
-    seller_name: "Rachel Cohen",
-    endorse_up: 15,
-    endorse_down: 0,
+    sellername: "Rachel Cohen",
+    endorseup: 15,
+    endorsedown: 0,
     status: "active",
-    created_at: "2024-01-14T16:45:00Z",
-    updated_at: "2024-01-14T16:45:00Z",
+    createdat: "2024-01-14T16:45:00Z",
+    updatedat: "2024-01-14T16:45:00Z",
     views: 203,
     rating: 5.0,
     images: ["/images/default-restaurant.webp"],
@@ -138,23 +138,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-4",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Couches & chairs - Living room furniture set",
     description: "Complete living room set including sofa and matching chairs.",
-    price_cents: 10000,
+    pricecents: 10000,
     currency: "USD",
     condition: 'used_good',
-    category_id: 4,
-    category_name: "Furniture",
+    categoryid: 4,
+    categoryname: "Furniture",
     city: "Miami Gardens",
     region: "FL",
     country: "US",
-    seller_name: "David Wilson",
-    endorse_up: 6,
-    endorse_down: 2,
+    sellername: "David Wilson",
+    endorseup: 6,
+    endorsedown: 2,
     status: "active",
-    created_at: "2024-01-15T12:20:00Z",
-    updated_at: "2024-01-15T12:20:00Z",
+    createdat: "2024-01-15T12:20:00Z",
+    updatedat: "2024-01-15T12:20:00Z",
     views: 156,
     rating: 4.2,
     images: ["/images/default-restaurant.webp"],
@@ -163,24 +163,24 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-5",
     kind: 'vehicle',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "2018 Honda Odyssey - Family Van",
     description: "Well-maintained family van with excellent safety features.",
-    price_cents: 350000,
+    pricecents: 350000,
     originalPrice: 420000,
     currency: "USD",
     condition: 'used_good',
-    category_id: 1,
-    category_name: "Vehicles",
+    categoryid: 1,
+    categoryname: "Vehicles",
     city: "Miami Beach",
     region: "FL",
     country: "US",
-    seller_name: "Michael Brown",
-    endorse_up: 20,
-    endorse_down: 1,
+    sellername: "Michael Brown",
+    endorseup: 20,
+    endorsedown: 1,
     status: "active",
-    created_at: "2024-01-14T14:30:00Z",
-    updated_at: "2024-01-14T14:30:00Z",
+    createdat: "2024-01-14T14:30:00Z",
+    updatedat: "2024-01-14T14:30:00Z",
     views: 234,
     rating: 4.7,
     images: ["/images/default-restaurant.webp"],
@@ -189,23 +189,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-6",
     kind: 'appliance',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Refrigerator - Dairy section only",
     description: "Dedicated dairy refrigerator in excellent condition.",
-    price_cents: 80000,
+    pricecents: 80000,
     currency: "USD",
     condition: 'used_like_new',
-    category_id: 3,
-    category_name: "Appliances",
+    categoryid: 3,
+    categoryname: "Appliances",
     city: "Hollywood",
     region: "FL",
     country: "US",
-    seller_name: "Lisa Green",
-    endorse_up: 10,
-    endorse_down: 0,
+    sellername: "Lisa Green",
+    endorseup: 10,
+    endorsedown: 0,
     status: "active",
-    created_at: "2024-01-13T11:15:00Z",
-    updated_at: "2024-01-13T11:15:00Z",
+    createdat: "2024-01-13T11:15:00Z",
+    updatedat: "2024-01-13T11:15:00Z",
     views: 178,
     rating: 4.9,
     images: ["/images/default-restaurant.webp"],
@@ -215,23 +215,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-7",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Kids Bike - Perfect for Ages 5-8",
     description: "Well-maintained children's bicycle with training wheels.",
-    price_cents: 7500,
+    pricecents: 7500,
     currency: "USD",
     condition: 'used_good',
-    category_id: 5,
-    category_name: "Sports",
+    categoryid: 5,
+    categoryname: "Sports",
     city: "Miami",
     region: "FL",
     country: "US",
-    seller_name: "Karen Miller",
-    endorse_up: 5,
-    endorse_down: 0,
+    sellername: "Karen Miller",
+    endorseup: 5,
+    endorsedown: 0,
     status: "active",
-    created_at: "2024-01-15T15:30:00Z",
-    updated_at: "2024-01-15T15:30:00Z",
+    createdat: "2024-01-15T15:30:00Z",
+    updatedat: "2024-01-15T15:30:00Z",
     views: 67,
     rating: 4.3,
     images: ["/images/default-restaurant.webp"],
@@ -240,23 +240,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-8",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Garden Tools Set - Complete Collection",
     description: "Professional quality garden tools including shovels, rakes, and more.",
-    price_cents: 12000,
+    pricecents: 12000,
     currency: "USD",
     condition: 'used_like_new',
-    category_id: 6,
-    category_name: "Tools",
+    categoryid: 6,
+    categoryname: "Tools",
     city: "Miami Beach",
     region: "FL",
     country: "US",
-    seller_name: "Bob Johnson",
-    endorse_up: 18,
-    endorse_down: 1,
+    sellername: "Bob Johnson",
+    endorseup: 18,
+    endorsedown: 1,
     status: "active",
-    created_at: "2024-01-14T09:15:00Z",
-    updated_at: "2024-01-14T09:15:00Z",
+    createdat: "2024-01-14T09:15:00Z",
+    updatedat: "2024-01-14T09:15:00Z",
     views: 145,
     rating: 4.6,
     images: ["/images/default-restaurant.webp"],
@@ -265,23 +265,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-9",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Book Collection - Children's Stories",
     description: "Collection of classic children's books in excellent condition.",
-    price_cents: 4500,
+    pricecents: 4500,
     currency: "USD",
     condition: 'used_good',
-    category_id: 7,
-    category_name: "Books",
+    categoryid: 7,
+    categoryname: "Books",
     city: "Aventura",
     region: "FL",
     country: "US",
-    seller_name: "Emma Davis",
-    endorse_up: 11,
-    endorse_down: 0,
+    sellername: "Emma Davis",
+    endorseup: 11,
+    endorsedown: 0,
     status: "active",
-    created_at: "2024-01-13T14:20:00Z",
-    updated_at: "2024-01-13T14:20:00Z",
+    createdat: "2024-01-13T14:20:00Z",
+    updatedat: "2024-01-13T14:20:00Z",
     views: 98,
     rating: 4.8,
     images: ["/images/default-restaurant.webp"],
@@ -290,23 +290,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   {
     id: "sample-10",
     kind: 'regular',
-    txn_type: 'sale',
+    txntype: 'sale',
     title: "Gaming Chair - Ergonomic Design",
     description: "High-quality gaming chair with excellent lumbar support.",
-    price_cents: 18000,
+    pricecents: 18000,
     currency: "USD",
     condition: 'used_like_new',
-    category_id: 4,
-    category_name: "Furniture",
+    categoryid: 4,
+    categoryname: "Furniture",
     city: "Hollywood",
     region: "FL",
     country: "US",
-    seller_name: "Alex Chen",
-    endorse_up: 22,
-    endorse_down: 2,
+    sellername: "Alex Chen",
+    endorseup: 22,
+    endorsedown: 2,
     status: "active",
-    created_at: "2024-01-12T16:45:00Z",
-    updated_at: "2024-01-12T16:45:00Z",
+    createdat: "2024-01-12T16:45:00Z",
+    updatedat: "2024-01-12T16:45:00Z",
     views: 267,
     rating: 4.4,
     images: ["/images/default-restaurant.webp"],
@@ -316,23 +316,23 @@ const sampleMarketplaceData: MarketplaceListing[] = [
   ...Array.from({ length: 20 }, (_, i) => ({
     id: `sample-${11 + i}`,
     kind: 'regular' as const,
-    txn_type: 'sale' as const,
+    txntype: 'sale' as const,
     title: `Item ${11 + i} - Sample Marketplace Product`,
     description: `Description for sample item ${11 + i}.`,
-    price_cents: (50 + i * 10) * 100,
+    pricecents: (50 + i * 10) * 100,
     currency: "USD",
     condition: 'used_good' as const,
-    category_id: 1 + (i % 7),
-    category_name: ["Vehicles", "Toys", "Appliances", "Furniture", "Sports", "Tools", "Books"][i % 7],
+    categoryid: 1 + (i % 7),
+    categoryname: ["Vehicles", "Toys", "Appliances", "Furniture", "Sports", "Tools", "Books"][i % 7],
     city: ["Miami", "Miami Beach", "Hollywood", "Aventura"][i % 4],
     region: "FL",
     country: "US",
-    seller_name: `Seller ${11 + i}`,
-    endorse_up: 5 + i,
-    endorse_down: i % 3,
+    sellername: `Seller ${11 + i}`,
+    endorseup: 5 + i,
+    endorsedown: i % 3,
     status: "active" as const,
-    created_at: new Date(2024, 0, 10 - i).toISOString(),
-    updated_at: new Date(2024, 0, 10 - i).toISOString(),
+    createdat: new Date(2024, 0, 10 - i).toISOString(),
+    updatedat: new Date(2024, 0, 10 - i).toISOString(),
     views: 50 + i * 10,
     rating: 4.0 + (i % 10) / 10,
     images: ["/images/default-restaurant.webp"],
@@ -443,16 +443,16 @@ function MarketplacePageContent() {
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize marketplace listing transformation to prevent unnecessary re-renders
-  const transformMarketplaceToCardData = useCallback(_(listing: MarketplaceListing) => {
+  const transformMarketplaceToCardData = useCallback((listing: MarketplaceListing) => {
     appLogger.debug('Transforming marketplace listing', { listingId: listing.id });
     
   // Format price from cents to dollars
-  const formatPrice = (_priceCents: number) => {
+  const formatPrice = (priceCents: number) => {
     return `$${(priceCents / 100).toFixed(0)}`;
   };
 
   // Format condition for display
-  const formatCondition = (_condition: string) => {
+  const formatCondition = (condition: string) => {
     switch (condition) {
       case 'new': return 'New';
       case 'used_like_new': return 'Like New';
@@ -463,7 +463,7 @@ function MarketplacePageContent() {
   };
 
   // Format date for display
-  const formatDate = (_dateString: string) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -512,7 +512,7 @@ function MarketplacePageContent() {
       return listings;
     }
 
-    return [...listings].sort(_(a, _b) => {
+    return [...listings].sort((a, b) => {
       // If either listing doesn't have coordinates, keep original order
       if (!a.lat || !a.lng || !b.lat || !b.lng) {
         return 0;
@@ -550,7 +550,7 @@ function MarketplacePageContent() {
   const { isScrolling } = useScrollDetection({ debounceMs: 100 });
 
   // Handle page changes for desktop pagination
-  const handlePageChange = async (_page: number) => {
+  const handlePageChange = async (page: number) => {
     if (page === currentPage || loading) {
       return;
     }
@@ -565,8 +565,8 @@ function MarketplacePageContent() {
         subcategory: filters.subcategory || undefined,
         kind: filters.kind || undefined,
         condition: filters.condition || undefined,
-        min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
-        max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
+        minprice: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
+        maxprice: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
         city: filters.city || undefined,
         region: filters.region || undefined
       };
@@ -597,7 +597,7 @@ function MarketplacePageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const _handleRequestLocation = async () => {
+  const handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };
@@ -632,7 +632,7 @@ function MarketplacePageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch marketplace listings with mobile optimization and distance sorting
-  const fetchMarketplaceData = useCallback(_async (page = 1, _append = false) => {
+  const fetchMarketplaceData = useCallback(async (page = 1, append = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -645,8 +645,8 @@ function MarketplacePageContent() {
         subcategory: filters.subcategory || undefined,
         kind: filters.kind || undefined,
         condition: filters.condition || undefined,
-        min_price: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
-        max_price: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
+        minprice: filters.minPrice ? parseInt(filters.minPrice) * 100 : undefined,
+        maxprice: filters.maxPrice ? parseInt(filters.maxPrice) * 100 : undefined,
         city: filters.city || undefined,
         region: filters.region || undefined
       };
@@ -760,7 +760,7 @@ function MarketplacePageContent() {
     }
   }, [mobileOptimizedItemsPerPage, searchQuery, filters, setInfiniteScrollHasMore]);
 
-  const fetchMoreListings = useCallback(_async () => {
+  const fetchMoreListings = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -773,19 +773,19 @@ function MarketplacePageContent() {
     }
   }, [isLoadingMore, hasMore, currentPage, fetchMarketplaceData]);
 
-  const handleSearch = (_query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
     fetchMarketplaceData(1, false);
   };
 
-  const handleFilterChange = (_newFilters: MarketplaceFiltersType) => {
+  const handleFilterChange = (newFilters: MarketplaceFiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
     fetchMarketplaceData(1, false);
   };
 
-  const handleTabChange = (_tab: string) => {
+  const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
     // Handle navigation to different pages based on the selected tab
@@ -822,7 +822,7 @@ function MarketplacePageContent() {
     setShowFilters(true);
   };
 
-  const handleCategorySelect = (_category: MarketplaceCategory) => {
+  const handleCategorySelect = (category: MarketplaceCategory) => {
     setSelectedCategory(category);
     if (category.id) {
       setFilters(prev => ({
@@ -845,7 +845,7 @@ function MarketplacePageContent() {
       // Subscribe to marketplace updates
       sendMessage({
         type: 'subscribe',
-        data: { room_id: 'marketplace_updates' }
+        data: { roomid: 'marketplace_updates' }
       });
     }
   }, [isConnected, sendMessage]);
@@ -947,7 +947,7 @@ function MarketplacePageContent() {
   }
 
   if (error) {
-    return (_<div style={responsiveStyles.container}>
+    return (<div style={responsiveStyles.container}>
         <Header />
         
         {/* Navigation Tabs - Always visible */}
