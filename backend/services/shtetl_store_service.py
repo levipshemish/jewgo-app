@@ -477,31 +477,27 @@ class ShtetlStoreService:
                 end_date=end_date
             )
             
-            # Query revenue and orders (if table exists)
-            try:
-                if start_date:
-                    revenue_query = """
-                        SELECT COALESCE(SUM(total_amount), 0) as revenue,
-                               COUNT(*) as orders
-                        FROM shtetl_orders 
-                        WHERE store_id = %s AND created_at >= %s AND created_at <= %s
-                    """
-                    revenue_result = self.db_manager.execute_query(
-                        revenue_query, (store_id, start_date, end_date), fetch_one=True
-                    )
-                else:
-                    revenue_query = """
-                        SELECT COALESCE(SUM(total_amount), 0) as revenue,
-                               COUNT(*) as orders
-                        FROM shtetl_orders 
-                        WHERE store_id = %s
-                    """
-                    revenue_result = self.db_manager.execute_query(
-                        revenue_query, (store_id,), fetch_one=True
-                    )
-            except Exception as e:
-                self.logger.warning(f"Orders table not available for analytics: {e}")
-                revenue_result = None
+            # Query revenue and orders
+            if start_date:
+                revenue_query = """
+                    SELECT COALESCE(SUM(total_amount), 0) as revenue,
+                           COUNT(*) as orders
+                    FROM shtetl_orders 
+                    WHERE store_id = %s AND created_at >= %s AND created_at <= %s
+                """
+                revenue_result = self.db_manager.execute_query(
+                    revenue_query, (store_id, start_date, end_date), fetch_one=True
+                )
+            else:
+                revenue_query = """
+                    SELECT COALESCE(SUM(total_amount), 0) as revenue,
+                       COUNT(*) as orders
+                    FROM shtetl_orders 
+                    WHERE store_id = %s
+                """
+                revenue_result = self.db_manager.execute_query(
+                    revenue_query, (store_id,), fetch_one=True
+                )
             
             if revenue_result:
                 analytics.revenue = float(revenue_result.get('revenue', 0))
@@ -527,22 +523,18 @@ class ShtetlStoreService:
                 analytics.featured_products = int(products_result.get('featured_products', 0))
                 analytics.low_stock_products = int(products_result.get('low_stock_products', 0))
             
-            # Query customers (if table exists)
-            try:
-                customers_query = """
-                    SELECT COUNT(DISTINCT customer_user_id) as total_customers
-                    FROM shtetl_orders 
-                    WHERE store_id = %s
-                """
-                customers_result = self.db_manager.execute_query(
-                    customers_query, (store_id,), fetch_one=True
-                )
-                
-                if customers_result:
-                    analytics.total_customers = int(customers_result.get('total_customers', 0))
-            except Exception as e:
-                self.logger.warning(f"Orders table not available for customer count: {e}")
-                analytics.total_customers = 0
+            # Query customers
+            customers_query = """
+                SELECT COUNT(DISTINCT customer_user_id) as total_customers
+                FROM shtetl_orders 
+                WHERE store_id = %s
+            """
+            customers_result = self.db_manager.execute_query(
+                customers_query, (store_id,), fetch_one=True
+            )
+            
+            if customers_result:
+                analytics.total_customers = int(customers_result.get('total_customers', 0))
             
             # Cache the result
             self.cache_manager.set(cache_key, json.dumps(asdict(analytics)), ttl=600)
@@ -656,7 +648,7 @@ class ShtetlStoreService:
             return results if results else []
             
         except Exception as e:
-            self.logger.warning(f"Orders table not available for store {store_id}: {e}")
+            self.logger.error(f"Error getting orders for store {store_id}: {e}")
             return []
 
     def get_store_messages(self, store_id: str, limit: int = 50, offset: int = 0) -> List[Dict]:
@@ -676,7 +668,7 @@ class ShtetlStoreService:
             return results if results else []
             
         except Exception as e:
-            self.logger.warning(f"Messages table not available for store {store_id}: {e}")
+            self.logger.error(f"Error getting messages for store {store_id}: {e}")
             return []
 
     def get_plan_limits(self, plan_type: str) -> Dict[str, Any]:
@@ -733,17 +725,13 @@ class ShtetlStoreService:
                     return False, f"Product limit reached for {store.plan_type} plan"
             
             elif operation == "add_message":
-                # Count current messages (if table exists)
-                try:
-                    messages_query = "SELECT COUNT(*) as count FROM shtetl_messages WHERE store_id = %s"
-                    result = self.db_manager.execute_query(messages_query, (store_id,), fetch_one=True)
-                    message_count = result.get('count', 0) if result else 0
-                    
-                    if message_count >= plan_limits["max_messages"]:
-                        return False, f"Message limit reached for {store.plan_type} plan"
-                except Exception as e:
-                    self.logger.warning(f"Messages table not available for plan limit check: {e}")
-                    # Allow operation if table doesn't exist
+                # Count current messages
+                messages_query = "SELECT COUNT(*) as count FROM shtetl_messages WHERE store_id = %s"
+                result = self.db_manager.execute_query(messages_query, (store_id,), fetch_one=True)
+                message_count = result.get('count', 0) if result else 0
+                
+                if message_count >= plan_limits["max_messages"]:
+                    return False, f"Message limit reached for {store.plan_type} plan"
             
             return True, "Operation allowed"
             
