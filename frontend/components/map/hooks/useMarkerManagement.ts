@@ -1,3 +1,4 @@
+/// <reference types="@types/google.maps" />
 import { useRef, useCallback, useEffect } from 'react';
 
 import { Restaurant } from '@/lib/types/restaurant';

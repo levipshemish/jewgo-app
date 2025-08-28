@@ -2,7 +2,7 @@
 
 import { Star, Upload, X, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';

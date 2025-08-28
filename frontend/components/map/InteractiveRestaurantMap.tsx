@@ -241,7 +241,8 @@ export function InteractiveRestaurantMap({
     if (directionsRendererRef.current) {
       directionsRendererRef.current.setDirections({ 
         routes: [],
-        geocoded_waypoints: []
+        geocoded_waypoints: [],
+        request: {} as google.maps.DirectionsRequest
       });
     }
   }, []);

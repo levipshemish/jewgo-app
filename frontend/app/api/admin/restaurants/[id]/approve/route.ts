@@ -1,17 +1,22 @@
-import { NextResponse, NextRequest } from 'next/server';
-import { adminLogger } from '@/lib/admin/logger';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
@@ -19,71 +24,58 @@ export async function POST(
     }
 
     // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_APPROVE)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     // Validate CSRF token
-    const csrfToken = request.headers.get('x-csrf-token');
-    if (!csrfToken || !validateSignedCSRFToken(csrfToken, adminUser.id)) {
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
-    const restaurantId = parseInt(id);
-    if (isNaN(restaurantId)) {
+    // Parse and validate ID
+    const id = parseInt(params.id);
+    if (isNaN(id)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
 
-    // Get the restaurant to check current status
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { id: restaurantId },
-      select: { id: true, name: true, submission_status: true, status: true }
+    // Check if restaurant exists
+    const existingRestaurant = await prisma.restaurant.findUnique({
+      where: { id }
     });
 
-    if (!restaurant) {
+    if (!existingRestaurant) {
       return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
     // Update restaurant status
+    const now = new Date();
     const updatedRestaurant = await prisma.restaurant.update({
-      where: { id: restaurantId },
+      where: { id },
       data: {
         submission_status: 'approved',
-        approval_date: new Date(),
-        status: 'active',
-        updated_at: new Date(),
-      },
-    });
-
-    adminLogger.info('Restaurant approved', { 
-      restaurantId, 
-      restaurantName: restaurant.name,
-      adminUserId: adminUser.id 
+        approval_date: now,
+        approved_by: adminUser.id,
+        updated_at: now
+      }
     });
 
     // Log the action
     await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_APPROVE, 'restaurant', {
-      entityId: restaurantId.toString(),
-      oldData: { submission_status: restaurant.submission_status, status: restaurant.status },
-      newData: { submission_status: 'approved', status: 'active', approval_date: new Date() },
+      entityId: id.toString(),
+      metadata: {
+        previousStatus: existingRestaurant.submission_status,
+        newStatus: 'approved',
+        approvalDate: now.toISOString()
+      }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Restaurant approved successfully',
-      restaurant: updatedRestaurant 
-    });
+    return NextResponse.json({ data: updatedRestaurant });
   } catch (error) {
-    adminLogger.error('Restaurant approval error', { 
-      error: String(error), 
-      restaurantId: id 
-    });
-    
+    console.error('[ADMIN] Restaurant approve error:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to approve restaurant',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      },
+      { error: 'Failed to approve restaurant' },
       { status: 500 }
     );
   }

@@ -212,22 +212,22 @@ const RestaurantDetailPage: React.FC = () => {
     
     // If we have at least one Cloudinary image, return only Cloudinary images (policy)
     if (images.length > 0) {
-      return processRestaurantImages(images, restaurant.kosher_category, images.length);
+      return processRestaurantImages(images, restaurant?.kosher_category || '', images.length);
     }
     // No images: use a single placeholder
-    return processRestaurantImages([], restaurant.kosher_category, 1);
+    return processRestaurantImages([], restaurant?.kosher_category || '', 1);
   };
 
-  const getPriceRange = (restaurant: Restaurant) => {
-    return restaurant.price_range || 'Price not available';
+  const getPriceRange = (restaurantItem: Restaurant) => {
+    return restaurantItem.price_range || 'Price not available';
   };
 
-  const getRating = (restaurant: Restaurant) => {
-    return restaurant.rating || restaurant.star_rating || restaurant.google_rating || 'N/A';
+  const getRating = (restaurantItem: Restaurant) => {
+    return restaurantItem.rating || restaurantItem.star_rating || restaurantItem.google_rating || 'N/A';
   };
 
-  const getReviewCount = (restaurant: Restaurant) => {
-    return restaurant.review_count || restaurant.google_review_count || 0;
+  const getReviewCount = (restaurantItem: Restaurant) => {
+    return restaurantItem.review_count || restaurantItem.google_review_count || 0;
   };
 
   const toggleFavorite = () => {
