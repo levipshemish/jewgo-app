@@ -111,7 +111,6 @@ export interface UserProfileFormData extends BaseFormData {
   lastName: string;
   email: string;
   phone?: string;
-  preferences?: Record<string, any>;
 }
 
 export interface LoginFormData extends BaseFormData {
