@@ -1,3 +1,4 @@
+import React from 'react';
 import { redirect } from 'next/navigation';
 import { getAdminUser } from '@/lib/admin/auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
