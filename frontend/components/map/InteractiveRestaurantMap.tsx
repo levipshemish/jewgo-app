@@ -96,8 +96,6 @@ export function InteractiveRestaurantMap({
           streetViewControl: true,
           fullscreenControl: true,
           zoomControl: true,
-          draggable: true,
-          disableDoubleClickZoom: false,
           clickableIcons: true,
           gestureHandling: 'cooperative',
         });

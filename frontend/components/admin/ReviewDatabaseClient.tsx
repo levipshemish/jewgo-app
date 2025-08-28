@@ -86,7 +86,7 @@ export default function ReviewDatabaseClient({
     fetchData();
   }, [page, pageSize, search, sortBy, sortOrder]);
 
-  const _onPageChange = (nextPage: number) => {
+  const onPageChange = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());
     p.set('page', String(nextPage));
     router.push(`/admin/database/reviews?${p.toString()}`);
@@ -161,8 +161,8 @@ export default function ReviewDatabaseClient({
     }
   };
 
-  const onBulkAction = async (action: string, ids: string[]) => {
-    if (!ids || selectedIds.length === 0) {
+  const onBulkAction = async (action: string, selectedIds: string[]) => {
+    if (!selectedIds || selectedIds.length === 0) {
       return;
     }
     
@@ -240,7 +240,7 @@ export default function ReviewDatabaseClient({
       columns={columns}
       pagination={pagination}
       loading={loading}
-      onPageChange={onPageChange}
+      onPageChange={_onPageChange}
       onPageSizeChange={onPageSizeChange}
       onSearch={onSearch}
       onSort={onSort}
