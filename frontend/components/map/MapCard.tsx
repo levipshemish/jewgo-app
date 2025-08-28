@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -14,18 +14,18 @@ import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 // TypeScript Interfaces
 interface CardData {
   id: string;
-  imageUrl?: string;
-  imageTag?: string;
+  imageUrl: string | undefined;
+  imageTag: string | undefined;
   title: string;
-  badge?: string;
-  subtitle?: string;
-  additionalText?: string;
-  showHeart?: boolean;
-  isLiked?: boolean;
-  kosherCategory?: string;
-  city?: string;
-  address?: string;
-  certifyingAgency?: string;
+  badge: string | undefined;
+  subtitle: string | undefined;
+  additionalText: string | undefined;
+  showHeart: boolean | undefined;
+  isLiked: boolean | undefined;
+  kosherCategory: string | undefined;
+  city: string | undefined;
+  address: string | undefined;
+  certifyingAgency: string | undefined;
 }
 
 interface MapCardProps {
@@ -136,7 +136,7 @@ const MapCard = memo<MapCardProps>(({
       // Reset animation state
       setTimeout(() => setIsAnimating(false), 150);
     } catch (error) {
-      appLogger.warn('Error toggling favorite', { error });
+      appLogger.warn('Error toggling favorite', { error: error instanceof Error ? error.message : 'Unknown error' });
       setIsAnimating(false);
     }
   }, [liked, data, addFavorite, removeFavorite, onLikeToggle]);
