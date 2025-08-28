@@ -44,7 +44,8 @@ class OrderServiceV4(BaseService):
         Args:
             db_session: SQLAlchemy database session
         """
-        super().__init__(db_session)
+        super().__init__()
+        self.db_session = db_session
         self.logger = logger
 
     def create_order(self, order_data: Dict[str, Any]) -> Dict[str, Any]:

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, X, Plus, Upload, Phone } from 'lucide-react';
+import { X, Upload, Phone } from 'lucide-react';
 import MultipleImageUpload from './MultipleImageUpload';
 import AddressAutofill from './AddressAutofill';
 import CustomHoursSelector from './CustomHoursSelector';
@@ -60,8 +60,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     setValue,
     getValues,
     formState: { errors },
-    trigger,
-    reset
+    trigger
   } = useForm<RestaurantFormData>({
     resolver: zodResolver(restaurantFormSchema) as any,
     defaultValues: defaultFormData,
@@ -218,11 +217,11 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   };
 
   // Debug function to check form state
-  const debugFormState = () => {
-    const values = getValues();
-    const stepFields = getStepFields(currentStep);
+  // const debugFormState = () => {
+  //   const values = getValues();
+  //   const stepFields = getStepFields(currentStep);
 
-  };
+  // };
 
   // Form submission
   const onSubmit = async (data: RestaurantFormData) => {
@@ -331,7 +330,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
               {process.env.NODE_ENV === 'development' && (
                 <div className="flex gap-2">
                   <button
-                    onClick={debugFormState}
+                    onClick={() => console.log('Form state:', watch())}
                     className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                   >
                     Debug
