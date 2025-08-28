@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
+import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
+import { corsHeaders } from '@/lib/middleware/security';
 
 export async function POST(
   request: NextRequest,
@@ -15,18 +16,18 @@ export async function POST(
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_REJECT)) {
+    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.RESTAURANT_EDIT)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const { id } = await params;
-    const restaurantId = Number(id);
+    const id = Number(resolvedParams.id);
     if (!Number.isInteger(id)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
+
     await AdminDatabaseService.updateRecord(
       prisma.restaurant,
       'restaurant',
