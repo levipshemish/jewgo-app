@@ -1,0 +1,335 @@
+name: Security Scanning & Vulnerability Assessment
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Dependency Vulnerability Scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install safety bandit
+          
+      - name: Install Node.js dependencies
+        run: |
+          cd frontend
+          npm ci --ignore-scripts
+          
+      - name: Run Python security audit
+        run: |
+          cd backend
+          safety check --json --output-file safety-report.json || true
+          bandit -r . -f json -o bandit-report.json || true
+          
+      - name: Run npm audit
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate --json > npm-audit-report.json || true
+          
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-reports
+          path: |
+            backend/safety-report.json
+            backend/bandit-report.json
+            frontend/npm-audit-report.json
+          retention-days: 30
+          
+      - name: Comment PR with security findings
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## 🔒 Security Scan Results\n\n';
+            
+            // Check for Python safety issues
+            if (fs.existsSync('backend/safety-report.json')) {
+              const safetyData = JSON.parse(fs.readFileSync('backend/safety-report.json', 'utf8'));
+              if (safetyData.length > 0) {
+                comment += '### 🐍 Python Dependencies\n';
+                comment += `Found ${safetyData.length} security vulnerabilities:\n\n`;
+                safetyData.forEach(vuln => {
+                  comment += `- **${vuln.package}**: ${vuln.vulnerability_id} (${vuln.severity})\n`;
+                });
+                comment += '\n';
+              }
+            }
+            
+            // Check for npm audit issues
+            if (fs.existsSync('frontend/npm-audit-report.json')) {
+              const npmData = JSON.parse(fs.readFileSync('frontend/npm-audit-report.json', 'utf8'));
+              if (npmData.vulnerabilities && Object.keys(npmData.vulnerabilities).length > 0) {
+                comment += '### 📦 Node.js Dependencies\n';
+                comment += `Found ${Object.keys(npmData.vulnerabilities).length} security vulnerabilities.\n\n`;
+              }
+            }
+            
+            if (comment === '## 🔒 Security Scan Results\n\n') {
+              comment += '✅ No security vulnerabilities found in dependencies.\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Secret Scanning
+  secret-scan:
+    name: Secret & Credential Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: '.'
+          base: ${{ github.event.before }}
+          head: ${{ github.event.after }}
+          extra_args: '--only-verified --fail'
+          
+      - name: Run GitGuardian (if configured)
+        if: env.GITGUARDIAN_API_KEY
+        run: |
+          pip install gitguardian
+          ggshield scan path . --recursive --exit-zero
+
+  # Static Application Security Testing (SAST)
+  sast-scan:
+    name: SAST - Static Application Security Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install Semgrep
+        run: |
+          python -m pip install semgrep
+          
+      - name: Run Semgrep scan
+        run: |
+          semgrep scan --config auto --json --output semgrep-results.json || true
+          
+      - name: Install ESLint security plugin
+        run: |
+          cd frontend
+          npm install --save-dev eslint-plugin-security
+          
+      - name: Run ESLint security scan
+        run: |
+          cd frontend
+          npx eslint . --ext .js,.jsx,.ts,.tsx --config .eslintrc.security.js --format json --output-file eslint-security-results.json || true
+          
+      - name: Upload SAST reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-reports
+          path: |
+            semgrep-results.json
+            frontend/eslint-security-results.json
+          retention-days: 30
+
+  # Container Security Scanning
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Build Docker images
+        run: |
+          docker build -f backend/Dockerfile -t jewgo-backend:test ./backend
+          docker build -f frontend/Dockerfile -t jewgo-frontend:test ./frontend
+          
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'jewgo-backend:test'
+          format: 'sarif'
+          output: 'trivy-results-backend.sarif'
+          
+      - name: Run Trivy on frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'jewgo-frontend:test'
+          format: 'sarif'
+          output: 'trivy-results-frontend.sarif'
+          
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-backend.sarif'
+          
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-frontend.sarif'
+
+  # Security Headers and Configuration Check
+  security-config:
+    name: Security Configuration Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install security check tools
+        run: |
+          npm install -g security-checker
+          
+      - name: Check security headers configuration
+        run: |
+          # Check for security headers in Next.js config
+          if grep -q "securityHeaders" frontend/next.config.js; then
+            echo "✅ Security headers configured in Next.js"
+          else
+            echo "❌ Security headers not configured in Next.js"
+            exit 1
+          fi
+          
+      - name: Check CORS configuration
+        run: |
+          # Check for CORS configuration in backend
+          if grep -r "CORS" backend/ --include="*.py" | grep -q "allowed_origins"; then
+            echo "✅ CORS configuration found"
+          else
+            echo "❌ CORS configuration not found or incomplete"
+            exit 1
+          fi
+
+  # Security Report Generation
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, secret-scan, sast-scan, container-scan, security-config]
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all security reports
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-security-reports
+          path: reports/dependency
+          
+      - name: Download SAST reports
+        uses: actions/download-artifact@v4
+        with:
+          name: sast-reports
+          path: reports/sast
+          
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" > security-summary.md
+          echo "Generated: $(date)" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # Count vulnerabilities
+          if [ -f "reports/dependency/safety-report.json" ]; then
+            PYTHON_VULNS=$(jq length reports/dependency/safety-report.json 2>/dev/null || echo "0")
+            echo "## Python Dependencies" >> security-summary.md
+            echo "- Vulnerabilities found: $PYTHON_VULNS" >> security-summary.md
+          fi
+          
+          if [ -f "reports/dependency/npm-audit-report.json" ]; then
+            NPM_VULNS=$(jq '.vulnerabilities | length' reports/dependency/npm-audit-report.json 2>/dev/null || echo "0")
+            echo "## Node.js Dependencies" >> security-summary.md
+            echo "- Vulnerabilities found: $NPM_VULNS" >> security-summary.md
+          fi
+          
+          echo "" >> security-summary.md
+          echo "## Recommendations" >> security-summary.md
+          echo "1. Review all identified vulnerabilities" >> security-summary.md
+          echo "2. Update vulnerable dependencies" >> security-summary.md
+          echo "3. Address SAST findings" >> security-summary.md
+          echo "4. Implement security best practices" >> security-summary.md
+          
+      - name: Upload security summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: security-summary.md
+          retention-days: 90
+          
+      - name: Comment PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('security-summary.md')) {
+              const summary = fs.readFileSync('security-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: summary
+              });
+            }

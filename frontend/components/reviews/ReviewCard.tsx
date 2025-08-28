@@ -3,7 +3,7 @@
 import { Star, ThumbsUp, Flag, User, Clock, Shield, MoreVertical } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 // NextAuth removed - using Supabase only
 import { formatDate } from '@/lib/utils/dateUtils';
@@ -58,8 +58,8 @@ export default function ReviewCard({
           return;
         }
 
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        setSession(user ? { user } : null);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setSession(session);
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
@@ -71,10 +71,12 @@ export default function ReviewCard({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async () => {
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      setSession(user ? { user } : null);
-      setLoading(false);
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event: string, session: Session | null) => {
+      // Only update on actual auth events, not on subscription
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        setSession(session);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
