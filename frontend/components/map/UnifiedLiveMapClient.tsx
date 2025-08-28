@@ -1,16 +1,16 @@
 'use client';
 
-import { ArrowLeft, SlidersHorizontal, Heart, X, Star, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, X, Star, MapPin, Search } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
-import InteractiveRestaurantMap from '@/components/map/InteractiveRestaurantMap';
+import { InteractiveRestaurantMap } from '@/components/map/InteractiveRestaurantMap';
 import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
 import { Restaurant } from '@/lib/types/restaurant';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
-import { throttle as throttleFn } from '@/lib/utils/touchUtils';
+import { throttleTyped as throttleFn } from '@/lib/utils/touchUtils';
 import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
@@ -25,7 +25,7 @@ interface MapState {
   isLoadingMarkers: boolean;
   markerError: string | null;
   restaurantsWithCoords: Restaurant[];
-  visibleCount?: number;
+  visibleCount: number | null;
 }
 
 interface UserLocation {
@@ -84,7 +84,8 @@ export default function UnifiedLiveMapClient() {
   const [mapState, setMapState] = useState<MapState>({
     isLoadingMarkers: false,
     markerError: null,
-    restaurantsWithCoords: []
+    restaurantsWithCoords: [],
+    visibleCount: null,
   });
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     loadTime: 0,
@@ -332,7 +333,7 @@ export default function UnifiedLiveMapClient() {
   }, []);
 
   // Throttled worker posts
-  const throttledPost = useMemo(() => throttleFn((message: FilterWorkerMessage) => {
+  const throttledPost = useMemo(() => throttleFn((message: any) => {
     postToWorker(message);
   }, 120), []);
 
@@ -534,13 +535,13 @@ export default function UnifiedLiveMapClient() {
         <div className="h-[calc(100vh-4rem)]">
           <InteractiveRestaurantMap
             restaurants={displayedRestaurants}
-            userLocation={userLocation}
-            selectedRestaurantId={selectedRestaurant?.id ? parseInt(selectedRestaurant.id.toString()) : undefined}
-            onRestaurantSelect={handleRestaurantSelect}
-            mapCenter={mapCenter}
+            userLocation={userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null}
+            selectedRestaurantId={selectedRestaurant?.id || null}
+            onRestaurantSelect={(restaurant) => handleRestaurantSelect(parseInt(restaurant.id.toString()))}
+            mapCenter={mapCenter || undefined}
             className="h-full rounded-none shadow-none bg-transparent"
             showRatingBubbles={true}
-            onMapStateUpdate={setMapState}
+            onMapStateUpdate={(state) => setMapState(state)}
           />
           {/* Debug info */}
           {process.env.NODE_ENV === 'development' && (
