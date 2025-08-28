@@ -237,11 +237,21 @@ export async function logAdminAction(
     };
 
     // Only add optional fields if they have values
-    if (entityId) auditData.entityId = entityId;
-    if (ipAddress) auditData.ipAddress = ipAddress;
-    if (userAgent) auditData.userAgent = userAgent;
-    if (sessionId) auditData.sessionId = sessionId;
-    if (correlationId) auditData.correlationId = correlationId;
+    if (entityId) {
+      auditData.entityId = entityId;
+    }
+    if (ipAddress) {
+      auditData.ipAddress = ipAddress;
+    }
+    if (userAgent) {
+      auditData.userAgent = userAgent;
+    }
+    if (sessionId) {
+      auditData.sessionId = sessionId;
+    }
+    if (correlationId) {
+      auditData.correlationId = correlationId;
+    }
 
     await prisma.auditLog.create({
       data: auditData,
