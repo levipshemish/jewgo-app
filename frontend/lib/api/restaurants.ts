@@ -290,7 +290,7 @@ export class RestaurantsAPI {
       const data = await this.makeRequest<RestaurantsResponse>(`/api/restaurants/search?q=${encodeURIComponent(query)}&limit=${limit}`);
       
       return {
-        restaurants: sanitizeRestaurantData(data.restaurants || []),
+        restaurants: sanitizeRestaurantData(data.restaurants || []) as Restaurant[],
         total: data.total || 0
       };
     } catch {
