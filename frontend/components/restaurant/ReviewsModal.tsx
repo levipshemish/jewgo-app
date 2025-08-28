@@ -1,7 +1,7 @@
 'use client';
 
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, MessageCircle, ExternalLink, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import { Review } from '@/components/reviews/ReviewCard';
@@ -75,10 +75,10 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
-        setSession(session);
-      } catch (error) {
-        console.error('Error getting session:', error);
+        const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+        setSession(currentSession);
+      } catch (sessionError) {
+        console.error('Error getting session:', sessionError);
       }
     };
 
@@ -86,8 +86,8 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: string, session: Session | null) => {
-        setSession(session);
+      async (event: string, authSession: Session | null) => {
+        setSession(authSession);
       }
     );
 
@@ -95,7 +95,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   }, []);
 
   // Safe JSON parsing for potentially malformed Google reviews payloads
-  const googleReviews: GoogleReview[] = React.useMemo(() => {
+  const googleReviews: GoogleReview[] = useMemo(() => {
     const source = restaurant?.google_reviews;
     if (!source) { return []; }
     try {
@@ -319,7 +319,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   );
 
   // Combine, filter, and sort reviews
-  const combinedReviews: CombinedReview[] = React.useMemo(() => {
+  const combinedReviews: CombinedReview[] = useMemo(() => {
     const googleReviewsFormatted: CombinedReview[] = googleReviews.map((review, index) => ({
       id: `google-${index}`,
       type: 'google' as const,

@@ -1,5 +1,7 @@
 'use client';
 
+/// <reference types="node" />
+import React from 'react';
 import { useState, useMemo } from 'react';
 import { 
   ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, Download, Trash2} from 'lucide-react';
@@ -48,6 +50,21 @@ export interface DataTableProps<T> {
   sortOrder?: 'asc' | 'desc';
   onSearchQueryChange?: (query: string) => void;
   onSortChange?: (key: string, order: 'asc' | 'desc') => void;
+}
+
+// Helper function to get static width classes
+function getWidthClass(width: string): string {
+  const widthMap: Record<string, string> = {
+    'sm': 'w-24',
+    'md': 'w-48', 
+    'lg': 'w-64',
+    'xl': 'w-80',
+    '2xl': 'w-96',
+    'full': 'w-full',
+    'auto': 'w-auto',
+  };
+  
+  return widthMap[width] || 'w-auto';
 }
 
 export default function DataTable<T extends { id: string | number }>({
@@ -281,7 +298,7 @@ export default function DataTable<T extends { id: string | number }>({
                     key={column.key}
                     aria-sort={ariaSort as any}
                     className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                      column.width ? `w-${column.width}` : ''
+                      column.width ? getWidthClass(column.width) : ''
                     } ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
                   >
                     <div className="flex items-center space-x-1">

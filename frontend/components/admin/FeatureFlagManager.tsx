@@ -1,6 +1,7 @@
 'use client';
 
 import { ToggleLeft, ToggleRight, Plus, Trash2, Edit, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import React from 'react';
 import { useState } from 'react';
 
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';

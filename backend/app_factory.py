@@ -580,6 +580,24 @@ def create_app():
         logger.error(f"Error registering shtetl marketplace API routes: {e}")
         logger.error(traceback.format_exc())
     
+    # Register shtetl store API routes
+    try:
+        logger.info("Attempting to import shtetl store API routes...")
+        from routes.shtetl_store_api import shtetl_store_bp
+        logger.info(f"Shtetl store blueprint imported: {shtetl_store_bp}")
+        
+        if shtetl_store_bp is not None:
+            app.register_blueprint(shtetl_store_bp)
+            logger.info("Shtetl store API routes registered successfully")
+        else:
+            logger.warning("Shtetl store blueprint is None - not registering routes")
+            
+    except ImportError as e:
+        logger.warning(f"Could not import shtetl store API routes: {e}")
+    except Exception as e:
+        logger.error(f"Error registering shtetl store API routes: {e}")
+        logger.error(traceback.format_exc())
+    
     # Add a simple test endpoint directly in app_factory to verify routing works
     @app.route('/api/v4/direct-test', methods=['GET'])
     def api_v4_direct_test():

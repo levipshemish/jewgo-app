@@ -40,7 +40,6 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
       <UserDatabaseClient
         initialData={initialData}
         initialPagination={initialPagination}
-        initialSearch={search}
         initialSortBy={sortBy}
         initialSortOrder={sortOrder as 'asc' | 'desc'}
       />

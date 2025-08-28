@@ -2,7 +2,7 @@
 
 import { Star, Upload, X, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';
@@ -49,11 +49,11 @@ export default function ReviewForm({
           return;
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        setSession(session);
-      } catch (error) {
-        console.error('Error getting session:', error);
-        handleUserLoadError(error);
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+        setSession(currentSession);
+      } catch (sessionError) {
+        console.error('Error getting session:', sessionError);
+        handleUserLoadError(sessionError);
       } finally {
         setLoading(false);
       }
@@ -62,8 +62,8 @@ export default function ReviewForm({
     getSession();
 
     // Listen for auth changes without redundant getUser calls
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
-      setSession(session);
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, authSession: Session | null) => {
+      setSession(authSession);
       setLoading(false);
     });
 

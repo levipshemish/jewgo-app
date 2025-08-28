@@ -111,7 +111,7 @@ export const handleFiltersClick = (
  */
 export const handleTabClick = (
   tabId: string,
-  onTabChange: (tabId: string) => void,
+  onTabChange: (selectedTabId: string) => void,
   activeTab: string
 ) => {
   if (tabId !== activeTab) {
@@ -124,7 +124,7 @@ export const handleTabClick = (
  */
 export const handleSearch = (
   query: string,
-  onSearch: (query: string) => void,
+  onSearch: (searchQuery: string) => void,
   debounceMs: number = 300
 ) => {
   const timeoutId = setTimeout(() => {

@@ -49,11 +49,7 @@ export default function LocationStep({
   storeData,
   updateStoreData,
   onNext,
-  onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onPrev
 }: LocationStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isGeocoding, setIsGeocoding] = useState(false);

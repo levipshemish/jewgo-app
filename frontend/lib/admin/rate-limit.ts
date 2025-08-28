@@ -22,28 +22,28 @@ export function rateLimit(config: RateLimitConfig) {
       : `admin_api:${getClientIP(request)}:${request.nextUrl.pathname}`;
     
     const now = Date.now();
-    const rateLimit = RATE_LIMIT_STORE.get(key);
+    const rateLimitData = RATE_LIMIT_STORE.get(key);
     
-    if (rateLimit && now < rateLimit.resetTime) {
-      if (rateLimit.count >= limit) {
+    if (rateLimitData && now < rateLimitData.resetTime) {
+      if (rateLimitData.count >= limit) {
         return NextResponse.json(
           { 
             error: 'Too Many Requests',
             message: 'Rate limit exceeded. Please try again later.',
-            retryAfter: Math.ceil((rateLimit.resetTime - now) / 1000)
+            retryAfter: Math.ceil((rateLimitData.resetTime - now) / 1000)
           },
           { 
             status: 429,
             headers: {
-              'Retry-After': Math.ceil((rateLimit.resetTime - now) / 1000).toString(),
+              'Retry-After': Math.ceil((rateLimitData.resetTime - now) / 1000).toString(),
               'X-RateLimit-Limit': limit.toString(),
               'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': new Date(rateLimit.resetTime).toISOString(),
+              'X-RateLimit-Reset': new Date(rateLimitData.resetTime).toISOString(),
             }
           }
         );
       }
-      rateLimit.count++;
+      rateLimitData.count++;
     } else {
       RATE_LIMIT_STORE.set(key, { 
         count: 1, 

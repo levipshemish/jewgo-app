@@ -46,7 +46,6 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
       <RestaurantDatabaseClient
         initialData={initialData}
         initialPagination={initialPagination}
-        initialSearch={search}
         initialSortBy={sortBy}
         initialSortOrder={sortOrder as 'asc' | 'desc'}
       />

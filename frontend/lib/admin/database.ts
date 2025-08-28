@@ -170,7 +170,10 @@ export class AdminDatabaseService {
     options: PaginationOptions & SearchOptions,
     include?: any
   ): Promise<PaginatedResult<T>> {
-    const { page, pageSize, search, filters, sortBy, sortOrder } = options;
+    const { page, pageSize: rawPageSize, search, filters, sortBy, sortOrder } = options;
+    
+    // Validate and clamp pageSize
+    const pageSize = Math.min(Math.max(1, rawPageSize || 20), 100);
 
     const safePageSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     const safePage = Math.max(page, 1);
@@ -200,18 +203,18 @@ export class AdminDatabaseService {
 
     // Build order by
     const orderBy: any = {};
-    if (sortBy) {
-      if (!this.validateSortField(modelKey, sortBy)) {
+          if (sortBy) {
+        if (!this.validateSortField(modelKey, sortBy)) {
         // eslint-disable-next-line no-console
         console.warn(
           `[ADMIN] Invalid sort field: ${sortBy} for model: ${modelKey}. Falling back to default.`
         );
-        const defaultSortField = this.getDefaultSortField(modelKey);
-        orderBy[defaultSortField] = sortOrder || 'desc';
+          const defaultSortField = this.getDefaultSortField(modelKey);
+          orderBy[defaultSortField] = sortOrder || 'desc';
+        } else {
+          orderBy[sortBy] = sortOrder || 'desc';
+        }
       } else {
-        orderBy[sortBy] = sortOrder || 'desc';
-      }
-    } else {
       const defaultSortField = this.getDefaultSortField(modelKey);
       orderBy[defaultSortField] = 'desc';
     }

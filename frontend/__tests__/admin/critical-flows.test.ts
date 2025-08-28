@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { requireAdmin, getAdminRole } from '@/lib/admin/auth';
+import { requireAdmin } from '@/lib/admin/auth';
 import { generateSignedCSRFToken, validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
@@ -144,13 +144,6 @@ describe('Critical Admin Flows', () => {
     });
 
     it('should prevent PII leakage in audit logs', () => {
-      const sensitiveData = {
-        email: 'user@example.com',
-        password: 'secret123',
-        phone: '555-1234',
-        name: 'John Doe',
-      };
-      
       // Test that sensitive fields are properly handled by allowlists
       const allowedFields = AUDIT_FIELD_ALLOWLISTS.USER;
       expect(allowedFields).toContain('id');

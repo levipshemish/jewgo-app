@@ -32,7 +32,7 @@ interface RestaurantDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
+
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -40,9 +40,6 @@ interface RestaurantDatabaseClientProps {
 export default function RestaurantDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
-  initialSortBy,
-  initialSortOrder,
 }: RestaurantDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -117,6 +114,7 @@ export default function RestaurantDatabaseClient({
 
   const _onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
+<<<<<<< HEAD
       const res = await adminFetch(`/api/admin/restaurants`, csrf, {
         method: 'PUT',
         headers: {
@@ -143,6 +141,7 @@ export default function RestaurantDatabaseClient({
     }
     
     try {
+<<<<<<< HEAD
       const res = await adminFetch(`/api/admin/restaurants/${id}`, csrf, {
         method: 'DELETE',
       });
@@ -166,6 +165,7 @@ export default function RestaurantDatabaseClient({
     
     setLoading(true);
     try {
+<<<<<<< HEAD
       const res = await adminFetch('/api/admin/restaurants/bulk', csrf, {
         method: 'POST',
         headers: {

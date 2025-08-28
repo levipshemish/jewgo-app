@@ -156,6 +156,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  // Deprecation warning for query parameter usage
+  console.warn('[ADMIN] PUT /api/admin/restaurants is deprecated. Use PUT /api/admin/restaurants/[id] instead.');
+  
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -223,6 +226,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  // Deprecation warning for query parameter usage
+  console.warn('[ADMIN] DELETE /api/admin/restaurants?id=X is deprecated. Use DELETE /api/admin/restaurants/[id] instead.');
+  
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);

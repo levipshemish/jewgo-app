@@ -281,11 +281,11 @@ export default function CustomHoursSelector({ value, onChange, error, testMode =
     setDaysHours(updated);
   };
 
-  const handleSelectChange = (index: number, field: 'open' | 'close', value: string) => {
+  const handleSelectChange = (index: number, field: 'open' | 'close', timeValue: string) => {
     if (testMode) {
-      appLogger.debug('CustomHoursSelector select change', { index, field, value });
+      appLogger.debug('CustomHoursSelector select change', { index, field, value: timeValue });
     }
-    updateDayHours(index, { [field]: value });
+    updateDayHours(index, { [field]: timeValue });
   };
 
   const handleSelectFocus = (index: number, field: string) => {

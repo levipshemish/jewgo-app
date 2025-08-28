@@ -4,13 +4,13 @@ import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { prisma } from '@/lib/db/prisma';
-import { corsHeaders } from '@/lib/middleware/security';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { params } = await context;
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -42,8 +42,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
-
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
 }

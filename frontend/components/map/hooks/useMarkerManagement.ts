@@ -1,3 +1,4 @@
+/// <reference types="@types/google.maps" />
 import { useRef, useCallback, useEffect } from 'react';
 
 import { Restaurant } from '@/lib/types/restaurant';
@@ -288,7 +289,7 @@ export function useMarkerManagement({
           restaurant,
           map,
         });
-      } catch (error) {
+      } catch (_error) {
         // console.warn(`Failed to create marker for restaurant ${restaurant.id}:`, error);
       }
     });

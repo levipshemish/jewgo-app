@@ -13,7 +13,7 @@ const DEV_AUTH_RATE_LIMIT_STORE: Map<string, { count: number; resetTime: number 
 /**
  * Get user's admin role by querying tables directly (no RPC dependency)
  */
-export async function getAdminRole(userId: string): Promise<AdminRole> {
+export async function getAdminRole(userId: string): Promise<AdminRole | null> {
   try {
     return await getUserAdminRoleFallback(userId);
   } catch (error: any) {
@@ -21,14 +21,14 @@ export async function getAdminRole(userId: string): Promise<AdminRole> {
     if (process.env.ADMIN_RBAC_FAIL_OPEN === 'true') {
       return 'moderator';
     }
-    throw new Error('Admin RBAC lookup failed; access denied');
+    return null;
   }
 }
 
 /**
  * Fallback method to get admin role directly from Supabase tables
  */
-async function getUserAdminRoleFallback(userId: string): Promise<AdminRole> {
+async function getUserAdminRoleFallback(userId: string): Promise<AdminRole | null> {
   try {
     const supabase = await createServerSupabaseClient();
     
@@ -70,14 +70,14 @@ async function getUserAdminRoleFallback(userId: string): Promise<AdminRole> {
       }
     }
     
-    // Default to moderator if no role found
-    return 'moderator';
+    // Return null if no role found (fail-closed)
+    return null;
   } catch (error: any) {
     console.error('[ADMIN] Error in getUserAdminRoleFallback:', error);
     if (process.env.ADMIN_RBAC_FAIL_OPEN === 'true') {
       return 'moderator';
     }
-    throw error;
+    return null;
   }
 }
 
@@ -144,6 +144,9 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
 
     // Get admin role from Supabase (source of truth)
     let adminRole = await getAdminRole(user.id);
+    if (!adminRole) {
+      return null;
+    }
 
     // Development overrides to ease local testing
     // These overrides only apply in NODE_ENV=development and are ignored in production
@@ -267,6 +270,9 @@ export async function getAdminUser(): Promise<AdminUser | null> {
 
     // Get admin role from Supabase (source of truth)
     const adminRole = await getAdminRole(user.id);
+    if (!adminRole) {
+      return null;
+    }
     const isSuperAdmin = adminRole === 'super_admin';
 
     const permissions = ROLE_PERMISSIONS[adminRole] || [];

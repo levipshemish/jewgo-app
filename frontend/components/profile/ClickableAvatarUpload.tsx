@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 "use client";
 
+import React from 'react';
 import { useCallback, useState, useRef } from "react";
 import Image from "next/image";
 

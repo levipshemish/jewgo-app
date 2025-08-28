@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
 import Script from "next/script";
@@ -156,8 +157,8 @@ function SignInForm() {
       } else {
         appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
-    } catch (error) {
-      appLogger.error('Form submission error', { error: String(error) });
+    } catch (formError) {
+      appLogger.error('Form submission error', { error: String(formError) });
       // Non-fatal; continue without reCAPTCHA token
     }
     

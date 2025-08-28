@@ -208,7 +208,6 @@ function StoresPageContent() {
     activeFilters,
     hasActiveFilters,
     setFilter,
-    toggleFilter,
     clearFilter,
     clearAllFilters
   } = useAdvancedFilters();
@@ -300,13 +299,9 @@ function StoresPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
-    toggleFilter(filterType);
-  }, [toggleFilter]);
 
-  const handleClearAllFilters = useCallback(() => {
-    clearAllFilters();
-  }, [clearAllFilters]);
+
+
 
   // Handle search functionality
   const handleSearch = useCallback((query: string) => {
@@ -369,11 +364,7 @@ function StoresPageContent() {
     }
   };
 
-  // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
-    // Use the context's requestLocation
-    requestLocation();
-  };
+
 
   // Handle location changes and update filters
   useEffect(() => {

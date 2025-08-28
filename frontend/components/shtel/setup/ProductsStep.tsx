@@ -44,11 +44,7 @@ export default function ProductsStep({
   storeData,
   updateStoreData,
   onNext,
-  onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onPrev
 }: ProductsStepProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -62,7 +58,7 @@ export default function ProductsStep({
   });
 
   const handleAddProduct = () => {
-    if (currentProduct.name && currentProduct.description && currentProduct.price > 0) {
+    if (currentProduct.name && currentProduct.description && (currentProduct.price ?? 0) > 0) {
       const newProducts = [...storeData.products, currentProduct as Product];
       updateStoreData({ products: newProducts });
       setCurrentProduct({
@@ -84,7 +80,7 @@ export default function ProductsStep({
   };
 
   const handleUpdateProduct = () => {
-    if (editingIndex !== null && currentProduct.name && currentProduct.description && currentProduct.price > 0) {
+    if (editingIndex !== null && currentProduct.name && currentProduct.description && (currentProduct.price ?? 0) > 0) {
       const newProducts = [...storeData.products];
       newProducts[editingIndex] = currentProduct as Product;
       updateStoreData({ products: newProducts });
@@ -290,7 +286,7 @@ export default function ProductsStep({
             </button>
             <button
               onClick={editingIndex !== null ? handleUpdateProduct : handleAddProduct}
-              disabled={!currentProduct.name || !currentProduct.description || currentProduct.price <= 0}
+              disabled={!currentProduct.name || !currentProduct.description || (currentProduct.price ?? 0) <= 0}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingIndex !== null ? 'Update Product' : 'Add Product'}

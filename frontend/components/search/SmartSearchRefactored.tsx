@@ -3,7 +3,7 @@
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { searchGooglePlaces } from '@/lib/google/places';
+
 import { useSearchInput, useSearchSuggestions, useRecentSearches } from '@/lib/hooks';
 import { SearchSuggestion } from '@/lib/hooks/useSearchSuggestions';
 

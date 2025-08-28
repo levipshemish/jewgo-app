@@ -14,7 +14,7 @@ interface MarketplaceHeaderProps {
   className?: string;
 }
 
-export default function MarketplaceHeader({ onSearch, className = "" }: MarketplaceHeaderProps) {
+export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) {
   const [user, setUser] = useState<TransformedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");

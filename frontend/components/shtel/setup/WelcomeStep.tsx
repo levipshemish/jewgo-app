@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Star, Store, Users, Award, CheckCircle } from 'lucide-react';
+import { Star, Award, CheckCircle } from 'lucide-react';
 
 interface StoreSetupData {
   storeType: string;
@@ -123,10 +123,7 @@ export default function WelcomeStep({
   updateStoreData,
   onNext,
   onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  currentStep
 }: WelcomeStepProps) {
   const handleStoreTypeSelect = (storeType: string) => {
     updateStoreData({ storeType });

@@ -238,7 +238,7 @@ export default function UnifiedLiveMapClient() {
         try {
           localStorage.setItem('restaurants_cache', JSON.stringify(validRestaurants));
           localStorage.setItem('restaurants_cache_timestamp', Date.now().toString());
-        } catch (cacheError) {
+        } catch (_cacheError) {
           // Cache storage failed, continue anyway
         }
 
@@ -269,8 +269,8 @@ export default function UnifiedLiveMapClient() {
         setDisplayedRestaurants([]);
         setLoadingStage('complete');
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+    } catch (fetchError) {
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         return;
       }
       
@@ -291,7 +291,7 @@ export default function UnifiedLiveMapClient() {
           setLoadingProgress(100);
           setLoadingStage('complete');
           return;
-        } catch (parseError) {
+        } catch (_parseError) {
           // Cache is corrupted
         }
       }

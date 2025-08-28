@@ -31,7 +31,7 @@ interface ReviewDatabaseClientProps {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  initialSearch: string;
+
   initialSortBy: string;
   initialSortOrder: 'asc' | 'desc';
 }
@@ -39,9 +39,6 @@ interface ReviewDatabaseClientProps {
 export default function ReviewDatabaseClient({
   initialData,
   initialPagination,
-  initialSearch,
-  initialSortBy,
-  initialSortOrder,
 }: ReviewDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

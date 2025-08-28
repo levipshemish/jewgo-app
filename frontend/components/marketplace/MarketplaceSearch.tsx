@@ -1,7 +1,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface MarketplaceSearchProps {
   onSearch: (query: string) => void;

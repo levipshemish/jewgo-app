@@ -1,6 +1,7 @@
 'use client';
 
 /// <reference types="@types/google.maps" />
+import React from 'react';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 
 import { loadMaps } from '@/lib/maps/loader';
@@ -241,7 +242,8 @@ export function InteractiveRestaurantMap({
     if (directionsRendererRef.current) {
       directionsRendererRef.current.setDirections({ 
         routes: [],
-        geocoded_waypoints: []
+        geocoded_waypoints: [],
+        request: {} as google.maps.DirectionsRequest
       });
     }
   }, []);
