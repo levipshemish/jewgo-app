@@ -7,10 +7,10 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { params } = await context;
+    const resolvedParams = await params;
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,7 +22,7 @@ export async function DELETE(
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const id = Number(params.id);
+    const id = Number(resolvedParams.id);
     if (!Number.isInteger(id)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
