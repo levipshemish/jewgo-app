@@ -59,19 +59,12 @@ export default function CustomizeStep({
   storeData,
   updateStoreData,
   onNext,
-  onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onPrev
 }: CustomizeStepProps) {
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setLogoFile(file);
       // In a real implementation, you'd upload to a service and get a URL
       updateStoreData({ logo: URL.createObjectURL(file) });
     }
@@ -80,7 +73,6 @@ export default function CustomizeStep({
   const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setBannerFile(file);
       // In a real implementation, you'd upload to a service and get a URL
       updateStoreData({ banner: URL.createObjectURL(file) });
     }
@@ -94,7 +86,7 @@ export default function CustomizeStep({
     updateStoreData({ [field]: value });
   };
 
-  const canProceed = true; // This step is optional
+
 
   return (
     <div className="space-y-8">

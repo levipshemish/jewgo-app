@@ -64,11 +64,7 @@ export default function StoreInfoStep({
   storeData,
   updateStoreData,
   onNext,
-  onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onPrev
 }: WelcomeStepProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 

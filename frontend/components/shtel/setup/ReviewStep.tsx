@@ -61,13 +61,9 @@ const STORE_TYPE_NAMES = {
 
 export default function ReviewStep({
   storeData,
-  updateStoreData,
-  onNext,
   onPrev,
   isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onSubmit
 }: ReviewStepProps) {
   const completionPercentage = 100; // All steps completed
 

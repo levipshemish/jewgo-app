@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useRovingFocus } from '@/hooks/useRovingFocus';
 import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
-import { CategoryNavProps, CategoryNavItem } from './CategoryNav.types';
+import { CategoryNavProps } from './CategoryNav.types';
 import styles from './CategoryNav.module.css';
 
 // Manual scroll fallback utility for older Safari

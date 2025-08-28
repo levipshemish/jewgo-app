@@ -44,11 +44,7 @@ export default function ProductsStep({
   storeData,
   updateStoreData,
   onNext,
-  onPrev,
-  isSubmitting,
-  onSubmit,
-  currentStep,
-  totalSteps
+  onPrev
 }: ProductsStepProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
