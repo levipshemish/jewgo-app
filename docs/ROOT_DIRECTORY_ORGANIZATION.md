@@ -12,7 +12,7 @@ The JewGo project root directory has been organized for better maintainability a
 ├── frontend/           # Next.js frontend application
 ├── backend/           # Python Flask backend application
 ├── scripts/           # Utility and maintenance scripts
-├── monitoring/        # Health checks and monitoring tools
+# monitoring/ directory removed (was empty)
 ├── data/              # Data files and datasets
 └── docs/              # Project documentation (organized)
 ```

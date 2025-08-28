@@ -58,7 +58,7 @@ All notable changes to the JewGo project will be documented in this file.
   - Enhanced security for sensitive admin operations
 
 ### Documentation
-- **Architectural Improvements Documentation** (`backend_architectural_improvements.md`)
+- **Architectural Improvements Documentation** (`docs/archive/backend_architectural_improvements.md`)
   - Comprehensive documentation of architectural changes
   - Impact assessment and risk mitigation strategies
   - Future improvement roadmap

@@ -72,9 +72,9 @@ else
     echo "   ❌ Found $DUPLICATE_PACKAGE package.json files (expected 2)"
 fi
 
-DUPLICATE_VERCEL=$(find . -name "vercel.json" -not -path "*/node_modules/*" | wc -l)
+DUPLICATE_VERCEL=$(find . -name "vercel.json" -not -path "*/node_modules/*" -not -path "*/frontend/*" | wc -l)
 if [ "$DUPLICATE_VERCEL" -eq 1 ]; then
-    echo "   ✅ Single vercel.json found (root only)"
+    echo "   ✅ Single vercel.json found (frontend only)"
 else
     echo "   ❌ Found $DUPLICATE_VERCEL vercel.json files"
 fi

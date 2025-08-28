@@ -16,11 +16,11 @@ jewgo-app/
 ├── backend/                # Python Flask backend API
 ├── ci-scripts/             # Scripts for Continuous Integration (CI) checks
 ├── config/                 # Project-wide configuration files (Docker, etc.)
-├── data/                   # CSV and JSON data files
-├── deployment/             # Deployment-related configurations (Procfile, etc.)
+├── backend/data/           # CSV and JSON data files
+├── backend/deployment/     # Deployment-related configurations (Procfile, etc.)
 ├── docs/                   # Project documentation
 ├── frontend/               # Next.js and React frontend application
-├── monitoring/             # Monitoring and health check configurations
+# monitoring/ directory removed (was empty)
 ├── node_modules/           # Node.js dependencies (managed by npm)
 ├── scripts/                # General utility and automation scripts
 ├── supabase/               # Supabase-specific configurations
@@ -348,7 +348,7 @@ deployment/
 ## 📊 **Data Structure**
 
 ```
-data/
+backend/data/
 ├── florida_shuls_full_20250807_171818.csv
 ├── kosher_miami_establishments.csv
 └── kosher_miami_establishments.json
@@ -391,7 +391,7 @@ scripts/
 
 ### **Deployment Files**
 - `backend/Dockerfile` - Production Docker image
-- `deployment/Procfile` - Render deployment configuration
+- `backend/deployment/Procfile` - Render deployment configuration
 - `config/docker/` - Docker Compose configurations
 
 ## 🔒 **Security and Access Control**

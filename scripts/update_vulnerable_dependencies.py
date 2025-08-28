@@ -276,7 +276,7 @@ def main():
     report = scanner.generate_report(results)
     
     # Save report
-    report_path = Path(project_root) / "dependency_security_report.md"
+    report_path = Path(project_root) / "docs" / "dependency_security_report.md"
     with open(report_path, "w") as f:
         f.write(report)
     

@@ -47,7 +47,7 @@
 - ✅ `frontend/utils/SafeHtml.tsx` - Safe HTML rendering component
 
 ### 3. **Security Reports**
-- ✅ `dependency_security_report.md` - Current vulnerability scan results
+- ✅ `docs/dependency_security_report.md` - Current vulnerability scan results
 
 ---
 
@@ -121,7 +121,7 @@
 
 - **Security Tickets**: `docs/SECURITY_TICKETS.md`
 - **Current Tasks**: `TASKS.md`
-- **Dependency Report**: `dependency_security_report.md`
+- **Dependency Report**: `docs/dependency_security_report.md`
 - **GitHub Actions**: Run #17305720784
 
 ---

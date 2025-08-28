@@ -95,8 +95,8 @@ deploy_frontend() {
     cd frontend
     
     # Check if vercel.json exists
-    if [ ! -f "vercel.json" ]; then
-        print_error "vercel.json not found"
+if [ ! -f "frontend/vercel.json" ]; then
+    print_error "frontend/vercel.json not found"
         exit 1
     fi
     

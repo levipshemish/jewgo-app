@@ -64,7 +64,7 @@
     - [ ] Add build continuation on non-critical errors
     - [ ] Improve error reporting for build issues
   - [ ] **Vercel Deployment Issues** - Fix deployment configuration
-    - [ ] Review and update `vercel.json` configuration
+    - [ ] Review and update `frontend/vercel.json` configuration
     - [ ] Ensure proper environment variable handling in deployment
     - [ ] Add build-time environment variable validation
   - [ ] **CI Workflow Updates** - Update `.github/workflows/ci.yml`

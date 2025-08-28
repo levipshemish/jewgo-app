@@ -98,7 +98,7 @@ python app.py
 ### **Step 3: Database Verification**
 ```bash
 # Run database verification
-python test_enhanced_add_eatery.py
+python backend/tests/test_enhanced_add_eatery.py
 ```
 
 **Checklist**:
@@ -256,7 +256,7 @@ NEXT_PUBLIC_BACKEND_URL=https://your-backend-url.com
 - Database Migration: `backend/database/migrations/enhance_add_eatery_workflow.py`
 
 ### **Testing**
-- Test Script: `backend/test_enhanced_add_eatery.py`
+- Test Script: `backend/tests/test_enhanced_add_eatery.py`
 - Manual Testing: Form validation, image upload, admin workflow
 - Performance Testing: Load testing, mobile testing
 
