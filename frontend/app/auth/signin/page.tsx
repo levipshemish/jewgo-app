@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import { useEffect, useState, Suspense, useCallback, useActionState } from "react";
 import Script from "next/script";
