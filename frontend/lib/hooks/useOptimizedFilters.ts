@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 import { FilterState, FilterValue } from '@/lib/filters/filters.types';
@@ -160,10 +161,10 @@ export const useOptimizedFilters = (
 ): UseOptimizedFiltersReturn => {
   const {
     debounceMs = 300,
-    enableMemoization = true,
-    enableServerSideFiltering = false,
-    maxClientSideItems = 1000,
-    enableDraftMode = true // Default to draft mode for better UX
+    _enableMemoization = true,
+    _enableServerSideFiltering = false,
+    _maxClientSideItems = 1000,
+    _enableDraftMode = true // Default to draft mode for better UX
   } = options;
 
   const [activeFilters, setActiveFilters] = useState<FilterState>(initialFilters);

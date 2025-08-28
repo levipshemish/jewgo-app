@@ -114,8 +114,8 @@ export default function AdminRestaurantsPage() {
       }
       
       return res.ok;
-    } catch (error) {
-      console.error('Approve error:', error);
+    } catch (approveError) {
+      console.error('Approve error:', approveError);
       return false;
     }
   };
@@ -142,8 +142,8 @@ export default function AdminRestaurantsPage() {
       }
       
       return res.ok;
-    } catch (error) {
-      console.error('Reject error:', error);
+    } catch (rejectError) {
+      console.error('Reject error:', rejectError);
       return false;
     }
   };
@@ -176,8 +176,8 @@ export default function AdminRestaurantsPage() {
       }
       
       await fetchData(); // Refresh data
-    } catch (error) {
-      console.error('Bulk action error:', error);
+    } catch (bulkError) {
+      console.error('Bulk action error:', bulkError);
       showError(`Failed to ${action} restaurants`);
     } finally {
       setLoading(false);

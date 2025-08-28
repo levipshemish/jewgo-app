@@ -241,7 +241,7 @@ function SignInForm() {
       }
       
       setMagicStatus('Check your email for a sign-in link.');
-    } catch (err) {
+    } catch {
       setMagicStatus('Failed to send magic link.');
       // Reset cooldown on errors
       setMagicLinkCooldown(0);

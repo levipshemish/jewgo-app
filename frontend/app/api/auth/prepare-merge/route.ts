@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const origin = request.headers.get('origin');
+    const requestOrigin = request.headers.get('origin');
     const referer = request.headers.get('referer');
     const csrfToken = request.headers.get('x-csrf-token');
     const forwardedFor = request.headers.get('x-forwarded-for');
@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
     const ipHash = hashIPForPrivacy(validatedIP);
     
     // Comprehensive CSRF validation with signed token fallback
-    if (!validateCSRFServer(origin, referer, ALLOWED_ORIGINS, csrfToken)) {
+    if (!validateCSRFServer(requestOrigin, referer, ALLOWED_ORIGINS, csrfToken)) {
       console.error(`CSRF validation failed for correlation ID: ${correlationId}`, {
-        origin,
+        origin: requestOrigin,
         referer,
         ipHash,
         correlationId,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         { error: 'CSRF' },
         { 
           status: 403,
-          headers: getCORSHeaders(origin || undefined)
+          headers: getCORSHeaders(requestOrigin || undefined)
         }
       );
     }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         },
         { 
           status: 429,
-          headers: getCORSHeaders(origin || undefined)
+          headers: getCORSHeaders(requestOrigin || undefined)
         }
       );
     }
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         { error: 'AUTHENTICATION_ERROR' },
         { 
           status: 401,
-          headers: getCORSHeaders(origin || undefined)
+          headers: getCORSHeaders(requestOrigin || undefined)
         }
       );
     }
