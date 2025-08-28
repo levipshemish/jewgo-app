@@ -11,7 +11,7 @@ export async function GET(
     }
 
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-    const response = await fetch(`${backendUrl}/api/restaurants/${restaurantId}/hours`, {
+    const response = await fetch(`${backendUrl}/api/v4/restaurants/${restaurantId}/hours`, {
       headers: {
         'Content-Type': 'application/json',
       },

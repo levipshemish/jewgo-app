@@ -6,8 +6,8 @@ The JewGo API provides a comprehensive REST API for managing kosher restaurants,
 
 ## Base URL
 
-- **Development**: `http://localhost:5000`
-- **Production**: `https://your-domain.com`
+- **Development**: `http://localhost:8082`
+- **Production**: `https://jewgo-app-oyoh.onrender.com`
 
 ## Authentication
 
@@ -169,7 +169,7 @@ Submit a new restaurant for review.
 }
 ```
 
-#### GET `/api/restaurants/{id}`
+#### GET `/api/v4/restaurants/{id}`
 Get a specific restaurant by ID.
 
 **Response:**
@@ -192,7 +192,35 @@ Get a specific restaurant by ID.
 }
 ```
 
-#### PUT `/api/restaurants/{id}`
+#### GET `/api/v4/restaurants/{id}/hours`
+Get restaurant operating hours.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "available",
+    "message": "Hours information available",
+    "is_open": false,
+    "today_hours": {},
+    "formatted_hours": [
+      "Monday: 11:00 AM – 9:00 PM",
+      "Tuesday: 11:00 AM – 9:00 PM",
+      "Wednesday: 11:00 AM – 9:00 PM",
+      "Thursday: 11:00 AM – 9:00 PM",
+      "Friday: 11:00 AM – 3:00 PM",
+      "Saturday: 9:00 PM – 12:00 AM",
+      "Sunday: 11:00 AM – 9:00 PM"
+    ],
+    "timezone": "America/New_York",
+    "last_updated": "2025-08-22T03:09:30.260000"
+  },
+  "message": "Restaurant hours retrieved successfully"
+}
+```
+
+#### PUT `/api/v4/restaurants/{id}`
 Update a restaurant.
 
 **Request Body:**
@@ -216,7 +244,7 @@ Update a restaurant.
 }
 ```
 
-#### DELETE `/api/restaurants/{id}`
+#### DELETE `/api/v4/restaurants/{id}`
 Delete a restaurant.
 
 **Response:**
@@ -232,7 +260,7 @@ Delete a restaurant.
 
 ### Enhanced Add Eatery Workflow Endpoints
 
-#### PUT `/api/restaurants/{id}/approve`
+#### PUT `/api/v4/restaurants/{id}/approve`
 Approve a restaurant submission (Admin only).
 
 **Request Body:**
@@ -260,7 +288,7 @@ Approve a restaurant submission (Admin only).
 }
 ```
 
-#### PUT `/api/restaurants/{id}/reject`
+#### PUT `/api/v4/restaurants/{id}/reject`
 Reject a restaurant submission (Admin only).
 
 **Request Body:**
@@ -311,7 +339,7 @@ Get filter options for restaurant forms and search.
 
 ### Filter Options
 ```http
-GET /api/restaurants/filter-options
+GET /api/v4/restaurants/filter-options
 ```
 
 **Response:**
@@ -326,6 +354,96 @@ GET /api/restaurants/filter-options
     "priceRanges": ["$", "$$", "$$$", "$$$$"],
     "kosherCategories": ["meat", "dairy", "pareve"]
   }
+}
+```
+
+### Reviews
+
+#### GET `/api/v4/reviews`
+Get reviews with optional filtering.
+
+**Query Parameters:**
+- `restaurantId` (integer): Filter by restaurant ID
+- `status` (string): Filter by review status (default: "approved")
+- `limit` (integer): Number of results (default: 10)
+- `offset` (integer): Number of results to skip (default: 0)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "reviews": [
+      {
+        "id": "1",
+        "restaurant_id": 1473,
+        "user_id": "user123",
+        "user_name": "John Doe",
+        "user_email": "john@example.com",
+        "rating": 5,
+        "title": "Great kosher food!",
+        "content": "Amazing experience, highly recommend.",
+        "images": [],
+        "status": "approved",
+        "created_at": "2025-08-28T06:00:00Z",
+        "updated_at": "2025-08-28T06:00:00Z",
+        "helpful_count": 3,
+        "report_count": 0,
+        "verified_purchase": false
+      }
+    ],
+    "pagination": {
+      "total": 1,
+      "limit": 10,
+      "offset": 0,
+      "hasMore": false
+    }
+  },
+  "message": "Success"
+}
+```
+
+#### POST `/api/v4/reviews`
+Create a new review.
+
+**Request Body:**
+```json
+{
+  "restaurantId": 1473,
+  "rating": 5,
+  "title": "Great kosher food!",
+  "content": "Amazing experience, highly recommend.",
+  "images": [],
+  "userId": "user123",
+  "userName": "John Doe",
+  "userEmail": "john@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "review": {
+      "id": "2",
+      "restaurant_id": 1473,
+      "user_id": "user123",
+      "user_name": "John Doe",
+      "user_email": "john@example.com",
+      "rating": 5,
+      "title": "Great kosher food!",
+      "content": "Amazing experience, highly recommend.",
+      "images": [],
+      "status": "pending",
+      "created_at": "2025-08-28T06:00:00Z",
+      "helpful_count": 0,
+      "report_count": 0,
+      "verified_purchase": false
+    },
+    "id": "2"
+  },
+  "message": "Review created successfully"
 }
 ```
 
@@ -371,6 +489,232 @@ GET /api/kosher-types
   }
 }
 ```
+
+### Reviews
+
+#### GET `/api/v4/reviews`
+Get reviews with optional filtering and pagination.
+
+**Query Parameters:**
+- `restaurantId` (integer): Filter by restaurant ID
+- `status` (string): Filter by review status (pending, approved, rejected, flagged) - default: approved
+- `limit` (integer): Number of reviews to return (default: 10, max: 100)
+- `offset` (integer): Number of reviews to skip (default: 0)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "reviews": [
+      {
+        "id": "1",
+        "restaurant_id": 1,
+        "user_id": "user123",
+        "user_name": "John Doe",
+        "user_email": "john@example.com",
+        "rating": 5,
+        "title": "Excellent kosher food!",
+        "content": "Amazing experience, highly recommend this restaurant.",
+        "images": ["https://example.com/image1.jpg"],
+        "status": "approved",
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "helpful_count": 3,
+        "report_count": 0,
+        "verified_purchase": true,
+        "moderator_notes": null
+      }
+    ],
+    "pagination": {
+      "total": 1,
+      "limit": 10,
+      "offset": 0,
+      "hasMore": false
+    }
+  },
+  "message": "Success"
+}
+```
+
+#### POST `/api/v4/reviews`
+Create a new review.
+
+**Request Body:**
+```json
+{
+  "restaurantId": 1,
+  "rating": 5,
+  "title": "Great kosher food!",
+  "content": "Amazing experience, highly recommend.",
+  "images": ["https://example.com/image1.jpg"],
+  "userId": "user123",
+  "userName": "John Doe",
+  "userEmail": "john@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "review": {
+      "id": "2",
+      "restaurant_id": 1,
+      "user_id": "user123",
+      "user_name": "John Doe",
+      "user_email": "john@example.com",
+      "rating": 5,
+      "title": "Great kosher food!",
+      "content": "Amazing experience, highly recommend.",
+      "images": ["https://example.com/image1.jpg"],
+      "status": "pending",
+      "created_at": "2024-01-01T12:00:00Z",
+      "helpful_count": 0,
+      "report_count": 0,
+      "verified_purchase": false
+    },
+    "id": "2"
+  },
+  "message": "Review created successfully"
+}
+```
+
+#### GET `/api/v4/reviews/{review_id}`
+Get a specific review by ID.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "review": {
+      "id": "1",
+      "restaurant_id": 1,
+      "user_id": "user123",
+      "user_name": "John Doe",
+      "user_email": "john@example.com",
+      "rating": 5,
+      "title": "Excellent kosher food!",
+      "content": "Amazing experience, highly recommend this restaurant.",
+      "images": ["https://example.com/image1.jpg"],
+      "status": "approved",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z",
+      "helpful_count": 3,
+      "report_count": 0,
+      "verified_purchase": true,
+      "moderator_notes": null
+    }
+  }
+}
+```
+
+#### PUT `/api/v4/reviews/{review_id}`
+Update an existing review.
+
+**Request Body:**
+```json
+{
+  "rating": 4,
+  "title": "Updated title",
+  "content": "Updated review content",
+  "images": ["https://example.com/new-image.jpg"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "review": {
+      "id": "1",
+      "restaurant_id": 1,
+      "user_id": "user123",
+      "user_name": "John Doe",
+      "user_email": "john@example.com",
+      "rating": 4,
+      "title": "Updated title",
+      "content": "Updated review content",
+      "images": ["https://example.com/new-image.jpg"],
+      "status": "approved",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T13:00:00Z",
+      "helpful_count": 3,
+      "report_count": 0,
+      "verified_purchase": true,
+      "moderator_notes": null
+    }
+  },
+  "message": "Review updated successfully"
+}
+```
+
+#### DELETE `/api/v4/reviews/{review_id}`
+Delete a review.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Review deleted successfully",
+  "data": {
+    "review_id": "1"
+  }
+}
+```
+
+### User Reviews (Authenticated)
+
+#### GET `/api/user/reviews`
+Get current user's reviews (requires authentication).
+
+**Query Parameters:**
+- `limit` (integer): Number of reviews to return (default: 20, max: 100)
+- `offset` (integer): Number of reviews to skip (default: 0)
+
+**Response:**
+```json
+{
+  "user_id": "user123",
+  "reviews": [
+    {
+      "id": "1",
+      "restaurant_id": 1,
+      "restaurant_name": "Kosher Restaurant",
+      "rating": 5,
+      "title": "Great food!",
+      "content": "Amazing experience",
+      "status": "approved",
+      "created_at": "2024-01-01T12:00:00Z"
+    }
+  ],
+  "total": 1,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+#### POST `/api/user/reviews/{restaurant_id}`
+Create a review for a specific restaurant (requires authentication).
+
+**Request Body:**
+```json
+{
+  "rating": 5,
+  "title": "Great kosher food!",
+  "content": "Amazing experience, highly recommend.",
+  "images": ["https://example.com/image1.jpg"]
+}
+```
+
+#### PUT `/api/user/reviews/{review_id}`
+Update user's own review (requires authentication).
+
+#### DELETE `/api/user/reviews/{review_id}`
+Delete user's own review (requires authentication).
 
 ## 🔍 Frontend API Routes
 

@@ -6,8 +6,8 @@ This guide documents the RESTful API endpoints for the JewGo application, includ
 
 ## 🔗 Base URLs
 
-- **Production**: `https://jewgo.onrender.com`
-- **Development**: `http://localhost:5000`
+- **Production**: `https://jewgo-app-oyoh.onrender.com`
+- **Development**: `http://localhost:8082`
 
 ## 🔐 Authentication
 
@@ -274,6 +274,93 @@ GET /api/kosher-types
   "pas_yisroel": 22
 }
 ```
+
+### Reviews
+
+#### GET `/api/v4/reviews`
+Get reviews with optional filtering and pagination.
+
+**Query Parameters:**
+- `restaurantId` (integer): Filter by restaurant ID
+- `status` (string): Filter by review status (pending, approved, rejected, flagged) - default: approved
+- `limit` (integer): Number of reviews to return (default: 10, max: 100)
+- `offset` (integer): Number of reviews to skip (default: 0)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "reviews": [
+      {
+        "id": "1",
+        "restaurant_id": 1,
+        "user_id": "user123",
+        "user_name": "John Doe",
+        "user_email": "john@example.com",
+        "rating": 5,
+        "title": "Excellent kosher food!",
+        "content": "Amazing experience, highly recommend this restaurant.",
+        "images": ["https://example.com/image1.jpg"],
+        "status": "approved",
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "helpful_count": 3,
+        "report_count": 0,
+        "verified_purchase": true,
+        "moderator_notes": null
+      }
+    ],
+    "pagination": {
+      "total": 1,
+      "limit": 10,
+      "offset": 0,
+      "hasMore": false
+    }
+  },
+  "message": "Success"
+}
+```
+
+#### POST `/api/v4/reviews`
+Create a new review.
+
+**Request Body:**
+```json
+{
+  "restaurantId": 1,
+  "rating": 5,
+  "title": "Great kosher food!",
+  "content": "Amazing experience, highly recommend.",
+  "images": ["https://example.com/image1.jpg"],
+  "userId": "user123",
+  "userName": "John Doe",
+  "userEmail": "john@example.com"
+}
+```
+
+#### GET `/api/v4/reviews/{review_id}`
+Get a specific review by ID.
+
+#### PUT `/api/v4/reviews/{review_id}`
+Update an existing review.
+
+#### DELETE `/api/v4/reviews/{review_id}`
+Delete a review.
+
+### User Reviews (Authenticated)
+
+#### GET `/api/user/reviews`
+Get current user's reviews (requires authentication).
+
+#### POST `/api/user/reviews/{restaurant_id}`
+Create a review for a specific restaurant (requires authentication).
+
+#### PUT `/api/user/reviews/{review_id}`
+Update user's own review (requires authentication).
+
+#### DELETE `/api/user/reviews/{review_id}`
+Delete user's own review (requires authentication).
 
 ## 🔍 Frontend API Routes
 

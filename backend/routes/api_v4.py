@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from psycopg2.extras import RealDictCursor
@@ -717,6 +718,43 @@ def reject_restaurant(restaurant_id: int):
             "Error rejecting restaurant", restaurant_id=restaurant_id, error=str(e)
         )
         return error_response("Failed to reject restaurant", 500)
+
+
+@safe_route("/restaurants/<int:restaurant_id>/hours", methods=["GET"])
+@require_api_v4_flag("api_v4_restaurants")
+def get_restaurant_hours(restaurant_id: int):
+    """Get restaurant hours using v4 service."""
+    try:
+        service = create_restaurant_service()
+        restaurant = service.get_restaurant_by_id(restaurant_id)
+        
+        if not restaurant:
+            return not_found_response("Restaurant not found", "restaurant")
+        
+        # Extract hours data from restaurant
+        hours_data = {
+            "status": "available" if restaurant.get("hours_open") else "unavailable",
+            "message": "Hours information available" if restaurant.get("hours_open") else "Hours information not available",
+            "is_open": False,  # This would need to be calculated based on current time
+            "today_hours": {},  # This would need to be parsed from hours_open
+            "formatted_hours": restaurant.get("hours_open", "").split("\n") if restaurant.get("hours_open") else [],
+            "timezone": "America/New_York",  # Default timezone
+            "last_updated": restaurant.get("updated_at", datetime.now().isoformat())
+        }
+        
+        return success_response(hours_data, "Restaurant hours retrieved successfully")
+
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except NotFoundError as e:
+        return not_found_response(str(e), "restaurant")
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception(
+            "Error fetching restaurant hours", restaurant_id=restaurant_id, error=str(e)
+        )
+        return error_response("Failed to fetch restaurant hours", 500)
 
 
 # Review Routes

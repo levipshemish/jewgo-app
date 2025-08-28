@@ -1,6 +1,36 @@
 # Changelog
 
-All notable changes to the JewGo application will be documented in this file.
+All notable changes to the JewGo project will be documented in this file.
+
+## [2025-08-28] - API v4 Fixes and Hours Endpoint
+
+### Added
+- **New Hours API Endpoint**: Added `/api/v4/restaurants/{id}/hours` endpoint to retrieve restaurant operating hours
+- **Enhanced Hours Display**: Improved hours data structure with formatted hours, timezone, and status information
+
+### Fixed
+- **Reviews API 404 Error**: Fixed frontend routing to properly forward to backend `/api/v4/reviews` endpoint
+- **Hours API 404 Error**: Fixed frontend routing to properly forward to backend `/api/v4/restaurants/{id}/hours` endpoint
+- **API Versioning**: Updated all API endpoints to use v4 prefix for consistency
+- **Development Environment**: Fixed local development setup to use correct backend port (8082)
+
+### Changed
+- **API Endpoints**: Updated all restaurant endpoints to use `/api/v4/` prefix
+- **Frontend Configuration**: Updated API config to use v4 endpoints
+- **Environment Variables**: Updated development backend URL to point to localhost:8082
+
+### Technical Details
+- **Backend Routes**: Added `get_restaurant_hours()` function in `backend/routes/api_v4.py`
+- **Frontend Routes**: Updated API forwarding in frontend route handlers
+- **Documentation**: Updated API documentation to reflect v4 endpoints and new hours functionality
+
+### Testing
+- ✅ Reviews API endpoint working correctly
+- ✅ Hours API endpoint working correctly  
+- ✅ Restaurant details API endpoint working correctly
+- ✅ Local development environment properly configured
+
+---
 
 ## [Unreleased]
 

@@ -21,72 +21,34 @@ export interface Review {
 
 // Mock reviews data for development (unused but kept for reference)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _mockReviews: Review[] = [
-  {
-    id: '1',
-    restaurant_id: 1,
-    user_id: 'user1@example.com',
-    user_name: 'Sarah Cohen',
-    user_email: 'user1@example.com',
-    rating: 5,
-    title: 'Excellent kosher dining experience!',
-    content: 'The food was absolutely delicious and the service was outstanding. Everything was fresh and the kosher standards were clearly maintained. Highly recommend the pastrami sandwich and the matzo ball soup.',
-    images: [],
-    status: 'approved',
-    created_at: '2024-01-15T10:30:00Z',
-    helpful_count: 8,
-    report_count: 0,
-    verified_purchase: true
-  },
-  {
-    id: '2',
-    restaurant_id: 1,
-    user_id: 'user2@example.com',
-    user_name: 'David Goldberg',
-    user_email: 'user2@example.com',
-    rating: 4,
-    title: 'Great food, long wait',
-    content: 'The quality of food is really good and everything tastes fresh. The portions are generous. Only downside was the 45-minute wait even with a reservation.',
-    images: [],
-    status: 'approved',
-    created_at: '2024-01-12T18:45:00Z',
-    helpful_count: 5,
-    report_count: 0,
-    verified_purchase: true
-  },
-  {
-    id: '3',
-    restaurant_id: 1,
-    user_id: 'user3@example.com',
-    user_name: 'Rachel Miller',
-    user_email: 'user3@example.com',
-    rating: 5,
-    title: 'Perfect for Shabbat dinner',
-    content: 'Brought my family here for Shabbat dinner and it was perfect. The atmosphere is warm and welcoming, and the challah was the best I\'ve had outside of home.',
-    images: [],
-    status: 'approved',
-    created_at: '2024-01-10T16:20:00Z',
-    helpful_count: 12,
-    report_count: 0,
-    verified_purchase: true
-  },
-  {
-    id: '4',
-    restaurant_id: 2,
-    user_id: 'user4@example.com',
-    user_name: 'Michael Rosen',
-    user_email: 'user4@example.com',
-    rating: 3,
-    title: 'Decent but pricey',
-    content: 'The food is good quality but quite expensive for what you get. Service was friendly though and the location is convenient.',
-    images: [],
-    status: 'approved',
-    created_at: '2024-01-08T14:15:00Z',
-    helpful_count: 3,
-    report_count: 0,
-    verified_purchase: false
-  }
-];
+// const _mockReviews: Review[] = [
+//   {
+//     id: '1',
+//     restaurant_id: 1,
+//     user_id: 'user1',
+//     user_name: 'John Doe',
+//     rating: 5,
+//     title: 'Great kosher food!',
+//     content: 'Amazing experience, highly recommend.',
+//     status: 'approved',
+//     helpful_count: 3,
+//     created_at: new Date().toISOString(),
+//     updated_at: new Date().toISOString(),
+//   },
+//   {
+//     id: '2',
+//     restaurant_id: 1,
+//     user_id: 'user2',
+//     user_name: 'Jane Smith',
+//     rating: 4,
+//     title: 'Good food, friendly staff',
+//     content: 'Nice atmosphere and good service.',
+//     status: 'approved',
+//     helpful_count: 1,
+//     created_at: new Date().toISOString(),
+//     updated_at: new Date().toISOString(),
+//   },
+// ];
 
 export async function GET(request: NextRequest) {
   try {
@@ -97,7 +59,7 @@ export async function GET(request: NextRequest) {
     
     // Forward the request to the backend with all query parameters
     const queryParams = new URLSearchParams(searchParams);
-    const apiUrl = `${backendUrl}/api/reviews?${queryParams.toString()}`;
+    const apiUrl = `${backendUrl}/api/v4/reviews?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -157,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // Forward review creation to backend API to persist in DB
     const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
-    const apiUrl = `${backendUrl}/api/reviews`;
+    const apiUrl = `${backendUrl}/api/v4/reviews`;
 
     const forwardPayload = {
       restaurantId,

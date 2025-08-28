@@ -32,10 +32,10 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD_CONFIRM: '/api/auth/reset-password/confirm',
   
   // Backend API endpoints (these will be proxied to Render backend)
-  RESTAURANTS: '/api/restaurants',
-  RESTAURANT_DETAILS: (id: string) => `/api/restaurants/${id}`,
-  REVIEWS: '/api/reviews',
-  STATISTICS: '/api/statistics',
+  RESTAURANTS: '/api/v4/restaurants',
+  RESTAURANT_DETAILS: (id: string) => `/api/v4/restaurants/${id}`,
+  REVIEWS: '/api/v4/reviews',
+  STATISTICS: '/api/v4/statistics',
 }
 
 // Helper function to make API calls
