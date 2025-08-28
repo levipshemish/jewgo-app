@@ -12,36 +12,21 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_VIEW)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Get query parameters
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSizeRaw = parseInt(searchParams.get('pageSize') || '20');
-    const pageSize = Math.min(Math.max(pageSizeRaw, 1), 100);
-    const search = searchParams.get('search') || undefined;
+    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const search = searchParams.get('search') || '';
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-    const status = searchParams.get('status') || undefined;
-    const rating = searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined;
-    const restaurantId = searchParams.get('restaurantId') ? parseInt(searchParams.get('restaurantId')!) : undefined;
 
-    // Build filters
-    const filters: any = {};
-    if (status) {filters.status = status;}
-    if (rating) {filters.rating = rating;}
-    if (restaurantId) {filters.restaurant_id = restaurantId;}
-
-    // Get paginated data with restaurant information
     const result = await AdminDatabaseService.getPaginatedData(
       prisma.review,
       'review',
@@ -49,27 +34,10 @@ export async function GET(request: NextRequest) {
         page,
         pageSize,
         search,
-        filters,
         sortBy,
         sortOrder,
-      },
-      {
-        restaurant: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            state: true,
-          },
-        },
       }
     );
-
-    // Log the action
-    await logAdminAction(adminUser, 'review_list_view', ENTITY_TYPES.REVIEW, {
-      metadata: { page, pageSize, search, filters },
-      whitelistFields: AUDIT_FIELD_ALLOWLISTS.REVIEW,
-    });
 
     return NextResponse.json(result);
   } catch (error) {

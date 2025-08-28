@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminUser = await requireAdmin(request);
@@ -21,7 +21,8 @@ export async function DELETE(
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     if (!id) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
