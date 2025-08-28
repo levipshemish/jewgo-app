@@ -346,7 +346,7 @@ Response:
       "name": "Restaurant Name",
       "submission_status": "approved",
       "approval_date": "2024-01-01T00:00:00Z",
-      "approved_by": "admin"
+      "approved_by": "admin_user_id"
     },
     "status": "approved"
   }
@@ -375,7 +375,7 @@ Response:
       "submission_status": "rejected",
       "rejection_reason": "Incomplete information provided",
       "approval_date": "2024-01-01T00:00:00Z",
-      "approved_by": "admin"
+      "approved_by": "admin_user_id"
     },
     "status": "rejected",
     "reason": "Incomplete information provided"

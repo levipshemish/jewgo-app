@@ -46,7 +46,7 @@ export const ENTITY_TYPES = {
 
 // Predefined audit field allowlists for common entities
 export const AUDIT_FIELD_ALLOWLISTS = {
-  RESTAURANT: ['id', 'name', 'city', 'state', 'status', 'submission_status', 'approval_date', 'rejection_reason'] as string[],
+  RESTAURANT: ['id', 'name', 'city', 'state', 'status', 'submission_status', 'approval_date', 'approved_by', 'rejection_reason'] as string[],
   REVIEW: ['id', 'restaurant_id', 'rating', 'title', 'status', 'moderator_notes'] as string[],
   USER: ['id', 'email', 'name', 'isSuperAdmin', 'createdAt', 'updatedAt'] as string[],
   SYSTEM: ['key', 'value', 'updatedAt'] as string[],

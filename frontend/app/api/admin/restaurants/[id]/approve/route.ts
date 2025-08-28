@@ -3,7 +3,7 @@ import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
 
 export async function POST(
@@ -66,7 +66,13 @@ export async function POST(
     await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_APPROVE, 'restaurant', {
       entityId: restaurantId.toString(),
       oldData: { submission_status: restaurant.submission_status, status: restaurant.status },
-      newData: { submission_status: 'approved', status: 'active', approval_date: new Date() },
+      newData: {
+        submission_status: 'approved',
+        status: 'active',
+        approval_date: new Date(),
+        approved_by: adminUser.id,
+      },
+      whitelistFields: AUDIT_FIELD_ALLOWLISTS.RESTAURANT,
     });
 
     return NextResponse.json({ 

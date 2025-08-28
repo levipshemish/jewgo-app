@@ -281,7 +281,7 @@ Approve a restaurant submission (Admin only).
       "name": "Restaurant Name",
       "submission_status": "approved",
       "approval_date": "2024-01-01T00:00:00Z",
-      "approved_by": "admin"
+      "approved_by": "admin_user_id"
     },
     "status": "approved"
   }
@@ -311,10 +311,50 @@ Reject a restaurant submission (Admin only).
       "submission_status": "rejected",
       "rejection_reason": "Incomplete information provided",
       "approval_date": "2024-01-01T00:00:00Z",
-      "approved_by": "admin"
+      "approved_by": "admin_user_id"
     },
     "status": "rejected",
-    "reason": "Incomplete information provided"
+  "reason": "Incomplete information provided"
+  }
+}
+```
+
+### Admin Moderation Endpoints
+
+#### POST `/api/admin/restaurants/{id}/approve`
+Approve a pending restaurant submission. Requires admin authentication and an `x-csrf-token` header.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant approved successfully",
+  "restaurant": {
+    "id": 1,
+    "name": "Restaurant Name",
+    "submission_status": "approved",
+    "approval_date": "2024-01-01T00:00:00Z",
+    "approved_by": "admin_user_id",
+    "status": "active"
+  }
+}
+```
+
+#### POST `/api/admin/restaurants/{id}/reject`
+Reject a restaurant submission with a JSON body `{ "reason": "string" }`. Requires admin authentication and an `x-csrf-token` header.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Restaurant rejected successfully",
+  "restaurant": {
+    "id": 1,
+    "name": "Restaurant Name",
+    "submission_status": "rejected",
+    "rejection_reason": "Incorrect information provided",
+    "approved_by": null,
+    "status": "inactive"
   }
 }
 ```
