@@ -25,14 +25,6 @@ import { appLogger } from '@/lib/utils/logger';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
-import { Metadata } from 'next';
-
-// Metadata for the eatery page
-export const metadata: Metadata = {
-  title: 'Kosher Restaurants - Jewgo',
-  description: 'Find the best kosher restaurants in your area. Filter by certification, dietary preferences, and more.',
-  keywords: 'kosher restaurants, Jewish dining, kosher food, kosher certification, Jewish restaurants',
-};
 
 // Loading component for Suspense fallback
 function EateryPageLoading() {
