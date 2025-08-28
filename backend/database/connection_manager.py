@@ -86,6 +86,11 @@ class DatabaseConnectionManager:
             msg = "DATABASE_URL environment variable is required"
             raise ValueError(msg)
 
+        # Fix database URL format if needed (postgres:// -> postgresql://)
+        if self.database_url.startswith("postgres://"):
+            self.database_url = self.database_url.replace("postgres://", "postgresql://")
+            logger.info("Fixed database URL format from postgres:// to postgresql://")
+
         # Initialize SQLAlchemy components
         self.engine = None
         self.SessionLocal = None

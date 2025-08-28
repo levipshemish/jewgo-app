@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { MapPin, X, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -16,10 +16,8 @@ export default function LocationPromptPopup({
   onSkip,
 }: LocationPromptPopupProps) {
   const { requestLocation, permissionStatus, isLoading, error } = useLocation();
-  const [hasRequested, setHasRequested] = useState(false);
 
   const handleRequestLocation = async () => {
-    setHasRequested(true);
     await requestLocation();
   };
 

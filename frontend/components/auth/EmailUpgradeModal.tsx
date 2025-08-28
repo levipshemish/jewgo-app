@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { emailUpgradeFlow, EmailUpgradeResult, MergeConflictResult } from '@/lib/auth/email-upgrade';
+import { emailUpgradeFlow, EmailUpgradeResult } from '@/lib/auth/email-upgrade';
 // import { writeGates } from '@/lib/auth/write-gates';
 
 interface EmailUpgradeModalProps {

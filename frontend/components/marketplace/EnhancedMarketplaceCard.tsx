@@ -10,8 +10,6 @@ import {
   formatPrice, 
   formatTimeAgo, 
   getListingTypeIcon, 
-  getListingTypeColor, 
-  getConditionColor,
   getHeroImage,
   cardStyles
 } from "@/lib/utils/cardUtils"

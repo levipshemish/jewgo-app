@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { LoadingButton } from '@/components/ui/LoadingStates';
-import { Loader2, UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { UserPlus, Shield, CheckCircle, XCircle } from 'lucide-react';
 
 export default function SuperAdminManager() {
   const [email, setEmail] = useState('');
@@ -35,7 +35,7 @@ export default function SuperAdminManager() {
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to promote user' });
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Network error occurred' });
     } finally {
       setIsLoading(false);

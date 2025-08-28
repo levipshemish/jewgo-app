@@ -17,8 +17,7 @@ import {
   getBusinessTypeIcon, 
   getBusinessTypeColor,
   parseReviewSnippets,
-  getAverageRating,
-  formatReviewCount
+  getAverageRating
 } from '@/lib/utils/reviewUtils';
 
 interface RestaurantCardProps {

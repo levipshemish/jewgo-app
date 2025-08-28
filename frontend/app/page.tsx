@@ -7,10 +7,10 @@ import { useRouter } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 import { supabaseClient } from "@/lib/supabase/client-secure";
-import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
+// import { extractIsAnonymous } from "@/lib/utils/auth-utils-client";
 
 export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [_isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function HomePage() {
           // Redirect unauthenticated users to signin page
           router.push('/auth/signin');
         }
-      } catch (error) {
+      } catch (_error) {
         // console.error('Auth check failed:', error);
         setIsAuthenticated(false);
         // Redirect unauthenticated users to signin page
@@ -59,7 +59,7 @@ export default function HomePage() {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event: string, session: any) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event: string, _session: any) => {
 
         if (event === 'SIGNED_IN') {
           const { data: { user } } = await supabaseClient.auth.getUser();

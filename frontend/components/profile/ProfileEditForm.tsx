@@ -17,7 +17,7 @@ interface ProfileEditFormProps {
 export default function ProfileEditForm({ onProfileUpdate, className = "" }: ProfileEditFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const { showSuccess, showError, showInfo } = useToast() as {
+  const { showSuccess, showError } = useToast() as {
     showSuccess: (message: string, duration?: number) => void;
     showError: (message: string, duration?: number) => void;
     showInfo: (message: string, duration?: number) => void;

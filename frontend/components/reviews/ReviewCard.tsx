@@ -40,7 +40,6 @@ export default function ReviewCard({
   review, onHelpful, onFlag, onEdit, onDelete, showActions = true, className = ''
 }: ReviewCardProps) {
   const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [isHelpfulLoading, setIsHelpfulLoading] = useState(false);
   const [isFlagLoading, setIsFlagLoading] = useState(false);
   const [showFlagModal, setShowFlagModal] = useState(false);
@@ -54,8 +53,6 @@ export default function ReviewCard({
       try {
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-
-          setLoading(false);
           return;
         }
 
@@ -64,8 +61,6 @@ export default function ReviewCard({
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -76,7 +71,6 @@ export default function ReviewCard({
       // Only update on actual auth events, not on subscription
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
         setSession(session);
-        setLoading(false);
       }
     });
 

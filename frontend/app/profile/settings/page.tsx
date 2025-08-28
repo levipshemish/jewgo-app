@@ -80,7 +80,7 @@ export default function SettingsPage() {
           setUser(null);
           setIsLoading(false);
         }
-      } catch (error) {
+      } catch (_error) {
         // console.error('Error loading user:', error);
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile/settings');

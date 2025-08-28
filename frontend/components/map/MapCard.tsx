@@ -59,7 +59,7 @@ const MapCard = memo<MapCardProps>(({
 }) => {
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { handleImmediateTouch } = useMobileTouch();
-  const { isScrolling } = useScrollDetection({ debounceMs: 100, enableBodyClass: false });
+  // const { isScrolling } = useScrollDetection({ debounceMs: 100, enableBodyClass: false });
   
   // State management
   const [imageError, setImageError] = useState(false);

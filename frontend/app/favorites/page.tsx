@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 // import dynamic from 'next/dynamic';
 
 import { Header } from '@/components/layout';
@@ -12,18 +12,18 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingState } from '@/components/ui/LoadingState';
 // import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useFavorites } from '@/lib/utils/favorites';
-import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
+// import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useGuestProtection } from '@/lib/utils/guest-protection';
 
 // Dynamically import Supabase client to prevent SSR issues
-const _getSupabaseClient = async () => {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  const { supabaseClient } = await import('@/lib/supabase/client-secure');
-  return supabaseClient;
-};
+// const _getSupabaseClient = async () => {
+//   if (typeof window === 'undefined') {
+//     return null;
+//   }
+//   const { supabaseClient } = await import('@/lib/supabase/client-secure');
+//   return supabaseClient;
+// };
 
 function FavoritesPageContent() {
   const { favorites } = useFavorites();
@@ -38,7 +38,7 @@ function FavoritesPageContent() {
     setFilter
   } = useAdvancedFilters();
 
-  const handleSearch = (query: string) => {
+  const handleSearch = (_query: string) => {
     // Search disabled on this page; no-op to satisfy types
   };
 

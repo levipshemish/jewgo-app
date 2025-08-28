@@ -25,7 +25,7 @@ function AddListingPageContent() {
   const { isLoading, isGuest } = useGuestProtection('/marketplace/add');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const categoryId = searchParams.get('category');
+  const _categoryId = searchParams.get('category');
 
   // Form state - moved all hooks to top
   const [kind, setKind] = useState<ListingKind>('regular');

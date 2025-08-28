@@ -22,7 +22,7 @@ import { MarketplaceListing } from '@/lib/types/marketplace';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
 
 // Loading component for Suspense fallback
-function ShtełPageLoading() {
+function ShtelPageLoading() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -54,7 +54,7 @@ const formatDistance = (distance: number) => {
 };
 
 // Main component that uses useSearchParams
-function ShtełPageContent() {
+function ShtelPageContent() {
   const router = useRouter();
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -705,10 +705,10 @@ function ShtełPageContent() {
   );
 }
 
-export default function ShtełPage() {
+export default function ShtelPage() {
   return (
-    <Suspense fallback={<ShtełPageLoading />}>
-      <ShtełPageContent />
+    <Suspense fallback={<ShtelPageLoading />}>
+      <ShtelPageContent />
     </Suspense>
   );
 }

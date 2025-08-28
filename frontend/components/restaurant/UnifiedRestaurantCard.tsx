@@ -17,8 +17,7 @@ import {
   formatPriceDollarSigns, 
   titleCase, 
   getSafeImageUrl,
-  cardStyles,
-  getImageStateClasses
+  cardStyles
 } from '@/lib/utils/cardUtils';
 import { getKosherCategoryBadgeClasses } from '@/lib/utils/kosherCategories';
 import { 
@@ -26,8 +25,7 @@ import {
   getBusinessTypeIcon, 
   getBusinessTypeColor,
   parseReviewSnippets,
-  getAverageRating,
-  formatReviewCount
+  getAverageRating
 } from '@/lib/utils/reviewUtils';
 
 interface UnifiedRestaurantCardProps {

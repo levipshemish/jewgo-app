@@ -241,7 +241,7 @@ function SignInForm() {
       }
       
       setMagicStatus('Check your email for a sign-in link.');
-    } catch (_err) {
+    } catch (err) {
       setMagicStatus('Failed to send magic link.');
       // Reset cooldown on errors
       setMagicLinkCooldown(0);
@@ -288,7 +288,7 @@ function SignInForm() {
         return;
       }
       router.push(redirectTo);
-    } catch (err) {
+    } catch (_err) {
       setAnonError('Guest sign-in failed. Please try again.');
       setAnonLoading(false);
     }

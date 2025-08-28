@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse} from 'next/server';
 import { requireAdmin} from '@/lib/admin/auth';
 import { AdminDatabaseService} from '@/lib/admin/database';
-import { prisma} from '@/lib/db/prisma';
+// import { prisma} from '@/lib/db/prisma';
 import { corsHeaders} from '@/lib/middleware/security';
 
 export async function GET(request: NextRequest) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, Star, Share2, ShoppingCart, User, ArrowLeft } from 'lucide-react';
+import { Heart, Share2, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 
 import { Header } from '@/components/layout';
@@ -62,35 +62,35 @@ export default function ProductDetailPage() {
   };
 
   // Helper functions
-  const getConditionColor = (condition?: string) => {
-    switch (condition) {
-      case 'new':
-        return 'bg-green-100 text-green-800';
-      case 'used_like_new':
-        return 'bg-blue-100 text-blue-800';
-      case 'used_good':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'used_fair':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // const getConditionColor = (condition?: string) => {
+  //   switch (condition) {
+  //     case 'new':
+  //       return 'bg-green-100 text-green-800';
+  //     case 'used_like_new':
+  //       return 'bg-blue-100 text-blue-800';
+  //     case 'used_good':
+  //       return 'bg-yellow-100 text-yellow-800';
+  //     case 'used_fair':
+  //       return 'bg-orange-100 text-orange-800';
+  //     default:
+  //       return 'bg-gray-100 text-gray-800';
+  //   }
+  // };
 
-  const getListingTypeColor = (type: string) => {
-    switch (type) {
-      case 'sale':
-        return 'bg-green-100 text-green-800';
-      case 'free':
-        return 'bg-blue-100 text-blue-800';
-      case 'borrow':
-        return 'bg-purple-100 text-purple-800';
-      case 'gemach':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // const getListingTypeColor = (type: string) => {
+  //   switch (type) {
+  //     case 'sale':
+  //       return 'bg-green-100 text-green-800';
+  //     case 'free':
+  //       return 'bg-blue-100 text-blue-800';
+  //     case 'borrow':
+  //       return 'bg-purple-100 text-purple-800';
+  //     case 'gemach':
+  //       return 'bg-orange-100 text-orange-800';
+  //     default:
+  //       return 'bg-gray-100 text-gray-800';
+  //   }
+  // };
 
   if (loading) {
     return (

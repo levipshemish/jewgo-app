@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useCallback} from 'react';
+import { useState, useMemo } from 'react';
 import { 
-  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, Filter, Download, MoreHorizontal, Edit, Trash2, Eye} from 'lucide-react';
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Search, Download, Trash2} from 'lucide-react';
 
 export interface Column<T> {
   key: string;
@@ -339,7 +339,7 @@ export default function DataTable<T extends { id: string | number }>({
                 </td>
               </tr>
             ) : (
-              data.map((row, index) => (
+              data.map((row, _index) => (
                 <tr
                   key={row.id}
                   className={`hover:bg-gray-50 ${selectedRows.has(row.id) ? 'bg-blue-50' : ''}`}

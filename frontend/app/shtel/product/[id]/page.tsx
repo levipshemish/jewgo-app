@@ -6,11 +6,11 @@ import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
 import { MarketplaceListing } from '@/lib/types/marketplace';
 
-interface ShtełProductPageProps {
-  params: {
-    id: string;
-  };
-}
+// interface ShtełProductPageProps {
+//   params: {
+//     id: string;
+//   };
+// }
 
 export default function ShtełProductPage() {
   const router = useRouter();

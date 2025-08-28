@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { appLogger } from '@/lib/utils/logger';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
@@ -75,7 +75,7 @@ interface Mikvah {
 }
 
 // Mock API function for mikvah - will be replaced with actual API
-const fetchMikvah = async (limit: number, params?: string) => {
+const fetchMikvah = async (limit: number, _params?: string) => {
   // For now, return mock data
   const mockMikvah: Mikvah[] = [
     {
@@ -346,11 +346,11 @@ function MikvahPageContent() {
     }
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
-  const handleToggleFilter = useCallback((filterType: keyof Filters) => {
+  const _handleToggleFilter = useCallback((filterType: keyof Filters) => {
     toggleFilter(filterType);
   }, [toggleFilter]);
 
-  const handleClearAllFilters = useCallback(() => {
+  const _handleClearAllFilters = useCallback(() => {
     clearAllFilters();
   }, [clearAllFilters]);
 
@@ -416,7 +416,7 @@ function MikvahPageContent() {
   };
 
   // Mobile-optimized location handling with context
-  const handleRequestLocation = async () => {
+  const _handleRequestLocation = async () => {
     // Use the context's requestLocation
     requestLocation();
   };

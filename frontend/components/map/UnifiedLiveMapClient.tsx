@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, SlidersHorizontal, X, Star, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, X, Search } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 
@@ -9,9 +9,7 @@ import AdvancedFilters from '@/components/search/AdvancedFilters';
 import { fetchRestaurants } from '@/lib/api/restaurants';
 import { postToWorker, subscribe, type FilterWorkerMessage } from '@/lib/message-bus';
 import { Restaurant } from '@/lib/types/restaurant';
-import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
 import { throttle as throttleFn } from '@/lib/utils/touchUtils';
-import { safeFilter } from '@/lib/utils/validation';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { favoritesManager } from '@/lib/utils/favorites';
@@ -28,11 +26,11 @@ interface MapState {
   visibleCount: number | null;
 }
 
-interface UserLocation {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-}
+// interface UserLocation {
+//   latitude: number;
+//   longitude: number;
+//   accuracy?: number;
+// }
 
 // Performance monitoring
 interface PerformanceMetrics {
@@ -45,7 +43,7 @@ interface PerformanceMetrics {
 export default function UnifiedLiveMapClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Core state
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
@@ -59,9 +57,7 @@ export default function UnifiedLiveMapClient() {
     userLocation,
     permissionStatus,
     isLoading: locationLoading,
-    error: locationError,
-    requestLocation,
-    setPermissionStatus
+    requestLocation
   } = useLocation();
   
   // Use the shared advanced filters hook
@@ -100,9 +96,9 @@ export default function UnifiedLiveMapClient() {
   const lastFetchTime = useRef<number>(0);
   const fetchAbortController = useRef<AbortController | null>(null);
   const loadStartTime = useRef<number>(0);
-  const performanceHistory = useRef<number[]>([]);
+  // const performanceHistory = useRef<number[]>([]);
   const restaurantsRef = useRef<Restaurant[]>([]);
-  const indexesRef = useRef<any>(null);
+  // const indexesRef = useRef<any>(null);
 
   // Constants
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -437,12 +433,12 @@ export default function UnifiedLiveMapClient() {
   // Utility functions
 
 
-  const hasActiveFilters = useMemo(() => {
-    return Boolean(searchQuery.trim()) ||
-           Object.values(activeFilters).some(value =>
-             value !== undefined && value !== false && value !== ''
-           );
-  }, [searchQuery, activeFilters]);
+  // const hasActiveFilters = useMemo(() => {
+  //   return Boolean(searchQuery.trim()) ||
+  //          Object.values(activeFilters).some(value =>
+  //            value !== undefined && value !== false && value !== ''
+  //          );
+  // }, [searchQuery, activeFilters]);
 
   // Loading states
   if (loading && loadingStage === 'initializing') {
@@ -563,7 +559,7 @@ export default function UnifiedLiveMapClient() {
               data={transformRestaurantToCardData(selectedRestaurant)}
               showStarInBadge={true}
               onCardClick={() => router.push(`/restaurant/${selectedRestaurant.id}`)}
-              onLikeToggle={(id, isLiked) => handleToggleFavorite(selectedRestaurant)}
+              onLikeToggle={(_id, _isLiked) => handleToggleFavorite(selectedRestaurant)}
               className="w-full shadow-2xl hover:shadow-3xl transition-shadow"
             />
             

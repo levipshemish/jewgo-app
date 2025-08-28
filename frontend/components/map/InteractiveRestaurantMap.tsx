@@ -158,13 +158,13 @@ export function InteractiveRestaurantMap({
 
   // Use marker management hook
   const {
-    markersRef,
-    markersMapRef,
-    clustererRef,
-    getRestaurantKey,
-    cleanupMarkers,
-    createMarker,
-    applyClustering
+    // markersRef,
+    // markersMapRef,
+    // clustererRef,
+    // getRestaurantKey,
+    // cleanupMarkers,
+    // createMarker,
+    // applyClustering
   } = useMarkerManagement({
     map: mapInstanceRef.current,
     restaurants: restaurantsWithCoords,

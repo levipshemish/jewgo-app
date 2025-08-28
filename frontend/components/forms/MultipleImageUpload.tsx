@@ -7,7 +7,7 @@ import { X, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils/classNames';
 // Custom button and badge components
-const Button = ({ children, variant = 'default', size = 'default', className = '', ...props }: any) => (
+const Button = ({ children, _variant = 'default', _size = 'default', className = '', ...props }: any) => (
   <button 
     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${className}`}
     {...props}
@@ -16,7 +16,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
   </button>
 );
 
-const Badge = ({ children, variant = 'default', className = '', ...props }: any) => (
+const Badge = ({ children, _variant = 'default', className = '', ...props }: any) => (
   <span 
     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
     {...props}
@@ -99,19 +99,19 @@ export default function MultipleImageUpload({
     throw new Error('Failed to upload image with all available presets');
   };
 
-  const validateFile = (file: File): string | null => {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      return 'Please select an image file (PNG, JPG, JPEG, GIF)';
-    }
+  // const validateFile = (file: File): string | null => {
+  //   // Validate file type
+  //   if (!file.type.startsWith('image/')) {
+  //     return 'Please select an image file (PNG, JPG, JPEG, GIF)';
+  //   }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return 'Image must be less than 5MB';
-    }
+  //   // Validate file size (max 5MB)
+  //   if (file.size > 5 * 1024 * 1024) {
+  //     return 'Image must be less than 5MB';
+  //   }
 
-    return null;
-  };
+  //   return null;
+  // };
 
   const addImages = useCallback(async (files: FileList) => {
     const newFiles = Array.from(files);

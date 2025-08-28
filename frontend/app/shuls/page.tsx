@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -79,7 +79,7 @@ interface Shul {
 }
 
 // Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (limit: number, params?: string) => {
+const fetchShuls = async (limit: number, _params?: string) => {
   // For now, return mock data
   const mockShuls: Shul[] = [
     {

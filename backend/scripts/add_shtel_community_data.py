@@ -251,28 +251,43 @@ class ShtelCommunityDataManager:
             
             with self.engine.connect() as conn:
                 for listing in listings:
-                    # Add timestamps
+                    # Add timestamps and required fields
                     now = datetime.now(timezone.utc)
                     listing.update({
+                        'name': listing['title'],  # Use title as name
+                        'location': f"{listing['city']}, {listing['state']} {listing['zip_code']}",  # Build location string
                         'created_at': now,
                         'updated_at': now,
                         'status': 'active',
                         'is_on_sale': False,
                         'thumbnail': '/images/default-restaurant.webp',
-                        'images': '[]'  # Empty JSON array
+                        'additional_images': None,  # Use NULL for empty array
+                        'vendor_review_count': 0,  # Default vendor review count
+                        'vendor_is_verified': True,  # Mark community vendors as verified
+                        'vendor_is_premium': False,  # Default premium status
+                        'kosher_is_verified': True,  # Mark kosher items as verified
+                        'is_gluten_free': False,
+                        'is_dairy_free': False,
+                        'is_nut_free': False,
+                        'is_vegan': False,
+                        'is_vegetarian': False
                     })
                     
-                    # Insert listing
+                    # Insert listing with all required fields
                     result = conn.execute(text("""
                         INSERT INTO marketplace 
-                        (title, description, price, currency, category, subcategory, city, state, zip_code,
+                        (name, title, description, price, currency, category, subcategory, location, city, state, zip_code,
                          vendor_name, vendor_phone, vendor_email, kosher_agency, kosher_level, is_available,
                          is_featured, is_on_sale, stock, rating, review_count, status, latitude, longitude,
-                         thumbnail, images, created_at, updated_at)
-                        VALUES (:title, :description, :price, :currency, :category, :subcategory, :city, :state, :zip_code,
+                         thumbnail, additional_images, vendor_review_count, vendor_is_verified, vendor_is_premium,
+                         kosher_is_verified, is_gluten_free, is_dairy_free, is_nut_free, is_vegan, is_vegetarian,
+                         created_at, updated_at)
+                        VALUES (:name, :title, :description, :price, :currency, :category, :subcategory, :location, :city, :state, :zip_code,
                                 :vendor_name, :vendor_phone, :vendor_email, :kosher_agency, :kosher_level, :is_available,
                                 :is_featured, :is_on_sale, :stock, :rating, :review_count, :status, :latitude, :longitude,
-                                :thumbnail, :images, :created_at, :updated_at)
+                                :thumbnail, :additional_images, :vendor_review_count, :vendor_is_verified, :vendor_is_premium,
+                                :kosher_is_verified, :is_gluten_free, :is_dairy_free, :is_nut_free, :is_vegan, :is_vegetarian,
+                                :created_at, :updated_at)
                     """), listing)
                     
                     logger.info(f"✅ Added: {listing['title']}")

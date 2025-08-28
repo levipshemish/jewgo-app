@@ -79,7 +79,7 @@ export default function ProfilePage() {
           router.push('/auth/signin?redirectTo=/profile');
           return;
         }
-      } catch (error) {
+      } catch (_error) {
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');

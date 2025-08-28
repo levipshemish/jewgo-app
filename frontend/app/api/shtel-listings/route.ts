@@ -146,8 +146,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Call the existing marketplace API
-    const backendUrl = `${BACKEND_BASE_URL}/api/v4/marketplace/listings?${queryParams.toString()}`;
+    // Call the dedicated shtetl marketplace API
+    const backendUrl = `${BACKEND_BASE_URL}/api/v4/shtetl/listings?${queryParams.toString()}`;
     
     const response = await fetch(backendUrl, {
       method: 'GET',

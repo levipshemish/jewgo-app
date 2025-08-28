@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Fragment, useMemo, Suspense, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -61,7 +61,7 @@ interface Store {
 }
 
 // Mock API function for stores - will be replaced with actual API
-const fetchStores = async (limit: number, params?: string) => {
+const fetchStores = async (limit: number, _params?: string) => {
   // For now, return mock data
   const mockStores: Store[] = [
     {

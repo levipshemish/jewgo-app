@@ -33,7 +33,7 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
     );
     initialData = result.data || [];
     initialPagination = result.pagination || initialPagination;
-  } catch (_e) {
+      } catch (e) {
     // ignore; client-side will fetch
   }
 

@@ -17,7 +17,6 @@ interface ImageCarouselProps {
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ 
   images = [], restaurantName, kosherCategory, className = '' 
 }) => {
-  const [imageError, setImageError] = useState<boolean[]>([]);
   const [imageLoading, setImageLoading] = useState<boolean[]>([]);
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -75,9 +74,8 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     return normalized;
   }, [images, kosherCategory]);
 
-  // Initialize image error and loading states
+  // Initialize image loading states
   useEffect(() => {
-    setImageError(new Array(allImages.length).fill(false));
     setImageLoading(new Array(allImages.length).fill(true));
   }, [allImages.length]);
 
@@ -98,11 +96,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   });
 
   const handleImageError = (index: number) => {
-    setImageError(prev => {
-      const newErrors = [...prev];
-      newErrors[index] = true;
-      return newErrors;
-    });
     setImageLoading(prev => {
       const newLoading = [...prev];
       newLoading[index] = false;
