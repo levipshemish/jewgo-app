@@ -70,9 +70,9 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
     updatedAt: user.updated_at || new Date().toISOString(),
     isEmailVerified: true, // Default to true for now
     isPhoneVerified: false, // Default to false for now
-    role: user.app_metadata?.role || 'user',
-    permissions: user.app_metadata?.permissions || ['read', 'write'],
-    subscriptionTier: user.app_metadata?.subscription_tier || 'free',
+    role: 'user', // Default role
+    permissions: ['read', 'write'], // Default permissions
+    subscriptionTier: 'free', // Default subscription tier
   };
 }
 
