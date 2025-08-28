@@ -1,8 +1,11 @@
 'use client';
 
+// Force dynamic rendering to avoid SSR issues with URL parameters
+export const dynamic = 'force-dynamic';
+
 /// <reference types="node" />
 import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
@@ -22,6 +25,14 @@ import { appLogger } from '@/lib/utils/logger';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
+import { Metadata } from 'next';
+
+// Metadata for the eatery page
+export const metadata: Metadata = {
+  title: 'Kosher Restaurants - Jewgo',
+  description: 'Find the best kosher restaurants in your area. Filter by certification, dietary preferences, and more.',
+  keywords: 'kosher restaurants, Jewish dining, kosher food, kosher certification, Jewish restaurants',
+};
 
 // Loading component for Suspense fallback
 function EateryPageLoading() {
@@ -35,6 +46,7 @@ function EateryPageLoading() {
 // Main component that uses useSearchParams
 function EateryPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true); // initial load only
   const [error, setError] = useState<string | null>(null);
