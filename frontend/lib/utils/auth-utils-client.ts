@@ -53,9 +53,9 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
   const provider = user.app_metadata?.provider as 'apple' | 'google' | 'unknown' || 'unknown';
   
   const providerInfo = {
-    apple: { name: 'Apple', icon: '🍎', color: 'text-black' },
-    google: { name: 'Google', icon: '🔍', color: 'text-blue-600' },
-    unknown: { name: 'Email', icon: '📧', color: 'text-gray-600' }
+    apple: { name: 'Apple', icon: '🍎', color: 'text-black', displayName: 'Apple' },
+    google: { name: 'Google', icon: '🔍', color: 'text-blue-600', displayName: 'Google' },
+    unknown: { name: 'Email', icon: '📧', color: 'text-gray-600', displayName: 'Email' }
   }[provider];
 
   return {
