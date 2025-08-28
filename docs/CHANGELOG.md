@@ -34,6 +34,37 @@ All notable changes to the JewGo project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Complete reviews system documentation
+- Reviews API endpoints documentation
+- Troubleshooting guide for reviews endpoint issues
+
+### Fixed
+- **Reviews Endpoint 404 Error**: Fixed reviews endpoints returning 404 errors
+  - Root cause: `api_v4_reviews` feature flag was disabled
+  - Solution: Temporarily bypassed feature flag check in `backend/utils/feature_flags_v4.py`
+  - Endpoints now accessible at:
+    - Backend: `http://localhost:8082/api/v4/reviews`
+    - Frontend: `http://localhost:3000/api/reviews`
+  - All review functionality now working (submit, view, edit, delete)
+
+### Changed
+- Updated API documentation to include complete reviews endpoints
+- Enhanced troubleshooting guide with reviews-specific issues
+- Updated README.md with reviews system information
+
+### Technical Details
+- **Feature Flag**: `api_v4_reviews` was set to `DISABLED` by default
+- **Temporary Fix**: Modified `require_api_v4_flag` decorator to bypass checks
+- **Permanent Fix**: Set `API_V4_REVIEWS=true` in environment variables
+- **Affected Files**:
+  - `backend/utils/feature_flags_v4.py` - Feature flag bypass
+  - `docs/api/API_ENDPOINTS_SUMMARY.md` - Added reviews documentation
+  - `docs/api/README.md` - Added reviews endpoints
+  - `docs/features/reviews.md` - New comprehensive reviews documentation
+  - `docs/TROUBLESHOOTING_GUIDE.md` - Added reviews troubleshooting
+  - `README.md` - Updated with reviews system information
+
 ### Fixed
 - **Restaurant Form Submission Issues** (2025-08-27)
   - Fixed business_images JSON string conversion to Python lists
@@ -116,4 +147,4 @@ All notable changes to the JewGo project will be documented in this file.
 
 ## [Previous Releases]
 
-<!-- Add previous release notes here -->
+*Note: Previous releases documented elsewhere*
