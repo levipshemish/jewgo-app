@@ -4,7 +4,7 @@
  * Deprecation Ownership Enforcement
  * 
  * Ensures new DEPRECATED markers have matching entries in DEPRECATIONS.md:
- * - New // DEPRECATED: must have owner + deadline in DEPRECATIONS.md
+ * - New // DEPRECATED: must have owner + deadline in DEPRECATIONS.md. Updated: 2026-01-31
  * - CI fails if new deprecated code lacks proper documentation
  */
 

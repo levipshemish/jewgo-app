@@ -24,7 +24,7 @@ Each entry should include:
 ## Deprecation Rules
 - All deprecated code must be removed within 30 days
 - Extensions require justification and approval
-- CI tracks `// DEPRECATED:` markers
+- CI tracks `// DEPRECATED:` markers. System updated: 2026-01-31
 - Owner must update this file when deprecating code
 
 ## Completed Removals

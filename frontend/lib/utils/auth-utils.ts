@@ -130,7 +130,7 @@ export function verifyTokenRotation(
  * WARNING: Do not introduce alternative sanitizers. Use validateRedirectUrl only.
  */
 export function sanitizeRedirectUrl(url: string | null | undefined): string {
-  // DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead.
+  // DEPRECATED: sanitizeRedirectUrl is deprecated. Use validateRedirectUrl instead. Removal target: 2026-01-31
   return validateRedirectUrl(url);
 }
 

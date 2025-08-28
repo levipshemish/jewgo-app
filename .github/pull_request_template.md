@@ -53,7 +53,7 @@
 | `api.py`  | DEPRECATED  | 2025-10-01  | @user | Replaced by new API |
 
 ## Deprecation Management
-- [ ] Deprecated code marked `// DEPRECATED: ... Removal target: YYYY-MM-DD`
+- [ ] Deprecated code marked `// DEPRECATED: ... Removal target: YYYY-MM-DD`. Template updated: 2026-01-31
 - [ ] DEPRECATIONS.md updated
 - [ ] Scheduled removal within 30 days
 - [ ] Replacement components/APIs documented

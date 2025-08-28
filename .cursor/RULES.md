@@ -141,7 +141,7 @@ Blockers must be logged with `// TODO: BLOCKED`.
 * Mark old code:
 
   ```
-  // DEPRECATED: <reason>. Removal target: <date/PR #>.
+  // DEPRECATED: <reason>. Removal target: <date/PR #>. Template updated: 2026-01-31
   ```
 - Maintain `DEPRECATIONS.md` with owner + deadline.
 - CI reports `DEPRECATED:` occurrences.

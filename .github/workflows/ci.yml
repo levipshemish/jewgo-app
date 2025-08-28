@@ -35,6 +35,29 @@ jobs:
         cache-dependency-path: |
           frontend/package-lock.json
 
+    - name: Script Safety Validation
+      run: |
+        echo "🔍 Validating critical scripts for syntax and dependencies..."
+        
+        # Python script validation
+        echo "📝 Validating Python scripts..."
+        python -m py_compile scripts/utils/jewgo-cli.py || (echo "❌ Critical Python script validation failed" && exit 1)
+        
+        # Find and validate all Python scripts in maintenance and deployment
+        find scripts/maintenance/ -name "*.py" -exec python -m py_compile {} \; || (echo "❌ Maintenance script validation failed" && exit 1)
+        find scripts/deployment/ -name "*.py" -exec python -m py_compile {} \; || (echo "❌ Deployment script validation failed" && exit 1)
+        
+        # Node.js script validation
+        echo "📝 Validating Node.js scripts..."
+        node -c scripts/env-consistency-check.js || (echo "❌ Environment consistency script validation failed" && exit 1)
+        node -c frontend/scripts/validate-env-unified.js || (echo "❌ Frontend validation script failed" && exit 1)
+        
+        # Test script help commands (basic functionality)
+        echo "🧪 Testing script basic functionality..."
+        python scripts/utils/jewgo-cli.py --help > /dev/null || (echo "❌ CLI script help test failed" && exit 1)
+        
+        echo "✅ All critical scripts validated successfully"
+        
     - name: Environment Consistency Check
       run: |
         node scripts/env-consistency-check.js
@@ -92,6 +115,9 @@ jobs:
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
         NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lgsfyrxkqpipaumngvfi.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-build-anon-key-for-testing-only' }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-service-role-key-for-testing-only' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
         NODE_ENV: production
@@ -108,6 +134,7 @@ jobs:
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement
       run: |
         cd $GITHUB_WORKSPACE
+        chmod +x ci-scripts/temp_deprecated_check.js
         node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan
@@ -210,6 +237,29 @@ jobs:
         cache-dependency-path: |
           frontend/package-lock.json
     
+    - name: Backend Script Safety Validation
+      run: |
+        echo "🔍 Validating backend scripts for syntax and dependencies..."
+        
+        # Python script validation
+        echo "📝 Validating Python scripts..."
+        python -m py_compile scripts/utils/jewgo-cli.py || (echo "❌ Critical Python script validation failed" && exit 1)
+        
+        # Validate backend-specific scripts
+        find backend/scripts/ -name "*.py" -exec python -m py_compile {} \; || (echo "❌ Backend script validation failed" && exit 1)
+        find scripts/maintenance/ -name "*.py" -exec python -m py_compile {} \; || (echo "❌ Maintenance script validation failed" && exit 1)
+        find scripts/deployment/ -name "*.py" -exec python -m py_compile {} \; || (echo "❌ Deployment script validation failed" && exit 1)
+        
+        # Test CLI basic functionality
+        echo "🧪 Testing CLI basic functionality..."
+        python scripts/utils/jewgo-cli.py --help > /dev/null || (echo "❌ CLI script help test failed" && exit 1)
+        
+        # Validate script dependencies
+        echo "📦 Checking script dependencies..."
+        python -c "import requests, psycopg2, sqlalchemy" || (echo "❌ Script dependencies check failed" && exit 1)
+        
+        echo "✅ All backend scripts validated successfully"
+        
     - name: Environment Consistency Check
       run: |
         node scripts/env-consistency-check.js
@@ -284,6 +334,7 @@ jobs:
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement (Backend)
       run: |
         cd $GITHUB_WORKSPACE
+        chmod +x ci-scripts/temp_deprecated_check.js
         node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan (Backend)
@@ -483,10 +534,15 @@ jobs:
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
         NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lgsfyrxkqpipaumngvfi.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-build-anon-key-for-testing-only' }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-service-role-key-for-testing-only' }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         NODE_ENV: production
       run: |
         cd $GITHUB_WORKSPACE/frontend
+        npx prisma generate
         npm run build
       
     - name: Build and run Lighthouse CI
@@ -549,6 +605,10 @@ jobs:
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-secret-key-for-testing-only' }}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'ci-build-api-key-for-testing-only' }}
         NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com' }}
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lgsfyrxkqpipaumngvfi.supabase.co' }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-build-anon-key-for-testing-only' }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-service-role-key-for-testing-only' }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test_jewgo' }}
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'https://jewgo-app.vercel.app' }}
         NODE_ENV: production
       run: |
