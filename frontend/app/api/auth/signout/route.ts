@@ -3,8 +3,8 @@ import { _cookies} from 'next/headers';
 import { _createServerClient} from '@supabase/ssr';
 import { _getCORSHeaders} from '@/lib/config/environment';
 
-export const _runtime = 'nodejs';
-export const _dynamic = 'force-dynamic';
+// export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function OPTIONS(request: NextRequest) {
   const _origin = request.headers.get('origin') || undefined;
