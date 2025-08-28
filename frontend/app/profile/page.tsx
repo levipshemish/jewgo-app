@@ -1,47 +1,46 @@
 "use client";
 
-import { _useEffect, _useState} from "react";
-import { _appLogger} from '@/lib/utils/logger';
-import { _useRouter} from "next/navigation";
+import { useEffect, useState} from "react";
+import { appLogger} from '@/lib/utils/logger';
+import { useRouter} from "next/navigation";
 import Link from "next/link";
-import { _SignOutButton} from "@/components/auth";
+import { SignOutButton} from "@/components/auth";
 import ClickableAvatarUpload from "@/components/profile/ClickableAvatarUpload";
 
 
 // Force dynamic rendering to avoid SSR issues with Supabase client
-export const _dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic';
 
-import { 
-  _handleUserLoadError, _type TransformedUser} from "@/lib/utils/auth-utils-client";
+import { type TransformedUser } from "@/lib/types/supabase-auth";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<TransformedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [redirectStatus, setRedirectStatus] = useState<string>('');
 
-  const _router = useRouter();
+  const router = useRouter();
 
   // Load user data
   useEffect(() => {
     let isMounted = true;
-    const _loadUser = async () => {
+    const loadUser = async () => {
       let redirected = false;
       let userAuthenticated = false;
       try {
         // Use server-side API to get user data instead of client-side Supabase
-        const _response = await fetch('/api/auth/sync-user', {
+        const response = await fetch('/api/auth/sync-user', {
           method: 'GET',
           credentials: 'include',
         });
 
         if (response.ok) {
-          const _userData = await response.json();
+          const userData = await response.json();
 
           if (userData.user) {
 
             // Check if user is a guest user (no email, provider unknown)
             // Guest users should be redirected to sign in for protected pages
-            const _isGuest = !userData.user.email && userData.user.provider === 'unknown';
+            const isGuest = !userData.user.email && userData.user.provider === 'unknown';
 
             if (isGuest) {
               appLogger.info('Profile page: Redirecting guest user');
@@ -80,7 +79,7 @@ export default function ProfilePage() {
           router.push('/auth/signin?redirectTo=/profile');
           return;
         }
-      } catch (_error) {
+      } catch (error) {
         setRedirectStatus('Error occurred, redirecting to /auth/signin...');
         redirected = true;
         router.push('/auth/signin?redirectTo=/profile');
@@ -169,8 +168,7 @@ export default function ProfilePage() {
               <ClickableAvatarUpload 
                 currentAvatarUrl={user.avatar_url}
                 onAvatarChange={(_avatarUrl) => {
-                  // Update the user state with the new avatar URL
-                  setUser(prevUser => prevUser ? { ...prevUser, avatar_url: avatarUrl } : null);
+                  setUser(prevUser => prevUser ? { ...prevUser, avatar_url: _avatarUrl } : null);
                 }}
                 size="xl"
               />
