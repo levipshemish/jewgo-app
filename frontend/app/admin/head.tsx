@@ -1,5 +1,6 @@
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 import { getAdminUser } from '@/lib/admin/auth';
+import { sanitizeHtml } from '@/utils/htmlSanitizer';
 
 export default async function AdminHead() {
   // Get admin user for CSRF token generation
@@ -20,7 +21,7 @@ export default async function AdminHead() {
       {!signedToken && process.env.NODE_ENV === 'production' && (
         <script
           dangerouslySetInnerHTML={{
-            __html: `
+            __html: sanitizeHtml(`
               console.warn('CSRF token missing. Admin actions may be limited.');
               // Show banner in production
               if (typeof window !== 'undefined') {
@@ -29,7 +30,7 @@ export default async function AdminHead() {
                 banner.innerHTML = '⚠️ CSRF token unavailable. <a href="/docs/admin/troubleshooting" style="color:#92400e;text-decoration:underline;">View documentation</a>';
                 document.body.appendChild(banner);
               }
-            `,
+            `, { allowScripts: true })
           }}
         />
       )}

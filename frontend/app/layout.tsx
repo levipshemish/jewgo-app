@@ -11,6 +11,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import { LocationProvider } from '@/lib/contexts/LocationContext'
+import { sanitizeHtml } from '@/utils/htmlSanitizer'
 import DevNavigation from '@/components/dev/DevNavigation'
 import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 
@@ -149,7 +150,7 @@ export default function RootLayout({
             />
             <script
               dangerouslySetInnerHTML={{
-                __html: `
+                __html: sanitizeHtml(`
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
@@ -157,7 +158,7 @@ export default function RootLayout({
                     page_title: document.title,
                     page_location: window.location.href,
                   });
-                `,
+                `, { allowScripts: true })
               }}
             />
           </>

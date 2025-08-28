@@ -2,9 +2,10 @@
 
 import { Plus, MessageCircle, ExternalLink } from 'lucide-react';
 import React, { useState, useEffect, useCallback } from 'react';
+import { Session } from '@supabase/supabase-js';
 
 import { StarRating } from '@/components/ui/StarRating';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 import { Restaurant } from '@/lib/types/restaurant';
 
@@ -59,7 +60,7 @@ interface ReviewsSectionProps {
 export default function ReviewsSection({
   restaurantId, restaurantName, restaurant, className = ''
 }: ReviewsSectionProps) {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -80,8 +81,8 @@ export default function ReviewsSection({
           return;
         }
 
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        setSession(user ? { user } : null);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setSession(session);
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
@@ -93,11 +94,8 @@ export default function ReviewsSection({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async (event, session) => {
-      // Only update on actual auth events, not on subscription
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        setSession(session?.user ? { user: session.user } : null);
-      }
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
+      setSession(session);
     });
 
     return () => subscription.unsubscribe();

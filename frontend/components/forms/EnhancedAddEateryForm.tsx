@@ -45,7 +45,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   
   // Debug logging (only in development and not too frequently)
   if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PLACES === 'true') {
-
+    // Debug logging can be enabled here if needed
   }
 
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
