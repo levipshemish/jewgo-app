@@ -102,10 +102,7 @@ function ShtelPageContent() {
   // URL-backed filter state
   const {
     activeFilters,
-    setFilter,
-    toggleFilter,
-    clearFilter,
-    clearAllFilters
+    setFilter
   } = useAdvancedFilters();
 
   // Create a stable key for filters to prevent effect loops due to object identity

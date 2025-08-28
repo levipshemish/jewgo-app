@@ -111,7 +111,7 @@ export const handleFiltersClick = (
  */
 export const handleTabClick = (
   tabId: string,
-  onTabChange: (tabId: string) => void,
+  onTabChange: (selectedTabId: string) => void,
   activeTab: string
 ) => {
   if (tabId !== activeTab) {

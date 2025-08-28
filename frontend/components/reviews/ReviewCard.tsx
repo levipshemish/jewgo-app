@@ -56,8 +56,8 @@ export default function ReviewCard({
           return;
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        setSession(session);
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+        setSession(currentSession);
       } catch (sessionError) {
         console.error('Error getting session:', sessionError);
         handleUserLoadError(sessionError);
@@ -67,10 +67,10 @@ export default function ReviewCard({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event: string, session: Session | null) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event: string, authSession: Session | null) => {
       // Only update on actual auth events, not on subscription
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        setSession(session);
+        setSession(authSession);
       }
     });
 

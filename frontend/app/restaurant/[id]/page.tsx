@@ -323,9 +323,9 @@ const RestaurantDetailPage: React.FC = () => {
       // Show success message with order number
       alert(`Order ${result.data.order.order_number} submitted successfully! You will receive a confirmation shortly.`);
       setShowOrderForm(false);
-    } catch (error) {
-      console.error('Order submission error:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to submit order. Please try again.');
+    } catch (orderError) {
+      console.error('Order submission error:', orderError);
+      throw new Error(orderError instanceof Error ? orderError.message : 'Failed to submit order. Please try again.');
     }
   };
 

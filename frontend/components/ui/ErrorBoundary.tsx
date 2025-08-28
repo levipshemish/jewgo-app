@@ -27,15 +27,15 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  componentDidCatch(caughtError: Error, errorInfo: ErrorInfo): void {
     // Call the onError callback if provided
-    this.props.onError?.(error, errorInfo);
+    this.props.onError?.(caughtError, errorInfo);
     
     // Update state with error information
-    this.setState({ error, errorInfo });
+    this.setState({ error: caughtError, errorInfo });
     
     // Log to error reporting service (e.g., Sentry)
-    this.logErrorToService(error, errorInfo);
+    this.logErrorToService(caughtError, errorInfo);
   }
 
   private logErrorToService(error: Error, errorInfo: ErrorInfo): void {
@@ -161,15 +161,15 @@ export class ErrorBoundary extends Component<Props, State> {
 export function useErrorHandler() {
   const [error, setError] = React.useState<Error | null>(null);
 
-  const handleError = React.useCallback((error: Error): void => {
-    setError(error);
+  const handleError = React.useCallback((caughtError: Error): void => {
+    setError(caughtError);
     
     // Log to error reporting service
     if (process.env['NODE_ENV'] === 'production') {
       // Simple error logging for now
       console.error('Production error:', {
-        message: error.message,
-        stack: error.stack,
+        message: caughtError.message,
+        stack: caughtError.stack,
         timestamp: new Date().toISOString(),
         url: typeof window !== 'undefined' ? window.location.href : 'unknown',
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
@@ -177,8 +177,8 @@ export function useErrorHandler() {
     } else {
       // Development logging
       console.error('Development error:', {
-        message: error.message,
-        stack: error.stack,
+        message: caughtError.message,
+        stack: caughtError.stack,
         timestamp: new Date().toISOString(),
         url: typeof window !== 'undefined' ? window.location.href : 'unknown',
       });

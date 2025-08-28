@@ -52,9 +52,9 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       setEnvironment(data.environment);
       setUserId(data.user_id);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setError(error);
-      onError?.(error);
+      const fetchError = err instanceof Error ? err : new Error('Unknown error');
+      setError(fetchError);
+      onError?.(fetchError);
     } finally {
       setLoading(false);
     }

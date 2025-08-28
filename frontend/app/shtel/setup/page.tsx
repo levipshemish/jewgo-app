@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { BottomNavigation } from '@/components/navigation/ui';
-import { ChevronLeft, ChevronRight, CheckCircle, Star, Trophy, Award } from 'lucide-react';
+import { CheckCircle, Trophy } from 'lucide-react';
 
 // Step components
 import WelcomeStep from '@/components/shtel/setup/WelcomeStep';
@@ -188,7 +188,7 @@ export default function ShtelSetupPage() {
   };
 
   // Check for achievements
-  const checkAchievements = (step: number, points: number) => {
+  const checkAchievements = (step: number) => {
     const newAchievements = [...achievements];
     
     // Store Creator achievement
@@ -235,8 +235,6 @@ export default function ShtelSetupPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        
         // Navigate to store dashboard
         router.push(`/shtel/dashboard`);
       } else {
@@ -282,7 +280,7 @@ export default function ShtelSetupPage() {
           
           {/* Step Indicators */}
           <div className="flex justify-between mt-4">
-            {STEPS.map((step, index) => (
+            {STEPS.map((step) => (
               <button
                 key={step.id}
                 onClick={() => goToStep(step.id)}

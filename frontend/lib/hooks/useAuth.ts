@@ -24,17 +24,17 @@ export function useAuth(): UseAuthReturn {
       setIsLoading(true);
       setError(null);
       
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser();
       
       if (authError) {
         throw authError;
       }
       
-      setUser(user);
-      setAuthState(user ? 'authenticated' : 'unauthenticated');
+      setUser(authUser);
+      setAuthState(authUser ? 'authenticated' : 'unauthenticated');
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Authentication check failed');
-      setError(error);
+      const authError = err instanceof Error ? err : new Error('Authentication check failed');
+      setError(authError);
       setAuthState('unauthenticated');
     } finally {
       setIsLoading(false);

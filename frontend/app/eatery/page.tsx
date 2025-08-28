@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 /// <reference types="node" />
 import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
@@ -35,10 +35,9 @@ function EateryPageLoading() {
   );
 }
 
-// Main component that uses useSearchParams
+// Main component
 function EateryPageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true); // initial load only
   const [error, setError] = useState<string | null>(null);

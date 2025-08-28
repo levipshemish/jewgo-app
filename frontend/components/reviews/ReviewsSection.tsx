@@ -81,8 +81,8 @@ export default function ReviewsSection({
           return;
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        setSession(session);
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+        setSession(currentSession);
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
@@ -94,8 +94,8 @@ export default function ReviewsSection({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
-      setSession(session);
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, authSession: Session | null) => {
+      setSession(authSession);
     });
 
     return () => subscription.unsubscribe();

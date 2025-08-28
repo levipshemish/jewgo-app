@@ -75,8 +75,8 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
-        setSession(session);
+        const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+        setSession(currentSession);
       } catch (sessionError) {
         console.error('Error getting session:', sessionError);
       }
@@ -86,8 +86,8 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
 
     // Listen for auth changes
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event: string, session: Session | null) => {
-        setSession(session);
+      async (event: string, authSession: Session | null) => {
+        setSession(authSession);
       }
     );
 

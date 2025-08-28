@@ -66,7 +66,7 @@ export const useTouchFeedback = (options: TouchFeedbackOptions = {}): TouchFeedb
     let lastTouchEnd = 0;
     const element = ref.current;
 
-    const handleTouchEnd = (event: TouchEvent) => {
+    const preventDoubleTapHandler = (event: TouchEvent) => {
       const now = new Date().getTime();
       if (now - lastTouchEnd <= 300) {
         event.preventDefault();
@@ -74,10 +74,10 @@ export const useTouchFeedback = (options: TouchFeedbackOptions = {}): TouchFeedb
       lastTouchEnd = now;
     };
 
-    element.addEventListener('touchend', handleTouchEnd, { passive: false });
+    element.addEventListener('touchend', preventDoubleTapHandler, { passive: false });
 
     return () => {
-      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchend', preventDoubleTapHandler);
     };
   }, [isMobile, preventDoubleTap]);
 
