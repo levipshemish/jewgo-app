@@ -3,7 +3,7 @@ import { _createServerClient} from '@supabase/ssr';
 import { _cookies} from 'next/headers';
 import { _generateCorrelationId, _scrubPII} from '@/lib/utils/auth-utils';
 
-export const _runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 // Cleanup configuration
 const _CLEANUP_CONFIG = {
