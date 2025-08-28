@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, X, Plus, Upload, Star, CheckCircle, AlertCircle, Phone } from 'lucide-react';
+import { ChevronDown, X, Plus, Upload, Phone } from 'lucide-react';
 import MultipleImageUpload from './MultipleImageUpload';
 import AddressAutofill from './AddressAutofill';
 import CustomHoursSelector from './CustomHoursSelector';
@@ -16,11 +16,8 @@ import {
   restaurantFormSchema, 
   defaultFormData, 
   type RestaurantFormData,
-  validateStep,
   isDairyCategory,
-  isMeatOrPareveCategory,
-  isPasYisroelCategory,
-  isOwnerSubmission
+  isPasYisroelCategory
 } from '@/lib/validations/restaurant-form-schema';
 import { cn } from '@/lib/utils/classNames';
 
@@ -62,7 +59,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
     watch,
     setValue,
     getValues,
-    formState: { errors, isValid, isDirty, touchedFields },
+    formState: { errors },
     trigger,
     reset
   } = useForm<RestaurantFormData>({
@@ -75,11 +72,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
   // If you need to programmatically reset later, do it in response to an explicit action.
 
   // Watch specific fields for conditional rendering
-  const watchedHours = watch('hours_of_operation');
-  const watchedIsOwner = watch('is_owner_submission');
   const watchedKosherCategory = watch('kosher_category');
   const watchedCertifyingAgency = watch('certifying_agency');
-  const watchedValues = watch(); // Watch all form values
+  const watchedIsOwner = watch('is_owner_submission');
 
   // Debug logging for kosher category changes (only when explicitly enabled)
   useEffect(() => {
@@ -1317,7 +1312,7 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
                       {/* Multiple image upload component */}
                       <MultipleImageUpload
                         onImagesUpload={handleImagesUpload}
-                        currentImageUrls={watchedValues.business_images || []}
+                        currentImageUrls={getValues('business_images') || []}
                         maxImages={5}
                         minImages={2}
                       />
