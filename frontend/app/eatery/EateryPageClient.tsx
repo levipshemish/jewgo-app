@@ -153,7 +153,7 @@ export function EateryPageClient() {
   // Handle search
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    setFilter('search', query);
+    setFilter('q', query);
   }, [setFilter]);
 
   // Handle page change
