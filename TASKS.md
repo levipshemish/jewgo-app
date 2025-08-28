@@ -150,7 +150,7 @@
     - [ ] Loading Performance Tests
     - [ ] API Response Time Tests
 
-### 6. **Shtel Marketplace Store Management System** 🏛️
+### 7. **Shtel Marketplace Store Management System** 🏛️
 - **Priority**: P1 (High)
 - **Issue**: Shtel marketplace foundation exists but missing store creation and management functionality
 - **Impact**: Users cannot create stores or manage their marketplace presence
@@ -286,7 +286,7 @@
 
 ## 🟡 **MEDIUM PRIORITY (P2)**
 
-### 7. **Frontend Linting Warnings** ⚠️
+### 8. **Frontend Linting Warnings** ⚠️
 - **Priority**: P2 (Medium)
 - **Issue**: Multiple unused variable warnings in frontend code
 - **Impact**: Code quality and maintainability
@@ -301,7 +301,7 @@
   - [ ] Fix unused variable warnings in `app/marketplace/` pages
 - **Reference**: See `frontend_issues.md` for complete list of warnings
 
-### 8. **Marketplace Features** ⚠️
+### 9. **Marketplace Features** ⚠️
 - **Priority**: P2 (Medium)
 - **Issue**: Category filter and counts not fully implemented
 - **Impact**: Limited marketplace functionality
@@ -315,7 +315,7 @@
   - [ ] Test marketplace filtering and search
   - [ ] Optimize marketplace performance
 
-### 9. **Performance Optimization** ⚠️
+### 10. **Performance Optimization** ⚠️
 - **Priority**: P2 (Medium)
 - **Issue**: Various optimization opportunities identified
 - **Impact**: Performance could be improved
@@ -336,7 +336,7 @@
     - [ ] Query optimization
     - [ ] Rate limiting improvements
 
-### 10. **Security Enhancements** ⚠️
+### 11. **Security Enhancements** ⚠️
 - **Priority**: P2 (Medium)
 - **Issue**: Various security improvements needed
 - **Impact**: Security hardening
@@ -357,7 +357,7 @@
 
 ## 🟢 **LOW PRIORITY (P3)**
 
-### 11. **UI/UX Improvements** ⚠️
+### 12. **UI/UX Improvements** ⚠️
 - **Priority**: P3 (Low)
 - **Issue**: Various UI/UX enhancements identified
 - **Impact**: User experience improvements
@@ -374,7 +374,7 @@
     - [ ] Error message improvements
     - [ ] Success feedback
 
-### 12. **Documentation** ⚠️
+### 13. **Documentation** ⚠️
 - **Priority**: P3 (Low)
 - **Issue**: Documentation gaps and outdated information
 - **Impact**: Developer experience and onboarding
@@ -385,7 +385,7 @@
   - [ ] **Deployment Guides** - Update deployment documentation
   - [ ] **Troubleshooting Guides** - Improve troubleshooting docs
 
-### 13. **Development Tools** ⚠️
+### 14. **Development Tools** ⚠️
 - **Priority**: P3 (Low)
 - **Issue**: Development workflow improvements needed
 - **Impact**: Developer productivity
@@ -447,6 +447,28 @@
   - ✅ Fixed Vercel deployment configuration
   - ✅ Enhanced script safety validation
 - **Impact**: CI pipeline now fully functional for automated testing and deployment
+
+### **Next.js 15 Compatibility Fixes** ✅
+- **Status**: Completed
+- **Date**: 2025-08-28
+- **Issue**: Frontend build failures due to Next.js 15 breaking changes
+- **Root Cause**: Route handler signatures changed from `{ params }` to `{ params: Promise<...> }` and searchParams became async
+- **Solution**: Updated all route handlers and page components for Next.js 15 compatibility
+- **Files Modified**:
+  - `frontend/app/api/admin/restaurants/[id]/route.ts` - Updated GET, PUT, DELETE handlers
+  - `frontend/app/api/admin/restaurants/[id]/approve/route.ts` - Updated POST handler
+  - `frontend/app/api/admin/restaurants/[id]/reject/route.ts` - Updated POST handler
+  - `frontend/app/admin/database/*/page.tsx` - Updated searchParams handling
+  - `frontend/app/eatery/page.tsx` - Removed invalid metadata export
+  - `frontend/components/auth/index.ts` - Removed invalid AuthStatus export
+  - `frontend/app/api/admin/roles/route.ts` - Fixed Prisma field names
+- **Key Fixes**:
+  - ✅ Updated route handler signatures for async params
+  - ✅ Fixed searchParams handling in admin database pages
+  - ✅ Removed invalid exports causing build errors
+  - ✅ Fixed Prisma schema field name mismatches
+  - ✅ Cleaned up unused imports and variables
+- **Impact**: Frontend now builds successfully with Next.js 15
 
 ### **Feature Flags System Fix** ✅
 - **Status**: Completed
@@ -551,8 +573,9 @@
 1. ✅ **Fix Feature Flags System** - ~~Resolve environment variable loading issue~~ **COMPLETED**
 2. ✅ **Authentication Integration** - ~~Replace placeholder sessions with Supabase~~ **COMPLETED**
 3. ✅ **Implement CI Pipeline Fixes** - ~~Address CI failures from PR #46~~ **COMPLETED**
-4. **Implement Analytics Integration** - Connect to actual analytics service
-5. **Complete Order Submission** - Connect order form to backend API
+4. ✅ **Next.js 15 Compatibility** - ~~Fix frontend build issues~~ **COMPLETED**
+5. **Implement Analytics Integration** - Connect to actual analytics service
+6. **Complete Order Submission** - Connect order form to backend API
 
 ### **Short-term (Next 2 Weeks)**
 1. **Begin Shtel Marketplace Enhancements** - Start with community-specific categories and kosher features
@@ -583,7 +606,7 @@
 - **Authentication**: Supabase auth working correctly
 - **Marketplace Core**: ✅ Fully operational (PR #45 - production ready with CRUD operations)
 - **Monitoring**: Sentry integration active
-- **CI Pipeline**: ⚠️ Issues identified, needs fixes (see PR #46)
+- **CI Pipeline**: ✅ Fully operational (fixed in PR #46)
 
 ### **Performance Metrics** ✅
 - **API Response Times**: < 200ms average
