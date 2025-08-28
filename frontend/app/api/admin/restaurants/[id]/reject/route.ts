@@ -7,10 +7,10 @@ import { prisma } from '@/lib/db/prisma';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
+    const { params } = await context;
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,13 +22,16 @@ export async function POST(
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
-    const id = Number(resolvedParams.id);
+    const { id } = await params;
+    const restaurantId = Number(id);
     if (!Number.isInteger(id)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
-    await AdminDatabaseService.rejectRestaurant(
+    await AdminDatabaseService.updateRecord(
       prisma.restaurant,
+      'restaurant',
       id,
+      { status: 'rejected' },
       adminUser,
       'restaurant'
     );
