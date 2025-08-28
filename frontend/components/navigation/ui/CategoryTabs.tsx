@@ -45,6 +45,33 @@ const Synagogue: React.FC<{ size?: number; className?: string }> = ({ size = 18,
   </svg>
 );
 
+// Custom Shtel (Jewish community marketplace) icon component
+const Shtel: React.FC<{ size?: number; className?: string }> = ({ size = 18, className = '' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    {/* Community buildings */}
+    <path d="M2 20h20" />
+    <path d="M4 20V10l4-3 4 3v10" />
+    <path d="M14 20V8l4-3 4 3v12" />
+    {/* Star of David symbol */}
+    <path d="M8 4l1 1.5L10.5 6L9 7.5L8 9l-1-1.5L5.5 6L7 4.5z" />
+    {/* Market stalls */}
+    <path d="M6 14h4" />
+    <path d="M6 16h4" />
+    <path d="M16 12h4" />
+    <path d="M16 14h4" />
+  </svg>
+);
+
 interface CategoryTabsProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
@@ -75,6 +102,12 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
       label: 'Marketplace',
       icon: Ticket,
       href: '/marketplace'
+    },
+    {
+      id: 'shtel',
+      label: 'Shtel',
+      icon: Shtel,
+      href: '/shtel'
     },
     {
       id: 'eatery',
