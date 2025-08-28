@@ -1,5 +1,5 @@
 export { default as ReviewsSection } from './ReviewsSection';
-export { ReviewForm } from './ReviewForm';
+export { default as ReviewForm } from './ReviewForm';
 export { default as ReviewCard } from './ReviewCard';
 export { default as ReviewModeration } from './ReviewModeration';
 
