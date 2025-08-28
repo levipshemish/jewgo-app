@@ -237,7 +237,7 @@ export function useMarkerManagement({
     }
 
     // Create clusterer
-    clustererRef.current = new window.MarkerClusterer(map, markersRef.current as any, {
+    clustererRef.current = new (window.MarkerClusterer as any)(map, markersRef.current as any, {
       gridSize: 50,
       maxZoom: 15,
       styles: [
