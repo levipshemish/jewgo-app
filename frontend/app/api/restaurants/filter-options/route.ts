@@ -1,15 +1,18 @@
-import { _NextRequest, _NextResponse} from 'next/server';
+import { NextRequest, NextResponse} from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
+    // Use production backend URL if environment variable is not set
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    
     // Fetch filter options from backend API
-    const _backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants/filter-options`, {
+    const _backendResponse = await fetch(`${backendUrl}/api/restaurants/filter-options`, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
     
-    if (!backendResponse.ok) {
+    if (!_backendResponse.ok) {
       // Return default options if backend is unavailable
       return NextResponse.json({
         success: true,
@@ -46,15 +49,15 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const _data = await backendResponse.json();
+    const _data = await _backendResponse.json();
     
     return NextResponse.json({
       success: true,
-      data: data.data || data
+      data: _data.data || _data
     });
     
   } catch (_error) {
-    console.error('Error fetching filter options:', error);
+    console.error('Error fetching filter options:', _error);
     
     // Return default options on error
     return NextResponse.json({

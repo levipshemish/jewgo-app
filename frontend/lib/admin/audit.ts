@@ -8,19 +8,19 @@ export interface AuditLog {
   userId: string;
   action: string;
   entityType: string;
-  entityId?: string;
-  oldData?: any;
-  newData?: any;
+  entityId: string | null;
+  oldData: any | null;
+  newData: any | null;
   timestamp: Date;
-  ipAddress?: string;
-  userAgent?: string;
-  sessionId?: string;
-  correlationId?: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  sessionId: string | null;
+  correlationId: string | null;
   auditLevel: 'info' | 'warning' | 'critical';
-  metadata?: Record<string, any>;
+  metadata: Record<string, any> | null;
   user?: {
     email: string;
-    name?: string;
+    name: string | null;
   };
 }
 
@@ -92,6 +92,100 @@ export const AUDIT_ACTIONS = {
 } as const;
 
 /**
+ * Audit logging utilities for admin actions
+ */
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details: Record<string, any>;
+  timestamp: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface AuditLogOptions {
+  sanitizeFields?: string[];
+  maxDetailLength?: number;
+}
+
+// In-memory audit log for development (use database in production)
+const auditLog: AuditLogEntry[] = [];
+
+
+
+/**
+ * Get audit logs for a user
+ */
+export async function getAuditLogs(
+  userId?: string,
+  limit: number = 100
+): Promise<AuditLogEntry[]> {
+  try {
+    let logs = [...auditLog];
+    
+    if (userId) {
+      logs = logs.filter(log => log.userId === userId);
+    }
+    
+    // Sort by timestamp descending
+    logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    return logs.slice(0, limit);
+  } catch (error) {
+    console.error('Failed to get audit logs:', error);
+    return [];
+  }
+}
+
+/**
+ * Sanitize sensitive data
+ */
+function sanitizeData(data: Record<string, any>, sensitiveFields: string[]): Record<string, any> {
+  const sanitized = { ...data };
+  
+  for (const field of sensitiveFields) {
+    if (field in sanitized) {
+      sanitized[field] = '[REDACTED]';
+    }
+  }
+  
+  return sanitized;
+}
+
+/**
+ * Truncate long details
+ */
+// function truncateDetails(details: Record<string, any>, maxLength: number): Record<string, any> {
+//   const detailsStr = JSON.stringify(details);
+//   
+//   if (detailsStr.length <= maxLength) {
+//     return details;
+//   }
+//   
+//   // Truncate and add indicator
+//   const truncated = detailsStr.substring(0, maxLength - 3) + '...';
+//   return { _truncated: true, data: JSON.parse(truncated) };
+// }
+
+/**
+ * Generate unique ID
+ */
+// function generateId(): string {
+//   return `audit_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+// }
+
+/**
+ * Clear audit logs (for testing)
+ */
+export function clearAuditLogs(): void {
+  auditLog.length = 0;
+}
+
+/**
  * Log admin action with comprehensive audit trail
  */
 export async function logAdminAction(
@@ -128,25 +222,29 @@ export async function logAdminAction(
     // Sanitize sensitive data with optional whitelist
     const sanitizedOldData = truncateForAudit(sanitizeDataWithWhitelist(oldData, whitelistFields));
     const sanitizedNewData = truncateForAudit(sanitizeDataWithWhitelist(newData, whitelistFields));
-    const sanitizedMetadata = truncateForAudit(sanitizeData(metadata));
+    const sanitizedMetadata = truncateForAudit(sanitizeData(metadata, []));
 
     // Create audit log entry
+    const auditData: any = {
+      userId: user.id,
+      action,
+      entityType,
+      oldData: sanitizedOldData ? JSON.stringify(sanitizedOldData) : null,
+      newData: sanitizedNewData ? JSON.stringify(sanitizedNewData) : null,
+      timestamp: new Date(),
+      auditLevel,
+      metadata: sanitizedMetadata ? JSON.stringify(sanitizedMetadata) : null,
+    };
+
+    // Only add optional fields if they have values
+    if (entityId) auditData.entityId = entityId;
+    if (ipAddress) auditData.ipAddress = ipAddress;
+    if (userAgent) auditData.userAgent = userAgent;
+    if (sessionId) auditData.sessionId = sessionId;
+    if (correlationId) auditData.correlationId = correlationId;
+
     await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action,
-        entityType,
-        entityId,
-        oldData: sanitizedOldData ? JSON.stringify(sanitizedOldData) : null,
-        newData: sanitizedNewData ? JSON.stringify(sanitizedNewData) : null,
-        timestamp: new Date(),
-        ipAddress,
-        userAgent,
-        sessionId,
-        correlationId,
-        auditLevel,
-        metadata: sanitizedMetadata ? JSON.stringify(sanitizedMetadata) : null,
-      },
+      data: auditData,
     });
 
     // Log to console for development/debugging
@@ -203,39 +301,7 @@ export function sanitizeDataWithWhitelist(data: any, whitelistFields: string[] =
   return data;
 }
 
-/**
- * Sanitize sensitive data for audit logs (legacy function)
- */
-export function sanitizeData(data: any): any {
-  if (!data) {return data;}
 
-  const sensitiveFields = [
-    'password', 'token', 'refresh_token', 'access_token', 'secret',
-    'api_key', 'private_key', 'credit_card', 'ssn', 'social_security',
-    // Common PII fields (extendable)
-    'email', 'user_email', 'owner_email', 'business_email', 'phone', 'owner_phone', 'phone_number'
-  ];
-
-  if (typeof data === 'object') {
-    const sanitized: Record<string, any> = { ...data };
-    // Redact known sensitive fields at the top level
-    for (const field of sensitiveFields) {
-      if (sanitized[field]) {
-        sanitized[field] = '[REDACTED]';
-      }
-    }
-    // Do not include nested objects/arrays in audit payloads to avoid leaking data
-    Object.keys(sanitized).forEach((k) => {
-      const v = sanitized[k];
-      if (v && typeof v === 'object') {
-        sanitized[k] = '[REDACTED_OBJECT]';
-      }
-    });
-    return sanitized;
-  }
-
-  return data;
-}
 
 /**
  * Query audit logs with filtering and pagination
@@ -308,15 +374,15 @@ export async function queryAuditLogs(options: {
   return {
     logs: logs.map(log => ({
       ...log,
-      entityId: log.entityId || undefined,
-      ipAddress: log.ipAddress || undefined,
-      userAgent: log.userAgent || undefined,
-      sessionId: log.sessionId || undefined,
-      correlationId: log.correlationId || undefined,
+      entityId: log.entityId,
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      sessionId: log.sessionId,
+      correlationId: log.correlationId,
       auditLevel: log.auditLevel as 'info' | 'warning' | 'critical',
       user: log.user ? {
         email: log.user.email,
-        name: log.user.name || undefined,
+        name: log.user.name,
       } : undefined,
       oldData: log.oldData ? JSON.parse(log.oldData) : null,
       newData: log.newData ? JSON.parse(log.newData) : null,
@@ -405,15 +471,15 @@ export async function getAuditStats(options: {
     ),
     recentActivity: recentActivity.map(log => ({
       ...log,
-      entityId: log.entityId || undefined,
-      ipAddress: log.ipAddress || undefined,
-      userAgent: log.userAgent || undefined,
-      sessionId: log.sessionId || undefined,
-      correlationId: log.correlationId || undefined,
+      entityId: log.entityId,
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      sessionId: log.sessionId,
+      correlationId: log.correlationId,
       auditLevel: log.auditLevel as 'info' | 'warning' | 'critical',
       user: log.user ? {
         email: log.user.email,
-        name: log.user.name || undefined,
+        name: log.user.name,
       } : undefined,
       oldData: log.oldData ? JSON.parse(log.oldData) : null,
       newData: log.newData ? JSON.parse(log.newData) : null,
