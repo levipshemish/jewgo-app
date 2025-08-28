@@ -51,22 +51,22 @@ export interface DataTableProps<T> {
 }
 
 export default function DataTable<T extends { id: string | number }>({
-  _title,
-  _exportHint,
+  title: _title,
+  exportHint: _exportHint,
   data,
   columns,
   pagination,
   onPageChange,
-  _onPageSizeChange,
+  onPageSizeChange: _onPageSizeChange,
   onSort,
   onSearch,
-  _onExport,
-  _onBulkAction,
-  _bulkActions = [],
-  _searchPlaceholder = 'Search...',
+  onExport: _onExport,
+  onBulkAction: _onBulkAction,
+  bulkActions: _bulkActions = [],
+  searchPlaceholder: _searchPlaceholder = 'Search...',
   loading = false,
-  _selectable = false,
-  _actions = [],
+  selectable: _selectable = false,
+  actions: _actions = [],
   // New controlled props with defaults
   searchQuery: controlledSearchQuery,
   sortKey: controlledSortKey,
@@ -157,7 +157,7 @@ export default function DataTable<T extends { id: string | number }>({
   // Handle bulk action
   const handleBulkAction = (action: string) => {
     const selectedIds = Array.from(selectedRows).map(id => id.toString());
-    onBulkAction?.(action, selectedIds);
+    _onBulkAction?.(action, selectedIds);
     setSelectedRows(new Set()); // Clear selection after action
   };
 
@@ -195,7 +195,7 @@ export default function DataTable<T extends { id: string | number }>({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder={searchPlaceholder}
+                placeholder={_searchPlaceholder}
                 value={searchQuery}
                 onChange={handleSearchInputChange}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
@@ -203,9 +203,9 @@ export default function DataTable<T extends { id: string | number }>({
             </form>
 
             {/* Export */}
-            {onExport && (
+            {_onExport && (
               <button
-                onClick={onExport}
+                onClick={_onExport}
                 className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
               >
                 <Download className="h-4 w-4" />
@@ -215,25 +215,25 @@ export default function DataTable<T extends { id: string | number }>({
           </div>
         </div>
 
-        {(title || exportHint) && (
+        {(_title || _exportHint) && (
           <div className="mt-2 flex items-center justify-between">
-            {title ? (
-              <div className="text-sm font-medium text-gray-900">{title}</div>
+            {_title ? (
+              <div className="text-sm font-medium text-gray-900">{_title}</div>
             ) : (
               <div />
             )}
-            {exportHint && (
-              <div className="text-xs text-gray-500">{exportHint}</div>
+            {_exportHint && (
+              <div className="text-xs text-gray-500">{_exportHint}</div>
             )}
           </div>
         )}
       </div>
 
       {/* Bulk Actions */}
-      {selectedCount > 0 && onBulkAction && (
+              {selectedCount > 0 && _onBulkAction && (
         <div className="p-6 border-b border-gray-200 flex items-center space-x-2">
-          {(Array.isArray(bulkActions) && bulkActions.length > 0) ? (
-            bulkActions.map((ba, idx) => (
+                      {(Array.isArray(_bulkActions) && _bulkActions.length > 0) ? (
+              _bulkActions.map((ba, idx) => (
               <button
                 key={idx}
                 onClick={() => handleBulkAction(ba.key)}
@@ -262,7 +262,7 @@ export default function DataTable<T extends { id: string | number }>({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {selectable && (
+              {_selectable && (
                 <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
@@ -311,7 +311,7 @@ export default function DataTable<T extends { id: string | number }>({
                 );
               })}
               
-              {actions.length > 0 && (
+              {_actions.length > 0 && (
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -323,7 +323,7 @@ export default function DataTable<T extends { id: string | number }>({
             {loading ? (
               <tr>
                 <td
-                  colSpan={columns.length + (selectable ? 1 : 0) + (actions.length > 0 ? 1 : 0)}
+                  colSpan={columns.length + (_selectable ? 1 : 0) + (_actions.length > 0 ? 1 : 0)}
                   className="px-6 py-4 text-center text-gray-500"
                 >
                   Loading...
@@ -332,7 +332,7 @@ export default function DataTable<T extends { id: string | number }>({
             ) : data.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length + (selectable ? 1 : 0) + (actions.length > 0 ? 1 : 0)}
+                  colSpan={columns.length + (_selectable ? 1 : 0) + (_actions.length > 0 ? 1 : 0)}
                   className="px-6 py-4 text-center text-gray-500"
                 >
                   No data found
@@ -344,7 +344,7 @@ export default function DataTable<T extends { id: string | number }>({
                   key={row.id}
                   className={`hover:bg-gray-50 ${selectedRows.has(row.id) ? 'bg-blue-50' : ''}`}
                 >
-                  {selectable && (
+                  {_selectable && (
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
@@ -368,10 +368,10 @@ export default function DataTable<T extends { id: string | number }>({
                     </td>
                   ))}
                   
-                  {actions.length > 0 && (
+                  {_actions.length > 0 && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {actions.map((action, actionIndex) => (
+                        {_actions.map((action, actionIndex) => (
                           <button
                             key={actionIndex}
                             onClick={() => action.onClick(row)}
@@ -408,7 +408,7 @@ export default function DataTable<T extends { id: string | number }>({
               
               <select
                 value={pagination.pageSize}
-                onChange={(e) => onPageSizeChange?.(parseInt(e.target.value))}
+                onChange={(e) => _onPageSizeChange?.(parseInt(e.target.value))}
                 className="border border-gray-300 rounded-md px-2 py-1 text-sm"
               >
                 <option value={10}>10</option>

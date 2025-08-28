@@ -161,10 +161,10 @@ export const useOptimizedFilters = (
 ): UseOptimizedFiltersReturn => {
   const {
     debounceMs = 300,
-    _enableMemoization = true,
-    _enableServerSideFiltering = false,
-    _maxClientSideItems = 1000,
-    _enableDraftMode = true // Default to draft mode for better UX
+    enableMemoization: _enableMemoization = true,
+    enableServerSideFiltering: _enableServerSideFiltering = false,
+    maxClientSideItems: _maxClientSideItems = 1000,
+    enableDraftMode: _enableDraftMode = true // Default to draft mode for better UX
   } = options;
 
   const [activeFilters, setActiveFilters] = useState<FilterState>(initialFilters);
