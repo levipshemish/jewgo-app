@@ -50,6 +50,7 @@ export async function POST(
       data: {
         submission_status: 'approved',
         approval_date: new Date(),
+        approved_by: adminUser.id,
         status: 'active',
         updated_at: new Date(),
       },

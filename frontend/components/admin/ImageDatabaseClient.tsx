@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
+import { adminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/lib/ui/toast';
 
@@ -111,11 +112,10 @@ export default function ImageDatabaseClient({
 
   const _onUpdate = async (id: number, updates: Partial<RestaurantImage>) => {
     try {
-      const res = await fetch(`/api/admin/images/${id}`, {
+      const res = await adminFetch(`/api/admin/images/${id}`, csrf, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrf,
         },
         body: JSON.stringify(updates),
       });
@@ -138,11 +138,8 @@ export default function ImageDatabaseClient({
     }
 
     try {
-      const res = await fetch(`/api/admin/images/${id}`, {
+      const res = await adminFetch(`/api/admin/images/${id}`, csrf, {
         method: 'DELETE',
-        headers: {
-          'X-CSRF-Token': csrf,
-        },
       });
 
       if (res.ok) {
@@ -159,11 +156,10 @@ export default function ImageDatabaseClient({
 
   const onBulkAction = async (action: string, selectedIds: string[]) => {
     try {
-      const res = await fetch('/api/admin/images/bulk', {
+      const res = await adminFetch('/api/admin/images/bulk', csrf, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrf,
         },
         body: JSON.stringify({ action, selectedIds }),
       });
@@ -187,11 +183,7 @@ export default function ImageDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/images/export?${params.toString()}`, {
-        headers: {
-          'X-CSRF-Token': csrf,
-        },
-      });
+      const res = await adminFetch(`/api/admin/images/export?${params.toString()}`, csrf);
 
       if (res.ok) {
         const blob = await res.blob();

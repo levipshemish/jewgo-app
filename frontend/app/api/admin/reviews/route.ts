@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const pageSizeRaw = parseInt(searchParams.get('pageSize') || '20');
+    const pageSize = Math.min(Math.max(pageSizeRaw, 1), 100);
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
@@ -242,13 +243,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
-    // Get review ID from query params
+    // Get review ID from query params (deprecated)
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
     }
+    // eslint-disable-next-line no-console
+    console.warn('[DEPRECATED] Use DELETE /api/admin/reviews/{id} instead of query param id');
 
     // Check if review exists before deleting
     const existingReview = await prisma.review.findUnique({

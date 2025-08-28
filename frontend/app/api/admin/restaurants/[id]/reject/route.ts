@@ -54,6 +54,8 @@ export async function POST(
       data: {
         submission_status: 'rejected',
         rejection_reason: rejectionReason,
+        approved_by: null,
+        approval_date: null,
         status: 'inactive',
         updated_at: new Date(),
       },

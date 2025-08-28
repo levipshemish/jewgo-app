@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const pageSizeRaw = parseInt(searchParams.get('pageSize') || '20');
+    const pageSize = Math.min(Math.max(pageSizeRaw, 1), 100);
     const search = searchParams.get('search') || undefined;
     const sortBy = searchParams.get('sortBy') || 'createdat';
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
@@ -296,13 +297,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
     }
 
-    // Get user ID from query params
+    // Get user ID from query params (deprecated)
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
+    // eslint-disable-next-line no-console
+    console.warn('[DEPRECATED] Use DELETE /api/admin/users/{id} instead of query param id');
 
     // Prevent self-deletion
     if (id === adminUser.id) {

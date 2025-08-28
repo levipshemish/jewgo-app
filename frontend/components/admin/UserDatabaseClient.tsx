@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
+import { adminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/lib/ui/toast';
 
@@ -111,11 +112,10 @@ export default function UserDatabaseClient({
 
   const _onEdit = async (id: string, data: Partial<User>) => {
     try {
-      const res = await fetch(`/api/admin/users`, {
+      const res = await adminFetch(`/api/admin/users`, csrf || '', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ id, ...data }),
       });
@@ -138,11 +138,8 @@ export default function UserDatabaseClient({
     }
     
     try {
-      const res = await fetch(`/api/admin/users?id=${id}`, {
+      const res = await adminFetch(`/api/admin/users/${id}`, csrf || '', {
         method: 'DELETE',
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
       });
       
       if (res.ok) {
@@ -164,11 +161,10 @@ export default function UserDatabaseClient({
     
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/users/bulk', {
+      const res = await adminFetch('/api/admin/users/bulk', csrf || '', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ action, ids }),
       });
@@ -194,11 +190,7 @@ export default function UserDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/users/export?${params.toString()}`, {
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
-      });
+      const res = await adminFetch(`/api/admin/users/export?${params.toString()}`, csrf || '');
       
       if (res.ok) {
         const blob = await res.blob();

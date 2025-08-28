@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { useAdminCsrf} from '@/lib/admin/hooks';
-import { useRouter, useSearchParams} from 'next/navigation';
-import { useToast} from '@/lib/ui/toast';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { adminFetch } from '@/lib/admin/fetch';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface Restaurant {
   id: number;
@@ -116,11 +117,10 @@ export default function RestaurantDatabaseClient({
 
   const _onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
-      const res = await fetch(`/api/admin/restaurants`, {
+      const res = await adminFetch(`/api/admin/restaurants`, csrf || '', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ id, ...data }),
       });
@@ -143,11 +143,8 @@ export default function RestaurantDatabaseClient({
     }
     
     try {
-      const res = await fetch(`/api/admin/restaurants?id=${id}`, {
+      const res = await adminFetch(`/api/admin/restaurants/${id}`, csrf || '', {
         method: 'DELETE',
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
       });
       
       if (res.ok) {
@@ -169,11 +166,10 @@ export default function RestaurantDatabaseClient({
     
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/restaurants/bulk', {
+      const res = await adminFetch('/api/admin/restaurants/bulk', csrf || '', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ action, ids }),
       });
@@ -199,11 +195,7 @@ export default function RestaurantDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/restaurants/export?${params.toString()}`, {
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
-      });
+      const res = await adminFetch(`/api/admin/restaurants/export?${params.toString()}`, csrf || '');
       
       if (res.ok) {
         const blob = await res.blob();

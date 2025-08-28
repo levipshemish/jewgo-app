@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
+import { adminFetch } from '@/lib/admin/fetch';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/lib/ui/toast';
 import { CheckCircle, XCircle } from 'lucide-react';
@@ -97,11 +98,10 @@ export default function AdminRestaurantsPage() {
 
   const approveOne = async (id: number, retryCount = 0): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/admin/restaurants/${id}/approve`, { 
-        method: 'POST', 
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '' 
+      const res = await adminFetch(`/api/admin/restaurants/${id}/approve`, csrf || '', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
       
@@ -122,13 +122,12 @@ export default function AdminRestaurantsPage() {
 
   const rejectOne = async (id: number, retryCount = 0): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/admin/restaurants/${id}/reject`, { 
-        method: 'POST', 
-        headers: { 
-          'Content-Type': 'application/json', 
-          'x-csrf-token': csrf || '' 
-        }, 
-        body: JSON.stringify({ 
+      const res = await adminFetch(`/api/admin/restaurants/${id}/reject`, csrf || '', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           reason: 'Rejected by admin'
         })
       });

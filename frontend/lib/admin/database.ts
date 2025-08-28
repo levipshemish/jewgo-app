@@ -171,6 +171,9 @@ export class AdminDatabaseService {
   ): Promise<PaginatedResult<T>> {
     const { page, pageSize, search, filters, sortBy, sortOrder } = options;
 
+    const safePageSize = Math.min(Math.max(pageSize, 1), 100);
+    const safePage = Math.max(page, 1);
+
     // Build where clause
     const where: any = {};
     
@@ -197,13 +200,17 @@ export class AdminDatabaseService {
     // Build order by
     const orderBy: any = {};
     if (sortBy) {
-      // Validate sort field
       if (!this.validateSortField(modelKey, sortBy)) {
-        throw new Error(`Invalid sort field: ${sortBy} for model: ${modelKey}`);
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[ADMIN] Invalid sort field: ${sortBy} for model: ${modelKey}. Falling back to default.`
+        );
+        const defaultSortField = this.getDefaultSortField(modelKey);
+        orderBy[defaultSortField] = sortOrder || 'desc';
+      } else {
+        orderBy[sortBy] = sortOrder || 'desc';
       }
-      orderBy[sortBy] = sortOrder || 'desc';
     } else {
-      // Use default sort field based on model
       const defaultSortField = this.getDefaultSortField(modelKey);
       orderBy[defaultSortField] = 'desc';
     }
@@ -216,8 +223,8 @@ export class AdminDatabaseService {
     const findOptions: any = {
       where,
       orderBy,
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      skip: (safePage - 1) * safePageSize,
+      take: safePageSize,
     };
     if (typeof include !== 'undefined') {
       findOptions.include = include;
@@ -246,15 +253,15 @@ export class AdminDatabaseService {
       }
     }
 
-    const totalPages = Math.ceil(total / pageSize);
-    const hasNext = page < totalPages;
-    const hasPrev = page > 1;
+    const totalPages = Math.ceil(total / safePageSize);
+    const hasNext = safePage < totalPages;
+    const hasPrev = safePage > 1;
 
     return {
       data,
       pagination: {
-        page,
-        pageSize,
+        page: safePage,
+        pageSize: safePageSize,
         total,
         totalPages,
         hasNext,

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
-import { useAdminCsrf} from '@/lib/admin/hooks';
-import { useRouter, useSearchParams} from 'next/navigation';
-import { useToast} from '@/lib/ui/toast';
+import { useAdminCsrf } from '@/lib/admin/hooks';
+import { adminFetch } from '@/lib/admin/fetch';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/ui/toast';
 
 interface Review {
   id: string;
@@ -115,11 +116,10 @@ export default function ReviewDatabaseClient({
 
   const _onEdit = async (id: string, data: Partial<Review>) => {
     try {
-      const res = await fetch(`/api/admin/reviews`, {
+      const res = await adminFetch(`/api/admin/reviews`, csrf || '', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ id, ...data }),
       });
@@ -142,11 +142,8 @@ export default function ReviewDatabaseClient({
     }
     
     try {
-      const res = await fetch(`/api/admin/reviews?id=${id}`, {
+      const res = await adminFetch(`/api/admin/reviews/${id}`, csrf || '', {
         method: 'DELETE',
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
       });
       
       if (res.ok) {
@@ -168,11 +165,10 @@ export default function ReviewDatabaseClient({
     
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/reviews/bulk', {
+      const res = await adminFetch('/api/admin/reviews/bulk', csrf || '', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-csrf-token': csrf || '',
         },
         body: JSON.stringify({ action, selectedIds }),
       });
@@ -198,11 +194,7 @@ export default function ReviewDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await fetch(`/api/admin/reviews/export?${params.toString()}`, {
-        headers: {
-          'x-csrf-token': csrf || '',
-        },
-      });
+      const res = await adminFetch(`/api/admin/reviews/export?${params.toString()}`, csrf || '');
       
       if (res.ok) {
         const blob = await res.blob();
