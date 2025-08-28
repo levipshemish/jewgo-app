@@ -4,7 +4,7 @@ import { Star, Upload, X, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 
 // NextAuth removed - using Supabase only
@@ -62,7 +62,7 @@ export default function ReviewForm({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async (event: string, session) => {
       // Only update on actual auth events, not on subscription
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
         setSession(session?.user ? { user: session.user } : null);
