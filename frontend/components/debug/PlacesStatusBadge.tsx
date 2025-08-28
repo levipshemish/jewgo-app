@@ -38,9 +38,9 @@ export default function PlacesStatusBadge() {
   return (
     <div className={`fixed bottom-3 right-3 z-50 text-xs px-2 py-1 rounded shadow-lg ${cls}`}>
       <span className="font-semibold">Places</span>:
-      {' '}ready {diag.ready ? '✓' : '✗'} | lib {diag.hasPlaces ? '✓' : '✗'} |
+      {' '}ready {diag.ready ? '&check;' : '&times;'} | lib {diag.hasPlaces ? '&check;' : '&times;'} |
       {' '}pred {diag.predictionStrategy}{' '}| details {diag.detailsStrategy}
-      {' '}| Sugg {diag.hasAutocompleteSuggestion ? '✓' : '✗'}
+      {' '}| Sugg {diag.hasAutocompleteSuggestion ? '&check;' : '&times;'}
     </div>
   );
 }
