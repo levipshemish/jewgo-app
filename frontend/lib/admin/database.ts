@@ -4,6 +4,7 @@ import { logAdminAction, AUDIT_ACTIONS } from './audit';
 
 // Constants for submission status
 const PENDING_STATUS = 'pending_approval';
+const MAX_PAGE_SIZE = 100;
 
 /**
  * Helper function to translate entity type and operation to audit action
@@ -171,7 +172,7 @@ export class AdminDatabaseService {
   ): Promise<PaginatedResult<T>> {
     const { page, pageSize, search, filters, sortBy, sortOrder } = options;
 
-    const safePageSize = Math.min(Math.max(pageSize, 1), 100);
+    const safePageSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     const safePage = Math.max(page, 1);
 
     // Build where clause

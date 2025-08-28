@@ -71,7 +71,7 @@ export default function RestaurantDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await adminFetch(`/api/admin/restaurants?${params.toString()}`, csrf || '', { cache: 'no-store' });
+      const res = await adminFetch(`/api/admin/restaurants?${params.toString()}`, csrf, { cache: 'no-store' });
       if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
       const json = await res.json();
       setRows(json.data || []);
@@ -117,7 +117,7 @@ export default function RestaurantDatabaseClient({
 
   const _onEdit = async (id: number, data: Partial<Restaurant>) => {
     try {
-      const res = await adminFetch(`/api/admin/restaurants`, csrf || '', {
+      const res = await adminFetch(`/api/admin/restaurants`, csrf, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ export default function RestaurantDatabaseClient({
     }
     
     try {
-      const res = await adminFetch(`/api/admin/restaurants/${id}`, csrf || '', {
+      const res = await adminFetch(`/api/admin/restaurants/${id}`, csrf, {
         method: 'DELETE',
       });
       
@@ -166,7 +166,7 @@ export default function RestaurantDatabaseClient({
     
     setLoading(true);
     try {
-      const res = await adminFetch('/api/admin/restaurants/bulk', csrf || '', {
+      const res = await adminFetch('/api/admin/restaurants/bulk', csrf, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ export default function RestaurantDatabaseClient({
       if (sortBy) { params.set('sortBy', sortBy); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
-      const res = await adminFetch(`/api/admin/restaurants/export?${params.toString()}`, csrf || '');
+      const res = await adminFetch(`/api/admin/restaurants/export?${params.toString()}`, csrf);
       
       if (res.ok) {
         const blob = await res.blob();

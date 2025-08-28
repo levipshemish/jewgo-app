@@ -5,6 +5,7 @@ import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { logAdminAction, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+import { corsHeaders } from '@/lib/middleware/security';
 
 export async function POST(
   request: NextRequest,
@@ -94,4 +95,8 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
 }
