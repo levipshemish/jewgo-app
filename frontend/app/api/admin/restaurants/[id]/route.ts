@@ -10,8 +10,9 @@ import { AdminErrors } from '@/lib/admin/errors';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { params } = await context.params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.DEFAULT)(request);
@@ -55,8 +56,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { params } = await context.params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -78,7 +80,7 @@ export async function PUT(
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Parse and validate restaurant ID
@@ -137,7 +139,7 @@ export async function DELETE(
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_ERROR();
+      return AdminErrors.CSRF_INVALID();
     }
 
     // Parse and validate restaurant ID
