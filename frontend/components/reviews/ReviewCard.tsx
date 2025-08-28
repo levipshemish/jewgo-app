@@ -71,10 +71,12 @@ export default function ReviewCard({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async () => {
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      setSession(user ? { user } : null);
-      setLoading(false);
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async (event, session) => {
+      // Only update on actual auth events, not on subscription
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        setSession(session?.user ? { user: session.user } : null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
