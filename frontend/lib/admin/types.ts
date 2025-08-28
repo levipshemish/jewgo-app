@@ -36,6 +36,7 @@ export const ADMIN_PERMISSIONS = {
   // System administration
   SYSTEM_SETTINGS: 'system:settings',
   SYSTEM_VIEW: 'system:view',
+  SYSTEM_EDIT: 'system:edit',
   AUDIT_VIEW: 'audit:view',
   AUDIT_DELETE: 'audit:delete',
   

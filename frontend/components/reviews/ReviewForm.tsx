@@ -51,9 +51,9 @@ export default function ReviewForm({
 
         const { data: { session } } = await supabaseClient.auth.getSession();
         setSession(session);
-      } catch (error) {
-        console.error('Error getting session:', error);
-        handleUserLoadError(error);
+      } catch (sessionError) {
+        console.error('Error getting session:', sessionError);
+        handleUserLoadError(sessionError);
       } finally {
         setLoading(false);
       }

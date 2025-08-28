@@ -8,8 +8,9 @@ import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
@@ -35,14 +36,14 @@ export async function POST(
     }
 
     // Parse and validate ID
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
       return NextResponse.json({ error: 'Invalid restaurant ID' }, { status: 400 });
     }
 
     // Check if restaurant exists
     const existingRestaurant = await prisma.restaurant.findUnique({
-      where: { id }
+      where: { id: parsedId }
     });
 
     if (!existingRestaurant) {
@@ -52,7 +53,7 @@ export async function POST(
     // Update restaurant status
     const now = new Date();
     const updatedRestaurant = await prisma.restaurant.update({
-      where: { id },
+      where: { id: parsedId },
       data: {
         submission_status: 'approved',
         approval_date: now,
@@ -63,7 +64,7 @@ export async function POST(
 
     // Log the action
     await logAdminAction(adminUser, AUDIT_ACTIONS.RESTAURANT_APPROVE, 'restaurant', {
-      entityId: id.toString(),
+      entityId: parsedId.toString(),
       metadata: {
         previousStatus: existingRestaurant.submission_status,
         newStatus: 'approved',

@@ -1,55 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
+import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
-import { corsHeaders } from '@/lib/middleware/security';
-import { logAdminAction, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
+import { logAdminAction, AUDIT_ACTIONS } from '@/lib/admin/audit';
+import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function GET(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.DEFAULT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse query parameters
+    // Check permissions - only super admins can view roles
+    if (!adminUser.isSuperAdmin) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Get query parameters
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '20');
-    const search = searchParams.get('search') || '';
-
-    // Build where clause
-    const where: any = {};
-    if (search) {
-      where.OR = [
-        { user: { email: { contains: search, mode: 'insensitive' } } },
-        { user: { name: { contains: search, mode: 'insensitive' } } },
-        { role: { contains: search, mode: 'insensitive' } },
-      ];
-    }
 
     // Get admin roles with pagination
-    const [roles, total] = await Promise.all([
-      prisma.adminRole.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              issuperadmin: true,
-            },
-          },
+    const total = await prisma.adminRole.count();
+    const roles = await prisma.adminRole.findMany({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            issuperadmin: true,
+          }
         },
-        orderBy: { assignedAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.adminRole.count({ where }),
-    ]);
+        assignedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          }
+        }
+      },
+      orderBy: { assigned_at: 'desc' }
+    });
 
     const totalPages = Math.ceil(total / pageSize);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     return NextResponse.json({
       data: roles,
@@ -58,12 +66,12 @@ export async function GET(request: NextRequest) {
         pageSize,
         total,
         totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
+        hasNext,
+        hasPrev,
+      }
     });
   } catch (error) {
-    console.error('[ADMIN] Roles fetch error:', error);
+    console.error('[ADMIN] Roles GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch admin roles' },
       { status: 500 }
@@ -73,52 +81,77 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check permissions - only super admins can update roles
+    if (!adminUser.isSuperAdmin) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Validate CSRF token
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+    }
+
     // Parse request body
-    const { id, is_active, expires_at } = await request.json();
+    const { id, isActive, expiresAt } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Role ID is required' }, { status: 400 });
     }
 
-    // Update admin role
+    // Update role
     const updatedRole = await prisma.adminRole.update({
       where: { id: parseInt(id) },
       data: {
-        isActive: is_active !== undefined ? is_active : undefined,
-        expiresAt: expires_at || null,
+        is_active: isActive,
+        expires_at: expiresAt ? new Date(expiresAt) : null,
+        updated_at: new Date(),
       },
-              include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              issuperadmin: true,
-            },
-          },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            issuperadmin: true,
+          }
         },
+        assignedBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          }
+        }
+      }
     });
 
     // Log the action
-    await logAdminAction(adminUser, 'role_update', 'admin_role', {
+    await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, 'admin_role', {
       entityId: id.toString(),
-      oldData: { id, is_active, expires_at },
-      newData: { id, is_active, expires_at },
-      whitelistFields: AUDIT_FIELD_ALLOWLISTS.ADMIN_ROLE,
+      metadata: {
+        roleId: id,
+        isActive,
+        expiresAt,
+        targetUserId: updatedRole.user_id
+      }
     });
 
-    return NextResponse.json({
-      message: 'Admin role updated successfully',
-      data: updatedRole,
-    });
+    return NextResponse.json({ data: updatedRole });
   } catch (error) {
-    console.error('[ADMIN] Role update error:', error);
+    console.error('[ADMIN] Roles PUT error:', error);
     return NextResponse.json(
       { error: 'Failed to update admin role' },
       { status: 500 }
@@ -128,48 +161,72 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Authenticate admin user
     const adminUser = await requireAdmin(request);
     if (!adminUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body
-    const { id } = await request.json();
-
-    if (!id) {
-      return NextResponse.json({ error: 'Role ID is required' }, { status: 400 });
+    // Check permissions - only super admins can delete roles
+    if (!adminUser.isSuperAdmin) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
-    // Get role data before deletion for audit
-    const roleToDelete = await prisma.adminRole.findUnique({
-      where: { id: parseInt(id) },
+    // Validate CSRF token
+    const headerToken = request.headers.get('x-csrf-token');
+    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
+      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+    }
+
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+    const role = searchParams.get('role');
+
+    if (!userId || !role) {
+      return NextResponse.json({ error: 'User ID and role are required' }, { status: 400 });
+    }
+
+    // Find and delete the role
+    const roleToDelete = await prisma.adminRole.findFirst({
+      where: {
+        user_id: userId,
+        role: role
+      }
     });
 
-    // Delete admin role
+    if (!roleToDelete) {
+      return NextResponse.json({ error: 'Role not found' }, { status: 404 });
+    }
+
+    // Log the action before deletion
+    await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, 'admin_role', {
+      entityId: roleToDelete.id.toString(),
+      metadata: {
+        action: 'delete',
+        roleId: roleToDelete.id,
+        userId,
+        role
+      }
+    });
+
+    // Delete the role
     await prisma.adminRole.delete({
-      where: { id: parseInt(id) },
+      where: { id: roleToDelete.id }
     });
 
-    // Log the action
-    await logAdminAction(adminUser, 'role_delete', 'admin_role', {
-      entityId: id.toString(),
-      oldData: roleToDelete,
-      whitelistFields: AUDIT_FIELD_ALLOWLISTS.ADMIN_ROLE,
-    });
-
-    return NextResponse.json({
-      message: 'Admin role deleted successfully',
-    });
+    return NextResponse.json({ message: 'Role removed successfully' });
   } catch (error) {
-    console.error('[ADMIN] Role delete error:', error);
+    console.error('[ADMIN] Roles DELETE error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete admin role' },
+      { error: 'Failed to remove admin role' },
       { status: 500 }
     );
   }
-}
-
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { status: 200, headers: corsHeaders(request) });
 }

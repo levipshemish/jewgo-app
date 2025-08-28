@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getAdminUser } from '@/lib/admin/auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { generateSignedCSRFToken } from '@/lib/admin/csrf';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -29,15 +28,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     redirect('/?error=not_authorized&message=insufficient_admin_permissions');
   }
 
-  // CSRF token provisioning with safe fallback to avoid SSR crash on missing secret
-  if (adminUser) {
-    try {
-      generateSignedCSRFToken(adminUser.id);
-    } catch (_e) {
-      // In production missing CSRF_SECRET should not crash SSR; show warning in UI
-      console.error('[ADMIN] CSRF token generation failed:', _e);
-    }
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50">

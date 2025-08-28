@@ -1,7 +1,7 @@
 'use client';
 
 import { X, MessageCircle, ExternalLink, Plus, Filter, SortAsc, SortDesc } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import { Review } from '@/components/reviews/ReviewCard';
@@ -77,8 +77,8 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
       try {
         const { data: { session } } = await supabaseBrowser.auth.getSession();
         setSession(session);
-      } catch (error) {
-        console.error('Error getting session:', error);
+      } catch (sessionError) {
+        console.error('Error getting session:', sessionError);
       }
     };
 

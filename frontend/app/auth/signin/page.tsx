@@ -156,8 +156,8 @@ function SignInForm() {
       } else {
         appLogger.info('reCAPTCHA not configured or not available - proceeding without reCAPTCHA');
       }
-    } catch (error) {
-      appLogger.error('Form submission error', { error: String(error) });
+    } catch (formError) {
+      appLogger.error('Form submission error', { error: String(formError) });
       // Non-fatal; continue without reCAPTCHA token
     }
     
