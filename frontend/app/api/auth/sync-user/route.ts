@@ -4,8 +4,8 @@ import { _createServerClient} from '@supabase/ssr';
 import { _getCORSHeaders, _ALLOWED_ORIGINS} from '@/lib/config/environment';
 import { _validateCSRFServer} from '@/lib/utils/auth-utils.server';
 
-export const _runtime = 'nodejs';
-export const _dynamic = 'force-dynamic';
+// export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function OPTIONS(request: NextRequest) {
   const _origin = request.headers.get('origin') || undefined;
