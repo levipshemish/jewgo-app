@@ -93,9 +93,8 @@ export default function ReviewsSection({
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async () => {
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      setSession(user ? { user } : null);
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
+      setSession(session);
     });
 
     return () => subscription.unsubscribe();
