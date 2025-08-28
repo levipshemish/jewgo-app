@@ -10,7 +10,7 @@ import {
   _ALLOWED_ORIGINS, _getCORSHeaders, _getCookieOptions, _FEATURE_FLAGS} from '@/lib/config/environment';
 import { _initializeServer} from '@/lib/server-init';
 
-export const _runtime = 'nodejs';
+// export const runtime = 'nodejs';
 
 /**
  * Prepare merge API with versioned HMAC cookie generation
