@@ -240,13 +240,23 @@ export function EateryPageClient() {
     );
   }
 
+  // Consistent responsive styles
+  const responsiveStyles = useMemo(() => {
+    const isMobileView = isMobile || isMobileDevice;
+    return {
+      container: {
+        minHeight: isMobileView ? viewportHeight : 'auto',
+      },
+    };
+  }, [isMobile, isMobileDevice, viewportHeight]);
+
   return (
     <div 
       className="min-h-screen bg-[#f4f4f4]"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      style={mobileStyles}
+      style={responsiveStyles.container}
     >
       <Header 
         onSearch={handleSearch}
@@ -257,9 +267,9 @@ export function EateryPageClient() {
           activeFilters={activeFilters}
           onFilterChange={handleFilterChange}
           onFilterClear={handleFilterClear}
-          userLocation={userLocation}
-          locationLoading={locationLoading}
-          onRequestLocation={requestLocation}
+          _userLocation={userLocation}
+          _locationLoading={locationLoading}
+          _onRequestLocation={requestLocation}
         />
         
         <div className="container mx-auto px-4 py-6">
@@ -269,9 +279,20 @@ export function EateryPageClient() {
                 {restaurants.map((restaurant) => (
                   <UnifiedCard
                     key={restaurant.id}
-                    restaurant={restaurant}
-                    userLocation={userLocation}
-                    isMobile={isMobileDevice}
+                    data={{
+                      id: restaurant.id.toString(),
+                      imageUrl: restaurant.image_url,
+                      title: restaurant.name,
+                      subtitle: restaurant.address,
+                      additionalText: restaurant.city,
+                      kosherCategory: restaurant.kosher_category,
+                      city: restaurant.city,
+                      showHeart: true
+                    }}
+                    onCardClick={(data) => {
+                      // Handle card click - navigate to restaurant detail
+                      window.location.href = `/restaurant/${data.id}`;
+                    }}
                   />
                 ))}
               </div>
@@ -311,13 +332,32 @@ export function EateryPageClient() {
         </div>
       </main>
       
-      <ActionButtons />
+      <ActionButtons 
+        onShowFilters={() => {
+          // Handle show filters - could open a modal or navigate to filters page
+          console.log('Show filters clicked');
+        }}
+        onShowMap={() => {
+          // Handle show map - navigate to map page
+          window.location.href = '/live-map';
+        }}
+        onAddEatery={() => {
+          // Handle add eatery - navigate to add eatery page
+          window.location.href = '/add-eatery';
+        }}
+      />
       <BottomNavigation />
       
       <LocationPromptPopup
         isOpen={permissionStatus === 'denied' && !userLocation}
-        onRequestLocation={requestLocation}
-        onClose={() => {}}
+        onClose={() => {
+          // Handle close location prompt
+          console.log('Location prompt closed');
+        }}
+        onSkip={() => {
+          // Handle skip location request
+          console.log('Location request skipped');
+        }}
       />
     </div>
   );
