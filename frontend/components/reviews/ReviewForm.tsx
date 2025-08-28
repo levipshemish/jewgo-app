@@ -3,8 +3,9 @@
 import { Star, Upload, X, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';
 
 // NextAuth removed - using Supabase only
@@ -29,7 +30,7 @@ export default function ReviewForm({
   restaurantId, restaurantName, onSubmit, onCancel, className = ''
 }: ReviewFormProps) {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
@@ -44,13 +45,12 @@ export default function ReviewForm({
       try {
         // Use centralized configuration check
         if (!isSupabaseConfigured()) {
-
           setLoading(false);
           return;
         }
 
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        setSession(user ? { user } : null);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        setSession(session);
       } catch (error) {
         console.error('Error getting session:', error);
         handleUserLoadError(error);
@@ -61,10 +61,9 @@ export default function ReviewForm({
 
     getSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(async () => {
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
-      setSession(user ? { user } : null);
+    // Listen for auth changes without redundant getUser calls
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event: string, session: Session | null) => {
+      setSession(session);
       setLoading(false);
     });
 
