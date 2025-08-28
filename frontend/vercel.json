@@ -1,1 +1,36 @@
- 
+{
+  "version": 2,
+  "name": "jewgo-frontend",
+  "buildCommand": "npm run validate-env && npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm ci",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_BACKEND_URL": "https://jewgo-app-oyoh.onrender.com"
+  },
+  "functions": {
+    "app/api/restaurants/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/restaurants/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/marketplace/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/reviews/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ]
+} 

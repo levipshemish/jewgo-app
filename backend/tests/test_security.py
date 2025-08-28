@@ -14,9 +14,9 @@ from datetime import datetime, timedelta
 
 # Import the application and security utilities
 from app import create_app
-from utils.error_handler import JewGoError, DatabaseError, ValidationError
-from utils.admin_auth import AdminAuth
-from utils.feature_flags_v4 import FeatureFlagsV4
+from utils.error_handler import APIError, DatabaseError, ValidationError
+from utils.admin_auth import AdminAuthManager
+from utils.feature_flags_v4 import APIV4FeatureFlags
 
 
 class TestSecurityAuthentication:
@@ -70,17 +70,19 @@ class TestSecurityAuthentication:
     
     def test_admin_authentication(self, app):
         """Test admin authentication security"""
-        admin_auth = AdminAuth()
+        admin_auth = AdminAuthManager()
         
         # Test valid admin credentials
-        with patch('utils.admin_auth.AdminAuth.verify_admin_credentials') as mock_verify:
-            mock_verify.return_value = True
-            assert admin_auth.verify_admin_credentials('admin', 'password') is True
+        with patch('utils.admin_auth.AdminAuthManager.generate_admin_token') as mock_generate:
+            mock_generate.return_value = "valid-token"
+            token = admin_auth.generate_admin_token('admin@example.com', 'password')
+            assert token is not None
         
         # Test invalid admin credentials
-        with patch('utils.admin_auth.AdminAuth.verify_admin_credentials') as mock_verify:
-            mock_verify.return_value = False
-            assert admin_auth.verify_admin_credentials('admin', 'wrong-password') is False
+        with patch('utils.admin_auth.AdminAuthManager.generate_admin_token') as mock_generate:
+            mock_generate.return_value = None
+            token = admin_auth.generate_admin_token('admin@example.com', 'wrong-password')
+            assert token is None
     
     def test_rate_limiting(self, client):
         """Test rate limiting on authentication endpoints"""

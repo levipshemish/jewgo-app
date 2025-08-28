@@ -382,7 +382,7 @@ scripts/
 ### **Documentation Files**
 - `docs/DATABASE_MIGRATION_SUMMARY.md` - Complete migration documentation
 - `docs/ORACLE_CLOUD_BACKUP_AND_OPTIMIZATION.md` - Backup and optimization guide
-- `docs/PROJECT_STATUS_AND_TODOS.md` - Current project status
+- `TASKS.md` - Current project status and unified task list
 
 ### **Configuration Files**
 - `config/environment/active/` - Active environment configurations

@@ -698,3 +698,137 @@ class MarketplaceServiceV4(BaseService):
                 "error": "Failed to fetch marketplace categories",
                 "details": str(e),
             }
+
+    def update_listing(self, listing_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a marketplace listing."""
+        try:
+            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+                logger.warning("Database manager not available for marketplace update")
+                return {"success": False, "error": "Database service unavailable"}
+
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # First, verify the listing exists and belongs to the user
+                verify_query = """
+                    SELECT id, vendor_id as seller_id, status 
+                    FROM marketplace 
+                    WHERE id = :listing_id
+                """
+                result = session.execute(text(verify_query), {"listing_id": listing_id})
+                listing = result.fetchone()
+                
+                if not listing:
+                    return {"success": False, "error": "Listing not found"}
+                
+                # Check if user owns the listing
+                seller_id = data.get("seller_id")
+                if listing.seller_id != seller_id:
+                    return {"success": False, "error": "Unauthorized to update this listing"}
+                
+                # Check if listing is active
+                if listing.status != "active":
+                    return {"success": False, "error": "Cannot update inactive listing"}
+
+                # Build update query with allowed fields
+                allowed_fields = [
+                    'title', 'description', 'price', 'currency', 'city', 'state', 
+                    'zip_code', 'latitude', 'longitude', 'category_id', 'subcategory_id',
+                    'condition', 'product_image', 'additional_images', 'thumbnail'
+                ]
+                
+                update_fields = []
+                update_params = {"listing_id": listing_id}
+                
+                for field in allowed_fields:
+                    if field in data:
+                        update_fields.append(f"{field} = :{field}")
+                        update_params[field] = data[field]
+                
+                if not update_fields:
+                    return {"success": False, "error": "No valid fields to update"}
+                
+                # Add updated_at timestamp
+                update_fields.append("updated_at = NOW()")
+                
+                update_query = f"""
+                    UPDATE marketplace 
+                    SET {', '.join(update_fields)}
+                    WHERE id = :listing_id
+                """
+                
+                session.execute(text(update_query), update_params)
+                session.commit()
+                
+                logger.info(f"Marketplace listing {listing_id} updated successfully")
+                
+                return {
+                    "success": True,
+                    "data": {
+                        "listing_id": listing_id,
+                        "message": "Listing updated successfully"
+                    }
+                }
+
+        except Exception as e:
+            logger.exception(f"Error updating marketplace listing {listing_id}")
+            return {
+                "success": False,
+                "error": "Failed to update listing",
+                "details": str(e)
+            }
+
+    def delete_listing(self, listing_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Delete a marketplace listing."""
+        try:
+            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+                logger.warning("Database manager not available for marketplace delete")
+                return {"success": False, "error": "Database service unavailable"}
+
+            with self.db_manager.connection_manager.get_session_context() as session:
+                from sqlalchemy import text
+                
+                # First, verify the listing exists and belongs to the user
+                verify_query = """
+                    SELECT id, vendor_id as seller_id, status 
+                    FROM marketplace 
+                    WHERE id = :listing_id
+                """
+                result = session.execute(text(verify_query), {"listing_id": listing_id})
+                listing = result.fetchone()
+                
+                if not listing:
+                    return {"success": False, "error": "Listing not found"}
+                
+                # Check if user owns the listing
+                seller_id = data.get("seller_id")
+                if listing.seller_id != seller_id:
+                    return {"success": False, "error": "Unauthorized to delete this listing"}
+                
+                # Soft delete by setting status to 'deleted'
+                delete_query = """
+                    UPDATE marketplace 
+                    SET status = 'deleted', updated_at = NOW()
+                    WHERE id = :listing_id
+                """
+                
+                session.execute(text(delete_query), {"listing_id": listing_id})
+                session.commit()
+                
+                logger.info(f"Marketplace listing {listing_id} deleted successfully")
+                
+                return {
+                    "success": True,
+                    "data": {
+                        "listing_id": listing_id,
+                        "message": "Listing deleted successfully"
+                    }
+                }
+
+        except Exception as e:
+            logger.exception(f"Error deleting marketplace listing {listing_id}")
+            return {
+                "success": False,
+                "error": "Failed to delete listing",
+                "details": str(e)
+            }

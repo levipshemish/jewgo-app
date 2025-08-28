@@ -21,6 +21,37 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+def _load_config_env():
+    """Load environment variables from config.env file if it exists."""
+    config_env_path = os.path.join(os.path.dirname(__file__), '..', 'config.env')
+    
+    if os.path.exists(config_env_path):
+        try:
+            with open(config_env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        
+                        # Remove quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+                        
+                        # Only set if not already in environment
+                        if key not in os.environ:
+                            os.environ[key] = value
+                            logger.debug(f"Loaded config.env variable: {key}")
+            
+            logger.info(f"Loaded environment variables from {config_env_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load config.env file: {e}")
+    else:
+        logger.debug(f"Config.env file not found at {config_env_path}")
+
+
 class MigrationStage(Enum):
     """Migration stages for the v4 API."""
 
@@ -35,6 +66,9 @@ class APIV4FeatureFlags:
     """Feature flag manager for v4 API migration."""
 
     def __init__(self):
+        # Load config.env file first
+        _load_config_env()
+        
         self.flags = {
             "api_v4_enabled": {
                 "default": False,
@@ -86,20 +120,35 @@ class APIV4FeatureFlags:
 
     def _load_from_env(self):
         """Load feature flags from environment variables."""
+        # Ensure config.env is loaded first
+        _load_config_env()
+        
         for flag_name in self.flags:
-            env_var = f"API_V4_{flag_name.upper()}"
+            # Fix the environment variable name construction
+            # Remove the 'api_v4_' prefix from flag_name when constructing env var name
+            env_var_name = flag_name.replace('api_v4_', '').upper()
+            env_var = f"API_V4_{env_var_name}"
+            
             if env_var in os.environ:
                 try:
                     value = os.environ[env_var].lower()
                     if value in ("true", "1", "yes", "on"):
                         self.flags[flag_name]["default"] = True
+                        logger.info(f"Loaded feature flag from env: {flag_name}=True (from {env_var})")
                     elif value in ("false", "0", "no", "off"):
                         self.flags[flag_name]["default"] = False
-                    logger.info(
-                        f"Loaded feature flag from env: {flag_name}={self.flags[flag_name]['default']}"
-                    )
+                        logger.info(f"Loaded feature flag from env: {flag_name}=False (from {env_var})")
+                    else:
+                        logger.warning(f"Invalid value for feature flag {flag_name}: {value}")
                 except Exception as e:
                     logger.warning(f"Failed to parse feature flag {flag_name}: {e}")
+            else:
+                logger.debug(f"Environment variable {env_var} not found, using default value")
+        
+        # Log the final state of the flags
+        logger.info("Feature flags loaded from environment:")
+        for flag_name, flag_info in self.flags.items():
+            logger.info(f"  {flag_name}: default={flag_info['default']}, stage={flag_info['stage']}")
 
     def is_enabled(self, flag_name: str, user_id: Optional[str] = None) -> bool:
         """Check if a feature flag is enabled."""

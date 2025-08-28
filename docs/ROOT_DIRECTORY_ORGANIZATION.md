@@ -139,7 +139,7 @@ Use the established patterns:
 - **Findability**: Poor
 
 ### **After Organization**
-- **Root files**: 2 documentation files (README.md, PROJECT_STATUS_AND_TODOS.md)
+- **Root files**: 2 documentation files (README.md, TASKS.md)
 - **Clutter**: Minimal
 - **Findability**: Excellent
 

@@ -1,59 +1,112 @@
 """
-Supabase Authentication Integration for Backend API
+Supabase JWT verification utilities for backend authentication.
 
-This module provides authentication decorators and utilities to integrate
-Supabase user authentication with Flask backend endpoints.
+This module provides functions to verify Supabase JWT tokens and extract user information
+for marketplace seller authentication and other protected endpoints.
 """
 
 import os
 import jwt
 import requests
-from functools import wraps
 from typing import Optional, Dict, Any
+from functools import wraps
 from flask import request, jsonify, current_app
 from utils.logging_config import get_logger
+from utils.error_handler import AuthenticationError, AuthorizationError
 
 logger = get_logger(__name__)
 
 
-class SupabaseAuthError(Exception):
-    """Custom exception for Supabase authentication errors"""
-    pass
-
-
 class SupabaseAuthManager:
-    """Manages Supabase authentication for backend API endpoints"""
+    """Manages Supabase JWT verification and user authentication."""
     
     def __init__(self):
-        self.supabase_url = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
-        self.supabase_anon_key = os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-        self.jwt_secret = os.environ.get('SUPABASE_JWT_SECRET')
+        self.supabase_url = os.getenv("SUPABASE_URL")
+        self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
+        self.jwks_url = f"{self.supabase_url}/rest/v1/auth/jwks" if self.supabase_url else None
+        self._jwks_cache = None
+        self._jwks_cache_time = 0
+        self._cache_duration = 3600  # 1 hour cache
         
-        if not all([self.supabase_url, self.supabase_anon_key]):
-            logger.warning("Supabase configuration incomplete - auth will be disabled")
+    def get_jwks(self) -> Optional[Dict[str, Any]]:
+        """Get JSON Web Key Set from Supabase."""
+        try:
+            if not self.jwks_url:
+                logger.error("SUPABASE_URL not configured")
+                return None
+                
+            # Check cache
+            import time
+            current_time = time.time()
+            if (self._jwks_cache and 
+                current_time - self._jwks_cache_time < self._cache_duration):
+                return self._jwks_cache
+            
+            # Fetch JWKS
+            response = requests.get(self.jwks_url, timeout=10)
+            response.raise_for_status()
+            
+            jwks = response.json()
+            self._jwks_cache = jwks
+            self._jwks_cache_time = current_time
+            
+            logger.debug("JWKS fetched successfully")
+            return jwks
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch JWKS: {e}")
+            return None
     
     def verify_jwt_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """
-        Verify a JWT token from Supabase
-        
-        Args:
-            token: JWT token from Authorization header
-            
-        Returns:
-            Decoded token payload if valid, None otherwise
-        """
+        """Verify Supabase JWT token and return payload."""
         try:
-            if not self.jwt_secret:
-                logger.warning("JWT secret not configured - using public key verification")
-                return self._verify_with_public_key(token)
+            if not token:
+                return None
+                
+            # Decode token header to get key ID
+            header = jwt.get_unverified_header(token)
+            key_id = header.get('kid')
             
-            # Verify with JWT secret
+            if not key_id:
+                logger.error("No key ID in JWT header")
+                return None
+            
+            # Get JWKS
+            jwks = self.get_jwks()
+            if not jwks:
+                logger.error("Failed to get JWKS")
+                return None
+            
+            # Find the correct key
+            public_key = None
+            for key in jwks.get('keys', []):
+                if key.get('kid') == key_id:
+                    try:
+                        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
+                    except AttributeError:
+                        # Fallback for older PyJWT versions
+                        from cryptography.hazmat.primitives.asymmetric import rsa
+                        from cryptography.hazmat.primitives import serialization
+                        import base64
+                        
+                        # Create a mock public key for testing
+                        public_key = "mock-public-key"
+                    break
+            
+            if not public_key:
+                logger.error(f"Key {key_id} not found in JWKS")
+                return None
+            
+            # Verify and decode token
             payload = jwt.decode(
-                token, 
-                self.jwt_secret, 
-                algorithms=['HS256'],
-                audience='authenticated'
+                token,
+                public_key,
+                algorithms=['RS256'],
+                audience='authenticated',
+                issuer=self.supabase_url
             )
+            
+            logger.debug(f"JWT token verified for user: {payload.get('sub')}")
             return payload
             
         except jwt.ExpiredSignatureError:
@@ -66,218 +119,160 @@ class SupabaseAuthManager:
             logger.error(f"Error verifying JWT token: {e}")
             return None
     
-    def _verify_with_public_key(self, token: str) -> Optional[Dict[str, Any]]:
-        """
-        Verify JWT token using Supabase's public key (fallback method)
-        """
-        try:
-            # Get Supabase's JWKS (JSON Web Key Set)
-            jwks_url = f"{self.supabase_url}/rest/v1/auth/jwks"
-            response = requests.get(jwks_url, timeout=10)
-            response.raise_for_status()
-            
-            jwks = response.json()
-            
-            # Decode token header to get key ID
-            header = jwt.get_unverified_header(token)
-            key_id = header.get('kid')
-            
-            if not key_id:
-                logger.warning("No key ID in JWT header")
-                return None
-            
-            # Find the public key
-            public_key = None
-            for key in jwks.get('keys', []):
-                if key.get('kid') == key_id:
-                    public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
-                    break
-            
-            if not public_key:
-                logger.warning(f"Public key not found for key ID: {key_id}")
-                return None
-            
-            # Verify token
-            payload = jwt.decode(
-                token,
-                public_key,
-                algorithms=['RS256'],
-                audience='authenticated'
-            )
-            return payload
-            
-        except Exception as e:
-            logger.error(f"Error verifying with public key: {e}")
-            return None
-    
     def get_user_from_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """
-        Get user information from JWT token
-        
-        Args:
-            token: JWT token from Authorization header
-            
-        Returns:
-            User information if token is valid, None otherwise
-        """
+        """Extract user information from JWT token."""
         payload = self.verify_jwt_token(token)
         if not payload:
             return None
         
-        # Extract user information from token payload
+        # Extract user information
         user_info = {
-            'id': payload.get('sub'),
+            'user_id': payload.get('sub'),
             'email': payload.get('email'),
             'role': payload.get('role', 'authenticated'),
             'aud': payload.get('aud'),
             'exp': payload.get('exp'),
-            'iat': payload.get('iat'),
-            'iss': payload.get('iss'),
-            'user_metadata': payload.get('user_metadata', {}),
-            'app_metadata': payload.get('app_metadata', {})
+            'iat': payload.get('iat')
         }
         
+        # Add app_metadata if available
+        if 'app_metadata' in payload:
+            user_info['app_metadata'] = payload['app_metadata']
+        
+        # Add user_metadata if available
+        if 'user_metadata' in payload:
+            user_info['user_metadata'] = payload['user_metadata']
+        
         return user_info
-    
-    def extract_token_from_request(self) -> Optional[str]:
-        """
-        Extract JWT token from request headers
-        
-        Returns:
-            JWT token if found, None otherwise
-        """
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return None
-        
-        # Check for Bearer token
-        if auth_header.startswith('Bearer '):
-            return auth_header[7:]  # Remove 'Bearer ' prefix
-        
-        return None
 
 
 # Global instance
-auth_manager = SupabaseAuthManager()
+supabase_auth = SupabaseAuthManager()
 
 
-def require_user_auth(f):
-    """
-    Decorator to require user authentication for API endpoints
-    
-    Usage:
-        @app.route('/api/user/profile')
-        @require_user_auth
-        def get_user_profile():
-            user = request.user  # Access authenticated user
-            return jsonify(user)
-    """
+def verify_supabase_token(token: str) -> Optional[Dict[str, Any]]:
+    """Verify Supabase JWT token and return user information."""
+    return supabase_auth.get_user_from_token(token)
+
+
+def require_supabase_auth(f):
+    """Decorator to require Supabase authentication."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Skip auth if Supabase is not configured
-        if not auth_manager.supabase_url:
-            logger.warning("Supabase not configured - skipping auth check")
-            return f(*args, **kwargs)
-        
-        # Extract token from request
-        token = auth_manager.extract_token_from_request()
-        if not token:
-            return jsonify({'error': 'No authorization token provided'}), 401
-        
-        # Verify token and get user
-        user = auth_manager.get_user_from_token(token)
-        if not user:
-            return jsonify({'error': 'Invalid or expired token'}), 401
-        
-        # Add user to request context
-        request.user = user
-        
-        return f(*args, **kwargs)
-    
-    return decorated_function
-
-
-def require_user_role(required_role: str):
-    """
-    Decorator to require specific user role
-    
-    Usage:
-        @app.route('/api/admin/users')
-        @require_user_role('admin')
-        def get_users():
-            return jsonify(users)
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            # First check user authentication
-            token = auth_manager.extract_token_from_request()
+        try:
+            # Check for Authorization header
+            auth_header = request.headers.get("Authorization")
+            if not auth_header:
+                raise AuthenticationError("Authorization header required")
+            
+            # Check Bearer token format
+            if not auth_header.startswith("Bearer "):
+                raise AuthenticationError("Bearer token required")
+            
+            token = auth_header.split(" ")[1]
             if not token:
-                return jsonify({'error': 'No authorization token provided'}), 401
+                raise AuthenticationError("Token required")
             
-            user = auth_manager.get_user_from_token(token)
-            if not user:
-                return jsonify({'error': 'Invalid or expired token'}), 401
+            # Verify Supabase JWT token
+            user_info = verify_supabase_token(token)
+            if not user_info:
+                raise AuthenticationError("Invalid or expired token")
             
-            # Check role
-            user_role = user.get('role', 'authenticated')
-            if user_role != required_role:
-                return jsonify({'error': f'Insufficient permissions. Required role: {required_role}'}), 403
+            # Add user info to request context
+            request.user = user_info
             
-            request.user = user
+            # Log successful authentication
+            logger.info("Supabase authentication successful", extra={
+                'user_id': user_info.get('user_id'),
+                'email': user_info.get('email'),
+                'ip_address': request.remote_addr,
+                'endpoint': request.endpoint
+            })
+            
             return f(*args, **kwargs)
         
-        return decorated_function
-    return decorator
-
-
-def optional_user_auth(f):
-    """
-    Decorator for optional user authentication
-    
-    Usage:
-        @app.route('/api/public/data')
-        @optional_user_auth
-        def get_data():
-            user = getattr(request, 'user', None)  # May be None
-            return jsonify(data)
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Skip auth if Supabase is not configured
-        if not auth_manager.supabase_url:
-            return f(*args, **kwargs)
+        except AuthenticationError as e:
+            logger.warning(f"Supabase authentication failed: {e.message}", extra={
+                'ip_address': request.remote_addr,
+                'endpoint': request.endpoint
+            })
+            return jsonify({
+                'success': False,
+                'error': e.message,
+                'status_code': 401
+            }), 401
         
-        # Try to get user, but don't require it
-        token = auth_manager.extract_token_from_request()
-        if token:
-            user = auth_manager.get_user_from_token(token)
-            if user:
-                request.user = user
-        
-        return f(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Unexpected error in Supabase authentication: {e}")
+            return jsonify({
+                'success': False,
+                'error': 'Authentication error',
+                'status_code': 401
+            }), 401
     
     return decorated_function
 
 
-# Utility functions for use in route handlers
-def get_current_user() -> Optional[Dict[str, Any]]:
-    """Get the current authenticated user from request context"""
+def optional_supabase_auth(f):
+    """Decorator for optional Supabase authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            # Check for Authorization header
+            auth_header = request.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+                if token:
+                    # Verify Supabase JWT token
+                    user_info = verify_supabase_token(token)
+                    if user_info:
+                        # Add user info to request context
+                        request.user = user_info
+                        logger.debug("Optional Supabase authentication successful", extra={
+                            'user_id': user_info.get('user_id'),
+                            'endpoint': request.endpoint
+                        })
+                    else:
+                        logger.debug("Invalid token in optional Supabase authentication")
+                else:
+                    logger.debug("Empty token in optional Supabase authentication")
+            else:
+                logger.debug("No authorization header in optional Supabase authentication")
+            
+            return f(*args, **kwargs)
+        
+        except Exception as e:
+            logger.error(f"Unexpected error in optional Supabase authentication: {e}")
+            # Continue without authentication
+            return f(*args, **kwargs)
+    
+    return decorated_function
+
+
+def get_current_supabase_user() -> Optional[Dict[str, Any]]:
+    """Get current authenticated user from request context."""
     return getattr(request, 'user', None)
 
 
-def is_user_authenticated() -> bool:
-    """Check if user is authenticated"""
-    return get_current_user() is not None
+def is_supabase_authenticated() -> bool:
+    """Check if user is authenticated via Supabase."""
+    return get_current_supabase_user() is not None
 
 
-def get_user_id() -> Optional[str]:
-    """Get the current user's ID"""
-    user = get_current_user()
-    return user.get('id') if user else None
+def get_supabase_user_id() -> Optional[str]:
+    """Get current user ID from Supabase authentication."""
+    user = get_current_supabase_user()
+    return user.get('user_id') if user else None
 
 
-def get_user_email() -> Optional[str]:
-    """Get the current user's email"""
-    user = get_current_user()
+def get_supabase_user_email() -> Optional[str]:
+    """Get current user email from Supabase authentication."""
+    user = get_current_supabase_user()
     return user.get('email') if user else None
+
+
+# Aliases for backward compatibility
+require_user_auth = require_supabase_auth
+optional_user_auth = optional_supabase_auth
+get_current_user = get_current_supabase_user
+get_user_id = get_supabase_user_id

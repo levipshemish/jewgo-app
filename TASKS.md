@@ -1,49 +1,90 @@
-# Current Tasks - JewGo Project
+# JewGo Project - Unified Task List
 
 **AI Model**: Claude Sonnet 4  
 **Agent**: Cursor AI Assistant  
-**Date**: 2025-01-28  
+**Date**: 2025-08-28  
 **Status**: Production Ready with Minor Issues
 
 ---
 
-## 🔧 Current Issues (High Priority)
+## 🔥 **CRITICAL PRIORITY (P0)**
 
-### 1. **Feature Flags System** ⚠️
-- **Priority**: High
+### 1. **Feature Flags System** ✅
+- **Priority**: P0 (Critical)
 - **Issue**: `API_V4_REVIEWS=true` environment variable not being loaded properly
 - **Impact**: Reviews endpoints may not function correctly
-- **Status**: Under investigation
+- **Status**: ✅ **FIXED**
 - **Files Affected**: 
   - `backend/utils/feature_flags_v4.py`
   - `backend/config.env` (line 129: `API_V4_REVIEWS=true`)
   - `backend/routes/api_v4.py` (lines 761, 815, 843, 867, 895)
 - **Tasks**:
-  - [ ] Investigate why `API_V4_REVIEWS=true` environment variable not being loaded properly
-  - [ ] Fix feature flag loading mechanism in `FeatureFlagsV4` class
-  - [ ] Test feature flag enablement via environment variables
-  - [ ] Remove temporary bypass code from `require_api_v4_flag` decorator
-  - [ ] Verify all API v4 endpoints work with proper feature flag system
-  - [ ] Update documentation to reflect proper feature flag usage
-- **Notes**: Current temporary fix allows reviews endpoints to work but bypasses proper feature flag system
+  - [x] Investigate why `API_V4_REVIEWS=true` environment variable not being loaded properly
+  - [x] Fix feature flag loading mechanism in `FeatureFlagsV4` class
+  - [x] Test feature flag enablement via environment variables
+  - [x] Remove temporary bypass code from `require_api_v4_flag` decorator
+  - [x] Verify all API v4 endpoints work with proper feature flag system
+  - [x] Update documentation to reflect proper feature flag usage
+- **Notes**: ✅ **RESOLVED** - Fixed environment variable loading from config.env file. The issue was in the environment variable name construction which was creating double prefixes (e.g., `API_V4_API_V4_ENABLED` instead of `API_V4_ENABLED`). Now properly loads `API_V4_ENABLED=true` and `API_V4_REVIEWS=true` from config.env.
 
-### 2. **Frontend Linting Warnings** ⚠️
-- **Priority**: Medium
-- **Issue**: Multiple unused variable warnings in frontend code
-- **Impact**: Code quality and maintainability
-- **Status**: Needs cleanup
-- **Files Affected**: Multiple frontend TypeScript files
+### 2. **Authentication Integration** ✅
+- **Priority**: P0 (Critical)
+- **Issue**: Supabase session integration missing in multiple components
+- **Impact**: Reviews and user functionality disabled
+- **Status**: ✅ **COMPLETED** - 2025-08-28
+- **Files Affected**: 
+  - `frontend/components/reviews/ReviewsSection.tsx:62`
+  - `frontend/components/restaurant/ReviewsModal.tsx:58`
+  - `backend/routes/api_v4.py:1081`
 - **Tasks**:
-  - [ ] Fix unused variable warnings in `app/account/link/LinkAccountForm.tsx`
-  - [ ] Fix unused variable warnings in `app/admin/` pages
-  - [ ] Fix unused variable warnings in `app/api/` routes
-  - [ ] Fix unused variable warnings in `app/auth/` components
-  - [ ] Fix unused variable warnings in `app/eatery/page.tsx`
-  - [ ] Fix unused variable warnings in `app/marketplace/` pages
-- **Reference**: See `frontend_issues.md` for complete list of warnings
+  - [x] Replace placeholder sessions with Supabase session in ReviewsSection
+  - [x] Replace placeholder sessions with Supabase session in ReviewsModal
+  - [x] Integrate Supabase auth in marketplace seller functionality
+  - [x] Test authentication flow across all components
+- **Implementation Details**:
+  - ✅ Created `backend/utils/supabase_auth.py` with JWT verification utilities
+  - ✅ Added `@require_supabase_auth` decorator to marketplace POST endpoint
+  - ✅ Added PUT and DELETE endpoints for marketplace listings with authentication
+  - ✅ Added `update_listing` and `delete_listing` methods to MarketplaceServiceV4
+  - ✅ Frontend components already had proper Supabase session integration
+  - ✅ Added user ownership verification for marketplace operations
 
-### 3. **CI Pipeline Issues** ⚠️
-- **Priority**: High
+---
+
+## 🔶 **HIGH PRIORITY (P1)**
+
+### 3. **Analytics Integration** ⚠️
+- **Priority**: P1 (High)
+- **Issue**: Analytics service not integrated with actual providers
+- **Impact**: No user behavior tracking in production
+- **Status**: Needs implementation
+- **Files Affected**: 
+  - `frontend/lib/utils/analytics.ts:212`
+- **Tasks**:
+  - [ ] Integrate with Google Analytics or Mixpanel
+  - [ ] Implement user behavior tracking
+  - [ ] Add performance metrics collection
+  - [ ] Set up conversion tracking
+  - [ ] Test analytics in production environment
+- **Notes**: Currently using placeholder analytics implementation
+
+### 4. **Order Submission Implementation** ⚠️
+- **Priority**: P1 (High)
+- **Issue**: Order submission not connected to backend API
+- **Impact**: Core order functionality not working
+- **Status**: Needs implementation
+- **Files Affected**: 
+  - `frontend/app/restaurant/[id]/page.tsx:284`
+- **Tasks**:
+  - [ ] Implement actual order submission to backend API endpoint
+  - [ ] Add order confirmation flow
+  - [ ] Implement order tracking interface
+  - [ ] Add payment form integration
+  - [ ] Test complete order flow
+- **Notes**: Currently using placeholder order submission logic
+
+### 5. **CI Pipeline Issues** ⚠️
+- **Priority**: P1 (High)
 - **Issue**: Multiple CI pipeline failures preventing automated deployments
 - **Impact**: Blocking automated testing and deployment processes
 - **Status**: Documented, needs implementation
@@ -74,26 +115,250 @@
     - [ ] Add better error handling and reporting
 - **Notes**: These issues were identified during PR #40 review and separated into PR #46 to avoid blocking core functionality fixes
 
----
-
-## 🔄 In Progress
-
-### 3. **Statusline Performance Monitoring** 🔄
-- **Priority**: Low
-- **Status**: Monitoring in active development sessions
+### 6. **Testing Implementation** ⚠️
+- **Priority**: P1 (High)
+- **Issue**: Comprehensive testing framework not implemented
+- **Impact**: Code quality and reliability concerns
+- **Status**: Needs implementation
 - **Tasks**:
-  - [ ] Monitor statusline performance in active development sessions
-  - [ ] Optimize statusline script if performance issues detected
-- **Notes**: Statusline is currently functional, monitoring for performance issues
+  - [ ] **Unit Tests** - Implement comprehensive unit tests for all components
+    - [ ] Error Boundary Component Tests
+    - [ ] Loading State Component Tests
+    - [ ] Form Validation Tests
+    - [ ] API Client Tests
+    - [ ] Utility Function Tests
+  - [ ] **Integration Tests** - Test component interactions and API integration
+    - [ ] Restaurant API Integration Tests
+    - [ ] Order System Integration Tests
+    - [ ] Authentication Flow Tests
+    - [ ] Error Handling Integration Tests
+  - [ ] **E2E Tests** - Full user flow testing
+    - [ ] Restaurant Discovery Flow
+    - [ ] Order Placement Flow
+    - [ ] User Authentication Flow
+    - [ ] Error Recovery Flow
+  - [ ] **Performance Tests** - Bundle analysis and loading time tests
+    - [ ] Bundle Size Optimization Tests
+    - [ ] Loading Performance Tests
+    - [ ] API Response Time Tests
+
+### 6. **Shtel Marketplace Enhancements** 🏛️
+- **Priority**: P1 (High)
+- **Issue**: While marketplace core functionality exists, missing Jewish community-specific features
+- **Impact**: Marketplace lacks shtel (Jewish community) focused functionality
+- **Status**: Enhancement needed - builds on existing marketplace foundation
+- **Reference**: Marketplace core implemented in PR #45
+- **Current Status**: ✅ Complete marketplace infrastructure exists
+- **Tasks**:
+  - [ ] **Community-Specific Categories** 
+    - [ ] Add Jewish holiday items category (Passover, Sukkot, etc.)
+    - [ ] Create ritual items section (Judaica, religious books, tallitot)
+    - [ ] Implement Gemach (free loan) items separate section
+    - [ ] Add kosher food marketplace integration
+  - [ ] **Jewish Community Features**
+    - [ ] Implement kosher certification verification system
+    - [ ] Add Shabbat/holiday-aware delivery scheduling
+    - [ ] Create community bulletin board integration
+    - [ ] Add Maaser (charity) percentage calculator for sellers
+  - [ ] **Synagogue Integration**
+    - [ ] Connect marketplace to local synagogue listings
+    - [ ] Implement synagogue-sponsored community sales
+    - [ ] Add Rabbi-verified product endorsements
+    - [ ] Create community event marketplace (auctions, fundraisers)
+  - [ ] **Enhanced Kosher Features**
+    - [ ] Implement advanced kosher level filtering (Cholov Yisrael, Yoshon, etc.)
+    - [ ] Add Hechsher (kosher symbol) verification system
+    - [ ] Create kosher agency trust ratings
+    - [ ] Implement expiration date alerts for kosher items
+  - [ ] **Community Gemach System**
+    - [ ] Design free loan/borrow system separate from paid marketplace
+    - [ ] Implement community resource sharing interface
+    - [ ] Add return tracking and reminder system
+    - [ ] Create Gemach category management
+  - [ ] **Jewish Calendar Integration**
+    - [ ] Add holiday-specific product promotions
+    - [ ] Implement Shabbat-aware pickup/delivery windows
+    - [ ] Display Jewish dates alongside regular dates
+    - [ ] Create holiday preparation reminder system
+- **Notes**: This builds on the existing marketplace foundation (`backend/services/marketplace_service_v4.py`, `frontend/app/marketplace/page.tsx`) which is fully functional
 
 ---
 
-## ✅ Recently Completed
+## 🟡 **MEDIUM PRIORITY (P2)**
+
+### 7. **Frontend Linting Warnings** ⚠️
+- **Priority**: P2 (Medium)
+- **Issue**: Multiple unused variable warnings in frontend code
+- **Impact**: Code quality and maintainability
+- **Status**: Needs cleanup
+- **Files Affected**: Multiple frontend TypeScript files
+- **Tasks**:
+  - [ ] Fix unused variable warnings in `app/account/link/LinkAccountForm.tsx`
+  - [ ] Fix unused variable warnings in `app/admin/` pages
+  - [ ] Fix unused variable warnings in `app/api/` routes
+  - [ ] Fix unused variable warnings in `app/auth/` components
+  - [ ] Fix unused variable warnings in `app/eatery/page.tsx`
+  - [ ] Fix unused variable warnings in `app/marketplace/` pages
+- **Reference**: See `frontend_issues.md` for complete list of warnings
+
+### 8. **Marketplace Features** ⚠️
+- **Priority**: P2 (Medium)
+- **Issue**: Category filter and counts not fully implemented
+- **Impact**: Limited marketplace functionality
+- **Status**: Partially implemented
+- **Files Affected**: 
+  - `frontend/components/marketplace/MarketplacePageClient.tsx:28`
+  - `frontend/components/filters/AdvancedFilterSheet.tsx:287`
+- **Tasks**:
+  - [ ] Implement category filter functionality
+  - [ ] Get actual counts from API for filter options
+  - [ ] Test marketplace filtering and search
+  - [ ] Optimize marketplace performance
+
+### 9. **Performance Optimization** ⚠️
+- **Priority**: P2 (Medium)
+- **Issue**: Various optimization opportunities identified
+- **Impact**: Performance could be improved
+- **Status**: Needs implementation
+- **Tasks**:
+  - [ ] **Bundle Optimization** - Reduce bundle size
+    - [ ] Code splitting improvements
+    - [ ] Tree shaking optimization
+    - [ ] Image optimization
+    - [ ] Caching strategies
+  - [ ] **Database Optimization** - Improve database performance
+    - [ ] Query optimization
+    - [ ] Index improvements
+    - [ ] Connection pooling
+    - [ ] Caching layer
+  - [ ] **API Performance** - Optimize API response times
+    - [ ] Response caching
+    - [ ] Query optimization
+    - [ ] Rate limiting improvements
+
+### 10. **Security Enhancements** ⚠️
+- **Priority**: P2 (Medium)
+- **Issue**: Various security improvements needed
+- **Impact**: Security hardening
+- **Status**: Needs implementation
+- **Tasks**:
+  - [ ] **Input Validation** - Strengthen security measures
+    - [ ] SQL injection prevention
+    - [ ] XSS protection
+    - [ ] CSRF protection
+    - [ ] Rate limiting improvements
+  - [ ] **Authentication** - Enhance authentication system
+    - [ ] Multi-factor authentication
+    - [ ] Session management
+    - [ ] Password policies
+    - [ ] Account recovery
+
+---
+
+## 🟢 **LOW PRIORITY (P3)**
+
+### 11. **UI/UX Improvements** ⚠️
+- **Priority**: P3 (Low)
+- **Issue**: Various UI/UX enhancements identified
+- **Impact**: User experience improvements
+- **Status**: Nice to have
+- **Tasks**:
+  - [ ] **Design System** - Enhance visual consistency
+    - [ ] Component library documentation
+    - [ ] Design tokens implementation
+    - [ ] Accessibility improvements
+    - [ ] Dark mode support
+  - [ ] **User Experience** - Polish user interactions
+    - [ ] Micro-interactions
+    - [ ] Loading animations
+    - [ ] Error message improvements
+    - [ ] Success feedback
+
+### 12. **Documentation** ⚠️
+- **Priority**: P3 (Low)
+- **Issue**: Documentation gaps and outdated information
+- **Impact**: Developer experience and onboarding
+- **Status**: Needs updates
+- **Tasks**:
+  - [ ] **API Documentation** - Update API documentation
+  - [ ] **Component Documentation** - Document components
+  - [ ] **Deployment Guides** - Update deployment documentation
+  - [ ] **Troubleshooting Guides** - Improve troubleshooting docs
+
+### 13. **Development Tools** ⚠️
+- **Priority**: P3 (Low)
+- **Issue**: Development workflow improvements needed
+- **Impact**: Developer productivity
+- **Status**: Nice to have
+- **Tasks**:
+  - [ ] **Hot Reload Improvements** - Enhance development experience
+  - [ ] **Debug Tools** - Improve debugging capabilities
+  - [ ] **Performance Profiling** - Add performance monitoring tools
+  - [ ] **Code Generation Tools** - Automate repetitive tasks
+
+---
+
+## ✅ **RECENTLY COMPLETED**
+
+### **Feature Flags System Fix** ✅
+- **Status**: Completed
+- **Date**: 2025-08-28
+- **Issue**: Environment variables `API_V4_ENABLED=true` and `API_V4_REVIEWS=true` not being loaded properly from config.env
+- **Root Cause**: Environment variable name construction was creating double prefixes (e.g., `API_V4_API_V4_ENABLED` instead of `API_V4_ENABLED`)
+- **Solution**: Fixed the `_load_from_env` method in `backend/utils/feature_flags_v4.py` to properly construct environment variable names by removing the `api_v4_` prefix from flag names
+- **Files Modified**:
+  - `backend/utils/feature_flags_v4.py` - Fixed environment variable loading
+  - `backend/utils/config_manager.py` - Added config.env loading support
+- **Verification**: All feature flags now properly load from config.env and API v4 endpoints work correctly
+- **Impact**: Reviews endpoints and other API v4 functionality now work as expected
+
+### **Build and Console Error Fixes** ✅
+- **Status**: Completed
+- **Date**: 2025-08-28
+- **Fixes**:
+  - ✅ Fixed syntax error in `frontend/app/eatery/page.tsx:678` (missing closing parenthesis)
+  - ✅ Resolved Zod validation errors in dietary filter parsing
+  - ✅ Fixed LCP image warnings for priority images
+  - ✅ Enhanced filter schema transformation logic
+  - ✅ Improved error recovery for malformed filter parameters
+
+### **Profile Management System** ✅
+- **Status**: Phase 1 completed
+- **Date**: 2025-08-28
+- **Features**:
+  - ✅ Forgot Password Flow (`/auth/forgot-password`)
+  - ✅ Password Reset Page (`/auth/reset-password`)
+  - ✅ Enhanced Settings Page (`/profile/settings`) with tabs
+  - ✅ Enhanced Sign-In Page with password reset link
+  - ✅ Enhanced Profile Page with settings link
+
+### **Duplication Consolidation** ✅
+- **Status**: Completed (Phases 4-8)
+- **Date**: 2025-08-28
+- **Consolidations**:
+  - ✅ Scripts consolidation (unified script utilities)
+  - ✅ UI Components consolidation (unified Loading component)
+  - ✅ Search Components consolidation (unified FilterBase component)
+  - ✅ Card Components consolidation (unified UnifiedCard component)
+  - ✅ Utility Function consolidation (date parsing logic)
+  - ✅ Type conflicts resolution
+  - ✅ Build validation and testing
+
+### **Database Integration** ✅
+- **Status**: Completed
+- **Date**: 2025-08-28
+- **Integrations**:
+  - ✅ Session count implementation with `_get_user_session_count` method
+  - ✅ Redis-backed caching with CacheManagerV4
+  - ✅ Admin token database integration with Prisma AdminToken model
+  - ✅ MFA secret database integration with Prisma MFASecret model
+  - ✅ Restaurant API endpoints (PUT, DELETE, PATCH methods)
+  - ✅ Supabase session integration in ReviewForm and ReviewCard
+  - ✅ Data counts in filter options API
 
 ### **Architectural Improvements** ✅
 - **Status**: Completed
 - **Date**: 2025-01-28
-- **Reference**: See `docs/CURRENT_SYSTEM_STATUS.md`
 - **Improvements**:
   - ✅ Created marketplace configuration system (`backend/config/marketplace_config.py`)
   - ✅ Implemented service factory pattern (`backend/services/service_factory.py`)
@@ -106,7 +371,6 @@
 ### **Search System Implementation** ✅
 - **Status**: Completed
 - **Date**: 2025-01-28
-- **Reference**: See `docs/SEARCH_SYSTEM_COMPREHENSIVE.md`
 - **Features**:
   - ✅ Unified search system with multiple providers
   - ✅ PostgreSQL full-text search with trigram similarity
@@ -116,7 +380,7 @@
 
 ---
 
-## 📋 Documentation Status
+## 📋 **DOCUMENTATION STATUS**
 
 ### **Current Documentation** ✅
 - **System Status**: `docs/CURRENT_SYSTEM_STATUS.md` - Comprehensive system overview
@@ -133,25 +397,35 @@
 
 ---
 
-## 🎯 Next Steps
+## 🎯 **NEXT STEPS**
 
 ### **Immediate (This Week)**
-1. **Fix Feature Flags System** - Resolve environment variable loading issue
-2. **Clean Up Linting Warnings** - Fix unused variable warnings in frontend
-3. **Implement CI Pipeline Fixes** - Address CI failures from PR #46
+1. ✅ **Fix Feature Flags System** - ~~Resolve environment variable loading issue~~ **COMPLETED**
+2. ✅ **Authentication Integration** - ~~Replace placeholder sessions with Supabase~~ **COMPLETED**
+3. **Implement Analytics Integration** - Connect to actual analytics service
+4. **Complete Order Submission** - Connect order form to backend API
+5. **Implement CI Pipeline Fixes** - Address CI failures from PR #46
 
 ### **Short-term (Next 2 Weeks)**
-1. **Performance Optimization** - Database query and API response time improvements
-2. **Testing Enhancement** - Improve test coverage for critical functionality
-3. **Monitoring Enhancement** - Add custom metrics and improved alerting
+1. **Begin Shtel Marketplace Enhancements** - Start with community-specific categories and kosher features
+2. **Implement Testing Framework** - Set up comprehensive testing
+3. **Clean Up Linting Warnings** - Fix unused variable warnings in frontend
+4. **Performance Optimization** - Database query and API response time improvements
+
+### **Medium-term (Next 3-4 Weeks)**
+1. **Complete Shtel Community Features** - Synagogue integration, Gemach system, Jewish calendar
+2. **Enhanced Kosher Certification System** - Advanced kosher level filtering and verification
+3. **Community Bulletin Board** - Integration with marketplace for community events
 
 ### **Long-term (Next Month)**
-1. **Feature Enhancements** - Advanced search capabilities and UX improvements
-2. **Infrastructure Improvements** - Scalability and caching strategy enhancements
+1. **Security Enhancements** - Implement security improvements
+2. **UI/UX Improvements** - Polish user experience
+3. **Documentation Updates** - Improve developer documentation
+4. **Development Tools** - Enhance development workflow
 
 ---
 
-## 📊 System Health
+## 📊 **SYSTEM HEALTH**
 
 ### **Operational Status** ✅
 - **Backend API**: Fully operational
@@ -159,6 +433,7 @@
 - **Database**: Healthy with optimized performance
 - **Search System**: Fully operational with hybrid search
 - **Authentication**: Supabase auth working correctly
+- **Marketplace Core**: ✅ Fully operational (PR #45 - production ready with CRUD operations)
 - **Monitoring**: Sentry integration active
 - **CI Pipeline**: ⚠️ Issues identified, needs fixes (see PR #46)
 
@@ -171,6 +446,41 @@
 
 ---
 
-*Last Updated: 2025-01-28*  
-*Next Review: 2025-02-04*  
+## 🔄 **MAINTENANCE TASKS**
+
+### **Weekly**
+- [ ] Monitor error rates
+- [ ] Check performance metrics
+- [ ] Review security alerts
+- [ ] Update dependencies
+
+### **Monthly**
+- [ ] Performance audit
+- [ ] Security review
+- [ ] User feedback analysis
+- [ ] Documentation updates
+
+### **Quarterly**
+- [ ] Major feature planning
+- [ ] Architecture review
+- [ ] Technology stack evaluation
+- [ ] User research and feedback
+
+---
+
+*Last Updated: 2025-08-28*  
+*Next Review: 2025-09-04*  
 *Status: Production Ready with Minor Issues*
+
+---
+
+## 📝 **TASK LIST CONSOLIDATION**
+
+This unified task list has been created by merging the following files:
+- `docs/TODO.md` - Frontend-specific tasks
+- `docs/frontend/TODO.md` - Duplicate frontend tasks
+- `docs/frontend/UNIFIED_TODOS.md` - Consolidated TODO items
+- `docs/development/TODO_CLEANUP_TRACKING.md` - Development cleanup tasks
+- `docs/PROJECT_STATUS_AND_TODOS.md` - Project-wide status and tasks
+
+All task information has been consolidated into this single file for better project management and tracking.

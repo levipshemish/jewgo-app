@@ -12,10 +12,44 @@ from utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+def _load_config_env():
+    """Load environment variables from config.env file if it exists."""
+    config_env_path = os.path.join(os.path.dirname(__file__), '..', 'config.env')
+    
+    if os.path.exists(config_env_path):
+        try:
+            with open(config_env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        
+                        # Remove quotes if present
+                        if (value.startswith('"') and value.endswith('"')) or \
+                           (value.startswith("'") and value.endswith("'")):
+                            value = value[1:-1]
+                        
+                        # Only set if not already in environment
+                        if key not in os.environ:
+                            os.environ[key] = value
+                            logger.debug(f"ConfigManager: Loaded config.env variable: {key}")
+            
+            logger.info(f"ConfigManager: Loaded environment variables from {config_env_path}")
+        except Exception as e:
+            logger.warning(f"ConfigManager: Failed to load config.env file: {e}")
+    else:
+        logger.debug(f"ConfigManager: Config.env file not found at {config_env_path}")
+
+
 class ConfigManager:
     """Centralized configuration manager for the application."""
     
     def __init__(self):
+        # Load config.env file first
+        _load_config_env()
+        
         self._config_cache: Dict[str, Any] = {}
         self._load_configuration()
     
@@ -69,6 +103,7 @@ class ConfigManager:
             # Feature flags
             'features': {
                 'api_v4_enabled': os.getenv('API_V4_ENABLED', 'true').lower() == 'true',
+                'api_v4_reviews': os.getenv('API_V4_REVIEWS', 'false').lower() == 'true',
                 'marketplace_enabled': os.getenv('MARKETPLACE_ENABLED', 'true').lower() == 'true',
                 'search_enabled': os.getenv('SEARCH_ENABLED', 'true').lower() == 'true',
             },
@@ -80,6 +115,9 @@ class ConfigManager:
                 'file_path': os.getenv('LOG_FILE_PATH'),
             }
         })
+        
+        # Log feature flag status
+        logger.info(f"Feature flags loaded: API_V4_ENABLED={self._config_cache['features']['api_v4_enabled']}, API_V4_REVIEWS={self._config_cache['features']['api_v4_reviews']}")
     
     def get(self, key: str, default: Any = None) -> Any:
         """Get a configuration value by key."""

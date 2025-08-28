@@ -75,7 +75,7 @@ This document provides a comprehensive summary of the repository cleanup work co
 - Build passes successfully (`pnpm build`)
 - TypeScript compilation passes (`pnpm type-check`)
 - Documentation is concise and accurate
-- Single root TODO.md exists and is canonical
+- Single root TASKS.md exists and is canonical
 - Analysis tools provide actionable insights
 - **NEW:** All syntax errors resolved
 - **NEW:** All dependency issues resolved
@@ -225,7 +225,7 @@ pnpm lint:fix        # Fix ESLint issues
 - `docs/conventions.md` - Coding standards
 - `docs/architecture/overview.md` - System architecture
 - `docs/architecture/file-structure.md` - File organization
-- `TODO.md` - Unified task list
+- `TASKS.md` - Unified task list
 
 ### Configuration Files
 - `.dependency-cruiser.js` - Dependency analysis config
@@ -260,7 +260,7 @@ pnpm lint:fix        # Fix ESLint issues
 1. **Always test build** after making changes: `pnpm build` ✅
 2. **Check TypeScript** after changes: `pnpm type-check` ✅
 3. **Follow conventions** in `docs/conventions.md`
-4. **Update TODO.md** when completing tasks
+4. **Update TASKS.md** when completing tasks
 5. **Create changelog entries** for significant changes
 6. **Use analysis tools** to validate improvements
 7. **Maintain backward compatibility** - no breaking changes

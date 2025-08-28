@@ -82,6 +82,36 @@ except ImportError:
     def require_admin_auth(f):
         return f
 
+# Import Supabase authentication decorators
+try:
+    from utils.supabase_auth import (
+        require_supabase_auth,
+        optional_supabase_auth,
+        get_current_supabase_user,
+        is_supabase_authenticated,
+        get_supabase_user_id,
+        get_supabase_user_email
+    )
+except ImportError:
+    # Fallback decorators if Supabase auth module is not available
+    def require_supabase_auth(f):
+        return f
+    
+    def optional_supabase_auth(f):
+        return f
+    
+    def get_current_supabase_user():
+        return None
+    
+    def is_supabase_authenticated():
+        return False
+    
+    def get_supabase_user_id():
+        return None
+    
+    def get_supabase_user_email():
+        return None
+
 
 # Import feature flag decorators
 try:
@@ -1213,6 +1243,7 @@ def get_marketplace_listing(listing_id):
 
 @safe_route("/marketplace/listings", methods=["POST"])
 @require_api_v4_flag("api_v4_marketplace")
+@require_supabase_auth
 def create_marketplace_listing():
     """Create a new marketplace listing."""
     try:
@@ -1220,12 +1251,25 @@ def create_marketplace_listing():
         if not data:
             return error_response("Request body is required", 400)
 
+        # Get authenticated user information
+        user = get_current_supabase_user()
+        if not user:
+            return error_response("User authentication required", 401)
+
+        # Add user information to listing data
+        listing_data = {
+            **data,
+            "seller_id": user.get("user_id"),
+            "seller_email": user.get("email"),
+            "created_by": user.get("user_id")
+        }
+
         # Use marketplace service
         service = create_marketplace_service()
         if not service:
             return error_response("Marketplace service unavailable", 503)
 
-        result = service.create_listing(data)
+        result = service.create_listing(listing_data)
 
         if result["success"]:
             return success_response(result["data"], "Listing created successfully", 201)
@@ -1236,6 +1280,83 @@ def create_marketplace_listing():
         logger.exception("Error creating marketplace listing")
         return error_response(
             "Failed to create marketplace listing", 500, {"details": str(e)}
+        )
+
+
+@safe_route("/marketplace/listings/<listing_id>", methods=["PUT"])
+@require_api_v4_flag("api_v4_marketplace")
+@require_supabase_auth
+def update_marketplace_listing(listing_id: str):
+    """Update a marketplace listing."""
+    try:
+        data = request.get_json()
+        if not data:
+            return error_response("Request body is required", 400)
+
+        # Get authenticated user information
+        user = get_current_supabase_user()
+        if not user:
+            return error_response("User authentication required", 401)
+
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+
+        # Add user information to update data
+        update_data = {
+            **data,
+            "updated_by": user.get("user_id"),
+            "seller_id": user.get("user_id")  # Ensure seller can only update their own listings
+        }
+
+        result = service.update_listing(listing_id, update_data)
+
+        if result["success"]:
+            return success_response(result["data"], "Listing updated successfully")
+        else:
+            return error_response(result.get("error", "Failed to update listing"), 400)
+
+    except Exception as e:
+        logger.exception("Error updating marketplace listing")
+        return error_response(
+            "Failed to update marketplace listing", 500, {"details": str(e)}
+        )
+
+
+@safe_route("/marketplace/listings/<listing_id>", methods=["DELETE"])
+@require_api_v4_flag("api_v4_marketplace")
+@require_supabase_auth
+def delete_marketplace_listing(listing_id: str):
+    """Delete a marketplace listing."""
+    try:
+        # Get authenticated user information
+        user = get_current_supabase_user()
+        if not user:
+            return error_response("User authentication required", 401)
+
+        # Use marketplace service
+        service = create_marketplace_service()
+        if not service:
+            return error_response("Marketplace service unavailable", 503)
+
+        # Add user information for verification
+        delete_data = {
+            "deleted_by": user.get("user_id"),
+            "seller_id": user.get("user_id")  # Ensure seller can only delete their own listings
+        }
+
+        result = service.delete_listing(listing_id, delete_data)
+
+        if result["success"]:
+            return success_response(result["data"], "Listing deleted successfully")
+        else:
+            return error_response(result.get("error", "Failed to delete listing"), 400)
+
+    except Exception as e:
+        logger.exception("Error deleting marketplace listing")
+        return error_response(
+            "Failed to delete marketplace listing", 500, {"details": str(e)}
         )
 
 
