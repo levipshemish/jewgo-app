@@ -172,8 +172,9 @@ export function useMarkerManagement({
     // Clear clusterer
     if (clustererRef.current) {
       // Clear markers from clusterer if method exists
-      if (typeof clustererRef.current.clearMarkers === 'function') {
-        clustererRef.current.clearMarkers();
+      const clusterer = clustererRef.current as any;
+      if (typeof clusterer.clearMarkers === 'function') {
+        clusterer.clearMarkers();
       }
       clustererRef.current = null;
     }
