@@ -3,6 +3,8 @@
  * This prevents Edge Runtime compatibility issues during prerendering
  */
 
+import { type TransformedUser } from "@/lib/types/supabase-auth";
+
 // User type definition - moved here to avoid circular dependencies
 interface User {
   id: string;
@@ -21,26 +23,7 @@ interface User {
   updated_at?: string;
 }
 
-export interface TransformedUser {
-  id: string;
-  email: string | undefined;
-  name: string | null;
-  username?: string;
-  provider: 'apple' | 'google' | 'unknown';
-  avatar_url: string | null;
-  providerInfo: {
-    name: string;
-    icon: string;
-    color: string;
-  };
-  createdAt?: string;
-  updatedAt?: string;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  role: string;
-  permissions: string[];
-  subscriptionTier: string;
-}
+
 
 /**
  * Check if user is anonymous based on app_metadata
@@ -115,6 +98,7 @@ export function createMockUser(): TransformedUser {
       name: 'Email',
       icon: '📧',
       color: 'text-gray-600',
+      displayName: 'Email',
       },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
