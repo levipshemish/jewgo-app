@@ -172,20 +172,26 @@ export function sanitizeHtml(
     sanitized = sanitized.replace(/\s+/g, ' ').trim();
   }
 
-  // Create a temporary DOM element to parse and sanitize
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitized, 'text/html');
+  // Check if we're in a browser environment with DOMParser
+  if (typeof DOMParser !== 'undefined') {
+    // Create a temporary DOM element to parse and sanitize
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(sanitized, 'text/html');
 
-  // Sanitize the document
-  sanitizeNode(doc.body, allowedTags, allowedCssProperties, allowImages, allowLinks);
+    // Sanitize the document
+    sanitizeNode(doc.body, allowedTags, allowedCssProperties, allowImages, allowLinks);
 
-  // If scripts are not allowed, remove all script tags
-  if (!allowScripts) {
-    const scripts = doc.querySelectorAll('script');
-    scripts.forEach(script => script.remove());
+    // If scripts are not allowed, remove all script tags
+    if (!allowScripts) {
+      const scripts = doc.querySelectorAll('script');
+      scripts.forEach(script => script.remove());
+    }
+
+    return doc.body.innerHTML;
+  } else {
+    // Server-side fallback: basic sanitization without DOM parsing
+    return basicHtmlClean(sanitized);
   }
-
-  return doc.body.innerHTML;
 }
 
 /**

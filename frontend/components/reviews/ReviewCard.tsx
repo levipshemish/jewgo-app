@@ -2,6 +2,7 @@
 
 import { Star, ThumbsUp, Flag, User, Clock, Shield, MoreVertical } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
+import { Session } from '@supabase/supabase-js';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';
 import { isSupabaseConfigured, handleUserLoadError } from '@/lib/utils/auth-utils';

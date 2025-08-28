@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 
 import { Review } from '@/components/reviews/ReviewCard';
-import { ReviewForm, ReviewData } from '@/components/reviews/ReviewForm';
+import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { Restaurant } from '@/lib/types/restaurant';
