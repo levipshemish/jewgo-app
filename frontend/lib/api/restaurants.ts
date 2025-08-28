@@ -319,7 +319,7 @@ export class RestaurantsAPI {
       if (restaurant) {
         // Sanitize the restaurant data before returning
         const sanitized = sanitizeRestaurantData([restaurant]);
-        return sanitized[0];
+        return sanitized[0] as Restaurant;
       }
       
       return null;
