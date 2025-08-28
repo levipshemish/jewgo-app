@@ -51,7 +51,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
       const data = await response.json();
       setProducts(data.products || []);
     } catch (err) {
-      appLogger.error('Error loading products:', err);
+      appLogger.error('Error loading products:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
       setShowAddModal(false);
       onRefresh();
     } catch (err) {
-      appLogger.error('Error adding product:', err);
+      appLogger.error('Error adding product:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -93,7 +93,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
       setEditingProduct(null);
       onRefresh();
     } catch (err) {
-      appLogger.error('Error updating product:', err);
+      appLogger.error('Error updating product:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -110,7 +110,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
       await loadProducts();
       onRefresh();
     } catch (err) {
-      appLogger.error('Error deleting product:', err);
+      appLogger.error('Error deleting product:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -345,7 +345,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
 }
 
 // Add Product Modal Component
-function AddProductModal({ storeData, onClose, onAdd }: any) {
+function AddProductModal({ onClose, onAdd }: any) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -495,7 +495,7 @@ function AddProductModal({ storeData, onClose, onAdd }: any) {
 }
 
 // Edit Product Modal Component
-function EditProductModal({ product, storeData, onClose, onUpdate }: any) {
+function EditProductModal({ product, onClose, onUpdate }: any) {
   const [formData, setFormData] = useState({
     name: product.name,
     description: product.description,

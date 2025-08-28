@@ -34,9 +34,6 @@ interface UserDatabaseClientProps {
 export default function UserDatabaseClient({
   initialData,
   initialPagination,
-
-  initialSortBy,
-  initialSortOrder,
 }: UserDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

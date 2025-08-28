@@ -289,7 +289,7 @@ export function useMarkerManagement({
           restaurant,
           map,
         });
-      } catch (error) {
+      } catch (_error) {
         // console.warn(`Failed to create marker for restaurant ${restaurant.id}:`, error);
       }
     });

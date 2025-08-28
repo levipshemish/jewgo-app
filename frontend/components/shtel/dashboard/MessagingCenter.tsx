@@ -88,7 +88,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       const data = await response.json();
       setConversations(data.conversations || []);
     } catch (err) {
-      appLogger.error('Error loading conversations:', { error: err });
+      appLogger.error('Error loading conversations:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       // Mark messages as read
       markMessagesAsRead(conversationId);
     } catch (err) {
-      appLogger.error('Error loading messages:', { error: err });
+      appLogger.error('Error loading messages:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -124,7 +124,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       
       onRefresh();
     } catch (err) {
-      appLogger.error('Error marking messages as read:', err);
+      appLogger.error('Error marking messages as read:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -164,7 +164,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       ));
       
     } catch (err) {
-      appLogger.error('Error sending message:', err);
+      appLogger.error('Error sending message:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setSending(false);
     }
@@ -188,7 +188,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
         setMessages([]);
       }
     } catch (err) {
-      appLogger.error('Error archiving conversation:', err);
+      appLogger.error('Error archiving conversation:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 

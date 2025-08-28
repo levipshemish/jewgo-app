@@ -163,35 +163,11 @@ function LocationDisplay() {
   )
 }
 
-// Helper function to get relative time
-function getTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (diffInSeconds < 60) {
-    return "Just now"
-  }
-  if (diffInSeconds < 3600) {
-    return `${Math.floor(diffInSeconds / 60)}m ago`
-  }
-  if (diffInSeconds < 86400) {
-    return `${Math.floor(diffInSeconds / 3600)}h ago`
-  }
-  if (diffInSeconds < 2592000) {
-    return `${Math.floor(diffInSeconds / 86400)}d ago`
-  }
-  return `${Math.floor(diffInSeconds / 2592000)}mo ago`
-}
 
 export default function MarketplacePageClient() {
-  const router = useRouter()
-  const [_activeTab, setActiveTab] = useState("marketplace")
-  const [searchQuery, setSearchQuery] = useState("")
   const [products, setProducts] = useState<MarketplaceListing[]>([])
-  const [categories, setCategories] = useState<MarketplaceCategory[]>([])
-  const [featuredProducts, setFeaturedProducts] = useState<MarketplaceListing[]>([])
-  const [stats, setStats] = useState<MarketplaceStats | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState<MarketplaceFiltersType>({
     category: "",
     subcategory: "",
@@ -223,17 +199,8 @@ export default function MarketplacePageClient() {
   const loadMarketplaceData = async () => {
     try {
       setLoading(true)
-      const [productsData, categoriesData, featuredData, statsData] = await Promise.all([
-        MarketplaceAPI.getProducts(),
-        MarketplaceAPI.getCategories(),
-        MarketplaceAPI.getFeaturedProducts(),
-        MarketplaceAPI.getStats(),
-      ])
-
+      const productsData = await MarketplaceAPI.getProducts()
       setProducts(productsData)
-      setCategories(categoriesData)
-      setFeaturedProducts(featuredData)
-      setStats(statsData)
     } catch (error) {
       console.error("Failed to load marketplace data:", error)
     } finally {

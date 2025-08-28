@@ -33,8 +33,6 @@ interface ImageDatabaseClientProps {
 export default function ImageDatabaseClient({
   initialData,
   initialPagination,
-  initialSortBy,
-  initialSortOrder,
 }: ImageDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -87,7 +87,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
       setOrders(data.orders || []);
       setTotalPages(data.total_pages || 1);
     } catch (err) {
-      appLogger.error('Error loading orders:', err);
+      appLogger.error('Error loading orders:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
       await loadOrders();
       onRefresh();
     } catch (err) {
-      appLogger.error('Error updating order status:', err);
+      appLogger.error('Error updating order status:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -127,7 +127,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
       await loadOrders();
       onRefresh();
     } catch (err) {
-      appLogger.error('Error updating tracking number:', err);
+      appLogger.error('Error updating tracking number:', { error: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -430,8 +430,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
 }
 
 // Order Details Modal Component
-function OrderDetailsModal({ order, onClose, onUpdateStatus, onUpdateTracking }: any) {
-  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '');
+function OrderDetailsModal({ order, onClose }: any) {
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

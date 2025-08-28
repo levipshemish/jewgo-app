@@ -363,7 +363,7 @@ export async function validateRestaurantName(_name: string): Promise<string | nu
 
 // Form submission helpers
 export async function submitForm<T>(
-  schema: z.ZodSchema<T>, data: unknown, submitFunction: (data: T) => Promise<void>
+  schema: z.ZodSchema<T>, data: unknown, submitFunction: (formData: T) => Promise<void>
 ): Promise<{ success: boolean; errors?: ValidationError[] }> {
   const validation = validateForm(schema, data);
   

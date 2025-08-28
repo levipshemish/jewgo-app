@@ -14,8 +14,6 @@ const SpecialsSection: React.FC<SpecialsSectionProps> = ({
   specials, title = "Today's Specials" 
 }) => {
   const getSpecialImage = (special: RestaurantSpecial, _index: number) => {
-    const cloudName = process.env['NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME'] || 'dcpuqbnrm';
-    
     // Use real restaurant images from your Cloudinary account
     const title = special.title.toLowerCase();
     

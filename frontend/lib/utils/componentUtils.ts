@@ -124,7 +124,7 @@ export const handleTabClick = (
  */
 export const handleSearch = (
   query: string,
-  onSearch: (query: string) => void,
+  onSearch: (searchQuery: string) => void,
   debounceMs: number = 300
 ) => {
   const timeoutId = setTimeout(() => {

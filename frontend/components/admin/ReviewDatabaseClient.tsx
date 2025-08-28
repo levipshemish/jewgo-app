@@ -38,9 +38,6 @@ interface ReviewDatabaseClientProps {
 export default function ReviewDatabaseClient({
   initialData,
   initialPagination,
-
-  initialSortBy,
-  initialSortOrder,
 }: ReviewDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

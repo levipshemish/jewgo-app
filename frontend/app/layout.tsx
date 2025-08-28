@@ -95,53 +95,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${roboto.variable} h-full`} data-scroll-behavior="smooth">
       <head>
-        {/* Targeted CSS protection - only removes CSS files masquerading as scripts */}
-        <Script id="css-protection" strategy="beforeInteractive">
-          {`
-            (function() {
-              // Only remove script tags that are clearly CSS files
-              function removeCssScripts() {
-                const scripts = document.querySelectorAll('script[src*=".css"]');
-                scripts.forEach(script => {
-                  if (script.src && script.src.includes('.css')) {
-                    console.warn('Removing CSS file loaded as script:', script.src);
-                    script.remove();
-                  }
-                });
-              }
-              
-              // Run immediately
-              removeCssScripts();
-              
-              // Run after DOM is ready
-              if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', removeCssScripts);
-              }
-              
-              // Monitor for new script tags (but don't override createElement)
-              const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                  mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SCRIPT') {
-                      const script = node;
-                      if (script.src && script.src.includes('.css')) {
-                        console.warn('Removing dynamically added CSS script:', script.src);
-                        script.remove();
-                      }
-                    }
-                  });
-                });
-              });
-              
-              // Only observe for new script tags, don't interfere with existing ones
-              observer.observe(document.head, {
-                childList: true,
-                subtree: false
-              });
-            })();
-          `}
-        </Script>
-        
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
           <>
@@ -165,49 +118,10 @@ export default function RootLayout({
           </>
         )}
         
-        {/* App version tracking and mobile optimizations */}
+        {/* App version tracking */}
         <Script id="app-version" strategy="afterInteractive">
           {`
             window.APP_VERSION = '${process.env.NEXT_PUBLIC_APP_VERSION || Date.now()}';
-            
-            // Mobile Touch Event Fixes - optimized for performance
-            (function() {
-              const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-              
-              if (isMobile) {
-                document.addEventListener('DOMContentLoaded', function() {
-                  const clickableElements = document.querySelectorAll('button, a, [role="button"], [onClick], [data-clickable="true"], .restaurant-card, .eatery-card');
-                  
-                  clickableElements.forEach(function(element) {
-                    if (!element.hasAttribute('data-touch-fixed')) {
-                      element.setAttribute('data-touch-fixed', 'true');
-                      element.style.touchAction = 'manipulation';
-                      element.style.webkitTapHighlightColor = 'rgba(0, 0, 0, 0.1)';
-                      element.style.webkitTouchCallout = 'none';
-                      element.style.webkitUserSelect = 'none';
-                      element.style.userSelect = 'none';
-                      element.style.pointerEvents = 'auto';
-                      
-                      if (element.tagName === 'BUTTON' || element.getAttribute('role') === 'button') {
-                        element.style.minHeight = '44px';
-                        element.style.minWidth = '44px';
-                      }
-                      
-                      element.style.position = 'relative';
-                      element.style.zIndex = '10';
-                    }
-                  });
-                });
-                
-                // Fix for iOS Safari specific issues
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                  const inputs = document.querySelectorAll('input[type="text"], input[type="search"], input[type="email"], input[type="tel"]');
-                  inputs.forEach(function(input) {
-                    input.style.fontSize = '16px';
-                  });
-                }
-              }
-            })();
           `}
         </Script>
       </head>

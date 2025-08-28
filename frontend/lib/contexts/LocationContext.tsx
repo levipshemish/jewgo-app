@@ -63,13 +63,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           if (age < maxAge) {
             setUserLocation(data.userLocation);
             if (process.env.NODE_ENV === 'development') {
-
+              // console.log('📍 LocationContext: Loaded saved location data');
             }
           } else {
             // Location is too old, clear it
             localStorage.removeItem(LOCATION_STORAGE_KEY);
             if (process.env.NODE_ENV === 'development') {
-              // console.log(`📍 LocationContext: Cleared expired location data (age: ${  Math.floor(age / (1000 * 60))  } minutes)`);
+              // console.log(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`);
             }
           }
         }
@@ -105,7 +105,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
         if (process.env.NODE_ENV === 'development') {
-
+          // console.log('📍 LocationContext: Saved location data to localStorage');
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
@@ -128,7 +128,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const minRequestInterval = 5000; // Reduced to 5 seconds for testing
     
     if (isLoading || timeSinceLastRequest < minRequestInterval) {
-
+      // console.log('📍 LocationContext: Skipping request - too soon or already loading');
       return;
     }
     
@@ -142,9 +142,26 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setIsLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    // Use timeout pattern to prevent hanging
+    const getPosition = () =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        const kill = setTimeout(() => reject(new Error('timeout')), 4000);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(kill);
+            resolve(pos);
+          },
+          (err) => {
+            clearTimeout(kill);
+            reject(err);
+          },
+          { enableHighAccuracy: false, timeout: 4000, maximumAge: 0 }
+        );
+      });
 
+    (async () => {
+      try {
+        const position = await getPosition();
         setIsLoading(false);
         setPermissionStatus('granted');
         const location: UserLocation = {
@@ -153,36 +170,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           timestamp: Date.now(),
         };
         if (process.env.NODE_ENV === 'development') {
-
+          // console.log('📍 LocationContext: Location obtained successfully');
         }
         setUserLocation(location);
-      },
-      (error: GeolocationPositionError) => {
-
+      } catch (error: any) {
         setIsLoading(false);
         let errorMessage = 'Unable to get your location';
         
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setPermissionStatus('denied');
-            errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable. Please try again.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out. Please try again.';
-            break;
+        if (error.message === 'timeout') {
+          errorMessage = 'Location request timed out. Please try again.';
+          setPermissionStatus('prompt');
+        } else if (error.code) {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setPermissionStatus('denied');
+              errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable. Please try again.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out. Please try again.';
+              break;
+          }
         }
         
         setError(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 600000, // 10 minutes - increased to reduce frequency
       }
-    );
+    })();
   }, [isLoading, lastRequestTime]);
 
   const setLocation = useCallback((location: UserLocation) => {
@@ -221,6 +236,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setLoading: setLoadingHandler,
   };
 
+  // IMPORTANT: always render children regardless of location status
   return (
     <LocationContext.Provider value={value}>
       {children}

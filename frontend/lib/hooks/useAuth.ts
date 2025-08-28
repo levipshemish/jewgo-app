@@ -55,8 +55,8 @@ export function useAuth(): UseAuthReturn {
       setUser(null);
       setAuthState('unauthenticated');
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Sign out failed');
-      setError(error);
+      const signOutError = err instanceof Error ? err : new Error('Sign out failed');
+      setError(signOutError);
     } finally {
       setIsLoading(false);
     }
@@ -92,8 +92,8 @@ export function useAuth(): UseAuthReturn {
             setAuthState('unauthenticated');
           }
         } catch (err) {
-          const error = err instanceof Error ? err : new Error('Auth state change error');
-          setError(error);
+          const stateChangeError = err instanceof Error ? err : new Error('Auth state change error');
+          setError(stateChangeError);
           setAuthState('unauthenticated');
         }
       }

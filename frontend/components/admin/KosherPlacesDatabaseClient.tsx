@@ -39,9 +39,6 @@ interface KosherPlacesDatabaseClientProps {
 export default function KosherPlacesDatabaseClient({
   initialData,
   initialPagination,
-
-  initialSortBy,
-  initialSortOrder,
 }: KosherPlacesDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

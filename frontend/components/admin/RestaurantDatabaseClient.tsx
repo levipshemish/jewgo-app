@@ -40,9 +40,6 @@ interface RestaurantDatabaseClientProps {
 export default function RestaurantDatabaseClient({
   initialData,
   initialPagination,
-
-  initialSortBy,
-  initialSortOrder,
 }: RestaurantDatabaseClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -21,7 +21,7 @@ interface AnalyticsData {
   monthlyRevenue: { month: string; revenue: number }[];
 }
 
-export default function StoreOverview({ storeData, onRefresh }: StoreOverviewProps) {
+export default function StoreOverview({ storeData }: StoreOverviewProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d'); // 7d, 30d, 90d, 1y
@@ -40,7 +40,7 @@ export default function StoreOverview({ storeData, onRefresh }: StoreOverviewPro
       const data = await response.json();
       setAnalytics(data);
     } catch (err) {
-      appLogger.error('Error loading store analytics:', err);
+      appLogger.error('Error loading store analytics:', { error: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }

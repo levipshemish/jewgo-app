@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { appLogger } from '@/lib/utils/logger';
 
 interface StoreSettingsProps {
@@ -51,7 +51,6 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleSave = async () => {
     try {
@@ -70,7 +69,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
       onRefresh();
       alert('Store settings updated successfully!');
     } catch (err) {
-      appLogger.error('Error updating store settings:', err);
+      appLogger.error('Error updating store settings:', { error: err instanceof Error ? err.message : String(err) });
       alert('Failed to update store settings. Please try again.');
     } finally {
       setSaving(false);
@@ -92,7 +91,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
       // Redirect to shtel page
       window.location.href = '/shtel';
     } catch (err) {
-      appLogger.error('Error deleting store:', err);
+      appLogger.error('Error deleting store:', { error: err instanceof Error ? err.message : String(err) });
       alert('Failed to delete store. Please try again.');
     } finally {
       setLoading(false);
@@ -649,7 +648,7 @@ function BillingSettings({ settings, updateSetting }: any) {
 }
 
 // Advanced Settings Component
-function AdvancedSettings({ settings, updateSetting, onDelete }: any) {
+function AdvancedSettings({ onDelete }: any) {
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900">Advanced Settings</h3>
