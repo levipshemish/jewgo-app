@@ -44,7 +44,6 @@ export default async function ImageDatabasePage({ searchParams }: { searchParams
       <ImageDatabaseClient
         initialData={initialData}
         initialPagination={initialPagination}
-        initialSearch={search}
         initialSortBy={sortBy}
         initialSortOrder={sortOrder as 'asc' | 'desc'}
       />
