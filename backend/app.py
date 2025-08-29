@@ -18,8 +18,12 @@ from utils.config_manager import config_manager
 app = create_app()
 
 if __name__ == "__main__":
+    # Get environment configuration
+    is_production = config_manager.get('environment.production', False)
+    environment_name = config_manager.get('environment.name', 'development')
+    
     app.run(
         host="0.0.0.0",
         port=8082,  # Use port 8082 to avoid conflicts
-        debug=not config_manager.get('environment.production', False),
+        debug=not is_production,  # Debug mode for non-production environments
     )

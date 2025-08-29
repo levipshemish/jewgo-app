@@ -25,8 +25,12 @@ Last Updated: 2024
 app = create_app()
 
 if __name__ == "__main__":
+    # Get environment configuration
+    is_production = config_manager.get('environment.production', False)
+    server_port = int(config_manager.get('server.port', 5000))
+    
     app.run(
         host="0.0.0.0",
-        port=int(config_manager.get('server.port', 5000)),
-        debug=not config_manager.get('environment.production', False),
+        port=server_port,
+        debug=not is_production,  # Debug mode for non-production environments
     )

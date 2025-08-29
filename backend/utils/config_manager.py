@@ -142,6 +142,21 @@ class ConfigManager:
                 'level': os.getenv('LOG_LEVEL', 'INFO'),
                 'format': os.getenv('LOG_FORMAT', 'json'),
                 'file_path': os.getenv('LOG_FILE_PATH'),
+            },
+            
+            # Environment configuration
+            'environment': {
+                'production': os.getenv('ENVIRONMENT', 'development').lower() == 'production',
+                'development': os.getenv('ENVIRONMENT', 'development').lower() == 'development',
+                'testing': os.getenv('ENVIRONMENT', 'development').lower() == 'testing',
+                'name': os.getenv('ENVIRONMENT', 'development'),
+            },
+            
+            # Server configuration
+            'server': {
+                'port': int(os.getenv('PORT', '8082')),
+                'host': os.getenv('HOST', '0.0.0.0'),
+                'debug': os.getenv('ENVIRONMENT', 'development').lower() != 'production',
             }
         })
         

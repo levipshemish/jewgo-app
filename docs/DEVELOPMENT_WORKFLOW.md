@@ -195,3 +195,204 @@ If you have questions about this workflow:
 ---
 
 **Remember: This rule exists to maintain code quality and team productivity. Following it consistently benefits everyone on the project.**
+
+# Development Workflow
+
+## Environment Configuration
+
+### Environment Variables Setup
+
+The project now uses a centralized environment configuration approach:
+
+- **Root `.env` file**: Primary source of truth for all environment variables
+- **Backend `config.env`**: Legacy file (fallback support maintained for backward compatibility)
+
+#### Migration from backend/config.env
+
+If you have an existing `backend/config.env` file, you can migrate to the new structure:
+
+```bash
+# Run the migration script
+python scripts/migrate-env-config.py
+```
+
+This script will:
+1. Load variables from both `backend/config.env` and root `.env`
+2. Merge them, preferring existing root `.env` values
+3. Save the result to the root `.env` file
+4. Optionally create a backup of the old config file
+
+#### Manual Setup
+
+1. Create a `.env` file in the project root:
+   ```bash
+   cp config/environment/templates/development.env.example .env
+   ```
+
+2. Update the `.env` file with your specific values:
+   ```bash
+   # Database Configuration
+   DATABASE_URL=postgresql://username:password@localhost:5432/jewgo_db
+   
+   # Redis Configuration
+   REDIS_URL=redis://localhost:6379
+   
+   # API Keys
+   GOOGLE_PLACES_API_KEY=your_google_places_api_key
+   GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+   
+   # Supabase Configuration
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_KEY=your_supabase_key
+   ```
+
+#### Environment Loading Priority
+
+The application loads environment variables in this order:
+1. System environment variables (highest priority)
+2. Root `.env` file
+3. `backend/config.env` file (fallback for backward compatibility)
+
+### Backend Local Server
+
+To run the backend server locally:
+
+```bash
+# From project root
+cd backend
+python app.py
+```
+
+The server will automatically load environment variables from the root `.env` file.
+
+### Build Process
+
+The build script now checks for the root `.env` file and provides clear messaging:
+
+```bash
+# From project root
+./scripts/build.sh
+```
+
+The build process will:
+1. Check for root `.env` file
+2. Install dependencies
+3. Set up Playwright browsers
+4. Verify the installation
+
+## Development Workflow
+
+### Prerequisites
+
+1. **Python 3.11+** installed
+2. **Node.js 18+** installed (for frontend)
+3. **PostgreSQL** database running
+4. **Redis** server running (optional, for caching)
+5. **Environment variables** configured in root `.env`
+
+### Quick Start
+
+1. **Clone and setup**:
+   ```bash
+   git clone <repository-url>
+   cd jewgo-app
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   # Backend dependencies
+   cd backend
+   pip install -r requirements.txt
+   
+   # Frontend dependencies
+   cd ../frontend
+   npm install
+   ```
+
+3. **Configure environment**:
+   ```bash
+   # Copy and configure environment file
+   cp config/environment/templates/development.env.example .env
+   # Edit .env with your specific values
+   ```
+
+4. **Start development servers**:
+   ```bash
+   # Backend (from project root)
+   cd backend && python app.py
+   
+   # Frontend (in another terminal, from project root)
+   cd frontend && npm run dev
+   ```
+
+### Database Setup
+
+1. **Create database**:
+   ```sql
+   CREATE DATABASE jewgo_db;
+   ```
+
+2. **Run migrations**:
+   ```bash
+   cd backend
+   python -m database.setup_database
+   ```
+
+### Testing
+
+```bash
+# Backend tests
+cd backend
+pytest
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Code Quality
+
+```bash
+# Backend linting
+cd backend
+flake8 .
+black .
+isort .
+
+# Frontend linting
+cd frontend
+npm run lint
+npm run type-check
+```
+
+## Troubleshooting
+
+### Environment Variables Not Loading
+
+1. **Check file location**: Ensure `.env` is in the project root
+2. **Check file format**: Variables should be `KEY=value` format
+3. **Check permissions**: Ensure the file is readable
+4. **Restart server**: Environment changes require server restart
+
+### Database Connection Issues
+
+1. **Verify DATABASE_URL** in `.env`
+2. **Check PostgreSQL** is running
+3. **Verify credentials** and permissions
+4. **Check network** connectivity
+
+### Redis Connection Issues
+
+1. **Verify REDIS_URL** in `.env`
+2. **Check Redis** server is running
+3. **Verify port** and authentication
+4. **Check firewall** settings
+
+## Best Practices
+
+1. **Never commit `.env` files** to version control
+2. **Use environment-specific** `.env` files for different deployments
+3. **Validate environment** variables on application startup
+4. **Use strong, unique** values for secrets and API keys
+5. **Rotate credentials** regularly
+6. **Monitor environment** variable usage in logs

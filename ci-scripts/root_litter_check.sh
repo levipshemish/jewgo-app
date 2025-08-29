@@ -11,7 +11,8 @@ ALLOWED=(
   ".nvmrc" ".python-version" ".tool-versions" ".editorconfig" ".pre-commit-config.yaml"
   "build.sh" "commitlint.config.js" "duplication_analysis_report.json"
   "test_deployment.py" "test_deployment_simple.py" ".env" ".env.local"
-  "render.yaml" "app.py" "Procfile"
+  "render.yaml" "app.py" "Procfile" "CHANGELOG.md" "TASKS.md" "AGENTS.md" "CLAUDE.md"
+  ".env.local.backup"
 )
 
 violations=0
