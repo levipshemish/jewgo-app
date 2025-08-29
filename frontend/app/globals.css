@@ -3159,6 +3159,17 @@ div[class*="specials-dynamic-grid"] {
   }
 
 /* Eatery Grid Layout - Consistent responsive design */
+/* Eatery page specific: 2-column grid with 4 rows on all screen sizes */
+.eatery-page .restaurant-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1rem !important;
+  padding: 1rem !important;
+  margin-bottom: 80px !important;
+  contain: layout style paint !important;
+  will-change: auto !important;
+  transform: translateZ(0) !important;
+}
+
 .restaurant-grid {
   display: grid !important;
   align-items: start !important; /* Ensure cards align to top */

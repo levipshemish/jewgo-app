@@ -93,7 +93,7 @@ export function EateryPageClient() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 eatery-page">
         <Header 
           onSearch={handleSearch}
           placeholder="Search restaurants..."
@@ -125,7 +125,7 @@ export function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20 eatery-page">
       <Header 
         onSearch={handleSearch}
         placeholder="Search restaurants..."
@@ -143,58 +143,73 @@ export function EateryPageClient() {
         onAddEatery={() => router.push('/add-eatery')}
       />
       
-      <div className="px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-          </div>
-        ) : restaurants.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No restaurants found</h3>
-            <p className="text-gray-600">Try adjusting your search or filters.</p>
-          </div>
-        ) : (
-          <>
-            <div className="restaurant-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-6">
-              {restaurants.map((restaurant, index) => (
-                <div 
-                  key={restaurant.id} 
-                  className="w-full" 
-                  role="gridcell"
-                >
-                  <UnifiedCard
-                    data={{
-                      id: restaurant.id,
-                      imageUrl: restaurant.image_url,
-                      title: restaurant.name,
-                      badge: typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : String(restaurant.rating || ''),
-                      subtitle: restaurant.price_range || '',
-                      additionalText: restaurant.distance ? String(restaurant.distance) : '',
-                      showHeart: true,
-                      isLiked: false,
-                      kosherCategory: restaurant.cuisine,
-                      city: restaurant.address
-                    }}
-                    onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
-                    priority={index < 4}
-                    className="w-full h-full"
-                  />
-                </div>
-              ))}
-            </div>
-            
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        </div>
+      ) : restaurants.length === 0 ? (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No restaurants found</h3>
+          <p className="text-gray-600">Try adjusting your search or filters.</p>
+        </div>
+      ) : (
+        <>
+          <div 
+            className="restaurant-grid"
+            role="grid"
+            aria-label="Restaurant listings"
+            style={{ 
+              contain: 'layout style paint',
+              willChange: 'auto',
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+              perspective: '1000px'
+            }}
+          >
+            {restaurants.map((restaurant, index) => (
+              <div 
+                key={restaurant.id} 
+                className="w-full" 
+                role="gridcell"
+                style={{
+                  contain: 'layout style paint',
+                  willChange: 'auto',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden'
+                }}
+              >
+                <UnifiedCard
+                  data={{
+                    id: restaurant.id,
+                    imageUrl: restaurant.image_url,
+                    title: restaurant.name,
+                    badge: typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : String(restaurant.rating || ''),
+                    subtitle: restaurant.price_range || '',
+                    additionalText: restaurant.distance ? String(restaurant.distance) : '',
+                    showHeart: true,
+                    isLiked: false,
+                    kosherCategory: restaurant.cuisine,
+                    city: restaurant.address
+                  }}
+                  onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+                  priority={index < 4}
+                  className="w-full h-full"
                 />
               </div>
-            )}
-          </>
-        )}
-      </div>
+            ))}
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8 mb-24">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

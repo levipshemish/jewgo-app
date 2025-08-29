@@ -105,7 +105,7 @@ export default function RootLayout({
             />
             <script
               dangerouslySetInnerHTML={{
-                __html: sanitizeHtml(`
+                __html: `
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
@@ -113,7 +113,7 @@ export default function RootLayout({
                     page_title: document.title,
                     page_location: window.location.href,
                   });
-                `, { allowScripts: true })
+                `
               }}
             />
           </>

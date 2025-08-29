@@ -18,23 +18,29 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
-  try {
-    const result = await AdminDatabaseService.getPaginatedData(
-      prisma.review,
-      'review',
-      {
-        page,
-        pageSize,
-        search,
-        filters,
-        sortBy,
-        sortOrder,
-      }
-    );
-    initialData = result.data || [];
-    initialPagination = result.pagination || initialPagination;
-      } catch {
-    // ignore; client-side will fetch
+  
+  // Skip database access during build time
+  if (process.env.NODE_ENV !== 'production' || process.env.SKIP_DB_ACCESS === 'true') {
+    // Use empty data during build
+  } else {
+    try {
+      const result = await AdminDatabaseService.getPaginatedData(
+        prisma.review,
+        'review',
+        {
+          page,
+          pageSize,
+          search,
+          filters,
+          sortBy,
+          sortOrder,
+        }
+      );
+      initialData = result.data || [];
+      initialPagination = result.pagination || initialPagination;
+    } catch {
+      // ignore; client-side will fetch
+    }
   }
 
   return (
