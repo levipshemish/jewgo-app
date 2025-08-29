@@ -64,7 +64,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
         body: JSON.stringify(settings),
       });
 
-      if (!response.ok) throw new Error('Failed to update store settings');
+      if (!response.ok) {throw new Error('Failed to update store settings');}
       
       onRefresh();
       alert('Store settings updated successfully!');
@@ -77,7 +77,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
   };
 
   const handleDeleteStore = async () => {
-    if (!confirm('Are you sure you want to delete your store? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to delete your store? This action cannot be undone.')) {return;}
     
     try {
       setLoading(true);
@@ -86,7 +86,7 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete store');
+      if (!response.ok) {throw new Error('Failed to delete store');}
       
       // Redirect to shtel page
       window.location.href = '/shtel';

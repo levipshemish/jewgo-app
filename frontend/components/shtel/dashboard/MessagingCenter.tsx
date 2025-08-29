@@ -83,7 +83,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
       });
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations?${params}`);
-      if (!response.ok) throw new Error('Failed to load conversations');
+      if (!response.ok) {throw new Error('Failed to load conversations');}
       
       const data = await response.json();
       setConversations(data.conversations || []);
@@ -97,7 +97,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
   const loadMessages = async (conversationId: string) => {
     try {
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`);
-      if (!response.ok) throw new Error('Failed to load messages');
+      if (!response.ok) {throw new Error('Failed to load messages');}
       
       const data = await response.json();
       setMessages(data.messages || []);
@@ -129,7 +129,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation) {return;}
     
     try {
       setSending(true);
@@ -145,7 +145,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {throw new Error('Failed to send message');}
       
       const data = await response.json();
       setMessages(prev => [...prev, data.message]);
@@ -180,7 +180,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
         body: JSON.stringify({ archived: !showArchived }),
       });
 
-      if (!response.ok) throw new Error('Failed to archive conversation');
+      if (!response.ok) {throw new Error('Failed to archive conversation');}
       
       await loadConversations();
       if (selectedConversation?.conversation_id === conversationId) {

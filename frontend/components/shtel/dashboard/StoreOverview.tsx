@@ -46,7 +46,7 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
       setLoading(true);
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/analytics?range=${timeRange}`);
-      if (!response.ok) throw new Error('Failed to load analytics');
+      if (!response.ok) {throw new Error('Failed to load analytics');}
       
       const data = await response.json();
       setAnalytics(data);

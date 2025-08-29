@@ -149,7 +149,7 @@ export default function GlobalSearchResults({ query, adminUser }: GlobalSearchRe
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    if (!searchQuery.trim()) return [];
+    if (!searchQuery.trim()) {return [];}
 
     // Mock search results based on query
     const mockResults: SearchResult[] = [

@@ -221,7 +221,7 @@ function ShtelDashboardContent() {
 
   // Render tab content
   const renderTabContent = () => {
-    if (!storeData) return null;
+    if (!storeData) {return null;}
     
     // Check if user is admin
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;

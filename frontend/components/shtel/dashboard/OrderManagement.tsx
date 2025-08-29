@@ -81,7 +81,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
       });
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/orders?${params}`);
-      if (!response.ok) throw new Error('Failed to load orders');
+      if (!response.ok) {throw new Error('Failed to load orders');}
       
       const data = await response.json();
       setOrders(data.orders || []);
@@ -103,7 +103,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!response.ok) throw new Error('Failed to update order status');
+      if (!response.ok) {throw new Error('Failed to update order status');}
       
       await loadOrders();
       onRefresh();
@@ -122,7 +122,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
         body: JSON.stringify({ tracking_number: trackingNumber }),
       });
 
-      if (!response.ok) throw new Error('Failed to update tracking number');
+      if (!response.ok) {throw new Error('Failed to update tracking number');}
       
       await loadOrders();
       onRefresh();

@@ -273,7 +273,7 @@ export default function AnalyticsDashboard() {
     );
   }
 
-  if (!analyticsData) return null;
+  if (!analyticsData) {return null;}
 
   return (
     <div className="space-y-6">

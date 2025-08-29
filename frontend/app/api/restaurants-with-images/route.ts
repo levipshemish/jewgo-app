@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     
     // Validate and sanitize search parameters to prevent malformed URLs
     const sanitizeParam = (value: string | null): string | null => {
-      if (!value) return null;
+      if (!value) {return null;}
       // Remove any potentially dangerous characters
       return value.replace(/[<>\"'&]/g, '').trim();
     };

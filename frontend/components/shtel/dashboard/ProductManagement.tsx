@@ -46,7 +46,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
       setLoading(true);
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products`);
-      if (!response.ok) throw new Error('Failed to load products');
+      if (!response.ok) {throw new Error('Failed to load products');}
       
       const data = await response.json();
       setProducts(data.products || []);
@@ -67,7 +67,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
         body: JSON.stringify(productData),
       });
 
-      if (!response.ok) throw new Error('Failed to add product');
+      if (!response.ok) {throw new Error('Failed to add product');}
       
       await loadProducts();
       setShowAddModal(false);
@@ -87,7 +87,7 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
         body: JSON.stringify(productData),
       });
 
-      if (!response.ok) throw new Error('Failed to update product');
+      if (!response.ok) {throw new Error('Failed to update product');}
       
       await loadProducts();
       setEditingProduct(null);
@@ -98,14 +98,14 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Are you sure you want to delete this product?')) {return;}
     
     try {
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products/${productId}`, {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete product');
+      if (!response.ok) {throw new Error('Failed to delete product');}
       
       await loadProducts();
       onRefresh();

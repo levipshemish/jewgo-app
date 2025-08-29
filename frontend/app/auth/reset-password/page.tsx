@@ -1,9 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
 
 import { supabaseClient } from "@/lib/supabase/client-secure";
 import { validatePassword } from "@/lib/utils/password-validation";

@@ -63,7 +63,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {return;}
     
     // Redirect to search results page with query
     window.location.href = `/admin/search?q=${encodeURIComponent(searchQuery.trim())}`;

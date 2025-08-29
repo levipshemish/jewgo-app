@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
-import ModernFilterPopup from '@/components/filters/ModernFilterPopup';
+import { ModernFilterPopup } from '@/frontend/components/filters/ModernFilterPopup';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 
@@ -489,46 +489,6 @@ export function EateryPageClient() {
         locationLoading={locationLoading}
         onRequestLocation={requestLocation}
       />
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={handleCloseFilters}
-          />
-          
-          {/* Modal */}
-          <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 rounded-t-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-                <button
-                  onClick={handleCloseFilters}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  aria-label="Close filters"
-                >
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Content */}
-            <div className="p-6">
-              <AdvancedFilterSheet
-                initialApplied={activeFilters}
-                onApply={handleApplyFilters}
-                onCancel={handleCloseFilters}
-                enableUrlSync={true}
-                userLocation={userLocation}
-                locationLoading={locationLoading}
-                onRequestLocation={requestLocation}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup
