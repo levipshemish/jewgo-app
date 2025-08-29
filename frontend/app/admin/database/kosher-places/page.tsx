@@ -1,13 +1,13 @@
 import KosherPlacesDatabaseClient from '@/components/admin/KosherPlacesDatabaseClient';
-import { AdminDatabaseService} from '@/lib/admin/database';
-import { prisma} from '@/lib/db/prisma';
+import { AdminDatabaseService } from '@/lib/admin/database';
+import { prisma } from '@/lib/db/prisma';
 
 export default async function KosherPlaceDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || 'created_at';
+  const sortBy = (params.sortBy as string) || AdminDatabaseService.getDefaultSortField('marketplace');
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
   
   // Build filters

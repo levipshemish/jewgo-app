@@ -10,11 +10,13 @@ import { useToast } from '@/lib/ui/toast';
 interface User {
   id: string;
   email: string;
-  name: string;
-  issuperadmin: boolean;
-  emailverified: string;
-  createdat: string;
-  updatedat: string;
+  name?: string;
+  isSuperAdmin: boolean;
+  emailVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  avatarUrl?: string;
+  provider?: string;
 }
 
 interface UserDatabaseClientProps {
@@ -45,11 +47,22 @@ export default function UserDatabaseClient({
   const [loading, setLoading] = useState<boolean>(false);
   const [pagination, setPagination] = useState(initialPagination);
 
+  const sortKeyMap: Record<string, string> = {
+    createdAt: 'createdat',
+    updatedAt: 'updatedat',
+    emailVerified: 'emailverified',
+    isSuperAdmin: 'issuperadmin',
+  };
+  const reverseSortKeyMap: Record<string, string> = Object.fromEntries(
+    Object.entries(sortKeyMap).map(([k, v]) => [v, k])
+  );
+
   // Controlled state derived from URL params
   const page = Number(searchParams.get('page') || '1');
   const pageSize = Number(searchParams.get('pageSize') || '20');
   const search = searchParams.get('search') || '';
-  const sortBy = searchParams.get('sortBy') || 'createdat';
+  const sortByParam = searchParams.get('sortBy') || 'createdat';
+  const sortBy = reverseSortKeyMap[sortByParam] || 'createdAt';
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
   // Fetch server data based on URL params
@@ -60,9 +73,9 @@ export default function UserDatabaseClient({
       params.set('page', String(page));
       params.set('pageSize', String(pageSize));
       if (search) { params.set('search', search); }
-      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortByParam) { params.set('sortBy', sortByParam); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
-      
+
       const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store' });
       if (!res.ok) { throw new Error(`Failed: ${res.status}`); }
       const json = await res.json();
@@ -78,7 +91,7 @@ export default function UserDatabaseClient({
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, search, sortBy, sortOrder]);
+  }, [page, pageSize, search, sortByParam, sortOrder]);
 
   const onPageChange = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());
@@ -102,7 +115,8 @@ export default function UserDatabaseClient({
 
   const onSort = (key: string, order: 'asc' | 'desc') => {
     const p = new URLSearchParams(searchParams.toString());
-    p.set('sortBy', key);
+    const dbKey = sortKeyMap[key] || key;
+    p.set('sortBy', dbKey);
     p.set('sortOrder', order);
     router.push(`/admin/database/users?${p.toString()}`);
   };
@@ -184,7 +198,7 @@ export default function UserDatabaseClient({
     try {
       const params = new URLSearchParams();
       if (search) { params.set('search', search); }
-      if (sortBy) { params.set('sortBy', sortBy); }
+      if (sortByParam) { params.set('sortBy', sortByParam); }
       if (sortOrder) { params.set('sortOrder', sortOrder); }
       
       const res = await adminFetch(`/api/admin/users/export?${params.toString()}`, csrf || '');
@@ -213,9 +227,9 @@ export default function UserDatabaseClient({
     { key: 'id', title: 'ID', sortable: true },
     { key: 'email', title: 'Email', sortable: true },
     { key: 'name', title: 'Name', sortable: true },
-    { key: 'issuperadmin', title: 'Super Admin', sortable: true },
-    { key: 'emailverified', title: 'Email Verified', sortable: true },
-    { key: 'createdat', title: 'Created', sortable: true },
+    { key: 'isSuperAdmin', title: 'Super Admin', sortable: true },
+    { key: 'emailVerified', title: 'Email Verified', sortable: true },
+    { key: 'createdAt', title: 'Created', sortable: true },
   ];
 
   return (
@@ -228,6 +242,8 @@ export default function UserDatabaseClient({
       onPageSizeChange={onPageSizeChange}
       onSearch={onSearch}
       onSort={onSort}
+      sortKey={sortBy}
+      sortOrder={sortOrder}
 
 
       onBulkAction={onBulkAction}

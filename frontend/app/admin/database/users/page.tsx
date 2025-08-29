@@ -1,5 +1,6 @@
 import UserDatabaseClient from '@/components/admin/UserDatabaseClient';
 import { AdminDatabaseService } from '@/lib/admin/database';
+import { mapUsersToApiResponse } from '@/lib/admin/dto/user';
 import { prisma } from '@/lib/db/prisma';
 
 export default async function UserDatabasePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -7,7 +8,7 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
   const search = (params.search as string) || '';
-  const sortBy = (params.sortBy as string) || 'created_at';
+  const sortBy = (params.sortBy as string) || AdminDatabaseService.getDefaultSortField('user');
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
 
   let initialData: any[] = [];
@@ -25,7 +26,7 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
         sortOrder,
       }
     );
-    initialData = result.data || [];
+    initialData = mapUsersToApiResponse(result.data as any[]);
     initialPagination = result.pagination || initialPagination;
       } catch {
     // ignore; client-side will fetch
