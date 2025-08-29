@@ -49,9 +49,6 @@ export const RATE_LIMIT_SHOW_RESET_TIME = process.env.RATE_LIMIT_SHOW_RESET_TIME
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Backend configuration
-export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
-
 // Redis configuration
 export const REDIS_URL = process.env.REDIS_URL;
 export const REDIS_HOST = process.env.REDIS_HOST;
@@ -68,6 +65,9 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000
 export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const IS_PRODUCTION = NODE_ENV === 'production';
 export const IS_DEVELOPMENT = NODE_ENV === 'development';
+
+// Backend configuration
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || (IS_PRODUCTION ? undefined : 'http://localhost:8000');
 
 /**
  * Validate required environment variables
@@ -114,6 +114,17 @@ export function validateEnvironment(): void {
   if (IS_DEVELOPMENT && !CLEANUP_CRON_SECRET) {
     // console.warn('CLEANUP_CRON_SECRET not set in development - using default value');
     process.env.CLEANUP_CRON_SECRET = 'development-cleanup-secret';
+  }
+
+  // Validate backend URL configuration in production
+  if (IS_PRODUCTION) {
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
+      throw new Error('NEXT_PUBLIC_BACKEND_URL must be set in production');
+    }
+    
+    if (!process.env.NEXT_PUBLIC_BACKEND_URL.startsWith('https://')) {
+      throw new Error('NEXT_PUBLIC_BACKEND_URL must use HTTPS in production. Current value: ' + process.env.NEXT_PUBLIC_BACKEND_URL);
+    }
   }
 
   // Validate Redis configuration in production

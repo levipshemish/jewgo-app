@@ -204,16 +204,16 @@ export function ModernFilterPopup({
                     type="range"
                     min="1"
                     max="50"
-                    value={draftFilters.maxDistanceMi || draftFilters.maxDistance || 25}
-                    onChange={(e) => setDraftFilter('maxDistanceMi', Number(e.target.value))}
+                    value={draftFilters.distanceMi || draftFilters.maxDistanceMi || draftFilters.maxDistance || 25}
+                    onChange={(e) => setDraftFilter('distanceMi', Number(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer slider-green"
                     style={{
-                      background: `linear-gradient(to right, #16a34a 0%, #16a34a ${(((draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb ${(((draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb 100%)`,
+                      background: `linear-gradient(to right, #16a34a 0%, #16a34a ${(((draftFilters.distanceMi || draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb ${(((draftFilters.distanceMi || draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb 100%)`,
                     }}
                   />
                   <div className="flex justify-between text-xs text-gray-600">
                     <span>1 mile</span>
-                    <span className="font-medium text-black">{draftFilters.maxDistanceMi || draftFilters.maxDistance || 25} miles</span>
+                    <span className="font-medium text-black">{draftFilters.distanceMi || draftFilters.maxDistanceMi || draftFilters.maxDistance || 25} miles</span>
                     <span>50 miles</span>
                   </div>
                 </div>

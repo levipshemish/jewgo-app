@@ -373,7 +373,7 @@ function StoresPageContent() {
       setFilter('lat', userLocation.latitude);
       setFilter('lng', userLocation.longitude);
       setFilter('nearMe', true);
-      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
+              setFilter('distanceMi', 25); // Set default distance filter when location is available
       
       // Send location update via WebSocket
       if (isConnected) {
@@ -387,7 +387,7 @@ function StoresPageContent() {
       clearFilter('lat');
       clearFilter('lng');
       clearFilter('nearMe');
-      clearFilter('maxDistanceMi');
+              clearFilter('distanceMi');
     }
   }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
 

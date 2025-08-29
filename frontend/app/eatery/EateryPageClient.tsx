@@ -14,6 +14,7 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+import { validateDistanceFields, toApiFormat, MultipleDistanceFieldsError, assembleSafeFilters } from '@/lib/filters/distance-validation';
 
 // One canonical cleaner for filters (use it everywhere)
 function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
@@ -155,14 +156,20 @@ export function EateryPageClient() {
     if (filters) {
       const cleaned = cleanFilters(filters);
       
-      if (typeof cleaned.agency === "string") {
-        params.set('certifying_agency', cleaned.agency);
+      // Use safe filter assembly to handle distance field conflicts
+      const safeFilters = assembleSafeFilters(cleaned);
+      
+      // Convert to API format (always use maxDistanceMi)
+      const apiFilters = toApiFormat(safeFilters);
+      
+      if (typeof apiFilters.agency === "string") {
+        params.set('certifying_agency', apiFilters.agency);
       }
-      if (typeof cleaned.category === "string") {
-        params.set('kosher_category', cleaned.category);
+      if (typeof apiFilters.category === "string") {
+        params.set('kosher_category', apiFilters.category);
       }
-      if (Array.isArray(cleaned.priceRange)) {
-        const [min, max] = cleaned.priceRange;
+      if (Array.isArray(apiFilters.priceRange)) {
+        const [min, max] = apiFilters.priceRange;
         if (Number.isFinite(min)) {
           params.set('price_min', min.toString());
         }
@@ -170,25 +177,24 @@ export function EateryPageClient() {
           params.set('price_max', max.toString());
         }
       }
-      if (typeof cleaned.ratingMin === "number") {
-        params.set('min_rating', cleaned.ratingMin.toString());
+      if (typeof apiFilters.ratingMin === "number") {
+        params.set('min_rating', apiFilters.ratingMin.toString());
       }
       // Location filters
-      if (cleaned.nearMe && Number.isFinite(cleaned.lat) && Number.isFinite(cleaned.lng)) {
-        params.set('lat', String(cleaned.lat!));
-        params.set('lng', String(cleaned.lng!));
-        // Support both maxDistance and maxDistanceMi for backward compatibility
-        const maxDistValue = cleaned.maxDistanceMi ?? cleaned.maxDistance;
-        if (Number.isFinite(maxDistValue)) {
-          params.set('max_distance_mi', String(maxDistValue!));
+      if (apiFilters.nearMe && Number.isFinite(apiFilters.lat) && Number.isFinite(apiFilters.lng)) {
+        params.set('lat', String(apiFilters.lat!));
+        params.set('lng', String(apiFilters.lng!));
+        // Always use maxDistanceMi for API compatibility
+        if (Number.isFinite(apiFilters.maxDistanceMi)) {
+          params.set('max_distance_mi', String(apiFilters.maxDistanceMi!));
         }
       }
       // Dietary filters (multi-select)
-      if (Array.isArray(cleaned.dietary) && cleaned.dietary.length > 0) {
-        cleaned.dietary.forEach(d => params.append('dietary', d));
-      } else if (cleaned.dietary && typeof cleaned.dietary === 'string' && cleaned.dietary.trim() !== '') {
+      if (Array.isArray(apiFilters.dietary) && apiFilters.dietary.length > 0) {
+        apiFilters.dietary.forEach(d => params.append('dietary', d));
+      } else if (apiFilters.dietary && typeof apiFilters.dietary === 'string' && apiFilters.dietary.trim() !== '') {
         // Handle single string dietary for backward compatibility
-        params.set('dietary', cleaned.dietary.trim());
+        params.set('dietary', apiFilters.dietary.trim());
       }
     }
     
@@ -265,26 +271,27 @@ export function EateryPageClient() {
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
 
-  // Create stable infinite scroll handler with proper dependencies
-  const handleInfiniteScrollLoad = useCallback(async () => {
-    // Don't fetch if already loading
-    if (loading) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Blocked by loading state');
-      }
-      return;
-    }
-    
-    try {
-      // Use functional update to get current state
-      setAllRestaurants(currentRestaurants => {
-        const nextOffset = currentRestaurants.length;
-        const nextPage = Math.floor(nextOffset / mobileOptimizedItemsPerPage) + 1;
-        
+  // Infinite scroll hook - only enabled on mobile  
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    async () => {
+      // Don't fetch if already loading
+      if (loading) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems: currentRestaurants.length });
+          console.log('Infinite scroll: Blocked by loading state');
         }
-        
+        return;
+      }
+      
+      // Get current values using refs to avoid stale closures
+      const currentItems = allRestaurants.length;
+      const nextOffset = currentItems;
+      const nextPage = Math.floor(nextOffset / mobileOptimizedItemsPerPage) + 1;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems });
+      }
+      
+      try {
         // Use unified buildQueryParams function to avoid duplication
         const params = buildQueryParams(nextPage, searchQuery, activeFilters);
         
@@ -298,70 +305,54 @@ export function EateryPageClient() {
           console.log('Infinite scroll: Fetching URL', url);
         }
         
-        // Perform async fetch operation
         const controller = new AbortController();
-        fetch(url, { signal: controller.signal })
-          .then(response => response.json())
-          .then((data: ApiResponse) => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Infinite scroll: Response received', { 
-                success: data.success, 
-                dataLength: data.data?.length || 0, 
-                total: data.total,
-                hasData: !!data.data 
-              });
-            }
-            
-            if (data.success && data.data.length > 0) {
-              // Append new restaurants to the accumulated list
-              setAllRestaurants(prev => {
-                const newList = [...prev, ...data.data];
-                
-                // Check if we've reached the end using data from response
-                const hasMoreData = newList.length < data.total && data.data.length === mobileOptimizedItemsPerPage;
-                setHasMore(hasMoreData);
-                setTotalRestaurants(data.total);
-                
-                // Debug logging
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newList.length, 'total available:', data.total, 'hasMore:', hasMoreData);
-                }
-                
-                return newList;
-              });
-              setInfiniteScrollPage(nextPage);
-            } else {
-              // No more data available
-              setHasMore(false);
-              
-              // Debug logging
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Infinite scroll: No more data available (empty response)');
-              }
-            }
-          })
-          .catch(err => {
-            if (err instanceof Error && err.name === 'AbortError') {
-              return; // Request was aborted, ignore
-            }
-            console.error('Error fetching more restaurants:', err);
-            // Don't set hasMore to false on error, allow retry
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
-            }
-          });
+        const response = await fetch(url, { signal: controller.signal });
+        const data: ApiResponse = await response.json();
         
-        // Return current state unchanged for the outer setter
-        return currentRestaurants;
-      });
-    } catch (err) {
-      console.error('Error in infinite scroll handler:', err);
-    }
-  }, [loading, buildQueryParams, searchQuery, activeFilters, mobileOptimizedItemsPerPage, setHasMore, setTotalRestaurants]);
-
-  // Infinite scroll hook - only enabled on mobile
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    handleInfiniteScrollLoad,
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Response received', { 
+            success: data.success, 
+            dataLength: data.data?.length || 0, 
+            total: data.total,
+            hasData: !!data.data 
+          });
+        }
+        
+        if (data.success && data.data.length > 0) {
+          // Append new restaurants to the accumulated list
+          setAllRestaurants(prev => [...prev, ...data.data]);
+          setInfiniteScrollPage(nextPage);
+          
+          // Update total and check if we have more data
+          setTotalRestaurants(data.total);
+          const newTotalItems = currentItems + data.data.length;
+          const hasMoreData = newTotalItems < data.total && data.data.length === mobileOptimizedItemsPerPage;
+          setHasMore(hasMoreData);
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData);
+          }
+        } else {
+          // No more data available
+          setHasMore(false);
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Infinite scroll: No more data available (empty response)');
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return; // Request was aborted, ignore
+        }
+        console.error('Error fetching more restaurants:', err);
+        // Don't set hasMore to false on error, allow retry
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
+        }
+      }
+    },
     { 
       threshold: isMobile ? 0.2 : 0.3, // Less aggressive on mobile for better UX
       rootMargin: isMobile ? '100px' : '200px', // Smaller margin to reduce premature loading

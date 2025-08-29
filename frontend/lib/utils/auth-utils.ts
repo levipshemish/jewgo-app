@@ -141,10 +141,9 @@ export async function transformSupabaseUser(
     role: 'user', // Default role
     permissions: [], // Initialize empty, filled by backend role data
     subscriptionTier: 'free', // Default subscription tier
-    // Initialize role fields
+    // Initialize role fields with proper defaults
     adminRole: null,
-    roleLevel: 0,
-    permissions: [],
+    roleLevel: null,
     isSuperAdmin: false
   };
 

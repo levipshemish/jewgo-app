@@ -6,13 +6,42 @@ export interface Filters {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
+  
+  /**
+   * Canonical distance field in miles - preferred over all other distance fields
+   * @unit miles
+   * @precedence 1 (highest priority)
+   */
+  distanceMi?: number;
+  
+  /**
+   * Distance filter in miles - backend expects this field
+   * @unit miles
+   * @precedence 2
+   * @deprecated Use distanceMi instead for consistency
+   */
+  maxDistanceMi?: number;
+  
+  /**
+   * Legacy distance filter in meters
+   * @unit meters
+   * @precedence 3
+   * @deprecated Use distanceMi instead for consistency
+   */
   maxDistance?: number;
-  maxDistanceMi?: number;  // Backend expects maxDistanceMi
+  
+  /**
+   * Legacy radius filter in meters
+   * @unit meters
+   * @precedence 4 (lowest priority)
+   * @deprecated Use distanceMi instead for consistency
+   */
+  radius?: number;
+  
   ratingMin?: number;
   priceRange?: [number, number];
   lat?: number;
   lng?: number;
-  radius?: number;
   page?: number;
   limit?: number;
 }
@@ -24,9 +53,38 @@ export interface FilterState {
   category?: string;
   businessTypes?: string[];
   nearMe?: boolean;
+  
+  /**
+   * Canonical distance field in miles - preferred over all other distance fields
+   * @unit miles
+   * @precedence 1 (highest priority)
+   */
+  distanceMi?: number;
+  
+  /**
+   * Distance filter in miles - backend expects this field
+   * @unit miles
+   * @precedence 2
+   * @deprecated Use distanceMi instead for consistency
+   */
+  maxDistanceMi?: number;
+  
+  /**
+   * Legacy distance filter in meters
+   * @unit meters
+   * @precedence 3
+   * @deprecated Use distanceMi instead for consistency
+   */
   maxDistance?: number;
-  maxDistanceMi?: number;  // Added for backend compatibility
+  
+  /**
+   * Legacy radius filter in meters
+   * @unit meters
+   * @precedence 4 (lowest priority)
+   * @deprecated Use distanceMi instead for consistency
+   */
   distanceRadius?: number;
+  
   ratingMin?: number;
   priceRange?: [number, number];
   searchQuery?: string;
@@ -55,13 +113,42 @@ export interface AppliedFilters extends Filters {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
+  
+  /**
+   * Canonical distance field in miles - preferred over all other distance fields
+   * @unit miles
+   * @precedence 1 (highest priority)
+   */
+  distanceMi?: number;
+  
+  /**
+   * Distance filter in miles - backend expects this field
+   * @unit miles
+   * @precedence 2
+   * @deprecated Use distanceMi instead for consistency
+   */
+  maxDistanceMi?: number;
+  
+  /**
+   * Legacy distance filter in meters
+   * @unit meters
+   * @precedence 3
+   * @deprecated Use distanceMi instead for consistency
+   */
   maxDistance?: number;
-  maxDistanceMi?: number;  // Backend expects maxDistanceMi
+  
+  /**
+   * Legacy radius filter in meters
+   * @unit meters
+   * @precedence 4 (lowest priority)
+   * @deprecated Use distanceMi instead for consistency
+   */
+  radius?: number;
+  
   ratingMin?: number;
   priceRange?: [number, number];
   lat?: number;
   lng?: number;
-  radius?: number;
   page?: number;
   limit?: number;
 }
@@ -75,8 +162,30 @@ export interface DraftFilters extends FilterState {
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
-  maxDistance?: number;
+  
+  /**
+   * Canonical distance field in miles - preferred over all other distance fields
+   * @unit miles
+   * @precedence 1 (highest priority)
+   */
+  distanceMi?: number;
+  
+  /**
+   * Distance filter in miles - backend expects this field
+   * @unit miles
+   * @precedence 2
+   * @deprecated Use distanceMi instead for consistency
+   */
   maxDistanceMi?: number;
+  
+  /**
+   * Legacy distance filter in meters
+   * @unit meters
+   * @precedence 3
+   * @deprecated Use distanceMi instead for consistency
+   */
+  maxDistance?: number;
+  
   ratingMin?: number;
   priceRange?: [number, number];
 }

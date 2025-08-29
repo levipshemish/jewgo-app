@@ -90,8 +90,8 @@ export async function requireAdminUser(): Promise<TransformedUser> {
     redirect("/auth/signin");
   }
   
-  if (!user.adminRole || (user.roleLevel || 0) === 0) {
-    // User is authenticated but not an admin
+  if (!(user.isSuperAdmin || user.adminRole || (user.roleLevel ?? 0) > 0)) {
+    // Authenticated but not an admin
     redirect("/");
   }
   

@@ -66,31 +66,57 @@ describe('ModernFilterPopup Dropdowns', () => {
     expect(screen.getByText('Pareve')).toBeInTheDocument();
   });
 
+// --- At the top of frontend/__tests__/filter-popup.test.tsx ---
+
+// Mock the hooks
+const mockSetDraftFilter = jest.fn();
+const defaultLocalFiltersState = {
+  draftFilters: {},
+  hasDraftFilters: false,
+  draftFilterCount: 0,
+  setDraftFilter: mockSetDraftFilter,
+  resetDraftFilters: jest.fn(),
+  clearAllDraftFilters: jest.fn(),
+  applyFilters: jest.fn(),
+  isApplying: false,
+};
+let mockLocalFiltersState = { ...defaultLocalFiltersState };
+
+jest.mock('@/lib/hooks/useLocalFilters', () => ({
+  useLocalFilters: () => mockLocalFiltersState,
+}));
+
+// --- Later in the same file ---
+
+describe('ModernFilterPopup Dropdowns', () => {
+  const defaultProps = {
+    // …existing defaultProps…
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockLocalFiltersState = { ...defaultLocalFiltersState };
+  });
+
   it('should handle dropdown value changes', async () => {
-    const mockSetDraftFilter = jest.fn();
-    
-    jest.doMock('@/lib/hooks/useLocalFilters', () => ({
-      useLocalFilters: () => ({
-        draftFilters: { category: 'Dairy' },
-        hasDraftFilters: true,
-        draftFilterCount: 1,
-        setDraftFilter: mockSetDraftFilter,
-        resetDraftFilters: jest.fn(),
-        clearAllDraftFilters: jest.fn(),
-        applyFilters: jest.fn(),
-        isApplying: false,
-      }),
-    }));
+    // Set the initial hook state for this test
+    mockLocalFiltersState = {
+      ...mockLocalFiltersState,
+      draftFilters: { category: 'Dairy' },
+      hasDraftFilters: true,
+      draftFilterCount: 1,
+    };
 
     render(<ModernFilterPopup {...defaultProps} />);
-    
+
     const kosherSelect = screen.getByDisplayValue('Dairy');
-    
-    // Change to "All Kosher Types"
     fireEvent.change(kosherSelect, { target: { value: '' } });
-    
+
     await waitFor(() => {
       expect(mockSetDraftFilter).toHaveBeenCalledWith('category', undefined);
     });
   });
+
+  // …other tests…
+});
 });

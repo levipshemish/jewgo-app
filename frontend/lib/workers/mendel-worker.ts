@@ -28,6 +28,8 @@ type ActiveFilters = {
   openNow?: boolean;
   category?: string;
   nearMe?: boolean;
+  distanceMi?: number;
+  maxDistanceMi?: number;
   distanceRadius?: number;
   maxDistance?: number;
   [key: string]: unknown;
@@ -115,7 +117,7 @@ function filterAndSortRestaurants(
   const agencyQuery = toLower(activeFilters.agency);
   const dietary = toLower(activeFilters.dietary);
   const category = toLower(activeFilters.category);
-  const limitDistance = activeFilters.distanceRadius || activeFilters.maxDistance || undefined;
+  const limitDistance = activeFilters.distanceMi || activeFilters.maxDistanceMi || activeFilters.distanceRadius || activeFilters.maxDistance || undefined;
 
   let filtered = restaurants.filter((restaurant) => {
     // Ensure valid object

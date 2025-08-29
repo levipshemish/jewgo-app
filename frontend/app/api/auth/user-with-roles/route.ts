@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import { BACKEND_URL } from '@/lib/config/environment';
+import { ROLE_PERMISSIONS, Role, Permission } from '@/lib/constants/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -139,59 +140,10 @@ export async function GET(request: NextRequest) {
 
 /**
  * Map backend role to frontend permissions
- * Uses the existing ROLE_PERMISSIONS mapping from admin system
+ * Uses the shared ROLE_PERMISSIONS mapping from constants
  */
-function mapRoleToPermissions(role: string | null): string[] {
+function mapRoleToPermissions(role: string | null): readonly Permission[] {
   if (!role) return [];
   
-  // Import the existing permission mappings
-  const ROLE_PERMISSIONS = {
-    'moderator': [
-      'restaurant:view',
-      'restaurant:approve',
-      'restaurant:reject',
-      'review:view',
-      'review:moderate',
-    ],
-    'data_admin': [
-      'restaurant:view',
-      'restaurant:edit',
-      'restaurant:approve',
-      'restaurant:reject',
-      'review:view',
-      'review:moderate',
-      'user:view',
-      'bulk:operations',
-      'data:export',
-      'analytics:view',
-    ],
-    'system_admin': [
-      'restaurant:view',
-      'restaurant:edit',
-      'restaurant:delete',
-      'restaurant:approve',
-      'restaurant:reject',
-      'review:view',
-      'review:moderate',
-      'review:delete',
-      'user:view',
-      'user:edit',
-      'system:settings',
-      'audit:view',
-      'bulk:operations',
-      'data:export',
-    ],
-    'super_admin': [
-      // All permissions
-      'restaurant:view', 'restaurant:edit', 'restaurant:delete', 'restaurant:approve', 'restaurant:reject', 'restaurant:moderate',
-      'review:view', 'review:moderate', 'review:delete',
-      'user:view', 'user:edit', 'user:delete',
-      'image:view', 'image:edit', 'image:delete',
-      'system:settings', 'system:view', 'system:edit', 'audit:view', 'audit:delete',
-      'bulk:operations', 'data:export', 'role:view', 'role:edit', 'role:delete',
-      'synagogue:view', 'kosher_place:view', 'analytics:view'
-    ]
-  };
-  
-  return ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS] || [];
+  return ROLE_PERMISSIONS[role as Role] || [];
 }

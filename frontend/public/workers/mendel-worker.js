@@ -23,7 +23,7 @@ self.onmessage = function(e){
   const agency = toLower(activeFilters.agency);
   const dietary = toLower(activeFilters.dietary);
   const category = toLower(activeFilters.category);
-  const limitDistance = activeFilters.distanceRadius || activeFilters.maxDistance;
+  const limitDistance = activeFilters.distanceMi || activeFilters.maxDistanceMi || activeFilters.distanceRadius || activeFilters.maxDistance;
   const filtered = restaurants.filter((r) =>{
     if(!r||typeof r!=='object'){return false;}
     if (searchQuery) {

@@ -82,6 +82,8 @@ export function hydrateFiltersFromUrl(): Filters {
       case 'nearMe':
         (filters as any)[key] = value === 'true';
         break;
+      case 'distanceMi':
+      case 'maxDistanceMi':
       case 'maxDistance':
       case 'ratingMin':
       case 'page':

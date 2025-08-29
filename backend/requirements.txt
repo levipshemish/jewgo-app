@@ -31,6 +31,9 @@ cryptography==44.0.0
 
 # Scheduling and background tasks
 APScheduler==3.10.4
+tzlocal>=2,<3  # Companion pin to avoid APScheduler 3.10.x pulling incompatible tzlocal
+pytz==2025.1  # Updated for current DST rules
+# Production note: Use external job store (SQLAlchemy/Redis) and configure jobs with max_instances=1 and coalesce=True for multi-worker deployments
 
 # Script dependencies (for CI validation)
 click==8.1.7
