@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
 
 interface MarketplaceHeaderProps {
@@ -23,7 +23,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session?.user) {
           setUser(transformSupabaseUser(session.user));
@@ -41,7 +41,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, session: Session | null) => {
         if (session?.user) {
           setUser(transformSupabaseUser(session.user));

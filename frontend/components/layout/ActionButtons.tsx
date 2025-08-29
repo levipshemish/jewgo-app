@@ -21,8 +21,8 @@ export default function ActionButtons({
   const handleAddEateryClick = async () => {
     try {
       // Dynamically import to avoid SSR issues
-      const { supabaseBrowser } = await import('@/lib/supabase/client');
-      const { data: { user } } = await supabaseBrowser.auth.getUser();
+          const { supabaseClient } = await import('@/lib/supabase/client-secure');
+    const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) {
         window.location.href = `/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`;
         return;
@@ -40,7 +40,7 @@ export default function ActionButtons({
   };
 
   return (
-    <div className="bg-white px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+    <div className="bg-white px-4 sm:px-6 lg:px-8 py-4 lg:py-6 border-b border-gray-100">
       <div className="max-w-screen-sm sm:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto">
         <div className="flex items-center justify-between space-x-2 sm:space-x-3 lg:space-x-6" style={{ alignItems: 'stretch' }}>
           {/* Live Map Button */}

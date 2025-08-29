@@ -6,7 +6,7 @@
  * the user's JWT token from Supabase.
  */
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 
 // Base API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
@@ -16,7 +16,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:50
  */
 async function getAuthToken(): Promise<string | null> {
   try {
-    const { data: { session } } = await supabaseBrowser.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     return session?.access_token || null;
   } catch (error) {
     console.error('Error getting auth token:', error);

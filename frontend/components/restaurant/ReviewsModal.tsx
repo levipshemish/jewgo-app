@@ -7,7 +7,7 @@ import { Session } from '@supabase/supabase-js';
 import { Review } from '@/components/reviews/ReviewCard';
 import ReviewForm, { ReviewData } from '@/components/reviews/ReviewForm';
 import { StarRating } from '@/components/ui/StarRating';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { Restaurant } from '@/lib/types/restaurant';
 
 // Google Review interface
@@ -75,7 +75,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+        const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
         setSession(currentSession);
       } catch (sessionError) {
         console.error('Error getting session:', sessionError);
@@ -85,7 +85,7 @@ export default function ReviewsModal({ isOpen, onClose, restaurant }: ReviewsMod
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, authSession: Session | null) => {
         setSession(authSession);
       }

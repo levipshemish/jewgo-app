@@ -35,8 +35,8 @@ const SubNav: React.FC<SubNavProps> = ({
             <button
               onClick={onAddEatery || (async () => {
                 try {
-                  const { supabaseBrowser } = await import('@/lib/supabase/client');
-                  const { data: { user } } = await supabaseBrowser.auth.getUser();
+                  const { supabaseClient } = await import('@/lib/supabase/client-secure');
+                  const { data: { user } } = await supabaseClient.auth.getUser();
                   if (!user) {
                     router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                     return;
@@ -85,8 +85,8 @@ const SubNav: React.FC<SubNavProps> = ({
         icon: Plus,
         onClick: async () => {
           try {
-            const { supabaseBrowser } = await import('@/lib/supabase/client');
-            const { data: { user } } = await supabaseBrowser.auth.getUser();
+            const { supabaseClient } = await import('@/lib/supabase/client-secure');
+            const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) {
               router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
               return;
@@ -150,8 +150,8 @@ const SubNav: React.FC<SubNavProps> = ({
           <button
             onClick={onAddEatery || (async () => {
               try {
-                const { supabaseBrowser } = await import('@/lib/supabase/client');
-                const { data: { user } } = await supabaseBrowser.auth.getUser();
+                const { supabaseClient } = await import('@/lib/supabase/client-secure');
+                const { data: { user } } = await supabaseClient.auth.getUser();
                 if (!user) {
                   router.push(`/auth/signin?redirectTo=${encodeURIComponent('/add-eatery')}`);
                   return;

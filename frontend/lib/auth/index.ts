@@ -10,7 +10,7 @@ export * from './validation';
 
 // Re-export Supabase clients
 export { createServerSupabaseClient } from '../supabase/server';
-export { supabaseBrowser } from '../supabase/client';
+export { supabaseClient } from '../supabase/client-secure';
 
 // Re-export auth types
 export type { TransformedUser } from '../utils/auth-utils';

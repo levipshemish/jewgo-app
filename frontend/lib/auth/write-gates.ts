@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { generateCorrelationId, extractIsAnonymous } from '@/lib/utils/auth-utils';
 
 export interface WritePermissionResult {
@@ -24,7 +24,7 @@ export interface UserPermissions {
  * Ensures anonymous users cannot perform write operations
  */
 export class WriteGates {
-  private supabase = supabaseBrowser;
+  private supabase = supabaseClient;
 
   /**
    * Check if user can perform write operations

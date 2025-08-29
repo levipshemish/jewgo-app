@@ -1,4 +1,4 @@
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { generateCorrelationId } from '@/lib/utils/auth-utils';
 
 export interface EmailUpgradeResult {
@@ -20,7 +20,7 @@ export interface MergeConflictResult {
  * Handles email conflicts and account merging
  */
 export class EmailUpgradeFlow {
-  private supabase = supabaseBrowser;
+  private supabase = supabaseClient;
 
   /**
    * Attempt to upgrade anonymous user with email

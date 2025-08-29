@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { supabaseBrowser } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client-secure';
 import { 
   transformSupabaseUser, 
   isSupabaseConfigured, 
@@ -86,7 +86,7 @@ export function useAuth() {
         }
 
         // Load user from Supabase
-        const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (user) {
           const transformedUser = transformSupabaseUser(user);
@@ -125,7 +125,7 @@ export function useAuth() {
       return;
     }
 
-    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: any, session: any) => {
 
         if (event === 'SIGNED_IN' && session?.user) {
@@ -151,7 +151,7 @@ export function useAuth() {
   // Sign out function
   const signOut = useCallback(async () => {
     try {
-      await supabaseBrowser.auth.signOut();
+      await supabaseClient.auth.signOut();
       dispatch({ type: 'RESET_STATE' });
       router.push('/auth/signin');
     } catch (err) {
@@ -165,7 +165,7 @@ export function useAuth() {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
-      const { data: { user }, error } = await supabaseBrowser.auth.getUser();
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
       
       if (user) {
         const transformedUser = transformSupabaseUser(user);
@@ -197,7 +197,7 @@ export function useAuth() {
       dispatch({ type: 'SET_ANONYMOUS_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
-      const { data, error } = await supabaseBrowser.auth.signInAnonymously();
+      const { data, error } = await supabaseClient.auth.signInAnonymously();
       
       if (error) {
         dispatch({ type: 'SET_ERROR', payload: error.message });
@@ -229,7 +229,7 @@ export function useAuth() {
     }
 
     try {
-      const { data: { session } } = await supabaseBrowser.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session?.access_token) {
         return;
       }

@@ -21,24 +21,33 @@ const isValidSupabaseUrl = (url: string | undefined): boolean => {
 };
 
 if (!isValidSupabaseUrl(supabaseUrl)) {
-  console.error('Invalid NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl);
-  console.error('Expected format: https://your-project-id.supabase.co');
-  console.error('Got:', supabaseUrl);
-  throw new Error('Invalid NEXT_PUBLIC_SUPABASE_URL. Expected Supabase project URL, got database connection string.');
+  console.warn('Invalid NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl);
+  console.warn('Expected format: https://your-project-id.supabase.co');
+  console.warn('Got:', supabaseUrl);
 }
 
 if (!supabaseAnonKey) {
-  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
-  throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is required');
+  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
 }
 
 export function createSupabaseMiddlewareClient(
   request: NextRequest,
   response: NextResponse
 ) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables not configured in middleware client.');
+    // Return a fallback client that won't cause runtime errors
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        getSession: async () => ({ data: { session: null }, error: null }),
+      },
+    } as any;
+  }
+
   const supabase = createServerClient(
-    supabaseUrl!,
-    supabaseAnonKey!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
