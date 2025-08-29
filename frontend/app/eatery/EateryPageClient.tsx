@@ -275,9 +275,47 @@ export function EateryPageClient() {
   const [infiniteScrollPage, setInfiniteScrollPage] = useState(1);
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
+  const prefetchRef = useRef<{ offset: number; items: Restaurant[]; total: number } | null>(null);
+  const prefetchAbortRef = useRef<AbortController | null>(null);
 
   // Infinite scroll hook - only enabled on mobile  
   const loadErrorCountRef = useRef(0);
+
+  const fetchRestaurantsPage = useCallback(async (offset: number): Promise<ApiResponse> => {
+    const page = Math.floor(offset / mobileOptimizedItemsPerPage) + 1;
+    const params = buildQueryParams(page, searchQuery, activeFilters);
+    params.set('limit', mobileOptimizedItemsPerPage.toString());
+    params.set('offset', offset.toString());
+    const url = `/api/restaurants-with-images?${params.toString()}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      const data: ApiResponse = await res.json();
+      return data;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, [mobileOptimizedItemsPerPage, buildQueryParams, searchQuery, activeFilters]);
+
+  const schedulePrefetch = useCallback(async () => {
+    if (!isMobileView) {return;}
+    const nextOffset = allRestaurants.length;
+    // Cancel any in-flight prefetch
+    prefetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    prefetchAbortRef.current = controller;
+    try {
+      const data = await fetchRestaurantsPage(nextOffset);
+      if (data.success && Array.isArray(data.data)) {
+        prefetchRef.current = { offset: nextOffset, items: data.data, total: data.total };
+      } else {
+        prefetchRef.current = null;
+      }
+    } catch {
+      prefetchRef.current = null;
+    }
+  }, [isMobileView, allRestaurants.length, fetchRestaurantsPage]);
 
   const { hasMore, isLoadingMore, loadingRef, setHasMore, loadMore } = useInfiniteScroll(
     async () => {
@@ -292,24 +330,13 @@ export function EateryPageClient() {
       }
       
       try {
-        // Use unified buildQueryParams function to avoid duplication
-        const params = buildQueryParams(nextPage, searchQuery, activeFilters);
-        
-        // Override with offset-based pagination for infinite scroll
-        params.set('limit', mobileOptimizedItemsPerPage.toString());
-        params.set('offset', nextOffset.toString());
-        
-        const url = `/api/restaurants-with-images?${params.toString()}`;
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Fetching URL', url);
+        let data: ApiResponse | null = null;
+        if (prefetchRef.current && prefetchRef.current.offset === nextOffset && prefetchRef.current.items.length > 0) {
+          data = { success: true, data: prefetchRef.current.items, total: prefetchRef.current.total, error: null } as ApiResponse;
+          prefetchRef.current = null; // consume prefetch
+        } else {
+          data = await fetchRestaurantsPage(nextOffset);
         }
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        const response = await fetch(url, { signal: controller.signal });
-        const data: ApiResponse = await response.json();
-        clearTimeout(timeoutId);
         
         if (process.env.NODE_ENV === 'development') {
           console.log('Infinite scroll: Response received', { 
@@ -328,12 +355,16 @@ export function EateryPageClient() {
           // Update total and check if we have more data
           setTotalRestaurants(data.total);
           const newTotalItems = currentItems + data.data.length;
-          const hasMoreData = newTotalItems < data.total && data.data.length === mobileOptimizedItemsPerPage;
+          const hasMoreData = newTotalItems < data.total;
           setHasMore(hasMoreData);
           
           // Debug logging
           if (process.env.NODE_ENV === 'development') {
             console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData);
+          }
+          // Prime next prefetch
+          if (hasMoreData) {
+            schedulePrefetch();
           }
         } else {
           // No more data available
@@ -369,6 +400,8 @@ export function EateryPageClient() {
 
 
   useEffect(() => {
+    prefetchRef.current = null;
+    prefetchAbortRef.current?.abort();
     fetchRestaurants(currentPage, searchQuery, activeFilters);
   }, [queryKey, fetchRestaurants]);
 
@@ -378,8 +411,10 @@ export function EateryPageClient() {
   useEffect(() => {
     if (isMobileView) {
       setHasMore(true);
+      // kick off prefetch after new query change
+      schedulePrefetch();
     }
-  }, [searchQuery, activeFilters, isMobileView, setHasMore]);
+  }, [searchQuery, activeFilters, isMobileView, setHasMore, schedulePrefetch]);
 
 
 
