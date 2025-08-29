@@ -366,7 +366,7 @@ def verify_supabase_admin_role(
             return None
         # Get role manager and check admin role
         role_manager = get_role_manager()
-        role_data = role_manager.get_user_admin_role(token)
+        role_data = role_manager.get_user_admin_role(payload.get('sub'), token)
         if not role_data:
             logger.warning("No admin role found for user")
             return None

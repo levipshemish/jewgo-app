@@ -23,7 +23,17 @@ class SupabaseRoleManager:
         self.supabase_url = os.getenv("SUPABASE_URL")
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
         self.base_ttl = int(os.getenv("ADMIN_ROLE_CACHE_SECONDS", "90"))
-        self.redis = get_redis_client()
+        
+        # Initialize Redis with graceful degradation
+        try:
+            self.redis = get_redis_client()
+            if not self.redis:
+                logger.warning("Redis client not available - admin role caching disabled")
+                self.redis = None
+        except Exception as e:
+            logger.warning(f"Failed to initialize Redis client: {e} - admin role caching disabled")
+            self.redis = None
+        
         if not self.supabase_url or not self.supabase_anon_key:
             raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
 
@@ -46,27 +56,7 @@ class SupabaseRoleManager:
             logger.error(f"Error getting admin role: {e}")
             return None
 
-    def _parse_sub_from_verified_token(self, token: str) -> Optional[str]:
-        """
-        Extract user_id from verified JWT token sub claim.
-        Args:
-            token: Verified Supabase JWT token
-        Returns:
-            User ID from sub claim or None if invalid
-        """
-        try:
-            import jwt
 
-            # Decode without verification (token already verified)
-            payload = jwt.decode(token, options={"verify_signature": False})
-            user_id = payload.get("sub")
-            if not user_id or not self._is_valid_uuid(user_id):
-                logger.warning(f"Invalid sub claim in token: {user_id}")
-                return None
-            return user_id
-        except Exception as e:
-            logger.error(f"Error parsing token sub claim: {e}")
-            return None
 
     def _call_supabase_rpc_with_strict_locking(
         self, user_token: str, user_id: str

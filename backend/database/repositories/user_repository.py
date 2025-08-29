@@ -45,7 +45,7 @@ class UserRepository(BaseRepository[User]):
                     if filters["role"] == "admin":
                         query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdminot n)
+                        query = query.filter(User.isSuperAdmin == False)
                 if filters.get("email_verified"):
                     if filters["email_verified"]:
                         query = query.filter(User.emailVerified.isnot(None))
@@ -77,7 +77,7 @@ class UserRepository(BaseRepository[User]):
                     if filters["role"] == "admin":
                         query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdminot n)
+                        query = query.filter(User.isSuperAdmin == False)
                 if filters.get("email_verified"):
                     if filters["email_verified"]:
                         query = query.filter(User.emailVerified.isnot(None))
