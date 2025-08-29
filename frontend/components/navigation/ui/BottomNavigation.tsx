@@ -19,8 +19,10 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   // Check if we're on mobile - ensure it's always detected correctly
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
+    setIsClient(true);
     const checkMobile = () => {
       const mobile = typeof window !== 'undefined' && window.innerWidth <= 768;
       setIsMobile(mobile);
@@ -37,8 +39,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
     };
   }, []);
   
-  const ButtonContainer = isMobile ? 'button' : motion.button;
-  const DivContainer = isMobile ? 'div' : motion.div;
+  // Use motion components consistently to avoid hydration mismatch
+  const ButtonContainer = motion.button;
+  const DivContainer = motion.div;
 
   // Standard navigation items for all pages
   const navItems = [
@@ -85,17 +88,17 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.id === 'explore' && pathname === '/eatery');
-            const hasUnread = item.id === 'notifications' && unreadCount > 0;
+            const hasUnread = isClient && item.id === 'notifications' && unreadCount > 0;
             
             return (
               <ButtonContainer
                 key={item.id}
                 onClick={() => handleNavigation(item.href)}
                 className="dynamic-bottom-nav-button flex flex-col items-center space-y-1 flex-1 transition-all duration-200 relative"
-                {...(isMobile ? {} : {
+                {...(isClient && !isMobile ? {
                   whileHover: { scale: 1.05 },
                   whileTap: { scale: 0.95 }
-                })}
+                } : {})}
                 style={{
                   minHeight: '44px',
                   minWidth: '44px',
@@ -117,15 +120,15 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
                   {/* Unread notifications indicator */}
                   {hasUnread && (
                     <DivContainer
-                      {...(isMobile ? {} : {
+                      {...(isClient && !isMobile ? {
                         initial: { scale: 0, opacity: 0 },
                         animate: { scale: 1, opacity: 1 },
                         exit: { scale: 0, opacity: 0 }
-                      })}
+                      } : {})}
                       className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
                       style={{
                         // Force scale for mobile
-                        ...(isMobile && {
+                        ...(isClient && isMobile && {
                           transform: 'scale(1)',
                           opacity: 1
                         })
@@ -140,7 +143,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
                 <span className={`dynamic-text-xs font-medium transition-colors duration-200 ${isActive ? 'text-black' : 'text-gray-400'}`}>
                   {item.label}
                 </span>
-                {isMobile ? (
+                {isClient && isMobile ? (
                   isActive && (
                     <div
                       className="w-1 h-1 bg-black rounded-full mt-1"

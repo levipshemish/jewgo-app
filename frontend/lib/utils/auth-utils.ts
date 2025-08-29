@@ -1,5 +1,6 @@
 import ipaddr from 'ipaddr.js';
 import { createClient } from '@supabase/supabase-js';
+import { type TransformedUser, type AuthProvider } from '@/lib/types/supabase-auth';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -24,257 +25,54 @@ interface User {
  * across the JewGo authentication system.
  */
 
-export interface TransformedUser {
-  id: string;
-  email: string | undefined;
-  name: string | null;
-  username: string | undefined;
-  provider: 'apple' | 'google' | 'unknown';
-  avatar_url: string | null;
-  providerInfo: {
-    name: string;
-    icon: string;
-    color: string;
-  };
-  createdAt?: string;
-  updatedAt?: string;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  role: string;
-  permissions: string[];
-  subscriptionTier: string;
-  // New role fields
-  adminRole?: string | null;
-  roleLevel?: number | null;
-  isSuperAdmin?: boolean;
-}
+
+// Re-export client-safe functions and types from auth-utils-client
+export { 
+  getUserWithRoles,
+  transformSupabaseUserWithRoles,
+  isAdminUser,
+  hasUserPermission,
+  hasMinimumRoleLevel,
+  generateCorrelationId,
+  scrubPII,
+  extractIsAnonymous,
+  handleAuthError,
+  handleUserLoadError,
+  createMockUser,
+  isValidUser,
+  extractJtiFromToken,
+  verifyTokenRotation,
+  isSupabaseConfigured
+} from './auth-utils-client';
 
 /**
- * Request user data with role information from backend
- * Integrates with the new JWT-based role system
+ * @deprecated Use transformSupabaseUser (server-aware) or transformSupabaseUserWithRoles (explicit) instead.
+ * This alias will be removed in a future version to reduce API confusion.
+ * 
+ * Migration guide:
+ * - For server-side use: transformSupabaseUser
+ * - For client-side with roles: transformSupabaseUserWithRoles
+ * - For client-side basic transform: import directly from auth-utils-client
  */
-export async function getUserWithRoles(userToken: string): Promise<{
-  adminRole: string | null;
-  roleLevel: number;
-  permissions: string[];
-} | null> {
-  try {
-    // Call backend endpoint that uses the new SupabaseRoleManager
-    const response = await fetch('/api/auth/user-with-roles', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${userToken}`,
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
+export { transformSupabaseUser as transformSupabaseUserClient } from './auth-utils-client';
 
-    if (!response.ok) {
-      console.warn('Failed to fetch user roles from backend:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    return {
-      adminRole: data.adminRole || null,
-      roleLevel: data.roleLevel || 0,
-      permissions: data.permissions || []
-    };
-  } catch (error) {
-    console.error('Error fetching user roles:', error);
-    return null;
-  }
-}
+// Re-export types from centralized location
+export type { TransformedUser, AuthProvider } from '@/lib/types/supabase-auth';
 
 /**
- * Transform Supabase user data with provider detection, Apple OAuth support, and role integration
+ * Server-side transform function - delegates to client-safe version
+ * Use transformSupabaseUserWithRoles for new implementations with role support
  */
 export async function transformSupabaseUser(
   user: User | null, 
   options: { includeRoles?: boolean; userToken?: string } = {}
 ): Promise<TransformedUser | null> {
-  if (!user) { return null; }
-
-  const provider = user.app_metadata?.provider ?? 'unknown';
-  
-  // Handle known providers with proper typing (existing logic)
-  const providerInfo = (() => {
-    switch (provider) {
-      case 'apple': {
-        return {
-          name: 'Apple',
-          icon: '🍎',
-          color: '#000000'
-        };
-      }
-      case 'google': {
-        return {
-          name: 'Google',
-          icon: '🔍',
-          color: '#4285F4'
-        };
-      }
-      default: {
-        return {
-          name: 'Account',
-          icon: '👤',
-          color: '#6B7280'
-        };
-      }
-    }
-  })();
-
-  // Base user object
-  const baseUser: TransformedUser = {
-    id: user.id,
-    email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-    username: user.user_metadata?.username,
-    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-    provider: provider as 'apple' | 'google' | 'unknown',
-    providerInfo,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
-    isEmailVerified: true, // Default to true for now
-    isPhoneVerified: false, // Default to false for now
-    role: 'user', // Default role
-    permissions: [], // Initialize empty, filled by backend role data
-    subscriptionTier: 'free', // Default subscription tier
-    // Initialize role fields with proper defaults
-    adminRole: null,
-    roleLevel: null,
-    isSuperAdmin: false
-  };
-
-  // Fetch role information if requested and token provided
-  if (options.includeRoles && options.userToken) {
-    try {
-      const roleData = await getUserWithRoles(options.userToken);
-      if (roleData) {
-        baseUser.adminRole = roleData.adminRole;
-        baseUser.roleLevel = roleData.roleLevel;
-        baseUser.permissions = roleData.permissions;
-        baseUser.isSuperAdmin = roleData.adminRole === 'super_admin';
-      }
-    } catch (error) {
-      console.warn('Failed to fetch role data, continuing without roles:', error);
-      // Continue without roles - don't fail the entire transformation
-    }
-  }
-
-  return baseUser;
+  // Delegate to the consolidated client-safe implementation
+  const { transformSupabaseUserWithRoles } = await import('./auth-utils-client');
+  return transformSupabaseUserWithRoles(user, options);
 }
 
-/**
- * Legacy transform function for backward compatibility
- * Use transformSupabaseUser with options for new implementations
- */
-export async function transformSupabaseUserLegacy(user: User | null): Promise<TransformedUser | null> {
-  // Call the new function without role fetching for backward compatibility
-  return await transformSupabaseUser(user, { includeRoles: false });
-}
 
-/**
- * Check if user has admin role
- */
-export function isAdminUser(user: TransformedUser | null): boolean {
-  return !!(user?.adminRole && (user.roleLevel || 0) > 0);
-}
-
-/**
- * Check if user has specific permission
- */
-export function hasUserPermission(user: TransformedUser | null, permission: string): boolean {
-  if (!user) return false;
-  return user.isSuperAdmin || (user.permissions || []).includes(permission);
-}
-
-/**
- * Check if user has minimum role level
- */
-export function hasMinimumRoleLevel(user: TransformedUser | null, minLevel: number): boolean {
-  if (!user) return false;
-  return (user.roleLevel || 0) >= minLevel;
-}
-
-/**
- * Extract JWT ID (jti) from access token
- * Works in both browser and Node.js environments
- * Converts base64url to base64 before decoding
- */
-export function extractJtiFromToken(token: string): string | null {
-  try {
-    const segments = token.split('.');
-    if (segments.length !== 3) {
-      return null;
-    }
-    
-    const payloadSegment = segments[1];
-    
-    // Convert base64url to base64: replace -→+, _→/, add = padding
-    const base64Segment = payloadSegment
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-    
-    // Add padding if needed
-    const padding = 4 - (base64Segment.length % 4);
-    const paddedSegment = padding !== 4 ? base64Segment + '='.repeat(padding) : base64Segment;
-    
-    let payload: any;
-    
-    if (typeof window !== 'undefined') {
-      // Browser environment - use atob
-      payload = JSON.parse(atob(paddedSegment));
-    } else {
-      // Node.js environment - use Buffer
-      payload = JSON.parse(Buffer.from(paddedSegment, 'base64').toString('utf-8'));
-    }
-    
-    return payload.jti || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Verify token rotation after account upgrade
- * Checks refresh_token and JWT jti changes between pre/post upgrade states
- * Returns true if either refresh_token OR jti changed (not requiring both)
- */
-export function verifyTokenRotation(
-  preUpgradeSession: any,
-  postUpgradeSession: any
-): boolean {
-  try {
-    // Compute refresh_token change
-    const refreshChanged = preUpgradeSession.refresh_token !== postUpgradeSession.refresh_token;
-    
-    // Compute JWT jti change - defensively check that tokens are strings
-    let preJti: string | null = null;
-    let postJti: string | null = null;
-    
-    if (typeof preUpgradeSession.access_token === 'string') {
-      preJti = extractJtiFromToken(preUpgradeSession.access_token);
-    }
-    
-    if (typeof postUpgradeSession.access_token === 'string') {
-      postJti = extractJtiFromToken(postUpgradeSession.access_token);
-    }
-    
-    const jtiChanged = preJti !== postJti;
-    
-    // Return true if either changed, false only if both unchanged
-    if (!refreshChanged && !jtiChanged) {
-      // Token rotation failed: both refresh_token and JWT jti unchanged
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    // Token rotation verification failed - return false as fallback
-    return false;
-  }
-}
 
 // Note: Server-only HMAC constants moved to auth-utils.server.ts to prevent client bundle inclusion
 
@@ -469,109 +267,8 @@ function verifySignedCSRFToken(token: string): boolean {
   }
 }
 
-/**
- * Generate correlation ID for request tracing
- */
-export function generateCorrelationId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
 
-/**
- * Scrub PII from logs for Sentry
- */
-export function scrubPII(data: any): any {
-  if (!data) {return data;}
-  
-  const scrubbed = { ...data };
-  const piiFields = ['email', 'phone', 'password', 'token', 'refresh_token', 'access_token'];
-  
-  piiFields.forEach(field => {
-    if (scrubbed[field]) {
-      scrubbed[field] = '[REDACTED]';
-    }
-  });
-  
-  return scrubbed;
-}
 
-/**
- * Extract is_anonymous flag from user metadata - defensive version
- */
-export function extractIsAnonymous(u?: any): boolean {
-  if (!u) {return false;}
-  return Boolean(u.is_anonymous ?? u.isAnonymous ?? u.app_metadata?.is_anonymous ?? u.user_metadata?.is_anonymous ?? u['is_anonymous']);
-}
-
-/**
- * Check if Supabase is properly configured
- * Updated to use centralized utility
- */
-export function isSupabaseConfigured(): boolean {
-  // Import the centralized utility to avoid duplication
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  return !!(supabaseUrl && supabaseAnonKey);
-}
-
-/**
- * Handle authentication errors consistently
- */
-export function handleAuthError(error: any, router?: any): void {
-  // Auth error handled - redirect if appropriate
-  if (router && error?.message?.includes('auth')) {
-    router.push('/auth/signin');
-  }
-}
-
-/**
- * Handle user loading errors with appropriate fallbacks
- */
-export function handleUserLoadError(error: any, router?: any): void {
-  console.error('User load error:', error);
-  
-  // Only redirect for auth errors, not network errors
-  if (router && error?.message?.includes('auth')) {
-    router.push('/auth/signin');
-  }
-}
-
-/**
- * Create mock user for development when Supabase is not configured
- */
-export function createMockUser(): TransformedUser {
-  return {
-    id: 'dev-user-id',
-    email: 'dev@example.com',
-    name: 'Development User',
-    username: 'dev-user',
-    provider: 'unknown',
-    avatar_url: null,
-    providerInfo: {
-      name: 'Development',
-      icon: '👤',
-      color: '#6B7280'
-    },
-    isEmailVerified: true,
-    isPhoneVerified: false,
-    role: 'user',
-    permissions: ['read', 'write'],
-    subscriptionTier: 'free',
-    adminRole: null,
-    roleLevel: 0,
-    isSuperAdmin: false
-  };
-}
-
-/**
- * Validate user object structure
- */
-export function isValidUser(user: any): user is TransformedUser {
-  return user && 
-         typeof user.id === 'string' && 
-         (user.email === undefined || typeof user.email === 'string') &&
-         typeof user.provider === 'string';
-}
 
 /**
  * Validate redirect URL with corrected security logic

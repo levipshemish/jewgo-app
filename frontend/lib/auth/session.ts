@@ -65,11 +65,11 @@ function transformUser(user: any): TransformedUser {
 function getProviderInfo(provider: string) {
   switch (provider) {
     case 'apple':
-      return { name: 'Apple', icon: '🍎', color: '#000000' };
+      return { name: 'Apple', icon: '🍎', color: '#000000', displayName: 'Apple' };
     case 'google':
-      return { name: 'Google', icon: '🔍', color: '#4285F4' };
+      return { name: 'Google', icon: '🔍', color: '#4285F4', displayName: 'Google' };
     default:
-      return { name: 'Email', icon: '📧', color: '#6B7280' };
+      return { name: 'Email', icon: '📧', color: '#6B7280', displayName: 'Email' };
   }
 }
 

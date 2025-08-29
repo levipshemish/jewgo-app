@@ -14,15 +14,21 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { validateDistanceFields, toApiFormat, MultipleDistanceFieldsError, assembleSafeFilters } from '@/lib/filters/distance-validation';
+import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
 
 // One canonical cleaner for filters (use it everywhere)
 function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
   const out: Partial<T> = {};
   for (const [k, v] of Object.entries(raw)) {
-    if (v === undefined || v === null) continue;
-    if (typeof v === "string" && v.trim() === "") continue;
-    if (Array.isArray(v) && v.length === 0) continue;
+    if (v === undefined || v === null) {
+      continue;
+    }
+    if (typeof v === "string" && v.trim() === "") {
+      continue;
+    }
+    if (Array.isArray(v) && v.length === 0) {
+      continue;
+    }
     out[k as keyof T] = v as any;
   }
   return out;
@@ -124,11 +130,9 @@ export function EateryPageClient() {
   // Advanced filters hook
   const {
     activeFilters,
-    hasActiveFilters,
     setFilter,
     clearFilter,
-    clearAllFilters,
-    getFilterCount
+    clearAllFilters
   } = useAdvancedFilters();
   
   // Location state from context
@@ -228,7 +232,11 @@ export function EateryPageClient() {
         
         // Reset infinite scroll state for mobile
         if (isMobileView) {
-          setAllRestaurants(data.data); // Start with initial data
+          // Ensure no duplicates in initial data
+          const uniqueRestaurants = data.data.filter((restaurant, index, self) => 
+            index === self.findIndex(r => r.id === restaurant.id)
+          );
+          setAllRestaurants(uniqueRestaurants); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
           setTotalRestaurants(data.total); // Track total count
           // Set hasMore based on whether there are more items available
@@ -236,6 +244,7 @@ export function EateryPageClient() {
           setHasMore(hasMoreData);
           
           if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
             console.log('Initial load for infinite scroll:', { 
               items: data.data.length, 
               total: data.total, 
@@ -246,6 +255,7 @@ export function EateryPageClient() {
         
         // Debug logging
         if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
           console.log('Initial load: Page', page, 'items:', data.data.length, 'total pages:', Math.ceil(data.total / mobileOptimizedItemsPerPage));
         }
       } else {
@@ -299,7 +309,9 @@ export function EateryPageClient() {
   }, [mobileOptimizedItemsPerPage, buildQueryParams, searchQuery, activeFilters]);
 
   const schedulePrefetch = useCallback(async () => {
-    if (!isMobileView) {return;}
+    if (!isMobileView) {
+      return;
+    }
     const nextOffset = allRestaurants.length;
     // Cancel any in-flight prefetch
     prefetchAbortRef.current?.abort();
@@ -317,7 +329,7 @@ export function EateryPageClient() {
     }
   }, [isMobileView, allRestaurants.length, fetchRestaurantsPage]);
 
-  const { hasMore, isLoadingMore, loadingRef, setHasMore, loadMore } = useInfiniteScroll(
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     async () => {
       
       // Get current values using refs to avoid stale closures
@@ -326,6 +338,7 @@ export function EateryPageClient() {
       const nextPage = Math.floor(nextOffset / mobileOptimizedItemsPerPage) + 1;
       
       if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems });
       }
       
@@ -339,6 +352,7 @@ export function EateryPageClient() {
         }
         
         if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
           console.log('Infinite scroll: Response received', { 
             success: data.success, 
             dataLength: data.data?.length || 0, 
@@ -348,8 +362,12 @@ export function EateryPageClient() {
         }
         
         if (data.success && data.data.length > 0) {
-          // Append new restaurants to the accumulated list
-          setAllRestaurants(prev => [...prev, ...data.data]);
+          // Append new restaurants to the accumulated list, ensuring no duplicates
+          setAllRestaurants(prev => {
+            const existingIds = new Set(prev.map(r => r.id));
+            const newRestaurants = data.data.filter(r => !existingIds.has(r.id));
+            return [...prev, ...newRestaurants];
+          });
           setInfiniteScrollPage(nextPage);
           
           // Update total and check if we have more data
@@ -360,6 +378,7 @@ export function EateryPageClient() {
           
           // Debug logging
           if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
             console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData);
           }
           // Prime next prefetch
@@ -372,6 +391,7 @@ export function EateryPageClient() {
           
           // Debug logging
           if (process.env.NODE_ENV === 'development') {
+            // eslint-disable-next-line no-console
             console.log('Infinite scroll: No more data available (empty response)');
           }
         }
@@ -386,6 +406,7 @@ export function EateryPageClient() {
           setHasMore(false);
         }
         if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
           console.log('Infinite scroll: Error occurred. Failure count =', loadErrorCountRef.current);
         }
       }
@@ -457,12 +478,14 @@ export function EateryPageClient() {
   // Force re-render when permission status changes
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log('📍 EateryPage: Permission status changed to:', permissionStatus);
     }
     
     // If permission is granted but we don't have location, request it
     if (permissionStatus === 'granted' && !userLocation && !locationLoading) {
       if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.log('📍 EateryPage: Permission granted but no location, requesting location');
       }
       requestLocation();
@@ -475,6 +498,7 @@ export function EateryPageClient() {
     const dataSource = isMobileView ? allRestaurants : restaurants;
     
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log('📍 EateryPage: Recalculating restaurant sorting', {
         hasUserLocation: !!userLocation,
         permissionStatus,
@@ -487,6 +511,7 @@ export function EateryPageClient() {
     // If no location or permission not granted, return original order
     if (!userLocation || permissionStatus !== 'granted') {
       if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
         console.log('📍 EateryPage: No location available, returning original order');
       }
       return dataSource.map(restaurant => ({
@@ -496,6 +521,7 @@ export function EateryPageClient() {
     }
 
     if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
       console.log('📍 EateryPage: Calculating distances and sorting by distance');
     }
 
@@ -740,7 +766,7 @@ export function EateryPageClient() {
         >
           {restaurantsWithDistance.map((restaurant, index) => (
             <div 
-              key={restaurant.id} 
+              key={`restaurant-${restaurant.id}-${index}`} 
               className="w-full" 
               role="gridcell"
               style={{

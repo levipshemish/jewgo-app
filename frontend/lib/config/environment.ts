@@ -123,7 +123,7 @@ export function validateEnvironment(): void {
     }
     
     if (!process.env.NEXT_PUBLIC_BACKEND_URL.startsWith('https://')) {
-      throw new Error('NEXT_PUBLIC_BACKEND_URL must use HTTPS in production. Current value: ' + process.env.NEXT_PUBLIC_BACKEND_URL);
+      throw new Error(`NEXT_PUBLIC_BACKEND_URL must use HTTPS in production. Current value: ${  process.env.NEXT_PUBLIC_BACKEND_URL}`);
     }
   }
 

@@ -11,9 +11,9 @@ def test_environment_variables():
     # These should be set in CI environment
     assert os.getenv("DATABASE_URL") is not None, "DATABASE_URL should be set"
     assert (
-        os.getenv("GOOGLE_MAPS_API_KEY") is not None
-    ), "GOOGLE_MAPS_API_KEY should be set"
-    assert os.getenv("SECRET_KEY") is not None, "SECRET_KEY should be set"
+        os.getenv("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY") is not None
+    ), "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY should be set"
+    assert os.getenv("FLASK_SECRET_KEY") is not None, "FLASK_SECRET_KEY should be set"
 
 
 def test_imports():

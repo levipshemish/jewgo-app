@@ -22,7 +22,7 @@ export async function getSessionUser(): Promise<TransformedUser | null> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      return transformSupabaseUser(user);
+      return await transformSupabaseUser(user);
     }
   } catch (error) {
     console.error('[Auth] Supabase auth check failed:', error);

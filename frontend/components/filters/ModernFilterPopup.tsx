@@ -29,9 +29,9 @@ const getDropdownValue = (value?: string | null) => {
 function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
   const out: Partial<T> = {};
   for (const [k, v] of Object.entries(raw)) {
-    if (v === undefined || v === null) continue;
-    if (typeof v === "string" && v.trim() === "") continue;
-    if (Array.isArray(v) && v.length === 0) continue;
+    if (v === undefined || v === null) {continue;}
+    if (typeof v === "string" && v.trim() === "") {continue;}
+    if (Array.isArray(v) && v.length === 0) {continue;}
     out[k as keyof T] = v as any;
   }
   return out;
@@ -165,7 +165,7 @@ export function ModernFilterPopup({
     onApplyFilters({});
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {return null;}
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center sm:justify-center p-2 sm:p-4">
@@ -321,10 +321,10 @@ export function ModernFilterPopup({
                 value={(() => {
                   // Convert numeric price range back to symbol for display
                   const priceValue = draftFilters.priceRange?.[0];
-                  if (priceValue === 1) return '$';
-                  if (priceValue === 2) return '$$';
-                  if (priceValue === 3) return '$$$';
-                  if (priceValue === 4) return '$$$$';
+                  if (priceValue === 1) {return '$';}
+                  if (priceValue === 2) {return '$$';}
+                  if (priceValue === 3) {return '$$$';}
+                  if (priceValue === 4) {return '$$$$';}
                   return '';
                 })()}
                 onChange={handlePriceRangeChange}

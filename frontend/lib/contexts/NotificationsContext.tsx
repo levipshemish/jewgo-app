@@ -37,23 +37,33 @@ interface NotificationsProviderProps {
 
 export const NotificationsProvider: React.FC<NotificationsProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  // Set client flag to prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Load notifications from localStorage on mount
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications) {
-      try {
-        setNotifications(JSON.parse(savedNotifications));
-      } catch {
-        // // console.error('Error loading notifications:', error);
+    if (typeof window !== 'undefined') {
+      const savedNotifications = localStorage.getItem('notifications');
+      if (savedNotifications) {
+        try {
+          setNotifications(JSON.parse(savedNotifications));
+        } catch {
+          // // console.error('Error loading notifications:', error);
+        }
       }
     }
   }, []);
 
   // Save notifications to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    if (isClient && typeof window !== 'undefined') {
+      localStorage.setItem('notifications', JSON.stringify(notifications));
+    }
+  }, [notifications, isClient]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateSignedCSRFToken } from '@/lib/admin/csrf';
-import { requireAdmin } from '@/lib/admin/auth';
+import { requireAdmin, type AdminUser } from '@/lib/admin/auth';
 
 export async function GET(request: NextRequest) {
-  const adminUser = await requireAdmin(request);
+  const adminUser: AdminUser | null = await requireAdmin(request);
   if (!adminUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

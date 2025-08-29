@@ -5,7 +5,7 @@ export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_adm
 
 export interface AdminUser extends TransformedUser {
   isSuperAdmin: boolean;
-  adminRole?: AdminRole;
+  adminRole: AdminRole | null;
   permissions: string[];
 }
 

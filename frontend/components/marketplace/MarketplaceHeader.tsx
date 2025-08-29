@@ -7,7 +7,8 @@ import { Search } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';
-import { transformSupabaseUser, type TransformedUser } from '@/lib/utils/auth-utils';
+import { transformSupabaseUserWithRoles } from '@/lib/utils/auth-utils-client';
+import { type TransformedUser } from '@/lib/types/supabase-auth';
 
 interface MarketplaceHeaderProps {
   onSearch?: (query: string) => void;
@@ -26,7 +27,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
         const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session?.user) {
-          const transformedUser = await transformSupabaseUser(session.user, {
+          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
@@ -48,7 +49,7 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, session: Session | null) => {
         if (session?.user) {
-          const transformedUser = await transformSupabaseUser(session.user, {
+          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });

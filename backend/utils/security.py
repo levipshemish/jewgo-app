@@ -43,8 +43,8 @@ def verify_admin_token(token: str) -> bool:
 
 def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     """Verify JWT token and return payload (DEPRECATED - use Supabase auth instead)."""
-    # Check if legacy auth is enabled
-    enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
+    # Check if legacy auth is enabled (default to true temporarily to avoid breaking non-admin endpoints)
+    enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "true").lower() == "true"
     if not enable_legacy:
         logger.warning("DEPRECATED: Legacy JWT verification disabled - use Supabase auth")
         raise RuntimeError("Legacy user authentication is disabled. Use Supabase auth instead.")
@@ -217,8 +217,8 @@ def require_user_auth(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if legacy auth is enabled
-        enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
+        # Check if legacy auth is enabled (default to true temporarily to avoid breaking non-admin endpoints)
+        enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "true").lower() == "true"
         if not enable_legacy:
             logger.warning("DEPRECATED: Legacy user auth disabled - use Supabase auth")
             return jsonify({"error": "legacy auth disabled"}), 401

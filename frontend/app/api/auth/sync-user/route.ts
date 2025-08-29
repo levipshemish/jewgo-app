@@ -31,6 +31,7 @@ export async function GET(_request: NextRequest) {
       );
     }
 
+    // No session/user is a valid state, not an error
     if (!user) {
       return NextResponse.json(
         { 

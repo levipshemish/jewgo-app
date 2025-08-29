@@ -13,6 +13,7 @@ from utils.error_handler_v2 import (
     handle_validation_operation,
     create_error_context,
     DatabaseServiceError,
+    ExternalAPIError,
 )
 from utils.http_client import get_http_client
 from utils.monitoring_v2 import get_metrics, clear_old_data
@@ -82,13 +83,14 @@ class TestErrorHandlerV2:
 
             raise Timeout("Request timed out")
 
-        result = handle_external_api_call(
-            operation=mock_operation,
-            operation_name="test_timeout",
-            context=create_error_context(api_endpoint="/test"),
-            default_return=None,
-        )
-        assert result is None
+        # When default_return is None, the function should raise an exception
+        with pytest.raises(ExternalAPIError):
+            handle_external_api_call(
+                operation=mock_operation,
+                operation_name="test_timeout",
+                context=create_error_context(api_endpoint="/test"),
+                default_return=None,
+            )
 
     def test_handle_validation_operation_success(self):
         """Test successful validation operation."""

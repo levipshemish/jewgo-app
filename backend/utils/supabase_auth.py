@@ -480,9 +480,8 @@ def verify_supabase_admin_role(
         except Exception as e:
             logger.error(f"role-manager-init-error: {e}")
             raise RoleLookupDependencyError("role-manager-init-failed")
-        # Use pre-verified sub to avoid double token verification
-        expected_sub = payload.get("sub")
-        role_data = role_manager.get_user_admin_role_by_sub(token, expected_sub, payload['sub'])
+        # Use token-based lookup to avoid exposing sub parameter trust surface
+        role_data = role_manager.get_user_admin_role(token)
         if role_data is None:
             # Dependency failure - raise to trigger 503
             raise RoleLookupDependencyError("role-lookup-failed")

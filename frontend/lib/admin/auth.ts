@@ -123,7 +123,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
         username: 'dev-admin',
         provider: 'unknown',
         avatar_url: null,
-        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280' },
+        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280', displayName: 'Development' },
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
@@ -131,7 +131,10 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
         isEmailVerified: true,
         isPhoneVerified: false,
         role: 'admin',
-        subscriptionTier: 'free'
+        subscriptionTier: 'free',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roleLevel: 10
       };
       return mockUser;
     }
@@ -256,7 +259,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
         username: 'dev-admin',
         provider: 'unknown',
         avatar_url: null,
-        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280' },
+        providerInfo: { name: 'Development', icon: '👤', color: '#6B7280', displayName: 'Development' },
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
@@ -264,7 +267,10 @@ export async function getAdminUser(): Promise<AdminUser | null> {
         isEmailVerified: true,
         isPhoneVerified: false,
         role: 'admin',
-        subscriptionTier: 'free'
+        subscriptionTier: 'free',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        roleLevel: 10
       };
       return mockUser;
     }

@@ -3,7 +3,8 @@
  * This prevents Edge Runtime compatibility issues during prerendering
  */
 
-import { type TransformedUser } from "@/lib/types/supabase-auth";
+import { type TransformedUser, type AuthProvider } from "@/lib/types/supabase-auth";
+import type { Permission } from '@/lib/constants/permissions';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -43,41 +44,150 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
- * Transform Supabase user to our internal format
+ * Request user data with role information from backend
+ * Integrates with the new JWT-based role system
  */
-export function transformSupabaseUser(user: User | null): TransformedUser | null {
+export async function getUserWithRoles(userToken: string): Promise<{
+  adminRole: string | null;
+  roleLevel: number;
+  permissions: readonly Permission[];
+} | null> {
+  try {
+    // Call backend endpoint that uses the new SupabaseRoleManager
+    const response = await fetch('/api/auth/user-with-roles', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to fetch user roles from backend:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      adminRole: data.adminRole || null,
+      roleLevel: data.roleLevel || 0,
+      permissions: data.permissions || []
+    };
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    return null;
+  }
+}
+
+/**
+ * Base transformation function (client-safe, no server dependencies)
+ */
+function transformSupabaseUserBase(user: User | null): Omit<TransformedUser, 'adminRole' | 'roleLevel' | 'permissions' | 'isSuperAdmin'> | null {
   if (!user) {
     return null;
   }
 
-  const provider = user.app_metadata?.provider as 'apple' | 'google' | 'unknown' || 'unknown';
+  const provider = user.app_metadata?.provider ?? 'unknown';
   
-  const providerInfo = {
-    apple: { name: 'Apple', icon: '🍎', color: 'text-black', displayName: 'Apple' },
-    google: { name: 'Google', icon: '🔍', color: 'text-blue-600', displayName: 'Google' },
-    unknown: { name: 'Email', icon: '📧', color: 'text-gray-600', displayName: 'Email' }
-  }[provider];
+  // Handle known providers with proper typing
+  const providerInfo = (() => {
+    switch (provider) {
+      case 'apple': {
+        return {
+          name: 'Apple',
+          icon: '🍎',
+          color: '#000000',
+          displayName: 'Apple'
+        };
+      }
+      case 'google': {
+        return {
+          name: 'Google',
+          icon: '🔍',
+          color: '#4285F4',
+          displayName: 'Google'
+        };
+      }
+      default: {
+        return {
+          name: 'Account',
+          icon: '👤',
+          color: '#6B7280',
+          displayName: 'Account'
+        };
+      }
+    }
+  })();
 
   return {
     id: user.id,
     email: user.email || undefined,
     name: user.user_metadata?.full_name || user.user_metadata?.name || null,
     username: user.user_metadata?.username,
-    provider,
     avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+    provider: provider as AuthProvider,
     providerInfo,
     createdAt: user.created_at || new Date().toISOString(),
     updatedAt: user.updated_at || new Date().toISOString(),
     isEmailVerified: true, // Default to true for now
     isPhoneVerified: false, // Default to false for now
     role: 'user', // Default role
-    permissions: ['read', 'write'], // Default permissions
     subscriptionTier: 'free', // Default subscription tier
-    // Initialize role fields with proper defaults
+  };
+}
+
+/**
+ * Transform Supabase user data with provider detection, Apple OAuth support, and role integration
+ * Client-safe version without server dependencies
+ */
+export async function transformSupabaseUserWithRoles(
+  user: User | null, 
+  options: { includeRoles?: boolean; userToken?: string } = {}
+): Promise<TransformedUser | null> {
+  const baseUser = transformSupabaseUserBase(user);
+  if (!baseUser) {
+    return null;
+  }
+
+  // Initialize role fields with proper defaults
+  const transformedUser: TransformedUser = {
+    ...baseUser,
+    permissions: [], // Initialize empty, filled by backend role data
     adminRole: null,
-    roleLevel: null,
+    roleLevel: 0,
     isSuperAdmin: false
   };
+
+  // Fetch role information if requested and token provided
+  if (options.includeRoles && options.userToken) {
+    try {
+      const roleData = await getUserWithRoles(options.userToken);
+      if (roleData) {
+        // Normalize role string to lowercase for consistency
+        const role = (roleData.adminRole || '').toLowerCase();
+        
+        transformedUser.adminRole = role;
+        transformedUser.roleLevel = roleData.roleLevel;
+        transformedUser.permissions = roleData.permissions;
+        transformedUser.isSuperAdmin = role === 'super_admin';
+      }
+    } catch (error) {
+      console.warn('Failed to fetch role data, continuing without roles:', error);
+      // Continue without roles - don't fail the entire transformation
+    }
+  }
+
+  return transformedUser;
+}
+
+/**
+ * Legacy transform function for backward compatibility
+ * Use transformSupabaseUserWithRoles with options for new implementations
+ */
+export async function transformSupabaseUser(user: User | null): Promise<TransformedUser | null> {
+  // Call the new function without role fetching for backward compatibility
+  return await transformSupabaseUserWithRoles(user, { includeRoles: false });
 }
 
 /**
@@ -93,6 +203,80 @@ export function handleUserLoadError(error: any, router?: any): void {
 }
 
 /**
+ * Check if user has admin role
+ */
+export function isAdminUser(user: TransformedUser | null): boolean {
+  return !!(user?.adminRole && user.roleLevel > 0);
+}
+
+/**
+ * Check if user has specific permission
+ */
+export function hasUserPermission(user: TransformedUser | null, permission: string): boolean {
+  if (!user) {
+    return false;
+  }
+  return user.isSuperAdmin || (user.permissions || []).includes(permission);
+}
+
+/**
+ * Check if user has minimum role level
+ */
+export function hasMinimumRoleLevel(user: TransformedUser | null, minLevel: number): boolean {
+  if (!user) {
+    return false;
+  }
+  return user.roleLevel >= minLevel;
+}
+
+/**
+ * Generate correlation ID for request tracing
+ */
+export function generateCorrelationId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Scrub PII from logs for Sentry
+ */
+export function scrubPII(data: any): any {
+  if (!data) {
+    return data;
+  }
+  
+  const scrubbed = { ...data };
+  const piiFields = ['email', 'phone', 'password', 'token', 'refresh_token', 'access_token'];
+  
+  piiFields.forEach(field => {
+    if (scrubbed[field]) {
+      scrubbed[field] = '[REDACTED]';
+    }
+  });
+  
+  return scrubbed;
+}
+
+/**
+ * Handle authentication errors consistently
+ */
+export function handleAuthError(error: any, router?: any): void {
+  // Auth error handled - redirect if appropriate
+  if (router && error?.message?.includes('auth')) {
+    router.push('/auth/signin');
+  }
+}
+
+/**
+ * Validate user object structure
+ */
+export function isValidUser(user: any): user is TransformedUser {
+  return user && 
+         typeof user.id === 'string' && 
+         (user.email === undefined || typeof user.email === 'string') &&
+         typeof user.provider === 'string';
+}
+
+/**
  * Create a mock user for development
  */
 export function createMockUser(): TransformedUser {
@@ -101,7 +285,7 @@ export function createMockUser(): TransformedUser {
     email: 'mock@example.com',
     name: 'Mock User',
     username: 'mockuser',
-    provider: 'unknown',
+    provider: 'unknown' as AuthProvider,
     avatar_url: null,
     providerInfo: {
       name: 'Email',
@@ -114,11 +298,11 @@ export function createMockUser(): TransformedUser {
     isEmailVerified: true,
     isPhoneVerified: false,
     role: 'user',
-    permissions: ['read', 'write'],
+    permissions: [],
     subscriptionTier: 'free',
     // Initialize role fields with proper defaults
     adminRole: null,
-    roleLevel: null,
+    roleLevel: 0,
     isSuperAdmin: false
     };
 }

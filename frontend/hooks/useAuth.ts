@@ -3,15 +3,15 @@ import { useRouter } from 'next/navigation';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';
 import { 
-  transformSupabaseUser, 
+  transformSupabaseUserWithRoles, 
   isSupabaseConfigured, 
   handleUserLoadError, 
   createMockUser,
   extractIsAnonymous,
   verifyTokenRotation,
   extractJtiFromToken
-} from '@/lib/utils/auth-utils';
-import { type TransformedUser } from '@/lib/utils/auth-utils';
+} from '@/lib/utils/auth-utils-client';
+import { type TransformedUser } from '@/lib/types/supabase-auth';
 
 // Define action types for the reducer
 type AuthAction = 
@@ -92,7 +92,7 @@ export function useAuth() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         
         // Transform user with role information
-        const transformedUser = await transformSupabaseUser(user, {
+        const transformedUser = await transformSupabaseUserWithRoles(user, {
           includeRoles: !!session?.access_token,
           userToken: session?.access_token || undefined
         });
@@ -138,7 +138,7 @@ export function useAuth() {
 
         if (event === 'SIGNED_IN' && session?.user) {
           // Transform user with role information on sign in
-          const transformedUser = await transformSupabaseUser(session.user, {
+          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
@@ -149,7 +149,7 @@ export function useAuth() {
           dispatch({ type: 'RESET_STATE' });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           // Refresh user with updated role information
-          const transformedUser = await transformSupabaseUser(session.user, {
+          const transformedUser = await transformSupabaseUserWithRoles(session.user, {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
@@ -201,7 +201,7 @@ export function useAuth() {
       }
 
       if (data.user) {
-        const transformedUser = await transformSupabaseUser(data.user, {
+        const transformedUser = await transformSupabaseUserWithRoles(data.user, {
           includeRoles: !!data.session?.access_token,
           userToken: data.session?.access_token || undefined
         });

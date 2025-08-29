@@ -23,8 +23,10 @@ const DashboardBottomNavigation: React.FC<DashboardBottomNavigationProps> = ({
   // Check if we're on mobile - ensure it's always detected correctly
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
+    setIsClient(true);
     const checkMobile = () => {
       const mobile = typeof window !== 'undefined' && window.innerWidth <= 768;
       setIsMobile(mobile);
@@ -41,8 +43,9 @@ const DashboardBottomNavigation: React.FC<DashboardBottomNavigationProps> = ({
     };
   }, []);
   
-  const ButtonContainer = isMobile ? 'button' : motion.button;
-  const DivContainer = isMobile ? 'div' : motion.div;
+  // Use motion components consistently to avoid hydration mismatch
+  const ButtonContainer = motion.button;
+  const DivContainer = motion.div;
 
   // Dashboard navigation items
   const navItems = [
@@ -89,17 +92,17 @@ const DashboardBottomNavigation: React.FC<DashboardBottomNavigationProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
-            const hasUnread = item.id === 'messages' && unreadCount > 0;
+            const hasUnread = isClient && item.id === 'messages' && unreadCount > 0;
             
             return (
               <ButtonContainer
                 key={item.id}
                 onClick={() => handleNavigation(item.href)}
                 className="dynamic-bottom-nav-button flex flex-col items-center space-y-1 flex-1 transition-all duration-200 relative"
-                {...(isMobile ? {} : {
+                {...(isClient && !isMobile ? {
                   whileHover: { scale: 1.05 },
                   whileTap: { scale: 0.95 }
-                })}
+                } : {})}
                 style={{
                   minHeight: '44px',
                   minWidth: '44px',

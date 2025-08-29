@@ -33,11 +33,16 @@ class SupabaseRoleManager:
         try:
             self.redis = get_redis_client()
             if not self.redis:
-                logger.warning("Redis client not available - admin role caching disabled")
+                logger.warning("STARTUP_WARNING: Redis client not available - admin role caching disabled. Performance may be degraded under load.")
                 self.redis = None
         except Exception as e:
-            logger.warning(f"Failed to initialize Redis client: {e} - admin role caching disabled")
+            logger.warning(f"STARTUP_WARNING: Failed to initialize Redis client: {e} - admin role caching disabled. Performance may be degraded under load.")
             self.redis = None
+        
+        # Initialize in-process cache fallback for when Redis is unavailable
+        self._fallback_cache = {}
+        self._fallback_cache_lock = threading.Lock()
+        self._fallback_cache_ttl = 60  # Short 60-second TTL for in-process cache
         
         if not self.supabase_url or not self.supabase_anon_key:
             raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
@@ -64,27 +69,6 @@ class SupabaseRoleManager:
             logger.error(f"Error getting admin role: {e}")
             return None
 
-    def get_user_admin_role_by_sub(self, user_token: str, expected_sub: str, verified_sub: str) -> Optional[Dict[str, Any]]:
-        """
-        Get admin role for user by pre-verified user_id.
-        Args:
-            user_token: Verified Supabase JWT token for RPC call
-            expected_sub: Expected user ID from pre-verified JWT payload
-            verified_sub: Verified user ID from JWT payload (to avoid double verification)
-        Returns:
-            Dict with role data or None if no admin role or system failure
-        """
-        try:
-            if verified_sub != expected_sub:
-                logger.warning("sub-mismatch")
-                return None
-            
-            # Get role with strict singleflight control (no token re-verification)
-            return self._call_supabase_rpc_with_strict_locking(user_token, expected_sub)
-        except Exception as e:
-            logger.error(f"Error getting admin role by sub: {e}")
-            return None
-
 
 
     def _call_supabase_rpc_with_strict_locking(
@@ -101,10 +85,36 @@ class SupabaseRoleManager:
         cache_key = f"admin_role:{user_id}"
         lock_key = f"lock:role:{user_id}"
         
-        # If Redis is not available, use in-process singleflight
+        # If Redis is not available, use in-process caching and singleflight
         if not self.redis:
-            logger.debug(f"Redis not available - using in-process singleflight for user {user_id}")
-            return self._fetch_role_from_supabase_with_singleflight(user_token, user_id)
+            logger.debug(f"Redis not available - using in-process cache and singleflight for user {user_id}")
+            
+            # Check in-process cache first
+            with self._fallback_cache_lock:
+                cached_data = self._fallback_cache.get(user_id)
+                if cached_data and cached_data.get("expires_at", 0) > time.time():
+                    logger.debug(f"FALLBACK_CACHE_HIT for user {user_id}")
+                    return cached_data
+                    
+            # Cache miss or expired - fetch with singleflight
+            result = self._fetch_role_from_supabase_with_singleflight(user_token, user_id)
+            
+            # Cache the result if successful
+            if result is not None:
+                with self._fallback_cache_lock:
+                    expires_at = time.time() + self._fallback_cache_ttl
+                    cache_data = {
+                        "role": result.get("role"),
+                        "level": result.get("level", 0),
+                        "expires_at": expires_at
+                    }
+                    self._fallback_cache[user_id] = cache_data
+                    logger.debug(f"FALLBACK_CACHE_SET for user {user_id} with TTL {self._fallback_cache_ttl}s")
+                    
+                    # Cleanup expired entries to prevent memory leaks
+                    self._cleanup_fallback_cache()
+                    
+            return result
         
         # Check cache first - only serve if within TTL
         cached = self.redis.get(cache_key)
@@ -307,16 +317,38 @@ class SupabaseRoleManager:
         Args:
             user_id: User ID to invalidate
         """
-        if not self.redis:
-            logger.debug(f"Redis not available - skipping invalidation for user {user_id}")
-            return
+        # Invalidate Redis cache
+        if self.redis:
+            try:
+                cache_key = f"admin_role:{user_id}"
+                self.redis.delete(cache_key)
+                logger.info(f"Invalidated Redis role cache for user {user_id}")
+            except Exception as e:
+                logger.error(f"Error invalidating Redis role cache for user {user_id}: {e}")
+        
+        # Also invalidate fallback cache
+        with self._fallback_cache_lock:
+            if user_id in self._fallback_cache:
+                del self._fallback_cache[user_id]
+                logger.debug(f"Invalidated fallback cache for user {user_id}")
+
+    def _cleanup_fallback_cache(self) -> None:
+        """
+        Clean up expired entries from fallback cache to prevent memory leaks.
+        Should be called with _fallback_cache_lock held.
+        """
+        current_time = time.time()
+        expired_keys = []
+        
+        for user_id, cached_data in self._fallback_cache.items():
+            if cached_data.get("expires_at", 0) <= current_time:
+                expired_keys.append(user_id)
+        
+        for user_id in expired_keys:
+            del self._fallback_cache[user_id]
             
-        try:
-            cache_key = f"admin_role:{user_id}"
-            self.redis.delete(cache_key)
-            logger.info(f"Invalidated role cache for user {user_id}")
-        except Exception as e:
-            logger.error(f"Error invalidating role cache for user {user_id}: {e}")
+        if expired_keys:
+            logger.debug(f"Cleaned up {len(expired_keys)} expired entries from fallback cache")
 
     def start_cache_invalidation_listener(self):
         """

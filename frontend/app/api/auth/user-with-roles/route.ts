@@ -3,6 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import { BACKEND_URL } from '@/lib/config/environment';
 import { ROLE_PERMISSIONS, Role, Permission } from '@/lib/constants/permissions';
+import { createTimeoutSignal } from '@/lib/utils/timeout-utils';
+
+// Force Node.js runtime to support AbortSignal.timeout
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,22 +25,54 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = await createServerSupabaseClient();
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error) {
-      console.error('[Auth] Error getting user for roles:', error);
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Authentication error',
-          adminRole: null,
-          roleLevel: 0,
-          permissions: []
-        },
-        { status: 401 }
-      );
+    
+    // Check for Authorization header first, fall back to cookie session
+    const authHeader = request.headers.get('authorization');
+    let user, accessToken;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { data, error } = await supabase.auth.getUser(token);
+      user = data.user;
+      accessToken = token;
+      
+      if (error) {
+        console.error('[Auth] Error validating Authorization header:', error);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid authorization token',
+            adminRole: null,
+            roleLevel: 0,
+            permissions: []
+          },
+          { status: 401 }
+        );
+      }
+    } else {
+      const { data: { user: cookieUser }, error } = await supabase.auth.getUser();
+      user = cookieUser;
+      
+      if (error) {
+        console.error('[Auth] Error getting user from cookie session:', error);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Authentication error',
+            adminRole: null,
+            roleLevel: 0,
+            permissions: []
+          },
+          { status: 401 }
+        );
+      }
+      
+      // Get token from session for backend call
+      const { data: { session } } = await supabase.auth.getSession();
+      accessToken = session?.access_token;
     }
 
+    // No session/user is a valid state, not an error
     if (!user) {
       return NextResponse.json(
         { 
@@ -49,13 +85,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get the user's JWT token to send to backend
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
+    if (!accessToken) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'No valid session',
+          error: 'No valid access token',
           adminRole: null,
           roleLevel: 0,
           permissions: []
@@ -69,11 +103,11 @@ export async function GET(request: NextRequest) {
       const response = await fetch(`${BACKEND_URL}/api/auth/user-role`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(5000)
+        // Add timeout to prevent hanging with fallback support
+        signal: createTimeoutSignal(5000)
       });
 
       if (!response.ok) {
@@ -92,8 +126,9 @@ export async function GET(request: NextRequest) {
 
       const roleData = await response.json();
       
-      // Map backend role data to frontend format
-      const adminRole = roleData.role || null;
+      // Map backend role data to frontend format with normalization
+      const role = (roleData.role || '').toLowerCase();
+      const adminRole = role || null;
       const roleLevel = roleData.level || 0;
       
       // Map role to permissions using existing permission system
@@ -143,7 +178,7 @@ export async function GET(request: NextRequest) {
  * Uses the shared ROLE_PERMISSIONS mapping from constants
  */
 function mapRoleToPermissions(role: string | null): readonly Permission[] {
-  if (!role) return [];
+  if (!role) {return [];}
   
   return ROLE_PERMISSIONS[role as Role] || [];
 }
