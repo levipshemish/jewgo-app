@@ -256,21 +256,21 @@ class TestErrorHandling:
         """Test custom error classes for security"""
         # Test JewGoError base class
         try:
-            raise JewGoError("Generic application error")
-        except JewGoError as e:
-            assert isinstance(e, JewGoError)
+            raise APIError("Generic application error")
+        except APIError as e:
+            assert isinstance(e, APIError)
         
         # Test specific error types
         try:
             raise DatabaseError("Database operation failed")
         except DatabaseError as e:
-            assert isinstance(e, JewGoError)
+            assert isinstance(e, APIError)
             assert isinstance(e, DatabaseError)
         
         try:
             raise ValidationError("Input validation failed")
         except ValidationError as e:
-            assert isinstance(e, JewGoError)
+            assert isinstance(e, APIError)
             assert isinstance(e, ValidationError)
 
 
@@ -279,7 +279,7 @@ class TestFeatureFlags:
     
     def test_feature_flag_validation(self, app):
         """Test feature flag validation"""
-        feature_flags = FeatureFlagsV4()
+        feature_flags = APIV4FeatureFlags()
         
         # Test valid feature flag
         with patch.dict('os.environ', {'API_V4_REVIEWS': 'true'}):

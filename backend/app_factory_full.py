@@ -46,6 +46,32 @@ except ImportError:
         def is_production():
             return os.getenv("ENVIRONMENT", "development") == "production"
 
+# Import service instances
+try:
+    from services.websocket_service import websocket_service
+except ImportError:
+    websocket_service = None
+    logger.warning("WebSocket service not available")
+
+try:
+    from monitoring.performance_monitor import performance_monitor
+except ImportError:
+    performance_monitor = None
+    logger.warning("Performance monitor not available")
+
+try:
+    from services.redis_cache_service import cache_service as redis_cache
+except ImportError:
+    redis_cache = None
+    logger.warning("Redis cache service not available")
+
+try:
+    from services.open_now_service import OpenNowService
+    open_now_service = OpenNowService()
+except ImportError:
+    open_now_service = None
+    logger.warning("Open now service not available")
+
 
 try:
     from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4

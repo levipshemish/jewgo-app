@@ -172,7 +172,6 @@ def get_service_manager() -> ServiceManager:
     Returns:
         Service manager instance
     """
-    global _service_manager
     if _service_manager is None:
         raise RuntimeError(
             "Service manager not initialized. Call initialize_service_manager() first."
