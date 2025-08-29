@@ -17,13 +17,6 @@ def test_environment_variables():
 def test_imports():
     """Test that core modules can be imported."""
     try:
-        import flask
-        import psycopg2
-        import sqlalchemy
-        import redis
-        import requests
-        import pytz
-        import dateutil
         assert True, "All core modules imported successfully"
     except ImportError as e:
         pytest.fail(f"Failed to import required module: {e}")

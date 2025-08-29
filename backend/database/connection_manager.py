@@ -8,11 +8,10 @@ Separated from business logic to follow single responsibility principle.
 import os
 import time
 from typing import Optional
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.exc import DBAPIError, OperationalError
-from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

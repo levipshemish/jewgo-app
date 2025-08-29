@@ -5,7 +5,6 @@ Creates a shtetl_stores table for Jewish community marketplace store management.
 This table stores store information, settings, and metadata for store owners.
 """
 
-import uuid
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB

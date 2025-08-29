@@ -1,7 +1,5 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
-from sqlalchemy.exc import DBAPIError, OperationalError, SQLAlchemyError
-from sqlalchemy.orm import Session
 from utils.logging_config import get_logger
 
 from .connection_manager import DatabaseConnectionManager

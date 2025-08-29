@@ -1,16 +1,14 @@
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from utils.config_manager import ConfigManager
 from utils.google_places_searcher import GooglePlacesSearcher
-from utils.google_places_validator import GooglePlacesValidator
 from utils.logging_config import get_logger
 from utils.validators import validate_website_url as unified_validate_website_url
 from utils.error_handler_v2 import (
     handle_external_api_call,
     create_error_context,
-    ExternalAPIError,
 )
 
 from .base_service import BaseService

@@ -1,11 +1,10 @@
-import asyncio
 import csv
 import json
 import os
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from playwright.async_api import async_playwright

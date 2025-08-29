@@ -7,7 +7,6 @@ and that timeout protection is functioning as expected.
 
 import pytest
 import time
-from unittest.mock import Mock, patch
 from datetime import timedelta
 
 from utils.error_handler_v2 import (
@@ -16,8 +15,6 @@ from utils.error_handler_v2 import (
     handle_validation_operation,
     create_error_context,
     DatabaseServiceError,
-    ExternalAPIError,
-    ValidationServiceError,
 )
 from utils.http_client import get_http_client
 from utils.monitoring_v2 import get_metrics, clear_old_data

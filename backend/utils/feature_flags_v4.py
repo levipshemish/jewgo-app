@@ -10,11 +10,10 @@ Last Updated: 2024
 """
 
 import hashlib
-import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from utils.logging_config import get_logger
 

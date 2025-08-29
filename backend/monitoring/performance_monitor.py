@@ -21,7 +21,7 @@ Last Updated: 2025-01-27
 import time
 import logging
 import json
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from collections import defaultdict, deque

@@ -6,10 +6,9 @@ error handling and timeout patterns implemented across the application.
 """
 
 import logging
-import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

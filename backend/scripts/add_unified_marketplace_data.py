@@ -16,14 +16,12 @@ import sys
 import json
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
-from pathlib import Path
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 
 # Load environment variables
 load_dotenv()

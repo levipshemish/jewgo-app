@@ -15,11 +15,9 @@ import contextlib
 import os
 import sys
 from datetime import datetime
-from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 from utils.logging_config import get_logger
 
 # Add the backend directory to the Python path

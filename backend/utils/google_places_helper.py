@@ -1,12 +1,7 @@
-import os
-import time
 
-import requests
 from utils.logging_config import get_logger
 
 from .google_places_searcher import GooglePlacesSearcher
-from .google_places_validator import GooglePlacesValidator
-from .hours_formatter import HoursFormatter
 
 logger = get_logger(__name__)
 

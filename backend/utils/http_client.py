@@ -19,7 +19,7 @@ from requests.exceptions import (
     Timeout,
     TooManyRedirects,
 )
-from .monitoring_v2 import record_timeout, record_error, record_retry, record_api_call
+from .monitoring_v2 import record_timeout, record_error, record_api_call
 
 logger = logging.getLogger(__name__)
 

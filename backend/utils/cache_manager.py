@@ -20,10 +20,9 @@ Last Updated: 2024
 import hashlib
 import json
 import os
-import time
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional
 
 import redis
 from utils.logging_config import get_logger

@@ -6,7 +6,7 @@ hardcoded values throughout the application.
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

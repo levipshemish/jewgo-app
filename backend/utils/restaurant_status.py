@@ -1,11 +1,9 @@
 import json
 import logging
 import re
-from datetime import UTC, datetime, time, timedelta, timezone
+from datetime import UTC, datetime, time, timedelta
 
 import pytz
-from dateutil import parser as date_parser
-from dateutil.relativedelta import relativedelta
 
 """Restaurant Status Calculation Module.
 

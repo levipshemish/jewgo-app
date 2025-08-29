@@ -1,5 +1,4 @@
-import os
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from utils.logging_config import get_logger
 

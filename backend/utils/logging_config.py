@@ -20,9 +20,8 @@ Last Updated: 2024
 """
 
 import os
-import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import structlog
 from structlog.processors import (

@@ -1,6 +1,5 @@
 import os
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from utils.logging_config import get_logger

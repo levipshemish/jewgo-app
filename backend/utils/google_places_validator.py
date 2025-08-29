@@ -12,7 +12,6 @@ Version: 1.0
 
 import os
 import re
-from typing import Optional
 
 import requests
 from utils.logging_config import get_logger

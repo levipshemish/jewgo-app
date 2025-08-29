@@ -5,7 +5,6 @@ Date: 2025-01-20
 Purpose: Support idempotent anonymous user data merging with ON CONFLICT DO NOTHING
 """
 
-import os
 import sys
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT

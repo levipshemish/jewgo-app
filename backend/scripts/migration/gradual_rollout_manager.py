@@ -18,7 +18,7 @@ import threading
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 # Add the backend directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -27,11 +27,6 @@ from monitoring.v4_monitoring import get_v4_alerts, get_v4_metrics_summary, v4_m
 from utils.feature_flags_v4 import (
     MigrationStage,
     api_v4_flags,
-    bulk_migrate_stage,
-    enable_full_rollout,
-    enable_partial_rollout,
-    enable_testing_mode,
-    migrate_stage,
 )
 from utils.logging_config import get_logger
 

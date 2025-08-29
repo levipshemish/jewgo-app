@@ -3,8 +3,6 @@
 
 import os
 import sys
-import uuid
-from pathlib import Path
 
 import psycopg2
 from dotenv import load_dotenv

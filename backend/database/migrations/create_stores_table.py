@@ -14,18 +14,8 @@ Stores table will contain:
 
 import os
 import sys
-from datetime import datetime
 
 from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
     create_engine,
     text,
 )

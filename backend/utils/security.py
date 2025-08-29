@@ -9,7 +9,7 @@ import os
 import time
 from functools import wraps
 from typing import Optional, Dict, Any
-from flask import request, jsonify, current_app
+from flask import request, jsonify
 from utils.logging_config import get_logger
 from utils.error_handler import AuthenticationError, AuthorizationError
 

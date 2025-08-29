@@ -1,18 +1,12 @@
 import json
-import os
-import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from services import hours_compute, hours_normalizer, hours_sources
 from services.base_service import BaseService
-from utils.cloudinary_uploader import CloudinaryUploader
 from utils.error_handler import NotFoundError, ValidationError
 from utils.error_handler_v2 import (
     handle_database_operation,
     handle_validation_operation,
     create_error_context,
-    DatabaseServiceError,
-    ValidationServiceError,
 )
 
 #!/usr/bin/env python3
@@ -655,7 +649,6 @@ class RestaurantServiceV4(BaseService):
     def _validate_restaurant_update_data(self, data: dict[str, Any]) -> None:
         """Validate restaurant update data."""
         # Add any update-specific validation logic
-        pass
 
     def _preprocess_restaurant_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess restaurant data before saving."""

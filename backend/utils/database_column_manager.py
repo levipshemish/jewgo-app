@@ -12,9 +12,8 @@ This is the single source of truth for database column management.
 
 import os
 import sys
-from typing import List, Dict, Tuple, Optional, Any
+from typing import List, Dict, Optional, Any
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

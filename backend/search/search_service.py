@@ -20,7 +20,6 @@ from .core.search_types import (
     SearchFilters,
     SearchMetadata,
     SearchResponse,
-    SearchResult,
     SearchType,
 )
 from .providers.postgresql_search import PostgreSQLSearchProvider

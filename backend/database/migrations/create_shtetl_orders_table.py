@@ -5,7 +5,6 @@ Creates a shtetl_orders table for Jewish community marketplace order management.
 This table stores order information, customer details, and order status for store transactions.
 """
 
-import uuid
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB

@@ -10,7 +10,7 @@ import jwt
 import time
 from typing import Optional, Dict, Any
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -18,7 +18,6 @@ logger = get_logger(__name__)
 
 class AdminAuthError(Exception):
     """Raised when admin authentication fails."""
-    pass
 
 
 class AdminAuthManager:

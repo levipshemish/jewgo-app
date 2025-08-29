@@ -4,10 +4,8 @@ Comprehensive security testing for authentication, authorization, input validati
 """
 
 import pytest
-import json
 import re
-from unittest.mock import patch, MagicMock
-from flask import Flask
+from unittest.mock import patch
 from werkzeug.security import generate_password_hash
 import jwt
 from datetime import datetime, timedelta

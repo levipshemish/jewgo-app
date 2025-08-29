@@ -1,9 +1,8 @@
 import os
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from psycopg2.extras import RealDictCursor
 from utils.logging_config import get_logger
 from werkzeug.exceptions import HTTPException
 

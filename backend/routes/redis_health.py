@@ -9,10 +9,8 @@ Version: 2.0
 Last Updated: 2024
 """
 
-import json
 import os
 import time
-from typing import Any, Dict
 
 import redis
 from flask import Blueprint, current_app, jsonify

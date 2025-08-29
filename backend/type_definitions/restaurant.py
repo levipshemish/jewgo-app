@@ -1,7 +1,6 @@
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 #!/usr/bin/env python3
 """Restaurant Type Definitions for JewGo Backend.

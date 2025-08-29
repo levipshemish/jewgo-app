@@ -5,7 +5,6 @@ Creates a shtetl_messages table for Jewish community marketplace messaging.
 This table stores communication between customers and store owners, including inquiries, support, and order-related messages.
 """
 
-import uuid
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB

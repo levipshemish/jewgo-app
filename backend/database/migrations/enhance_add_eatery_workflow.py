@@ -13,22 +13,11 @@ New Fields:
 
 import os
 import sys
-from datetime import datetime
 
 from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
     create_engine,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.exc import SQLAlchemyError
 
 import logging

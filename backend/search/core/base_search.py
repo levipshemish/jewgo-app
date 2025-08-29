@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from utils.logging_config import get_logger
 
@@ -87,7 +87,6 @@ class BaseSearchProvider(ABC):
         Raises:
             SearchError: If search fails
         """
-        pass
 
     @abstractmethod
     async def get_suggestions(self, query: str, limit: int = 10) -> List[str]:
@@ -100,7 +99,6 @@ class BaseSearchProvider(ABC):
         Returns:
             List of suggestion strings
         """
-        pass
 
     @abstractmethod
     def get_search_type(self) -> str:
@@ -109,7 +107,6 @@ class BaseSearchProvider(ABC):
         Returns:
             Search type string (e.g., 'postgresql', 'fuzzy')
         """
-        pass
 
     @abstractmethod
     async def is_healthy(self) -> bool:
@@ -118,7 +115,6 @@ class BaseSearchProvider(ABC):
         Returns:
             True if healthy, False otherwise
         """
-        pass
 
     async def preprocess_query(self, query: str) -> str:
         """Preprocess the search query.
@@ -188,16 +184,13 @@ class SearchError(Exception):
 class SearchTimeoutError(SearchError):
     """Raised when search operation times out."""
 
-    pass
 
 
 class SearchConfigurationError(SearchError):
     """Raised when search configuration is invalid."""
 
-    pass
 
 
 class SearchProviderUnavailableError(SearchError):
     """Raised when search provider is unavailable."""
 
-    pass

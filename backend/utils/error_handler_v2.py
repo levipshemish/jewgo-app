@@ -6,8 +6,7 @@ exception handling with specific exception types and proper logging.
 """
 
 import logging
-import traceback
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 from sqlalchemy.exc import (
     DatabaseError,
@@ -31,23 +30,18 @@ T = TypeVar('T')
 # Custom exception types
 class ServiceError(Exception):
     """Base exception for service layer errors."""
-    pass
 
 class DatabaseServiceError(ServiceError):
     """Database-related service errors."""
-    pass
 
 class ExternalAPIError(ServiceError):
     """External API call errors."""
-    pass
 
 class ValidationServiceError(ServiceError):
     """Validation-related service errors."""
-    pass
 
 class ConfigurationError(ServiceError):
     """Configuration-related errors."""
-    pass
 
 
 def handle_database_operation(

@@ -4,10 +4,9 @@
 import json
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
-    from utils.cloudinary_uploader import CloudinaryUploader
     from utils.error_handler import NotFoundError, ValidationError
     from utils.hours_parser import parse_hours_blob
 
@@ -15,7 +14,6 @@ try:
     from .base_service import BaseService
 except ImportError:
     try:
-        from utils.cloudinary_uploader import CloudinaryUploader
         from utils.error_handler import NotFoundError, ValidationError
         from utils.hours_parser import parse_hours_blob
 
@@ -28,7 +26,6 @@ except ImportError:
         import hours_normalizer
         import hours_sources
         from base_service import BaseService
-        from utils.cloudinary_uploader import CloudinaryUploader
         from utils.error_handler import NotFoundError, ValidationError
         from utils.hours_parser import parse_hours_blob
 

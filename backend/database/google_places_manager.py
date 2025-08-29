@@ -35,7 +35,6 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 from utils.hours import HoursFormatter

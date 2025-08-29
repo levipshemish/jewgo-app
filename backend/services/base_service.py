@@ -4,7 +4,7 @@
 import os
 import sys
 import traceback
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict
 
 import structlog
 from utils.logging_config import get_logger

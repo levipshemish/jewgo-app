@@ -18,11 +18,10 @@ Version: 1.0
 Last Updated: 2024
 """
 
-import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from database.database_manager_v3 import Restaurant
-from sqlalchemy import and_, func, or_, text
+from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
 from utils.logging_config import get_logger
 

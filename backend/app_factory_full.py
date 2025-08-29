@@ -2,10 +2,10 @@ import os
 import time
 import traceback
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import sentry_sdk
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -95,40 +95,20 @@ except Exception as e:
     api_v4 = None
 
 from database.database_manager_v3 import EnhancedDatabaseManager
-from services.restaurant_service import RestaurantService
 from utils.api_response import (
     APIResponse,
-    created_response,
-    kosher_types_response,
-    not_found_response,
-    restaurant_response,
-    restaurants_response,
-    statistics_response,
-    success_response,
-    validation_error_response,
 )
 from utils.error_handler import ErrorHandler
-from utils.error_handler import ValidationError as AppValidationError
-from utils.error_handler import register_error_handlers
 from utils.feature_flags import (
     FeatureFlag,
     feature_flag_manager,
-    get_feature_flags,
-    is_feature_enabled,
-    require_feature_flag,
 )
 from utils.feedback_manager import FeedbackManager
-from utils.google_places_manager import GooglePlacesManager
 from utils.logging_config import configure_logging
 from utils.security import (
     SecurityManager,
-    log_request,
-    require_admin_auth,
-    require_scraper_auth,
     security_manager,
 )
-from utils.validation import ReviewCreateSchema, validate_payload
-
 from config.config import Config
 
 # Import Redis health blueprint with fallback

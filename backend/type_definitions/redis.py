@@ -7,7 +7,6 @@ including cache management, session handling, and rate limiting.
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import (
@@ -15,8 +14,6 @@ from typing import (
     Literal, TypeVar, Generic, Callable, Awaitable
 )
 from dataclasses import dataclass, field
-from redis import Redis, ConnectionPool
-from redis.exceptions import RedisError
 
 # Type variables for generic operations
 T = TypeVar('T')

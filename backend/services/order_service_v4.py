@@ -11,14 +11,13 @@ Version: 4.0
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
 from database.models import Order, OrderItem, Restaurant
 from services.base_service import BaseService
 from utils.error_handler import (
-    APIError,
     DatabaseError,
     NotFoundError,
     ValidationError,

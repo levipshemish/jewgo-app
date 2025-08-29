@@ -3,8 +3,6 @@
 
 import os
 import sys
-import json
-from datetime import datetime
 
 # Set up environment
 os.environ['DATABASE_URL'] = 'postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require'

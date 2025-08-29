@@ -1,8 +1,6 @@
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from bs4 import BeautifulSoup
 

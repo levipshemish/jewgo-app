@@ -26,11 +26,8 @@ from utils.logging_config import get_logger
 
 from ..core.base_search import BaseSearchProvider, SearchError
 from ..core.search_types import (
-    CertifyingAgency,
-    KosherCategory,
     SearchFilters,
     SearchResult,
-    SearchSuggestion,
     SearchType,
 )
 

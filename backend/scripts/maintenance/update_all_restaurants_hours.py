@@ -10,7 +10,6 @@ import time
 from datetime import datetime
 
 from database.database_manager_v3 import EnhancedDatabaseManager
-from database.google_places_manager import GooglePlacesData, GooglePlacesManager
 from dotenv import load_dotenv
 from sqlalchemy import text
 from utils.http_client import get_http_client

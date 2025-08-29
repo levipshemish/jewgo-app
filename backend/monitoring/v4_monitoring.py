@@ -16,7 +16,7 @@ import threading
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import psutil
 
@@ -25,7 +25,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
 from utils.cache_manager_v4 import CacheManagerV4
-from utils.feature_flags_v4 import api_v4_flags, get_migration_status
+from utils.feature_flags_v4 import get_migration_status
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

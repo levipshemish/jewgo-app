@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Add basic categories to the marketplace."""
 
-import os
 
 from database.database_manager_v4 import DatabaseManager
 

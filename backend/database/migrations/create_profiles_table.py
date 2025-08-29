@@ -4,7 +4,6 @@
 Creates the profiles table for storing user profile information.
 """
 
-import uuid
 
 import sqlalchemy as sa
 from alembic import op

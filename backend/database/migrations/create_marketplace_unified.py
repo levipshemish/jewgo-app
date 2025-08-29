@@ -16,14 +16,10 @@ This is the single source of truth for marketplace table creation.
 
 import os
 import sys
-import json
-from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Optional
 
-from sqlalchemy import create_engine, text, MetaData, Table, Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey
-from sqlalchemy.exc import SQLAlchemyError, OperationalError
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.sql import func
+from sqlalchemy import create_engine, text, MetaData
+
 
 # Add the parent directory to the path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

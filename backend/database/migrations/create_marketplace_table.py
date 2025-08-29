@@ -7,7 +7,6 @@ comprehensive fields for product management, vendor information, and
 kosher certification details.
 """
 
-import uuid
 
 import sqlalchemy as sa
 from alembic import op

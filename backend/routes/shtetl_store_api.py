@@ -9,16 +9,15 @@ Version: 1.0
 Last Updated: 2025-08-28
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request
 from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response, not_found_response
 from utils.feature_flags_v4 import require_api_v4_flag
 from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
 from utils.admin_auth import require_admin_auth
-from utils.decorators import safe_route
 
 # Service imports
-from services.shtetl_store_service import ShtetlStoreService, StoreData, StoreAnalytics
+from services.shtetl_store_service import ShtetlStoreService, StoreData
 
 logger = get_logger(__name__)
 

@@ -16,7 +16,6 @@ Missing columns:
 import os
 import sys
 
-import structlog
 from sqlalchemy import create_engine, text
 from utils.logging_config import get_logger
 

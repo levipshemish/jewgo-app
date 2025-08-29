@@ -13,7 +13,7 @@ import base64
 import os
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from utils.logging_config import get_logger
 

@@ -23,7 +23,7 @@ import logging
 import asyncio
 import uuid
 from typing import Dict, List, Set, Optional, Any, Callable
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 import websockets

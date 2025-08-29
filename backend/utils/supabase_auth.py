@@ -10,9 +10,9 @@ import jwt
 import requests
 from typing import Optional, Dict, Any
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify
 from utils.logging_config import get_logger
-from utils.error_handler import AuthenticationError, AuthorizationError
+from utils.error_handler import AuthenticationError
 
 logger = get_logger(__name__)
 
@@ -85,9 +85,7 @@ class SupabaseAuthManager:
                         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
                     except AttributeError:
                         # Fallback for older PyJWT versions
-                        from cryptography.hazmat.primitives.asymmetric import rsa
-                        from cryptography.hazmat.primitives import serialization
-                        import base64
+                        pass
                         
                         # Create a mock public key for testing
                         public_key = "mock-public-key"

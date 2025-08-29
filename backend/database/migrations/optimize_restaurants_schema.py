@@ -12,22 +12,11 @@ Changes:
 
 import os
 import sys
-from datetime import datetime
 
 from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
     create_engine,
     text,
 )
-from sqlalchemy.exc import SQLAlchemyError
 
 # Configure logging using unified logging configuration
 from utils.logging_config import get_logger

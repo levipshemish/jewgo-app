@@ -1,11 +1,9 @@
 import os
-from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
 
 import magic
 from PIL import Image, ImageOps
-from utils.error_handler import handle_file_operation, handle_operation_with_fallback
+from utils.error_handler import handle_operation_with_fallback
 from utils.logging_config import get_logger
 
 """Image Optimization Utility for JewGo Backend

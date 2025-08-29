@@ -34,23 +34,11 @@ Last Updated: 2024
 """
 
 import json
-import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
-    create_engine,
-    text,
-)
-from sqlalchemy.exc import DBAPIError, OperationalError, SQLAlchemyError
+from sqlalchemy import create_engine, text
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)

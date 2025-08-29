@@ -6,7 +6,7 @@ to replace broad Exception catches throughout the application.
 """
 
 import logging
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Dict, Optional, Callable
 from werkzeug.exceptions import HTTPException
 from functools import wraps
 

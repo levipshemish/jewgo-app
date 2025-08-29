@@ -7,8 +7,8 @@ the backend. These endpoints require Supabase authentication.
 
 from flask import Blueprint, request, jsonify
 from utils.logging_config import get_logger
-from utils.supabase_auth import require_user_auth, optional_user_auth, get_current_user, get_user_id
-from utils.error_handler import APIError, ValidationError, NotFoundError, DatabaseError
+from utils.supabase_auth import require_user_auth, get_current_user, get_user_id
+from utils.error_handler import ValidationError, NotFoundError
 from utils.config_manager import config_manager
 
 logger = get_logger(__name__)

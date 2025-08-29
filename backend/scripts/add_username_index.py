@@ -8,7 +8,6 @@ when looking up profiles by username.
 """
 
 import logging
-import os
 import sys
 from pathlib import Path
 

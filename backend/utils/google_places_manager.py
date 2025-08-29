@@ -15,15 +15,13 @@ import os
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from sqlalchemy import create_engine, text
 from utils.logging_config import get_logger
 
 from .google_places_searcher import GooglePlacesSearcher
-from .google_places_validator import GooglePlacesValidator
-from .validators import validate_website_url as unified_validate_website_url
 
 logger = get_logger(__name__)
 """Google Places Manager Utility.

@@ -1,11 +1,11 @@
 import os
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy import create_engine, event, text
-from sqlalchemy.exc import DBAPIError, OperationalError, SQLAlchemyError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from utils.logging_config import get_logger
 

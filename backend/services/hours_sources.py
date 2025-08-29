@@ -5,7 +5,6 @@ This module provides functions for fetching hours data from external sources
 like Google Places API and ORB certification data.
 """
 
-import json
 import logging
 import os
 import re

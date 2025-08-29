@@ -6,10 +6,9 @@ Jewish community marketplace items, completely independent
 from the regular marketplace table.
 """
 
-import uuid
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY
 
 # revision identifiers, used by Alembic.
 revision = "create_shtetl_marketplace_table"
