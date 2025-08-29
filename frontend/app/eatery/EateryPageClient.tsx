@@ -116,6 +116,11 @@ export function EateryPageClient() {
     }
   }, [isMobile, viewportWidth]);
   
+  // Unified mobile detection for infinite scroll and UI gating
+  const isMobileView = useMemo(() => {
+    return isMobile || viewportWidth <= 768;
+  }, [isMobile, viewportWidth]);
+
   // Advanced filters hook
   const {
     activeFilters,
@@ -149,8 +154,8 @@ export function EateryPageClient() {
     params.set('limit', String(limit));
     params.set('offset', String(offset)); // ✅ backend expects this
     
-    if (query && query.trim()) {
-      params.set('search', query.trim());
+    if (query && String(query).trim()) {
+      params.set('search', String(query).trim());
     }
     
     if (filters) {
@@ -192,9 +197,9 @@ export function EateryPageClient() {
       // Dietary filters (multi-select)
       if (Array.isArray(apiFilters.dietary) && apiFilters.dietary.length > 0) {
         apiFilters.dietary.forEach(d => params.append('dietary', d));
-      } else if (apiFilters.dietary && typeof apiFilters.dietary === 'string' && apiFilters.dietary.trim() !== '') {
+      } else if (apiFilters.dietary && typeof apiFilters.dietary === 'string' && String(apiFilters.dietary).trim() !== '') {
         // Handle single string dietary for backward compatibility
-        params.set('dietary', apiFilters.dietary.trim());
+        params.set('dietary', String(apiFilters.dietary).trim());
       }
     }
     
@@ -222,7 +227,7 @@ export function EateryPageClient() {
         setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
         
         // Reset infinite scroll state for mobile
-        if (isMobile) {
+        if (isMobileView) {
           setAllRestaurants(data.data); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
           setTotalRestaurants(data.total); // Track total count
@@ -274,13 +279,6 @@ export function EateryPageClient() {
   // Infinite scroll hook - only enabled on mobile  
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     async () => {
-      // Don't fetch if already loading
-      if (loading) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Blocked by loading state');
-        }
-        return;
-      }
       
       // Get current values using refs to avoid stale closures
       const currentItems = allRestaurants.length;
@@ -354,9 +352,9 @@ export function EateryPageClient() {
       }
     },
     { 
-      threshold: isMobile ? 0.2 : 0.3, // Less aggressive on mobile for better UX
-      rootMargin: isMobile ? '100px' : '200px', // Smaller margin to reduce premature loading
-      disabled: !isMobile // Only enable infinite scroll on mobile
+      threshold: isMobileView ? 0.2 : 0.3,
+      rootMargin: isMobileView ? '100px' : '200px',
+      disabled: loading || !isMobileView
     }
   );
 
@@ -370,10 +368,10 @@ export function EateryPageClient() {
 
   // Reset hasMore when filters or search change
   useEffect(() => {
-    if (isMobile) {
+    if (isMobileView) {
       setHasMore(true);
     }
-  }, [searchQuery, activeFilters, isMobile, setHasMore]);
+  }, [searchQuery, activeFilters, isMobileView, setHasMore]);
 
 
 
@@ -431,7 +429,7 @@ export function EateryPageClient() {
   // Calculate distances and sort restaurants when location is available
   const restaurantsWithDistance = useMemo(() => {
     // Use the appropriate data source based on device type
-    const dataSource = isMobile ? allRestaurants : restaurants;
+    const dataSource = isMobileView ? allRestaurants : restaurants;
     
     if (process.env.NODE_ENV === 'development') {
       console.log('📍 EateryPage: Recalculating restaurant sorting', {
@@ -751,7 +749,7 @@ export function EateryPageClient() {
 
 
       {/* Infinite scroll trigger element - only on mobile */}
-      {isMobile && (
+      {isMobileView && (
         <div 
           ref={loadingRef}
           className="h-32 w-full my-8 flex items-center justify-center border-t border-gray-200"
