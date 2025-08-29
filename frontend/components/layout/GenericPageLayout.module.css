@@ -23,6 +23,13 @@
   }
 }
 
+.stickyTop {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--sticky-bg, #fff);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--min-col, 150px), 1fr));

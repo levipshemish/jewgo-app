@@ -12,6 +12,9 @@ The `GenericPageLayout` component provides a responsive grid container for listi
 - `gridClassName`: merges additional grid classes with the default module class.
 - `containerClassName`: optional class for the outer wrapper.
 - `ariaColCount` / `ariaRowCount`: optional accessibility hints for grid dimensions.
+- `header`, `navigation`, `actions`: optional React nodes rendered in a sticky top section.
+- `beforeItems`, `afterItems`: optional content placed before or after the item grid.
+- `footer`: optional React node rendered after the grid (e.g., bottom navigation).
 - `as`: wrapper element, defaults to `section`.
 
 ### Accessibility

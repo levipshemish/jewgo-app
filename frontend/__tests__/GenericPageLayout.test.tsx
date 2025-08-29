@@ -131,5 +131,21 @@ describe('GenericPageLayout', () => {
     const grid = screen.getByTestId('gpl-grid');
     expect(grid).toHaveAttribute('aria-busy', 'true');
   });
+
+  it('renders header, navigation, and actions when provided', () => {
+    render(
+      <GenericPageLayout
+        items={[1]}
+        renderItem={(item) => <div>{item}</div>}
+        header={<div data-testid="hdr">H</div>}
+        navigation={<div data-testid="nav">N</div>}
+        actions={<div data-testid="act">A</div>}
+      />
+    );
+
+    expect(screen.getByTestId('hdr')).toBeInTheDocument();
+    expect(screen.getByTestId('nav')).toBeInTheDocument();
+    expect(screen.getByTestId('act')).toBeInTheDocument();
+  });
 });
 

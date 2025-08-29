@@ -15,6 +15,12 @@ interface GenericPageLayoutProps<T> {
   listLabel?: string;
   sentinelRef?: React.RefObject<HTMLDivElement>;
   emptyRenderer?: () => React.ReactNode;
+  header?: React.ReactNode;
+  navigation?: React.ReactNode;
+  actions?: React.ReactNode;
+  beforeItems?: React.ReactNode;
+  afterItems?: React.ReactNode;
+  footer?: React.ReactNode;
   as?: React.ElementType;
   containerClassName?: string;
   ariaColCount?: number;
@@ -36,6 +42,12 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     listLabel,
     sentinelRef,
     emptyRenderer,
+    header,
+    navigation,
+    actions,
+    beforeItems,
+    afterItems,
+    footer,
     as: Wrapper = 'section',
     containerClassName,
     ariaColCount,
@@ -46,33 +58,49 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
   const mergedRef = sentinelRef ?? internalSentinelRef;
 
   return (
-    <Wrapper className={`${styles.pageContainer} ${containerClassName ?? ''}`}>
-      {pageTitle && <h1 className={styles.pageTitle}>{pageTitle}</h1>}
-
-      {items.length > 0 || isLoading ? (
-        <div
-          className={`${styles.grid} ${gridClassName ?? ''}`}
-          style={{ ['--min-col' as any]: minColumnWidth }}
-          data-testid="gpl-grid"
-          role="grid"
-          aria-busy={isLoading || isLoadingMore}
-          aria-label={listLabel || pageTitle}
-          aria-colcount={ariaColCount}
-          aria-rowcount={ariaRowCount}
-        >
-          {items.map((item, index) => (
-            <div key={getItemKey ? getItemKey(item, index) : index} role="gridcell">
-              {renderItem(item, index)}
-            </div>
-          ))}
+    <Wrapper className={containerClassName ?? ''}>
+      {(header || navigation || actions) && (
+        <div className={styles.stickyTop}>
+          {header}
+          {navigation}
+          {actions}
         </div>
-      ) : (
-        emptyRenderer ? emptyRenderer() : null
       )}
 
-      {enableInfiniteScroll && hasNextPage && (
-        <div ref={mergedRef} className={styles.sentinel} data-testid="gpl-sentinel" />
-      )}
+      <div className={styles.pageContainer}>
+        {pageTitle && <h1 className={styles.pageTitle}>{pageTitle}</h1>}
+
+        {beforeItems}
+
+        {items.length > 0 || isLoading ? (
+          <div
+            className={`${styles.grid} ${gridClassName ?? ''}`}
+            style={{ ['--min-col' as any]: minColumnWidth }}
+            data-testid="gpl-grid"
+            role="grid"
+            aria-busy={isLoading || isLoadingMore}
+            aria-label={listLabel || pageTitle}
+            aria-colcount={ariaColCount}
+            aria-rowcount={ariaRowCount}
+          >
+            {items.map((item, index) => (
+              <div key={getItemKey ? getItemKey(item, index) : index} role="gridcell">
+                {renderItem(item, index)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          emptyRenderer ? emptyRenderer() : null
+        )}
+
+        {enableInfiniteScroll && hasNextPage && (
+          <div ref={mergedRef} className={styles.sentinel} data-testid="gpl-sentinel" />
+        )}
+
+        {afterItems}
+      </div>
+
+      {footer}
 
       <div className={styles.srOnly} aria-live="polite">
         {isLoadingMore ? 'Loading more…' : ''}
