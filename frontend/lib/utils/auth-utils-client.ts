@@ -169,7 +169,7 @@ export async function transformSupabaseUserWithRoles(
         
         transformedUser.adminRole = role;
         transformedUser.roleLevel = roleData.roleLevel;
-        transformedUser.permissions = roleData.permissions;
+        transformedUser.permissions = [...roleData.permissions];
         transformedUser.isSuperAdmin = role === 'super_admin';
       }
     } catch (error) {
@@ -182,12 +182,20 @@ export async function transformSupabaseUserWithRoles(
 }
 
 /**
- * Legacy transform function for backward compatibility
- * Use transformSupabaseUserWithRoles with options for new implementations
+ * Legacy transform function for no-role behavior
+ * @deprecated Use transformSupabaseUserWithRoles with options instead. Removal planned for Q2 2025.
  */
-export async function transformSupabaseUser(user: User | null): Promise<TransformedUser | null> {
-  // Call the new function without role fetching for backward compatibility
+export async function transformSupabaseUserLegacy(user: User | null): Promise<TransformedUser | null> {
+  // Legacy behavior: no role fetching
   return await transformSupabaseUserWithRoles(user, { includeRoles: false });
+}
+
+/**
+ * Primary transform function - delegates to transformSupabaseUserWithRoles for consistency
+ * Use this for all new implementations
+ */
+export async function transformSupabaseUser(user: User | null, options: { includeRoles?: boolean; userToken?: string } = {}): Promise<TransformedUser | null> {
+  return await transformSupabaseUserWithRoles(user, options);
 }
 
 /**
@@ -206,13 +214,13 @@ export function handleUserLoadError(error: any, router?: any): void {
  * Check if user has admin role
  */
 export function isAdminUser(user: TransformedUser | null): boolean {
-  return !!(user?.adminRole && user.roleLevel > 0);
+  return !!(user && (user.isSuperAdmin || (user.adminRole && user.roleLevel > 0)));
 }
 
 /**
  * Check if user has specific permission
  */
-export function hasUserPermission(user: TransformedUser | null, permission: string): boolean {
+export function hasUserPermission(user: TransformedUser | null, permission: Permission): boolean {
   if (!user) {
     return false;
   }

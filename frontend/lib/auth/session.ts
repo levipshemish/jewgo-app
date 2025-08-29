@@ -5,6 +5,7 @@
 
 import { createServerSupabaseClient } from '../supabase/server';
 import { TransformedUser } from '../utils/auth-utils';
+import { Permission } from '../constants/permissions';
 
 /**
  * Get current user session
@@ -50,7 +51,7 @@ function transformUser(user: any): TransformedUser {
     isEmailVerified: true, // Default to true for now
     isPhoneVerified: false, // Default to false for now
     role: 'user', // Default role
-    permissions: ['read', 'write'], // Default permissions
+    permissions: ['restaurant:view', 'review:view'] as Permission[], // Default permissions
     subscriptionTier: 'free', // Default subscription tier
     // Initialize role fields
     adminRole: null,

@@ -15,7 +15,7 @@ export async function POST(
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('RESTAURANT_EDIT')) {
+    if (!adminUser.permissions.includes('restaurant:edit')) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

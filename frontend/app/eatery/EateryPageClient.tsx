@@ -99,33 +99,40 @@ export function EateryPageClient() {
   // Mobile optimization hook
   const { isMobile, viewportWidth } = useMobileOptimization();
   
+  // Hydration state to prevent SSR/client mismatch
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+  
   // Responsive items per page calculation
   const mobileOptimizedItemsPerPage = useMemo(() => {
     // Calculate items per page to ensure exactly 4 rows on every screen size
-    if (isMobile) {
+    if (isHydrated && isMobile) {
       return 8; // Keep initial payload light on mobile for faster loads
     } else {
       // For desktop, calculate based on viewport width to ensure 4 rows
       let columnsPerRow = 3; // Default fallback
       
-      if (viewportWidth >= 1441) {
+      if (isHydrated && viewportWidth >= 1441) {
         columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
-      } else if (viewportWidth >= 1025) {
+      } else if (isHydrated && viewportWidth >= 1025) {
         columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
-      } else if (viewportWidth >= 769) {
+      } else if (isHydrated && viewportWidth >= 769) {
         columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
-      } else if (viewportWidth >= 641) {
+      } else if (isHydrated && viewportWidth >= 641) {
         columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
       }
       
       return columnsPerRow * 4; // Always 4 rows
     }
-  }, [isMobile, viewportWidth]);
+  }, [isHydrated, isMobile, viewportWidth]);
   
   // Unified mobile detection for infinite scroll and UI gating
   const isMobileView = useMemo(() => {
-    return isMobile || viewportWidth <= 768;
-  }, [isMobile, viewportWidth]);
+    return isHydrated && (isMobile || viewportWidth <= 768);
+  }, [isHydrated, isMobile, viewportWidth]);
 
   // Advanced filters hook
   const {
@@ -753,7 +760,7 @@ export function EateryPageClient() {
         </div>
       ) : (
         <div 
-          className={`restaurant-grid ${isMobileView ? 'infinite-scroll' : ''}`}
+          className={`restaurant-grid ${isHydrated && isMobileView ? 'infinite-scroll' : ''}`}
           role="grid"
           aria-label="Restaurant listings"
           style={{ 
@@ -797,7 +804,7 @@ export function EateryPageClient() {
               />
             </div>
           ))}
-          {isMobileView && isLoadingMore && (
+          {isHydrated && isMobileView && isLoadingMore && (
             Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map((_, i) => (
               <div key={`skeleton-${i}`} className="w-full" role="presentation">
                 <div className="skeleton-card">
@@ -811,7 +818,7 @@ export function EateryPageClient() {
         </div>
       )}
       
-      {!isMobile && totalPages > 1 && (
+      {isHydrated && !isMobile && totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
@@ -829,7 +836,7 @@ export function EateryPageClient() {
 
 
       {/* Infinite scroll trigger element - only on mobile */}
-      {isMobileView && (
+      {isHydrated && isMobileView && (
         <div 
           ref={loadingRef}
           className="h-32 w-full my-8 flex items-center justify-center border-t border-gray-200"
@@ -854,7 +861,7 @@ export function EateryPageClient() {
         </div>
       )}
 
-      {isMobileView && isLoadingMore && (
+      {isHydrated && isMobileView && isLoadingMore && (
         <div className="loading-toast" role="status" aria-live="polite">
           <div className="spinner" />
           <span>Loading more…</span>

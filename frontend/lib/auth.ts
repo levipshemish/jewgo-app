@@ -6,6 +6,7 @@ import {
   transformSupabaseUser, 
   type TransformedUser 
 } from "@/lib/utils/auth-utils";
+import { Permission } from "@/lib/constants/permissions";
 
 // Enhanced Supabase authentication system with role integration
 export async function getSessionUser(): Promise<TransformedUser | null> {
@@ -90,7 +91,7 @@ export async function requireAdminUser(): Promise<TransformedUser> {
     redirect("/auth/signin");
   }
   
-  if (!(user.isSuperAdmin || user.adminRole || (user.roleLevel ?? 0) > 0)) {
+  if (!user.isSuperAdmin && !(user.adminRole && user.roleLevel > 0)) {
     // Authenticated but not an admin
     redirect("/");
   }
@@ -101,7 +102,7 @@ export async function requireAdminUser(): Promise<TransformedUser> {
 /**
  * Check if user has specific permission
  */
-export async function checkUserPermission(permission: string): Promise<boolean> {
+export async function checkUserPermission(permission: Permission): Promise<boolean> {
   const user = await getSessionUserWithRoles();
   
   if (!user) {
@@ -122,4 +123,22 @@ export async function checkMinimumRoleLevel(minLevel: number): Promise<boolean> 
   }
   
   return (user.roleLevel || 0) >= minLevel;
+}
+
+/**
+ * Assert that user has admin role or throw error
+ * For use in API routes where redirects are not appropriate
+ */
+export async function assertAdminOrThrow(): Promise<TransformedUser> {
+  const user = await getSessionUserWithRoles();
+  
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+  
+  if (!user.isSuperAdmin && !(user.adminRole && user.roleLevel > 0)) {
+    throw new Error('Admin access required');
+  }
+  
+  return user;
 }

@@ -181,7 +181,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         };
       default:
         return {
-          cardClass: hasFullWidth ? "w-full rounded-2xl overflow-hidden p-2" : "w-[200px] rounded-2xl overflow-hidden p-2",
+          cardClass: hasFullWidth ? "w-full rounded-2xl overflow-hidden p-0" : "w-[200px] rounded-2xl overflow-hidden p-0",
           imageClass: "aspect-[4/3]",
           titleClass: "text-sm font-semibold",
           badgeClass: "text-xs px-2 py-0.5"
@@ -312,21 +312,21 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="unified-card-content pt-1 flex flex-col bg-transparent"
+        className="unified-card-content pt-0.5 px-1 flex flex-col bg-transparent"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-1 mb-0 min-h-[32px]">
+        <div className="flex justify-between items-start gap-1 mb-0 min-h-[16px]">
           <h3 
             className={cn(
               variantStyles.titleClass,
               "text-gray-800 m-0 flex-1 min-w-0 transition-colors duration-200 group-hover:text-gray-900 leading-tight"
             )}
             style={{ 
-              minHeight: '32px',
+              minHeight: '16px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -357,7 +357,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center h-[16px] relative">
+        <div className="flex justify-between items-center h-[10px] relative">
           {/* Subtitle - Locked to left */}
           <div className="flex-1 min-w-0">
             <p 

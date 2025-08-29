@@ -58,7 +58,7 @@ export interface TransformedUser {
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   role: string;
-  permissions: readonly Permission[];
+  permissions: Permission[];
   subscriptionTier: string;
   // New role fields
   /** Nullable role string when present */

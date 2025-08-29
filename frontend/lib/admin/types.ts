@@ -1,4 +1,5 @@
 import { TransformedUser } from '@/lib/utils/auth-utils';
+import { Permission } from '@/lib/constants/permissions';
 
 // Admin permission levels
 export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
@@ -6,7 +7,7 @@ export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_adm
 export interface AdminUser extends TransformedUser {
   isSuperAdmin: boolean;
   adminRole: AdminRole | null;
-  permissions: string[];
+  permissions: Permission[];
 }
 
 // Permission definitions
@@ -105,6 +106,6 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
 /**
  * Check if user has a specific permission
  */
-export function hasPermission(user: AdminUser, permission: string): boolean {
+export function hasPermission(user: AdminUser, permission: Permission): boolean {
   return user.permissions.includes(permission) || user.isSuperAdmin;
 }

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { transformSupabaseUser } from '@/lib/utils/auth-utils';
 import { AdminUser, AdminRole, ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
+import { Permission } from '@/lib/constants/permissions';
 // Re-export types and helpers so other modules can import from this single entrypoint
 export type { AdminUser, AdminRole };
 export { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from './types';
@@ -181,7 +182,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     const isSuperAdmin = adminRole === 'super_admin';
 
     // Get permissions for role
-    const permissions = ROLE_PERMISSIONS[adminRole] || [];
+    const permissions = (ROLE_PERMISSIONS[adminRole] || []) as Permission[];
 
     const adminUser: AdminUser = {
       ...transformedUser,
@@ -200,14 +201,14 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
 /**
  * Check if user has any of the specified permissions
  */
-export function hasAnyPermission(user: AdminUser, permissions: string[]): boolean {
+export function hasAnyPermission(user: AdminUser, permissions: Permission[]): boolean {
   return permissions.some(permission => user.permissions.includes(permission)) || user.isSuperAdmin;
 }
 
 /**
  * Check if user has all of the specified permissions
  */
-export function hasAllPermissions(user: AdminUser, permissions: string[]): boolean {
+export function hasAllPermissions(user: AdminUser, permissions: Permission[]): boolean {
   return permissions.every(permission => user.permissions.includes(permission)) || user.isSuperAdmin;
 }
 
@@ -262,7 +263,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
         providerInfo: { name: 'Development', icon: '👤', color: '#6B7280', displayName: 'Development' },
         isSuperAdmin: true,
         adminRole: 'super_admin',
-        permissions: Object.values(ADMIN_PERMISSIONS),
+        permissions: Object.values(ADMIN_PERMISSIONS) as Permission[],
         // Added required TransformedUser fields
         isEmailVerified: true,
         isPhoneVerified: false,

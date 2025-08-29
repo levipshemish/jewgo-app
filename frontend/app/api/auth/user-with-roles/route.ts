@@ -24,6 +24,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Validate BACKEND_URL in production
+    if (process.env.NODE_ENV === 'production' && !BACKEND_URL) {
+      console.error('[Auth] BACKEND_URL not configured in production');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Backend not configured',
+          adminRole: null,
+          roleLevel: 0,
+          permissions: []
+        },
+        { status: 500 }
+      );
+    }
+
     const supabase = await createServerSupabaseClient();
     
     // Check for Authorization header first, fall back to cookie session
@@ -33,23 +48,38 @@ export async function GET(request: NextRequest) {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       const { data, error } = await supabase.auth.getUser(token);
-      user = data.user;
-      accessToken = token;
       
-      if (error) {
-        console.error('[Auth] Error validating Authorization header:', error);
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Invalid authorization token',
-            adminRole: null,
-            roleLevel: 0,
-            permissions: []
-          },
-          { status: 401 }
-        );
+      if (!error && data.user) {
+        // Authorization header is valid
+        user = data.user;
+        accessToken = token;
+      } else {
+        // Authorization header is invalid, try cookie fallback
+        console.warn('[Auth] Invalid Authorization header, trying cookie fallback:', error);
+        
+        const { data: { user: cookieUser }, error: cookieError } = await supabase.auth.getUser();
+        if (!cookieError && cookieUser) {
+          user = cookieUser;
+          // Get token from session for backend call
+          const { data: { session } } = await supabase.auth.getSession();
+          accessToken = session?.access_token;
+        } else {
+          // Both Authorization header and cookie failed
+          console.error('[Auth] Both Authorization header and cookie failed');
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: 'Invalid authorization token',
+              adminRole: null,
+              roleLevel: 0,
+              permissions: []
+            },
+            { status: 401 }
+          );
+        }
       }
     } else {
+      // No Authorization header, use cookie session
       const { data: { user: cookieUser }, error } = await supabase.auth.getUser();
       user = cookieUser;
       
@@ -132,7 +162,7 @@ export async function GET(request: NextRequest) {
       const roleLevel = roleData.level || 0;
       
       // Map role to permissions using existing permission system
-      const permissions = mapRoleToPermissions(adminRole);
+      const permissions = ROLE_PERMISSIONS[adminRole as Role] || [];
 
       return NextResponse.json(
         { 
@@ -173,12 +203,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Map backend role to frontend permissions
- * Uses the shared ROLE_PERMISSIONS mapping from constants
- */
-function mapRoleToPermissions(role: string | null): readonly Permission[] {
-  if (!role) {return [];}
-  
-  return ROLE_PERMISSIONS[role as Role] || [];
-}

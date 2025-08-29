@@ -46,15 +46,9 @@ export {
 } from './auth-utils-client';
 
 /**
- * @deprecated Use transformSupabaseUser (server-aware) or transformSupabaseUserWithRoles (explicit) instead.
- * This alias will be removed in a future version to reduce API confusion.
- * 
- * Migration guide:
- * - For server-side use: transformSupabaseUser
- * - For client-side with roles: transformSupabaseUserWithRoles
- * - For client-side basic transform: import directly from auth-utils-client
+ * @deprecated Client alias for backward compatibility. Use primary transformSupabaseUser instead. Removal planned for Q2 2025.
  */
-export { transformSupabaseUser as transformSupabaseUserClient } from './auth-utils-client';
+export { transformSupabaseUserLegacy as transformSupabaseUserClient } from './auth-utils-client';
 
 // Re-export types from centralized location
 export type { TransformedUser, AuthProvider } from '@/lib/types/supabase-auth';
