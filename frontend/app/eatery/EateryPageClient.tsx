@@ -109,15 +109,8 @@ export function EateryPageClient() {
         location,
       });
       
-      // Add debug logging
-      console.log('API Response:', data);
-      
       if (data.success) {
         let sortedRestaurants = data.restaurants || [];
-        
-        // Add debug logging for restaurants array
-        console.log('Restaurants array:', sortedRestaurants);
-        console.log('Restaurants length:', sortedRestaurants.length);
         
         // Sort by distance if location is available
         if (location && sortedRestaurants.length > 0) {
@@ -134,15 +127,6 @@ export function EateryPageClient() {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
       appLogger.error('Failed to fetch restaurants', { error: errorMessage, filters });
-      
-      // Add debug logging for errors
-      console.error('Fetch restaurants error:', err);
-      console.error('Error details:', {
-        message: errorMessage,
-        filters,
-        currentPage,
-        location
-      });
     } finally {
       setLoading(false);
     }
