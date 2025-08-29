@@ -774,7 +774,7 @@ export function EateryPageClient() {
           {restaurantsWithDistance.map((restaurant, index) => (
             <div 
               key={`restaurant-${restaurant.id}-${index}`} 
-              className="w-full" 
+              className="min-w-0 h-full" 
               role="gridcell"
               style={{
                 contain: 'layout style paint',
@@ -800,7 +800,7 @@ export function EateryPageClient() {
                 showStarInBadge={true}
                 onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
                 priority={index < 4}
-                className="w-full h-full"
+                className="h-full"
               />
             </div>
           ))}
@@ -835,30 +835,13 @@ export function EateryPageClient() {
 
 
 
-      {/* Infinite scroll trigger element - only on mobile */}
+      {/* Infinite scroll trigger element - outside the grid */}
       {isHydrated && isMobileView && (
         <div 
           ref={loadingRef}
-          className="h-32 w-full my-8 flex items-center justify-center border-t border-gray-200"
+          className="h-px w-full"
           aria-hidden="true"
-        >
-          {/* Spinner hidden; skeletons + toast provide feedback */}
-          {!isLoadingMore && hasMore && (
-            <div className="text-xs text-gray-400">
-              Scroll for more restaurants
-            </div>
-          )}
-          {!hasMore && restaurantsWithDistance.length > 0 && (
-            <div className="text-xs text-gray-400">
-              All restaurants loaded ({restaurantsWithDistance.length} total)
-            </div>
-          )}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-400 mt-2">
-              Debug: Mobile={isMobile.toString()}, hasMore={hasMore.toString()}, isLoading={isLoadingMore.toString()}, items={restaurantsWithDistance.length}/{totalRestaurants}, page={infiniteScrollPage}
-            </div>
-          )}
-        </div>
+        />
       )}
 
       {isHydrated && isMobileView && isLoadingMore && (

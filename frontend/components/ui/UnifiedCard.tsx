@@ -203,7 +203,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return filtered.join(' ');
   }, [className]);
 
-  // Render content without motion during scroll to prevent flickering
+    // Render content without motion during scroll to prevent flickering
   const cardContent = (
     <>
       {/* Persistent live region for announcements */}
@@ -212,107 +212,103 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       </span>
       
       {/* Image Container */}
-      <div className="relative w-full">
-        <div className="relative w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-transparent border-0 shadow-none">
-          {/* Loading Placeholder */}
-          {imageLoading && (
-            <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center rounded-[20px]">
-              <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-            </div>
-          )}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl">
+        {/* Loading Placeholder */}
+        {imageLoading && (
+          <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          </div>
+        )}
 
-          {/* Next.js Image Component */}
-          {heroImageUrl && (
-            <Image
-              src={heroImageUrl}
-              alt={cardData.title || 'Product image'}
-              fill
-              className={cn(
-                "object-cover transition-transform duration-300 rounded-[20px] opacity-100",
-                "group-hover:scale-105"
-              )}
-              onLoad={() => setImageLoading(false)}
-              onError={() => {
-                setImageError(true);
-                setImageLoading(false);
-                // Fallback to default image on error
-                // eslint-disable-next-line no-console
-                console.error(`Failed to load image: ${heroImageUrl}`);
-              }}
-              sizes="(max-width: 768px) 45vw, 200px"
-              unoptimized={false}
-              priority={priority}
-            />
-          )}
+        {/* Next.js Image Component */}
+        {heroImageUrl && (
+          <Image
+            src={heroImageUrl}
+            alt={cardData.title || 'Product image'}
+            fill
+            className={cn(
+              "object-cover transition-transform duration-300 opacity-100",
+              "group-hover:scale-105"
+            )}
+            onLoad={() => setImageLoading(false)}
+            onError={() => {
+              setImageError(true);
+              setImageLoading(false);
+              // Fallback to default image on error
+              // eslint-disable-next-line no-console
+              console.error(`Failed to load image: ${heroImageUrl}`);
+            }}
+            sizes="(max-width: 768px) 45vw, 200px"
+            unoptimized={false}
+            priority={priority}
+          />
+        )}
 
-          {/* Fallback image when hero image fails or is not available */}
-          {(!heroImageUrl || imageError) && (
-            <div className="absolute inset-0 bg-gray-200 rounded-[20px] flex items-center justify-center">
-              <div className="text-gray-400 text-sm text-center px-2">
-                <div className="w-8 h-8 mx-auto mb-2">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                  </svg>
-                </div>
-                <span className="text-xs">Image unavailable</span>
+        {/* Fallback image when hero image fails or is not available */}
+        {(!heroImageUrl || imageError) && (
+          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+            <div className="text-gray-400 text-sm text-center px-2">
+              <div className="w-8 h-8 mx-auto mb-2">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                  <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                </svg>
               </div>
+              <span className="text-xs">Image unavailable</span>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Image Tag - now positioned relative to image wrapper */}
-          {cardData.imageTag && (
-            <div
-              className="unified-card-tag"
-              aria-label={`Tag: ${cardData.imageTag}`}
-              style={{ zIndex: 10 }}
-            >
-              <span 
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  fontSize: 'inherit',
-                  lineHeight: 'inherit',
-                  fontWeight: 'inherit'
-                }}
-              >
-                {cardData.imageTag}
-              </span>
-            </div>
-          )}
-
-          {/* Heart Button - positioned relative to image wrapper */}
-          {cardData.showHeart && (
-            <button
-            className={`unified-card-heart ${liked ? 'liked' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleLikeToggle();
+        {/* Image Tag - now positioned relative to image wrapper */}
+        {cardData.imageTag && (
+          <div
+            className="unified-card-tag"
+            aria-label={`Tag: ${cardData.imageTag}`}
+            style={{ zIndex: 10 }}
+          >
+            <span 
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
+                fontSize: 'inherit',
+                lineHeight: 'inherit',
+                fontWeight: 'inherit'
               }}
-              onKeyDown={handleHeartKeyDown}
+            >
+              {cardData.imageTag}
+            </span>
+          </div>
+        )}
+
+        {/* Heart Button - positioned relative to image wrapper */}
+        {cardData.showHeart && (
+          <button
+            className={`unified-card-heart ${liked ? 'liked' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeToggle();
+            }}
+            onKeyDown={handleHeartKeyDown}
             aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
             aria-pressed={liked}
-            >
-              <span className="relative block w-[18px] h-[18px]">
-                {/* Always use filled heart SVG with CSS controlling colors */}
-                <svg 
-                  viewBox="0 0 24 24" 
-                  className="w-[18px] h-[18px]"
-                  aria-hidden
-                >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-              </span>
-            </button>
-          )}
-        </div>
-        
-        
+          >
+            <span className="relative block w-[18px] h-[18px]">
+              {/* Always use filled heart SVG with CSS controlling colors */}
+              <svg 
+                viewBox="0 0 24 24" 
+                className="w-[18px] h-[18px]"
+                aria-hidden
+              >
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </span>
+          </button>
+        )}
       </div>
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="unified-card-content pt-0.5 px-1 flex flex-col bg-transparent"
+        className="unified-card-content px-2 pt-2 pb-0 flex flex-col min-w-0"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
@@ -323,23 +319,16 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           <h3 
             className={cn(
               variantStyles.titleClass,
-              "text-gray-800 m-0 flex-1 min-w-0 transition-colors duration-200 group-hover:text-gray-900 leading-tight"
+              "text-sm font-semibold line-clamp-1 break-words min-w-0 text-black m-0 flex-1 transition-colors duration-200 group-hover:text-gray-900"
             )}
-            style={{ 
-              minHeight: '16px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%'
-            }}
             aria-label={`Title: ${cardData.title}`}
           >
-            {cardData.title.length > 10 ? `${cardData.title.substring(0, 10)}...` : cardData.title}
+            {cardData.title}
           </h3>
           {cardData.badge && (
             <div
               className={cn(
-                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
+                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm ml-auto",
                 variantStyles.badgeClass
               )}
               style={{
@@ -350,50 +339,20 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               aria-label={`Rating: ${cardData.badge}`}
             >
               {showStarInBadge && (
-                <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                <Star size={12} className="fill-yellow-400 text-yellow-400 flex-shrink-0" style={{ marginTop: '-1px' }} />
               )}
-              {cardData.badge}
+              <span className="leading-none" style={{ marginTop: '1px' }}>{cardData.badge}</span>
             </div>
           )}
         </div>
         
-        <div className="flex justify-between items-center h-[10px] relative">
-          {/* Subtitle - Locked to left */}
-          <div className="flex-1 min-w-0">
-            <p 
-              className="text-xs font-bold text-black m-0 text-left whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-900"
-              style={{ 
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                opacity: cardData.subtitle ? 1 : 0
-              }}
-              aria-label={cardData.subtitle ? `Price range: ${cardData.subtitle}` : ''}
-            >
-              {cardData.subtitle || 'Placeholder'}
-            </p>
-          </div>
-          
-          {/* Spacer to ensure proper separation */}
-          <div className="flex-shrink-0 w-2" />
-          
-          {/* Additional Text - Locked to right */}
-          <div className="flex-shrink-0">
-            <p 
-              className="text-xs text-gray-500 m-0 text-right whitespace-nowrap truncate transition-colors duration-200 group-hover:text-gray-600"
-              style={{ 
-                width: '60px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                opacity: cardData.additionalText ? 1 : 0
-              }}
-              aria-label={cardData.additionalText ? `Additional info: ${cardData.additionalText}` : ''}
-            >
-              {cardData.additionalText || 'Placeholder'}
-            </p>
-          </div>
+        <div className="flex justify-between items-center mt-0.5">
+          <p className="text-xs text-muted-foreground line-clamp-1 flex-1 min-w-0">
+            {cardData.subtitle || ''}
+          </p>
+          <p className="text-xs text-muted-foreground line-clamp-1 ml-2 flex-shrink-0">
+            {cardData.additionalText || ''}
+          </p>
         </div>
       </div>
     </>
@@ -404,10 +363,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return (
       <div
         className={cn(
-                  'relative bg-transparent cursor-pointer group unified-card',
-        'h-full flex flex-col',
-          'border-0',
-          'shadow-none',
+          'h-full flex flex-col rounded-2xl overflow-hidden border bg-white cursor-pointer group unified-card',
           variantStyles.cardClass,
           sanitizedClassName
         )}
@@ -418,7 +374,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           transform: 'none',
           transition: 'none',
           animation: 'none',
-          willChange: 'auto'
+          willChange: 'auto',
+          paddingBottom: 0,
+          margin: 0
         }}
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
@@ -444,14 +402,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       whileHover={undefined}
       whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
       className={cn(
-        'relative bg-transparent cursor-pointer group unified-card',
+        'h-full flex flex-col rounded-2xl overflow-hidden border bg-white cursor-pointer group unified-card',
         'transition-all duration-200 ease-out',
-        'h-full flex flex-col',
-        'border-0',
-        'shadow-none',
         variantStyles.cardClass,
         sanitizedClassName
       )}
+      style={{ paddingBottom: 0, margin: 0, boxShadow: 'none' }}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}

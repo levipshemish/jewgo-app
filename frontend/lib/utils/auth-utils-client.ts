@@ -3,8 +3,9 @@
  * This prevents Edge Runtime compatibility issues during prerendering
  */
 
-import { type TransformedUser, type AuthProvider } from "@/lib/types/supabase-auth";
+import { type TransformedUser, type AuthProvider, AUTH_PROVIDERS } from "@/lib/types/supabase-auth";
 import type { Permission } from '@/lib/constants/permissions';
+import { normalizeAdminRole } from '@/lib/constants/permissions';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -91,34 +92,7 @@ function transformSupabaseUserBase(user: User | null): Omit<TransformedUser, 'ad
   const provider = user.app_metadata?.provider ?? 'unknown';
   
   // Handle known providers with proper typing
-  const providerInfo = (() => {
-    switch (provider) {
-      case 'apple': {
-        return {
-          name: 'Apple',
-          icon: '🍎',
-          color: '#000000',
-          displayName: 'Apple'
-        };
-      }
-      case 'google': {
-        return {
-          name: 'Google',
-          icon: '🔍',
-          color: '#4285F4',
-          displayName: 'Google'
-        };
-      }
-      default: {
-        return {
-          name: 'Account',
-          icon: '👤',
-          color: '#6B7280',
-          displayName: 'Account'
-        };
-      }
-    }
-  })();
+  const providerInfo = AUTH_PROVIDERS[provider as AuthProvider] || AUTH_PROVIDERS.unknown;
 
   return {
     id: user.id,
@@ -164,13 +138,13 @@ export async function transformSupabaseUserWithRoles(
     try {
       const roleData = await getUserWithRoles(options.userToken);
       if (roleData) {
-        // Normalize role string to lowercase for consistency
-        const role = (roleData.adminRole || '').toLowerCase();
+        // Normalize role string using consistent helper
+        const adminRole = normalizeAdminRole(roleData.adminRole);
         
-        transformedUser.adminRole = role;
+        transformedUser.adminRole = adminRole;
         transformedUser.roleLevel = roleData.roleLevel;
         transformedUser.permissions = [...roleData.permissions];
-        transformedUser.isSuperAdmin = role === 'super_admin';
+        transformedUser.isSuperAdmin = adminRole === 'super_admin';
       }
     } catch (error) {
       console.warn('Failed to fetch role data, continuing without roles:', error);
@@ -224,7 +198,7 @@ export function hasUserPermission(user: TransformedUser | null, permission: Perm
   if (!user) {
     return false;
   }
-  return user.isSuperAdmin || (user.permissions || []).includes(permission);
+  return user.isSuperAdmin || (user.permissions || []).includes(permission as Permission);
 }
 
 /**

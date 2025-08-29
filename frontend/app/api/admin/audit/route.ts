@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
-import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { hasPermission } from '@/lib/server/admin-utils';
+import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { queryAuditLogs, exportAuditLogs } from '@/lib/admin/audit';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';

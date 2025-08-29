@@ -15,7 +15,9 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
-import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { AdminUser } from '@/lib/admin/types';
+import { hasPermission } from '@/lib/server/admin-utils';
+import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 
 interface SearchResult {
   id: string;

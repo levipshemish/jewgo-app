@@ -9,6 +9,37 @@ export type Permission =
   | 'bulk:operations' | 'data:export' | 'role:view' | 'role:edit' | 'role:delete'
   | 'synagogue:view' | 'kosher_place:view' | 'analytics:view';
 
+/**
+ * Normalize admin role string to Role type
+ * Handles case variations and null/undefined inputs
+ */
+export function normalizeAdminRole(input: string | null): Role | null {
+  if (!input) {
+    return null;
+  }
+  
+  const normalized = input.toLowerCase().trim();
+  
+  switch (normalized) {
+    case 'moderator':
+      return 'moderator';
+    case 'data_admin':
+    case 'dataadmin':
+    case 'data-admin':
+      return 'data_admin';
+    case 'system_admin':
+    case 'systemadmin':
+    case 'system-admin':
+      return 'system_admin';
+    case 'super_admin':
+    case 'superadmin':
+    case 'super-admin':
+      return 'super_admin';
+    default:
+      return null;
+  }
+}
+
 export const ROLE_PERMISSIONS: Readonly<Record<Role, readonly Permission[]>> = {
   'moderator': [
     'restaurant:view',

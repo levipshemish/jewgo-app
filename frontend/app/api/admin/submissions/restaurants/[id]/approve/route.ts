@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logAdminAction } from '@/lib/admin/audit';
+import { Permission } from '@/lib/constants/permissions';
 
 export async function POST(
   request: NextRequest,
@@ -16,7 +17,7 @@ export async function POST(
     }
 
     // Check permissions
-    if (!adminUser.permissions.includes('restaurant:edit')) {
+    if (!adminUser.permissions.includes('restaurant:edit' as Permission)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

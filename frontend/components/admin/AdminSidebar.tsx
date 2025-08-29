@@ -19,7 +19,9 @@ import {
   User,
   BarChart3
 } from 'lucide-react';
-import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { AdminUser } from '@/lib/admin/types';
+import { hasPermission } from '@/lib/server/admin-utils';
+import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { SignOutButton } from '@/components/auth';
 
 interface AdminSidebarProps {

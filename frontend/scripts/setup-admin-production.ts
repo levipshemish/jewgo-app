@@ -11,7 +11,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from '../lib/admin/types';
+import { ADMIN_PERMISSIONS, ROLE_PERMISSIONS } from '../lib/server/admin-constants';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 

@@ -88,12 +88,16 @@ class AdminAuthManager:
     def generate_admin_token(self, email: str, password: str) -> Optional[str]:
         """Generate an admin JWT token if credentials are valid."""
         if email not in self.admin_users:
-            logger.warning(f"Admin login attempt with unknown email: {email}")
+            # Mask email for security - only log first 2 characters + domain
+            masked_email = email[:2] + "*****@" + email.split("@")[-1] if "@" in email else "***"
+            logger.warning(f"Admin login attempt with unknown email: {masked_email}")
             return None
         user = self.admin_users[email]
         # In production, use proper password hashing (bcrypt, etc.)
         if password != user.get("password_hash", ""):
-            logger.warning(f"Admin login attempt with invalid password for: {email}")
+            # Mask email for security - only log first 2 characters + domain
+            masked_email = email[:2] + "*****@" + email.split("@")[-1] if "@" in email else "***"
+            logger.warning(f"Admin login attempt with invalid password for: {masked_email}")
             return None
         # Generate JWT token
         payload = {
@@ -106,7 +110,9 @@ class AdminAuthManager:
         }
         try:
             token = jwt.encode(payload, self.secret_key, algorithm="HS256")
-            logger.info(f"Admin token generated for: {email}")
+            # Mask email for security - only log first 2 characters + domain
+            masked_email = email[:2] + "*****@" + email.split("@")[-1] if "@" in email else "***"
+            logger.info(f"Admin token generated for: {masked_email}")
             return token
         except Exception as e:
             logger.error(f"Error generating admin token: {e}")
@@ -178,7 +184,9 @@ class AdminAuthManager:
                 # Verify user still exists
                 email = payload.get("email")
                 if email not in self.admin_users:
-                    logger.warning(f"Admin token for non-existent user: {email}")
+                    # Mask email for security - only log first 2 characters + domain
+                    masked_email = email[:2] + "*****@" + email.split("@")[-1] if "@" in email and email else "***"
+                    logger.warning(f"Admin token for non-existent user: {masked_email}")
                     return None
             return payload
         except jwt.ExpiredSignatureError:

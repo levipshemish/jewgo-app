@@ -9,7 +9,8 @@ import {
   createMockUser,
   extractIsAnonymous,
   verifyTokenRotation,
-  extractJtiFromToken
+  extractJtiFromToken,
+  isAdminUser
 } from '@/lib/utils/auth-utils';
 import { type TransformedUser } from '@/lib/types/supabase-auth';
 import { Permission } from '@/lib/constants/permissions';
@@ -284,7 +285,7 @@ export function useAuth() {
     verifyTokenRotationStatus,
     
     // New role-related helpers
-    isAdmin: state.user?.isSuperAdmin || (state.user?.adminRole && state.user.roleLevel > 0),
+    isAdmin: isAdminUser(state.user),
     hasPermission: (permission: Permission) => {
       return state.user?.isSuperAdmin || (state.user?.permissions || []).includes(permission);
     },

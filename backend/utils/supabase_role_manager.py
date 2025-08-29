@@ -56,11 +56,11 @@ class SupabaseRoleManager:
             Dict with role data or None if no admin role or system failure
         """
         try:
-            # Derive user_id from token
+            # Always derive user_id from verified token to prevent confused-deputy attacks
             from utils.supabase_auth import parse_sub_from_verified_token
             user_id = parse_sub_from_verified_token(user_token)
             if not user_id:
-                logger.warning("Could not parse sub from verified token")
+                logger.error("Could not parse sub from verified token - rejecting request")
                 return None
             
             # Get role with strict singleflight control
@@ -102,7 +102,7 @@ class SupabaseRoleManager:
             # Cache the result if successful
             if result is not None:
                 with self._fallback_cache_lock:
-                    expires_at = time.time() + self._fallback_cache_ttl
+                    expires_at = time.time() + self._ttl_with_jitter(self._fallback_cache_ttl)
                     cache_data = {
                         "role": result.get("role"),
                         "level": result.get("level", 0),
@@ -188,9 +188,20 @@ class SupabaseRoleManager:
                 lock.release()
                 logger.debug(f"ROLE_FALLBACK_LOCK_RELEASED for user {user_id}")
         else:
-            # Lock acquisition failed - wait briefly and return None (fail closed)
-            logger.warning(f"ROLE_FALLBACK_LOCK_TIMEOUT for user {user_id}")
-            return None
+            # Lock acquisition failed - wait briefly then check cache again with TTL validation
+            import time
+            time.sleep(0.1 + random.uniform(0, 0.05))  # 100-150ms jitter
+            
+            # Recheck in-process cache and validate TTL (fail-closed if expired)
+            with self._fallback_cache_lock:
+                cached_data = self._fallback_cache.get(user_id)
+                if cached_data and cached_data.get("expires_at", 0) > time.time():
+                    logger.debug(f"ROLE_FALLBACK_CACHE_HIT_AFTER_WAIT for user {user_id}")
+                    return cached_data
+                else:
+                    # Cache expired or missing - fail closed
+                    logger.warning(f"ROLE_FALLBACK_LOCK_TIMEOUT for user {user_id} - expired cache")
+                    return None
 
     def _fetch_role_from_supabase(
         self, user_token: str, user_id: str, cache_key: Optional[str] = None
@@ -384,7 +395,10 @@ class SupabaseRoleManager:
                     logger.info("Started listening for admin role changes")
                     
                     while True:
-                        # Wait for notifications
+                        # Wait for notifications with blocking select
+                        import select
+                        if select.select([conn], [], [], 10) == ([], [], []):
+                            continue
                         conn.poll()
                         while conn.notifies:
                             notify = conn.notifies.pop()

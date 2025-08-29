@@ -4,7 +4,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { 
   isSupabaseConfigured, 
   transformSupabaseUser, 
-  type TransformedUser 
+  type TransformedUser,
+  isAdminUser
 } from "@/lib/utils/auth-utils";
 import { Permission } from "@/lib/constants/permissions";
 
@@ -91,7 +92,7 @@ export async function requireAdminUser(): Promise<TransformedUser> {
     redirect("/auth/signin");
   }
   
-  if (!user.isSuperAdmin && !(user.adminRole && user.roleLevel > 0)) {
+  if (!isAdminUser(user)) {
     // Authenticated but not an admin
     redirect("/");
   }
@@ -109,7 +110,7 @@ export async function checkUserPermission(permission: Permission): Promise<boole
     return false;
   }
   
-  return user.isSuperAdmin || (user.permissions || []).includes(permission);
+  return user.isSuperAdmin || (user.permissions || []).includes(permission as Permission);
 }
 
 /**
@@ -136,7 +137,7 @@ export async function assertAdminOrThrow(): Promise<TransformedUser> {
     throw new Error('Authentication required');
   }
   
-  if (!user.isSuperAdmin && !(user.adminRole && user.roleLevel > 0)) {
+  if (!isAdminUser(user)) {
     throw new Error('Admin access required');
   }
   

@@ -1,78 +1,94 @@
+import 'server-only';
+
+// DEPRECATED: This file is deprecated and will be removed in the next phase
+// Use lib/server/canonical-auth.ts instead
+
+console.warn('[ADMIN] lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+
+// Re-export from new server module with deprecation warnings
+export async function requireAdminAuth(...args: any[]) {
+  console.warn('[ADMIN] requireAdminAuth from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { requireAdminAuth: newRequireAdminAuth } = await import('../server/canonical-auth');
+  return newRequireAdminAuth(...args);
+}
+
+export async function checkAdminAuth(...args: any[]) {
+  console.warn('[ADMIN] checkAdminAuth from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { checkAdminAuth: newCheckAdminAuth } = await import('../server/canonical-auth');
+  return newCheckAdminAuth(...args);
+}
+
+export async function requireAdminPermission(...args: any[]) {
+  console.warn('[ADMIN] requireAdminPermission from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { requireAdminPermission: newRequireAdminPermission } = await import('../server/canonical-auth');
+  return newRequireAdminPermission(...args);
+}
+
+export async function requireMinimumRoleLevel(...args: any[]) {
+  console.warn('[ADMIN] requireMinimumRoleLevel from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { requireMinimumRoleLevel: newRequireMinimumRoleLevel } = await import('../server/canonical-auth');
+  return newRequireMinimumRoleLevel(...args);
+}
+
+export async function validateAdminAccess(...args: any[]) {
+  console.warn('[ADMIN] validateAdminAccess from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { validateAdminAccess: newValidateAdminAccess } = await import('../server/canonical-auth');
+  return newValidateAdminAccess(...args);
+}
+
+export async function assertAdminUser(...args: any[]) {
+  console.warn('[ADMIN] assertAdminUser from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+  const { assertAdminUser: newAssertAdminUser } = await import('../server/canonical-auth');
+  return newAssertAdminUser(...args);
+}
+
+// Legacy function with feature flag
+export async function requireAdminAuthLegacy(...args: any[]) {
+  console.warn('[ADMIN] requireAdminAuthLegacy is deprecated and feature-flagged. Use requireAdminAuth instead.');
+  const { requireAdminAuthLegacy: newRequireAdminAuthLegacy } = await import('../server/canonical-auth');
+  return newRequireAdminAuthLegacy(...args);
+}
+
 /**
- * Canonical Authentication Module
- * Single source of truth for all authentication operations
+ * MIGRATION GUIDE
+ * 
+ * Old Usage:
+ * ```typescript
+ * import { requireAdminAuth } from '@/lib/auth/canonical';
+ * ```
+ * 
+ * New Usage (Server-only):
+ * ```typescript
+ * import { requireAdminAuth } from '@/lib/server/canonical-auth';
+ * import { handleRoute } from '@/lib/server/route-helpers';
+ * 
+ * // Page component example
+ * export default async function AdminPage() {
+ *   const admin = await requireAdminAuth();
+ *   return <div>Welcome {admin.name}</div>;
+ * }
+ * 
+ * // Route handler example
+ * export const runtime = 'nodejs';
+ * export async function GET() {
+ *   return handleRoute(async () => {
+ *     const admin = await requireAdminAuth();
+ *     return Response.json({ user: admin.name });
+ *   });
+ * }
+ * ```
+ * 
+ * For Permission Checks:
+ * ```typescript
+ * import { requireAdminPermission } from '@/lib/server/canonical-auth';
+ * 
+ * const admin = await requireAdminPermission('restaurant:edit');
+ * ```
+ * 
+ * For Role Level Checks:
+ * ```typescript
+ * import { requireMinimumRoleLevel } from '@/lib/server/canonical-auth';
+ * 
+ * const admin = await requireMinimumRoleLevel(3); // system_admin or higher
+ * ```
  */
-
-import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { 
-  isSupabaseConfigured, 
-  transformSupabaseUser, 
-  type TransformedUser 
-} from "@/lib/utils/auth-utils";
-
-// Core authentication functions
-export async function getSessionUser(): Promise<TransformedUser | null> {
-  try {
-    if (!isSupabaseConfigured()) {
-      return null;
-    }
-
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      return await transformSupabaseUser(user);
-    }
-  } catch (error) {
-    console.error('[Auth] Supabase auth check failed:', error);
-  }
-
-  return null;
-}
-
-export async function requireUser(): Promise<TransformedUser> {
-  const user = await getSessionUser();
-  if (!user) {
-    redirect("/auth/signin");
-  }
-  return user;
-}
-
-export async function requireAdmin(): Promise<TransformedUser> {
-  const user = await requireUser();
-  
-  const adminEmails = new Set<string>([
-    process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@jewgo.com",
-  ]);
-  
-  if (!adminEmails.has(user.email ?? "")) {
-    redirect("/");
-  }
-  
-  return user;
-}
-
-// Authentication state helpers
-export async function isAuthenticated(): Promise<boolean> {
-  const user = await getSessionUser();
-  return !!user;
-}
-
-export async function getUserProfile() {
-  const user = await getSessionUser();
-  if (!user) {
-    return null;
-  }
-  
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    avatar_url: user.avatar_url,
-    provider: user.provider
-  };
-}
-
-// Re-export types for convenience
-export type { TransformedUser };

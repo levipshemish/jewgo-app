@@ -31,6 +31,11 @@ except ImportError:
     ROLE_MANAGER_AVAILABLE = False
     logger = get_logger(__name__)
     logger.warning("SupabaseRoleManager not available - admin roles disabled")
+except ValueError as e:
+    # Handle missing Supabase environment variables during import
+    ROLE_MANAGER_AVAILABLE = False
+    logger = get_logger(__name__)
+    logger.error(f"SupabaseRoleManager environment error - admin roles disabled: {e}")
 logger = get_logger(__name__)
 
 
@@ -75,6 +80,10 @@ class SupabaseAuthManager:
                     req_id = 'unknown'
                 logger.warning(f"AUTH_401_JWKS: JWKS key unavailable for kid {kid} (fallback)", extra={"request_id": req_id})
             return result
+        # Check for exponential backoff first
+        if self._is_jwks_kid_in_backoff(kid):
+            return None  # Early return to avoid repeated fetch attempts
+            
         # Check cache by kid
         cache_key = f"jwks_key:{kid}"
         cached_key = self.redis.get(cache_key)
@@ -129,6 +138,8 @@ class SupabaseAuthManager:
                 except:
                     req_id = 'unknown'
                 logger.warning(f"AUTH_401_JWKS: Kid {kid} not found in JWKS response", extra={"request_id": req_id})
+                # Set exponential backoff for missing kid
+                self._set_jwks_failure_backoff(kid, ttl_seconds=60)
                 return None
             except Exception as e:
                 try:
@@ -136,6 +147,8 @@ class SupabaseAuthManager:
                 except:
                     req_id = 'unknown'
                 logger.error(f"AUTH_401_JWKS: JWKS fetch failed for kid {kid}: {e}", extra={"request_id": req_id})
+                # Set exponential backoff for fetch failures
+                self._set_jwks_failure_backoff(kid, ttl_seconds=30)
                 return None  # Fail closed - no fallback to old keys
             finally:
                 self.redis.delete(lock_key)
@@ -162,6 +175,11 @@ class SupabaseAuthManager:
         """Fallback JWKS fetching without Redis with in-process singleflight."""
         import threading
         import time
+
+        # Check backoff first
+        if hasattr(self, "_jwks_fallback_backoff") and kid in self._jwks_fallback_backoff:
+            if self._jwks_fallback_backoff[kid] > time.time():
+                return None  # Still in backoff
 
         # In-process lock for singleflight
         if not hasattr(self, "_jwks_fallback_locks"):
@@ -203,6 +221,8 @@ class SupabaseAuthManager:
                     except:
                         req_id = 'unknown'
                     logger.warning(f"AUTH_401_JWKS: Kid {kid} not found in fallback JWKS", extra={"request_id": req_id})
+                    # Set backoff for missing kid
+                    self._set_jwks_fallback_backoff(kid, 60)
                 return result
             except Exception as e:
                 try:
@@ -210,6 +230,8 @@ class SupabaseAuthManager:
                 except:
                     req_id = 'unknown'
                 logger.error(f"AUTH_401_JWKS: JWKS fallback fetch failed for kid {kid}: {e}", extra={"request_id": req_id})
+                # Set backoff for fetch failures
+                self._set_jwks_fallback_backoff(kid, 30)
                 return None
             finally:
                 lock.release()
@@ -425,6 +447,31 @@ class SupabaseAuthManager:
         if "user_metadata" in payload:
             user_info["user_metadata"] = payload["user_metadata"]
         return user_info
+    
+    def _is_jwks_kid_in_backoff(self, kid: str) -> bool:
+        """Check if a kid is currently in exponential backoff."""
+        if not self.redis:
+            return False
+        neg_key = f"jwks_kid_neg:{kid}"
+        return bool(self.redis.exists(neg_key))
+    
+    def _set_jwks_failure_backoff(self, kid: str, ttl_seconds: int = 30):
+        """Set exponential backoff for a failed kid lookup."""
+        if not self.redis:
+            return
+        neg_key = f"jwks_kid_neg:{kid}"
+        # Set with small TTL to prevent repeated attempts
+        self.redis.setex(neg_key, ttl_seconds, "1")
+        logger.info(f"JWKS kid {kid} set to backoff for {ttl_seconds}s")
+
+    def _set_jwks_fallback_backoff(self, kid: str, ttl_seconds: int = 30):
+        """Set in-process backoff for a failed kid lookup in fallback mode."""
+        if not hasattr(self, "_jwks_fallback_backoff"):
+            self._jwks_fallback_backoff = {}
+        import time
+        expires_at = time.time() + ttl_seconds
+        self._jwks_fallback_backoff[kid] = expires_at
+        logger.info(f"JWKS fallback kid {kid} set to backoff for {ttl_seconds}s")
 
 
 def parse_sub_from_verified_token(token: str) -> Optional[str]:
@@ -477,10 +524,14 @@ def verify_supabase_admin_role(
         # Get role manager and check admin role
         try:
             role_manager = get_role_manager()
+        except ValueError as e:
+            # Handle missing Supabase environment variables
+            logger.error(f"role-manager-init-error (env vars missing): {e}")
+            raise RoleLookupDependencyError("role-manager-init-failed")
         except Exception as e:
             logger.error(f"role-manager-init-error: {e}")
             raise RoleLookupDependencyError("role-manager-init-failed")
-        # Use token-based lookup to avoid exposing sub parameter trust surface
+        # Use optimized lookup to avoid JWT re-verification
         role_data = role_manager.get_user_admin_role(token)
         if role_data is None:
             # Dependency failure - raise to trigger 503

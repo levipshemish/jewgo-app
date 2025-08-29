@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import { BACKEND_URL } from '@/lib/config/environment';
-import { ROLE_PERMISSIONS, Role, Permission } from '@/lib/constants/permissions';
+import { ROLE_PERMISSIONS, Role, Permission, normalizeAdminRole } from '@/lib/constants/permissions';
 import { createTimeoutSignal } from '@/lib/utils/timeout-utils';
 
 // Force Node.js runtime to support AbortSignal.timeout
@@ -29,13 +29,12 @@ export async function GET(request: NextRequest) {
       console.error('[Auth] BACKEND_URL not configured in production');
       return NextResponse.json(
         { 
-          success: false, 
-          error: 'Backend not configured',
+          success: true, 
           adminRole: null,
           roleLevel: 0,
           permissions: []
         },
-        { status: 500 }
+        { status: 200 }
       );
     }
 
@@ -53,6 +52,14 @@ export async function GET(request: NextRequest) {
         // Authorization header is valid
         user = data.user;
         accessToken = token;
+        
+        // Check if cookie session exists and compare user IDs
+        const { data: { user: cookieUser } } = await supabase.auth.getUser();
+        if (cookieUser && cookieUser.id !== data.user.id) {
+          console.warn('[Auth] User mismatch between header token and cookie session');
+          // Prefer header token as it's more explicit
+          // Continue with header user, but log the mismatch
+        }
       } else {
         // Authorization header is invalid, try cookie fallback
         console.warn('[Auth] Invalid Authorization header, trying cookie fallback:', error);
@@ -69,10 +76,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(
             { 
               success: false, 
-              error: 'Invalid authorization token',
-              adminRole: null,
-              roleLevel: 0,
-              permissions: []
+              error: 'Unauthorized'
             },
             { status: 401 }
           );
@@ -88,10 +92,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Authentication error',
-            adminRole: null,
-            roleLevel: 0,
-            permissions: []
+            error: 'Unauthorized'
           },
           { status: 401 }
         );
@@ -116,15 +117,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (!accessToken) {
+      console.warn('[Auth] Missing access token but user exists, returning default role payload');
       return NextResponse.json(
         { 
-          success: false, 
-          error: 'No valid access token',
+          success: true, 
           adminRole: null,
           roleLevel: 0,
           permissions: []
         },
-        { status: 401 }
+        { status: 200 }
       );
     }
 
@@ -157,12 +158,16 @@ export async function GET(request: NextRequest) {
       const roleData = await response.json();
       
       // Map backend role data to frontend format with normalization
-      const role = (roleData.role || '').toLowerCase();
-      const adminRole = role || null;
+      const adminRole = normalizeAdminRole(roleData.role);
       const roleLevel = roleData.level || 0;
       
-      // Map role to permissions using existing permission system
-      const permissions = ROLE_PERMISSIONS[adminRole as Role] || [];
+      // Merge backend permissions with role-based permissions (deduplicated)
+      const rolePermissions = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];
+      const backendPermissions = roleData.permissions || [];
+      
+      // Combine and deduplicate permissions
+      const allPermissions = new Set([...rolePermissions, ...backendPermissions]);
+      const permissions = Array.from(allPermissions);
 
       return NextResponse.json(
         { 
@@ -193,10 +198,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Internal server error',
-        adminRole: null,
-        roleLevel: 0,
-        permissions: []
+        error: 'Internal server error'
       },
       { status: 500 }
     );

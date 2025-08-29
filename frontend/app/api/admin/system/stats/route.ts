@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth';
-import { hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
+import { hasPermission } from '@/lib/server/admin-utils';
+import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';

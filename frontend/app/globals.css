@@ -116,12 +116,12 @@
   position: absolute !important;
   top: 4px !important;
   right: 8px !important;
-  width: 28px !important;
-  max-width: 28px !important;
-  min-width: 28px !important;
-  height: 28px !important;
-  max-height: 28px !important;
-  min-height: 28px !important;
+  width: 32px !important;
+  max-width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  max-height: 32px !important;
+  min-height: 32px !important;
 }
 
 .unified-card-heart:hover { 
@@ -134,8 +134,8 @@
 }
 
 .unified-card-heart svg {
-  width: 14px !important;
-  height: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
   transition: all 0.2s ease-out !important;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
 }
@@ -357,6 +357,9 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   /* Force override of any inherited backgrounds */
   background-color: transparent !important;
   background: transparent !important;
+  /* Remove any shadow-related spacing */
+  box-shadow: none !important;
+  margin: 0 !important;
 }
 
 .unified-card:hover {
@@ -515,13 +518,14 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   align-items: start;
   width: 100%;
   box-sizing: border-box;
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
   grid-auto-rows: min-content;
   justify-items: stretch;
   padding: 0.25rem;
   margin-bottom: 80px;
-  gap: 0.5rem;
-  row-gap: 0.5rem;
+  gap: 8px;
+  row-gap: 8px;
 }
 
 /* Ensure marketplace grid cards have consistent sizing */
@@ -540,8 +544,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 @media (max-width: 640px) {
   .restaurant-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-    row-gap: 0.5rem;
+    gap: 8px;
+    row-gap: 8px;
   }
 }
 
@@ -549,8 +553,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 @media (min-width: 641px) and (max-width: 768px) {
   .restaurant-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    row-gap: 0.5rem;
+    gap: 8px;
+    row-gap: 8px;
   }
 }
 
@@ -558,8 +562,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 @media (min-width: 769px) and (max-width: 1024px) {
   .restaurant-grid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    row-gap: 0.5rem;
+    gap: 8px;
+    row-gap: 8px;
   }
 }
 
@@ -567,8 +571,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 @media (min-width: 1025px) and (max-width: 1440px) {
   .restaurant-grid {
     grid-template-columns: repeat(6, 1fr);
-    gap: 0.5rem;
-    row-gap: 0.5rem;
+    gap: 8px;
+    row-gap: 8px;
   }
 }
 
@@ -576,8 +580,8 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
 @media (min-width: 1441px) {
   .restaurant-grid {
     grid-template-columns: repeat(8, 1fr);
-    gap: 0.5rem;
-    row-gap: 0.5rem;
+    gap: 8px;
+    row-gap: 8px;
   }
 }
 
@@ -585,59 +589,91 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
    Ensures the grid does NOT stretch cards to fill leftover space */
 :root {
   --card-w: 200px;
-  --card-content-h: 20px; /* cut in half - ultra compact content area height */
+  --card-content-h: 60px; /* increased content area height to prevent clipping */
 }
 
 .restaurant-grid {
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-w), var(--card-w))) !important;
+  display: grid !important;
+  gap: 1rem !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
   justify-content: start !important;
-  align-items: stretch !important; /* ensure cards stretch to fill their cell */
-  max-width: 1400px !important; /* prevent grid from getting too wide on abnormal screens */
-  margin: 0 auto !important; /* center the container itself, not the tracks */
+  align-items: start !important;
+  max-width: 1400px !important;
+  margin: 0 auto !important;
 }
 
 @media (max-width: 640px) {
-  .restaurant-grid { --card-w: 160px; }
-  .unified-card-content { height: var(--card-content-h, 18px) !important; }
+  .restaurant-grid { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+  }
 }
 
 @media (min-width: 641px) and (max-width: 768px) {
-  .restaurant-grid { --card-w: 180px; }
-  .unified-card-content { height: var(--card-content-h, 19px) !important; }
+  .restaurant-grid { 
+    grid-template-columns: repeat(3, 1fr) !important; 
+  }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
-  .restaurant-grid { --card-w: 200px; }
-  .unified-card-content { height: var(--card-content-h, 20px) !important; }
+  .restaurant-grid { 
+    grid-template-columns: repeat(4, 1fr) !important; 
+  }
 }
 
 @media (min-width: 1025px) and (max-width: 1440px) {
-  .restaurant-grid { --card-w: 220px; }
-  .unified-card-content { height: var(--card-content-h, 21px) !important; }
+  .restaurant-grid { 
+    grid-template-columns: repeat(6, 1fr) !important; 
+  }
 }
 
 @media (min-width: 1441px) {
-  .restaurant-grid { --card-w: 240px; }
-  .unified-card-content { height: var(--card-content-h, 23px) !important; }
+  .restaurant-grid { 
+    grid-template-columns: repeat(8, 1fr) !important; 
+  }
 }
 
-/* Ensure unified card content doesn't expand card height unevenly */
+/* Let unified card content size naturally but maintain consistency */
 .unified-card-content {
-  overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
-  height: var(--card-content-h, 40px) !important;
-  max-height: var(--card-content-h, 40px) !important;
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  z-index: 1 !important;
+  position: relative !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
 }
 
-/* Prevent any child elements from expanding the card height */
+/* Let child elements size naturally */
 .unified-card-content > * {
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
-  max-height: none !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  z-index: 2 !important;
+  position: relative !important;
+}
+
+/* Ensure all text elements in unified cards are visible */
+.unified-card p,
+.unified-card h3,
+.unified-card span,
+.unified-card div {
+  color: black !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  z-index: 2 !important;
+  position: relative !important;
+  margin-bottom: 0 !important;
+  line-height: 1.2 !important;
+}
+
+/* Ensure image tags have white text */
+.unified-card .unified-card-tag,
+.unified-card .unified-card-tag *,
+.unified-card .unified-card-tag span {
+  color: #ffffff !important;
+  background-color: transparent !important;
+  z-index: 10 !important;
 }
 
 /* Override any restaurant-card rules that might affect marketplace UnifiedCard */
@@ -1547,6 +1583,7 @@ a,
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+  line-height: 1.2;
 }
 
 .line-clamp-2 {
@@ -1554,8 +1591,7 @@ a,
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  max-height: 2.8rem;
-  line-height: 1.4;
+  line-height: 1.2;
 }
 
 .line-clamp-3 {
@@ -3156,8 +3192,9 @@ div[class*="specials-dynamic-grid"] {
   .stores-page .restaurant-grid,
   .shtel-page .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
+    gap: 8px !important;
+    row-gap: 8px !important;
+    padding: 0.25rem !important;
     margin-bottom: 80px !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3174,8 +3211,9 @@ div[class*="specials-dynamic-grid"] {
   .stores-page .restaurant-grid,
   .shtel-page .restaurant-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
+    gap: 8px !important;
+    row-gap: 8px !important;
+    padding: 0.25rem !important;
     margin-bottom: 80px !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3192,8 +3230,9 @@ div[class*="specials-dynamic-grid"] {
   .stores-page .restaurant-grid,
   .shtel-page .restaurant-grid {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
+    gap: 8px !important;
+    row-gap: 8px !important;
+    padding: 0.25rem !important;
     margin-bottom: 80px !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3210,8 +3249,9 @@ div[class*="specials-dynamic-grid"] {
   .stores-page .restaurant-grid,
   .shtel-page .restaurant-grid {
     grid-template-columns: repeat(6, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
+    gap: 8px !important;
+    row-gap: 8px !important;
+    padding: 0.25rem !important;
     margin-bottom: 80px !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3228,8 +3268,9 @@ div[class*="specials-dynamic-grid"] {
   .stores-page .restaurant-grid,
   .shtel-page .restaurant-grid {
     grid-template-columns: repeat(8, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
+    gap: 8px !important;
+    row-gap: 8px !important;
+    padding: 0.25rem !important;
     margin-bottom: 80px !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3382,6 +3423,12 @@ div[class*="specials-dynamic-grid"] {
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
   align-self: stretch !important;
+  /* Remove any margins that might interfere with grid gaps */
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 /* Ensure grid items maintain consistent sizing */
@@ -3399,6 +3446,12 @@ div[class*="specials-dynamic-grid"] {
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
   align-self: stretch !important;
+  /* Remove any margins that might interfere with grid gaps */
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 /* Ensure consistent image aspect ratios */
@@ -3456,8 +3509,13 @@ div[class*="specials-dynamic-grid"] {
   font-weight: 600 !important;
   margin: 0 !important;
   padding: 0 !important;
-  min-height: 16px !important;
-  max-height: 16px !important;
+  min-height: 20px !important;
+  max-height: none !important;
+  color: black !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  z-index: 2 !important;
+  position: relative !important;
 }
 
 /* Ensure consistent badge positioning and sizing */
@@ -3471,6 +3529,8 @@ div[class*="specials-dynamic-grid"] {
   font-size: 12px !important;
   line-height: 1 !important;
   font-weight: 500 !important;
+  color: #ffffff !important;
+  background-color: rgba(17, 24, 39, 0.70) !important;
 }
 
 /* Force UnifiedCard to be transparent regardless of parent styles */
