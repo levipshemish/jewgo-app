@@ -93,7 +93,7 @@ export function EateryPageClient() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 eatery-page">
+      <div className="min-h-screen bg-gray-50">
         <Header 
           onSearch={handleSearch}
           placeholder="Search restaurants..."
@@ -125,7 +125,7 @@ export function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 eatery-page">
+    <div className="min-h-screen bg-[#f4f4f4] pb-20">
       <Header 
         onSearch={handleSearch}
         placeholder="Search restaurants..."
@@ -148,67 +148,76 @@ export function EateryPageClient() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
         </div>
       ) : restaurants.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No restaurants found</h3>
-          <p className="text-gray-600">Try adjusting your search or filters.</p>
+        <div className="text-center py-10 px-5" role="status" aria-live="polite">
+          <div className="text-5xl mb-4" aria-hidden="true">🍽️</div>
+          <p className="text-lg text-gray-600 mb-2">No restaurants found</p>
+          <p className="text-sm text-gray-500">
+            {searchQuery 
+              ? 'Try adjusting your search or filters'
+              : 'Be the first to add a restaurant!'
+            }
+          </p>
         </div>
       ) : (
-        <>
-          <div 
-            className="restaurant-grid"
-            role="grid"
-            aria-label="Restaurant listings"
-            style={{ 
-              contain: 'layout style paint',
-              willChange: 'auto',
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden',
-              perspective: '1000px'
-            }}
-          >
-            {restaurants.map((restaurant, index) => (
-              <div 
-                key={restaurant.id} 
-                className="w-full" 
-                role="gridcell"
-                style={{
-                  contain: 'layout style paint',
-                  willChange: 'auto',
-                  transform: 'translateZ(0)',
-                  backfaceVisibility: 'hidden'
+        <div 
+          className="restaurant-grid"
+          role="grid"
+          aria-label="Restaurant listings"
+          style={{ 
+            contain: 'layout style paint',
+            willChange: 'auto',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
+            perspective: '1000px'
+          }}
+        >
+          {restaurants.map((restaurant, index) => (
+            <div 
+              key={restaurant.id} 
+              className="w-full" 
+              role="gridcell"
+              style={{
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden'
+              }}
+            >
+              <UnifiedCard
+                data={{
+                  id: restaurant.id,
+                  imageUrl: restaurant.image_url,
+                  title: restaurant.name,
+                  badge: typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : String(restaurant.rating || ''),
+                  subtitle: restaurant.price_range || '',
+                  additionalText: restaurant.distance ? String(restaurant.distance) : '',
+                  showHeart: true,
+                  isLiked: false,
+                  kosherCategory: restaurant.cuisine,
+                  city: restaurant.address
                 }}
-              >
-                <UnifiedCard
-                  data={{
-                    id: restaurant.id,
-                    imageUrl: restaurant.image_url,
-                    title: restaurant.name,
-                    badge: typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : String(restaurant.rating || ''),
-                    subtitle: restaurant.price_range || '',
-                    additionalText: restaurant.distance ? String(restaurant.distance) : '',
-                    showHeart: true,
-                    isLiked: false,
-                    kosherCategory: restaurant.cuisine,
-                    city: restaurant.address
-                  }}
-                  onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
-                  priority={index < 4}
-                  className="w-full h-full"
-                />
-              </div>
-            ))}
-          </div>
-          
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-8 mb-24">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
+                onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+                priority={index < 4}
+                className="w-full h-full"
               />
             </div>
-          )}
-        </>
+          ))}
+        </div>
+      )}
+      
+      {totalPages > 1 && (
+        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            isLoading={loading}
+            className="mb-4"
+          />
+          <div className="text-center text-sm text-gray-600">
+            Showing {restaurants.length} of {restaurants.length * totalPages} restaurants
+          </div>
+        </div>
       )}
     </div>
   );

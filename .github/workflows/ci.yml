@@ -33,8 +33,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
 
     - name: Script Safety Validation
       run: |
@@ -215,8 +214,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
     
     - name: Backend Script Safety Validation
       run: |
@@ -409,8 +407,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
     
     - name: Environment Consistency Check
       run: |
@@ -472,8 +469,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
     
     - name: Environment Consistency Check
       run: |
@@ -519,8 +515,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
     
     - name: Environment Consistency Check
       run: |
@@ -598,8 +593,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: |
-          frontend/package-lock.json
+        cache-dependency-path: frontend/package-lock.json
 
     - name: Deploy to Vercel (Frontend via CLI)
       if: ${{ env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != '' }}
