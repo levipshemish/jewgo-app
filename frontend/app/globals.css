@@ -3159,10 +3159,15 @@ div[class*="specials-dynamic-grid"] {
   }
 
 /* Eatery Grid Layout - Consistent responsive design */
-/* Eatery page specific: Responsive grid with max 4 rows and up to 8 columns */
+/* Responsive grid with max 4 rows and up to 8 columns for all pages */
 /* Mobile: 2 columns */
 @media (max-width: 640px) {
-  .eatery-page .restaurant-grid {
+  .eatery-page .restaurant-grid,
+  .marketplace-page .restaurant-grid,
+  .mikvah-page .restaurant-grid,
+  .shuls-page .restaurant-grid,
+  .stores-page .restaurant-grid,
+  .shtel-page .restaurant-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
@@ -3175,7 +3180,12 @@ div[class*="specials-dynamic-grid"] {
 
 /* Small tablet: 3 columns */
 @media (min-width: 641px) and (max-width: 768px) {
-  .eatery-page .restaurant-grid {
+  .eatery-page .restaurant-grid,
+  .marketplace-page .restaurant-grid,
+  .mikvah-page .restaurant-grid,
+  .shuls-page .restaurant-grid,
+  .stores-page .restaurant-grid,
+  .shtel-page .restaurant-grid {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
@@ -3188,7 +3198,12 @@ div[class*="specials-dynamic-grid"] {
 
 /* Large tablet: 4 columns */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .eatery-page .restaurant-grid {
+  .eatery-page .restaurant-grid,
+  .marketplace-page .restaurant-grid,
+  .mikvah-page .restaurant-grid,
+  .shuls-page .restaurant-grid,
+  .stores-page .restaurant-grid,
+  .shtel-page .restaurant-grid {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
@@ -3201,7 +3216,12 @@ div[class*="specials-dynamic-grid"] {
 
 /* Desktop: 6 columns */
 @media (min-width: 1025px) and (max-width: 1440px) {
-  .eatery-page .restaurant-grid {
+  .eatery-page .restaurant-grid,
+  .marketplace-page .restaurant-grid,
+  .mikvah-page .restaurant-grid,
+  .shuls-page .restaurant-grid,
+  .stores-page .restaurant-grid,
+  .shtel-page .restaurant-grid {
     grid-template-columns: repeat(6, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
@@ -3214,7 +3234,12 @@ div[class*="specials-dynamic-grid"] {
 
 /* Large desktop: 8 columns */
 @media (min-width: 1441px) {
-  .eatery-page .restaurant-grid {
+  .eatery-page .restaurant-grid,
+  .marketplace-page .restaurant-grid,
+  .mikvah-page .restaurant-grid,
+  .shuls-page .restaurant-grid,
+  .stores-page .restaurant-grid,
+  .shtel-page .restaurant-grid {
     grid-template-columns: repeat(8, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;

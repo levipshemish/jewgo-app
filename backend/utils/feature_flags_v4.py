@@ -149,6 +149,11 @@ class APIV4FeatureFlags:
                 "description": "Enable streamlined marketplace endpoints",
                 "stage": MigrationStage.TESTING,
             },
+            "shtetl": {
+                "default": False,
+                "description": "Enable shtetl marketplace endpoints",
+                "stage": MigrationStage.DISABLED,
+            },
         }
         self._load_from_env()
 

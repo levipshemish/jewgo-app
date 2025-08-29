@@ -223,7 +223,7 @@ function StoresPageContent() {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
 
-  // Standard 4-rows pagination - always show exactly 4 rows
+  // Responsive grid with maximum 4 rows and up to 8 columns
   const mobileOptimizedItemsPerPage = useMemo(() => {
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile || isMobileDevice) {
@@ -233,11 +233,11 @@ function StoresPageContent() {
       let columnsPerRow = 3; // Default fallback
       
       if (viewportWidth >= 1441) {
-        columnsPerRow = 6; // Large desktop: 6 columns × 4 rows = 24 items
+        columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
       } else if (viewportWidth >= 1025) {
-        columnsPerRow = 5; // Desktop: 5 columns × 4 rows = 20 items
+        columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
       } else if (viewportWidth >= 769) {
-        columnsPerRow = 4; // Tablet: 4 columns × 4 rows = 16 items
+        columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
       } else if (viewportWidth >= 641) {
         columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
       }
@@ -608,7 +608,7 @@ function StoresPageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] pb-20"
+      className="min-h-screen bg-[#f4f4f4] pb-20 stores-page"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
