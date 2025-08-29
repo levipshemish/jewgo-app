@@ -692,7 +692,7 @@ export function EateryPageClient() {
         </div>
       ) : (
         <div 
-          className="restaurant-grid"
+          className={`restaurant-grid ${isMobileView ? 'infinite-scroll' : ''}`}
           role="grid"
           aria-label="Restaurant listings"
           style={{ 

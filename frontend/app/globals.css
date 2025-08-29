@@ -3229,44 +3229,44 @@ div[class*="specials-dynamic-grid"] {
 }
 
 /* Limit grid items based on screen size */
-/* Mobile: 2 columns × 4 rows = 8 items */
+/* Mobile: allow infinite scroll to append more items when class present */
 @media (max-width: 640px) {
-  .restaurant-grid > div:nth-child(n+9) {
+  .restaurant-grid:not(.infinite-scroll) > div:nth-child(n+9) {
     display: none !important;
   }
 }
 
 /* Tablet: 3 columns × 4 rows = 12 items */
 @media (min-width: 641px) and (max-width: 768px) {
-  .restaurant-grid > div:nth-child(n+13) {
+  .restaurant-grid:not(.infinite-scroll) > div:nth-child(n+13) {
     display: none !important;
   }
 }
 
 /* Large tablet: 4 columns × 4 rows = 16 items */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .restaurant-grid > div:nth-child(n+17) {
+  .restaurant-grid:not(.infinite-scroll) > div:nth-child(n+17) {
     display: none !important;
   }
 }
 
 /* Desktop: 6 columns × 4 rows = 24 items */
 @media (min-width: 1025px) and (max-width: 1440px) {
-  .restaurant-grid > div:nth-child(n+25) {
+  .restaurant-grid:not(.infinite-scroll) > div:nth-child(n+25) {
     display: none !important;
   }
 }
 
 /* Large desktop: 8 columns × 4 rows = 32 items */
 @media (min-width: 1441px) {
-  .restaurant-grid > div:nth-child(n+33) {
+  .restaurant-grid:not(.infinite-scroll) > div:nth-child(n+33) {
     display: none !important;
   }
 }
 
 /* Mobile and tablet: Use overflow hidden for infinite scroll */
 @media (max-width: 1024px) {
-  .restaurant-grid {
+  .restaurant-grid:not(.infinite-scroll) {
     max-height: calc(4 * (var(--card-height) + 1rem)) !important; /* Limit height to 4 rows */
     overflow: hidden !important; /* Hide overflow beyond 4 rows */
   }
