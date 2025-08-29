@@ -771,6 +771,17 @@ export function EateryPageClient() {
               />
             </div>
           ))}
+          {isMobileView && isLoadingMore && (
+            Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map((_, i) => (
+              <div key={`skeleton-${i}`} className="w-full" role="presentation">
+                <div className="skeleton-card">
+                  <div className="skeleton-image" />
+                  <div className="skeleton-row" />
+                  <div className="skeleton-row short" />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
       
@@ -798,12 +809,7 @@ export function EateryPageClient() {
           className="h-32 w-full my-8 flex items-center justify-center border-t border-gray-200"
           aria-hidden="true"
         >
-          {isLoadingMore && (
-            <div className="flex items-center space-x-2 text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-              <span className="text-sm">Loading more restaurants...</span>
-            </div>
-          )}
+          {/* Spinner hidden; skeletons + toast provide feedback */}
           {!isLoadingMore && hasMore && (
             <div className="text-xs text-gray-400">
               Scroll for more restaurants
@@ -819,6 +825,13 @@ export function EateryPageClient() {
               Debug: Mobile={isMobile.toString()}, hasMore={hasMore.toString()}, isLoading={isLoadingMore.toString()}, items={restaurantsWithDistance.length}/{totalRestaurants}, page={infiniteScrollPage}
             </div>
           )}
+        </div>
+      )}
+
+      {isMobileView && isLoadingMore && (
+        <div className="loading-toast" role="status" aria-live="polite">
+          <div className="spinner" />
+          <span>Loading more…</span>
         </div>
       )}
 
