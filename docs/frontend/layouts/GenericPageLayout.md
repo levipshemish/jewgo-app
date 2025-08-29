@@ -23,10 +23,10 @@ The layout matches the existing Eatery page with the following metrics:
 - Grid gap: **8 px** on both axes
 - Grid inner padding: **0.25 rem**
 - Outer gutters: **1 rem / 1.5 rem / 2 rem** for mobile / tablet / desktop
-- Column counts: **2 / 3 / 4 / 6 / 8** across breakpoints
+- Column counts: **1 / 2 / 3 / 4 / 6 / 8** across breakpoints
 
 Tuning column counts is done via the `minColumnWidth` prop which maps to the `--min-col` CSS variable.
-The Eatery page sets `minColumnWidth="200px"` and the layout caps its width at **1440 px** to preserve the `2 / 3 / 4 / 6 / 8` column pattern across breakpoints.
+The Eatery page sets `minColumnWidth="150px"` and the layout caps its width at **1440 px** to preserve the `1 / 2 / 3 / 4 / 6 / 8` column pattern across breakpoints while requesting items in groups of four rows.
 
 ## Theming
 

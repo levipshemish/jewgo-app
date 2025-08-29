@@ -110,26 +110,27 @@ export function EateryPageClient() {
   
   // Responsive items per page calculation
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    // Calculate items per page to ensure exactly 4 rows on every screen size
-    if (isHydrated && isMobile) {
-      return 8; // Keep initial payload light on mobile for faster loads
-    } else {
-      // For desktop, calculate based on viewport width to ensure 4 rows
-      let columnsPerRow = 3; // Default fallback
-      
-      if (isHydrated && viewportWidth >= 1441) {
-        columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
-      } else if (isHydrated && viewportWidth >= 1025) {
-        columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
-      } else if (isHydrated && viewportWidth >= 769) {
-        columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
-      } else if (isHydrated && viewportWidth >= 641) {
-        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
-      }
-      
-      return columnsPerRow * 4; // Always 4 rows
+    if (!isHydrated) {
+      return 8; // fall back to a reasonable payload before hydration
     }
-  }, [isHydrated, isMobile, viewportWidth]);
+
+    // Derive column count from viewport width so each page shows four rows
+    let columnsPerRow = 1;
+
+    if (viewportWidth >= 1441) {
+      columnsPerRow = 8; // Large desktop
+    } else if (viewportWidth >= 1025) {
+      columnsPerRow = 6; // Desktop
+    } else if (viewportWidth >= 769) {
+      columnsPerRow = 4; // Large tablet
+    } else if (viewportWidth >= 641) {
+      columnsPerRow = 3; // Small tablet
+    } else if (viewportWidth >= 360) {
+      columnsPerRow = 2; // Standard mobile
+    } // otherwise remain at 1 column for very small screens
+
+    return columnsPerRow * 4; // Always 4 rows
+  }, [isHydrated, viewportWidth]);
   
   // Unified mobile detection for infinite scroll and UI gating
   const isMobileView = useMemo(() => {
@@ -823,7 +824,7 @@ export function EateryPageClient() {
           hasNextPage={hasMore}
           isLoadingMore={isLoadingMore}
           gridClassName={styles.eateryPageGrid}
-          minColumnWidth="200px"
+          minColumnWidth="150px"
           sentinelRef={loadingRef}
           getItemKey={(restaurant, index) => restaurant ? restaurant.id : index}
         />
