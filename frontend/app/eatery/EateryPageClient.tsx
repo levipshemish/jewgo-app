@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
+import { GenericPageLayout } from '@/components/layout/GenericPageLayout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
@@ -15,6 +16,7 @@ import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
+import styles from './EateryPageClient.module.css';
 
 // One canonical cleaner for filters (use it everywhere)
 function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
@@ -566,6 +568,22 @@ export function EateryPageClient() {
     });
   }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus]);
 
+  const displayedRestaurants = useMemo<(Restaurant | null)[]>(() => {
+    const items: (Restaurant | null)[] = [...restaurantsWithDistance];
+    if (isHydrated && isMobileView && isLoadingMore) {
+      items.push(
+        ...Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map(() => null)
+      );
+    }
+    return items;
+  }, [
+    restaurantsWithDistance,
+    isHydrated,
+    isMobileView,
+    isLoadingMore,
+    mobileOptimizedItemsPerPage,
+  ]);
+
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -759,67 +777,56 @@ export function EateryPageClient() {
           </p>
         </div>
       ) : (
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div 
-              className={`restaurant-grid ${isHydrated && isMobileView ? 'infinite-scroll' : ''}`}
-              role="grid"
-              aria-label="Restaurant listings"
-              style={{ 
-                contain: 'layout style paint',
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
-                perspective: '1000px'
-              }}
-            >
-          {restaurantsWithDistance.map((restaurant, index) => (
-            <div 
-              key={`restaurant-${restaurant.id}-${index}`} 
-              className="min-w-0 h-full" 
-              role="gridcell"
-              style={{
-                contain: 'layout style paint',
-                willChange: 'auto',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden'
-              }}
-            >
+        <GenericPageLayout
+          items={displayedRestaurants}
+          renderItem={(restaurant, index) => {
+            if (!restaurant) {
+              return (
+                <div className="w-full" role="presentation">
+                  <div className="skeleton-card">
+                    <div className="skeleton-image" />
+                    <div className="skeleton-row" />
+                    <div className="skeleton-row short" />
+                  </div>
+                </div>
+              );
+            }
+            return (
               <UnifiedCard
                 data={{
                   id: String(restaurant.id),
                   imageUrl: restaurant.image_url,
                   title: restaurant.name,
-                  badge: typeof restaurant.google_rating === 'number' ? restaurant.google_rating.toFixed(1) : String(restaurant.google_rating || ''),
+                  badge:
+                    typeof restaurant.google_rating === 'number'
+                      ? restaurant.google_rating.toFixed(1)
+                      : String(restaurant.google_rating || ''),
                   subtitle: restaurant.price_range || '',
-                  additionalText: restaurant.distance ? formatDistance(restaurant.distance) : '',
+                  additionalText: restaurant.distance
+                    ? formatDistance(restaurant.distance)
+                    : '',
                   showHeart: true,
                   isLiked: false,
                   kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',
                   city: restaurant.address,
-                  imageTag: restaurant.kosher_category || ''
+                  imageTag: restaurant.kosher_category || '',
                 }}
                 showStarInBadge={true}
                 onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
                 priority={index < 4}
-                className="h-full"
+                className="w-full h-full"
               />
-            </div>
-          ))}
-          {isHydrated && isMobileView && isLoadingMore && (
-            Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map((_, i) => (
-              <div key={`skeleton-${i}`} className="w-full" role="presentation">
-                <div className="skeleton-card">
-                  <div className="skeleton-image" />
-                  <div className="skeleton-row" />
-                  <div className="skeleton-row short" />
-                </div>
-              </div>
-            ))
-          )}
-            </div>
-          </div>
-        </div>
+            );
+          }}
+          pageTitle="Kosher Eateries"
+          enableInfiniteScroll={isHydrated && isMobileView}
+          hasNextPage={hasMore}
+          isLoadingMore={isLoadingMore}
+          gridClassName={styles.eateryPageGrid}
+          minColumnWidth="200px"
+          sentinelRef={loadingRef}
+          getItemKey={(restaurant, index) => restaurant ? restaurant.id : index}
+        />
       )}
       
       {isHydrated && !isMobile && totalPages > 1 && (
@@ -842,15 +849,6 @@ export function EateryPageClient() {
       )}
 
 
-
-      {/* Infinite scroll trigger element - outside the grid */}
-      {isHydrated && isMobileView && (
-        <div 
-          ref={loadingRef}
-          className="h-px w-full"
-          aria-hidden="true"
-        />
-      )}
 
       {isHydrated && isMobileView && isLoadingMore && (
         <div className="loading-toast" role="status" aria-live="polite">

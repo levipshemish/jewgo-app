@@ -1,0 +1,66 @@
+/* GenericPageLayout component styles */
+
+.pageContainer {
+  /* page padding (outer gutters) */
+  padding-inline: 1rem;
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1440px;
+  background-color: var(--color-bg, #fff);
+  position: relative;
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .pageContainer {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pageContainer {
+    padding-inline: 2rem;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--min-col, 200px), 1fr));
+  gap: 8px;
+  padding: 0.25rem;
+  align-content: start;
+}
+
+.sentinel {
+  width: 100%;
+  height: 1px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pageTitle {
+  margin: 0 0 1rem 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pageContainer {
+    background-color: var(--color-bg-dark, var(--color-bg, #fff));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid {
+    scroll-behavior: auto;
+  }
+}
+
