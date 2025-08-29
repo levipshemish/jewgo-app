@@ -66,11 +66,15 @@ class OrderServiceV4(BaseService):
             self._validate_order_data(order_data)
 
             # Check if restaurant exists
-            restaurant = self.db_session.query(Restaurant).filter(
-                Restaurant.id == order_data["restaurant_id"]
-            ).first()
+            restaurant = (
+                self.db_session.query(Restaurant)
+                .filter(Restaurant.id == order_data["restaurant_id"])
+                .first()
+            )
             if not restaurant:
-                raise NotFoundError(f"Restaurant with ID {order_data['restaurant_id']} not found")
+                raise NotFoundError(
+                    f"Restaurant with ID {order_data['restaurant_id']} not found"
+                )
 
             # Generate order number
             order_number = self._generate_order_number()
@@ -100,7 +104,7 @@ class OrderServiceV4(BaseService):
                 tax=tax,
                 delivery_fee=delivery_fee,
                 total=total,
-                status="pending"
+                status="pending",
             )
 
             self.db_session.add(order)
@@ -115,7 +119,7 @@ class OrderServiceV4(BaseService):
                     price=item_data["price"],
                     quantity=item_data["quantity"],
                     special_instructions=item_data.get("special_instructions"),
-                    subtotal=item_data["price"] * item_data["quantity"]
+                    subtotal=item_data["price"] * item_data["quantity"],
                 )
                 self.db_session.add(order_item)
 
@@ -171,9 +175,11 @@ class OrderServiceV4(BaseService):
             DatabaseError: If database operation fails
         """
         try:
-            order = self.db_session.query(Order).filter(
-                Order.order_number == order_number
-            ).first()
+            order = (
+                self.db_session.query(Order)
+                .filter(Order.order_number == order_number)
+                .first()
+            )
             if not order:
                 raise NotFoundError(f"Order with number {order_number} not found")
 
@@ -185,7 +191,9 @@ class OrderServiceV4(BaseService):
             self.logger.error(f"Error retrieving order {order_number}: {str(e)}")
             raise DatabaseError(f"Failed to retrieve order: {str(e)}")
 
-    def get_orders_by_restaurant(self, restaurant_id: int, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_orders_by_restaurant(
+        self, restaurant_id: int, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get orders for a specific restaurant.
 
         Args:
@@ -200,17 +208,26 @@ class OrderServiceV4(BaseService):
             DatabaseError: If database operation fails
         """
         try:
-            orders = self.db_session.query(Order).filter(
-                Order.restaurant_id == restaurant_id
-            ).order_by(Order.created_at.desc()).limit(limit).offset(offset).all()
+            orders = (
+                self.db_session.query(Order)
+                .filter(Order.restaurant_id == restaurant_id)
+                .order_by(Order.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
 
             return [self._format_order_response(order) for order in orders]
 
         except Exception as e:
-            self.logger.error(f"Error retrieving orders for restaurant {restaurant_id}: {str(e)}")
+            self.logger.error(
+                f"Error retrieving orders for restaurant {restaurant_id}: {str(e)}"
+            )
             raise DatabaseError(f"Failed to retrieve orders: {str(e)}")
 
-    def get_orders_by_customer(self, customer_email: str, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_orders_by_customer(
+        self, customer_email: str, limit: int = 50, offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """Get orders for a specific customer.
 
         Args:
@@ -225,14 +242,21 @@ class OrderServiceV4(BaseService):
             DatabaseError: If database operation fails
         """
         try:
-            orders = self.db_session.query(Order).filter(
-                Order.customer_email == customer_email
-            ).order_by(Order.created_at.desc()).limit(limit).offset(offset).all()
+            orders = (
+                self.db_session.query(Order)
+                .filter(Order.customer_email == customer_email)
+                .order_by(Order.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
 
             return [self._format_order_response(order) for order in orders]
 
         except Exception as e:
-            self.logger.error(f"Error retrieving orders for customer {customer_email}: {str(e)}")
+            self.logger.error(
+                f"Error retrieving orders for customer {customer_email}: {str(e)}"
+            )
             raise DatabaseError(f"Failed to retrieve orders: {str(e)}")
 
     def update_order_status(self, order_id: int, status: str) -> Dict[str, Any]:
@@ -252,9 +276,18 @@ class OrderServiceV4(BaseService):
         """
         try:
             # Validate status
-            valid_statuses = ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"]
+            valid_statuses = [
+                "pending",
+                "confirmed",
+                "preparing",
+                "ready",
+                "delivered",
+                "cancelled",
+            ]
             if status not in valid_statuses:
-                raise ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+                raise ValidationError(
+                    f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+                )
 
             order = self.db_session.query(Order).filter(Order.id == order_id).first()
             if not order:
@@ -284,8 +317,13 @@ class OrderServiceV4(BaseService):
             ValidationError: If data is invalid
         """
         required_fields = [
-            "restaurant_id", "customer_name", "customer_phone", "customer_email",
-            "order_type", "payment_method", "items"
+            "restaurant_id",
+            "customer_name",
+            "customer_phone",
+            "customer_email",
+            "order_type",
+            "payment_method",
+            "items",
         ]
 
         for field in required_fields:
@@ -307,14 +345,18 @@ class OrderServiceV4(BaseService):
 
         for item in items:
             if not all(key in item for key in ["id", "name", "price", "quantity"]):
-                raise ValidationError("Each item must have id, name, price, and quantity")
+                raise ValidationError(
+                    "Each item must have id, name, price, and quantity"
+                )
             if item["price"] < 0:
                 raise ValidationError("Item price cannot be negative")
             if item["quantity"] <= 0:
                 raise ValidationError("Item quantity must be greater than 0")
 
         # Validate delivery address for delivery orders
-        if order_data["order_type"] == "delivery" and not order_data.get("delivery_address"):
+        if order_data["order_type"] == "delivery" and not order_data.get(
+            "delivery_address"
+        ):
             raise ValidationError("Delivery address is required for delivery orders")
 
     def _generate_order_number(self) -> str:
@@ -361,8 +403,8 @@ class OrderServiceV4(BaseService):
                     "price": item.price,
                     "quantity": item.quantity,
                     "special_instructions": item.special_instructions,
-                    "subtotal": item.subtotal
+                    "subtotal": item.subtotal,
                 }
                 for item in order.items
-            ]
+            ],
         }

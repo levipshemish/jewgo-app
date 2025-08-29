@@ -40,7 +40,9 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
 # CORS Configuration - Remove wildcard default for security
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
-    CORS_ORIGINS = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+    CORS_ORIGINS = [
+        origin.strip() for origin in cors_origins_env.split(",") if origin.strip()
+    ]
 else:
     # Default to empty list - explicit origins must be configured
     CORS_ORIGINS = []

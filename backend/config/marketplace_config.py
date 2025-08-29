@@ -12,6 +12,7 @@ from enum import Enum
 
 class MarketplaceCategoryType(Enum):
     """Marketplace category types."""
+
     BAKED_GOODS = "baked-goods"
     ACCESSORIES = "accessories"
     VEHICLES = "vehicles"
@@ -27,6 +28,7 @@ class MarketplaceCategoryType(Enum):
 @dataclass
 class MarketplaceSubcategory:
     """Marketplace subcategory configuration."""
+
     id: int
     name: str
     slug: str
@@ -38,6 +40,7 @@ class MarketplaceSubcategory:
 @dataclass
 class MarketplaceCategory:
     """Marketplace category configuration."""
+
     id: int
     name: str
     slug: str
@@ -53,7 +56,7 @@ class MarketplaceCategory:
 
 class MarketplaceConfig:
     """Centralized marketplace configuration."""
-    
+
     # Default categories with subcategories
     DEFAULT_CATEGORIES = [
         MarketplaceCategory(
@@ -67,7 +70,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(2, "Pastries", "pastries", 2),
                 MarketplaceSubcategory(3, "Cakes", "cakes", 3),
                 MarketplaceSubcategory(4, "Cookies", "cookies", 4),
-            ]
+            ],
         ),
         MarketplaceCategory(
             id=2,
@@ -80,7 +83,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(6, "Clothing", "clothing", 2),
                 MarketplaceSubcategory(7, "Bags", "bags", 3),
                 MarketplaceSubcategory(8, "Watches", "watches", 4),
-            ]
+            ],
         ),
         MarketplaceCategory(
             id=3,
@@ -93,7 +96,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(10, "Motorcycles", "motorcycles", 2),
                 MarketplaceSubcategory(11, "Bicycles", "bicycles", 3),
                 MarketplaceSubcategory(12, "Trucks", "trucks", 4),
-            ]
+            ],
         ),
         MarketplaceCategory(
             id=4,
@@ -106,7 +109,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(14, "Laundry", "laundry", 2),
                 MarketplaceSubcategory(15, "Cleaning", "cleaning", 3),
                 MarketplaceSubcategory(16, "Heating/Cooling", "heating-cooling", 4),
-            ]
+            ],
         ),
         MarketplaceCategory(
             id=5,
@@ -119,7 +122,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(18, "Non-Fiction", "non-fiction", 2),
                 MarketplaceSubcategory(19, "Educational", "educational", 3),
                 MarketplaceSubcategory(20, "Children's Books", "childrens-books", 4),
-            ]
+            ],
         ),
         MarketplaceCategory(
             id=6,
@@ -132,7 +135,7 @@ class MarketplaceConfig:
                 MarketplaceSubcategory(22, "Phones", "phones", 2),
                 MarketplaceSubcategory(23, "Tablets", "tablets", 3),
                 MarketplaceSubcategory(24, "Audio/Video", "audio-video", 4),
-            ]
+            ],
         ),
     ]
 
@@ -145,9 +148,7 @@ class MarketplaceConfig:
     def get_active_categories(cls) -> List[Dict[str, Any]]:
         """Get only active categories as dictionaries."""
         return [
-            category.__dict__ 
-            for category in cls.DEFAULT_CATEGORIES 
-            if category.active
+            category.__dict__ for category in cls.DEFAULT_CATEGORIES if category.active
         ]
 
     @classmethod
@@ -180,23 +181,23 @@ class MarketplaceConfig:
         """Get all subcategories for a specific category."""
         category = cls.get_category_by_id(category_id)
         if category:
-            return category.get('subcategories', [])
+            return category.get("subcategories", [])
         return []
 
 
 # Configuration constants
 MARKETPLACE_CONFIG = {
-    'max_listings_per_user': 50,
-    'max_images_per_listing': 10,
-    'max_title_length': 100,
-    'max_description_length': 2000,
-    'default_page_size': 20,
-    'max_page_size': 100,
-    'listing_expiry_days': 90,
-    'auto_approve_listings': False,
-    'require_approval': True,
-    'enable_endorsements': True,
-    'enable_transactions': True,
-    'enable_messaging': True,
-    'categories': MarketplaceConfig.get_categories(),
+    "max_listings_per_user": 50,
+    "max_images_per_listing": 10,
+    "max_title_length": 100,
+    "max_description_length": 2000,
+    "default_page_size": 20,
+    "max_page_size": 100,
+    "listing_expiry_days": 90,
+    "auto_approve_listings": False,
+    "require_approval": True,
+    "enable_endorsements": True,
+    "enable_transactions": True,
+    "enable_messaging": True,
+    "categories": MarketplaceConfig.get_categories(),
 }

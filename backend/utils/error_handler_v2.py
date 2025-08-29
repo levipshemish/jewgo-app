@@ -25,20 +25,25 @@ from requests.exceptions import (
 logger = logging.getLogger(__name__)
 
 # Type variable for return type
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 # Custom exception types
 class ServiceError(Exception):
     """Base exception for service layer errors."""
 
+
 class DatabaseServiceError(ServiceError):
     """Database-related service errors."""
+
 
 class ExternalAPIError(ServiceError):
     """External API call errors."""
 
+
 class ValidationServiceError(ServiceError):
     """Validation-related service errors."""
+
 
 class ConfigurationError(ServiceError):
     """Configuration-related errors."""
@@ -53,17 +58,17 @@ def handle_database_operation(
 ) -> Optional[T]:
     """
     Handle database operations with specific exception handling.
-    
+
     Args:
         operation: Database operation function
         operation_name: Name of the operation for logging
         context: Additional context for logging
         default_return: Value to return on error (if None, raises exception)
         log_level: Logging level for errors
-        
+
     Returns:
         Result of operation or default_return on error
-        
+
     Raises:
         DatabaseServiceError: If database operation fails and default_return is None
     """
@@ -110,17 +115,17 @@ def handle_external_api_call(
 ) -> Optional[T]:
     """
     Handle external API calls with specific exception handling.
-    
+
     Args:
         operation: API call function
         operation_name: Name of the operation for logging
         context: Additional context for logging
         default_return: Value to return on error (if None, raises exception)
         log_level: Logging level for errors
-        
+
     Returns:
         Result of operation or default_return on error
-        
+
     Raises:
         ExternalAPIError: If API call fails and default_return is None
     """
@@ -173,17 +178,17 @@ def handle_validation_operation(
 ) -> Optional[T]:
     """
     Handle validation operations with specific exception handling.
-    
+
     Args:
         operation: Validation operation function
         operation_name: Name of the operation for logging
         context: Additional context for logging
         default_return: Value to return on error (if None, raises exception)
         log_level: Logging level for errors
-        
+
     Returns:
         Result of operation or default_return on error
-        
+
     Raises:
         ValidationServiceError: If validation fails and default_return is None
     """
@@ -219,7 +224,7 @@ def safe_execute(
 ) -> Optional[T]:
     """
     Generic safe execution wrapper with configurable exception handling.
-    
+
     Args:
         operation: Function to execute
         operation_name: Name of the operation for logging
@@ -227,10 +232,10 @@ def safe_execute(
         default_return: Value to return on error (if None, raises exception)
         log_level: Logging level for errors
         exception_types: Tuple of exception types to catch specifically
-        
+
     Returns:
         Result of operation or default_return on error
-        
+
     Raises:
         ServiceError: If operation fails and default_return is None
     """
@@ -252,7 +257,7 @@ def log_and_raise(
 ) -> None:
     """
     Log an exception and re-raise it with context.
-    
+
     Args:
         exception: Exception to log and raise
         operation_name: Name of the operation for logging
@@ -267,14 +272,16 @@ def log_and_raise(
 def create_error_context(**kwargs) -> Dict[str, Any]:
     """
     Create a standardized error context dictionary.
-    
+
     Args:
         **kwargs: Context key-value pairs
-        
+
     Returns:
         Dictionary with error context
     """
     return {
-        "timestamp": logging.Formatter().formatTime(logging.LogRecord("", 0, "", 0, "", (), None)),
-        **kwargs
+        "timestamp": logging.Formatter().formatTime(
+            logging.LogRecord("", 0, "", 0, "", (), None)
+        ),
+        **kwargs,
     }

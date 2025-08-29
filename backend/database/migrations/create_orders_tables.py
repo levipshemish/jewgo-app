@@ -42,8 +42,12 @@ def upgrade() -> None:
         sa.Column("customer_email", sa.String(255), nullable=False),
         sa.Column("delivery_address", sa.Text, nullable=True),
         sa.Column("delivery_instructions", sa.Text, nullable=True),
-        sa.Column("order_type", sa.String(20), nullable=False),  # 'pickup' or 'delivery'
-        sa.Column("payment_method", sa.String(20), nullable=False),  # 'cash', 'card', 'online'
+        sa.Column(
+            "order_type", sa.String(20), nullable=False
+        ),  # 'pickup' or 'delivery'
+        sa.Column(
+            "payment_method", sa.String(20), nullable=False
+        ),  # 'cash', 'card', 'online'
         sa.Column("estimated_time", sa.String(100), nullable=True),
         sa.Column("subtotal", sa.Float, nullable=False, default=0.0),
         sa.Column("tax", sa.Float, nullable=False, default=0.0),
@@ -58,16 +62,14 @@ def upgrade() -> None:
         ),
         # Check constraints
         sa.CheckConstraint(
-            "order_type IN ('pickup', 'delivery')", 
-            name="check_order_type"
+            "order_type IN ('pickup', 'delivery')", name="check_order_type"
         ),
         sa.CheckConstraint(
-            "payment_method IN ('cash', 'card', 'online')", 
-            name="check_payment_method"
+            "payment_method IN ('cash', 'card', 'online')", name="check_payment_method"
         ),
         sa.CheckConstraint(
-            "status IN ('pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled')", 
-            name="check_order_status"
+            "status IN ('pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled')",
+            name="check_order_status",
         ),
         sa.CheckConstraint("subtotal >= 0", name="check_subtotal_positive"),
         sa.CheckConstraint("tax >= 0", name="check_tax_positive"),
@@ -109,23 +111,41 @@ def upgrade() -> None:
     )
 
     # Add comments
-    op.execute("COMMENT ON TABLE orders IS 'Customer orders placed through JewGo platform'")
+    op.execute(
+        "COMMENT ON TABLE orders IS 'Customer orders placed through JewGo platform'"
+    )
     op.execute("COMMENT ON COLUMN orders.id IS 'Unique order identifier'")
     op.execute("COMMENT ON COLUMN orders.order_number IS 'Human-readable order number'")
     op.execute("COMMENT ON COLUMN orders.restaurant_id IS 'Associated restaurant ID'")
     op.execute("COMMENT ON COLUMN orders.customer_name IS 'Customer name'")
     op.execute("COMMENT ON COLUMN orders.customer_phone IS 'Customer phone number'")
     op.execute("COMMENT ON COLUMN orders.customer_email IS 'Customer email address'")
-    op.execute("COMMENT ON COLUMN orders.delivery_address IS 'Delivery address (optional for pickup)'")
-    op.execute("COMMENT ON COLUMN orders.delivery_instructions IS 'Special delivery instructions'")
-    op.execute("COMMENT ON COLUMN orders.order_type IS 'Order type: pickup or delivery'")
-    op.execute("COMMENT ON COLUMN orders.payment_method IS 'Payment method: cash, card, or online'")
-    op.execute("COMMENT ON COLUMN orders.estimated_time IS 'Estimated pickup/delivery time'")
-    op.execute("COMMENT ON COLUMN orders.subtotal IS 'Order subtotal before tax and fees'")
+    op.execute(
+        "COMMENT ON COLUMN orders.delivery_address IS 'Delivery address (optional for pickup)'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN orders.delivery_instructions IS 'Special delivery instructions'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN orders.order_type IS 'Order type: pickup or delivery'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN orders.payment_method IS 'Payment method: cash, card, or online'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN orders.estimated_time IS 'Estimated pickup/delivery time'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN orders.subtotal IS 'Order subtotal before tax and fees'"
+    )
     op.execute("COMMENT ON COLUMN orders.tax IS 'Tax amount'")
-    op.execute("COMMENT ON COLUMN orders.delivery_fee IS 'Delivery fee (if applicable)'")
+    op.execute(
+        "COMMENT ON COLUMN orders.delivery_fee IS 'Delivery fee (if applicable)'"
+    )
     op.execute("COMMENT ON COLUMN orders.total IS 'Total order amount'")
-    op.execute("COMMENT ON COLUMN orders.status IS 'Order status: pending, confirmed, preparing, ready, delivered, cancelled'")
+    op.execute(
+        "COMMENT ON COLUMN orders.status IS 'Order status: pending, confirmed, preparing, ready, delivered, cancelled'"
+    )
 
     op.execute("COMMENT ON TABLE order_items IS 'Individual items in customer orders'")
     op.execute("COMMENT ON COLUMN order_items.id IS 'Unique order item identifier'")
@@ -134,8 +154,12 @@ def upgrade() -> None:
     op.execute("COMMENT ON COLUMN order_items.name IS 'Menu item name'")
     op.execute("COMMENT ON COLUMN order_items.price IS 'Unit price of the item'")
     op.execute("COMMENT ON COLUMN order_items.quantity IS 'Quantity ordered'")
-    op.execute("COMMENT ON COLUMN order_items.special_instructions IS 'Special instructions for this item'")
-    op.execute("COMMENT ON COLUMN order_items.subtotal IS 'Item subtotal (price * quantity)'")
+    op.execute(
+        "COMMENT ON COLUMN order_items.special_instructions IS 'Special instructions for this item'"
+    )
+    op.execute(
+        "COMMENT ON COLUMN order_items.subtotal IS 'Item subtotal (price * quantity)'"
+    )
 
 
 def downgrade() -> None:

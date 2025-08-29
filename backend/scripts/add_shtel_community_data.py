@@ -30,9 +30,9 @@ class ShtelCommunityDataManager:
 
     def __init__(self, database_url: str = None):
         """Initialize the data manager."""
-        self.database_url = database_url or os.getenv('DATABASE_URL')
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-        
+
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -41,11 +41,11 @@ class ShtelCommunityDataManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-            
+
             # Test connection
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            
+
             logger.info("✅ Database connection successful")
             return True
         except Exception as e:
@@ -76,7 +76,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.1300,
                 "stock": 5,
                 "rating": 4.9,
-                "review_count": 12
+                "review_count": 12,
             },
             {
                 "title": "High Chair - Community Gemach",
@@ -99,7 +99,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.1955,
                 "stock": 1,
                 "rating": 5.0,
-                "review_count": 8
+                "review_count": 8,
             },
             {
                 "title": "Fleishig Vitamix Blender",
@@ -122,7 +122,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.2456,
                 "stock": 1,
                 "rating": 4.8,
-                "review_count": 15
+                "review_count": 15,
             },
             {
                 "title": "Beautiful Shabbat Candlesticks - Silver Plated",
@@ -145,7 +145,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.1495,
                 "stock": 3,
                 "rating": 4.7,
-                "review_count": 9
+                "review_count": 9,
             },
             {
                 "title": "Passover Dishes Set - Complete",
@@ -168,7 +168,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.2962,
                 "stock": 2,
                 "rating": 4.9,
-                "review_count": 18
+                "review_count": 18,
             },
             {
                 "title": "Tallit Bag - Hand Embroidered",
@@ -191,7 +191,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.2561,
                 "stock": 8,
                 "rating": 4.6,
-                "review_count": 7
+                "review_count": 7,
             },
             {
                 "title": "Sukkah Decorations - Complete Set",
@@ -214,7 +214,7 @@ class ShtelCommunityDataManager:
                 "longitude": -80.0997,
                 "stock": 12,
                 "rating": 4.8,
-                "review_count": 22
+                "review_count": 22,
             },
             {
                 "title": "Baby Crib - Gemach Loan",
@@ -237,43 +237,47 @@ class ShtelCommunityDataManager:
                 "longitude": -80.1484,
                 "stock": 1,
                 "rating": 5.0,
-                "review_count": 14
-            }
+                "review_count": 14,
+            },
         ]
 
     def add_shtel_listings(self) -> bool:
         """Add shtetl community listings to the marketplace."""
         try:
             listings = self.get_shtel_community_listings()
-            
+
             logger.info(f"🏛️ Adding {len(listings)} shtetl community listings...")
-            
+
             with self.engine.connect() as conn:
                 for listing in listings:
                     # Add timestamps and required fields
                     now = datetime.now(timezone.utc)
-                    listing.update({
-                        'name': listing['title'],  # Use title as name
-                        'location': f"{listing['city']}, {listing['state']} {listing['zip_code']}",  # Build location string
-                        'created_at': now,
-                        'updated_at': now,
-                        'status': 'active',
-                        'is_on_sale': False,
-                        'thumbnail': '/images/default-restaurant.webp',
-                        'additional_images': None,  # Use NULL for empty array
-                        'vendor_review_count': 0,  # Default vendor review count
-                        'vendor_is_verified': True,  # Mark community vendors as verified
-                        'vendor_is_premium': False,  # Default premium status
-                        'kosher_is_verified': True,  # Mark kosher items as verified
-                        'is_gluten_free': False,
-                        'is_dairy_free': False,
-                        'is_nut_free': False,
-                        'is_vegan': False,
-                        'is_vegetarian': False
-                    })
-                    
+                    listing.update(
+                        {
+                            "name": listing["title"],  # Use title as name
+                            "location": f"{listing['city']}, {listing['state']} {listing['zip_code']}",  # Build location string
+                            "created_at": now,
+                            "updated_at": now,
+                            "status": "active",
+                            "is_on_sale": False,
+                            "thumbnail": "/images/default-restaurant.webp",
+                            "additional_images": None,  # Use NULL for empty array
+                            "vendor_review_count": 0,  # Default vendor review count
+                            "vendor_is_verified": True,  # Mark community vendors as verified
+                            "vendor_is_premium": False,  # Default premium status
+                            "kosher_is_verified": True,  # Mark kosher items as verified
+                            "is_gluten_free": False,
+                            "is_dairy_free": False,
+                            "is_nut_free": False,
+                            "is_vegan": False,
+                            "is_vegetarian": False,
+                        }
+                    )
+
                     # Insert listing with all required fields
-                    result = conn.execute(text("""
+                    result = conn.execute(
+                        text(
+                            """
                         INSERT INTO marketplace 
                         (name, title, description, price, currency, category, subcategory, location, city, state, zip_code,
                          vendor_name, vendor_phone, vendor_email, kosher_agency, kosher_level, is_available,
@@ -287,16 +291,21 @@ class ShtelCommunityDataManager:
                                 :thumbnail, :additional_images, :vendor_review_count, :vendor_is_verified, :vendor_is_premium,
                                 :kosher_is_verified, :is_gluten_free, :is_dairy_free, :is_nut_free, :is_vegan, :is_vegetarian,
                                 :created_at, :updated_at)
-                    """), listing)
-                    
+                    """
+                        ),
+                        listing,
+                    )
+
                     logger.info(f"✅ Added: {listing['title']}")
-                
+
                 # Commit the transaction
                 conn.commit()
-            
-            logger.info(f"🎉 Successfully added {len(listings)} shtetl community listings!")
+
+            logger.info(
+                f"🎉 Successfully added {len(listings)} shtetl community listings!"
+            )
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error adding shtetl listings: {e}")
             return False
@@ -304,13 +313,13 @@ class ShtelCommunityDataManager:
     def run(self):
         """Run the shtetl data population."""
         logger.info("🏛️ Starting Shtetl Community Data Population...")
-        
+
         if not self.connect():
             logger.error("❌ Failed to connect to database")
             return False
-        
+
         success = self.add_shtel_listings()
-        
+
         if success:
             logger.info("🎉 Shtetl community data population completed successfully!")
             logger.info("")
@@ -321,7 +330,7 @@ class ShtelCommunityDataManager:
             logger.info("4. Check kosher verification indicators")
         else:
             logger.error("❌ Shtetl data population failed")
-        
+
         return success
 
 

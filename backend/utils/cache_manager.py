@@ -41,7 +41,7 @@ class CacheManager:
         self.redis_url = redis_url or os.getenv("REDIS_URL")
         self.redis_client = None
         self.use_redis = False
-        
+
         if self.redis_url:
             try:
                 self.redis_client = redis.from_url(self.redis_url)
@@ -58,14 +58,14 @@ class CacheManager:
     def _generate_key(self, prefix: str, *args, **kwargs) -> str:
         """Generate cache key from prefix and arguments."""
         key_parts = [prefix]
-        
+
         if args:
             key_parts.extend([str(arg) for arg in args])
-        
+
         if kwargs:
             sorted_kwargs = sorted(kwargs.items())
             key_parts.extend([f"{k}:{v}" for k, v in sorted_kwargs])
-        
+
         key_string = "|".join(key_parts)
         return hashlib.md5(key_string.encode()).hexdigest()
 
@@ -87,7 +87,7 @@ class CacheManager:
                         del _memory_cache[key]
         except Exception as e:
             logger.error(f"Error getting cache key {key}: {e}")
-        
+
         return None
 
     def set(self, key: str, value: Any, ttl: int = 300) -> bool:
@@ -98,10 +98,7 @@ class CacheManager:
             else:
                 # Memory cache
                 expires_at = datetime.now() + timedelta(seconds=ttl)
-                _memory_cache[key] = {
-                    "value": value,
-                    "expires_at": expires_at
-                }
+                _memory_cache[key] = {"value": value, "expires_at": expires_at}
                 return True
         except Exception as e:
             logger.error(f"Error setting cache key {key}: {e}")
@@ -119,7 +116,7 @@ class CacheManager:
                     return True
         except Exception as e:
             logger.error(f"Error deleting cache key {key}: {e}")
-        
+
         return False
 
     def clear_pattern(self, pattern: str) -> int:
@@ -136,15 +133,15 @@ class CacheManager:
                 for key in _memory_cache:
                     if pattern.replace("*", "") in key:
                         keys_to_delete.append(key)
-                
+
                 for key in keys_to_delete:
                     del _memory_cache[key]
                     deleted_count += 1
-                
+
                 return deleted_count
         except Exception as e:
             logger.error(f"Error clearing cache pattern {pattern}: {e}")
-        
+
         return 0
 
     def get_stats(self) -> Dict[str, Any]:
@@ -157,13 +154,13 @@ class CacheManager:
                     "connected_clients": info.get("connected_clients", 0),
                     "used_memory_human": info.get("used_memory_human", "0B"),
                     "keyspace_hits": info.get("keyspace_hits", 0),
-                    "keyspace_misses": info.get("keyspace_misses", 0)
+                    "keyspace_misses": info.get("keyspace_misses", 0),
                 }
             else:
                 return {
                     "type": "memory",
                     "entries": len(_memory_cache),
-                    "memory_usage": "unknown"
+                    "memory_usage": "unknown",
                 }
         except Exception as e:
             logger.error(f"Error getting cache stats: {e}")
@@ -199,30 +196,36 @@ def clear_cache_pattern(pattern: str) -> int:
 
 def cached(ttl: int = 300, key_prefix: str = "cache") -> Callable:
     """Decorator for caching function results."""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Generate cache key
-            cache_key = _cache_manager._generate_key(key_prefix, func.__name__, *args, **kwargs)
-            
+            cache_key = _cache_manager._generate_key(
+                key_prefix, func.__name__, *args, **kwargs
+            )
+
             # Try to get from cache
             cached_result = get_cache(cache_key)
             if cached_result is not None:
                 logger.debug(f"Cache hit for {func.__name__}")
                 return cached_result
-            
+
             # Execute function and cache result
             result = func(*args, **kwargs)
             set_cache(cache_key, result, ttl)
             logger.debug(f"Cache miss for {func.__name__}, cached result")
-            
+
             return result
+
         return wrapper
+
     return decorator
 
 
 def invalidate_cache(pattern: str) -> Callable:
     """Decorator for invalidating cache after function execution."""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -230,7 +233,9 @@ def invalidate_cache(pattern: str) -> Callable:
             clear_cache_pattern(pattern)
             logger.debug(f"Invalidated cache pattern: {pattern}")
             return result
+
         return wrapper
+
     return decorator
 
 

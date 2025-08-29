@@ -26,7 +26,7 @@ from utils.api_response import (
 
 __all__ = [
     "success_response",
-    "error_response", 
+    "error_response",
     "not_found_response",
     "created_response",
     "paginated_response",

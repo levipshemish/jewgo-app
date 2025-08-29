@@ -1,4 +1,3 @@
-
 from alembic import op
 
 #!/usr/bin/env python3

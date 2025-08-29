@@ -65,9 +65,9 @@ class SearchService:
         # Initialize cache manager
         if CACHE_AVAILABLE:
             self.cache_manager = CacheManagerV4(
-                redis_url=self.config.redis_url
-                if hasattr(self.config, "redis_url")
-                else None,
+                redis_url=(
+                    self.config.redis_url if hasattr(self.config, "redis_url") else None
+                ),
                 default_ttl=1800,  # 30 minutes for search results
                 enable_cache=True,
                 cache_prefix="jewgo:search:",

@@ -46,6 +46,7 @@ except ImportError:
         def is_production():
             return os.getenv("ENVIRONMENT", "development") == "production"
 
+
 # Import service instances
 try:
     from services.websocket_service import websocket_service
@@ -67,6 +68,7 @@ except ImportError:
 
 try:
     from services.open_now_service import OpenNowService
+
     open_now_service = OpenNowService()
 except ImportError:
     open_now_service = None
@@ -751,6 +753,7 @@ def create_app(config_class=None):
     # Register mock API routes for development
     try:
         from mock_api import mock_bp
+
         app.register_blueprint(mock_bp)
         logger.info("Mock API routes blueprint registered successfully")
     except ImportError as e:
@@ -996,9 +999,11 @@ def create_app(config_class=None):
             for token_hash, info in admin_tokens.items():
                 token_info.append(
                     {
-                        "token_hash": token_hash[:8] + "..."
-                        if len(token_hash) > 8
-                        else token_hash,
+                        "token_hash": (
+                            token_hash[:8] + "..."
+                            if len(token_hash) > 8
+                            else token_hash
+                        ),
                         "type": info.get("type"),
                         "permissions": info.get("permissions"),
                         "description": info.get("description"),
@@ -1161,9 +1166,9 @@ def create_app(config_class=None):
                                 "columns": column_info,
                                 "status": "marketplace_table_found",
                                 "query_works": query_works,
-                                "query_error": query_error_msg
-                                if not query_works
-                                else None,
+                                "query_error": (
+                                    query_error_msg if not query_works else None
+                                ),
                                 "sample_data": sample_data if query_works else None,
                             }
                         )
@@ -1341,172 +1346,204 @@ def create_app(config_class=None):
     # All routes are already registered in this file
 
     # Initialize SocketIO for WebSocket support
-    socketio = SocketIO(app, cors_allowed_origins=['http://localhost:3000', 'https://jewgo.app'])
-    
+    socketio = SocketIO(
+        app, cors_allowed_origins=["http://localhost:3000", "https://jewgo.app"]
+    )
+
     # WebSocket event handlers
-    @socketio.on('connect')
+    @socketio.on("connect")
     def handle_connect():
         """Handle client connection"""
         try:
             client_id = request.sid
             websocket_service.add_connection(client_id, request.remote_addr)
-            performance_monitor.record_metric('websocket_connection', 1)
+            performance_monitor.record_metric("websocket_connection", 1)
             logger.info(f"Client connected: {client_id}")
-            emit('connected', {'status': 'connected', 'client_id': client_id})
+            emit("connected", {"status": "connected", "client_id": client_id})
         except Exception as e:
             logger.error(f"Error handling connection: {e}")
-            emit('error', {'message': 'Connection failed'})
-    
-    @socketio.on('disconnect')
+            emit("error", {"message": "Connection failed"})
+
+    @socketio.on("disconnect")
     def handle_disconnect():
         """Handle client disconnection"""
         try:
             client_id = request.sid
             websocket_service.remove_connection(client_id)
-            performance_monitor.record_metric('websocket_disconnection', 1)
+            performance_monitor.record_metric("websocket_disconnection", 1)
             logger.info(f"Client disconnected: {client_id}")
         except Exception as e:
             logger.error(f"Error handling disconnection: {e}")
-    
-    @socketio.on('join_room')
+
+    @socketio.on("join_room")
     def handle_join_room(data):
         """Handle room joining"""
         try:
-            room_id = data.get('room_id')
+            room_id = data.get("room_id")
             client_id = request.sid
             if room_id:
                 join_room(room_id)
                 websocket_service.add_to_room(client_id, room_id)
                 logger.info(f"Client {client_id} joined room: {room_id}")
-                emit('room_joined', {'room_id': room_id})
+                emit("room_joined", {"room_id": room_id})
         except Exception as e:
             logger.error(f"Error joining room: {e}")
-            emit('error', {'message': 'Failed to join room'})
-    
-    @socketio.on('leave_room')
+            emit("error", {"message": "Failed to join room"})
+
+    @socketio.on("leave_room")
     def handle_leave_room(data):
         """Handle room leaving"""
         try:
-            room_id = data.get('room_id')
+            room_id = data.get("room_id")
             client_id = request.sid
             if room_id:
                 leave_room(room_id)
                 websocket_service.remove_from_room(client_id, room_id)
                 logger.info(f"Client {client_id} left room: {room_id}")
-                emit('room_left', {'room_id': room_id})
+                emit("room_left", {"room_id": room_id})
         except Exception as e:
             logger.error(f"Error leaving room: {e}")
-            emit('error', {'message': 'Failed to leave room'})
-    
-    @socketio.on('filter_update')
+            emit("error", {"message": "Failed to leave room"})
+
+    @socketio.on("filter_update")
     def handle_filter_update(data):
         """Handle filter updates from clients"""
         try:
             client_id = request.sid
-            filter_type = data.get('filter_type')
-            filter_value = data.get('filter_value')
-            location = data.get('location')
-            
+            filter_type = data.get("filter_type")
+            filter_value = data.get("filter_value")
+            location = data.get("location")
+
             # Broadcast filter update to other clients in the same room
-            room_id = 'filter_updates'
-            websocket_service.broadcast_to_room(room_id, {
-                'type': 'filter_update',
-                'data': {
-                    'filter_type': filter_type,
-                    'filter_value': filter_value,
-                    'location': location,
-                    'client_id': client_id
-                }
-            })
-            
-            performance_monitor.record_metric('filter_update', 1)
-            logger.info(f"Filter update from {client_id}: {filter_type} = {filter_value}")
+            room_id = "filter_updates"
+            websocket_service.broadcast_to_room(
+                room_id,
+                {
+                    "type": "filter_update",
+                    "data": {
+                        "filter_type": filter_type,
+                        "filter_value": filter_value,
+                        "location": location,
+                        "client_id": client_id,
+                    },
+                },
+            )
+
+            performance_monitor.record_metric("filter_update", 1)
+            logger.info(
+                f"Filter update from {client_id}: {filter_type} = {filter_value}"
+            )
         except Exception as e:
             logger.error(f"Error handling filter update: {e}")
-    
-    @socketio.on('location_update')
+
+    @socketio.on("location_update")
     def handle_location_update(data):
         """Handle location updates from clients"""
         try:
             client_id = request.sid
-            latitude = data.get('latitude')
-            longitude = data.get('longitude')
-            
+            latitude = data.get("latitude")
+            longitude = data.get("longitude")
+
             # Update client location in WebSocket service
             websocket_service.update_client_location(client_id, latitude, longitude)
-            
+
             # Broadcast location update to relevant rooms
-            websocket_service.broadcast_to_room('location_updates', {
-                'type': 'location_update',
-                'data': {
-                    'latitude': latitude,
-                    'longitude': longitude,
-                    'client_id': client_id
-                }
-            })
-            
-            performance_monitor.record_metric('location_update', 1)
+            websocket_service.broadcast_to_room(
+                "location_updates",
+                {
+                    "type": "location_update",
+                    "data": {
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "client_id": client_id,
+                    },
+                },
+            )
+
+            performance_monitor.record_metric("location_update", 1)
             logger.info(f"Location update from {client_id}: {latitude}, {longitude}")
         except Exception as e:
             logger.error(f"Error handling location update: {e}")
-    
-    @socketio.on('heartbeat')
+
+    @socketio.on("heartbeat")
     def handle_heartbeat(data):
         """Handle heartbeat messages"""
         try:
             client_id = request.sid
             websocket_service.update_heartbeat(client_id)
-            emit('heartbeat_ack', {'timestamp': datetime.now(timezone.utc).isoformat()})
+            emit("heartbeat_ack", {"timestamp": datetime.now(timezone.utc).isoformat()})
         except Exception as e:
             logger.error(f"Error handling heartbeat: {e}")
-    
+
     # API Routes
-    @app.route('/api/restaurants', methods=['GET'])
+    @app.route("/api/restaurants", methods=["GET"])
     def get_restaurants():
         """Get restaurants with advanced filtering and caching"""
         try:
             start_time = datetime.now()
-            
+
             # Parse and validate query parameters
-            lat = request.args.get('lat', type=float)
-            lng = request.args.get('lng', type=float)
-            max_distance_mi = request.args.get('max_distance_mi', type=float)
-            
+            lat = request.args.get("lat", type=float)
+            lng = request.args.get("lng", type=float)
+            max_distance_mi = request.args.get("max_distance_mi", type=float)
+
             # Parse pagination parameters with explicit type conversion
             try:
-                limit = int(request.args.get('limit', 50))
+                limit = int(request.args.get("limit", 50))
             except (ValueError, TypeError):
                 limit = 50
-                
+
             try:
-                page = int(request.args.get('page', 1))
+                page = int(request.args.get("page", 1))
             except (ValueError, TypeError):
                 page = 1
-                
+
             try:
-                offset = int(request.args.get('offset', 0))
+                offset = int(request.args.get("offset", 0))
             except (ValueError, TypeError):
                 offset = 0
-            
+
             # Calculate offset from page if page is provided
             if page and page > 1:
                 offset = (page - 1) * limit
-            
+
             # Build cache key
             cache_key = f"restaurants:{request.query_string.decode()}"
-            
+
             # Debug logging for pagination
-            logger.info(f"Pagination debug - page: {page}, limit: {limit}, offset: {offset}")
+            logger.info(
+                f"Pagination debug - page: {page}, limit: {limit}, offset: {offset}"
+            )
             logger.info(f"Cache key: {cache_key}")
             logger.info(f"Request args: {dict(request.args)}")
             logger.info(f"Query string: {request.query_string.decode()}")
-            
+
             # Parse boolean parameters properly (Flask's type=bool doesn't work with 'true'/'false' strings)
-            open_now = request.args.get('open_now', '').lower() in ['true', '1', 'yes', 'on']
-            mobile_optimized = request.args.get('mobile_optimized', '').lower() in ['true', '1', 'yes', 'on']
-            low_power_mode = request.args.get('low_power_mode', '').lower() in ['true', '1', 'yes', 'on']
-            slow_connection = request.args.get('slow_connection', '').lower() in ['true', '1', 'yes', 'on']
-            
+            open_now = request.args.get("open_now", "").lower() in [
+                "true",
+                "1",
+                "yes",
+                "on",
+            ]
+            mobile_optimized = request.args.get("mobile_optimized", "").lower() in [
+                "true",
+                "1",
+                "yes",
+                "on",
+            ]
+            low_power_mode = request.args.get("low_power_mode", "").lower() in [
+                "true",
+                "1",
+                "yes",
+                "on",
+            ]
+            slow_connection = request.args.get("slow_connection", "").lower() in [
+                "true",
+                "1",
+                "yes",
+                "on",
+            ]
+
             # Try to get from cache first (skip if redis_cache not available)
             # Temporarily disable cache to debug pagination issue
             # if 'redis_cache' in locals():
@@ -1515,100 +1552,109 @@ def create_app(config_class=None):
             #         if 'performance_monitor' in locals():
             #             performance_monitor.record_cache_hit('restaurants')
             #         return jsonify(cached_result)
-            #     
+            #
             #     if 'performance_monitor' in locals():
             #         performance_monitor.record_cache_miss('restaurants')
-            
+
             # Build base query
             query = "SELECT * FROM restaurants WHERE 1=1"
             count_query = "SELECT COUNT(*) FROM restaurants WHERE 1=1"
             params = []
             count_params = []
-            
+
             # Apply distance filtering if coordinates provided
             if lat is not None and lng is not None and max_distance_mi:
                 # Convert miles to meters for earth_distance function (1 mile = 1609.34 meters)
                 max_distance_meters = max_distance_mi * 1609.34
-                
+
                 # Add distance calculation to SELECT
-                query = query.replace("SELECT *", "SELECT *, (earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) / 1609.34) as distance_mi")
+                query = query.replace(
+                    "SELECT *",
+                    "SELECT *, (earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) / 1609.34) as distance_mi",
+                )
                 params.extend([lat, lng])
-                
+
                 # Add distance filter to WHERE clause
                 query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
                 params.extend([lat, lng, max_distance_meters])
-                
+
                 # Apply same filter to count query
                 count_query += " AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%s, %s)) <= %s"
                 count_params.extend([lat, lng, max_distance_meters])
-                
+
                 # Log distance filtering for monitoring
-                if hasattr(locals(), 'performance_monitor'):
-                    performance_monitor.record_distance_filtering(lat, lng, max_distance_mi)
-            
+                if hasattr(locals(), "performance_monitor"):
+                    performance_monitor.record_distance_filtering(
+                        lat, lng, max_distance_mi
+                    )
+
             # Apply open now filtering
             if open_now:
                 # For now, skip open_now filtering as it requires complex time/timezone logic
                 # TODO: Implement proper open now filtering based on restaurant hours
                 pass
-            
+
             # Apply additional filters from request
-            search_term = request.args.get('search')
+            search_term = request.args.get("search")
             if search_term:
                 search_pattern = f"%{search_term}%"
-                query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                query += (
+                    " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                )
                 params.extend([search_pattern, search_pattern, search_pattern])
-                count_query += " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                count_query += (
+                    " AND (name ILIKE %s OR cuisine_type ILIKE %s OR address ILIKE %s)"
+                )
                 count_params.extend([search_pattern, search_pattern, search_pattern])
-            
-            certifying_agency = request.args.get('certifying_agency')
+
+            certifying_agency = request.args.get("certifying_agency")
             if certifying_agency:
                 query += " AND certifying_agency = %s"
                 params.append(certifying_agency)
                 count_query += " AND certifying_agency = %s"
                 count_params.append(certifying_agency)
-            
-            kosher_category = request.args.get('kosher_category')
+
+            kosher_category = request.args.get("kosher_category")
             if kosher_category:
                 query += " AND kosher_category = %s"
                 params.append(kosher_category)
                 count_query += " AND kosher_category = %s"
                 count_params.append(kosher_category)
-            
-            listing_type = request.args.get('listing_type')
+
+            listing_type = request.args.get("listing_type")
             if listing_type:
                 query += " AND listing_type = %s"
                 params.append(listing_type)
                 count_query += " AND listing_type = %s"
                 count_params.append(listing_type)
-            
-            min_rating = request.args.get('min_rating', type=float)
+
+            min_rating = request.args.get("min_rating", type=float)
             if min_rating:
                 query += " AND rating >= %s"
                 params.append(min_rating)
                 count_query += " AND rating >= %s"
                 count_params.append(min_rating)
-            
-            price_min = request.args.get('price_min', type=int)
+
+            price_min = request.args.get("price_min", type=int)
             if price_min:
                 query += " AND min_avg_meal_cost >= %s"
                 params.append(price_min)
                 count_query += " AND min_avg_meal_cost >= %s"
                 count_params.append(price_min)
-            
-            price_max = request.args.get('price_max', type=int)
+
+            price_max = request.args.get("price_max", type=int)
             if price_max:
                 query += " AND max_avg_meal_cost <= %s"
                 params.append(price_max)
                 count_query += " AND max_avg_meal_cost <= %s"
                 count_params.append(price_max)
-            
+
             # Add ordering BEFORE limit (correct SQL syntax)
             if lat is not None and lng is not None:
                 query += " ORDER BY distance_mi ASC"
             else:
                 query += " ORDER BY name ASC"
-            
+
             # Apply limit from request or use defaults based on optimization mode
             if limit:
                 # Use explicit limit from request
@@ -1626,111 +1672,132 @@ def create_app(config_class=None):
             else:
                 # Desktop optimization
                 query += " LIMIT 100"
-            
+
             # Add offset for pagination
             if offset > 0:
                 query += f" OFFSET {offset}"
-            
+
             # Execute query
             db_manager = get_db_manager()
             if not db_manager:
-                return jsonify({
-                    'success': False,
-                    'error': 'Database connection unavailable'
-                }), 503
-            
+                return (
+                    jsonify(
+                        {"success": False, "error": "Database connection unavailable"}
+                    ),
+                    503,
+                )
+
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Debug logging
                     logger.info(f"Executing query: {query}")
                     logger.info(f"With params: {params}")
                     logger.info(f"Final SQL with LIMIT/OFFSET: {query}")
-                    
+
                     # Execute count query first to get total
                     cursor.execute(count_query, count_params)
                     total_count = cursor.fetchone()[0]
-                    
+
                     # Execute main query
                     cursor.execute(query, params)
                     restaurants = cursor.fetchall()
-                    
-                    logger.info(f"Query returned {len(restaurants)} restaurants out of {total_count} total")
-                    
+
+                    logger.info(
+                        f"Query returned {len(restaurants)} restaurants out of {total_count} total"
+                    )
+
                     # Convert to list of dictionaries
                     columns = [desc[0] for desc in cursor.description]
                     restaurants_data = []
-                    
+
                     for row in restaurants:
                         restaurant_dict = dict(zip(columns, row))
-                        
+
                         # Format distance if available
-                        if 'distance_mi' in restaurant_dict:
+                        if "distance_mi" in restaurant_dict:
                             # Format distance to 1 decimal place
-                            distance = restaurant_dict['distance_mi']
+                            distance = restaurant_dict["distance_mi"]
                             if distance < 1:
-                                restaurant_dict['distance_formatted'] = f"{distance * 5280:.0f} ft"
+                                restaurant_dict["distance_formatted"] = (
+                                    f"{distance * 5280:.0f} ft"
+                                )
                             else:
-                                restaurant_dict['distance_formatted'] = f"{distance:.1f} mi"
-                        
+                                restaurant_dict["distance_formatted"] = (
+                                    f"{distance:.1f} mi"
+                                )
+
                         # Check open now status if not already filtered
-                        if not open_now and restaurant_dict.get('hours_structured'):
+                        if not open_now and restaurant_dict.get("hours_structured"):
                             # TODO: Implement is_open_now logic
-                            restaurant_dict['is_open_now'] = None
-                        
+                            restaurant_dict["is_open_now"] = None
+
                         restaurants_data.append(restaurant_dict)
-            
+
             # Prepare response
             response_data = {
-                'success': True,
-                'data': restaurants_data,
-                'count': len(restaurants_data),
-                'total': total_count,  # Add total count for pagination
-                'page': page,
-                'limit': limit or 50,
-                'offset': offset,
-                'filters_applied': {
-                    'distance_filtering': lat is not None and lng is not None and max_distance_mi,
-                    'open_now': open_now,
-                    'mobile_optimized': mobile_optimized,
-                    'low_power_mode': low_power_mode,
-                    'slow_connection': slow_connection
+                "success": True,
+                "data": restaurants_data,
+                "count": len(restaurants_data),
+                "total": total_count,  # Add total count for pagination
+                "page": page,
+                "limit": limit or 50,
+                "offset": offset,
+                "filters_applied": {
+                    "distance_filtering": lat is not None
+                    and lng is not None
+                    and max_distance_mi,
+                    "open_now": open_now,
+                    "mobile_optimized": mobile_optimized,
+                    "low_power_mode": low_power_mode,
+                    "slow_connection": slow_connection,
                 },
-                'performance': {
-                    'query_time_ms': (datetime.now() - start_time).total_seconds() * 1000,
-                    'cache_hit': False
-                }
+                "performance": {
+                    "query_time_ms": (datetime.now() - start_time).total_seconds()
+                    * 1000,
+                    "cache_hit": False,
+                },
             }
-            
+
             logger.info(f"Returning {len(restaurants_data)} restaurants to frontend")
             logger.info(f"Response data keys: {list(response_data.keys())}")
-            logger.info(f"Response page: {response_data.get('page')}, limit: {response_data.get('limit')}, offset: {response_data.get('offset')}")
-            
+            logger.info(
+                f"Response page: {response_data.get('page')}, limit: {response_data.get('limit')}, offset: {response_data.get('offset')}"
+            )
+
             # Cache the result (skip if redis_cache not available)
             # if 'redis_cache' in locals():
             #     redis_cache.set(cache_key, response_data, ttl=300)  # 5 minutes
-            
+
             # Send real-time update via WebSocket (skip if service not available)
-            if 'websocket_service' in locals():
-                websocket_service.broadcast_to_room('restaurant_updates', {
-                    'type': 'restaurant_list_update',
-                    'data': {
-                        'count': len(restaurants_data),
-                        'filters_applied': response_data['filters_applied']
-                    }
-                })
-            
+            if "websocket_service" in locals():
+                websocket_service.broadcast_to_room(
+                    "restaurant_updates",
+                    {
+                        "type": "restaurant_list_update",
+                        "data": {
+                            "count": len(restaurants_data),
+                            "filters_applied": response_data["filters_applied"],
+                        },
+                    },
+                )
+
             return jsonify(response_data)
-            
+
         except Exception as e:
             logger.error(f"Error fetching restaurants: {e}")
             logger.error(traceback.format_exc())
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch restaurants',
-                'details': str(e)
-            }), 500
-    
-    @app.route('/api/restaurants/<int:restaurant_id>', methods=['GET'])
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to fetch restaurants",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
+
+    @app.route("/api/restaurants/<int:restaurant_id>", methods=["GET"])
     def get_restaurant(restaurant_id):
         """Get a specific restaurant by ID with caching"""
         try:
@@ -1738,56 +1805,59 @@ def create_app(config_class=None):
             cache_key = f"restaurant:{restaurant_id}"
             cached_result = redis_cache.get(cache_key)
             if cached_result:
-                performance_monitor.record_cache_hit('restaurant_detail')
+                performance_monitor.record_cache_hit("restaurant_detail")
                 return jsonify(cached_result)
-            
-            performance_monitor.record_cache_miss('restaurant_detail')
-            
+
+            performance_monitor.record_cache_miss("restaurant_detail")
+
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(
-                        "SELECT * FROM restaurants WHERE id = %s",
-                        (restaurant_id,)
+                        "SELECT * FROM restaurants WHERE id = %s", (restaurant_id,)
                     )
                     restaurant = cursor.fetchone()
-                    
+
                     if not restaurant:
-                        return jsonify({
-                            'success': False,
-                            'error': 'Restaurant not found'
-                        }), 404
-                    
+                        return (
+                            jsonify(
+                                {"success": False, "error": "Restaurant not found"}
+                            ),
+                            404,
+                        )
+
                     # Convert to dictionary
                     columns = [desc[0] for desc in cursor.description]
                     restaurant_dict = dict(zip(columns, restaurant))
-                    
-                    # Add open now status
-                    if restaurant_dict.get('hours_structured'):
-                        is_open = open_now_service.is_open_now(
-                            restaurant_dict['hours_structured'],
-                            restaurant_dict.get('timezone', 'America/New_York')
-                        )
-                        restaurant_dict['is_open_now'] = is_open
-                    
-                    response_data = {
-                        'success': True,
-                        'data': restaurant_dict
-                    }
 
-            # Cache the result
+                    # Add open now status
+                    if restaurant_dict.get("hours_structured"):
+                        is_open = open_now_service.is_open_now(
+                            restaurant_dict["hours_structured"],
+                            restaurant_dict.get("timezone", "America/New_York"),
+                        )
+                        restaurant_dict["is_open_now"] = is_open
+
+                    response_data = {"success": True, "data": restaurant_dict}
+
+                    # Cache the result
                     redis_cache.set(cache_key, response_data, ttl=600)  # 10 minutes
-                    
+
                     return jsonify(response_data)
 
         except Exception as e:
             logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch restaurant',
-                'details': str(e)
-            }), 500
-    
-    @app.route('/api/restaurants/<int:restaurant_id>/status', methods=['GET'])
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to fetch restaurant",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
+
+    @app.route("/api/restaurants/<int:restaurant_id>/status", methods=["GET"])
     def get_restaurant_status(restaurant_id):
         """Get real-time restaurant status"""
         try:
@@ -1795,118 +1865,127 @@ def create_app(config_class=None):
                 with conn.cursor() as cursor:
                     cursor.execute(
                         "SELECT id, name, hours_structured, timezone, status FROM restaurants WHERE id = %s",
-                        (restaurant_id,)
+                        (restaurant_id,),
                     )
                     restaurant = cursor.fetchone()
-                    
+
             if not restaurant:
-                return jsonify({
-                    'success': False,
-                    'error': 'Restaurant not found'
-                }), 404
-            
+                return jsonify({"success": False, "error": "Restaurant not found"}), 404
+
             # Check open now status
             hours_structured = restaurant[2]
-            timezone_str = restaurant[3] or 'America/New_York'
+            timezone_str = restaurant[3] or "America/New_York"
             status = restaurant[4]
-            
+
             is_open = False
             if hours_structured:
                 is_open = open_now_service.is_open_now(hours_structured, timezone_str)
-            
+
             response_data = {
-                'success': True,
-                'data': {
-                    'restaurant_id': restaurant_id,
-                    'name': restaurant[1],
-                    'is_open': is_open,
-                    'status': status,
-                    'last_updated': datetime.now(timezone.utc).isoformat()
-                }
+                "success": True,
+                "data": {
+                    "restaurant_id": restaurant_id,
+                    "name": restaurant[1],
+                    "is_open": is_open,
+                    "status": status,
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
+                },
             }
-            
+
             # Send real-time update
-            websocket_service.broadcast_to_room(f'restaurant_{restaurant_id}', {
-                'type': 'restaurant_status_update',
-                'data': response_data['data']
-            })
-            
+            websocket_service.broadcast_to_room(
+                f"restaurant_{restaurant_id}",
+                {"type": "restaurant_status_update", "data": response_data["data"]},
+            )
+
             return jsonify(response_data)
-                    
+
         except Exception as e:
             logger.error(f"Error fetching restaurant status {restaurant_id}: {e}")
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch restaurant status',
-                'details': str(e)
-            }), 500
-    
-    @app.route('/api/performance/stats', methods=['GET'])
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to fetch restaurant status",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
+
+    @app.route("/api/performance/stats", methods=["GET"])
     def get_performance_stats():
         """Get performance monitoring statistics"""
         try:
             stats = {
-                'distance_filtering': performance_monitor.get_distance_filtering_stats(),
-                'open_now_filtering': performance_monitor.get_open_now_filtering_stats(),
-                'cache': performance_monitor.get_cache_stats(),
-                'overall': performance_monitor.get_overall_stats(),
-                'websocket': {
-                    'active_connections': len(websocket_service.connections),
-                    'active_rooms': len(websocket_service.rooms)
-                }
+                "distance_filtering": performance_monitor.get_distance_filtering_stats(),
+                "open_now_filtering": performance_monitor.get_open_now_filtering_stats(),
+                "cache": performance_monitor.get_cache_stats(),
+                "overall": performance_monitor.get_overall_stats(),
+                "websocket": {
+                    "active_connections": len(websocket_service.connections),
+                    "active_rooms": len(websocket_service.rooms),
+                },
             }
-            
-            return jsonify({
-                'success': True,
-                'data': stats
-            })
+
+            return jsonify({"success": True, "data": stats})
         except Exception as e:
             logger.error(f"Error fetching performance stats: {e}")
-            return jsonify({
-                'success': False,
-                'error': 'Failed to fetch performance stats',
-                'details': str(e)
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to fetch performance stats",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
 
-    @app.route('/api/cache/clear', methods=['POST'])
+    @app.route("/api/cache/clear", methods=["POST"])
     def clear_cache():
         """Clear all cache"""
         try:
             redis_cache.clear_all()
-            return jsonify({
-                'success': True,
-                'message': 'Cache cleared successfully'
-            })
+            return jsonify({"success": True, "message": "Cache cleared successfully"})
         except Exception as e:
             logger.error(f"Error clearing cache: {e}")
-            return jsonify({
-                'success': False,
-                'error': 'Failed to clear cache',
-                'details': str(e)
-            }), 500
-    
-    @app.route('/api/health', methods=['GET'])
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Failed to clear cache",
+                        "details": str(e),
+                    }
+                ),
+                500,
+            )
+
+    @app.route("/api/health", methods=["GET"])
     def health_check():
         """Health check endpoint"""
-        
+
         # Check if migration is requested
-        migrate = request.args.get('migrate')
-        if migrate == 'subcategories':
+        migrate = request.args.get("migrate")
+        if migrate == "subcategories":
             try:
                 with db_manager.get_connection() as conn:
                     with conn.cursor() as cursor:
                         # Check if subcategories table exists
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             SELECT EXISTS (
                                 SELECT FROM information_schema.tables 
                                 WHERE table_name = 'subcategories'
                             );
-                        """)
+                        """
+                        )
                         table_exists = cursor.fetchone()[0]
-                        
+
                         if not table_exists:
                             # Create the subcategories table
-                            cursor.execute("""
+                            cursor.execute(
+                                """
                                 CREATE TABLE subcategories (
                                     id SERIAL PRIMARY KEY,
                                     category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
@@ -1920,29 +1999,39 @@ def create_app(config_class=None):
                                 
                                 CREATE INDEX idx_subcategories_category_id ON subcategories(category_id);
                                 CREATE INDEX idx_subcategories_slug ON subcategories(slug);
-                            """)
+                            """
+                            )
                             conn.commit()
-                            
-                            return jsonify({
-                                'status': 'healthy',
-                                'migration': 'subcategories table created successfully',
-                                'timestamp': datetime.now(timezone.utc).isoformat()
-                            })
+
+                            return jsonify(
+                                {
+                                    "status": "healthy",
+                                    "migration": "subcategories table created successfully",
+                                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                                }
+                            )
                         else:
-                            return jsonify({
-                                'status': 'healthy',
-                                'migration': 'subcategories table already exists',
-                                'timestamp': datetime.now(timezone.utc).isoformat()
-                            })
-                            
+                            return jsonify(
+                                {
+                                    "status": "healthy",
+                                    "migration": "subcategories table already exists",
+                                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                                }
+                            )
+
             except Exception as e:
                 logger.error(f"Migration failed: {e}")
-                return jsonify({
-                    'status': 'unhealthy',
-                    'migration': f'failed: {str(e)}',
-                    'timestamp': datetime.now(timezone.utc).isoformat()
-                }), 500
-        
+                return (
+                    jsonify(
+                        {
+                            "status": "unhealthy",
+                            "migration": f"failed: {str(e)}",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }
+                    ),
+                    500,
+                )
+
         try:
             # Check database connection
             with db_manager.get_connection() as conn:
@@ -1952,7 +2041,7 @@ def create_app(config_class=None):
         except Exception as e:
             db_healthy = False
             logger.error(f"Database health check failed: {e}")
-        
+
         # Check Redis connection
         try:
             redis_cache.ping()
@@ -1960,25 +2049,27 @@ def create_app(config_class=None):
         except Exception as e:
             redis_healthy = False
             logger.error(f"Redis health check failed: {e}")
-        
+
         health_status = {
-            'status': 'healthy' if db_healthy and redis_healthy else 'unhealthy',
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'services': {
-                'database': 'healthy' if db_healthy else 'unhealthy',
-                'redis': 'healthy' if redis_healthy else 'unhealthy',
-                'websocket': 'healthy'
+            "status": "healthy" if db_healthy and redis_healthy else "unhealthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "services": {
+                "database": "healthy" if db_healthy else "unhealthy",
+                "redis": "healthy" if redis_healthy else "unhealthy",
+                "websocket": "healthy",
             },
-            'performance': {
-                'active_connections': len(websocket_service.connections),
-                'cache_hit_rate': performance_monitor.get_cache_stats().get('hit_rate', 0)
-            }
+            "performance": {
+                "active_connections": len(websocket_service.connections),
+                "cache_hit_rate": performance_monitor.get_cache_stats().get(
+                    "hit_rate", 0
+                ),
+            },
         }
-        
+
         status_code = 200 if db_healthy and redis_healthy else 503
         return jsonify(health_status), status_code
 
-    @app.route('/api/admin/run-marketplace-migration', methods=['POST'])
+    @app.route("/api/admin/run-marketplace-migration", methods=["POST"])
     def run_marketplace_migration():
         """Temporary admin endpoint to run marketplace migration."""
         try:
@@ -1986,150 +2077,166 @@ def create_app(config_class=None):
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
                 return jsonify({"error": "Unauthorized"}), 401
-            
+
             token = auth_header.split(" ")[1]
             admin_token = os.getenv("ADMIN_TOKEN")
-            
+
             if not admin_token or token != admin_token:
                 return jsonify({"error": "Invalid admin token"}), 401
-            
+
             # Import and run the migration
             from database.migrations.create_marketplace_unified import run_migration
-            
+
             success = run_migration()
-            
+
             if success:
-                return jsonify({
-                    "success": True,
-                    "message": "Marketplace migration completed successfully",
-                    "tables_created": [
-                        "categories", "subcategories", "listings", "gemachs",
-                        "listing_images", "listing_transactions", "listing_endorsements", "usernames"
-                    ]
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Marketplace migration completed successfully",
+                        "tables_created": [
+                            "categories",
+                            "subcategories",
+                            "listings",
+                            "gemachs",
+                            "listing_images",
+                            "listing_transactions",
+                            "listing_endorsements",
+                            "usernames",
+                        ],
+                    }
+                )
             else:
-                return jsonify({
-                    "success": False,
-                    "error": "Marketplace migration failed"
-                }), 500
-                
+                return (
+                    jsonify(
+                        {"success": False, "error": "Marketplace migration failed"}
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.exception("Error running marketplace migration")
-            return jsonify({
-                "success": False,
-                "error": str(e)
-            }), 500
+            return jsonify({"success": False, "error": str(e)}), 500
 
-    @app.route('/api/migrate-marketplace', methods=['POST'])
+    @app.route("/api/migrate-marketplace", methods=["POST"])
     def migrate_marketplace():
         """Simple migration endpoint that runs the marketplace migration script."""
         try:
             # Import and run the migration script
             import subprocess
             import sys
-            
+
             # Run the migration script
-            result = subprocess.run([
-                sys.executable, 
-                'run_marketplace_migration.py'
-            ], capture_output=True, text=True, cwd='.')
-            
+            result = subprocess.run(
+                [sys.executable, "run_marketplace_migration.py"],
+                capture_output=True,
+                text=True,
+                cwd=".",
+            )
+
             if result.returncode == 0:
-                return jsonify({
-                    "success": True,
-                    "message": "Marketplace migration completed successfully",
-                    "output": result.stdout
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Marketplace migration completed successfully",
+                        "output": result.stdout,
+                    }
+                )
             else:
-                return jsonify({
-                    "success": False,
-                    "error": "Migration failed",
-                    "output": result.stdout,
-                    "error_output": result.stderr
-                }), 500
-                
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": "Migration failed",
+                            "output": result.stdout,
+                            "error_output": result.stderr,
+                        }
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.exception("Error running marketplace migration script")
-            return jsonify({
-                "success": False,
-                "error": str(e)
-            }), 500
+            return jsonify({"success": False, "error": str(e)}), 500
 
-    @app.route('/api/fix-marketplace', methods=['POST'])
+    @app.route("/api/fix-marketplace", methods=["POST"])
     def fix_marketplace():
         """Simple endpoint to fix marketplace tables."""
         try:
             # Import and run the migration directly
             from database.migrations.create_marketplace_unified import run_migration
-            
+
             success = run_migration()
-            
+
             if success:
-                return jsonify({
-                    "success": True,
-                    "message": "Marketplace tables created successfully"
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Marketplace tables created successfully",
+                    }
+                )
             else:
-                return jsonify({
-                    "success": False,
-                    "error": "Failed to create marketplace tables"
-                }), 500
-                
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": "Failed to create marketplace tables",
+                        }
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.exception("Error creating marketplace tables")
-            return jsonify({
-                "success": False,
-                "error": str(e)
-            }), 500
+            return jsonify({"success": False, "error": str(e)}), 500
 
-    @app.route('/api/create-tables', methods=['GET'])
+    @app.route("/api/create-tables", methods=["GET"])
     def create_tables():
         """Simple endpoint to create marketplace tables."""
         try:
             # Import and run the migration directly
             from database.migrations.create_marketplace_unified import run_migration
-            
+
             success = run_migration()
-            
+
             if success:
-                return jsonify({
-                    "success": True,
-                    "message": "Marketplace tables created successfully"
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Marketplace tables created successfully",
+                    }
+                )
             else:
-                return jsonify({
-                    "success": False,
-                    "error": "Failed to create marketplace tables"
-                }), 500
-                
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "error": "Failed to create marketplace tables",
+                        }
+                    ),
+                    500,
+                )
+
         except Exception as e:
             logger.exception("Error creating marketplace tables")
-            return jsonify({
-                "success": False,
-                "error": str(e)
-            }), 500
-    
+            return jsonify({"success": False, "error": str(e)}), 500
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):
-        return jsonify({
-            'success': False,
-            'error': 'Endpoint not found'
-        }), 404
-    
+        return jsonify({"success": False, "error": "Endpoint not found"}), 404
+
     @app.errorhandler(500)
     def internal_error(error):
         logger.error(f"Internal server error: {error}")
-        return jsonify({
-            'success': False,
-            'error': 'Internal server error'
-        }), 500
-    
+        return jsonify({"success": False, "error": "Internal server error"}), 500
+
     return app, socketio
+
 
 # Create the app and socketio instances
 app, socketio = create_app()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run the app with SocketIO
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=8000, debug=True)

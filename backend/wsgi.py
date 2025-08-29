@@ -6,9 +6,15 @@ try:
     from utils.config_manager import config_manager
 except ImportError:
     # Fallback config if the module is not available
-    config_manager = type('ConfigManager', (), {
-        'get': lambda self, key, default=None: os.getenv(key.upper().replace('.', '_'), default)
-    })()
+    config_manager = type(
+        "ConfigManager",
+        (),
+        {
+            "get": lambda self, key, default=None: os.getenv(
+                key.upper().replace(".", "_"), default
+            )
+        },
+    )()
 
 """
 WSGI Entry Point for JewGo Backend
@@ -26,9 +32,9 @@ app = create_app()
 
 if __name__ == "__main__":
     # Get environment configuration
-    is_production = config_manager.get('environment.production', False)
-    server_port = int(config_manager.get('server.port', 5000))
-    
+    is_production = config_manager.get("environment.production", False)
+    server_port = int(config_manager.get("server.port", 5000))
+
     app.run(
         host="0.0.0.0",
         port=server_port,

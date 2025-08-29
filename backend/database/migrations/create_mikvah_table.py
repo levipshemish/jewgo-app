@@ -192,16 +192,18 @@ def run_migration() -> bool | None:
                 # Execute the SQL statements
                 logger.info("Creating mikvah table...")
                 conn.execute(text(create_mikvah_table_sql))
-                
+
                 logger.info("Creating indexes...")
                 conn.execute(text(create_indexes_sql))
-                
+
                 logger.info("Creating search trigger...")
                 conn.execute(text(create_search_trigger_sql))
 
                 # Commit transaction
                 trans.commit()
-                logger.info("Successfully created mikvah table with all indexes and triggers")
+                logger.info(
+                    "Successfully created mikvah table with all indexes and triggers"
+                )
 
                 return True
 

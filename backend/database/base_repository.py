@@ -57,7 +57,7 @@ class BaseRepository(Generic[T]):
                 return {
                     "id": record_id,
                     "name": getattr(instance, "name", None),
-                    "created": True
+                    "created": True,
                 }
         except Exception as e:
             self.logger.exception("Failed to create record", error=str(e), data=data)

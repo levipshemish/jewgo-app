@@ -259,9 +259,11 @@ def cache_health_check():
         return (
             jsonify(
                 {
-                    "status": "healthy"
-                    if health_status.get("is_healthy", False)
-                    else "unhealthy",
+                    "status": (
+                        "healthy"
+                        if health_status.get("is_healthy", False)
+                        else "unhealthy"
+                    ),
                     "cache_health": health_status,
                     "cache_metrics": cache_metrics,
                     "timestamp": time.time(),

@@ -54,23 +54,32 @@ class ShtetlMarketplaceService(BaseService):
         """Get shtetl marketplace listings with community-specific filtering."""
         try:
             # Check if shtetl_marketplace table exists
-            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+            if not self.db_manager or not hasattr(
+                self.db_manager, "connection_manager"
+            ):
                 logger.warning("Database manager not available for shtetl marketplace")
                 return self._get_empty_listings_response(limit, offset)
-            
+
             # Try to check if shtetl_marketplace table exists
             try:
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
+
                     # Test if shtetl_marketplace table exists
-                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'shtetl_marketplace\''))
+                    result = session.execute(
+                        text(
+                            "SELECT 1 FROM information_schema.tables WHERE table_name = 'shtetl_marketplace'"
+                        )
+                    )
                     if not result.fetchone():
-                        logger.warning("Shtetl marketplace table does not exist, returning empty response")
+                        logger.warning(
+                            "Shtetl marketplace table does not exist, returning empty response"
+                        )
                         return self._get_empty_listings_response(limit, offset)
             except Exception as e:
                 logger.warning(f"Could not check shtetl_marketplace table: {e}")
                 return self._get_empty_listings_response(limit, offset)
-            
+
             # Build query for shtetl_marketplace table
             query = """
                 SELECT s.id, s.title, s.description, s.price_cents, s.currency, s.city, s.state, s.zip_code,
@@ -148,6 +157,7 @@ class ShtetlMarketplaceService(BaseService):
 
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
+
                 result = session.execute(text(query), params)
                 rows = result.fetchall()
 
@@ -155,24 +165,29 @@ class ShtetlMarketplaceService(BaseService):
                 listings = []
                 for row in rows:
                     listing = dict(row._mapping)
-                    
+
                     # Handle JSON fields
-                    if listing.get('images'):
+                    if listing.get("images"):
                         try:
-                            if isinstance(listing['images'], str):
-                                listing['images'] = json.loads(listing['images'])
+                            if isinstance(listing["images"], str):
+                                listing["images"] = json.loads(listing["images"])
                         except (json.JSONDecodeError, TypeError):
-                            listing['images'] = []
-                    
+                            listing["images"] = []
+
                     listings.append(listing)
 
                 # Get total count for pagination
                 count_query = query.replace(
                     "SELECT s.id, s.title, s.description, s.price_cents, s.currency, s.city, s.state, s.zip_code, s.latitude as lat, s.longitude as lng, s.seller_name, s.seller_phone, s.seller_email, s.category_name, s.subcategory, s.status, s.created_at, s.updated_at, s.thumbnail, s.images, s.kosher_agency, s.kosher_level, s.kosher_verified, s.rabbi_endorsed, s.community_verified, s.is_gemach, s.gemach_type, s.holiday_category, s.condition, s.stock_quantity, s.is_available, s.is_featured, s.rating, s.review_count, s.transaction_type, s.contact_preference, s.notes FROM shtetl_marketplace s",
-                    "SELECT COUNT(*) as total FROM shtetl_marketplace s"
-                ).split("ORDER BY")[0]  # Remove ORDER BY and LIMIT clauses
-                
-                count_result = session.execute(text(count_query), {k: v for k, v in params.items() if k not in ['limit', 'offset']})
+                    "SELECT COUNT(*) as total FROM shtetl_marketplace s",
+                ).split("ORDER BY")[
+                    0
+                ]  # Remove ORDER BY and LIMIT clauses
+
+                count_result = session.execute(
+                    text(count_query),
+                    {k: v for k, v in params.items() if k not in ["limit", "offset"]},
+                )
                 total = count_result.fetchone()[0]
 
                 return {
@@ -182,8 +197,8 @@ class ShtetlMarketplaceService(BaseService):
                         "total": total,
                         "limit": limit,
                         "offset": offset,
-                        "community_focus": True  # Indicates this is community-focused data
-                    }
+                        "community_focus": True,  # Indicates this is community-focused data
+                    },
                 }
 
         except Exception as e:
@@ -191,7 +206,7 @@ class ShtetlMarketplaceService(BaseService):
             return {
                 "success": False,
                 "error": f"Failed to fetch shtetl listings: {str(e)}",
-                "data": {"listings": [], "total": 0, "limit": limit, "offset": offset}
+                "data": {"listings": [], "total": 0, "limit": limit, "offset": offset},
             }
 
     def get_listing_by_id(self, listing_id: str) -> Dict[str, Any]:
@@ -210,6 +225,7 @@ class ShtetlMarketplaceService(BaseService):
 
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
+
                 result = session.execute(text(query), {"listing_id": listing_id})
                 row = result.fetchone()
 
@@ -217,20 +233,23 @@ class ShtetlMarketplaceService(BaseService):
                     return {"success": False, "error": "Shtetl listing not found"}
 
                 listing = dict(row._mapping)
-                
+
                 # Handle JSON fields
-                if listing.get('images'):
+                if listing.get("images"):
                     try:
-                        if isinstance(listing['images'], str):
-                            listing['images'] = json.loads(listing['images'])
+                        if isinstance(listing["images"], str):
+                            listing["images"] = json.loads(listing["images"])
                     except (json.JSONDecodeError, TypeError):
-                        listing['images'] = []
+                        listing["images"] = []
 
                 return {"success": True, "data": listing}
 
         except Exception as e:
             logger.exception(f"Error fetching shtetl listing {listing_id}")
-            return {"success": False, "error": f"Failed to fetch shtetl listing: {str(e)}"}
+            return {
+                "success": False,
+                "error": f"Failed to fetch shtetl listing: {str(e)}",
+            }
 
     def create_listing(self, listing_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new shtetl marketplace listing."""
@@ -242,7 +261,10 @@ class ShtetlMarketplaceService(BaseService):
             required_fields = ["title", "category_name", "seller_name", "city", "state"]
             for field in required_fields:
                 if not listing_data.get(field):
-                    return {"success": False, "error": f"Missing required field: {field}"}
+                    return {
+                        "success": False,
+                        "error": f"Missing required field: {field}",
+                    }
 
             # Set defaults and process data
             now = datetime.now(timezone.utc)
@@ -286,7 +308,7 @@ class ShtetlMarketplaceService(BaseService):
                 "pickup_instructions": listing_data.get("pickup_instructions"),
                 "notes": listing_data.get("notes"),
                 "created_at": now,
-                "updated_at": now
+                "updated_at": now,
             }
 
             # If price is 0, mark as Gemach automatically
@@ -316,42 +338,99 @@ class ShtetlMarketplaceService(BaseService):
 
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
+
                 result = session.execute(text(insert_query), processed_data)
                 listing_id = result.fetchone()[0]
                 session.commit()
 
-                logger.info(f"Created shtetl listing {listing_id}: {processed_data['title']}")
-                
+                logger.info(
+                    f"Created shtetl listing {listing_id}: {processed_data['title']}"
+                )
+
                 return {
                     "success": True,
                     "data": {"id": listing_id, **processed_data},
-                    "message": "Shtetl listing created successfully"
+                    "message": "Shtetl listing created successfully",
                 }
 
         except Exception as e:
             logger.exception("Error creating shtetl listing")
-            return {"success": False, "error": f"Failed to create shtetl listing: {str(e)}"}
+            return {
+                "success": False,
+                "error": f"Failed to create shtetl listing: {str(e)}",
+            }
 
     def get_categories(self) -> Dict[str, Any]:
         """Get shtetl marketplace categories."""
         # Hardcoded Jewish community categories
         categories = [
-            {"name": "Judaica", "subcategories": ["Mezuzot", "Kiddush Cups", "Havdalah Sets", "Tallitot", "Tefillin"]},
-            {"name": "Holiday Items", "subcategories": ["Passover", "Sukkot", "Purim", "Chanukah", "Rosh Hashana"]},
-            {"name": "Religious Books", "subcategories": ["Siddur", "Chumash", "Gemara", "Halacha", "Jewish Philosophy"]},
-            {"name": "Kosher Food", "subcategories": ["Meat", "Dairy", "Pareve", "Bakery", "Wine"]},
-            {"name": "Baby Items", "subcategories": ["Furniture", "Toys", "Clothes", "Feeding", "Safety"]},
-            {"name": "Appliances", "subcategories": ["Kitchen", "Cleaning", "Electronics"]},
-            {"name": "Furniture", "subcategories": ["Dining", "Living Room", "Bedroom", "Office"]},
-            {"name": "Clothing", "subcategories": ["Men", "Women", "Children", "Formal Wear"]},
-            {"name": "Books & Media", "subcategories": ["Jewish Books", "Children's Books", "Music", "DVDs"]},
-            {"name": "Gemach Items", "subcategories": ["Baby Gear", "Medical Equipment", "Tools", "Books", "Toys"]}
+            {
+                "name": "Judaica",
+                "subcategories": [
+                    "Mezuzot",
+                    "Kiddush Cups",
+                    "Havdalah Sets",
+                    "Tallitot",
+                    "Tefillin",
+                ],
+            },
+            {
+                "name": "Holiday Items",
+                "subcategories": [
+                    "Passover",
+                    "Sukkot",
+                    "Purim",
+                    "Chanukah",
+                    "Rosh Hashana",
+                ],
+            },
+            {
+                "name": "Religious Books",
+                "subcategories": [
+                    "Siddur",
+                    "Chumash",
+                    "Gemara",
+                    "Halacha",
+                    "Jewish Philosophy",
+                ],
+            },
+            {
+                "name": "Kosher Food",
+                "subcategories": ["Meat", "Dairy", "Pareve", "Bakery", "Wine"],
+            },
+            {
+                "name": "Baby Items",
+                "subcategories": ["Furniture", "Toys", "Clothes", "Feeding", "Safety"],
+            },
+            {
+                "name": "Appliances",
+                "subcategories": ["Kitchen", "Cleaning", "Electronics"],
+            },
+            {
+                "name": "Furniture",
+                "subcategories": ["Dining", "Living Room", "Bedroom", "Office"],
+            },
+            {
+                "name": "Clothing",
+                "subcategories": ["Men", "Women", "Children", "Formal Wear"],
+            },
+            {
+                "name": "Books & Media",
+                "subcategories": ["Jewish Books", "Children's Books", "Music", "DVDs"],
+            },
+            {
+                "name": "Gemach Items",
+                "subcategories": [
+                    "Baby Gear",
+                    "Medical Equipment",
+                    "Tools",
+                    "Books",
+                    "Toys",
+                ],
+            },
         ]
-        
-        return {
-            "success": True,
-            "data": {"categories": categories}
-        }
+
+        return {"success": True, "data": {"categories": categories}}
 
     def _get_empty_listings_response(self, limit: int, offset: int) -> Dict[str, Any]:
         """Return empty listings response."""
@@ -362,6 +441,6 @@ class ShtetlMarketplaceService(BaseService):
                 "total": 0,
                 "limit": limit,
                 "offset": offset,
-                "community_focus": True
-            }
+                "community_focus": True,
+            },
         }

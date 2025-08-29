@@ -155,12 +155,12 @@ class SearchResult:
             cholov_stam=restaurant.cholov_stam,
             image_url=restaurant.image_url,
             specials=restaurant.specials,
-            created_at=restaurant.created_at.isoformat()
-            if restaurant.created_at
-            else None,
-            updated_at=restaurant.updated_at.isoformat()
-            if restaurant.updated_at
-            else None,
+            created_at=(
+                restaurant.created_at.isoformat() if restaurant.created_at else None
+            ),
+            updated_at=(
+                restaurant.updated_at.isoformat() if restaurant.updated_at else None
+            ),
             **kwargs,
         )
 

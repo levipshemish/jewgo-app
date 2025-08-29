@@ -185,12 +185,9 @@ class SearchTimeoutError(SearchError):
     """Raised when search operation times out."""
 
 
-
 class SearchConfigurationError(SearchError):
     """Raised when search configuration is invalid."""
 
 
-
 class SearchProviderUnavailableError(SearchError):
     """Raised when search provider is unavailable."""
-

@@ -28,9 +28,9 @@ class DatabaseColumnManager:
 
     def __init__(self, database_url: Optional[str] = None):
         """Initialize the column manager."""
-        self.database_url = database_url or os.getenv('DATABASE_URL')
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-        
+
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -39,15 +39,15 @@ class DatabaseColumnManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-            
+
             # Test connection
             with self.engine.connect() as conn:
                 result = conn.execute(text("SELECT 1"))
                 result.fetchone()
-            
+
             logger.info("✅ Database connection established successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Database connection failed: {e}")
             return False
@@ -56,12 +56,17 @@ class DatabaseColumnManager:
         """Check if a column exists in a table."""
         try:
             with self.engine.connect() as conn:
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text(
+                        """
                     SELECT column_name
                     FROM information_schema.columns
                     WHERE table_name = :table_name
                     AND column_name = :column_name
-                """), {"table_name": table_name, "column_name": column_name})
+                """
+                    ),
+                    {"table_name": table_name, "column_name": column_name},
+                )
                 return result.fetchone() is not None
         except Exception as e:
             logger.error(f"Error checking column existence: {e}")
@@ -71,16 +76,22 @@ class DatabaseColumnManager:
         """Add a column to a table."""
         try:
             if self.check_column_exists(table_name, column_name):
-                logger.info(f"Column {column_name} already exists in {table_name}, skipping")
+                logger.info(
+                    f"Column {column_name} already exists in {table_name}, skipping"
+                )
                 return True
 
             logger.info(f"Adding column {column_name} to {table_name}")
-            
+
             with self.engine.begin() as conn:
-                conn.execute(text(f"""
+                conn.execute(
+                    text(
+                        f"""
                     ALTER TABLE {table_name}
                     ADD COLUMN {column_name} {column_type}
-                """))
+                """
+                    )
+                )
 
             logger.info(f"✅ Successfully added column {column_name} to {table_name}")
             return True
@@ -93,7 +104,7 @@ class DatabaseColumnManager:
         """Add missing columns to the restaurants table."""
         try:
             logger.info("🏗️ Adding missing columns to restaurants table...")
-            
+
             # Define the columns to add
             columns_to_add = [
                 ("cuisine_type", "VARCHAR(100)"),
@@ -110,15 +121,17 @@ class DatabaseColumnManager:
                 ("current_time_local", "TIMESTAMP"),
                 ("hours_parsed", "BOOLEAN DEFAULT FALSE"),
             ]
-            
+
             success_count = 0
             total_columns = len(columns_to_add)
-            
+
             for column_name, column_type in columns_to_add:
                 if self.add_column("restaurants", column_name, column_type):
                     success_count += 1
 
-            logger.info(f"✅ Added {success_count}/{total_columns} columns to restaurants table")
+            logger.info(
+                f"✅ Added {success_count}/{total_columns} columns to restaurants table"
+            )
             return success_count == total_columns
 
         except Exception as e:
@@ -129,7 +142,7 @@ class DatabaseColumnManager:
         """Add missing columns to the marketplace table."""
         try:
             logger.info("🏗️ Adding missing columns to marketplace table...")
-            
+
             # Define the columns to add
             columns_to_add = [
                 ("price_cents", "INTEGER"),
@@ -142,15 +155,17 @@ class DatabaseColumnManager:
                 ("view_count", "INTEGER DEFAULT 0"),
                 ("favorite_count", "INTEGER DEFAULT 0"),
             ]
-            
+
             success_count = 0
             total_columns = len(columns_to_add)
-            
+
             for column_name, column_type in columns_to_add:
                 if self.add_column("marketplace", column_name, column_type):
                     success_count += 1
 
-            logger.info(f"✅ Added {success_count}/{total_columns} columns to marketplace table")
+            logger.info(
+                f"✅ Added {success_count}/{total_columns} columns to marketplace table"
+            )
             return success_count == total_columns
 
         except Exception as e:
@@ -161,7 +176,7 @@ class DatabaseColumnManager:
         """Add missing columns to the users table."""
         try:
             logger.info("🏗️ Adding missing columns to users table...")
-            
+
             # Define the columns to add
             columns_to_add = [
                 ("phone_number", "VARCHAR(20)"),
@@ -175,15 +190,17 @@ class DatabaseColumnManager:
                 ("last_login", "TIMESTAMP"),
                 ("is_verified", "BOOLEAN DEFAULT FALSE"),
             ]
-            
+
             success_count = 0
             total_columns = len(columns_to_add)
-            
+
             for column_name, column_type in columns_to_add:
                 if self.add_column("users", column_name, column_type):
                     success_count += 1
 
-            logger.info(f"✅ Added {success_count}/{total_columns} columns to users table")
+            logger.info(
+                f"✅ Added {success_count}/{total_columns} columns to users table"
+            )
             return success_count == total_columns
 
         except Exception as e:
@@ -194,22 +211,29 @@ class DatabaseColumnManager:
         """Get all columns for a table."""
         try:
             with self.engine.connect() as conn:
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text(
+                        """
                     SELECT column_name, data_type, is_nullable, column_default
                     FROM information_schema.columns
                     WHERE table_name = :table_name
                     ORDER BY ordinal_position
-                """), {"table_name": table_name})
-                
+                """
+                    ),
+                    {"table_name": table_name},
+                )
+
                 columns = []
                 for row in result.fetchall():
-                    columns.append({
-                        "name": row[0],
-                        "type": row[1],
-                        "nullable": row[2] == "YES",
-                        "default": row[3]
-                    })
-                
+                    columns.append(
+                        {
+                            "name": row[0],
+                            "type": row[1],
+                            "nullable": row[2] == "YES",
+                            "default": row[3],
+                        }
+                    )
+
                 return columns
 
         except Exception as e:
@@ -220,36 +244,33 @@ class DatabaseColumnManager:
         """Validate the structure of a table."""
         try:
             logger.info(f"🔍 Validating table structure for {table_name}...")
-            
+
             columns = self.get_table_columns(table_name)
-            
+
             if not columns:
                 return {
                     "valid": False,
-                    "error": f"Table {table_name} not found or no columns"
+                    "error": f"Table {table_name} not found or no columns",
                 }
-            
+
             # Check for required columns based on table type
             required_columns = self._get_required_columns(table_name)
             missing_columns = []
-            
+
             for required_col in required_columns:
                 if not any(col["name"] == required_col["name"] for col in columns):
                     missing_columns.append(required_col)
-            
+
             return {
                 "valid": len(missing_columns) == 0,
                 "total_columns": len(columns),
                 "missing_columns": missing_columns,
-                "columns": columns
+                "columns": columns,
             }
 
         except Exception as e:
             logger.error(f"Error validating table structure: {e}")
-            return {
-                "valid": False,
-                "error": str(e)
-            }
+            return {"valid": False, "error": str(e)}
 
     def _get_required_columns(self, table_name: str) -> List[Dict[str, str]]:
         """Get required columns for a specific table."""
@@ -281,7 +302,7 @@ class DatabaseColumnManager:
     def run_complete_migration(self) -> bool:
         """Run the complete column migration."""
         logger.info("🚀 Starting complete column migration...")
-        
+
         try:
             # Connect to database
             if not self.connect():
@@ -293,10 +314,10 @@ class DatabaseColumnManager:
                 ("marketplace", self.add_marketplace_columns),
                 ("users", self.add_user_columns),
             ]
-            
+
             success_count = 0
             total_migrations = len(migrations)
-            
+
             for table_name, migration_func in migrations:
                 logger.info(f"📋 Processing {table_name} table...")
                 if migration_func():
@@ -305,7 +326,9 @@ class DatabaseColumnManager:
                 else:
                     logger.warning(f"⚠️ {table_name} migration failed")
 
-            logger.info(f"🎉 Column migration completed: {success_count}/{total_migrations} successful")
+            logger.info(
+                f"🎉 Column migration completed: {success_count}/{total_migrations} successful"
+            )
             return success_count == total_migrations
 
         except Exception as e:
@@ -316,17 +339,21 @@ class DatabaseColumnManager:
 def main():
     """Main execution function."""
     import argparse
-    
-    parser = argparse.ArgumentParser(description='Database Column Manager')
-    parser.add_argument('--table', help='Specific table to process (restaurants, marketplace, users)')
-    parser.add_argument('--validate', action='store_true', help='Validate table structure')
-    parser.add_argument('--database-url', help='Database URL (optional)')
-    
+
+    parser = argparse.ArgumentParser(description="Database Column Manager")
+    parser.add_argument(
+        "--table", help="Specific table to process (restaurants, marketplace, users)"
+    )
+    parser.add_argument(
+        "--validate", action="store_true", help="Validate table structure"
+    )
+    parser.add_argument("--database-url", help="Database URL (optional)")
+
     args = parser.parse_args()
-    
+
     try:
         manager = DatabaseColumnManager(database_url=args.database_url)
-        
+
         if args.validate:
             if args.table:
                 result = manager.validate_table_structure(args.table)
@@ -345,9 +372,9 @@ def main():
                 return 1
         else:
             success = manager.run_complete_migration()
-        
+
         return 0 if success else 1
-        
+
     except Exception as e:
         logger.error(f"❌ Column manager failed: {e}")
         return 1

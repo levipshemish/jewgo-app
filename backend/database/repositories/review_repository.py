@@ -393,9 +393,9 @@ class ReviewRepository(BaseRepository[Review]):
                     "title": review.title,
                     "content": review.content,
                     "status": review.status,
-                    "created_at": review.created_at.isoformat()
-                    if review.created_at
-                    else None,
+                    "created_at": (
+                        review.created_at.isoformat() if review.created_at else None
+                    ),
                     "flag_count": flag_count,
                 }
                 result.append(review_dict)

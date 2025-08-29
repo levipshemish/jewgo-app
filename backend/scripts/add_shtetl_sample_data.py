@@ -29,9 +29,9 @@ class ShtetlSampleDataManager:
 
     def __init__(self, database_url: str = None):
         """Initialize the data manager."""
-        self.database_url = database_url or os.getenv('DATABASE_URL')
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-        
+
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -40,11 +40,11 @@ class ShtetlSampleDataManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-            
+
             # Test connection
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            
+
             logger.info("✅ Database connection successful")
             return True
         except Exception as e:
@@ -80,7 +80,7 @@ class ShtetlSampleDataManager:
                 "is_available": True,
                 "is_featured": True,
                 "transaction_type": "sale",
-                "contact_preference": "phone"
+                "contact_preference": "phone",
             },
             {
                 "title": "High Chair - Community Gemach",
@@ -108,7 +108,7 @@ class ShtetlSampleDataManager:
                 "is_featured": True,
                 "transaction_type": "gemach",
                 "contact_preference": "phone",
-                "pickup_instructions": "Call before pickup - located at community center"
+                "pickup_instructions": "Call before pickup - located at community center",
             },
             {
                 "title": "Vitamix Blender - Fleishig Only",
@@ -132,7 +132,7 @@ class ShtetlSampleDataManager:
                 "is_available": True,
                 "transaction_type": "sale",
                 "contact_preference": "phone",
-                "notes": "Strictly fleishig use - never mixed with dairy"
+                "notes": "Strictly fleishig use - never mixed with dairy",
             },
             {
                 "title": "Silver Shabbat Candlesticks",
@@ -155,7 +155,7 @@ class ShtetlSampleDataManager:
                 "is_available": True,
                 "is_featured": True,
                 "transaction_type": "sale",
-                "contact_preference": "phone"
+                "contact_preference": "phone",
             },
             {
                 "title": "Complete Passover Dish Set",
@@ -183,7 +183,7 @@ class ShtetlSampleDataManager:
                 "is_available": True,
                 "is_featured": True,
                 "transaction_type": "sale",
-                "contact_preference": "email"
+                "contact_preference": "email",
             },
             {
                 "title": "Hand Embroidered Tallit Bag",
@@ -205,7 +205,7 @@ class ShtetlSampleDataManager:
                 "stock_quantity": 8,
                 "is_available": True,
                 "transaction_type": "sale",
-                "contact_preference": "email"
+                "contact_preference": "email",
             },
             {
                 "title": "Baby Stroller - Gemach Loan",
@@ -233,7 +233,7 @@ class ShtetlSampleDataManager:
                 "is_featured": True,
                 "transaction_type": "gemach",
                 "contact_preference": "phone",
-                "pickup_instructions": "Community center pickup by appointment"
+                "pickup_instructions": "Community center pickup by appointment",
             },
             {
                 "title": "Sukkah Decorations Set",
@@ -257,45 +257,47 @@ class ShtetlSampleDataManager:
                 "stock_quantity": 12,
                 "is_available": True,
                 "transaction_type": "sale",
-                "contact_preference": "phone"
-            }
+                "contact_preference": "phone",
+            },
         ]
 
     def add_sample_data(self) -> bool:
         """Add sample data to shtetl_marketplace table."""
         try:
             listings = self.get_sample_listings()
-            
+
             logger.info(f"🏛️ Adding {len(listings)} shtetl community sample listings...")
-            
+
             with self.engine.connect() as conn:
                 for listing in listings:
                     # Add timestamps and defaults
                     now = datetime.now(timezone.utc)
-                    listing.update({
-                        'created_at': now,
-                        'updated_at': now,
-                        'status': 'active',
-                        'rating': 0.0,
-                        'review_count': 0
-                    })
-                    
+                    listing.update(
+                        {
+                            "created_at": now,
+                            "updated_at": now,
+                            "status": "active",
+                            "rating": 0.0,
+                            "review_count": 0,
+                        }
+                    )
+
                     # Set defaults if not provided
-                    listing.setdefault('kosher_agency', None)
-                    listing.setdefault('kosher_level', None)
-                    listing.setdefault('kosher_verified', False)
-                    listing.setdefault('rabbi_endorsed', False)
-                    listing.setdefault('community_verified', False)
-                    listing.setdefault('is_gemach', False)
-                    listing.setdefault('gemach_type', None)
-                    listing.setdefault('loan_duration_days', None)
-                    listing.setdefault('return_condition', None)
-                    listing.setdefault('holiday_category', None)
-                    listing.setdefault('seasonal_item', False)
-                    listing.setdefault('is_featured', False)
-                    listing.setdefault('pickup_instructions', None)
-                    listing.setdefault('notes', None)
-                    
+                    listing.setdefault("kosher_agency", None)
+                    listing.setdefault("kosher_level", None)
+                    listing.setdefault("kosher_verified", False)
+                    listing.setdefault("rabbi_endorsed", False)
+                    listing.setdefault("community_verified", False)
+                    listing.setdefault("is_gemach", False)
+                    listing.setdefault("gemach_type", None)
+                    listing.setdefault("loan_duration_days", None)
+                    listing.setdefault("return_condition", None)
+                    listing.setdefault("holiday_category", None)
+                    listing.setdefault("seasonal_item", False)
+                    listing.setdefault("is_featured", False)
+                    listing.setdefault("pickup_instructions", None)
+                    listing.setdefault("notes", None)
+
                     # Insert listing
                     insert_sql = """
                         INSERT INTO shtetl_marketplace 
@@ -315,15 +317,17 @@ class ShtetlSampleDataManager:
                          :rating, :review_count, :status, :transaction_type, :contact_preference,
                          :pickup_instructions, :notes, :created_at, :updated_at)
                     """
-                    
+
                     conn.execute(text(insert_sql), listing)
                     logger.info(f"✅ Added: {listing['title']}")
-                
+
                 conn.commit()
-            
-            logger.info(f"🎉 Successfully added {len(listings)} shtetl community listings!")
+
+            logger.info(
+                f"🎉 Successfully added {len(listings)} shtetl community listings!"
+            )
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error adding shtetl sample data: {e}")
             return False
@@ -331,15 +335,17 @@ class ShtetlSampleDataManager:
     def run(self):
         """Run the shtetl sample data population."""
         logger.info("🏛️ Starting Shtetl Community Sample Data Population...")
-        
+
         if not self.connect():
             logger.error("❌ Failed to connect to database")
             return False
-        
+
         success = self.add_sample_data()
-        
+
         if success:
-            logger.info("🎉 Shtetl community sample data population completed successfully!")
+            logger.info(
+                "🎉 Shtetl community sample data population completed successfully!"
+            )
             logger.info("")
             logger.info("📋 Next steps:")
             logger.info("1. Visit the shtetl marketplace page")
@@ -348,7 +354,7 @@ class ShtetlSampleDataManager:
             logger.info("4. Test kosher verification and community sorting")
         else:
             logger.error("❌ Shtetl sample data population failed")
-        
+
         return success
 
 

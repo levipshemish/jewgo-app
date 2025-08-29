@@ -5,17 +5,22 @@ import os
 import sys
 
 # Set up environment
-os.environ['DATABASE_URL'] = 'postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require'
+os.environ["DATABASE_URL"] = (
+    "postgresql://app_user:Jewgo123@141.148.50.111:5432/app_db?sslmode=require"
+)
+
 
 def test_database_connection():
     """Test database connection and verify new fields exist."""
     try:
         from sqlalchemy import create_engine, text
-        
-        engine = create_engine(os.environ['DATABASE_URL'])
+
+        engine = create_engine(os.environ["DATABASE_URL"])
         with engine.connect() as conn:
             # Check if new fields exist
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT column_name, data_type 
                 FROM information_schema.columns 
                 WHERE table_name = 'restaurants' 
@@ -26,52 +31,59 @@ def test_database_connection():
                     'approval_date', 'approved_by', 'rejection_reason'
                 )
                 ORDER BY column_name
-            """))
-            
+            """
+                )
+            )
+
             new_fields = result.fetchall()
             print(f"✅ Found {len(new_fields)} new fields in restaurants table:")
             for field in new_fields:
                 print(f"   - {field[0]}: {field[1]}")
-            
+
             # Check if indexes exist
-            result = conn.execute(text("""
+            result = conn.execute(
+                text(
+                    """
                 SELECT indexname 
                 FROM pg_indexes 
                 WHERE tablename = 'restaurants' 
                 AND indexname LIKE 'idx_restaurants_%'
                 ORDER BY indexname
-            """))
-            
+            """
+                )
+            )
+
             indexes = result.fetchall()
             print(f"✅ Found {len(indexes)} new indexes:")
             for index in indexes:
                 print(f"   - {index[0]}")
-            
+
             return True
-            
+
     except Exception as e:
         print(f"❌ Database connection test failed: {e}")
         return False
+
 
 def test_backend_api():
     """Test backend API endpoints."""
     try:
         # Test if we can import the API
-        sys.path.append('.')
+        sys.path.append(".")
         from routes.api_v4 import app
-        
+
         print("✅ Backend API imported successfully")
-        
+
         # Test if the app has the expected routes
         routes = []
         for rule in app.url_map.iter_rules():
             routes.append(rule.rule)
-        
+
         expected_routes = [
-            '/api/v4/restaurants/<int:restaurant_id>/approve',
-            '/api/v4/restaurants/<int:restaurant_id>/reject'
+            "/api/v4/restaurants/<int:restaurant_id>/approve",
+            "/api/v4/restaurants/<int:restaurant_id>/reject",
         ]
-        
+
         found_routes = []
         for route in expected_routes:
             if route in routes:
@@ -79,64 +91,67 @@ def test_backend_api():
                 print(f"✅ Found route: {route}")
             else:
                 print(f"❌ Missing route: {route}")
-        
+
         return len(found_routes) == len(expected_routes)
-        
+
     except Exception as e:
         print(f"❌ Backend API test failed: {e}")
         return False
+
 
 def test_validation_schema():
     """Test validation schema."""
     try:
         # This would test the frontend validation schema
         # For now, just check if the file exists
-        schema_file = '../frontend/lib/validations/restaurant-form-schema.ts'
+        schema_file = "../frontend/lib/validations/restaurant-form-schema.ts"
         if os.path.exists(schema_file):
             print("✅ Validation schema file exists")
             return True
         else:
             print("❌ Validation schema file not found")
             return False
-            
+
     except Exception as e:
         print(f"❌ Validation schema test failed: {e}")
         return False
+
 
 def test_frontend_components():
     """Test frontend components."""
     try:
         components = [
-            '../frontend/components/forms/EnhancedAddEateryForm.tsx',
-            '../frontend/components/forms/MultipleImageUpload.tsx',
-            '../frontend/app/admin/restaurants/page.tsx'
+            "../frontend/components/forms/EnhancedAddEateryForm.tsx",
+            "../frontend/components/forms/MultipleImageUpload.tsx",
+            "../frontend/app/admin/restaurants/page.tsx",
         ]
-        
+
         for component in components:
             if os.path.exists(component):
                 print(f"✅ Component exists: {os.path.basename(component)}")
             else:
                 print(f"❌ Component missing: {os.path.basename(component)}")
                 return False
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Frontend components test failed: {e}")
         return False
+
 
 def main():
     """Run all tests."""
     print("🧪 Testing Enhanced Add Eatery Workflow Components")
     print("=" * 50)
-    
+
     tests = [
         ("Database Connection", test_database_connection),
         ("Backend API", test_backend_api),
         ("Validation Schema", test_validation_schema),
-        ("Frontend Components", test_frontend_components)
+        ("Frontend Components", test_frontend_components),
     ]
-    
+
     results = []
     for test_name, test_func in tests:
         print(f"\n🔍 Running {test_name} test...")
@@ -146,28 +161,31 @@ def main():
         except Exception as e:
             print(f"❌ {test_name} test failed with exception: {e}")
             results.append((test_name, False))
-    
+
     print("\n" + "=" * 50)
     print("📊 Test Results Summary:")
     print("=" * 50)
-    
+
     passed = 0
     total = len(results)
-    
+
     for test_name, result in results:
         status = "✅ PASS" if result else "❌ FAIL"
         print(f"{status} {test_name}")
         if result:
             passed += 1
-    
+
     print(f"\n🎯 Overall: {passed}/{total} tests passed")
-    
+
     if passed == total:
-        print("🎉 All tests passed! Enhanced Add Eatery Workflow is ready for deployment.")
+        print(
+            "🎉 All tests passed! Enhanced Add Eatery Workflow is ready for deployment."
+        )
         return True
     else:
         print("⚠️  Some tests failed. Please review and fix issues before deployment.")
         return False
+
 
 if __name__ == "__main__":
     success = main()

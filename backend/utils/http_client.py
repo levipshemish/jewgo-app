@@ -35,7 +35,7 @@ DEFAULT_RETRY_STRATEGY = Retry(
 
 class HTTPClient:
     """Standardized HTTP client with timeouts and retry logic."""
-    
+
     def __init__(
         self,
         timeout: tuple = DEFAULT_TIMEOUT,
@@ -44,7 +44,7 @@ class HTTPClient:
     ):
         """
         Initialize HTTP client.
-        
+
         Args:
             timeout: Tuple of (connect_timeout, read_timeout) in seconds
             retry_strategy: urllib3 Retry strategy
@@ -52,12 +52,12 @@ class HTTPClient:
         """
         self.timeout = timeout
         self.session = session or requests.Session()
-        
+
         if retry_strategy:
             adapter = HTTPAdapter(max_retries=retry_strategy)
             self.session.mount("http://", adapter)
             self.session.mount("https://", adapter)
-    
+
     def get(
         self,
         url: str,
@@ -65,11 +65,11 @@ class HTTPClient:
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[tuple] = None,
         operation_name: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> requests.Response:
         """
         Make a GET request with standardized error handling and monitoring.
-        
+
         Args:
             url: Request URL
             params: Query parameters
@@ -77,30 +77,30 @@ class HTTPClient:
             timeout: Override default timeout
             operation_name: Name for monitoring (defaults to URL)
             **kwargs: Additional arguments for requests.get
-            
+
         Returns:
             requests.Response object
-            
+
         Raises:
             RequestException: For network or HTTP errors
         """
         timeout = timeout or self.timeout
         operation = operation_name or url
         start_time = time.time()
-        
+
         try:
             logger.debug(f"Making GET request to {url}")
             response = self.session.get(
                 url, params=params, headers=headers, timeout=timeout, **kwargs
             )
             response.raise_for_status()
-            
+
             # Record successful API call
             duration = time.time() - start_time
             record_api_call(operation, duration, response.status_code, {"url": url})
-            
+
             return response
-            
+
         except Timeout as e:
             duration = time.time() - start_time
             record_timeout(operation, duration, {"url": url, "timeout": timeout})
@@ -113,7 +113,12 @@ class HTTPClient:
             raise RequestException(f"Connection failed: {e}")
         except HTTPError as e:
             duration = time.time() - start_time
-            record_error(operation, "HTTPError", str(e), {"url": url, "status_code": e.response.status_code})
+            record_error(
+                operation,
+                "HTTPError",
+                str(e),
+                {"url": url, "status_code": e.response.status_code},
+            )
             logger.error(f"HTTP error for GET {url}: {e}")
             raise RequestException(f"HTTP error: {e}")
         except TooManyRedirects as e:
@@ -126,7 +131,7 @@ class HTTPClient:
             record_error(operation, "UnexpectedError", str(e), {"url": url})
             logger.error(f"Unexpected error for GET {url}: {e}")
             raise RequestException(f"Request failed: {e}")
-    
+
     def post(
         self,
         url: str,
@@ -134,11 +139,11 @@ class HTTPClient:
         json: Optional[Dict] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[tuple] = None,
-        **kwargs
+        **kwargs,
     ) -> requests.Response:
         """
         Make a POST request with standardized error handling.
-        
+
         Args:
             url: Request URL
             data: Form data
@@ -146,15 +151,15 @@ class HTTPClient:
             headers: Request headers
             timeout: Override default timeout
             **kwargs: Additional arguments for requests.post
-            
+
         Returns:
             requests.Response object
-            
+
         Raises:
             RequestException: For network or HTTP errors
         """
         timeout = timeout or self.timeout
-        
+
         try:
             logger.debug(f"Making POST request to {url}")
             response = self.session.post(
@@ -162,7 +167,7 @@ class HTTPClient:
             )
             response.raise_for_status()
             return response
-            
+
         except Timeout as e:
             logger.error(f"Timeout error for POST {url}: {e}")
             raise RequestException(f"Request timeout: {e}")

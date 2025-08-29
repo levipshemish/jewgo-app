@@ -3,7 +3,7 @@
 Create Shtetl Marketplace Table - Direct SQL Migration
 =====================================================
 
-Creates a separate shtetl_marketplace table specifically for 
+Creates a separate shtetl_marketplace table specifically for
 Jewish community marketplace items.
 """
 
@@ -12,7 +12,9 @@ import sys
 from sqlalchemy import create_engine, text
 
 # Add the parent directory to the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from utils.logging_config import get_logger
 
@@ -24,9 +26,9 @@ class ShtetlTableMigration:
 
     def __init__(self, database_url: str = None):
         """Initialize the migration."""
-        self.database_url = database_url or os.getenv('DATABASE_URL')
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-        
+
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -35,11 +37,11 @@ class ShtetlTableMigration:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-            
+
             # Test connection
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            
+
             logger.info("✅ Database connection successful")
             return True
         except Exception as e:
@@ -50,7 +52,7 @@ class ShtetlTableMigration:
         """Create the shtetl_marketplace table."""
         try:
             logger.info("🏛️ Creating shtetl_marketplace table...")
-            
+
             create_table_sql = """
             CREATE TABLE IF NOT EXISTS shtetl_marketplace (
                 -- System fields
@@ -136,14 +138,14 @@ class ShtetlTableMigration:
                 CONSTRAINT check_shtetl_contact_preference_valid CHECK (contact_preference IN ('phone', 'email', 'whatsapp', 'text'))
             );
             """
-            
+
             with self.engine.connect() as conn:
                 conn.execute(text(create_table_sql))
                 conn.commit()
-            
+
             logger.info("✅ shtetl_marketplace table created successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error creating shtetl_marketplace table: {e}")
             return False
@@ -152,7 +154,7 @@ class ShtetlTableMigration:
         """Create indexes for performance."""
         try:
             logger.info("📊 Creating indexes for shtetl_marketplace...")
-            
+
             indexes_sql = """
             -- Performance indexes
             CREATE INDEX IF NOT EXISTS idx_shtetl_title ON shtetl_marketplace(title);
@@ -170,14 +172,14 @@ class ShtetlTableMigration:
             CREATE INDEX IF NOT EXISTS idx_shtetl_holiday_category ON shtetl_marketplace(holiday_category);
             CREATE INDEX IF NOT EXISTS idx_shtetl_transaction_type ON shtetl_marketplace(transaction_type);
             """
-            
+
             with self.engine.connect() as conn:
                 conn.execute(text(indexes_sql))
                 conn.commit()
-            
+
             logger.info("✅ Indexes created successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error creating indexes: {e}")
             return False
@@ -185,21 +187,21 @@ class ShtetlTableMigration:
     def run(self):
         """Run the shtetl table migration."""
         logger.info("🏛️ Starting Shtetl Marketplace Table Creation...")
-        
+
         if not self.connect():
             logger.error("❌ Failed to connect to database")
             return False
-        
+
         # Create table
         if not self.create_shtetl_marketplace_table():
             logger.error("❌ Failed to create shtetl_marketplace table")
             return False
-        
+
         # Create indexes
         if not self.create_indexes():
             logger.error("❌ Failed to create indexes")
             return False
-        
+
         logger.info("🎉 Shtetl marketplace table creation completed successfully!")
         logger.info("")
         logger.info("📋 Next steps:")
@@ -207,7 +209,7 @@ class ShtetlTableMigration:
         logger.info("2. Update frontend to use separate shtetl API")
         logger.info("3. Add shtetl community data")
         logger.info("4. Test shtetl marketplace functionality")
-        
+
         return True
 
 

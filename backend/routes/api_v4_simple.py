@@ -7,11 +7,14 @@ from datetime import datetime, timezone
 # Create a simple blueprint
 api_v4_simple = Blueprint("api_v4_simple", __name__, url_prefix="/api/v4")
 
+
 @api_v4_simple.route("/test", methods=["GET"])
 def test():
     """Simple test endpoint."""
-    return jsonify({
-        "success": True,
-        "message": "API v4 simple test endpoint is working",
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    })
+    return jsonify(
+        {
+            "success": True,
+            "message": "API v4 simple test endpoint is working",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    )

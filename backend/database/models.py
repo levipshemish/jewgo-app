@@ -131,7 +131,9 @@ class Order(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    order_number = Column(String(50), unique=True, nullable=False)  # Human-readable order number
+    order_number = Column(
+        String(50), unique=True, nullable=False
+    )  # Human-readable order number
 
     # 🏪 Restaurant Information
     restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
@@ -161,7 +163,9 @@ class Order(Base):
     )  # 'pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'
 
     # 🔗 Relationships
-    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    items = relationship(
+        "OrderItem", back_populates="order", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Order(id={self.id}, order_number='{self.order_number}', status='{self.status}')>"
@@ -192,7 +196,9 @@ class OrderItem(Base):
     subtotal = Column(Float, nullable=False)  # Price * quantity
 
     def __repr__(self):
-        return f"<OrderItem(id={self.id}, name='{self.name}', quantity={self.quantity})>"
+        return (
+            f"<OrderItem(id={self.id}, name='{self.name}', quantity={self.quantity})>"
+        )
 
 
 class Review(Base):

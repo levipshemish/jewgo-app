@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
-import { ModernFilterPopup } from '@/frontend/components/filters/ModernFilterPopup';
+import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 

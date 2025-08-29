@@ -527,12 +527,12 @@ class RestaurantRepository(BaseRepository[Restaurant]):
                         "image_url": image.image_url,
                         "image_order": image.image_order,
                         "cloudinary_public_id": image.cloudinary_public_id,
-                        "created_at": image.created_at.isoformat()
-                        if image.created_at
-                        else None,
-                        "updated_at": image.updated_at.isoformat()
-                        if image.updated_at
-                        else None,
+                        "created_at": (
+                            image.created_at.isoformat() if image.created_at else None
+                        ),
+                        "updated_at": (
+                            image.updated_at.isoformat() if image.updated_at else None
+                        ),
                     }
                 )
 

@@ -9,9 +9,11 @@ import pytest
 def test_environment_variables():
     """Test that required environment variables are set."""
     # These should be set in CI environment
-    assert os.getenv('DATABASE_URL') is not None, "DATABASE_URL should be set"
-    assert os.getenv('GOOGLE_MAPS_API_KEY') is not None, "GOOGLE_MAPS_API_KEY should be set"
-    assert os.getenv('SECRET_KEY') is not None, "SECRET_KEY should be set"
+    assert os.getenv("DATABASE_URL") is not None, "DATABASE_URL should be set"
+    assert (
+        os.getenv("GOOGLE_MAPS_API_KEY") is not None
+    ), "GOOGLE_MAPS_API_KEY should be set"
+    assert os.getenv("SECRET_KEY") is not None, "SECRET_KEY should be set"
 
 
 def test_imports():

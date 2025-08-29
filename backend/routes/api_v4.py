@@ -87,6 +87,7 @@ except ImportError:
     def require_admin_auth(f):
         return f
 
+
 # Import Supabase authentication decorators
 try:
     from utils.supabase_auth import (
@@ -95,25 +96,25 @@ try:
         get_current_supabase_user,
         is_supabase_authenticated,
         get_supabase_user_id,
-        get_supabase_user_email
+        get_supabase_user_email,
     )
 except ImportError:
     # Fallback decorators if Supabase auth module is not available
     def require_supabase_auth(f):
         return f
-    
+
     def optional_supabase_auth(f):
         return f
-    
+
     def get_current_supabase_user():
         return None
-    
+
     def is_supabase_authenticated():
         return False
-    
+
     def get_supabase_user_id():
         return None
-    
+
     def get_supabase_user_email():
         return None
 
@@ -168,7 +169,7 @@ missing_essential = [
 if all(essential_dependencies):
     api_v4 = Blueprint("api_v4", __name__, url_prefix="/api/v4")
     logger.info("API v4 blueprint created successfully")
-    
+
     # Log which optional dependencies are missing
     optional_dependencies = [
         MarketplaceServiceV4,
@@ -257,20 +258,24 @@ def create_restaurant_service():
             from database.database_manager_v4 import DatabaseManager
             from utils.cache_manager_v4 import CacheManagerV4
             from utils.config_manager import ConfigManager
-            
+
             db_manager = DatabaseManager()
             db_manager.connect()
             cache_manager = CacheManagerV4(enable_cache=False)
             config = ConfigManager()
-            
+
             return RestaurantServiceV4(
                 db_manager=db_manager, cache_manager=cache_manager, config=config
             )
         except ImportError as fallback_error:
-            logger.error(f"Fallback service creation failed - import error: {fallback_error}")
+            logger.error(
+                f"Fallback service creation failed - import error: {fallback_error}"
+            )
             raise DatabaseError("Required modules not available")
         except ConnectionError as fallback_error:
-            logger.error(f"Fallback service creation failed - connection error: {fallback_error}")
+            logger.error(
+                f"Fallback service creation failed - connection error: {fallback_error}"
+            )
             raise DatabaseError("Database connection failed")
         except Exception as fallback_error:
             logger.error(f"Fallback service creation also failed: {fallback_error}")
@@ -387,17 +392,22 @@ def get_restaurants():
 
         # Calculate total pages for frontend compatibility
         total_pages = (total_count + limit - 1) // limit
-        
+
         # Return response in the format expected by frontend
-        return jsonify({
-            "success": True,
-            "restaurants": paginated_restaurants,
-            "totalPages": total_pages,
-            "totalRestaurants": total_count,
-            "page": (offset // limit) + 1,
-            "limit": limit,
-            "message": f"Retrieved {len(paginated_restaurants)} restaurants"
-        }), 200
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "restaurants": paginated_restaurants,
+                    "totalPages": total_pages,
+                    "totalRestaurants": total_count,
+                    "page": (offset // limit) + 1,
+                    "limit": limit,
+                    "message": f"Retrieved {len(paginated_restaurants)} restaurants",
+                }
+            ),
+            200,
+        )
 
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
@@ -432,29 +442,43 @@ def search_restaurants():
             category=request.args.get("category"),
             listing_type=request.args.get("listing_type"),
             price_range=request.args.get("price_range"),
-            min_rating=float(request.args.get("min_rating"))
-            if request.args.get("min_rating")
-            else None,
-            has_reviews=request.args.get("has_reviews") == "true"
-            if request.args.get("has_reviews")
-            else None,
-            open_now=request.args.get("open_now") == "true"
-            if request.args.get("open_now")
-            else None,
-            is_cholov_yisroel=request.args.get("is_cholov_yisroel") == "true"
-            if request.args.get("is_cholov_yisroel")
-            else None,
-            is_pas_yisroel=request.args.get("is_pas_yisroel") == "true"
-            if request.args.get("is_pas_yisroel")
-            else None,
-            cholov_stam=request.args.get("cholov_stam") == "true"
-            if request.args.get("cholov_stam")
-            else None,
+            min_rating=(
+                float(request.args.get("min_rating"))
+                if request.args.get("min_rating")
+                else None
+            ),
+            has_reviews=(
+                request.args.get("has_reviews") == "true"
+                if request.args.get("has_reviews")
+                else None
+            ),
+            open_now=(
+                request.args.get("open_now") == "true"
+                if request.args.get("open_now")
+                else None
+            ),
+            is_cholov_yisroel=(
+                request.args.get("is_cholov_yisroel") == "true"
+                if request.args.get("is_cholov_yisroel")
+                else None
+            ),
+            is_pas_yisroel=(
+                request.args.get("is_pas_yisroel") == "true"
+                if request.args.get("is_pas_yisroel")
+                else None
+            ),
+            cholov_stam=(
+                request.args.get("cholov_stam") == "true"
+                if request.args.get("cholov_stam")
+                else None
+            ),
             lat=float(request.args.get("lat")) if request.args.get("lat") else None,
             lng=float(request.args.get("lng")) if request.args.get("lng") else None,
-            radius=float(request.args.get("radius"))
-            if request.args.get("radius")
-            else None,
+            radius=(
+                float(request.args.get("radius"))
+                if request.args.get("radius")
+                else None
+            ),
             limit=limit,
             offset=offset,
         )
@@ -529,28 +553,35 @@ def create_restaurant():
     try:
         data = request.get_json(silent=True) or {}
         logger.info("Received restaurant creation request", data=data)
-        
+
         # Debug business_images field
-        if 'business_images' in data:
-            logger.info("business_images field details", 
-                       type=type(data['business_images']), 
-                       value=data['business_images'])
-            
+        if "business_images" in data:
+            logger.info(
+                "business_images field details",
+                type=type(data["business_images"]),
+                value=data["business_images"],
+            )
+
             # Check if it's a JSON string that needs to be parsed
-            if isinstance(data['business_images'], str):
+            if isinstance(data["business_images"], str):
                 try:
                     import json
-                    parsed_images = json.loads(data['business_images'])
-                    logger.info("Parsed business_images from JSON string", 
-                               parsed_type=type(parsed_images), 
-                               parsed_value=parsed_images)
-                    data['business_images'] = parsed_images
+
+                    parsed_images = json.loads(data["business_images"])
+                    logger.info(
+                        "Parsed business_images from JSON string",
+                        parsed_type=type(parsed_images),
+                        parsed_value=parsed_images,
+                    )
+                    data["business_images"] = parsed_images
                 except (json.JSONDecodeError, TypeError) as e:
-                    logger.warning("Failed to parse business_images as JSON", error=str(e))
+                    logger.warning(
+                        "Failed to parse business_images as JSON", error=str(e)
+                    )
 
         service = create_restaurant_service()
         logger.info("Restaurant service created successfully")
-        
+
         restaurant_data = service.create_restaurant(data)
         logger.info("Restaurant creation result", result=restaurant_data)
 
@@ -640,49 +671,57 @@ def get_restaurant_filter_options():
     """Get filter options for restaurants using v4 service."""
     try:
         service = create_restaurant_service()
-        
+
         # Get all restaurants to extract filter options
         restaurants = service.get_all_restaurants()
-        
-        # Extract unique values for each filter category
-        agencies = sorted(list(set(
-            r.get("certifying_agency") for r in restaurants 
-            if r.get("certifying_agency")
-        )))
-        
-        kosher_categories = sorted(list(set(
-            r.get("kosher_category") for r in restaurants 
-            if r.get("kosher_category")
-        )))
-        
-        listing_types = sorted(list(set(
-            r.get("listing_type") for r in restaurants 
-            if r.get("listing_type")
-        )))
-        
-        price_ranges = sorted(list(set(
-            r.get("price_range") for r in restaurants 
-            if r.get("price_range")
-        )))
-        
-        cities = sorted(list(set(
-            r.get("city") for r in restaurants 
-            if r.get("city")
-        )))
-        
-        states = sorted(list(set(
-            r.get("state") for r in restaurants 
-            if r.get("state")
-        )))
 
-        return success_response({
-            "agencies": agencies,
-            "kosherCategories": kosher_categories,
-            "listingTypes": listing_types,
-            "priceRanges": price_ranges,
-            "cities": cities,
-            "states": states
-        })
+        # Extract unique values for each filter category
+        agencies = sorted(
+            list(
+                set(
+                    r.get("certifying_agency")
+                    for r in restaurants
+                    if r.get("certifying_agency")
+                )
+            )
+        )
+
+        kosher_categories = sorted(
+            list(
+                set(
+                    r.get("kosher_category")
+                    for r in restaurants
+                    if r.get("kosher_category")
+                )
+            )
+        )
+
+        listing_types = sorted(
+            list(
+                set(r.get("listing_type") for r in restaurants if r.get("listing_type"))
+            )
+        )
+
+        price_ranges = sorted(
+            list(set(r.get("price_range") for r in restaurants if r.get("price_range")))
+        )
+
+        cities = sorted(list(set(r.get("city") for r in restaurants if r.get("city"))))
+
+        states = sorted(
+            list(set(r.get("state") for r in restaurants if r.get("state")))
+        )
+
+        return success_response(
+            {
+                "agencies": agencies,
+                "kosherCategories": kosher_categories,
+                "listingTypes": listing_types,
+                "priceRanges": price_ranges,
+                "cities": cities,
+                "states": states,
+            }
+        )
 
     except Exception as e:
         logger.exception("Error fetching filter options", error=str(e))
@@ -697,7 +736,7 @@ def approve_restaurant(restaurant_id: int):
     try:
         data = request.get_json(silent=True) or {}
         status = data.get("status", "approved")
-        
+
         service = create_restaurant_service()
         success = service.update_restaurant_status(restaurant_id, status, "approved")
 
@@ -705,7 +744,8 @@ def approve_restaurant(restaurant_id: int):
             # Get the updated restaurant
             restaurant = service.get_restaurant_by_id(restaurant_id)
             return success_response(
-                {"restaurant": restaurant, "status": status}, "Restaurant approved successfully"
+                {"restaurant": restaurant, "status": status},
+                "Restaurant approved successfully",
             )
         else:
             return error_response("Failed to approve restaurant", 500)
@@ -731,15 +771,18 @@ def reject_restaurant(restaurant_id: int):
         data = request.get_json(silent=True) or {}
         status = data.get("status", "rejected")
         reason = data.get("reason", "Rejected by admin")
-        
+
         service = create_restaurant_service()
-        success = service.update_restaurant_status(restaurant_id, status, "rejected", reason)
+        success = service.update_restaurant_status(
+            restaurant_id, status, "rejected", reason
+        )
 
         if success:
             # Get the updated restaurant
             restaurant = service.get_restaurant_by_id(restaurant_id)
             return success_response(
-                {"restaurant": restaurant, "status": status, "reason": reason}, "Restaurant rejected successfully"
+                {"restaurant": restaurant, "status": status, "reason": reason},
+                "Restaurant rejected successfully",
             )
         else:
             return error_response("Failed to reject restaurant", 500)
@@ -764,21 +807,29 @@ def get_restaurant_hours(restaurant_id: int):
     try:
         service = create_restaurant_service()
         restaurant = service.get_restaurant_by_id(restaurant_id)
-        
+
         if not restaurant:
             return not_found_response("Restaurant not found", "restaurant")
-        
+
         # Extract hours data from restaurant
         hours_data = {
             "status": "available" if restaurant.get("hours_open") else "unavailable",
-            "message": "Hours information available" if restaurant.get("hours_open") else "Hours information not available",
+            "message": (
+                "Hours information available"
+                if restaurant.get("hours_open")
+                else "Hours information not available"
+            ),
             "is_open": False,  # This would need to be calculated based on current time
             "today_hours": {},  # This would need to be parsed from hours_open
-            "formatted_hours": restaurant.get("hours_open", "").split("\n") if restaurant.get("hours_open") else [],
+            "formatted_hours": (
+                restaurant.get("hours_open", "").split("\n")
+                if restaurant.get("hours_open")
+                else []
+            ),
             "timezone": "America/New_York",  # Default timezone
-            "last_updated": restaurant.get("updated_at", datetime.now().isoformat())
+            "last_updated": restaurant.get("updated_at", datetime.now().isoformat()),
         }
-        
+
         return success_response(hours_data, "Restaurant hours retrieved successfully")
 
     except ValidationError as e:
@@ -1146,17 +1197,21 @@ def get_marketplace_listings():
     try:
         # Check if marketplace service is available
         if not MarketplaceServiceV4:
-            logger.warning("MarketplaceServiceV4 not available, returning empty listings")
-            return success_response({
-                "listings": [],
-                "pagination": {
-                    "total": 0,
-                    "limit": 50,
-                    "offset": 0,
-                    "hasMore": False,
+            logger.warning(
+                "MarketplaceServiceV4 not available, returning empty listings"
+            )
+            return success_response(
+                {
+                    "listings": [],
+                    "pagination": {
+                        "total": 0,
+                        "limit": 50,
+                        "offset": 0,
+                        "hasMore": False,
+                    },
                 }
-            })
-        
+            )
+
         # Get query parameters
         limit = min(int(request.args.get("limit", 50)), 1000)
         offset = max(int(request.args.get("offset", 0)), 0)
@@ -1179,17 +1234,21 @@ def get_marketplace_listings():
         service = create_marketplace_service()
         if not service:
             # Return empty marketplace response instead of error
-            logger.warning("Marketplace service not available, returning empty response")
-            return success_response({
-                "listings": [],
-                "pagination": {
-                    "total": 0,
-                    "limit": limit,
-                    "offset": offset,
-                    "hasMore": False,
+            logger.warning(
+                "Marketplace service not available, returning empty response"
+            )
+            return success_response(
+                {
+                    "listings": [],
+                    "pagination": {
+                        "total": 0,
+                        "limit": limit,
+                        "offset": offset,
+                        "hasMore": False,
+                    },
                 }
-            })
-        
+            )
+
         logger.info("Marketplace service created successfully, calling get_listings...")
 
         result = service.get_listings(
@@ -1209,7 +1268,7 @@ def get_marketplace_listings():
             lng=lng,
             radius=radius,
         )
-        
+
         logger.info(f"Service result: {result}")
 
         if result["success"]:
@@ -1268,7 +1327,7 @@ def create_marketplace_listing():
             **data,
             "seller_id": user.get("user_id"),
             "seller_email": user.get("email"),
-            "created_by": user.get("user_id")
+            "created_by": user.get("user_id"),
         }
 
         # Use marketplace service
@@ -1314,7 +1373,9 @@ def update_marketplace_listing(listing_id: str):
         update_data = {
             **data,
             "updated_by": user.get("user_id"),
-            "seller_id": user.get("user_id")  # Ensure seller can only update their own listings
+            "seller_id": user.get(
+                "user_id"
+            ),  # Ensure seller can only update their own listings
         }
 
         result = service.update_listing(listing_id, update_data)
@@ -1350,7 +1411,9 @@ def delete_marketplace_listing(listing_id: str):
         # Add user information for verification
         delete_data = {
             "deleted_by": user.get("user_id"),
-            "seller_id": user.get("user_id")  # Ensure seller can only delete their own listings
+            "seller_id": user.get(
+                "user_id"
+            ),  # Ensure seller can only delete their own listings
         }
 
         result = service.delete_listing(listing_id, delete_data)
@@ -1374,12 +1437,14 @@ def get_marketplace_categories():
     try:
         # Check if marketplace service is available
         if not MarketplaceServiceV4:
-            logger.warning("MarketplaceServiceV4 not available, returning fallback categories")
+            logger.warning(
+                "MarketplaceServiceV4 not available, returning fallback categories"
+            )
             # Use config manager instead of hardcoded values
             config = ConfigManager()
             fallback_categories = config.get_marketplace_categories()
             return success_response(fallback_categories)
-        
+
         # Try to use the marketplace service if available
         try:
             service = get_marketplace_service()
@@ -1388,12 +1453,14 @@ def get_marketplace_categories():
                 if result.get("success") and result.get("data"):
                     return success_response(result["data"])
                 else:
-                    logger.warning("Marketplace service returned no data, using fallback")
+                    logger.warning(
+                        "Marketplace service returned no data, using fallback"
+                    )
             else:
                 logger.warning("Could not create marketplace service, using fallback")
         except Exception as e:
             logger.warning(f"Error using marketplace service: {e}, using fallback")
-        
+
         # Return fallback categories if service fails
         logger.info("Returning fallback categories for marketplace")
         fallback_categories = [
@@ -1417,8 +1484,8 @@ def get_marketplace_categories():
                         "slug": "pastries",
                         "sort_order": 2,
                         "active": True,
-                    }
-                ]
+                    },
+                ],
             },
             {
                 "id": 2,
@@ -1440,8 +1507,8 @@ def get_marketplace_categories():
                         "slug": "clothing",
                         "sort_order": 2,
                         "active": True,
-                    }
-                ]
+                    },
+                ],
             },
             {
                 "id": 3,
@@ -1463,8 +1530,8 @@ def get_marketplace_categories():
                         "slug": "motorcycles",
                         "sort_order": 2,
                         "active": True,
-                    }
-                ]
+                    },
+                ],
             },
             {
                 "id": 4,
@@ -1486,9 +1553,9 @@ def get_marketplace_categories():
                         "slug": "laundry",
                         "sort_order": 2,
                         "active": True,
-                    }
-                ]
-            }
+                    },
+                ],
+            },
         ]
         return success_response(fallback_categories)
 
@@ -1505,41 +1572,46 @@ def migrate_marketplace_tables():
     try:
         # Import the migration function
         from database.migrations.create_marketplace_unified import run_migration
-        
+
         logger.info("Starting marketplace migration via API v4")
-        
+
         # Run the migration
         success = run_migration()
-        
+
         if success:
             logger.info("Marketplace migration completed successfully")
-            return jsonify({
-                "success": True,
-                "message": "Marketplace migration completed successfully",
-                "tables_created": [
-                    "categories",
-                    "subcategories", 
-                    "Marketplace listings",
-                    "gemachs",
-                    "listing_images",
-                    "listing_transactions",
-                    "listing_endorsements",
-                    "usernames"
-                ]
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "Marketplace migration completed successfully",
+                        "tables_created": [
+                            "categories",
+                            "subcategories",
+                            "Marketplace listings",
+                            "gemachs",
+                            "listing_images",
+                            "listing_transactions",
+                            "listing_endorsements",
+                            "usernames",
+                        ],
+                    }
+                ),
+                200,
+            )
         else:
             logger.error("Marketplace migration failed")
-            return jsonify({
-                "success": False,
-                "message": "Marketplace migration failed"
-            }), 500
-            
+            return (
+                jsonify({"success": False, "message": "Marketplace migration failed"}),
+                500,
+            )
+
     except Exception as e:
         logger.exception("Error during marketplace migration")
-        return jsonify({
-            "success": False,
-            "message": f"Error during migration: {str(e)}"
-        }), 500
+        return (
+            jsonify({"success": False, "message": f"Error during migration: {str(e)}"}),
+            500,
+        )
 
 
 @safe_route("/marketplace/create-tables", methods=["POST"])
@@ -1548,19 +1620,21 @@ def create_marketplace_tables():
     try:
         from sqlalchemy import create_engine, text
         import os
-        
-        database_url = os.getenv('DATABASE_URL')
+
+        database_url = os.getenv("DATABASE_URL")
         if not database_url:
-            return jsonify({
-                "success": False,
-                "message": "DATABASE_URL not configured"
-            }), 500
-        
+            return (
+                jsonify({"success": False, "message": "DATABASE_URL not configured"}),
+                500,
+            )
+
         engine = create_engine(database_url)
-        
+
         with engine.begin() as conn:
             # Create categories table
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
                 CREATE TABLE IF NOT EXISTS categories (
                     id SERIAL PRIMARY KEY,
                     name VARCHAR(100) NOT NULL,
@@ -1570,10 +1644,14 @@ def create_marketplace_tables():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """))
-            
+            """
+                )
+            )
+
             # Create subcategories table
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
                 CREATE TABLE IF NOT EXISTS subcategories (
                     id SERIAL PRIMARY KEY,
                     category_id INTEGER REFERENCES categories(id),
@@ -1584,19 +1662,27 @@ def create_marketplace_tables():
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """))
-            
+            """
+                )
+            )
+
             # Insert sample categories
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
                 INSERT INTO categories (id, name, slug, sort_order, active) 
                 VALUES 
                     (1, 'Baked Goods', 'baked-goods', 1, true),
                     (2, 'Accessories', 'accessories', 2, true)
                 ON CONFLICT (id) DO NOTHING
-            """))
-            
+            """
+                )
+            )
+
             # Insert sample subcategories
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
                 INSERT INTO subcategories (id, category_id, name, slug, sort_order, active) 
                 VALUES 
                     (1, 1, 'Bread', 'bread', 1, true),
@@ -1604,20 +1690,24 @@ def create_marketplace_tables():
                     (3, 2, 'Jewelry', 'jewelry', 1, true),
                     (4, 2, 'Clothing', 'clothing', 2, true)
                 ON CONFLICT (id) DO NOTHING
-            """))
-        
+            """
+                )
+            )
+
         logger.info("Marketplace tables created successfully")
-        return jsonify({
-            "success": True,
-            "message": "Marketplace tables created successfully"
-        }), 200
-        
+        return (
+            jsonify(
+                {"success": True, "message": "Marketplace tables created successfully"}
+            ),
+            200,
+        )
+
     except Exception as e:
         logger.exception("Error creating marketplace tables")
-        return jsonify({
-            "success": False,
-            "message": f"Error creating tables: {str(e)}"
-        }), 500
+        return (
+            jsonify({"success": False, "message": f"Error creating tables: {str(e)}"}),
+            500,
+        )
 
 
 def create_order_service():
@@ -1646,13 +1736,18 @@ def create_order():
             return error_response("Content-Type must be application/json", 400)
 
         order_data = request.get_json()
-        
+
         # Validate required fields
         required_fields = [
-            "restaurant_id", "customer_name", "customer_phone", "customer_email",
-            "order_type", "payment_method", "items"
+            "restaurant_id",
+            "customer_name",
+            "customer_phone",
+            "customer_email",
+            "order_type",
+            "payment_method",
+            "items",
         ]
-        
+
         for field in required_fields:
             if field not in order_data:
                 return error_response(f"Missing required field: {field}", 400)
@@ -1664,7 +1759,7 @@ def create_order():
         return success_response(
             {
                 "order": order,
-                "message": f"Order {order['order_number']} created successfully"
+                "message": f"Order {order['order_number']} created successfully",
             }
         )
 
@@ -1728,14 +1823,12 @@ def get_restaurant_orders(restaurant_id: int):
         service = create_order_service()
         orders = service.get_orders_by_restaurant(restaurant_id, limit, offset)
 
-        return success_response({
-            "orders": orders,
-            "pagination": {
-                "limit": limit,
-                "offset": offset,
-                "count": len(orders)
+        return success_response(
+            {
+                "orders": orders,
+                "pagination": {"limit": limit, "offset": offset, "count": len(orders)},
             }
-        })
+        )
 
     except DatabaseError as e:
         return error_response(str(e), 503)
@@ -1755,14 +1848,12 @@ def get_customer_orders(email: str):
         service = create_order_service()
         orders = service.get_orders_by_customer(email, limit, offset)
 
-        return success_response({
-            "orders": orders,
-            "pagination": {
-                "limit": limit,
-                "offset": offset,
-                "count": len(orders)
+        return success_response(
+            {
+                "orders": orders,
+                "pagination": {"limit": limit, "offset": offset, "count": len(orders)},
             }
-        })
+        )
 
     except DatabaseError as e:
         return error_response(str(e), 503)
@@ -1781,17 +1872,16 @@ def update_order_status(order_id: int):
 
         data = request.get_json()
         status = data.get("status")
-        
+
         if not status:
             return error_response("Status field is required", 400)
 
         service = create_order_service()
         order = service.update_order_status(order_id, status)
 
-        return success_response({
-            "order": order,
-            "message": f"Order status updated to {status}"
-        })
+        return success_response(
+            {"order": order, "message": f"Order status updated to {status}"}
+        )
 
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
@@ -1806,35 +1896,31 @@ def update_order_status(order_id: int):
 
 # Error handlers - only register if api_v4 blueprint is available
 if api_v4 is not None:
+
     @api_v4.errorhandler(ValidationError)
     def handle_validation_error(error):
         """Handle validation errors."""
         return error_response(str(error), 400, {"validation_errors": error.details})
-
 
     @api_v4.errorhandler(NotFoundError)
     def handle_not_found_error(error):
         """Handle not found errors."""
         return not_found_response(str(error))
 
-
     @api_v4.errorhandler(DatabaseError)
     def handle_database_error(error):
         """Handle database errors."""
         return error_response(str(error), 503)
-
 
     @api_v4.errorhandler(ExternalServiceError)
     def handle_external_service_error(error):
         """Handle external service errors."""
         return error_response(str(error), 502)
 
-
     @api_v4.errorhandler(HTTPException)
     def handle_http_error(error):
         """Handle HTTP exceptions."""
         return error_response(error.description, error.code)
-
 
     @api_v4.errorhandler(Exception)
     def handle_generic_error(error):
@@ -1850,27 +1936,32 @@ def run_marketplace_migration():
     try:
         # Import and run the migration
         from database.migrations.create_marketplace_unified import run_migration
-        
+
         success = run_migration()
-        
+
         if success:
-            return jsonify({
-                "success": True,
-                "message": "Marketplace migration completed successfully",
-                "tables_created": [
-                    "categories", "subcategories", "listings", "gemachs",
-                    "listing_images", "listing_transactions", "listing_endorsements", "usernames"
-                ]
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Marketplace migration completed successfully",
+                    "tables_created": [
+                        "categories",
+                        "subcategories",
+                        "listings",
+                        "gemachs",
+                        "listing_images",
+                        "listing_transactions",
+                        "listing_endorsements",
+                        "usernames",
+                    ],
+                }
+            )
         else:
-            return jsonify({
-                "success": False,
-                "error": "Marketplace migration failed"
-            }), 500
-            
+            return (
+                jsonify({"success": False, "error": "Marketplace migration failed"}),
+                500,
+            )
+
     except Exception as e:
         logger.exception("Error running marketplace migration")
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500

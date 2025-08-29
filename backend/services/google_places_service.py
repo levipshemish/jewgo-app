@@ -97,10 +97,8 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(place_id=place_id, max_reviews=max_reviews)
-        
-        self.log_operation(
-            "fetch_reviews", place_id=place_id, max_reviews=max_reviews
-        )
+
+        self.log_operation("fetch_reviews", place_id=place_id, max_reviews=max_reviews)
 
         # Use external API call handler with timeout
         data = handle_external_api_call(
@@ -144,7 +142,7 @@ class GooglePlacesService(BaseService):
     def _make_places_api_call(self, place_id: str) -> dict[str, Any]:
         """Make Google Places API call with proper timeout."""
         from utils.http_client import get_http_client
-        
+
         url = f"{self.base_url}/details/json"
         params = {
             "place_id": place_id,
@@ -179,7 +177,7 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(restaurant_id=restaurant_id, place_id=place_id)
-        
+
         if not place_id:
             # Get restaurant info to search for place
             if not self.db_manager:
@@ -215,9 +213,7 @@ class GooglePlacesService(BaseService):
 
         # Update database with reviews
         if self.db_manager:
-            success = self.db_manager.update_restaurant_reviews(
-                restaurant_id, reviews
-            )
+            success = self.db_manager.update_restaurant_reviews(restaurant_id, reviews)
             self.log_operation(
                 "reviews_updated", restaurant_id=restaurant_id, success=success
             )
@@ -236,7 +232,7 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(limit=limit)
-        
+
         if not self.db_manager:
             return {"success": False, "error": "No DB manager available"}
 
@@ -289,8 +285,10 @@ class GooglePlacesService(BaseService):
             True if successful, False otherwise
 
         """
-        context = create_error_context(restaurant_id=restaurant_id, website_url=website_url)
-        
+        context = create_error_context(
+            restaurant_id=restaurant_id, website_url=website_url
+        )
+
         if not self.validate_website_url(website_url):
             self.log_operation(
                 "website_validation_failed",
@@ -324,7 +322,7 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(limit=limit)
-        
+
         if self.db_manager:
             return self.db_manager.get_restaurants_without_websites(limit)
         return []
@@ -340,7 +338,7 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(restaurant_id=restaurant.get("id"))
-        
+
         restaurant_id = restaurant["id"]
         restaurant_name = restaurant["name"]
         address = restaurant.get("address", "")
@@ -369,9 +367,7 @@ class GooglePlacesService(BaseService):
             self.update_restaurant_website(restaurant_id, website_url)
 
         # Update reviews
-        reviews_updated = self.update_restaurant_google_reviews(
-            restaurant_id, place_id
-        )
+        reviews_updated = self.update_restaurant_google_reviews(restaurant_id, place_id)
 
         return {
             "restaurant_id": restaurant_id,
@@ -392,14 +388,12 @@ class GooglePlacesService(BaseService):
 
         """
         context = create_error_context(limit=limit)
-        
+
         if not self.db_manager:
             return {"success": False, "error": "No DB manager available"}
 
         # Get restaurants to process
-        restaurants = self.db_manager.get_restaurants_for_google_places_update(
-            limit
-        )
+        restaurants = self.db_manager.get_restaurants_for_google_places_update(limit)
 
         results = {
             "total": len(restaurants),

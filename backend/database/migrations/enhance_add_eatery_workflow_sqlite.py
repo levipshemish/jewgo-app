@@ -26,8 +26,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,9 @@ def run_migration() -> bool | None:
             trans = conn.begin()
 
             try:
-                logger.info("Starting restaurants table enhancement for add eatery workflow")
+                logger.info(
+                    "Starting restaurants table enhancement for add eatery workflow"
+                )
 
                 # 1. Add new fields for enhanced add eatery workflow
                 new_columns = [
@@ -58,23 +59,19 @@ def run_migration() -> bool | None:
                     ("owner_email", "TEXT"),
                     ("owner_phone", "TEXT"),
                     ("is_owner_submission", "BOOLEAN DEFAULT 0"),
-                    
                     # Additional business fields
                     ("business_email", "TEXT"),
                     ("instagram_link", "TEXT"),
                     ("facebook_link", "TEXT"),
                     ("tiktok_link", "TEXT"),
-                    
                     # Multiple images support (SQLite doesn't support arrays, use JSON string)
                     ("business_images", "TEXT"),  # JSON string for multiple image URLs
-                    
                     # Enhanced status tracking
                     ("submission_status", "TEXT DEFAULT 'pending_approval'"),
                     ("submission_date", "TIMESTAMP"),
                     ("approval_date", "TIMESTAMP"),
                     ("approved_by", "TEXT"),
                     ("rejection_reason", "TEXT"),
-                    
                     # Additional business details
                     ("business_license", "TEXT"),
                     ("tax_id", "TEXT"),
@@ -83,10 +80,9 @@ def run_migration() -> bool | None:
                     ("delivery_available", "BOOLEAN DEFAULT 0"),
                     ("takeout_available", "BOOLEAN DEFAULT 0"),
                     ("catering_available", "BOOLEAN DEFAULT 0"),
-                    
                     # Contact preferences
                     ("preferred_contact_method", "TEXT"),  # email, phone, text
-                    ("preferred_contact_time", "TEXT"),    # morning, afternoon, evening
+                    ("preferred_contact_time", "TEXT"),  # morning, afternoon, evening
                     ("contact_notes", "TEXT"),
                 ]
 
@@ -107,7 +103,9 @@ def run_migration() -> bool | None:
                                 f"Adding column {column_name} to restaurants table"
                             )
                             conn.execute(
-                                text(f"ALTER TABLE restaurants ADD COLUMN {column_name} {column_type}")
+                                text(
+                                    f"ALTER TABLE restaurants ADD COLUMN {column_name} {column_type}"
+                                )
                             )
                             logger.info(f"Successfully added column {column_name}")
                         else:
@@ -144,7 +142,9 @@ def run_migration() -> bool | None:
                         if not result.fetchone():
                             logger.info(f"Creating index {index_name}")
                             conn.execute(
-                                text(f"CREATE INDEX {index_name} ON restaurants ({column_name})")
+                                text(
+                                    f"CREATE INDEX {index_name} ON restaurants ({column_name})"
+                                )
                             )
                             logger.info(f"Successfully created index {index_name}")
                         else:
@@ -160,7 +160,7 @@ def run_migration() -> bool | None:
 
                 # 3. Update existing records to set default values
                 logger.info("Updating existing records with default values")
-                
+
                 # Set submission_status for existing records
                 conn.execute(
                     text(
@@ -205,10 +205,12 @@ def run_migration() -> bool | None:
 
                 # 4. Verify the changes
                 logger.info("Verifying migration results...")
-                
+
                 # Count total columns
                 result = conn.execute(
-                    text("SELECT COUNT(*) as column_count FROM pragma_table_info('restaurants')")
+                    text(
+                        "SELECT COUNT(*) as column_count FROM pragma_table_info('restaurants')"
+                    )
                 )
                 column_count = result.fetchone()[0]
                 logger.info(f"Total columns in restaurants table: {column_count}")
@@ -216,8 +218,11 @@ def run_migration() -> bool | None:
                 # List new columns
                 new_column_names = [col[0] for col in new_columns]
                 result = conn.execute(
-                    text("SELECT name FROM pragma_table_info('restaurants') WHERE name IN (" + 
-                         ",".join([f"'{name}'" for name in new_column_names]) + ")")
+                    text(
+                        "SELECT name FROM pragma_table_info('restaurants') WHERE name IN ("
+                        + ",".join([f"'{name}'" for name in new_column_names])
+                        + ")"
+                    )
                 )
                 existing_new_columns = [row[0] for row in result.fetchall()]
                 logger.info(f"New columns added: {existing_new_columns}")
@@ -294,7 +299,9 @@ def rollback_migration() -> bool | None:
 
                 # Note: SQLite doesn't support dropping columns easily
                 # We would need to recreate the table to remove columns
-                logger.warning("SQLite doesn't support dropping columns. Manual table recreation required for full rollback.")
+                logger.warning(
+                    "SQLite doesn't support dropping columns. Manual table recreation required for full rollback."
+                )
 
                 # Commit the rollback
                 trans.commit()
@@ -319,7 +326,9 @@ def rollback_migration() -> bool | None:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Enhance restaurants table for add eatery workflow (SQLite)")
+    parser = argparse.ArgumentParser(
+        description="Enhance restaurants table for add eatery workflow (SQLite)"
+    )
     parser.add_argument(
         "--rollback",
         action="store_true",

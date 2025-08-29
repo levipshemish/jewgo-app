@@ -19,9 +19,9 @@ app = create_app()
 
 if __name__ == "__main__":
     # Get environment configuration
-    is_production = config_manager.get('environment.production', False)
-    environment_name = config_manager.get('environment.name', 'development')
-    
+    is_production = config_manager.get("environment.production", False)
+    environment_name = config_manager.get("environment.name", "development")
+
     app.run(
         host="0.0.0.0",
         port=8082,  # Use port 8082 to avoid conflicts

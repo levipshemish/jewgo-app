@@ -255,9 +255,11 @@ class UserRepository(BaseRepository[User]):
                     "id": user_session.id,
                     "sessionToken": user_session.sessionToken,
                     "userId": user_session.userId,
-                    "expires": user_session.expires.isoformat()
-                    if user_session.expires
-                    else None,
+                    "expires": (
+                        user_session.expires.isoformat()
+                        if user_session.expires
+                        else None
+                    ),
                 }
                 result.append(session_dict)
 

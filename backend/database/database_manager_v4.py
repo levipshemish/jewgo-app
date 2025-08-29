@@ -452,9 +452,11 @@ class DatabaseManager:
                 "short_description": restaurant.short_description,
                 "hours_of_operation": restaurant.hours_of_operation,
                 "hours_json": restaurant.hours_json,
-                "hours_last_updated": restaurant.hours_last_updated.isoformat()
-                if restaurant.hours_last_updated
-                else None,
+                "hours_last_updated": (
+                    restaurant.hours_last_updated.isoformat()
+                    if restaurant.hours_last_updated
+                    else None
+                ),
                 "timezone": restaurant.timezone,
                 "latitude": restaurant.latitude,
                 "longitude": restaurant.longitude,
@@ -468,15 +470,17 @@ class DatabaseManager:
                 "google_review_count": restaurant.google_review_count,
                 "google_reviews": self._safe_json_loads(restaurant.google_reviews, []),
                 "user_email": restaurant.user_email,
-                "created_at": restaurant.created_at.isoformat()
-                if restaurant.created_at
-                else None,
-                "updated_at": restaurant.updated_at.isoformat()
-                if restaurant.updated_at
-                else None,
-                "current_time_local": restaurant.current_time_local.isoformat()
-                if restaurant.current_time_local
-                else None,
+                "created_at": (
+                    restaurant.created_at.isoformat() if restaurant.created_at else None
+                ),
+                "updated_at": (
+                    restaurant.updated_at.isoformat() if restaurant.updated_at else None
+                ),
+                "current_time_local": (
+                    restaurant.current_time_local.isoformat()
+                    if restaurant.current_time_local
+                    else None
+                ),
                 "hours_parsed": restaurant.hours_parsed,
                 "images": image_dicts,
                 "is_open": status_info.get("is_open", False),
@@ -500,12 +504,12 @@ class DatabaseManager:
                 "content": review.content,
                 "images": self._safe_json_loads(review.images, []),
                 "status": review.status,
-                "created_at": review.created_at.isoformat()
-                if review.created_at
-                else None,
-                "updated_at": review.updated_at.isoformat()
-                if review.updated_at
-                else None,
+                "created_at": (
+                    review.created_at.isoformat() if review.created_at else None
+                ),
+                "updated_at": (
+                    review.updated_at.isoformat() if review.updated_at else None
+                ),
                 "moderator_notes": review.moderator_notes,
                 "verified_purchase": review.verified_purchase,
                 "helpful_count": review.helpful_count,
@@ -522,9 +526,9 @@ class DatabaseManager:
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
-                "emailVerified": user.emailVerified.isoformat()
-                if user.emailVerified
-                else None,
+                "emailVerified": (
+                    user.emailVerified.isoformat() if user.emailVerified else None
+                ),
                 "image": user.image,
                 "isSuperAdmin": user.isSuperAdmin,
                 "role": "admin" if user.isSuperAdmin else "user",
@@ -584,12 +588,12 @@ class DatabaseManager:
                 "image_url": image.image_url,
                 "image_order": image.image_order,
                 "cloudinary_public_id": image.cloudinary_public_id,
-                "created_at": image.created_at.isoformat()
-                if image.created_at
-                else None,
-                "updated_at": image.updated_at.isoformat()
-                if image.updated_at
-                else None,
+                "created_at": (
+                    image.created_at.isoformat() if image.created_at else None
+                ),
+                "updated_at": (
+                    image.updated_at.isoformat() if image.updated_at else None
+                ),
             }
         except Exception as e:
             logger.exception("Error converting image to dict", error=str(e))

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Wifi, Car, Clock } from 'lucide-react';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useLocalFilters } from '@/lib/hooks/useLocalFilters';
+import { useFilterOptions } from '@/lib/hooks/useFilterOptions';
 import { cn } from '@/lib/utils/classNames';
 
 interface ModernFilterPopupProps {
@@ -43,6 +44,9 @@ export function ModernFilterPopup({
     isApplying,
   } = useLocalFilters(initialFilters);
 
+  // Fetch filter options from database
+  const { filterOptions, loading: filterOptionsLoading, error: filterOptionsError } = useFilterOptions();
+
   // Local state for quick filters
   const [quickFilters, setQuickFilters] = useState<string[]>([]);
 
@@ -78,7 +82,7 @@ export function ModernFilterPopup({
     setQuickFilters([]);
   };
 
-  if (!isOpen) {return null;}
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center sm:justify-center p-4">
@@ -178,20 +182,43 @@ export function ModernFilterPopup({
             </div>
           </div>
 
-          {/* Category Filter */}
+          {/* Certifying Agency Filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-black">Category</label>
+            <label className="text-sm font-medium text-black">Certifying Agency</label>
+            <select
+              value={draftFilters.agency || ''}
+              onChange={(e) => setDraftFilter('agency', e.target.value || undefined)}
+              className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={filterOptionsLoading}
+            >
+              <option value="">Select certifying agency</option>
+              {filterOptionsLoading ? (
+                <option value="" disabled>Loading...</option>
+              ) : filterOptions?.agencies?.map((agency) => (
+                <option key={agency} value={agency}>
+                  {agency}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Kosher Type Filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-black">Kosher Type</label>
             <select
               value={draftFilters.category || ''}
               onChange={(e) => setDraftFilter('category', e.target.value || undefined)}
               className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={filterOptionsLoading}
             >
-              <option value="">Select category</option>
-              <option value="restaurant">Restaurants</option>
-              <option value="bakery">Bakeries</option>
-              <option value="cafe">Cafes</option>
-              <option value="catering">Catering</option>
-              <option value="deli">Delis</option>
+              <option value="">Select kosher type</option>
+              {filterOptionsLoading ? (
+                <option value="" disabled>Loading...</option>
+              ) : filterOptions?.kosherCategories?.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -205,12 +232,18 @@ export function ModernFilterPopup({
                 setDraftFilter('priceRange', value ? [parseInt(value), parseInt(value) + 1] : undefined);
               }}
               className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              disabled={filterOptionsLoading}
             >
               <option value="">Select price range</option>
-              <option value="1">$ - Budget Friendly</option>
-              <option value="2">$$ - Moderate</option>
-              <option value="3">$$$ - Expensive</option>
-              <option value="4">$$$$ - Very Expensive</option>
+              {filterOptionsLoading ? (
+                <option value="" disabled>Loading...</option>
+              ) : filterOptions?.priceRanges?.map((priceRange) => (
+                <option key={priceRange} value={priceRange}>
+                  {priceRange} - {priceRange === '$' ? 'Budget Friendly' : 
+                    priceRange === '$$' ? 'Moderate' : 
+                    priceRange === '$$$' ? 'Expensive' : 'Very Expensive'}
+                </option>
+              ))}
             </select>
           </div>
 

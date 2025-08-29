@@ -1,4 +1,3 @@
-
 from utils.logging_config import get_logger
 
 from .google_places_searcher import GooglePlacesSearcher

@@ -469,9 +469,11 @@ def cache_restaurant(ttl: int = 1800):  # 30 minutes
 
     def decorator(func):
         return CacheDecorator(
-            cache_manager=func.__self__.cache_manager
-            if hasattr(func.__self__, "cache_manager")
-            else None,
+            cache_manager=(
+                func.__self__.cache_manager
+                if hasattr(func.__self__, "cache_manager")
+                else None
+            ),
             ttl=ttl,
             key_prefix="restaurant:",
         )(func)
@@ -484,9 +486,11 @@ def cache_review(ttl: int = 900):  # 15 minutes
 
     def decorator(func):
         return CacheDecorator(
-            cache_manager=func.__self__.cache_manager
-            if hasattr(func.__self__, "cache_manager")
-            else None,
+            cache_manager=(
+                func.__self__.cache_manager
+                if hasattr(func.__self__, "cache_manager")
+                else None
+            ),
             ttl=ttl,
             key_prefix="review:",
         )(func)
@@ -499,9 +503,11 @@ def cache_user(ttl: int = 3600):  # 1 hour
 
     def decorator(func):
         return CacheDecorator(
-            cache_manager=func.__self__.cache_manager
-            if hasattr(func.__self__, "cache_manager")
-            else None,
+            cache_manager=(
+                func.__self__.cache_manager
+                if hasattr(func.__self__, "cache_manager")
+                else None
+            ),
             ttl=ttl,
             key_prefix="user:",
         )(func)
@@ -514,9 +520,11 @@ def cache_statistics(ttl: int = 300):  # 5 minutes
 
     def decorator(func):
         return CacheDecorator(
-            cache_manager=func.__self__.cache_manager
-            if hasattr(func.__self__, "cache_manager")
-            else None,
+            cache_manager=(
+                func.__self__.cache_manager
+                if hasattr(func.__self__, "cache_manager")
+                else None
+            ),
             ttl=ttl,
             key_prefix="stats:",
         )(func)

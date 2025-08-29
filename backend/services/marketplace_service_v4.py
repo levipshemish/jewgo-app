@@ -30,7 +30,9 @@ class MarketplaceServiceV4(BaseService):
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
 
-        logger.info("MarketplaceServiceV4 (Streamlined) initialized successfully - v2.0 with get_listing_by_id")
+        logger.info(
+            "MarketplaceServiceV4 (Streamlined) initialized successfully - v2.0 with get_listing_by_id"
+        )
 
     def get_listings(
         self,
@@ -53,23 +55,32 @@ class MarketplaceServiceV4(BaseService):
         """Get marketplace listings with filtering and pagination."""
         try:
             # Check if marketplace tables exist
-            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+            if not self.db_manager or not hasattr(
+                self.db_manager, "connection_manager"
+            ):
                 logger.warning("Database manager not available for marketplace")
                 return self._get_empty_listings_response(limit, offset)
-            
+
             # Try to check if marketplace tables exist
             try:
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
+
                     # Test if marketplace table exists
-                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'marketplace\''))
+                    result = session.execute(
+                        text(
+                            "SELECT 1 FROM information_schema.tables WHERE table_name = 'marketplace'"
+                        )
+                    )
                     if not result.fetchone():
-                        logger.warning("Marketplace tables do not exist, returning empty response")
+                        logger.warning(
+                            "Marketplace tables do not exist, returning empty response"
+                        )
                         return self._get_empty_listings_response(limit, offset)
             except Exception as e:
                 logger.warning(f"Could not check marketplace tables: {e}")
                 return self._get_empty_listings_response(limit, offset)
-            
+
             # Build query for marketplace table with correct column names including images
             query = """
                 SELECT m.id, m.title, m.description, m.price, m.currency, m.city, m.state as region, m.zip_code as zip, 
@@ -155,7 +166,7 @@ class MarketplaceServiceV4(BaseService):
                 from sqlalchemy import text
 
                 logger.info(f"Executing marketplace query with params: {params}")
-                
+
                 # Execute main query
                 result = session.execute(text(query), params)
                 listings = result.fetchall()
@@ -176,17 +187,21 @@ class MarketplaceServiceV4(BaseService):
                 # Convert marketplace table structure to expected format
                 # Use dictionary access since SQLAlchemy returns Row objects
                 # Process image fields
-                product_image = listing[18] if len(listing) > 18 else None  # product_image
-                additional_images = listing[19] if len(listing) > 19 else None  # additional_images
+                product_image = (
+                    listing[18] if len(listing) > 18 else None
+                )  # product_image
+                additional_images = (
+                    listing[19] if len(listing) > 19 else None
+                )  # additional_images
                 thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
-                
+
                 # Create images array with thumbnail as first image if available
                 images = []
                 if thumbnail:
                     images.append(thumbnail)
                 elif product_image:
                     images.append(product_image)
-                
+
                 # Add additional images if available
                 if additional_images:
                     if isinstance(additional_images, list):
@@ -195,24 +210,27 @@ class MarketplaceServiceV4(BaseService):
                         # Handle case where additional_images might be a JSON string
                         try:
                             import json
+
                             parsed_images = json.loads(additional_images)
                             if isinstance(parsed_images, list):
                                 images.extend(parsed_images)
                         except (json.JSONDecodeError, TypeError):
                             # If it's not JSON, treat as single image
                             images.append(additional_images)
-                
+
                 # Ensure we have at least one image (use placeholder if none)
                 if not images:
                     images = ["/images/default-restaurant.webp"]
-                
+
                 formatted_listing = {
                     "id": str(listing[0]),  # id
                     "kind": "regular",  # Default to regular for marketplace items
                     "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
                     "title": listing[1],  # title
                     "description": listing[2],  # description
-                    "price_cents": int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
+                    "price_cents": (
+                        int(float(listing[3]) * 100) if listing[3] else 0
+                    ),  # price (convert to cents)
                     "currency": listing[4] or "USD",  # currency
                     "condition": listing[12] or "new",  # condition
                     "category_id": listing[13],  # category
@@ -225,7 +243,9 @@ class MarketplaceServiceV4(BaseService):
                     "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
                     "seller_user_id": listing[10],  # seller_user_id (vendor_id)
                     "images": images,  # Add images array
-                    "thumbnail": thumbnail or product_image or images[0] if images else None,  # Add thumbnail
+                    "thumbnail": (
+                        thumbnail or product_image or images[0] if images else None
+                    ),  # Add thumbnail
                     "attributes": {
                         "type": listing[11],  # type (category)
                         "condition": listing[12],  # condition (status)
@@ -235,12 +255,12 @@ class MarketplaceServiceV4(BaseService):
                     "endorse_up": 0,  # Default values
                     "endorse_down": 0,  # Default values
                     "status": listing[15],  # status
-                    "created_at": listing[16].isoformat()
-                    if listing[16]
-                    else None,  # created_at
-                    "updated_at": listing[17].isoformat()
-                    if listing[17]
-                    else None,  # updated_at
+                    "created_at": (
+                        listing[16].isoformat() if listing[16] else None
+                    ),  # created_at
+                    "updated_at": (
+                        listing[17].isoformat() if listing[17] else None
+                    ),  # updated_at
                     "category_name": listing[13],  # category name
                     "subcategory_name": listing[14],  # subcategory name
                     "seller_name": listing[10],  # seller_user_id as seller_name
@@ -278,7 +298,9 @@ class MarketplaceServiceV4(BaseService):
         """Get a specific marketplace listing by ID - v2.0."""
         try:
             # Check if marketplace tables exist
-            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+            if not self.db_manager or not hasattr(
+                self.db_manager, "connection_manager"
+            ):
                 logger.warning("Database manager not available for marketplace")
                 return {"success": False, "error": "Listing not found"}
 
@@ -286,8 +308,13 @@ class MarketplaceServiceV4(BaseService):
             try:
                 with self.db_manager.connection_manager.get_session_context() as session:
                     from sqlalchemy import text
+
                     # Test if marketplace table exists
-                    result = session.execute(text('SELECT 1 FROM information_schema.tables WHERE table_name = \'Marketplace listings\''))
+                    result = session.execute(
+                        text(
+                            "SELECT 1 FROM information_schema.tables WHERE table_name = 'Marketplace listings'"
+                        )
+                    )
                     if not result.fetchone():
                         logger.warning("Marketplace tables do not exist")
                         return {"success": False, "error": "Listing not found"}
@@ -324,17 +351,21 @@ class MarketplaceServiceV4(BaseService):
                     return {"success": False, "error": "Listing not found"}
 
                 # Process image fields
-                product_image = listing[18] if len(listing) > 18 else None  # product_image
-                additional_images = listing[19] if len(listing) > 19 else None  # additional_images
+                product_image = (
+                    listing[18] if len(listing) > 18 else None
+                )  # product_image
+                additional_images = (
+                    listing[19] if len(listing) > 19 else None
+                )  # additional_images
                 thumbnail = listing[20] if len(listing) > 20 else None  # thumbnail
-                
+
                 # Create images array with thumbnail as first image if available
                 images = []
                 if thumbnail:
                     images.append(thumbnail)
                 elif product_image:
                     images.append(product_image)
-                
+
                 # Add additional images if available
                 if additional_images:
                     if isinstance(additional_images, list):
@@ -343,13 +374,14 @@ class MarketplaceServiceV4(BaseService):
                         # Handle case where additional_images might be a JSON string
                         try:
                             import json
+
                             parsed_images = json.loads(additional_images)
                             if isinstance(parsed_images, list):
                                 images.extend(parsed_images)
                         except (json.JSONDecodeError, TypeError):
                             # If it's not JSON, treat as single image
                             images.append(additional_images)
-                
+
                 # Ensure we have at least one image (use placeholder if none)
                 if not images:
                     images = ["/images/default-restaurant.webp"]
@@ -361,7 +393,9 @@ class MarketplaceServiceV4(BaseService):
                     "txn_type": listing[11] or "sale",  # type (sale, borrow, etc.)
                     "title": listing[1],  # title
                     "description": listing[2],  # description
-                    "price_cents": int(float(listing[3]) * 100) if listing[3] else 0,  # price (convert to cents)
+                    "price_cents": (
+                        int(float(listing[3]) * 100) if listing[3] else 0
+                    ),  # price (convert to cents)
                     "currency": listing[4] or "USD",  # currency
                     "condition": listing[12] or "new",  # condition
                     "category_id": listing[13],  # category
@@ -374,7 +408,9 @@ class MarketplaceServiceV4(BaseService):
                     "lng": float(listing[9]) if listing[9] else None,  # lng (longitude)
                     "seller_user_id": listing[10],  # seller_user_id (vendor_id)
                     "images": images,  # Add images array
-                    "thumbnail": thumbnail or product_image or images[0] if images else None,  # Add thumbnail
+                    "thumbnail": (
+                        thumbnail or product_image or images[0] if images else None
+                    ),  # Add thumbnail
                     "attributes": {
                         "type": listing[11],  # type (category)
                         "condition": listing[12],  # condition (status)
@@ -384,12 +420,12 @@ class MarketplaceServiceV4(BaseService):
                     "endorse_up": 0,  # Default values
                     "endorse_down": 0,  # Default values
                     "status": listing[15],  # status
-                    "created_at": listing[16].isoformat()
-                    if listing[16]
-                    else None,  # created_at
-                    "updated_at": listing[17].isoformat()
-                    if listing[17]
-                    else None,  # updated_at
+                    "created_at": (
+                        listing[16].isoformat() if listing[16] else None
+                    ),  # created_at
+                    "updated_at": (
+                        listing[17].isoformat() if listing[17] else None
+                    ),  # updated_at
                     "category_name": listing[13],  # category name
                     "subcategory_name": listing[14],  # subcategory name
                     "seller_name": listing[10],  # seller_user_id as seller_name
@@ -566,10 +602,14 @@ class MarketplaceServiceV4(BaseService):
 
         except Exception as e:
             logger.exception("Error fetching marketplace categories")
-            
+
             # Return mock data when database is not available
-            if "Database not connected" in str(e) or "Failed to establish database" in str(e):
-                logger.info("Database not available, returning mock marketplace categories")
+            if "Database not connected" in str(
+                e
+            ) or "Failed to establish database" in str(e):
+                logger.info(
+                    "Database not available, returning mock marketplace categories"
+                )
                 return {
                     "success": True,
                     "data": [
@@ -593,8 +633,8 @@ class MarketplaceServiceV4(BaseService):
                                     "slug": "pastries",
                                     "sort_order": 2,
                                     "active": True,
-                                }
-                            ]
+                                },
+                            ],
                         },
                         {
                             "id": 2,
@@ -616,8 +656,8 @@ class MarketplaceServiceV4(BaseService):
                                     "slug": "tallits",
                                     "sort_order": 2,
                                     "active": True,
-                                }
-                            ]
+                                },
+                            ],
                         },
                         {
                             "id": 3,
@@ -639,8 +679,8 @@ class MarketplaceServiceV4(BaseService):
                                     "slug": "decor",
                                     "sort_order": 2,
                                     "active": True,
-                                }
-                            ]
+                                },
+                            ],
                         },
                         {
                             "id": 4,
@@ -662,8 +702,8 @@ class MarketplaceServiceV4(BaseService):
                                     "slug": "prayer-books",
                                     "sort_order": 2,
                                     "active": True,
-                                }
-                            ]
+                                },
+                            ],
                         },
                         {
                             "id": 5,
@@ -685,12 +725,12 @@ class MarketplaceServiceV4(BaseService):
                                     "slug": "snacks",
                                     "sort_order": 2,
                                     "active": True,
-                                }
-                            ]
-                        }
-                    ]
+                                },
+                            ],
+                        },
+                    ],
                 }
-            
+
             return {
                 "success": False,
                 "error": "Failed to fetch marketplace categories",
@@ -700,13 +740,15 @@ class MarketplaceServiceV4(BaseService):
     def update_listing(self, listing_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a marketplace listing."""
         try:
-            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+            if not self.db_manager or not hasattr(
+                self.db_manager, "connection_manager"
+            ):
                 logger.warning("Database manager not available for marketplace update")
                 return {"success": False, "error": "Database service unavailable"}
 
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
-                
+
                 # First, verify the listing exists and belongs to the user
                 verify_query = """
                     SELECT id, vendor_id as seller_id, status 
@@ -715,57 +757,72 @@ class MarketplaceServiceV4(BaseService):
                 """
                 result = session.execute(text(verify_query), {"listing_id": listing_id})
                 listing = result.fetchone()
-                
+
                 if not listing:
                     return {"success": False, "error": "Listing not found"}
-                
+
                 # Check if user owns the listing
                 seller_id = data.get("seller_id")
                 if listing.seller_id != seller_id:
-                    return {"success": False, "error": "Unauthorized to update this listing"}
-                
+                    return {
+                        "success": False,
+                        "error": "Unauthorized to update this listing",
+                    }
+
                 # Check if listing is active
                 if listing.status != "active":
                     return {"success": False, "error": "Cannot update inactive listing"}
 
                 # Build update query with allowed fields
                 allowed_fields = [
-                    'title', 'description', 'price', 'currency', 'city', 'state', 
-                    'zip_code', 'latitude', 'longitude', 'category_id', 'subcategory_id',
-                    'condition', 'product_image', 'additional_images', 'thumbnail'
+                    "title",
+                    "description",
+                    "price",
+                    "currency",
+                    "city",
+                    "state",
+                    "zip_code",
+                    "latitude",
+                    "longitude",
+                    "category_id",
+                    "subcategory_id",
+                    "condition",
+                    "product_image",
+                    "additional_images",
+                    "thumbnail",
                 ]
-                
+
                 update_fields = []
                 update_params = {"listing_id": listing_id}
-                
+
                 for field in allowed_fields:
                     if field in data:
                         update_fields.append(f"{field} = :{field}")
                         update_params[field] = data[field]
-                
+
                 if not update_fields:
                     return {"success": False, "error": "No valid fields to update"}
-                
+
                 # Add updated_at timestamp
                 update_fields.append("updated_at = NOW()")
-                
+
                 update_query = f"""
                     UPDATE marketplace 
                     SET {', '.join(update_fields)}
                     WHERE id = :listing_id
                 """
-                
+
                 session.execute(text(update_query), update_params)
                 session.commit()
-                
+
                 logger.info(f"Marketplace listing {listing_id} updated successfully")
-                
+
                 return {
                     "success": True,
                     "data": {
                         "listing_id": listing_id,
-                        "message": "Listing updated successfully"
-                    }
+                        "message": "Listing updated successfully",
+                    },
                 }
 
         except Exception as e:
@@ -773,19 +830,21 @@ class MarketplaceServiceV4(BaseService):
             return {
                 "success": False,
                 "error": "Failed to update listing",
-                "details": str(e)
+                "details": str(e),
             }
 
     def delete_listing(self, listing_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Delete a marketplace listing."""
         try:
-            if not self.db_manager or not hasattr(self.db_manager, 'connection_manager'):
+            if not self.db_manager or not hasattr(
+                self.db_manager, "connection_manager"
+            ):
                 logger.warning("Database manager not available for marketplace delete")
                 return {"success": False, "error": "Database service unavailable"}
 
             with self.db_manager.connection_manager.get_session_context() as session:
                 from sqlalchemy import text
-                
+
                 # First, verify the listing exists and belongs to the user
                 verify_query = """
                     SELECT id, vendor_id as seller_id, status 
@@ -794,33 +853,36 @@ class MarketplaceServiceV4(BaseService):
                 """
                 result = session.execute(text(verify_query), {"listing_id": listing_id})
                 listing = result.fetchone()
-                
+
                 if not listing:
                     return {"success": False, "error": "Listing not found"}
-                
+
                 # Check if user owns the listing
                 seller_id = data.get("seller_id")
                 if listing.seller_id != seller_id:
-                    return {"success": False, "error": "Unauthorized to delete this listing"}
-                
+                    return {
+                        "success": False,
+                        "error": "Unauthorized to delete this listing",
+                    }
+
                 # Soft delete by setting status to 'deleted'
                 delete_query = """
                     UPDATE marketplace 
                     SET status = 'deleted', updated_at = NOW()
                     WHERE id = :listing_id
                 """
-                
+
                 session.execute(text(delete_query), {"listing_id": listing_id})
                 session.commit()
-                
+
                 logger.info(f"Marketplace listing {listing_id} deleted successfully")
-                
+
                 return {
                     "success": True,
                     "data": {
                         "listing_id": listing_id,
-                        "message": "Listing deleted successfully"
-                    }
+                        "message": "Listing deleted successfully",
+                    },
                 }
 
         except Exception as e:
@@ -828,5 +890,5 @@ class MarketplaceServiceV4(BaseService):
             return {
                 "success": False,
                 "error": "Failed to delete listing",
-                "details": str(e)
+                "details": str(e),
             }

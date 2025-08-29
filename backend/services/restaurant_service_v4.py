@@ -32,7 +32,7 @@ class RestaurantServiceV4(BaseService):
         self.log_operation("get_all_restaurants", filters=filters)
 
         context = create_error_context(filters=filters)
-        
+
         # Handle database operation with specific error handling
         restaurants = handle_database_operation(
             operation=lambda: self.db_manager.get_restaurants(
@@ -43,10 +43,10 @@ class RestaurantServiceV4(BaseService):
             operation_name="get_all_restaurants",
             context=context,
         )
-        
+
         if restaurants is None:
             return []
-        
+
         # Apply any post-processing (e.g., add computed fields, format data)
         processed_restaurants = self._process_restaurant_list(restaurants)
 
@@ -76,14 +76,14 @@ class RestaurantServiceV4(BaseService):
             operation_name="validate_restaurant_id",
             context=create_error_context(restaurant_id=restaurant_id),
         )
-        
+
         if validation_result is False:
             raise ValidationError("Invalid restaurant ID")
 
         self.log_operation("get_restaurant_by_id", restaurant_id=restaurant_id)
 
         context = create_error_context(restaurant_id=restaurant_id)
-        
+
         # Handle database operation with specific error handling
         restaurant = handle_database_operation(
             operation=lambda: self.db_manager.get_restaurant_by_id(restaurant_id),
@@ -407,29 +407,33 @@ class RestaurantServiceV4(BaseService):
         try:
             # Get all restaurants to extract unique values
             restaurants = self.db_manager.get_restaurants()
-            
+
             # Extract unique kosher categories
             kosher_categories = set()
             certifying_agencies = set()
-            
+
             for restaurant in restaurants:
                 # Handle both dict and object types
                 if isinstance(restaurant, dict):
-                    kosher_categories.add(restaurant.get('kosher_category'))
-                    certifying_agencies.add(restaurant.get('certifying_agency'))
+                    kosher_categories.add(restaurant.get("kosher_category"))
+                    certifying_agencies.add(restaurant.get("certifying_agency"))
                 else:
-                    kosher_categories.add(getattr(restaurant, 'kosher_category', None))
-                    certifying_agencies.add(getattr(restaurant, 'certifying_agency', None))
-            
+                    kosher_categories.add(getattr(restaurant, "kosher_category", None))
+                    certifying_agencies.add(
+                        getattr(restaurant, "certifying_agency", None)
+                    )
+
             # Remove None values and convert to sorted lists
             kosher_categories = sorted([cat for cat in kosher_categories if cat])
-            certifying_agencies = sorted([agency for agency in certifying_agencies if agency])
-            
+            certifying_agencies = sorted(
+                [agency for agency in certifying_agencies if agency]
+            )
+
             filter_options = {
-                'kosherCategories': kosher_categories,
-                'agencies': certifying_agencies
+                "kosherCategories": kosher_categories,
+                "agencies": certifying_agencies,
             }
-            
+
             self.logger.info("Successfully retrieved filter options")
             return filter_options
 
@@ -582,6 +586,7 @@ class RestaurantServiceV4(BaseService):
     def _get_current_timestamp(self) -> str:
         """Get current timestamp in ISO format."""
         from datetime import datetime
+
         return datetime.utcnow().isoformat()
 
     # Helper methods
@@ -653,102 +658,135 @@ class RestaurantServiceV4(BaseService):
     def _preprocess_restaurant_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Preprocess restaurant data before saving."""
         processed_data = data.copy()
-        
+
         # Handle business_images field - convert JSON string to array if needed
-        if 'business_images' in processed_data:
-            business_images = processed_data['business_images']
-            self.logger.info("Processing business_images", 
-                           original_type=type(business_images), 
-                           original_value=business_images)
-            
+        if "business_images" in processed_data:
+            business_images = processed_data["business_images"]
+            self.logger.info(
+                "Processing business_images",
+                original_type=type(business_images),
+                original_value=business_images,
+            )
+
             if isinstance(business_images, str):
                 try:
                     import json
-                    processed_data['business_images'] = json.loads(business_images)
-                    self.logger.info("Converted business_images from JSON string", 
-                                   result=processed_data['business_images'])
+
+                    processed_data["business_images"] = json.loads(business_images)
+                    self.logger.info(
+                        "Converted business_images from JSON string",
+                        result=processed_data["business_images"],
+                    )
                 except (json.JSONDecodeError, TypeError) as e:
                     # If it's not valid JSON, treat it as a single image
-                    processed_data['business_images'] = [business_images] if business_images else []
-                    self.logger.warning("Failed to parse business_images as JSON", error=str(e))
+                    processed_data["business_images"] = (
+                        [business_images] if business_images else []
+                    )
+                    self.logger.warning(
+                        "Failed to parse business_images as JSON", error=str(e)
+                    )
             elif not isinstance(business_images, list):
                 # If it's not a list, convert to list
-                processed_data['business_images'] = [business_images] if business_images else []
-                self.logger.info("Converted business_images to list", 
-                               result=processed_data['business_images'])
+                processed_data["business_images"] = (
+                    [business_images] if business_images else []
+                )
+                self.logger.info(
+                    "Converted business_images to list",
+                    result=processed_data["business_images"],
+                )
             else:
-                self.logger.info("business_images already a list", 
-                               result=processed_data['business_images'])
-        
+                self.logger.info(
+                    "business_images already a list",
+                    result=processed_data["business_images"],
+                )
+
         # Remove description field if it exists (not in model)
-        if 'description' in processed_data:
-            del processed_data['description']
-        
+        if "description" in processed_data:
+            del processed_data["description"]
+
         # Ensure status is set to pending for new submissions
-        if 'status' not in processed_data or processed_data['status'] == 'active':
-            processed_data['status'] = 'pending'
-            self.logger.info("Set status to pending", original_status=processed_data.get('status'))
-        
+        if "status" not in processed_data or processed_data["status"] == "active":
+            processed_data["status"] = "pending"
+            self.logger.info(
+                "Set status to pending", original_status=processed_data.get("status")
+            )
+
         # Capitalize kosher category
-        if 'kosher_category' in processed_data and processed_data['kosher_category']:
-            kosher_category = processed_data['kosher_category'].lower()
-            self.logger.info("Processing kosher_category", 
-                           original=processed_data['kosher_category'], 
-                           lowercase=kosher_category)
-            
-            if kosher_category == 'dairy':
-                processed_data['kosher_category'] = 'Dairy'
-            elif kosher_category == 'meat':
-                processed_data['kosher_category'] = 'Meat'
-            elif kosher_category == 'pareve':
-                processed_data['kosher_category'] = 'Pareve'
-            
-            self.logger.info("Capitalized kosher_category", 
-                           result=processed_data['kosher_category'])
-        
+        if "kosher_category" in processed_data and processed_data["kosher_category"]:
+            kosher_category = processed_data["kosher_category"].lower()
+            self.logger.info(
+                "Processing kosher_category",
+                original=processed_data["kosher_category"],
+                lowercase=kosher_category,
+            )
+
+            if kosher_category == "dairy":
+                processed_data["kosher_category"] = "Dairy"
+            elif kosher_category == "meat":
+                processed_data["kosher_category"] = "Meat"
+            elif kosher_category == "pareve":
+                processed_data["kosher_category"] = "Pareve"
+
+            self.logger.info(
+                "Capitalized kosher_category", result=processed_data["kosher_category"]
+            )
+
         # Handle null values for kosher flags - convert empty strings to None
-        kosher_flags = ['is_cholov_yisroel', 'is_pas_yisroel', 'cholov_stam']
+        kosher_flags = ["is_cholov_yisroel", "is_pas_yisroel", "cholov_stam"]
         for flag in kosher_flags:
             if flag in processed_data:
-                if processed_data[flag] == '' or processed_data[flag] is None:
+                if processed_data[flag] == "" or processed_data[flag] is None:
                     processed_data[flag] = None
                 elif isinstance(processed_data[flag], str):
                     # Convert string to boolean
-                    processed_data[flag] = processed_data[flag].lower() in ['true', '1', 'yes']
-        
+                    processed_data[flag] = processed_data[flag].lower() in [
+                        "true",
+                        "1",
+                        "yes",
+                    ]
+
         # Parse address components if full address is provided
-        if 'address' in processed_data and processed_data['address']:
-            address = processed_data['address']
+        if "address" in processed_data and processed_data["address"]:
+            address = processed_data["address"]
             # If address contains city, state, zip, try to parse it
-            if ',' in address and not processed_data.get('city'):
-                parts = address.split(',')
+            if "," in address and not processed_data.get("city"):
+                parts = address.split(",")
                 if len(parts) >= 2:
                     # Extract street address (everything before the first comma)
-                    processed_data['address'] = parts[0].strip()
-                    
+                    processed_data["address"] = parts[0].strip()
+
                     # Try to extract city, state, zip from remaining parts
-                    remaining = ','.join(parts[1:]).strip()
+                    remaining = ",".join(parts[1:]).strip()
                     if remaining:
                         # Look for state and zip pattern
                         import re
-                        state_zip_pattern = r'([A-Z]{2})\s+(\d{5}(?:-\d{4})?)'
+
+                        state_zip_pattern = r"([A-Z]{2})\s+(\d{5}(?:-\d{4})?)"
                         match = re.search(state_zip_pattern, remaining)
                         if match:
                             state = match.group(1)
                             zip_code = match.group(2)
-                            city = remaining.replace(f'{state} {zip_code}', '').strip().rstrip(',').strip()
-                            
-                            if not processed_data.get('state'):
-                                processed_data['state'] = state
-                            if not processed_data.get('zip_code'):
-                                processed_data['zip_code'] = zip_code
-                            if not processed_data.get('city') and city:
-                                processed_data['city'] = city
-        
+                            city = (
+                                remaining.replace(f"{state} {zip_code}", "")
+                                .strip()
+                                .rstrip(",")
+                                .strip()
+                            )
+
+                            if not processed_data.get("state"):
+                                processed_data["state"] = state
+                            if not processed_data.get("zip_code"):
+                                processed_data["zip_code"] = zip_code
+                            if not processed_data.get("city") and city:
+                                processed_data["city"] = city
+
         # Ensure hours_of_operation is included
-        if 'hours_of_operation' not in processed_data and 'hours_open' in processed_data:
-            processed_data['hours_of_operation'] = processed_data['hours_open']
-        
+        if (
+            "hours_of_operation" not in processed_data
+            and "hours_open" in processed_data
+        ):
+            processed_data["hours_of_operation"] = processed_data["hours_open"]
+
         return processed_data
 
     def _get_created_restaurant(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -757,31 +795,42 @@ class RestaurantServiceV4(BaseService):
         restaurants = self.db_manager.get_restaurants()
         for restaurant in restaurants:
             # Handle both dict and object types
-            restaurant_name = restaurant.get('name') if isinstance(restaurant, dict) else getattr(restaurant, 'name', None)
-            restaurant_address = restaurant.get('address') if isinstance(restaurant, dict) else getattr(restaurant, 'address', None)
-            
-            if (restaurant_name == data.get('name') and 
-                restaurant_address == data.get('address')):
+            restaurant_name = (
+                restaurant.get("name")
+                if isinstance(restaurant, dict)
+                else getattr(restaurant, "name", None)
+            )
+            restaurant_address = (
+                restaurant.get("address")
+                if isinstance(restaurant, dict)
+                else getattr(restaurant, "address", None)
+            )
+
+            if restaurant_name == data.get("name") and restaurant_address == data.get(
+                "address"
+            ):
                 # Convert to dict if it's an object
                 if isinstance(restaurant, dict):
                     return restaurant
                 else:
                     # Convert object to dict
                     return {
-                        'id': getattr(restaurant, 'id', None),
-                        'name': getattr(restaurant, 'name', None),
-                        'address': getattr(restaurant, 'address', None),
-                        'city': getattr(restaurant, 'city', None),
-                        'state': getattr(restaurant, 'state', None),
-                        'zip_code': getattr(restaurant, 'zip_code', None),
-                        'phone_number': getattr(restaurant, 'phone_number', None),
-                        'kosher_category': getattr(restaurant, 'kosher_category', None),
-                        'listing_type': getattr(restaurant, 'listing_type', None),
-                        'certifying_agency': getattr(restaurant, 'certifying_agency', None),
-                        'created_at': getattr(restaurant, 'created_at', None),
-                        'updated_at': getattr(restaurant, 'updated_at', None),
-                        'hours_parsed': getattr(restaurant, 'hours_parsed', None),
+                        "id": getattr(restaurant, "id", None),
+                        "name": getattr(restaurant, "name", None),
+                        "address": getattr(restaurant, "address", None),
+                        "city": getattr(restaurant, "city", None),
+                        "state": getattr(restaurant, "state", None),
+                        "zip_code": getattr(restaurant, "zip_code", None),
+                        "phone_number": getattr(restaurant, "phone_number", None),
+                        "kosher_category": getattr(restaurant, "kosher_category", None),
+                        "listing_type": getattr(restaurant, "listing_type", None),
+                        "certifying_agency": getattr(
+                            restaurant, "certifying_agency", None
+                        ),
+                        "created_at": getattr(restaurant, "created_at", None),
+                        "updated_at": getattr(restaurant, "updated_at", None),
+                        "hours_parsed": getattr(restaurant, "hours_parsed", None),
                     }
-        
+
         # If not found, return the original data
         return data

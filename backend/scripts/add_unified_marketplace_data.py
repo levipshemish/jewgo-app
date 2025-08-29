@@ -36,9 +36,9 @@ class UnifiedMarketplaceDataManager:
 
     def __init__(self, database_url: Optional[str] = None):
         """Initialize the data manager."""
-        self.database_url = database_url or os.getenv('DATABASE_URL')
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-        
+
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -47,15 +47,15 @@ class UnifiedMarketplaceDataManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-            
+
             # Test connection
             with self.engine.connect() as conn:
                 result = conn.execute(text("SELECT 1"))
                 result.fetchone()
-            
+
             logger.info("✅ Database connection established successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Database connection failed: {e}")
             return False
@@ -64,12 +64,17 @@ class UnifiedMarketplaceDataManager:
         """Check if a table exists in the database."""
         try:
             with self.engine.connect() as conn:
-                result = conn.execute(text("""
+                result = conn.execute(
+                    text(
+                        """
                     SELECT EXISTS (
                         SELECT FROM information_schema.tables 
                         WHERE table_name = :table_name
                     )
-                """), {"table_name": table_name})
+                """
+                    ),
+                    {"table_name": table_name},
+                )
                 return result.scalar()
         except Exception as e:
             logger.error(f"Error checking table existence: {e}")
@@ -83,57 +88,57 @@ class UnifiedMarketplaceDataManager:
                 "description": "Kosher food and beverage items",
                 "icon": "🍽️",
                 "is_active": True,
-                "sort_order": 1
+                "sort_order": 1,
             },
             {
                 "name": "Appliances",
                 "description": "Kitchen and household appliances",
                 "icon": "🔌",
                 "is_active": True,
-                "sort_order": 2
+                "sort_order": 2,
             },
             {
                 "name": "Vehicles",
                 "description": "Cars, trucks, and other vehicles",
                 "icon": "🚗",
                 "is_active": True,
-                "sort_order": 3
+                "sort_order": 3,
             },
             {
                 "name": "Community",
                 "description": "Community services and gemachs",
                 "icon": "🤝",
                 "is_active": True,
-                "sort_order": 4
+                "sort_order": 4,
             },
             {
                 "name": "Home & Garden",
                 "description": "Home improvement and gardening items",
                 "icon": "🏠",
                 "is_active": True,
-                "sort_order": 5
+                "sort_order": 5,
             },
             {
                 "name": "Electronics",
                 "description": "Electronic devices and accessories",
                 "icon": "📱",
                 "is_active": True,
-                "sort_order": 6
+                "sort_order": 6,
             },
             {
                 "name": "Clothing & Accessories",
                 "description": "Modest clothing and accessories",
                 "icon": "👕",
                 "is_active": True,
-                "sort_order": 7
+                "sort_order": 7,
             },
             {
                 "name": "Books & Media",
                 "description": "Jewish books, CDs, and media",
                 "icon": "📚",
                 "is_active": True,
-                "sort_order": 8
-            }
+                "sort_order": 8,
+            },
         ]
 
     def create_sample_listings(self) -> List[Dict[str, Any]]:
@@ -284,45 +289,57 @@ class UnifiedMarketplaceDataManager:
                 "images": [
                     "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop",
                 ],
-            }
+            },
         ]
 
     def populate_categories(self) -> bool:
         """Populate marketplace categories."""
         try:
-            if not self.check_table_exists('marketplace_categories'):
-                logger.info("⚠️ Marketplace categories table does not exist, skipping categories")
+            if not self.check_table_exists("marketplace_categories"):
+                logger.info(
+                    "⚠️ Marketplace categories table does not exist, skipping categories"
+                )
                 return True
 
             logger.info("📂 Populating marketplace categories...")
-            
+
             categories = self.create_sample_categories()
-            
+
             with self.engine.begin() as conn:
                 for category in categories:
                     # Check if category already exists
-                    result = conn.execute(text("""
+                    result = conn.execute(
+                        text(
+                            """
                         SELECT id FROM marketplace_categories 
                         WHERE name = :name
-                    """), {"name": category["name"]})
-                    
+                    """
+                        ),
+                        {"name": category["name"]},
+                    )
+
                     if not result.fetchone():
-                        conn.execute(text("""
+                        conn.execute(
+                            text(
+                                """
                             INSERT INTO marketplace_categories 
                             (name, description, icon, is_active, sort_order, created_at, updated_at)
                             VALUES (:name, :description, :icon, :is_active, :sort_order, :created_at, :updated_at)
-                        """), {
-                            **category,
-                            "created_at": datetime.now(timezone.utc),
-                            "updated_at": datetime.now(timezone.utc)
-                        })
+                        """
+                            ),
+                            {
+                                **category,
+                                "created_at": datetime.now(timezone.utc),
+                                "updated_at": datetime.now(timezone.utc),
+                            },
+                        )
                         logger.info(f"✅ Added category: {category['name']}")
                     else:
                         logger.info(f"⏭️ Category already exists: {category['name']}")
 
             logger.info("✅ Categories populated successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error populating categories: {e}")
             return False
@@ -330,26 +347,30 @@ class UnifiedMarketplaceDataManager:
     def populate_listings(self) -> bool:
         """Populate marketplace listings."""
         try:
-            if not self.check_table_exists('marketplace'):
+            if not self.check_table_exists("marketplace"):
                 logger.error("❌ Marketplace table does not exist")
                 return False
 
             logger.info("📦 Populating marketplace listings...")
-            
+
             # Check if data already exists
             with self.engine.connect() as conn:
                 result = conn.execute(text("SELECT COUNT(*) FROM marketplace"))
                 count = result.scalar()
-                
+
                 if count > 0:
-                    logger.info(f"✅ Marketplace table already contains {count} records, skipping sample data")
+                    logger.info(
+                        f"✅ Marketplace table already contains {count} records, skipping sample data"
+                    )
                     return True
 
             listings = self.create_sample_listings()
-            
+
             with self.engine.begin() as conn:
                 for listing in listings:
-                    conn.execute(text("""
+                    conn.execute(
+                        text(
+                            """
                         INSERT INTO marketplace 
                         (title, description, price, currency, category, subcategory, city, state, zip_code,
                          vendor_name, vendor_phone, vendor_email, kosher_agency, kosher_level, is_available,
@@ -359,17 +380,20 @@ class UnifiedMarketplaceDataManager:
                                 :vendor_name, :vendor_phone, :vendor_email, :kosher_agency, :kosher_level, :is_available,
                                 :is_featured, :is_on_sale, :stock, :rating, :review_count, :status, :latitude, :longitude,
                                 :thumbnail, :images, :created_at, :updated_at)
-                    """), {
-                        **listing,
-                        "images": json.dumps(listing["images"]),
-                        "created_at": datetime.now(timezone.utc),
-                        "updated_at": datetime.now(timezone.utc)
-                    })
+                    """
+                        ),
+                        {
+                            **listing,
+                            "images": json.dumps(listing["images"]),
+                            "created_at": datetime.now(timezone.utc),
+                            "updated_at": datetime.now(timezone.utc),
+                        },
+                    )
                     logger.info(f"✅ Added listing: {listing['title']}")
 
             logger.info("✅ Listings populated successfully")
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Error populating listings: {e}")
             return False
@@ -377,22 +401,24 @@ class UnifiedMarketplaceDataManager:
     def run_complete_population(self) -> bool:
         """Run complete data population process."""
         logger.info("🚀 Starting unified marketplace data population...")
-        
+
         try:
             # Connect to database
             if not self.connect():
                 return False
-            
+
             # Populate categories (if table exists)
             self.populate_categories()
-            
+
             # Populate listings
             if not self.populate_listings():
                 return False
-            
-            logger.info("🎉 Unified marketplace data population completed successfully!")
+
+            logger.info(
+                "🎉 Unified marketplace data population completed successfully!"
+            )
             return True
-            
+
         except Exception as e:
             logger.error(f"❌ Data population failed: {e}")
             return False
@@ -403,10 +429,10 @@ def main():
     try:
         # Initialize data manager
         data_manager = UnifiedMarketplaceDataManager()
-        
+
         # Run complete population
         success = data_manager.run_complete_population()
-        
+
         if success:
             print("\n🎉 Data population completed successfully!")
             print("✅ Categories populated (if table exists)")
@@ -418,9 +444,9 @@ def main():
         else:
             print("\n❌ Data population completed with errors")
             print("Please check the logs above for details")
-        
+
         return 0 if success else 1
-        
+
     except Exception as e:
         logger.error(f"❌ Data population script failed: {e}")
         return 1

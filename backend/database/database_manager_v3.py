@@ -231,23 +231,25 @@ class Restaurant(Base):
     owner_email = Column(Text)  # Restaurant owner email
     owner_phone = Column(Text)  # Restaurant owner phone
     is_owner_submission = Column(Boolean, default=False)  # Whether submitted by owner
-    
+
     # Additional business fields
     business_email = Column(Text)  # Business contact email
     instagram_link = Column(Text)  # Instagram profile link
     facebook_link = Column(Text)  # Facebook page link
     tiktok_link = Column(Text)  # TikTok profile link
-    
+
     # Multiple images support
     business_images = Column(ARRAY(String))  # Array of image URLs
-    
+
     # Enhanced status tracking
-    submission_status = Column(String(20), default='pending_approval')  # pending_approval, approved, rejected, draft
+    submission_status = Column(
+        String(20), default="pending_approval"
+    )  # pending_approval, approved, rejected, draft
     submission_date = Column(DateTime)  # When submitted
     approval_date = Column(DateTime)  # When approved/rejected
     approved_by = Column(Text)  # Who approved/rejected
     rejection_reason = Column(Text)  # Reason for rejection
-    
+
     # Additional business details
     business_license = Column(Text)  # Business license number
     tax_id = Column(Text)  # Tax ID number
@@ -256,7 +258,7 @@ class Restaurant(Base):
     delivery_available = Column(Boolean, default=False)  # Delivery service available
     takeout_available = Column(Boolean, default=False)  # Takeout service available
     catering_available = Column(Boolean, default=False)  # Catering service available
-    
+
     # Contact preferences
     preferred_contact_method = Column(Text)  # email, phone, text, any
     preferred_contact_time = Column(Text)  # morning, afternoon, evening
@@ -483,8 +485,12 @@ class EnhancedDatabaseManager:
         try:
             # Fix database URL format if needed (postgres:// -> postgresql://)
             if self.database_url.startswith("postgres://"):
-                self.database_url = self.database_url.replace("postgres://", "postgresql://")
-                logger.info("Fixed database URL format from postgres:// to postgresql://")
+                self.database_url = self.database_url.replace(
+                    "postgres://", "postgresql://"
+                )
+                logger.info(
+                    "Fixed database URL format from postgres:// to postgresql://"
+                )
 
             # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
             try:
@@ -1956,7 +1962,6 @@ class EnhancedDatabaseManager:
                 "hours_of_operation",
                 "google_listing_url",
                 "business_email",
-                
                 # Enhanced add eatery workflow fields
                 "owner_name",
                 "owner_email",
@@ -2972,12 +2977,16 @@ class EnhancedDatabaseManager:
                             "image_url": image.image_url,
                             "image_order": image.image_order,
                             "cloudinary_public_id": image.cloudinary_public_id,
-                            "created_at": image.created_at.isoformat()
-                            if image.created_at
-                            else None,
-                            "updated_at": image.updated_at.isoformat()
-                            if image.updated_at
-                            else None,
+                            "created_at": (
+                                image.created_at.isoformat()
+                                if image.created_at
+                                else None
+                            ),
+                            "updated_at": (
+                                image.updated_at.isoformat()
+                                if image.updated_at
+                                else None
+                            ),
                         }
                     )
 
@@ -3321,9 +3330,9 @@ class EnhancedDatabaseManager:
                     "id": user.id,
                     "name": user.name,
                     "email": user.email,
-                    "emailVerified": user.emailVerified.isoformat()
-                    if user.emailVerified
-                    else None,
+                    "emailVerified": (
+                        user.emailVerified.isoformat() if user.emailVerified else None
+                    ),
                     "image": user.image,
                     "isSuperAdmin": user.isSuperAdmin,
                     "role": "admin" if user.isSuperAdmin else "user",
@@ -3464,12 +3473,12 @@ class EnhancedDatabaseManager:
                         "image_url": image.image_url,
                         "image_order": image.image_order,
                         "cloudinary_public_id": image.cloudinary_public_id,
-                        "created_at": image.created_at.isoformat()
-                        if image.created_at
-                        else None,
-                        "updated_at": image.updated_at.isoformat()
-                        if image.updated_at
-                        else None,
+                        "created_at": (
+                            image.created_at.isoformat() if image.created_at else None
+                        ),
+                        "updated_at": (
+                            image.updated_at.isoformat() if image.updated_at else None
+                        ),
                     }
                 )
 
