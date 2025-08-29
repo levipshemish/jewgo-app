@@ -277,7 +277,9 @@ export function EateryPageClient() {
   const [totalRestaurants, setTotalRestaurants] = useState(0);
 
   // Infinite scroll hook - only enabled on mobile  
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+  const loadErrorCountRef = useRef(0);
+
+  const { hasMore, isLoadingMore, loadingRef, setHasMore, loadMore } = useInfiniteScroll(
     async () => {
       
       // Get current values using refs to avoid stale closures
@@ -347,9 +349,13 @@ export function EateryPageClient() {
           return; // Request was aborted, ignore
         }
         console.error('Error fetching more restaurants:', err);
-        // Don't set hasMore to false on error, allow retry
+        // Back off after repeated failures to avoid infinite loading loop
+        loadErrorCountRef.current += 1;
+        if (loadErrorCountRef.current >= 2) {
+          setHasMore(false);
+        }
         if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
+          console.log('Infinite scroll: Error occurred. Failure count =', loadErrorCountRef.current);
         }
       }
     },
