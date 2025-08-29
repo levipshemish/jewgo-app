@@ -47,10 +47,8 @@ def check_database_schema():
         print("\n📋 Database Schema for hours-related columns:")
         for column in columns:
             print(
-                f"   {column[0]}: {column[1]} (
-                    nullable: {column[2]},
-                    default: {column[3]}
-                )"
+                f"   {column[0]}: {column[1]} "
+                f"(nullable: {column[2]}, default: {column[3]})"
             )
         # Check if columns exist
         column_names = [col[0] for col in columns]

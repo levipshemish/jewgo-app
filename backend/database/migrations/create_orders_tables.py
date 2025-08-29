@@ -61,14 +61,14 @@ def upgrade() -> None:
             "payment_method IN ('cash', 'card', 'online')", name="check_payment_method"
         ),
         sa.CheckConstraint(
-            "status IN (
-                'pending',
-                'confirmed',
-                'preparing',
-                'ready',
-                'delivered',
-                'cancelled'
-            )",
+            "status IN ("
+            "'pending', "
+            "'confirmed', "
+            "'preparing', "
+            "'ready', "
+            "'delivered', "
+            "'cancelled'"
+            ")",
             name="check_order_status",
         ),
         sa.CheckConstraint("subtotal >= 0", name="check_subtotal_positive"),

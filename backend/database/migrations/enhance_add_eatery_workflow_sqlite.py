@@ -51,10 +51,7 @@ def run_migration() -> bool | None:
                     ("instagram_link", "TEXT"),
                     ("facebook_link", "TEXT"),
                     ("tiktok_link", "TEXT"),
-                    # Multiple images support (
-                        SQLite doesn't support arrays,
-                        use JSON string
-                    )
+                    # Multiple images support (SQLite doesn't support arrays, use JSON string)
                     ("business_images", "TEXT"),  # JSON string for multiple image URLs
                     # Enhanced status tracking
                     ("submission_status", "TEXT DEFAULT 'pending_approval'"),

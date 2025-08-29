@@ -264,7 +264,7 @@ def get_shtetl_stats():
         stats = {
             "total_listings": total_listings,
             "active_listings": len(
-                [l for line in listings if l.get("status") == "active"]
+                [listing for listing in listings if listing.get("status") == "active"]
             ),
             "gemach_items": gemach_count,
             "kosher_verified_items": kosher_verified_count,
