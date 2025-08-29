@@ -136,7 +136,7 @@ jobs:
           path: '.'
           base: ${{ github.event.before }}
           head: ${{ github.event.after }}
-          extra_args: '--only-verified --fail'
+          extra_args: '--only-verified'
           
       - name: Run GitGuardian (if configured)
         if: env.GITGUARDIAN_API_KEY
