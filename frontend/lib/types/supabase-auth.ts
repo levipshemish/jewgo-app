@@ -59,6 +59,10 @@ export interface TransformedUser {
   role: string;
   permissions: string[];
   subscriptionTier: string;
+  // New role fields
+  adminRole?: string | null;
+  roleLevel?: number;
+  isSuperAdmin?: boolean;
 }
 
 export type AuthProvider = 'apple' | 'google' | 'email' | 'phone' | 'github' | 'discord' | 'unknown';

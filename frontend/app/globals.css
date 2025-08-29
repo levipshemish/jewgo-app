@@ -509,21 +509,17 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   background-color: transparent !important;
 }
 
-/* Ensure marketplace page uses the same responsive grid as restaurant page */
-.marketplace-page .restaurant-grid,
+/* Unified restaurant grid - clean responsive design */
 .restaurant-grid {
-  display: grid !important;
-  align-items: start !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  /* Force consistent grid behavior */
-  grid-auto-rows: min-content !important;
-  grid-auto-columns: 1fr !important;
-  justify-items: stretch !important;
-  align-items: start !important;
+  display: grid;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  grid-auto-rows: min-content;
+  justify-items: stretch;
+  padding: 1rem;
+  margin-bottom: 80px;
 }
 
 /* Ensure marketplace grid cards have consistent sizing */
@@ -538,70 +534,43 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   max-width: 100% !important;
 }
 
-/* Mobile: 2 columns with consistent spacing */
+/* Mobile: 2 columns */
 @media (max-width: 640px) {
-  .marketplace-page .restaurant-grid,
   .restaurant-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
-    margin-bottom: 80px !important;
-    contain: layout style paint !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 }
 
 /* Small tablet: 3 columns */
 @media (min-width: 641px) and (max-width: 768px) {
-  .marketplace-page .restaurant-grid,
   .restaurant-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
-    margin-bottom: 80px !important;
-    contain: layout style paint !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
   }
 }
 
 /* Large tablet: 4 columns */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .marketplace-page .restaurant-grid,
   .restaurant-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
-    contain: layout style paint !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
   }
 }
 
-/* Desktop: 5 columns */
+/* Desktop: 6 columns */
 @media (min-width: 1025px) and (max-width: 1440px) {
-  .marketplace-page .restaurant-grid,
   .restaurant-grid {
-    grid-template-columns: repeat(5, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
-    contain: layout style paint !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
   }
 }
 
-/* Large desktop: 6 columns */
+/* Large desktop: 8 columns */
 @media (min-width: 1441px) {
-  .marketplace-page .restaurant-grid,
   .restaurant-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 1rem !important;
-    padding: 1rem !important;
-    contain: layout style paint !important;
-    will-change: auto !important;
-    transform: translateZ(0) !important;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1rem;
   }
 }
 

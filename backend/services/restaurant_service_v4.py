@@ -176,14 +176,22 @@ class RestaurantServiceV4(BaseService):
             self._validate_restaurant_data(restaurant_data)
             # Apply any pre-processing
             processed_data = self._preprocess_restaurant_data(restaurant_data)
-            # Use database manager v4's add method
-            success = self.db_manager.add_restaurant(processed_data)
-            if not success:
+            # Use database manager v4's create method via repository
+            create_result = self.db_manager.restaurant_repo.create(processed_data)
+            if not create_result or not create_result.get("id"):
                 raise Exception("Failed to create restaurant")
-            # Get the created restaurant by searching for it
-            # Since we don't have the ID, we'll search by name and address
-            created_restaurant = self._get_created_restaurant(processed_data)
-            self.logger.info("Successfully created restaurant")
+            
+            restaurant_id = create_result["id"]
+            
+            # Return success with basic restaurant info
+            created_restaurant = {
+                'id': restaurant_id,
+                'name': create_result.get("name"),
+                'status': 'pending',
+                'message': 'Restaurant created successfully and is pending approval'
+            }
+                
+            self.logger.info("Successfully created restaurant", restaurant_id=restaurant_id)
             return created_restaurant
         except ValidationError:
             raise
@@ -580,9 +588,45 @@ class RestaurantServiceV4(BaseService):
                     "business_images already a list",
                     result=processed_data["business_images"],
                 )
-        # Remove description field if it exists (not in model)
-        if "description" in processed_data:
-            del processed_data["description"]
+        # Remove fields that don't exist in the database model
+        fields_to_remove = [
+            "description",  # Not in model
+            "business_email",  # Not in model  
+            "hours_open",  # Use hours_of_operation instead
+            "submission_status",  # Not in model
+            "submission_date",  # Use created_at instead
+            "is_owner_submission",  # Not in model
+            "owner_name",  # Not in model
+            "owner_email",  # Not in model
+            "owner_phone",  # Not in model
+            "business_license",  # Not in model
+            "tax_id",  # Not in model
+            "years_in_business",  # Not in model
+            "delivery_available",  # Not in model
+            "takeout_available",  # Not in model
+            "catering_available",  # Not in model
+            "preferred_contact_method",  # Not in model
+            "preferred_contact_time",  # Not in model
+            "contact_notes",  # Not in model
+            "instagram_link",  # Not in model
+            "facebook_link",  # Not in model
+            "tiktok_link",  # Not in model
+            "seating_capacity",  # Not in model
+        ]
+        
+        for field in fields_to_remove:
+            if field in processed_data:
+                self.logger.debug(f"Removing field '{field}' from restaurant data")
+                del processed_data[field]
+        
+        # Handle business_images - use first image as main image_url, then remove the field
+        if "business_images" in processed_data and processed_data["business_images"]:
+            if isinstance(processed_data["business_images"], list) and len(processed_data["business_images"]) > 0:
+                processed_data["image_url"] = processed_data["business_images"][0]
+                self.logger.info("Set image_url from first business_image")
+            # Remove business_images since it's not in the database model
+            del processed_data["business_images"]
+            
         # Ensure status is set to pending for new submissions
         if "status" not in processed_data or processed_data["status"] == "active":
             processed_data["status"] = "pending"

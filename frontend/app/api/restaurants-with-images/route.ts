@@ -185,9 +185,17 @@ export async function GET(request: NextRequest) {
     if (listing_type) {
       queryParams.append('listing_type', listing_type);
     }
-    if (price_range) {
-      queryParams.append('price_range', price_range);
+    
+    // Handle price range filters (convert from price_min/price_max to backend format)
+    const price_min = searchParams.get('price_min');
+    const price_max = searchParams.get('price_max');
+    if (price_min) {
+      queryParams.append('price_min', price_min);
     }
+    if (price_max) {
+      queryParams.append('price_max', price_max);
+    }
+    
     if (min_rating) {
       queryParams.append('min_rating', min_rating);
     }
@@ -207,8 +215,14 @@ export async function GET(request: NextRequest) {
       queryParams.append('lng', lng);
     }
     if (radius) {
-      queryParams.append('radius', radius);
+      queryParams.append('max_distance_mi', radius);
     }
+    
+    // Handle dietary filters (multiple values)
+    const dietaries = searchParams.getAll('dietary');
+    dietaries.forEach(dietary => {
+      queryParams.append('dietary', dietary);
+    });
     
     // Call the backend API (normalize URL and default to local in dev)
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];

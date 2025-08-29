@@ -7,6 +7,7 @@ the simple token-based authentication with a more secure system.
 import os
 import jwt
 import time
+from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from functools import wraps
 from flask import request, jsonify
@@ -22,6 +23,22 @@ except ImportError:
     logger = get_logger(__name__)
     logger.warning("SupabaseRoleManager not available - admin roles disabled")
 logger = get_logger(__name__)
+
+# Legacy admin auth kill-switch configuration
+REMOVAL_DAYS = int(os.getenv('LEGACY_REMOVE_AFTER_DAYS', '90'))
+REMOVAL_DATE = datetime.now() + timedelta(days=REMOVAL_DAYS)
+
+
+class DeprecationError(Exception):
+    """Raised when deprecated functionality is accessed after removal date."""
+    pass
+
+
+def _check_removal_date():
+    """Check if legacy admin auth should be removed based on date."""
+    if datetime.now() > REMOVAL_DATE:
+        logger.error(f"Legacy admin auth removal date passed: {REMOVAL_DATE.isoformat()}")
+        raise DeprecationError(f"Legacy admin authentication was removed on {REMOVAL_DATE.isoformat()}. Use Supabase admin roles instead.")
 
 
 class AdminAuthError(Exception):
@@ -196,10 +213,19 @@ class AdminAuthDecorator:
         @wraps(f)
         def auth_wrapper(*args, **kwargs):
             try:
+                # Check removal date first
+                _check_removal_date()
+                
                 # Get token from Authorization header
                 auth_header = request.headers.get("Authorization")
-                if not auth_header or not auth_header.startswith("Bearer "):
+                if not auth_header:
                     return jsonify({"error": "Authorization header required"}), 401
+                
+                # Require AdminBearer header pattern (not Bearer)
+                if not auth_header.startswith("AdminBearer "):
+                    logger.warning("DEPRECATED: Legacy admin auth requires AdminBearer header")
+                    return jsonify({"error": "AdminBearer token required"}), 401
+                
                 token = auth_header.split(" ")[1]
                 # Verify token
                 user_info = admin_auth_manager.verify_admin_token(token)
@@ -221,24 +247,46 @@ class AdminAuthDecorator:
         return auth_wrapper
 
 
-def require_admin_auth(permission: str = "read"):
-    """Decorator to require admin authentication with specific permission."""
+def require_legacy_admin_auth(permission: str = "read"):
+    """
+    Legacy decorator to require admin authentication with specific permission.
+    
+    DEPRECATED: This function is deprecated and will be removed in a future release.
+    Use Supabase admin roles instead.
+    
+    This function is gated by ENABLE_LEGACY_ADMIN_AUTH environment variable.
+    Default: disabled (false)
+    Runtime removal date: 90 days from first use
+    
+    Args:
+        permission: Required permission level
+    """
+    # Check removal date first
+    _check_removal_date()
+    
+    # Check if legacy admin auth is enabled
+    enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+    if not enable_legacy:
+        logger.warning("DEPRECATED: Legacy admin auth disabled - use Supabase admin roles")
+        raise RuntimeError("Legacy admin authentication is disabled. Use Supabase admin roles instead.")
+    
+    logger.warning("DEPRECATED: Using legacy admin auth - migrate to Supabase admin roles")
     return AdminAuthDecorator(permission)
 
 
 def require_admin_migrate():
     """Decorator specifically for migration endpoints."""
-    return require_admin_auth("migrate")
+    return require_legacy_admin_auth("migrate")
 
 
 def require_admin_write():
     """Decorator for write operations."""
-    return require_admin_auth("write")
+    return require_legacy_admin_auth("write")
 
 
 def require_admin_delete():
     """Decorator for delete operations."""
-    return require_admin_auth("delete")
+    return require_legacy_admin_auth("delete")
 
 
 class SimpleAdminTokenDecorator:
@@ -252,9 +300,18 @@ class SimpleAdminTokenDecorator:
         @wraps(f)
         def simple_auth_wrapper(*args, **kwargs):
             try:
+                # Check removal date first
+                _check_removal_date()
+                
                 auth_header = request.headers.get("Authorization")
-                if not auth_header or not auth_header.startswith("Bearer "):
-                    return jsonify({"error": "Unauthorized"}), 401
+                if not auth_header:
+                    return jsonify({"error": "Authorization header required"}), 401
+                
+                # Require AdminBearer header pattern (not Bearer)
+                if not auth_header.startswith("AdminBearer "):
+                    logger.warning("DEPRECATED: Legacy admin auth requires AdminBearer header")
+                    return jsonify({"error": "AdminBearer token required"}), 401
+                
                 token = auth_header.split(" ")[1]
                 admin_token = os.getenv("ADMIN_TOKEN")
                 if not admin_token or token != admin_token:
@@ -272,5 +329,35 @@ class SimpleAdminTokenDecorator:
 
 # Legacy compatibility - simple token check for backward compatibility
 def require_simple_admin_token():
-    """Legacy decorator for simple token-based authentication."""
+    """
+    Legacy decorator for simple token-based authentication.
+    
+    DEPRECATED: This function is deprecated and will be removed in a future release.
+    Use Supabase admin roles instead.
+    
+    This function is gated by ENABLE_LEGACY_ADMIN_AUTH environment variable.
+    Default: disabled (false)
+    Runtime removal date: 90 days from first use
+    """
+    # Check removal date first
+    _check_removal_date()
+    
+    # Check if legacy admin auth is enabled
+    enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+    if not enable_legacy:
+        logger.warning("DEPRECATED: Legacy simple admin auth disabled - use Supabase admin roles")
+        raise RuntimeError("Legacy simple admin authentication is disabled. Use Supabase admin roles instead.")
+    
+    logger.warning("DEPRECATED: Using legacy simple admin auth - migrate to Supabase admin roles")
     return SimpleAdminTokenDecorator()
+
+
+# Backward compatibility alias - will be removed in future release
+def require_legacy_admin_auth_compat(permission: str = "read"):
+    """
+    DEPRECATED: Backward compatibility alias for require_legacy_admin_auth.
+    This function will be removed in a future release.
+    Use Supabase admin roles instead.
+    """
+    logger.warning("DEPRECATED: require_admin_auth is deprecated - use require_legacy_admin_auth or migrate to Supabase admin roles")
+    return require_legacy_admin_auth(permission)

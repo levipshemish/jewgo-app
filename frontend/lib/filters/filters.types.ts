@@ -1,12 +1,13 @@
 export interface Filters {
   q?: string;
   agency?: string;
-  dietary?: string;
+  dietary?: string[];
   category?: string;
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
   maxDistance?: number;
+  maxDistanceMi?: number;  // Backend expects maxDistanceMi
   ratingMin?: number;
   priceRange?: [number, number];
   lat?: number;
@@ -18,12 +19,13 @@ export interface Filters {
 
 export interface FilterState {
   agency?: string;
-  dietary?: string;
+  dietary?: string[];  // Changed to match updated schema
   openNow?: boolean;
   category?: string;
   businessTypes?: string[];
   nearMe?: boolean;
   maxDistance?: number;
+  maxDistanceMi?: number;  // Added for backend compatibility
   distanceRadius?: number;
   ratingMin?: number;
   priceRange?: [number, number];
@@ -48,12 +50,13 @@ export interface AppliedFilters extends Filters {
   // Applied filters are the ones that have been submitted and are actively filtering data
   q?: string;
   agency?: string;
-  dietary?: string;
+  dietary?: string[];
   category?: string;
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
   maxDistance?: number;
+  maxDistanceMi?: number;  // Backend expects maxDistanceMi
   ratingMin?: number;
   priceRange?: [number, number];
   lat?: number;
@@ -67,12 +70,13 @@ export interface DraftFilters extends FilterState {
   // Draft filters are the ones being edited but not yet applied
   q?: string;
   agency?: string;
-  dietary?: string;
+  dietary?: string[];
   category?: string;
   businessTypes?: string[];
   openNow?: boolean;
   nearMe?: boolean;
   maxDistance?: number;
+  maxDistanceMi?: number;
   ratingMin?: number;
   priceRange?: [number, number];
 }

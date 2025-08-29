@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -12,6 +12,20 @@ import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { ModernFilterPopup } from '@/components/filters/ModernFilterPopup';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
+import { useMobileOptimization } from '@/lib/mobile-optimization';
+import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
+
+// One canonical cleaner for filters (use it everywhere)
+function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
+  const out: Partial<T> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    out[k as keyof T] = v as any;
+  }
+  return out;
+}
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -72,11 +86,41 @@ export function EateryPageClient() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // AbortController for request cancellation
+  const controllerRef = useRef<AbortController | null>(null);
+  
+  // Mobile optimization hook
+  const { isMobile, viewportWidth } = useMobileOptimization();
+  
+  // Responsive items per page calculation
+  const mobileOptimizedItemsPerPage = useMemo(() => {
+    // Calculate items per page to ensure exactly 4 rows on every screen size
+    if (isMobile) {
+      return 8; // 4 rows × 2 columns = 8 items
+    } else {
+      // For desktop, calculate based on viewport width to ensure 4 rows
+      let columnsPerRow = 3; // Default fallback
+      
+      if (viewportWidth >= 1441) {
+        columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
+      } else if (viewportWidth >= 1025) {
+        columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
+      } else if (viewportWidth >= 769) {
+        columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
+      } else if (viewportWidth >= 641) {
+        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
+      }
+      
+      return columnsPerRow * 4; // Always 4 rows
+    }
+  }, [isMobile, viewportWidth]);
+  
   // Advanced filters hook
   const {
     activeFilters,
     hasActiveFilters,
     setFilter,
+    clearFilter,
     clearAllFilters,
     getFilterCount
   } = useAdvancedFilters();
@@ -96,45 +140,242 @@ export function EateryPageClient() {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
 
+  // Build query parameters consistently
+  const buildQueryParams = useCallback((page: number, query: string, filters?: AppliedFilters) => {
+    const params = new URLSearchParams();
+    const limit = mobileOptimizedItemsPerPage;
+    const offset = Math.max(0, (page - 1) * limit);
+    params.set('limit', String(limit));
+    params.set('offset', String(offset)); // ✅ backend expects this
+    
+    if (query && query.trim()) {
+      params.set('search', query.trim());
+    }
+    
+    if (filters) {
+      const cleaned = cleanFilters(filters);
+      
+      if (typeof cleaned.agency === "string") {
+        params.set('certifying_agency', cleaned.agency);
+      }
+      if (typeof cleaned.category === "string") {
+        params.set('kosher_category', cleaned.category);
+      }
+      if (Array.isArray(cleaned.priceRange)) {
+        const [min, max] = cleaned.priceRange;
+        if (Number.isFinite(min)) {
+          params.set('price_min', min.toString());
+        }
+        if (Number.isFinite(max)) {
+          params.set('price_max', max.toString());
+        }
+      }
+      if (typeof cleaned.ratingMin === "number") {
+        params.set('min_rating', cleaned.ratingMin.toString());
+      }
+      // Location filters
+      if (cleaned.nearMe && Number.isFinite(cleaned.lat) && Number.isFinite(cleaned.lng)) {
+        params.set('lat', String(cleaned.lat!));
+        params.set('lng', String(cleaned.lng!));
+        // Support both maxDistance and maxDistanceMi for backward compatibility
+        const maxDistValue = cleaned.maxDistanceMi ?? cleaned.maxDistance;
+        if (Number.isFinite(maxDistValue)) {
+          params.set('max_distance_mi', String(maxDistValue!));
+        }
+      }
+      // Dietary filters (multi-select)
+      if (Array.isArray(cleaned.dietary) && cleaned.dietary.length > 0) {
+        cleaned.dietary.forEach(d => params.append('dietary', d));
+      } else if (cleaned.dietary && typeof cleaned.dietary === 'string' && cleaned.dietary.trim() !== '') {
+        // Handle single string dietary for backward compatibility
+        params.set('dietary', cleaned.dietary.trim());
+      }
+    }
+    
+    return params;
+  }, [mobileOptimizedItemsPerPage]);
 
-  const fetchRestaurants = useCallback(async (page: number = 1, query: string = '') => {
+  const fetchRestaurants = useCallback(async (page: number = 1, query: string = '', filters?: AppliedFilters) => {
+    // Cancel any in-flight request
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    
     try {
       setLoading(true);
       setError(null);
       
-      // Construct URL more explicitly to avoid encoding issues
-      const baseUrl = '/api/restaurants-with-images';
-      const queryParams: string[] = [];
-      queryParams.push(`page=${encodeURIComponent(page.toString())}`);
-      queryParams.push(`limit=100`); // Higher limit to show more restaurants
+      const params = buildQueryParams(page, query, filters);
+      const url = `/api/restaurants-with-images?${params.toString()}`;
       
-      if (query && query.trim()) {
-        queryParams.push(`search=${encodeURIComponent(query.trim())}`);
-      }
-      
-      const url = `${baseUrl}?${queryParams.join('&')}`;
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
       const data: ApiResponse = await response.json();
       
       if (data.success) {
         setRestaurants(data.data);
-        setTotalPages(Math.ceil(data.total / 100));
+        setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
+        
+        // Reset infinite scroll state for mobile
+        if (isMobile) {
+          setAllRestaurants(data.data); // Start with initial data
+          setInfiniteScrollPage(1); // Reset to page 1
+          setTotalRestaurants(data.total); // Track total count
+          // Set hasMore based on whether there are more items available
+          const hasMoreData = data.data.length < data.total;
+          setHasMore(hasMoreData);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Initial load for infinite scroll:', { 
+              items: data.data.length, 
+              total: data.total, 
+              hasMore: hasMoreData 
+            });
+          }
+        }
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Initial load: Page', page, 'items:', data.data.length, 'total pages:', Math.ceil(data.total / mobileOptimizedItemsPerPage));
+        }
       } else {
         setError(data.error || 'Failed to fetch restaurants');
       }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return; // Request was aborted, ignore
+      }
       setError('Failed to fetch restaurants');
       console.error('Error fetching restaurants:', err);
     } finally {
       setLoading(false);
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+      }
     }
-  }, []);
+  }, [buildQueryParams, mobileOptimizedItemsPerPage, isMobile]);
+
+  // Memoized query key to prevent unnecessary refetches
+  const queryKey = useMemo(() => {
+    const params = buildQueryParams(currentPage, searchQuery, activeFilters);
+    return params.toString();
+  }, [currentPage, searchQuery, activeFilters, buildQueryParams]);
+
+  // Separate state for infinite scroll to avoid conflicts
+  const [infiniteScrollPage, setInfiniteScrollPage] = useState(1);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [totalRestaurants, setTotalRestaurants] = useState(0);
+
+  // Infinite scroll hook - only enabled on mobile
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    async () => {
+      // Don't fetch if already loading
+      if (loading) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Blocked by loading state');
+        }
+        return;
+      }
+      
+      try {
+        // Calculate the correct offset for the next page
+        const nextOffset = allRestaurants.length;
+        const nextPage = Math.floor(nextOffset / mobileOptimizedItemsPerPage) + 1;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems: allRestaurants.length });
+        }
+        
+        // Use unified buildQueryParams function to avoid duplication
+        const params = buildQueryParams(nextPage, searchQuery, activeFilters);
+        
+        // Override with offset-based pagination for infinite scroll
+        params.set('limit', mobileOptimizedItemsPerPage.toString());
+        params.set('offset', nextOffset.toString());
+        
+        const url = `/api/restaurants-with-images?${params.toString()}`;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Fetching URL', url);
+        }
+        
+        const controller = new AbortController();
+        const response = await fetch(url, { signal: controller.signal });
+        const data: ApiResponse = await response.json();
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Response received', { 
+            success: data.success, 
+            dataLength: data.data?.length || 0, 
+            total: data.total,
+            hasData: !!data.data 
+          });
+        }
+        
+        if (data.success && data.data.length > 0) {
+          // Append new restaurants to the accumulated list
+          setAllRestaurants(prev => [...prev, ...data.data]);
+          setInfiniteScrollPage(nextPage);
+          
+          // Check if we've reached the end using actual total count
+          const newTotalItems = allRestaurants.length + data.data.length;
+          const hasMoreData = newTotalItems < totalRestaurants;
+          setHasMore(hasMoreData);
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData);
+          }
+        } else {
+          // No more data available
+          setHasMore(false);
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Infinite scroll: No more data available (empty response)');
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return; // Request was aborted, ignore
+        }
+        console.error('Error fetching more restaurants:', err);
+        // Don't set hasMore to false on error, allow retry
+        // Show a temporary error state that allows manual retry
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
+        }
+      }
+    },
+    { 
+      threshold: isMobile ? 0.2 : 0.3, // Less aggressive on mobile for better UX
+      rootMargin: isMobile ? '100px' : '200px', // Smaller margin to reduce premature loading
+      disabled: !isMobile // Only enable infinite scroll on mobile
+    }
+  );
 
 
 
   useEffect(() => {
-    fetchRestaurants(currentPage, searchQuery);
-  }, [currentPage, searchQuery, fetchRestaurants]);
+    fetchRestaurants(currentPage, searchQuery, activeFilters);
+  }, [queryKey, fetchRestaurants]);
+
+
+
+  // Reset hasMore when filters or search change
+  useEffect(() => {
+    if (isMobile) {
+      setHasMore(true);
+    }
+  }, [searchQuery, activeFilters, isMobile, setHasMore]);
+
+
+
+  // Cleanup AbortController on unmount
+  useEffect(() => {
+    return () => {
+      controllerRef.current?.abort();
+    };
+  }, []);
 
   // Show location prompt when page loads and user doesn't have location
   useEffect(() => {
@@ -182,11 +423,16 @@ export function EateryPageClient() {
 
   // Calculate distances and sort restaurants when location is available
   const restaurantsWithDistance = useMemo(() => {
+    // Use the appropriate data source based on device type
+    const dataSource = isMobile ? allRestaurants : restaurants;
+    
     if (process.env.NODE_ENV === 'development') {
       console.log('📍 EateryPage: Recalculating restaurant sorting', {
         hasUserLocation: !!userLocation,
         permissionStatus,
-        restaurantCount: restaurants.length
+        restaurantCount: dataSource.length,
+        isMobile,
+        dataSource: isMobile ? 'allRestaurants' : 'restaurants'
       });
     }
 
@@ -195,7 +441,7 @@ export function EateryPageClient() {
       if (process.env.NODE_ENV === 'development') {
         console.log('📍 EateryPage: No location available, returning original order');
       }
-      return restaurants.map(restaurant => ({
+      return dataSource.map(restaurant => ({
         ...restaurant,
         distance: undefined
       }));
@@ -205,7 +451,7 @@ export function EateryPageClient() {
       console.log('📍 EateryPage: Calculating distances and sorting by distance');
     }
 
-    return restaurants.map(restaurant => {
+    return dataSource.map(restaurant => {
       let distance: number | undefined;
       
       // Calculate distance if restaurant has coordinates
@@ -237,11 +483,12 @@ export function EateryPageClient() {
       // Keep original order for restaurants without coordinates
       return 0;
     });
-  }, [restaurants, userLocation, permissionStatus]);
+  }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
+    // Note: hasMore will be reset when new data is loaded
   }, []);
 
   const handlePageChange = useCallback((page: number) => {
@@ -258,14 +505,33 @@ export function EateryPageClient() {
   }, []);
 
   const handleApplyFilters = useCallback((filters: AppliedFilters) => {
-    // Apply the filters to the active filters
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined) {
-        setFilter(key as keyof typeof activeFilters, value);
-      }
-    });
+    // Check if this is a "Clear All" operation (empty object)
+    if (Object.keys(filters).length === 0) {
+      // Clear all filters
+      clearAllFilters();
+    } else {
+      // Clean the filters before applying
+      const cleaned = cleanFilters(filters);
+      
+      // Remove keys that no longer exist in the new filters
+      const keysToRemove = Object.keys(activeFilters).filter(k => !(k in cleaned));
+      keysToRemove.forEach(k => {
+        clearFilter(k as keyof typeof activeFilters);
+      });
+      
+      // Set updated keys
+      Object.entries(cleaned).forEach(([key, value]) => {
+        if (value !== undefined) {
+          setFilter(key as keyof typeof activeFilters, value);
+        }
+      });
+    }
+    
+    // Reset to first page when applying filters
+    setCurrentPage(1);
     setShowFilters(false);
-  }, [setFilter, activeFilters]);
+    // Note: hasMore will be reset when new data is loaded
+  }, [setFilter, clearFilter, clearAllFilters, activeFilters]);
 
   if (error) {
     return (
@@ -290,7 +556,7 @@ export function EateryPageClient() {
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
           <p className="text-gray-600 text-center mb-6 max-w-md">{error}</p>
           <button
-            onClick={() => fetchRestaurants(currentPage, searchQuery)}
+            onClick={() => fetchRestaurants(currentPage, searchQuery, activeFilters)}
             className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
           >
             Try Again
@@ -400,7 +666,7 @@ export function EateryPageClient() {
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
         </div>
-      ) : restaurants.length === 0 ? (
+      ) : restaurantsWithDistance.length === 0 ? (
         <div className="text-center py-10 px-5" role="status" aria-live="polite">
           <div className="text-5xl mb-4" aria-hidden="true">🍽️</div>
           <p className="text-lg text-gray-600 mb-2">No restaurants found</p>
@@ -460,7 +726,7 @@ export function EateryPageClient() {
         </div>
       )}
       
-      {totalPages > 1 && (
+      {!isMobile && totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
@@ -470,8 +736,41 @@ export function EateryPageClient() {
             className="mb-4"
           />
           <div className="text-center text-sm text-gray-600">
-            Showing {restaurantsWithDistance.length} of {restaurantsWithDistance.length * totalPages} restaurants
+            Showing {restaurantsWithDistance.length} of {restaurants.length * totalPages} restaurants
           </div>
+        </div>
+      )}
+
+
+
+      {/* Infinite scroll trigger element - only on mobile */}
+      {isMobile && (
+        <div 
+          ref={loadingRef}
+          className="h-32 w-full my-8 flex items-center justify-center border-t border-gray-200"
+          aria-hidden="true"
+        >
+          {isLoadingMore && (
+            <div className="flex items-center space-x-2 text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+              <span className="text-sm">Loading more restaurants...</span>
+            </div>
+          )}
+          {!isLoadingMore && hasMore && (
+            <div className="text-xs text-gray-400">
+              Scroll for more restaurants
+            </div>
+          )}
+          {!hasMore && restaurantsWithDistance.length > 0 && (
+            <div className="text-xs text-gray-400">
+              All restaurants loaded ({restaurantsWithDistance.length} total)
+            </div>
+          )}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-gray-400 mt-2">
+              Debug: Mobile={isMobile.toString()}, hasMore={hasMore.toString()}, isLoading={isLoadingMore.toString()}, items={restaurantsWithDistance.length}/{totalRestaurants}, page={infiniteScrollPage}
+            </div>
+          )}
         </div>
       )}
 

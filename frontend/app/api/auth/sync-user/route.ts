@@ -41,8 +41,15 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    // Transform the user to match the expected format
-    const transformedUser = transformSupabaseUser(user);
+    // Get user's JWT token for role fetching
+    const { data: { session } } = await supabase.auth.getSession();
+    const userToken = session?.access_token;
+
+    // Transform the user with role information if token is available
+    const transformedUser = await transformSupabaseUser(user, {
+      includeRoles: !!userToken,
+      userToken: userToken || undefined
+    });
 
     return NextResponse.json(
       { 

@@ -17,11 +17,20 @@ interface FilterAction {
 function filterReducer(state: DraftFilters, action: FilterAction): DraftFilters {
   switch (action.type) {
     case 'SET_FILTER':
-      if (action.payload?.key && action.payload.value !== undefined) {
-        return {
-          ...state,
-          [action.payload.key]: action.payload.value,
-        };
+      if (action.payload?.key) {
+        // Handle both setting and clearing filters
+        if (action.payload.value === undefined) {
+          // Remove the key when value is undefined
+          const newState = { ...state };
+          delete newState[action.payload.key];
+          return newState;
+        } else {
+          // Set the value
+          return {
+            ...state,
+            [action.payload.key]: action.payload.value,
+          };
+        }
       }
       return state;
       

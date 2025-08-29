@@ -47,6 +47,15 @@ function transformUser(user: any): TransformedUser {
     providerInfo: getProviderInfo(user.app_metadata?.provider),
     createdAt: user.created_at,
     updatedAt: user.updated_at,
+    isEmailVerified: true, // Default to true for now
+    isPhoneVerified: false, // Default to false for now
+    role: 'user', // Default role
+    permissions: ['read', 'write'], // Default permissions
+    subscriptionTier: 'free', // Default subscription tier
+    // Initialize role fields
+    adminRole: null,
+    roleLevel: 0,
+    isSuperAdmin: false
   };
 }
 

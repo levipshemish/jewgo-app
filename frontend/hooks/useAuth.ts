@@ -10,8 +10,8 @@ import {
   extractIsAnonymous,
   verifyTokenRotation,
   extractJtiFromToken
-} from '@/lib/utils/auth-utils-client';
-import { type TransformedUser } from '@/lib/types/supabase-auth';
+} from '@/lib/utils/auth-utils';
+import { type TransformedUser } from '@/lib/utils/auth-utils';
 
 // Define action types for the reducer
 type AuthAction = 
@@ -72,52 +72,60 @@ export function useAuth() {
   // Guard against concurrent anonymous signin calls
   const isStartingAnonRef = useRef(false);
 
-  // Load user effect
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        dispatch({ type: 'SET_LOADING', payload: true });
-        
-        // Check if Supabase is configured
-        if (!isSupabaseConfigured()) {
-          console.warn('Supabase not configured, using mock user for development');
-          dispatch({ type: 'SET_USER', payload: createMockUser() });
-          return;
-        }
+  // Enhanced user loading with role information
+  const loadUserWithRoles = useCallback(async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      
+      // Check if Supabase is configured
+      if (!isSupabaseConfigured()) {
+        console.warn('Supabase not configured, using mock user for development');
+        dispatch({ type: 'SET_USER', payload: createMockUser() });
+        return;
+      }
 
-        // Load user from Supabase
-        const { data: { user }, error } = await supabaseClient.auth.getUser();
+      // Load user from Supabase
+      const { data: { user }, error } = await supabaseClient.auth.getUser();
+      
+      if (user) {
+        // Get session for JWT token
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
-        if (user) {
-          const transformedUser = transformSupabaseUser(user);
-          dispatch({ type: 'SET_USER', payload: transformedUser });
-          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
-        } else if (error) {
-          // Handle specific auth session missing error
-          if (error.message.includes('Auth session missing')) {
-            console.warn('Auth session missing, user needs to sign in');
-            dispatch({ type: 'SET_USER', payload: null });
-            dispatch({ type: 'SET_ANONYMOUS', payload: false });
-            // Don't redirect immediately, let the component handle it
-          } else {
-            dispatch({ type: 'SET_ERROR', payload: error.message });
-            handleUserLoadError(error, router);
-          }
-        } else {
+        // Transform user with role information
+        const transformedUser = await transformSupabaseUser(user, {
+          includeRoles: !!session?.access_token,
+          userToken: session?.access_token || undefined
+        });
+        
+        dispatch({ type: 'SET_USER', payload: transformedUser });
+        dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
+      } else if (error) {
+        // Handle specific auth session missing error
+        if (error.message.includes('Auth session missing')) {
+          console.warn('Auth session missing, user needs to sign in');
           dispatch({ type: 'SET_USER', payload: null });
           dispatch({ type: 'SET_ANONYMOUS', payload: false });
+        } else {
+          dispatch({ type: 'SET_ERROR', payload: error.message });
+          handleUserLoadError(error, router);
         }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load user';
-        dispatch({ type: 'SET_ERROR', payload: errorMessage });
-        handleUserLoadError(err, router);
-      } finally {
-        dispatch({ type: 'SET_LOADING', payload: false });
+      } else {
+        dispatch({ type: 'SET_USER', payload: null });
+        dispatch({ type: 'SET_ANONYMOUS', payload: false });
       }
-    };
-    
-    loadUser();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load user';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      handleUserLoadError(err, router);
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
   }, [router]);
+
+  // Load user effect
+  useEffect(() => {
+    loadUserWithRoles();
+  }, [loadUserWithRoles]);
 
   // Set up auth state change listener
   useEffect(() => {
@@ -129,14 +137,22 @@ export function useAuth() {
       async (event: any, session: any) => {
 
         if (event === 'SIGNED_IN' && session?.user) {
-          const transformedUser = transformSupabaseUser(session.user);
+          // Transform user with role information on sign in
+          const transformedUser = await transformSupabaseUser(session.user, {
+            includeRoles: !!session?.access_token,
+            userToken: session?.access_token || undefined
+          });
           dispatch({ type: 'SET_USER', payload: transformedUser });
           dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
           dispatch({ type: 'SET_ERROR', payload: null });
         } else if (event === 'SIGNED_OUT') {
           dispatch({ type: 'RESET_STATE' });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          const transformedUser = transformSupabaseUser(session.user);
+          // Refresh user with updated role information
+          const transformedUser = await transformSupabaseUser(session.user, {
+            includeRoles: !!session?.access_token,
+            userToken: session?.access_token || undefined
+          });
           dispatch({ type: 'SET_USER', payload: transformedUser });
           dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
         }
@@ -160,30 +176,10 @@ export function useAuth() {
     }
   }, [router]);
 
-  // Refresh user function
+  // Enhanced refresh user function
   const refreshUser = useCallback(async () => {
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      
-      const { data: { user }, error } = await supabaseClient.auth.getUser();
-      
-      if (user) {
-        const transformedUser = transformSupabaseUser(user);
-        dispatch({ type: 'SET_USER', payload: transformedUser });
-        dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
-        dispatch({ type: 'SET_ERROR', payload: null });
-      } else if (error) {
-        dispatch({ type: 'SET_ERROR', payload: error.message });
-      } else {
-        dispatch({ type: 'SET_USER', payload: null });
-        dispatch({ type: 'SET_ANONYMOUS', payload: false });
-      }
-    } catch (err) {
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to refresh user' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  }, []);
+    await loadUserWithRoles();
+  }, [loadUserWithRoles]);
 
   // Anonymous sign in function with race condition prevention
   const signInAnonymously = useCallback(async () => {
@@ -205,7 +201,10 @@ export function useAuth() {
       }
 
       if (data.user) {
-        const transformedUser = transformSupabaseUser(data.user);
+        const transformedUser = await transformSupabaseUser(data.user, {
+          includeRoles: !!data.session?.access_token,
+          userToken: data.session?.access_token || undefined
+        });
         dispatch({ type: 'SET_USER', payload: transformedUser });
         dispatch({ type: 'SET_ANONYMOUS', payload: true });
         dispatch({ type: 'SET_ERROR', payload: null });
@@ -282,5 +281,14 @@ export function useAuth() {
     refreshUser,
     signInAnonymously,
     verifyTokenRotationStatus,
+    
+    // New role-related helpers
+    isAdmin: state.user?.adminRole ? true : false,
+    hasPermission: (permission: string) => {
+      return state.user?.isSuperAdmin || (state.user?.permissions || []).includes(permission);
+    },
+    hasMinimumRoleLevel: (minLevel: number) => {
+      return (state.user?.roleLevel || 0) >= minLevel;
+    }
   };
 }

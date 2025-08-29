@@ -7,27 +7,7 @@ export const FiltersSchema = z.object({
   
   // Kosher filters
   agency: z.string().optional(),
-  dietary: z.string().optional().transform((val) => {
-    // Handle multiple dietary values by taking the first one
-    if (typeof val === 'string') {
-      // If it's a JSON array string, parse and take the first one (check this first)
-      if (val.startsWith('[') && val.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(val);
-          return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : val;
-        } catch {
-          // If JSON parsing fails, try to extract the first value using regex
-          const match = val.match(/"([^"]+)"/);
-          return match ? match[1] : val;
-        }
-      }
-      // If it's a comma-separated list (but not a JSON array), take the first one
-      if (val.includes(',')) {
-        return val.split(',')[0].trim();
-      }
-    }
-    return val;
-  }),
+  dietary: z.array(z.string()).optional(),        // ✅ multi-select
   category: z.string().optional(),
   
   // Location filters
@@ -41,8 +21,9 @@ export const FiltersSchema = z.object({
   
   // Rating and price filters
   ratingMin: z.coerce.number().min(1).max(5).optional(),
-  priceMin: z.coerce.number().min(1).max(4).optional(),
-  priceMax: z.coerce.number().min(1).max(4).optional(),
+  priceRange: z.tuple([z.number().int().min(1).max(4), z.number().int().min(1).max(4)]).optional(), // ✅
+  priceMin: z.coerce.number().min(1).max(4).optional(), // Legacy support for EateryFilters
+  priceMax: z.coerce.number().min(1).max(4).optional(), // Legacy support for EateryFilters
   
   // Mikvah-specific filters
   mikvahType: z.string().optional(),
@@ -89,14 +70,11 @@ export const toSearchParams = (filters: Filters): URLSearchParams => {
     if (typeof value === "boolean") {
       params.set(String(key), value ? "1" : "0");
     } else if (Array.isArray(value)) {
-      // Handle arrays by adding multiple parameters (except dietary)
-      if (key === 'dietary') {
-        // For dietary, only use the first value
-        const firstValue = value[0];
-        if (firstValue !== undefined && firstValue !== null && String(firstValue).trim() !== "") {
-          params.set(String(key), String(firstValue));
-        }
+      // Handle price range tuples specially
+      if (key === 'priceRange' && value.length === 2) {
+        params.set(String(key), `${value[0]},${value[1]}`);
       } else {
+        // Handle regular arrays by adding multiple parameters
         value.forEach(item => {
           if (item !== undefined && item !== null && String(item).trim() !== "") {
             params.append(String(key), String(item));
@@ -134,17 +112,33 @@ export const fromSearchParams = (searchParams: URLSearchParams): Filters => {
     'hasDailyMincha',
   ]);
 
+  // Keys that should be arrays
+  const arrayKeys = new Set(['dietary']);
+
   // Convert URLSearchParams to object, with safe boolean conversion only for boolean keys
   searchParams.forEach((value, key) => {
     // Properly decode the value
     const decodedValue = decodeURIComponent(value);
     
-    // For dietary parameter, only take the first value to avoid array issues
-    if (key === 'dietary' && obj[key] !== undefined) {
-      return; // Skip additional dietary values
+    // Handle special tuple parameters like priceRange
+    if (key === 'priceRange' && decodedValue.includes(',')) {
+      const [min, max] = decodedValue.split(',').map(Number);
+      if (!isNaN(min) && !isNaN(max)) {
+        obj[key] = [min, max];
+      }
+      return;
     }
 
-    // Handle multiple values for the same parameter (except dietary)
+    // Handle multiple values for array parameters
+    if (arrayKeys.has(key)) {
+      if (obj[key] === undefined) {
+        obj[key] = [];
+      }
+      (obj[key] as unknown[]).push(decodedValue);
+      return;
+    }
+
+    // Handle multiple values for the same parameter
     if (obj[key] !== undefined) {
       if (Array.isArray(obj[key])) {
         (obj[key] as unknown[]).push(decodedValue);

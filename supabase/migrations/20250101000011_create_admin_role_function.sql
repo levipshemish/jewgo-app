@@ -3,13 +3,18 @@
 -- Description: Creates a secure database function for admin role queries with proper security boundaries
 
 -- Create minimal-privilege role for function ownership
-CREATE ROLE role_admin_ro NOLOGIN;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'role_admin_ro') THEN
+    CREATE ROLE role_admin_ro NOLOGIN;
+  END IF;
+END $$;
 
 -- Grant only necessary permissions
 GRANT SELECT ON public.admin_roles TO role_admin_ro;
 GRANT USAGE ON SCHEMA public TO role_admin_ro;
 
--- Ensure role can access auth.uid() function
+-- Ensure role can access auth schema and auth.uid() function
+GRANT USAGE ON SCHEMA auth TO role_admin_ro;
 GRANT EXECUTE ON FUNCTION auth.uid() TO role_admin_ro;
 
 -- Create the admin role function with proper ownership
@@ -92,3 +97,8 @@ Owned by minimal-privilege role_admin_ro with only necessary permissions.';
 COMMENT ON FUNCTION public.notify_admin_role_change() IS 
 'Trigger function to notify cache invalidation when admin roles change.
 Sends pg_notify with user_id for cache cleanup.';
+
+-- Enable RLS and create policy for role_admin_ro
+ALTER TABLE public.admin_roles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS admin_ro_select ON public.admin_roles;
+CREATE POLICY admin_ro_select ON public.admin_roles FOR SELECT TO role_admin_ro USING (user_id = auth.uid());

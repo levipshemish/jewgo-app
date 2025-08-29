@@ -26,7 +26,11 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
         const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session?.user) {
-          setUser(transformSupabaseUser(session.user));
+          const transformedUser = await transformSupabaseUser(session.user, {
+            includeRoles: !!session?.access_token,
+            userToken: session?.access_token || undefined
+          });
+          setUser(transformedUser);
         } else {
           setUser(null);
         }
@@ -44,7 +48,11 @@ export default function MarketplaceHeader({ onSearch }: MarketplaceHeaderProps) 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: string, session: Session | null) => {
         if (session?.user) {
-          setUser(transformSupabaseUser(session.user));
+          const transformedUser = await transformSupabaseUser(session.user, {
+            includeRoles: !!session?.access_token,
+            userToken: session?.access_token || undefined
+          });
+          setUser(transformedUser);
         } else {
           setUser(null);
         }

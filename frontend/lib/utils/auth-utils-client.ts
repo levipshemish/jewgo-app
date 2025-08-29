@@ -73,6 +73,10 @@ export function transformSupabaseUser(user: User | null): TransformedUser | null
     role: 'user', // Default role
     permissions: ['read', 'write'], // Default permissions
     subscriptionTier: 'free', // Default subscription tier
+    // Initialize role fields
+    adminRole: null,
+    roleLevel: 0,
+    isSuperAdmin: false
   };
 }
 
@@ -112,6 +116,10 @@ export function createMockUser(): TransformedUser {
     role: 'user',
     permissions: ['read', 'write'],
     subscriptionTier: 'free',
+    // Initialize role fields
+    adminRole: null,
+    roleLevel: 0,
+    isSuperAdmin: false
     };
 }
 

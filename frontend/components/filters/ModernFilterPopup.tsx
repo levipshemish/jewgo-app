@@ -1,11 +1,41 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { X, MapPin, Wifi, Car, Clock } from 'lucide-react';
-import { AppliedFilters } from '@/lib/filters/filters.types';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { X, MapPin, Star, DollarSign, Shield, Utensils } from 'lucide-react';
 import { useLocalFilters } from '@/lib/hooks/useLocalFilters';
 import { useFilterOptions } from '@/lib/hooks/useFilterOptions';
+import { DraftFilters, AppliedFilters } from '@/lib/filters/filters.types';
 import { cn } from '@/lib/utils/classNames';
+
+// Helper function to normalize UI state ↔ form control
+const toSelectValue = (v?: string | null) => {
+  // Handle undefined, null, and empty string cases
+  if (v === undefined || v === null || v === '') {
+    return '';
+  }
+  return v;
+};
+
+// Helper function to ensure dropdown value is always valid
+const getDropdownValue = (value?: string | null) => {
+  // If the value is not in the available options, default to empty string
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+  return value;
+};
+
+// One canonical cleaner for filters (use it everywhere)
+function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
+  const out: Partial<T> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    out[k as keyof T] = v as any;
+  }
+  return out;
+}
 
 interface ModernFilterPopupProps {
   isOpen: boolean;
@@ -18,9 +48,10 @@ interface ModernFilterPopupProps {
 }
 
 const quickFilterOptions = [
-  { id: 'openNow', label: 'Open Now', icon: Clock },
-  { id: 'freeWifi', label: 'Free Wi-Fi', icon: Wifi },
-  { id: 'parking', label: 'Parking Available', icon: Car },
+  { id: 'openNow', label: 'Open Now', icon: Star, supported: false }, // TODO: Implement hours table
+  { id: 'freeWifi', label: 'Free Wi-Fi', icon: Shield, supported: false }, // TODO: Add wifi column
+  { id: 'parking', label: 'Parking Available', icon: DollarSign, supported: false }, // TODO: Add parking column
+  { id: 'kosher', label: 'Kosher', icon: Utensils, supported: true }, // Already filtered by kosher_category
 ];
 
 export function ModernFilterPopup({
@@ -77,16 +108,68 @@ export function ModernFilterPopup({
     onClose();
   };
 
+  // Explicit category change logic (no state races, no leaky keys)
+  const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const raw = e.target.value;           // "" for All, otherwise a string
+    const nextCategory = raw === "" ? undefined : raw;
+
+    // Update draft synchronously via functional set to avoid lost updates
+    setDraftFilter('category', nextCategory);
+  }, [setDraftFilter]);
+
+  const handleAgencyChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const raw = e.target.value;
+    const nextAgency = raw === "" ? undefined : raw;
+
+    setDraftFilter('agency', nextAgency);
+  }, [setDraftFilter]);
+
+  const handlePriceRangeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const raw = e.target.value;
+    if (raw === "") {
+      setDraftFilter('priceRange', undefined);
+    } else {
+      // Map price symbols to numeric values correctly
+      const priceMap: Record<string, number> = {
+        '$': 1,
+        '$$': 2, 
+        '$$$': 3,
+        '$$$$': 4
+      };
+      
+      const priceValue = priceMap[raw];
+      if (priceValue) {
+        // Create range: for $$ (value 2), range is [2,2] not [2,3]
+        const nextPriceRange = [priceValue, priceValue] as [number, number];
+        setDraftFilter('priceRange', nextPriceRange);
+      }
+    }
+  }, [setDraftFilter]);
+
+  const handleRatingChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const raw = e.target.value;
+    if (raw === "") {
+      setDraftFilter('ratingMin', undefined);
+    } else {
+      const ratingValue = Number(raw);
+      if (!isNaN(ratingValue)) {
+        setDraftFilter('ratingMin', ratingValue);
+      }
+    }
+  }, [setDraftFilter]);
+
   const handleClearAll = () => {
     clearAllDraftFilters();
     setQuickFilters([]);
+    // Apply an empty filter object to clear all active filters
+    onApplyFilters({});
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center sm:justify-center p-2 sm:p-4">
-      <div className="w-full max-w-md mx-auto bg-white border-0 rounded-t-3xl sm:rounded-3xl shadow-xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="w-full max-w-md mx-auto bg-white border-0 rounded-t-3xl sm:rounded-3xl shadow-xl max-h-[70vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -108,7 +191,7 @@ export function ModernFilterPopup({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
             {/* Distance Filter */}
             {userLocation ? (
               <div className="space-y-2 sm:space-y-3">
@@ -121,16 +204,16 @@ export function ModernFilterPopup({
                     type="range"
                     min="1"
                     max="50"
-                    value={draftFilters.maxDistance || 25}
-                    onChange={(e) => setDraftFilter('maxDistance', Number(e.target.value))}
+                    value={draftFilters.maxDistanceMi || draftFilters.maxDistance || 25}
+                    onChange={(e) => setDraftFilter('maxDistanceMi', Number(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer slider-green"
                     style={{
-                      background: `linear-gradient(to right, #16a34a 0%, #16a34a ${((draftFilters.maxDistance || 25) / 50) * 100}%, #e5e7eb ${((draftFilters.maxDistance || 25) / 50) * 100}%, #e5e7eb 100%)`,
+                      background: `linear-gradient(to right, #16a34a 0%, #16a34a ${(((draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb ${(((draftFilters.maxDistanceMi || draftFilters.maxDistance || 25)) / 50) * 100}%, #e5e7eb 100%)`,
                     }}
                   />
                   <div className="flex justify-between text-xs text-gray-600">
                     <span>1 mile</span>
-                    <span className="font-medium text-black">{draftFilters.maxDistance || 25} miles</span>
+                    <span className="font-medium text-black">{draftFilters.maxDistanceMi || draftFilters.maxDistance || 25} miles</span>
                     <span>50 miles</span>
                   </div>
                 </div>
@@ -161,7 +244,9 @@ export function ModernFilterPopup({
             <div className="space-y-2 sm:space-y-3">
               <label className="text-sm font-medium text-black">Quick Filters</label>
               <div className="flex flex-wrap gap-2">
-                {quickFilterOptions.map((filter) => {
+                {quickFilterOptions
+                  .filter(filter => filter.supported) // Only show supported filters
+                  .map((filter) => {
                   const Icon = filter.icon;
                   const isActive = quickFilters.includes(filter.id);
                   
@@ -181,18 +266,23 @@ export function ModernFilterPopup({
                   );
                 })}
               </div>
+              {quickFilterOptions.some(filter => !filter.supported) && (
+                <p className="text-xs text-gray-500">
+                  More filters coming soon! We're working on adding hours, Wi-Fi, and parking information.
+                </p>
+              )}
             </div>
 
             {/* Certifying Agency Filter */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-black">Certifying Agency</label>
               <select
-                value={draftFilters.agency || ''}
-                onChange={(e) => setDraftFilter('agency', e.target.value || undefined)}
-                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
+                value={getDropdownValue(draftFilters.agency)}
+                onChange={handleAgencyChange}
+                className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
-                <option value="">Select certifying agency</option>
+                <option value="">All Agencies</option>
                 {filterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.agencies?.map((agency) => (
@@ -207,12 +297,13 @@ export function ModernFilterPopup({
             <div className="space-y-2">
               <label className="text-sm font-medium text-black">Kosher Type</label>
               <select
-                value={draftFilters.category || ''}
-                onChange={(e) => setDraftFilter('category', e.target.value || undefined)}
-                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
+                key={`category-${draftFilters.category || 'empty'}`}
+                value={getDropdownValue(draftFilters.category)}
+                onChange={handleCategoryChange}
+                className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
-                <option value="">Select kosher type</option>
+                <option value="">All Kosher Types</option>
                 {filterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.kosherCategories?.map((category) => (
@@ -227,15 +318,20 @@ export function ModernFilterPopup({
             <div className="space-y-2">
               <label className="text-sm font-medium text-black">Price Range</label>
               <select
-                value={draftFilters.priceRange?.[0] || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setDraftFilter('priceRange', value ? [parseInt(value), parseInt(value) + 1] : undefined);
-                }}
-                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
+                value={(() => {
+                  // Convert numeric price range back to symbol for display
+                  const priceValue = draftFilters.priceRange?.[0];
+                  if (priceValue === 1) return '$';
+                  if (priceValue === 2) return '$$';
+                  if (priceValue === 3) return '$$$';
+                  if (priceValue === 4) return '$$$$';
+                  return '';
+                })()}
+                onChange={handlePriceRangeChange}
+                className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
-                <option value="">Select price range</option>
+                <option value="">All Price Ranges</option>
                 {filterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.priceRanges?.map((priceRange) => (
@@ -252,11 +348,11 @@ export function ModernFilterPopup({
             <div className="space-y-2">
               <label className="text-sm font-medium text-black">Minimum Rating</label>
               <select
-                value={draftFilters.ratingMin || ''}
-                onChange={(e) => setDraftFilter('ratingMin', e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
+                value={getDropdownValue(draftFilters.ratingMin?.toString())}
+                onChange={handleRatingChange}
+                className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
               >
-                <option value="">Select minimum rating</option>
+                <option value="">All Ratings</option>
                 <option value="3">3+ Stars</option>
                 <option value="4">4+ Stars</option>
                 <option value="4.5">4.5+ Stars</option>
@@ -266,7 +362,7 @@ export function ModernFilterPopup({
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="flex gap-3 p-4 sm:p-6 border-t border-gray-200 flex-shrink-0">
+        <div className="flex gap-3 p-4 sm:p-6 border-t border-gray-200 flex-shrink-0 bg-white">
           <button
             onClick={handleClearAll}
             className="flex-1 bg-white text-black border border-gray-300 hover:bg-gray-50 rounded-full py-2.5 sm:py-3 px-4 font-medium transition-colors text-sm"
@@ -305,14 +401,14 @@ export function ModernFilterPopup({
           
           /* Modern select dropdown styling */
           .modern-select {
-            background-color: black !important;
-            color: white !important;
+            background-color: white !important;
+            color: black !important;
             border-radius: 9999px !important;
-            border: 1px solid #4b5563 !important;
+            border: 1px solid #16a34a !important;
             -webkit-appearance: none !important;
             -moz-appearance: none !important;
             appearance: none !important;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2316a34a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
             background-position: right 0.75rem center !important;
             background-repeat: no-repeat !important;
             background-size: 1.5em 1.5em !important;
@@ -326,8 +422,8 @@ export function ModernFilterPopup({
           }
           
           .modern-select option {
-            background-color: black !important;
-            color: white !important;
+            background-color: white !important;
+            color: black !important;
             padding: 8px 12px !important;
             border-radius: 8px !important;
             margin: 2px 0 !important;

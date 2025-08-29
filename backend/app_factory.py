@@ -52,7 +52,46 @@ def create_app():
         logger.info("Loaded environment variables from config.env")
     except Exception as e:
         logger.warning(f"Failed to load config.env: {e}")
+    
+    # Pre-warm JWKS cache on startup
+    try:
+        from utils.supabase_auth import supabase_auth
+        supabase_auth.pre_warm_jwks()
+        logger.info("JWKS pre-warming completed")
+    except Exception as e:
+        logger.warning(f"JWKS pre-warming failed: {e}")
+    
+    # Schedule JWKS refresh
+    try:
+        from utils.supabase_auth import supabase_auth
+        supabase_auth.schedule_jwks_refresh()
+        logger.info("JWKS refresh scheduling completed")
+    except Exception as e:
+        logger.warning(f"Failed to schedule JWKS refresh: {e}")
+    
+    # Start admin role cache invalidation listener
+    try:
+        # Check if cache invalidation listener is enabled
+        if os.getenv("ENABLE_CACHE_INVALIDATION_LISTENER", "true").lower() == "true":
+            from utils.supabase_role_manager import get_role_manager
+            role_manager = get_role_manager()
+            role_manager.start_cache_invalidation_listener()
+            logger.info("Admin role cache invalidation listener startup completed")
+        else:
+            logger.info("Cache invalidation listener disabled by ENABLE_CACHE_INVALIDATION_LISTENER=false")
+    except Exception as e:
+        logger.warning(f"Failed to start admin role cache invalidation listener: {e}")
+    
     app = Flask(__name__)
+    
+    # Register teardown handler to clear user context
+    try:
+        from utils.security import clear_user_context
+        app.teardown_request(clear_user_context)
+        logger.info("Registered user context cleanup handler")
+    except Exception as e:
+        logger.warning(f"Failed to register user context cleanup: {e}")
+    
     # Configure CORS
     # Get CORS origins from environment or use defaults
     cors_origins_env = os.environ.get("CORS_ORIGINS", "")
@@ -367,6 +406,15 @@ def create_app():
             kosher_category = request.args.get("kosher_category", type=str)
             listing_type = request.args.get("listing_type", type=str)
             status = request.args.get("status", type=str, default="active")
+            
+            # New filter parameters
+            price_min = request.args.get("price_min", type=int)
+            price_max = request.args.get("price_max", type=int)
+            min_rating = request.args.get("min_rating", type=float)
+            lat = request.args.get("lat", type=float)
+            lng = request.args.get("lng", type=float)
+            max_distance_mi = request.args.get("max_distance_mi", type=float, default=50.0)
+            dietaries = request.args.getlist("dietary")  # multiple dietary tags
             # Validate parameters
             if limit > 1000:
                 limit = 1000
@@ -402,6 +450,57 @@ def create_app():
             if listing_type:
                 query += " AND listing_type ILIKE %s"
                 params.append(f"%{listing_type}%")
+                
+            # Price range filter (convert numeric to textual price_range length)
+            if price_min is not None or price_max is not None:
+                # Clamp values
+                if price_min is not None:
+                    price_min = max(1, min(4, price_min))
+                if price_max is not None:
+                    price_max = max(1, min(4, price_max))
+                
+                # Convert to textual price_range filter using LENGTH
+                if price_min is not None and price_max is not None:
+                    query += " AND LENGTH(price_range) BETWEEN %s AND %s"
+                    params.extend([price_min, price_max])
+                elif price_min is not None:
+                    query += " AND LENGTH(price_range) >= %s"
+                    params.append(price_min)
+                elif price_max is not None:
+                    query += " AND LENGTH(price_range) <= %s"
+                    params.append(price_max)
+                    
+            # Rating filter
+            if min_rating is not None:
+                query += " AND rating >= %s"
+                params.append(min_rating)
+                
+            # Location/distance filter
+            if lat is not None and lng is not None:
+                # Haversine formula for distance calculation
+                query += """
+                AND latitude IS NOT NULL AND longitude IS NOT NULL
+                AND (
+                  3959 * acos(
+                    least(1,
+                      cos(radians(%s)) * cos(radians(latitude)) *
+                      cos(radians(longitude) - radians(%s)) +
+                      sin(radians(%s)) * sin(radians(latitude))
+                    )
+                  )
+                ) <= %s
+                """
+                params.extend([lat, lng, lat, max_distance_mi])
+                
+            # Dietary filter (multiple values)
+            if dietaries:
+                # If dietary column is TEXT, use ILIKE for each value
+                dietary_conditions = []
+                for dietary in dietaries:
+                    dietary_conditions.append("dietary ILIKE %s")
+                    params.append(f"%{dietary}%")
+                query += " AND (" + " OR ".join(dietary_conditions) + ")"
+                
             # Get total count
             count_query = query.replace("SELECT *", "SELECT COUNT(*)")
             with db_manager.get_connection() as conn:
@@ -409,7 +508,21 @@ def create_app():
                     cursor.execute(count_query, params)
                     total = cursor.fetchone()[0]
             # Add pagination and ordering
-            query += " ORDER BY name ASC LIMIT %s OFFSET %s"
+            order_by = " ORDER BY name ASC"  # default
+            if lat is not None and lng is not None:
+                # Sort by distance when location is provided
+                order_by = """
+                ORDER BY 3959 * acos(
+                  least(1,
+                    cos(radians(%s)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(%s)) +
+                    sin(radians(%s)) * sin(radians(latitude))
+                  )
+                )
+                """
+                params.extend([lat, lng, lat])
+            
+            query += order_by + " LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             # Execute main query
             with db_manager.get_connection() as conn:
@@ -797,16 +910,7 @@ def create_app():
     except Exception as e:
         logger.warning(f"Failed to pre-warm JWKS cache: {e}")
 
-    # Add teardown_request handler to clear Flask g context
-    @app.teardown_request
-    def teardown_request(exception=None):
-        """Clear Flask g context after each request."""
-        from flask import g
-
-        if hasattr(g, "user"):
-            delattr(g, "user")
-        if hasattr(g, "admin_role"):
-            delattr(g, "admin_role")
+    # Teardown handler already registered above (lines 87-93) to avoid duplication
 
     logger.info("JewGo Backend application created successfully")
     return app

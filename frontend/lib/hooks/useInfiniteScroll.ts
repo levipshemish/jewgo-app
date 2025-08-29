@@ -32,14 +32,32 @@ export function useInfiniteScroll(
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastLoadTimeRef = useRef<number>(0);
 
   // Load more function with loading state management
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore || disabled) {
-
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Load more blocked', { isLoadingMore, hasMore, disabled });
+      }
       return;
     }
 
+    // Prevent rapid-fire loading with a minimum delay
+    const now = Date.now();
+    const timeSinceLastLoad = now - lastLoadTimeRef.current;
+    if (timeSinceLastLoad < 500) { // Minimum 500ms between loads
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Load more blocked - too soon', { timeSinceLastLoad });
+      }
+      return;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Infinite scroll: Starting load more');
+    }
+
+    lastLoadTimeRef.current = now;
     setIsLoadingMore(true);
     
     try {
@@ -48,13 +66,18 @@ export function useInfiniteScroll(
       console.error('Error in infinite scroll load more:', error);
     } finally {
       setIsLoadingMore(false);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Load more completed');
+      }
     }
   }, [onLoadMore, isLoadingMore, hasMore, disabled]);
 
   // Set up intersection observer
   useEffect(() => {
     if (disabled || !hasMore) {
-
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Disabled or no more items', { disabled, hasMore });
+      }
       return;
     }
 
@@ -68,7 +91,18 @@ export function useInfiniteScroll(
       (entries) => {
         const [entry] = entries;
 
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Intersection observed', { 
+            isIntersecting: entry.isIntersecting, 
+            isLoadingMore, 
+            hasMore 
+          });
+        }
+
         if (entry.isIntersecting && !isLoadingMore && hasMore) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Infinite scroll: Triggering load more');
+          }
           loadMore();
         }
       },
@@ -82,27 +116,24 @@ export function useInfiniteScroll(
     observerRef.current = observer;
 
     if (loadingRef.current) {
-
       observer.observe(loadingRef.current);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Observer attached to element');
+      }
     } else {
-
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: No loading ref element found');
+      }
     }
 
     return () => {
       if (observerRef.current) {
-
         observerRef.current.disconnect();
       }
     };
-  }, [threshold, rootMargin, root, disabled, hasMore, isLoadingMore, loadMore]);
+  }, [threshold, rootMargin, root, disabled, hasMore, isLoadingMore]); // Removed loadMore from dependencies
 
-  // Re-observe when loading ref changes
-  useEffect(() => {
-    if (observerRef.current && loadingRef.current && !disabled && hasMore) {
 
-      observerRef.current.observe(loadingRef.current);
-    }
-  }, [disabled, hasMore]);
 
   return {
     loadMore,

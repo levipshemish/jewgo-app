@@ -9,11 +9,18 @@ import json
 import time
 import jwt
 import requests
+import uuid
 from typing import Optional, Dict, Any
 from functools import wraps
 from flask import request, jsonify
 from utils.logging_config import get_logger
 from utils.error_handler import AuthenticationError, AuthorizationError
+
+
+class RoleLookupDependencyError(Exception):
+    """Raised when role lookup fails due to system dependency issues."""
+    pass
+
 
 # Import the new role manager
 try:
@@ -60,7 +67,14 @@ class SupabaseAuthManager:
             JWK data or None if not available
         """
         if not self.redis:
-            return self._get_jwks_key_fallback(kid)
+            result = self._get_jwks_key_fallback(kid)
+            if result is None:
+                try:
+                    req_id = request.headers.get('X-Request-ID', 'unknown')
+                except:
+                    req_id = 'unknown'
+                logger.warning(f"AUTH_401_JWKS: JWKS key unavailable for kid {kid} (fallback)", extra={"request_id": req_id})
+            return result
         # Check cache by kid
         cache_key = f"jwks_key:{kid}"
         cached_key = self.redis.get(cache_key)
@@ -72,7 +86,14 @@ class SupabaseAuthManager:
             except (json.JSONDecodeError, KeyError):
                 pass
         # Unknown kid - singleflight fetch
-        return self._fetch_jwks_with_singleflight(kid)
+        result = self._fetch_jwks_with_singleflight(kid)
+        if result is None:
+            try:
+                req_id = request.headers.get('X-Request-ID', 'unknown')
+            except:
+                req_id = 'unknown'
+            logger.warning(f"AUTH_401_JWKS: JWKS key fetch failed for kid {kid}", extra={"request_id": req_id})
+        return result
 
     def _fetch_jwks_with_singleflight(self, kid: str) -> Optional[Dict]:
         """
@@ -103,9 +124,18 @@ class SupabaseAuthManager:
                         )
                         return key
                 # Kid not found in JWKS
+                try:
+                    req_id = request.headers.get('X-Request-ID', 'unknown')
+                except:
+                    req_id = 'unknown'
+                logger.warning(f"AUTH_401_JWKS: Kid {kid} not found in JWKS response", extra={"request_id": req_id})
                 return None
             except Exception as e:
-                logger.error(f"JWKS fetch failed for kid {kid}: {e}")
+                try:
+                    req_id = request.headers.get('X-Request-ID', 'unknown')
+                except:
+                    req_id = 'unknown'
+                logger.error(f"AUTH_401_JWKS: JWKS fetch failed for kid {kid}: {e}", extra={"request_id": req_id})
                 return None  # Fail closed - no fallback to old keys
             finally:
                 self.redis.delete(lock_key)
@@ -155,8 +185,8 @@ class SupabaseAuthManager:
                 # Initialize cache if needed
                 if not hasattr(self, "_jwks_fallback_cache"):
                     self._jwks_fallback_cache = {}
-                # Cache all keys
-                cache_ttl = 3600  # 1 hour fallback cache
+                # Cache all keys with proper TTL from headers
+                cache_ttl = min(self._get_cache_ttl(response.headers), self.cache_ttl)
                 expires_at = time.time() + cache_ttl
                 for key in jwks.get("keys", []):
                     key_kid = key.get("kid")
@@ -166,9 +196,20 @@ class SupabaseAuthManager:
                             "expires_at": expires_at,
                         }
                 # Return the requested key
-                return self._jwks_fallback_cache.get(kid, {}).get("key")
+                result = self._jwks_fallback_cache.get(kid, {}).get("key")
+                if result is None:
+                    try:
+                        req_id = request.headers.get('X-Request-ID', 'unknown')
+                    except:
+                        req_id = 'unknown'
+                    logger.warning(f"AUTH_401_JWKS: Kid {kid} not found in fallback JWKS", extra={"request_id": req_id})
+                return result
             except Exception as e:
-                logger.error(f"JWKS fallback fetch failed for kid {kid}: {e}")
+                try:
+                    req_id = request.headers.get('X-Request-ID', 'unknown')
+                except:
+                    req_id = 'unknown'
+                logger.error(f"AUTH_401_JWKS: JWKS fallback fetch failed for kid {kid}: {e}", extra={"request_id": req_id})
                 return None
             finally:
                 lock.release()
@@ -200,6 +241,45 @@ class SupabaseAuthManager:
             logger.info(f"Pre-warmed {len(jwks.get('keys', []))} JWKS keys")
         except Exception as e:
             logger.error(f"JWKS pre-warming failed: {e}")
+
+    def schedule_jwks_refresh(self):
+        """Schedule periodic JWKS refresh using APScheduler with multi-process guard."""
+        try:
+            # Check if JWKS scheduler is enabled
+            if os.getenv("ENABLE_JWKS_SCHEDULER", "true").lower() != "true":
+                logger.info("JWKS scheduler disabled by ENABLE_JWKS_SCHEDULER=false")
+                return None
+            
+            # Multi-process guard using Redis lock
+            if self.redis:
+                lock_key = "jwks_scheduler_lock"
+                got_lock = self.redis.set(lock_key, "1", nx=True, ex=300)  # 5 minute lock
+                if not got_lock:
+                    logger.info("JWKS scheduler already running in another process")
+                    return None
+            else:
+                logger.warning("Redis not available - JWKS scheduler may run in multiple processes")
+            
+            from apscheduler.schedulers.background import BackgroundScheduler
+            
+            scheduler = BackgroundScheduler()
+            refresh_interval = int(os.getenv("JWKS_REFRESH_INTERVAL", "3600"))  # 1 hour default
+            scheduler.add_job(
+                func=self.pre_warm_jwks,
+                trigger="interval",
+                seconds=refresh_interval,
+                id="jwks_refresh",
+                name="JWKS Cache Refresh"
+            )
+            scheduler.start()
+            logger.info(f"JWKS refresh scheduled every {refresh_interval} seconds")
+            return scheduler
+        except ImportError:
+            logger.warning("APScheduler not available - JWKS refresh not scheduled")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to schedule JWKS refresh: {e}")
+            return None
 
     def get_jwks(self) -> Optional[Dict[str, Any]]:
         """Get JSON Web Key Set from Supabase (legacy method)."""
@@ -240,11 +320,12 @@ class SupabaseAuthManager:
             # Get public key (fail-closed if not available)
             public_key = self.get_jwks_key(kid)
             if not public_key:
-                logger.warning(f"JWKS key not available for kid: {kid}")
+                # JWKS error already logged in get_jwks_key - don't duplicate
                 return None
-            # Convert JWK to public key
+            # Convert JWK to public key using PyJWT 2.x API
             try:
-                rsa_key = jwt.algorithms.RSAAlgorithm.from_jwk(public_key)
+                from jwt.algorithms import RSAAlgorithm
+                rsa_key = RSAAlgorithm.from_jwk(json.dumps(public_key))
             except Exception as e:
                 logger.error(f"Failed to convert JWK to RSA key: {e}")
                 return None
@@ -267,15 +348,26 @@ class SupabaseAuthManager:
                 algorithms=["RS256"],  # Only RS256
                 issuer=issuer,
                 audience=self.expected_audience,
+                leeway=int(os.getenv('JWT_CLOCK_SKEW_LEEWAY','0')),
                 options={
                     "verify_signature": True,
                     "verify_exp": True,
-                    "verify_nb": True,
+                    "verify_nbf": True,
                     "verify_iat": True,
                     "verify_aud": True,
                     "verify_iss": True,
                 },
             )
+            # Additional audience normalization check
+            aud = payload.get('aud')
+            if isinstance(aud, str):
+                auds = [aud]
+            else:
+                auds = aud or []
+            if self.expected_audience not in auds:
+                logger.warning(f"Invalid audience: {auds}, expected: {self.expected_audience}")
+                return None
+            
             # Additional validations
             if payload.get("role") == "anon":
                 logger.warning("Rejected anonymous token")
@@ -321,7 +413,7 @@ class SupabaseAuthManager:
         user_info = {
             "user_id": payload.get("sub"),
             "email": payload.get("email"),
-            "role": payload.get("role", "authenticated"),
+            "jwt_role": payload.get("role", "authenticated"),  # Renamed to avoid confusion with admin_role
             "aud": payload.get("aud"),
             "exp": payload.get("exp"),
             "iat": payload.get("iat"),
@@ -333,6 +425,24 @@ class SupabaseAuthManager:
         if "user_metadata" in payload:
             user_info["user_metadata"] = payload["user_metadata"]
         return user_info
+
+
+def parse_sub_from_verified_token(token: str) -> Optional[str]:
+    """
+    Parse sub claim from verified JWT token.
+    Args:
+        token: JWT token to parse
+    Returns:
+        Sub claim value or None if verification fails
+    """
+    try:
+        payload = supabase_auth.verify_jwt_token(token)
+        if payload:
+            return payload.get('sub')
+        return None
+    except Exception as e:
+        logger.error(f"Error parsing sub from token: {e}")
+        return None
 
 
 # Global instance
@@ -357,19 +467,25 @@ def verify_supabase_admin_role(
     """
     if not ROLE_MANAGER_AVAILABLE:
         logger.warning("Role manager not available - admin role verification disabled")
-        return None
+        raise RoleLookupDependencyError("role-manager-unavailable")
     try:
         # First verify the JWT token
         payload = supabase_auth.verify_jwt_token(token)
         if not payload:
             logger.warning("Invalid JWT token for admin role verification")
-            return None
+            raise AuthenticationError("Invalid or expired token")
         # Get role manager and check admin role
-        role_manager = get_role_manager()
-        role_data = role_manager.get_user_admin_role(payload.get('sub'), token)
-        if not role_data:
-            logger.warning("No admin role found for user")
-            return None
+        try:
+            role_manager = get_role_manager()
+        except Exception as e:
+            logger.error(f"role-manager-init-error: {e}")
+            raise RoleLookupDependencyError("role-manager-init-failed")
+        # Use pre-verified sub to avoid double token verification
+        expected_sub = payload.get("sub")
+        role_data = role_manager.get_user_admin_role_by_sub(token, expected_sub, payload['sub'])
+        if role_data is None:
+            # Dependency failure - raise to trigger 503
+            raise RoleLookupDependencyError("role-lookup-failed")
         # Check role level
         role_level = role_data.get("level", 0)
         required_level = _get_role_level(required_role)
@@ -377,15 +493,21 @@ def verify_supabase_admin_role(
             logger.info(
                 f"Admin role verified: {role_data.get('role')} (level {role_level})"
             )
-            return role_data
+            return {"payload": payload, "role_data": role_data}
         else:
             logger.warning(
                 f"Insufficient admin role: {role_data.get('role')} (level {role_level}) < {required_role} (level {required_level})"
             )
             return None
+    except RoleLookupDependencyError:
+        # Re-raise dependency errors to be handled by caller
+        raise
+    except AuthenticationError:
+        # Re-raise authentication errors to be handled by caller
+        raise
     except Exception as e:
-        logger.error(f"Error verifying admin role: {e}")
-        return None
+        logger.error(f"admin-role-verify-error: {e}")
+        raise RoleLookupDependencyError("role-lookup-failed")
 
 
 def _get_role_level(role: str) -> int:
@@ -419,17 +541,20 @@ def require_supabase_auth(f):
 
             g.user = user_info
             # Log successful authentication
-            logger.info("AUTH_SUCCESS", extra={"endpoint": request.endpoint})
+            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+            logger.info("AUTH_SUCCESS", extra={"endpoint": request.endpoint, "request_id": req_id})
             return f(*args, **kwargs)
         except AuthenticationError as e:
+            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
             logger.warning(
-                f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint}
+                f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
             )
             response = jsonify({"error": "unauthorized"})
             response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
             return response, 401
         except Exception as e:
-            logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
+            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+            logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id})
             return jsonify({"error": "unavailable"}), 503
 
     return decorated_function
@@ -437,62 +562,19 @@ def require_supabase_auth(f):
 
 def require_supabase_admin_role(required_role: str = "system_admin"):
     """
-    Decorator to require Supabase authentication with admin role.
-    Args:
-        required_role: Minimum required admin role level
+    DEPRECATED: Use utils.security.require_admin() instead.
+    This decorator is kept for backward compatibility but will be removed.
     """
-
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            try:
-                # Check for Authorization header
-                auth_header = request.headers.get("Authorization")
-                if not auth_header:
-                    raise AuthenticationError("Authorization header required")
-                # Check Bearer token format
-                if not auth_header.startswith("Bearer "):
-                    raise AuthenticationError("Bearer token required")
-                token = auth_header.split(" ")[1]
-                if not token:
-                    raise AuthenticationError("Token required")
-                # Verify admin role
-                role_data = verify_supabase_admin_role(token, required_role)
-                if not role_data:
-                    raise AuthorizationError("Insufficient admin privileges")
-                # Add role info to Flask g context
-                from flask import g
-
-                g.admin_role = role_data
-                # Log successful admin authentication
-                logger.info(
-                    "AUTH_SUCCESS",
-                    extra={
-                        "endpoint": request.endpoint,
-                        "role": role_data.get("role"),
-                        "level": role_data.get("level"),
-                    },
-                )
-                return f(*args, **kwargs)
-            except AuthenticationError as e:
-                logger.warning(
-                    f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint}
-                )
-                response = jsonify({"error": "unauthorized"})
-                response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
-                return response, 401
-            except AuthorizationError as e:
-                logger.warning(
-                    f"AUTH_403_ROLE: {e.message}", extra={"endpoint": request.endpoint}
-                )
-                return jsonify({"error": "forbidden"}), 403
-            except Exception as e:
-                logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
-                return jsonify({"error": "unavailable"}), 503
-
-        return decorated_function
-
-    return decorator
+    import warnings
+    warnings.warn(
+        "require_supabase_admin_role is deprecated. Use utils.security.require_admin() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Import the canonical decorator from security module
+    from utils.security import require_admin
+    return require_admin(required_role)
 
 
 def optional_supabase_auth(f):

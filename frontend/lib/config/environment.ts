@@ -49,6 +49,9 @@ export const RATE_LIMIT_SHOW_RESET_TIME = process.env.RATE_LIMIT_SHOW_RESET_TIME
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Backend configuration
+export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+
 // Redis configuration
 export const REDIS_URL = process.env.REDIS_URL;
 export const REDIS_HOST = process.env.REDIS_HOST;

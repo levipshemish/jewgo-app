@@ -6,6 +6,7 @@ to replace simple token checking throughout the application.
 
 import os
 import time
+import uuid
 from functools import wraps
 from typing import Optional, Dict, Any
 from flask import request, jsonify
@@ -14,7 +15,7 @@ from utils.error_handler import AuthenticationError, AuthorizationError
 
 # Import Supabase auth and role manager
 try:
-    from utils.supabase_auth import verify_supabase_admin_role
+    from utils.supabase_auth import verify_supabase_admin_role, RoleLookupDependencyError
 
     SUPABASE_ROLES_ENABLED = True
 except ImportError:
@@ -25,7 +26,14 @@ logger = get_logger(__name__)
 
 
 def verify_admin_token(token: str) -> bool:
-    """Verify admin token against environment variable."""
+    """Verify admin token against environment variable (DEPRECATED - use Supabase auth instead)."""
+    # Check if legacy admin auth is enabled
+    enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+    if not enable_legacy:
+        logger.warning("DEPRECATED: Legacy admin token verification disabled - use Supabase auth")
+        raise RuntimeError("Legacy admin authentication is disabled. Use Supabase admin roles instead.")
+    
+    logger.warning("DEPRECATED: Using legacy admin token verification - migrate to Supabase auth")
     admin_token = os.getenv("ADMIN_TOKEN")
     if not admin_token:
         logger.error("ADMIN_TOKEN not configured")
@@ -39,7 +47,7 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
     if not enable_legacy:
         logger.warning("DEPRECATED: Legacy JWT verification disabled - use Supabase auth")
-        return None
+        raise RuntimeError("Legacy user authentication is disabled. Use Supabase auth instead.")
     
     logger.warning("DEPRECATED: Using legacy HS256 JWT verification - migrate to Supabase auth")
     
@@ -66,103 +74,142 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
 
+def require_admin(min_level='system_admin'):
+    """
+    Decorator to require admin authentication with specified minimum level.
+    
+    Args:
+        min_level: Minimum required admin role level ('moderator', 'data_admin', 'system_admin', 'super_admin')
+    
+    This function accepts only Supabase RS256 JWTs with admin roles.
+    Legacy token fallback is disabled - pure fail-closed policy.
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            try:
+                # Check for Authorization header
+                auth_header = request.headers.get("Authorization")
+                if not auth_header:
+                    raise AuthenticationError("Authorization header required")
+
+                # Check Bearer token format - only Supabase JWTs accepted
+                if not auth_header.startswith("Bearer "):
+                    raise AuthenticationError("Bearer token required")
+
+                token = auth_header.split(" ")[1]
+                if not token:
+                    raise AuthenticationError("Token required")
+
+                # Try Supabase role-based authentication
+                if SUPABASE_ROLES_ENABLED:
+                    try:
+                        result = verify_supabase_admin_role(token, min_level)
+                        if result:
+                            # Extract payload and role data from result
+                            payload = result["payload"]
+                            role_data = result["role_data"]
+                            
+                            # Add role info to Flask g context
+                            from flask import g
+
+                            g.admin_role = role_data
+                            
+                            # Build user info from the already-verified payload
+                            user_info = {
+                                "user_id": payload.get("sub"),
+                                "email": payload.get("email"),
+                                "jwt_role": payload.get("role", "authenticated"),
+                                "aud": payload.get("aud"),
+                                "exp": payload.get("exp"),
+                                "iat": payload.get("iat"),
+                                "admin_role": role_data.get('role'),
+                                "admin_level": role_data.get('level', 0)
+                            }
+                            # Add metadata if available
+                            if "app_metadata" in payload:
+                                user_info["app_metadata"] = payload["app_metadata"]
+                            if "user_metadata" in payload:
+                                user_info["user_metadata"] = payload["user_metadata"]
+                            
+                            g.user = user_info
+                            
+                            # Log successful Supabase admin authentication
+                            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                            logger.info(
+                                "AUTH_SUCCESS",
+                                extra={
+                                    "endpoint": request.endpoint,
+                                    "role": role_data.get("role"),
+                                    "level": role_data.get("level"),
+                                    "request_id": req_id
+                                },
+                            )
+
+                            return f(*args, **kwargs)
+                        else:
+                            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                            logger.warning("AUTH_403_ROLE", extra={
+                                "endpoint": request.endpoint,
+                                "request_id": req_id
+                            })
+                            raise AuthorizationError("Insufficient admin privileges")
+                    except AuthenticationError as e:
+                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                        logger.warning(
+                            f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                        )
+                        raise
+                    except RoleLookupDependencyError as e:
+                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                        logger.error(
+                            f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                        )
+                        raise
+                    except Exception as e:
+                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                        logger.error(
+                            f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                        )
+                        raise
+
+                # No legacy fallback - pure fail-closed policy
+                logger.warning("AUTH_401_NO_LEGACY", extra={"endpoint": request.endpoint})
+                raise AuthenticationError("Legacy admin authentication disabled")
+
+            except AuthenticationError as e:
+                req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                logger.warning(
+                    f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                )
+                response = jsonify({"error": "unauthorized"})
+                response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
+                return response, 401
+
+            except AuthorizationError as e:
+                req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                logger.warning(
+                    f"AUTH_403_ROLE: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                )
+                return jsonify({"error": "forbidden"}), 403
+
+            except Exception as e:
+                req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id})
+                return jsonify({"error": "unavailable"}), 503
+
+        return decorated_function
+    return decorator
+
+
 def require_admin_auth(f):
     """
-    Decorator to require admin authentication.
+    Decorator to require admin authentication (alias for require_admin with system_admin level).
+    
     This function accepts only Supabase RS256 JWTs with admin roles.
-    Legacy token fallback is disabled by default and can be enabled with ENABLE_LEGACY_ADMIN_AUTH=true.
+    Legacy token fallback is disabled - pure fail-closed policy.
     """
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        try:
-            # Check for Authorization header
-            auth_header = request.headers.get("Authorization")
-            if not auth_header:
-                raise AuthenticationError("Authorization header required")
-            # Check Bearer token format
-            if not auth_header.startswith("Bearer "):
-                raise AuthenticationError("Bearer token required")
-            token = auth_header.split(" ")[1]
-            if not token:
-                raise AuthenticationError("Token required")
-            # Try Supabase role-based authentication
-            if SUPABASE_ROLES_ENABLED:
-                try:
-                    role_data = verify_supabase_admin_role(token, "system_admin")
-                    if role_data:
-                        # Add role info to Flask g context
-                        from flask import g
-
-                        g.admin_role = role_data
-                        
-                        # Also populate g.user with user info and admin role
-                        from utils.supabase_auth import verify_supabase_token
-                        user_info = verify_supabase_token(token)
-                        if user_info:
-                            user_info.update({
-                                'admin_role': role_data.get('role'),
-                                'admin_level': role_data.get('level', 0)
-                            })
-                            g.user = user_info
-                        
-                        # Log successful Supabase admin authentication
-                        logger.info(
-                            "AUTH_SUCCESS",
-                            extra={
-                                "endpoint": request.endpoint,
-                                "role": role_data.get("role"),
-                                "level": role_data.get("level"),
-                            },
-                        )
-                        return f(*args, **kwargs)
-                    else:
-                        logger.warning(
-                            "AUTH_403_ROLE", extra={"endpoint": request.endpoint}
-                        )
-                        raise AuthorizationError("Insufficient admin privileges")
-                except Exception as e:
-                    logger.error(
-                        f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint}
-                    )
-                    raise
-            # Legacy token fallback (disabled by default)
-            enable_legacy = (
-                os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
-            )
-            if enable_legacy:
-                # Check for AdminBearer header pattern: Authorization: AdminBearer <token>
-                if auth_header.startswith("AdminBearer "):
-                    admin_token = auth_header.split(" ")[1]
-                    if verify_admin_token(admin_token):
-                        logger.info(
-                            "AUTH_LEGACY_SUCCESS", extra={"endpoint": request.endpoint}
-                        )
-                        return f(*args, **kwargs)
-                logger.warning("AUTH_401_LEGACY", extra={"endpoint": request.endpoint})
-                raise AuthenticationError("Invalid admin token")
-            else:
-                logger.warning(
-                    "AUTH_401_NO_LEGACY", extra={"endpoint": request.endpoint}
-                )
-                raise AuthenticationError("Legacy admin authentication disabled")
-        except AuthenticationError as e:
-            logger.warning(
-                f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint}
-            )
-            response = jsonify({"error": "unauthorized"})
-            response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
-            return response, 401
-        except AuthorizationError as e:
-            logger.warning(
-                f"AUTH_403_ROLE: {e.message}", extra={"endpoint": request.endpoint}
-            )
-            return jsonify({"error": "forbidden"}), 403
-        except Exception as e:
-            logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
-            return jsonify({"error": "unavailable"}), 503
-
-    return decorated_function
+    return require_admin('system_admin')(f)
 
 
 def require_user_auth(f):
@@ -234,24 +281,29 @@ def optional_user_auth(f):
                     # Verify JWT token
                     payload = verify_jwt_token(token)
                     if payload:
-                        # Add user info to request context
-                        request.user = payload
-                        logger.debug(
-                            "Optional user authentication successful",
-                            extra={
-                                "user_id": payload.get("user_id"),
-                                "endpoint": request.endpoint,
-                            },
-                        )
+                        # Add user info to Flask g context
+                        from flask import g
+                        g.user = payload
+                        logger.debug("AUTH_OPTIONAL_SUCCESS", extra={
+                            "endpoint": request.endpoint,
+                        })
                     else:
-                        logger.debug("Invalid token in optional authentication")
+                        logger.debug("AUTH_OPTIONAL_INVALID", extra={
+                            "endpoint": request.endpoint,
+                        })
                 else:
-                    logger.debug("Empty token in optional authentication")
+                    logger.debug("AUTH_OPTIONAL_EMPTY", extra={
+                        "endpoint": request.endpoint,
+                    })
             else:
-                logger.debug("No authorization header in optional authentication")
+                logger.debug("AUTH_OPTIONAL_NO_HEADER", extra={
+                    "endpoint": request.endpoint,
+                })
             return f(*args, **kwargs)
         except Exception as e:
-            logger.error(f"Unexpected error in optional authentication: {e}")
+            logger.error(f"AUTH_OPTIONAL_ERROR: {e}", extra={
+                "endpoint": request.endpoint,
+            })
             # Continue without authentication
             return f(*args, **kwargs)
 
@@ -259,18 +311,28 @@ def optional_user_auth(f):
 
 
 def require_super_admin(f):
-    """Decorator to require super admin privileges."""
+    """Decorator to require super admin privileges (DEPRECATED - use Supabase admin roles instead)."""
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Check if legacy admin auth is enabled
+        enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+        if not enable_legacy:
+            logger.warning("DEPRECATED: Legacy super admin auth disabled - use Supabase admin roles")
+            raise RuntimeError("Legacy super admin authentication is disabled. Use Supabase admin roles instead.")
+        
+        logger.warning("DEPRECATED: Using legacy super admin auth - migrate to Supabase admin roles")
+        
         try:
-            # First require admin authentication
+            # Require AdminBearer header pattern: Authorization: AdminBearer <token>
             auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                raise AuthenticationError("Authorization header required")
+            if not auth_header or not auth_header.startswith("AdminBearer "):
+                raise AuthenticationError("AdminBearer token required")
+            
             token = auth_header.split(" ")[1]
             if not verify_admin_token(token):
                 raise AuthenticationError("Invalid admin token")
+            
             # Check for super admin token specifically
             super_admin_token = os.getenv("SUPER_ADMIN_TOKEN")
             if not super_admin_token:
@@ -278,6 +340,7 @@ def require_super_admin(f):
                 raise AuthorizationError("Super admin access not configured")
             if token != super_admin_token:
                 raise AuthorizationError("Super admin privileges required")
+            
             # Log successful super admin authentication
             logger.info(
                 "Super admin authentication successful",
@@ -402,11 +465,19 @@ def is_authenticated() -> bool:
 
 def is_admin() -> bool:
     """Check if user has admin privileges."""
-    user = get_current_user()
-    return user and user.get("role") == "admin" if user else False
+    return bool((u:=get_current_user()) and u.get('admin_level',0) >= 2)
 
 
 def is_super_admin() -> bool:
     """Check if user has super admin privileges."""
-    user = get_current_user()
-    return user and user.get("role") == "super_admin" if user else False
+    return bool((u:=get_current_user()) and u.get('admin_role')=='super_admin')
+
+
+def clear_user_context(_):
+    """Clear user context from Flask g to prevent context leakage across requests."""
+    from flask import g
+    for attr in ("user", "admin_role"):
+        try:
+            delattr(g, attr)
+        except Exception:
+            pass

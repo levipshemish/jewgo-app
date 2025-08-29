@@ -28,7 +28,7 @@ export interface TransformedUser {
   id: string;
   email: string | undefined;
   name: string | null;
-  username?: string;
+  username: string | undefined;
   provider: 'apple' | 'google' | 'unknown';
   avatar_url: string | null;
   providerInfo: {
@@ -38,6 +38,165 @@ export interface TransformedUser {
   };
   createdAt?: string;
   updatedAt?: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  role: string;
+  permissions: string[];
+  subscriptionTier: string;
+  // New role fields
+  adminRole?: string | null;
+  roleLevel?: number;
+  permissions?: string[];
+  isSuperAdmin?: boolean;
+}
+
+/**
+ * Request user data with role information from backend
+ * Integrates with the new JWT-based role system
+ */
+export async function getUserWithRoles(userToken: string): Promise<{
+  adminRole: string | null;
+  roleLevel: number;
+  permissions: string[];
+} | null> {
+  try {
+    // Call backend endpoint that uses the new SupabaseRoleManager
+    const response = await fetch('/api/auth/user-with-roles', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to fetch user roles from backend:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return {
+      adminRole: data.adminRole || null,
+      roleLevel: data.roleLevel || 0,
+      permissions: data.permissions || []
+    };
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    return null;
+  }
+}
+
+/**
+ * Transform Supabase user data with provider detection, Apple OAuth support, and role integration
+ */
+export async function transformSupabaseUser(
+  user: User | null, 
+  options: { includeRoles?: boolean; userToken?: string } = {}
+): Promise<TransformedUser | null> {
+  if (!user) { return null; }
+
+  const provider = user.app_metadata?.provider ?? 'unknown';
+  
+  // Handle known providers with proper typing (existing logic)
+  const providerInfo = (() => {
+    switch (provider) {
+      case 'apple': {
+        return {
+          name: 'Apple',
+          icon: '🍎',
+          color: '#000000'
+        };
+      }
+      case 'google': {
+        return {
+          name: 'Google',
+          icon: '🔍',
+          color: '#4285F4'
+        };
+      }
+      default: {
+        return {
+          name: 'Account',
+          icon: '👤',
+          color: '#6B7280'
+        };
+      }
+    }
+  })();
+
+  // Base user object
+  const baseUser: TransformedUser = {
+    id: user.id,
+    email: user.email,
+    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+    username: user.user_metadata?.username,
+    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+    provider: provider as 'apple' | 'google' | 'unknown',
+    providerInfo,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+    isEmailVerified: true, // Default to true for now
+    isPhoneVerified: false, // Default to false for now
+    role: 'user', // Default role
+    permissions: [], // Initialize empty, filled by backend role data
+    subscriptionTier: 'free', // Default subscription tier
+    // Initialize role fields
+    adminRole: null,
+    roleLevel: 0,
+    permissions: [],
+    isSuperAdmin: false
+  };
+
+  // Fetch role information if requested and token provided
+  if (options.includeRoles && options.userToken) {
+    try {
+      const roleData = await getUserWithRoles(options.userToken);
+      if (roleData) {
+        baseUser.adminRole = roleData.adminRole;
+        baseUser.roleLevel = roleData.roleLevel;
+        baseUser.permissions = roleData.permissions;
+        baseUser.isSuperAdmin = roleData.adminRole === 'super_admin';
+      }
+    } catch (error) {
+      console.warn('Failed to fetch role data, continuing without roles:', error);
+      // Continue without roles - don't fail the entire transformation
+    }
+  }
+
+  return baseUser;
+}
+
+/**
+ * Legacy transform function for backward compatibility
+ * Use transformSupabaseUser with options for new implementations
+ */
+export async function transformSupabaseUserLegacy(user: User | null): Promise<TransformedUser | null> {
+  // Call the new function without role fetching for backward compatibility
+  return await transformSupabaseUser(user, { includeRoles: false });
+}
+
+/**
+ * Check if user has admin role
+ */
+export function isAdminUser(user: TransformedUser | null): boolean {
+  return !!(user?.adminRole && (user.roleLevel || 0) > 0);
+}
+
+/**
+ * Check if user has specific permission
+ */
+export function hasUserPermission(user: TransformedUser | null, permission: string): boolean {
+  if (!user) return false;
+  return user.isSuperAdmin || (user.permissions || []).includes(permission);
+}
+
+/**
+ * Check if user has minimum role level
+ */
+export function hasMinimumRoleLevel(user: TransformedUser | null, minLevel: number): boolean {
+  if (!user) return false;
+  return (user.roleLevel || 0) >= minLevel;
 }
 
 /**
@@ -358,54 +517,6 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
- * Transform Supabase user data with provider detection and Apple OAuth support
- */
-export function transformSupabaseUser(user: User | null): TransformedUser | null {
-  if (!user) {return null;}
-
-  const provider = user.app_metadata?.provider ?? 'unknown';
-  
-  // Handle known providers with proper typing
-  const providerInfo = (() => {
-    switch (provider) {
-      case 'apple': {
-        return {
-          name: 'Apple',
-          icon: '🍎',
-          color: '#000000'
-        };
-      }
-      case 'google': {
-        return {
-          name: 'Google',
-          icon: '🔍',
-          color: '#4285F4'
-        };
-      }
-      default: {
-        // Unknown provider - use generic fallback
-        return {
-          name: 'Account',
-          icon: '👤',
-          color: '#6B7280'
-        };
-      }
-    }
-  })();
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-    provider: provider as 'apple' | 'google' | 'unknown',
-    providerInfo,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at
-  };
-}
-
-/**
  * Handle authentication errors consistently
  */
 export function handleAuthError(error: any, router?: any): void {
@@ -442,7 +553,15 @@ export function createMockUser(): TransformedUser {
       name: 'Development',
       icon: '👤',
       color: '#6B7280'
-    }
+    },
+    isEmailVerified: true,
+    isPhoneVerified: false,
+    role: 'user',
+    permissions: ['read', 'write'],
+    subscriptionTier: 'free',
+    adminRole: null,
+    roleLevel: 0,
+    isSuperAdmin: false
   };
 }
 
