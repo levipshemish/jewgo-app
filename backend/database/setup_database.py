@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Setup Script for JewGo
 Helps configure and test PostgreSQL database connections.
 """
-
 import os
-
 from database_manager import DatabaseManager as OldDB
 from database_manager_v2 import Base, EnhancedDatabaseManager
 from dotenv import load_dotenv
@@ -49,20 +47,16 @@ def migrate_data_from_sqlite() -> bool | None:
         old_db = OldDB()
         if not old_db.connect():
             return False
-
         # Get database URL from environment
         database_url = os.environ.get("DATABASE_URL")
         if not database_url:
             return False
-
         # Connect to new PostgreSQL database
         new_db = EnhancedDatabaseManager(database_url)
         if not new_db.connect():
             return False
-
         # Get all restaurants from SQLite
         restaurants = old_db.search_restaurants(limit=10000)
-
         # Migrate each restaurant
         migrated_count = 0
         for restaurant in restaurants:
@@ -70,9 +64,7 @@ def migrate_data_from_sqlite() -> bool | None:
                 migrated_count += 1
             else:
                 pass
-
         return True
-
     except Exception as e:
         return False
 
@@ -93,24 +85,19 @@ def main() -> None:
     """Main setup function."""
     # Check environment variables
     database_url = os.environ.get("DATABASE_URL")
-
     if not database_url:
         return
-
     # Test connection
     if "postgresql" in database_url:
         if not test_postgresql_connection(database_url):
             return
     elif not test_sqlite_connection():
         return
-
     # Create tables
     if not create_tables(database_url):
         return
-
     # Show database info
     show_database_info(database_url)
-
     # Offer migration if using PostgreSQL
     if "postgresql" in database_url:
         migrate_choice = input(

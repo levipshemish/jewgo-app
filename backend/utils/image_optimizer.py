@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import magic
 from PIL import Image, ImageOps
 from utils.error_handler import handle_operation_with_fallback
@@ -9,7 +8,6 @@ from utils.logging_config import get_logger
 """Image Optimization Utility for JewGo Backend
 Uses Pillow for image processing and optimization.
 """
-
 logger = get_logger(__name__)
 
 
@@ -20,9 +18,8 @@ class ImageOptimizer:
         "JPEG": [".jpg", ".jpeg"],
         "PNG": [".png"],
         "WEBP": [".webp"],
-        "AVIF": [".avif"],
+        "AVIF": [".avi"],
     }
-
     DEFAULT_QUALITY = 85
     DEFAULT_MAX_SIZE = (1920, 1080)  # Max dimensions
 
@@ -32,11 +29,9 @@ class ImageOptimizer:
         max_size: tuple[int, int] = DEFAULT_MAX_SIZE,
     ) -> None:
         """Initialize the image optimizer.
-
         Args:
             quality: JPEG/WebP quality (1-100)
             max_size: Maximum dimensions (width, height)
-
         """
         self.quality = max(1, min(100, quality))
         self.max_size = max_size
@@ -44,13 +39,10 @@ class ImageOptimizer:
     @handle_operation_with_fallback(fallback_value=False)
     def is_image_file(self, file_path: str | Path) -> bool:
         """Check if a file is an image based on its MIME type.
-
         Args:
             file_path: Path to the file
-
         Returns:
             True if the file is an image
-
         """
         mime_type = magic.from_file(str(file_path), mime=True)
         return mime_type.startswith("image/")
@@ -64,13 +56,10 @@ class ImageOptimizer:
     @handle_operation_with_fallback(fallback_value={})
     def get_image_info(self, image_path: str | Path) -> dict:
         """Get information about an image.
-
         Args:
             image_path: Path to the image
-
         Returns:
             Dictionary with image information
-
         """
         with Image.open(image_path) as img:
             return {
@@ -93,7 +82,6 @@ class ImageOptimizer:
         strip_metadata: bool = True,
     ) -> dict:
         """Optimize an image.
-
         Args:
             input_path: Path to input image
             output_path: Path for optimized image (optional)
@@ -101,31 +89,23 @@ class ImageOptimizer:
             quality: Quality setting (1-100)
             max_size: Maximum dimensions
             strip_metadata: Whether to remove metadata
-
         Returns:
             Dictionary with optimization results
-
         """
         input_path = Path(input_path)
-
         if not self.is_image_file(input_path):
             msg = f"File {input_path} is not a supported image format"
             raise ValueError(msg)
-
         if output_path is None:
             output_path = (
                 input_path.parent / f"{input_path.stem}_optimized.{format.lower()}"
             )
-
         output_path = Path(output_path)
-
         # Use instance defaults if not specified
         quality = quality or self.quality
         max_size = max_size or self.max_size
-
         try:
             original_size = os.path.getsize(input_path)
-
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary (for JPEG/WebP)
                 if format in ["JPEG", "WEBP"] and img.mode in ["RGBA", "LA", "P"]:
@@ -140,7 +120,6 @@ class ImageOptimizer:
                     img = background
                 elif format in ["JPEG", "WEBP"] and img.mode != "RGB":
                     img = img.convert("RGB")
-
                 # Resize if necessary
                 if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
                     img = ImageOps.contain(
@@ -148,10 +127,8 @@ class ImageOptimizer:
                         max_size,
                         method=Image.Resampling.LANCZOS,
                     )
-
                 # Prepare save parameters
                 save_kwargs = {}
-
                 if format == "JPEG":
                     save_kwargs["quality"] = quality
                     save_kwargs["optimize"] = True
@@ -165,16 +142,13 @@ class ImageOptimizer:
                 elif format == "AVIF":
                     save_kwargs["quality"] = quality
                     save_kwargs["speed"] = 6  # Slower but better compression
-
                 # Save optimized image
                 img.save(output_path, format=format, **save_kwargs)
-
                 optimized_size = os.path.getsize(output_path)
                 savings = original_size - optimized_size
                 savings_percent = (
                     (savings / original_size * 100) if original_size > 0 else 0
                 )
-
                 result = {
                     "success": True,
                     "input_path": str(input_path),
@@ -187,7 +161,6 @@ class ImageOptimizer:
                     "quality": quality,
                     "final_size": img.size,
                 }
-
                 logger.info(
                     "Optimized image",
                     filename=input_path.name,
@@ -196,7 +169,6 @@ class ImageOptimizer:
                     savings_percent=f"{savings_percent:.1f}%",
                 )
                 return result
-
         except Exception as e:
             logger.exception(
                 "Error optimizing image", input_path=str(input_path), error=str(e)
@@ -215,26 +187,20 @@ class ImageOptimizer:
         recursive: bool = True,
     ) -> dict:
         """Optimize all images in a directory.
-
         Args:
             input_dir: Input directory path
             output_dir: Output directory path (optional)
             format: Output format
             recursive: Whether to process subdirectories
-
         Returns:
             Dictionary with optimization results
-
         """
         input_dir = Path(input_dir)
         output_dir = Path(output_dir) if output_dir else input_dir / "optimized"
-
         if not input_dir.exists():
             msg = f"Input directory {input_dir} does not exist"
             raise ValueError(msg)
-
         output_dir.mkdir(parents=True, exist_ok=True)
-
         results = {
             "total_files": 0,
             "processed_files": 0,
@@ -245,21 +211,16 @@ class ImageOptimizer:
             "errors": [],
             "files": [],
         }
-
         # Find all image files
         image_extensions = []
         for extensions in self.SUPPORTED_FORMATS.values():
             image_extensions.extend(extensions)
-
         pattern = "**/*" if recursive else "*"
         image_files = []
-
         for ext in image_extensions:
             image_files.extend(input_dir.glob(pattern + ext))
             image_files.extend(input_dir.glob(pattern + ext.upper()))
-
         results["total_files"] = len(image_files)
-
         for image_file in image_files:
             try:
                 # Create relative output path
@@ -268,15 +229,12 @@ class ImageOptimizer:
                     f".{format.lower()}",
                 )
                 output_file.parent.mkdir(parents=True, exist_ok=True)
-
                 result = self.optimize_image(
                     image_file,
                     output_file,
                     format=format,
                 )
-
                 results["processed_files"] += 1
-
                 if result["success"]:
                     results["successful_optimizations"] += 1
                     results["total_original_size"] += result["original_size"]
@@ -285,7 +243,6 @@ class ImageOptimizer:
                     results["files"].append(result)
                 else:
                     results["errors"].append(result)
-
             except Exception as e:
                 logger.exception(
                     "Error processing image file",
@@ -298,7 +255,6 @@ class ImageOptimizer:
                         "error": str(e),
                     },
                 )
-
         # Calculate overall savings percentage
         if results["total_original_size"] > 0:
             results["total_savings_percent"] = round(
@@ -307,7 +263,6 @@ class ImageOptimizer:
             )
         else:
             results["total_savings_percent"] = 0
-
         logger.info(
             "Directory optimization complete",
             successful_optimizations=results["successful_optimizations"],
@@ -324,40 +279,31 @@ class ImageOptimizer:
         quality: int = 80,
     ) -> dict:
         """Create a thumbnail from an image.
-
         Args:
             input_path: Path to input image
             output_path: Path for thumbnail (optional)
             size: Thumbnail size (width, height)
             format: Output format
             quality: Quality setting
-
         Returns:
             Dictionary with thumbnail creation results
-
         """
         input_path = Path(input_path)
-
         if output_path is None:
             output_path = (
                 input_path.parent / f"{input_path.stem}_thumb.{format.lower()}"
             )
-
         output_path = Path(output_path)
-
         try:
             with Image.open(input_path) as img:
                 # Convert to RGB if necessary
                 if format == "JPEG" and img.mode != "RGB":
                     img = img.convert("RGB")
-
                 # Create thumbnail
                 img.thumbnail(size, Image.Resampling.LANCZOS)
-
                 # Save thumbnail
                 save_kwargs = {"quality": quality} if format == "JPEG" else {}
                 img.save(output_path, format=format, **save_kwargs)
-
                 return {
                     "success": True,
                     "input_path": str(input_path),
@@ -365,7 +311,6 @@ class ImageOptimizer:
                     "size": img.size,
                     "format": format,
                 }
-
         except Exception as e:
             logger.exception(
                 "Error creating thumbnail", input_path=str(input_path), error=str(e)
@@ -384,16 +329,13 @@ def optimize_single_image(
     format: str = "WEBP",
 ) -> dict:
     """Convenience function to optimize a single image.
-
     Args:
         input_path: Path to input image
         output_path: Path for optimized image (optional)
         quality: Quality setting (1-100)
         format: Output format
-
     Returns:
         Dictionary with optimization results
-
     """
     optimizer = ImageOptimizer(quality=quality)
     return optimizer.optimize_image(input_path, output_path, format=format)
@@ -406,16 +348,13 @@ def optimize_directory_images(
     recursive: bool = True,
 ) -> dict:
     """Convenience function to optimize all images in a directory.
-
     Args:
         input_dir: Input directory path
         output_dir: Output directory path (optional)
         format: Output format
         recursive: Whether to process subdirectories
-
     Returns:
         Dictionary with optimization results
-
     """
     optimizer = ImageOptimizer()
     return optimizer.optimize_directory(input_dir, output_dir, format, recursive)

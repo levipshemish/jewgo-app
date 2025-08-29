@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Decorators Module.
-
 This module provides a compatibility layer for decorator functions,
 importing them from other modules as needed.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-08-28

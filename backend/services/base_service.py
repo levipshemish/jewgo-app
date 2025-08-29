@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Base service class with common functionality and proper error handling."""
-
 import os
 import sys
 import traceback
 from typing import Any, Dict
-
 import structlog
 from utils.logging_config import get_logger
 
@@ -35,7 +33,6 @@ except ImportError:
             NotFoundError,
             ValidationError,
         )
-
 logger = get_logger(__name__)
 
 
@@ -44,7 +41,6 @@ class BaseService:
 
     def __init__(self, db_manager=None, config=None, cache_manager=None) -> None:
         """Initialize service with dependencies.
-
         Args:
             db_manager: Database manager instance
             config: Configuration object
@@ -54,7 +50,6 @@ class BaseService:
         self.config = config
         self.cache_manager = cache_manager
         self.logger = logger.bind(service=self.__class__.__name__)
-
         # Service health tracking
         self._is_healthy = True
         self._last_error = None
@@ -66,7 +61,6 @@ class BaseService:
         required_fields: list,
     ) -> None:
         """Validate that required fields are present in data.
-
         Raises:
             ValidationError: If required fields are missing
         """
@@ -81,7 +75,6 @@ class BaseService:
 
     def log_error(self, error: Exception, operation: str, **context) -> None:
         """Log service error with full context and stack trace.
-
         Args:
             error: The exception that occurred
             operation: Name of the operation that failed
@@ -94,7 +87,6 @@ class BaseService:
             "timestamp": structlog.processors.TimeStamper(fmt="iso")(None, None, {}),
             "context": context,
         }
-
         self.logger.error(
             "Service error",
             operation=operation,
@@ -108,18 +100,15 @@ class BaseService:
         self, error: Exception, service_name: str, operation: str, **context
     ) -> None:
         """Handle external service errors with proper logging and re-raising.
-
         Args:
             error: The original exception
             service_name: Name of the external service
             operation: Operation that failed
             **context: Additional context
-
         Raises:
             ExternalServiceError: Wrapped error with service context
         """
         self.log_error(error, operation, service=service_name, **context)
-
         # Re-raise as ExternalServiceError for proper API handling
         raise ExternalServiceError(
             f"{service_name} service error: {str(error)}",
@@ -135,17 +124,14 @@ class BaseService:
         self, error: Exception, operation: str, **context
     ) -> None:
         """Handle database errors with proper logging and re-raising.
-
         Args:
             error: The original exception
             operation: Operation that failed
             **context: Additional context
-
         Raises:
             DatabaseError: Wrapped error with database context
         """
         self.log_error(error, operation, **context)
-
         # Re-raise as DatabaseError for proper API handling
         raise DatabaseError(
             f"Database error during {operation}: {str(error)}",
@@ -158,16 +144,13 @@ class BaseService:
 
     def safe_execute(self, operation: str, func, *args, **kwargs):
         """Safely execute a function with proper error handling and logging.
-
         Args:
             operation: Name of the operation for logging
             func: Function to execute
             *args: Function arguments
             **kwargs: Function keyword arguments
-
         Returns:
             Function result if successful
-
         Raises:
             APIError: If the function fails
         """
@@ -192,7 +175,6 @@ class BaseService:
 
     def get_health_status(self) -> Dict[str, Any]:
         """Get service health status for monitoring.
-
         Returns:
             Dictionary with health information
         """

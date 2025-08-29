@@ -1,6 +1,5 @@
 """
 Redis client utility for the backend application.
-
 This module provides a centralized Redis client with connection pooling
 and error handling for caching and session management.
 """
@@ -11,7 +10,6 @@ from typing import Optional
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 # Global Redis client instance
 _redis_client = None
 
@@ -19,15 +17,12 @@ _redis_client = None
 def get_redis_client() -> Optional[redis.Redis]:
     """
     Get Redis client instance with connection pooling.
-
     Returns:
         Redis client instance or None if Redis is not available
     """
     global _redis_client
-
     if _redis_client is not None:
         return _redis_client
-
     try:
         # Get Redis configuration from environment
         redis_host = os.getenv("REDIS_HOST", "localhost")
@@ -35,7 +30,6 @@ def get_redis_client() -> Optional[redis.Redis]:
         redis_db = int(os.getenv("REDIS_DB", 0))
         redis_password = os.getenv("REDIS_PASSWORD")
         redis_ssl = os.getenv("REDIS_SSL", "false").lower() == "true"
-
         # Create Redis client with connection pooling
         _redis_client = redis.Redis(
             host=redis_host,
@@ -49,13 +43,10 @@ def get_redis_client() -> Optional[redis.Redis]:
             retry_on_timeout=True,
             health_check_interval=30,
         )
-
         # Test connection
         _redis_client.ping()
         logger.info(f"Redis client initialized successfully: {redis_host}:{redis_port}")
-
         return _redis_client
-
     except Exception as e:
         logger.error(f"Failed to initialize Redis client: {e}")
         _redis_client = None
@@ -78,7 +69,6 @@ def close_redis_client():
 def redis_health_check() -> bool:
     """
     Check Redis connection health.
-
     Returns:
         True if Redis is healthy, False otherwise
     """
@@ -96,7 +86,6 @@ def redis_health_check() -> bool:
 def redis_info() -> Optional[dict]:
     """
     Get Redis server information.
-
     Returns:
         Redis info dict or None if not available
     """

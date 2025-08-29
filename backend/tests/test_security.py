@@ -41,37 +41,31 @@ class TestSecurityAuthentication:
             app.config["SECRET_KEY"],
             algorithm="HS256",
         )
-
         with app.test_request_context(
             headers={"Authorization": f"Bearer {valid_token}"}
         ):
             # Test token validation logic
             pass
-
         # Test expired token
         expired_token = jwt.encode(
             {"user_id": 1, "exp": datetime.utcnow() - timedelta(hours=1)},
             app.config["SECRET_KEY"],
             algorithm="HS256",
         )
-
         with pytest.raises(jwt.ExpiredSignatureError):
             jwt.decode(expired_token, app.config["SECRET_KEY"], algorithms=["HS256"])
-
         # Test invalid signature
         invalid_token = jwt.encode(
             {"user_id": 1, "exp": datetime.utcnow() + timedelta(hours=1)},
             "wrong-secret-key",
             algorithm="HS256",
         )
-
         with pytest.raises(jwt.InvalidSignatureError):
             jwt.decode(invalid_token, app.config["SECRET_KEY"], algorithms=["HS256"])
 
     def test_admin_authentication(self, app):
         """Test admin authentication security"""
         admin_auth = AdminAuthManager()
-
         # Test valid admin credentials
         with patch(
             "utils.admin_auth.AdminAuthManager.generate_admin_token"
@@ -79,7 +73,6 @@ class TestSecurityAuthentication:
             mock_generate.return_value = "valid-token"
             token = admin_auth.generate_admin_token("admin@example.com", "password")
             assert token is not None
-
         # Test invalid admin credentials
         with patch(
             "utils.admin_auth.AdminAuthManager.generate_admin_token"
@@ -98,7 +91,6 @@ class TestSecurityAuthentication:
                 "/api/auth/login",
                 json={"email": "test@example.com", "password": "password"},
             )
-
             if i < 5:
                 # Should allow first 5 attempts
                 assert response.status_code in [200, 401, 404]
@@ -111,13 +103,10 @@ class TestSecurityAuthentication:
         # Test password hashing
         password = "SecurePassword123!"
         hashed = generate_password_hash(password)
-
         assert password != hashed
         assert hashed.startswith("pbkdf2:sha256:")
-
         # Test weak password detection
         weak_passwords = ["password", "123456", "qwerty", "admin", "test"]
-
         for weak_password in weak_passwords:
             # In a real implementation, this would check against common passwords
             assert len(weak_password) < 8  # Weak passwords are short
@@ -135,7 +124,6 @@ class TestInputValidation:
             "admin'--",
             "1' UNION SELECT * FROM users--",
         ]
-
         for malicious_input in malicious_inputs:
             # Test that malicious input is properly escaped or rejected
             # This would be tested in actual database queries
@@ -154,7 +142,6 @@ class TestInputValidation:
             "<svg onload=alert('xss')>",
             "';alert('xss');//",
         ]
-
         for payload in xss_payloads:
             # Test that XSS payloads are properly sanitized
             sanitized = self.sanitize_input(payload)
@@ -168,11 +155,9 @@ class TestInputValidation:
         # Test email length
         long_email = "a" * 100 + "@example.com"
         assert len(long_email) > 254  # RFC 5321 limit
-
         # Test password length
         short_password = "123"
         assert len(short_password) < 8
-
         # Test username length
         long_username = "a" * 100
         assert len(long_username) > 50
@@ -186,13 +171,10 @@ class TestInputValidation:
             input_string,
             flags=re.IGNORECASE | re.DOTALL,
         )
-
         # Remove javascript: protocol
         sanitized = re.sub(r"javascript:", "", sanitized, flags=re.IGNORECASE)
-
         # Remove event handlers
         sanitized = re.sub(r"on\w+\s*=", "", sanitized, flags=re.IGNORECASE)
-
         return sanitized
 
 
@@ -206,7 +188,6 @@ class TestDataProtection:
             "api_key": "secret_api_key",
             "token": "jwt_token",
         }
-
         # Test that sensitive data is not logged in plain text
         for key, value in sensitive_data.items():
             # In a real implementation, this would check logs
@@ -219,7 +200,6 @@ class TestDataProtection:
             "phone": "+1234567890",
             "address": "123 Main St, City, State",
         }
-
         # Test that PII is properly handled
         for key, value in pii_data.items():
             # In a real implementation, this would check data handling
@@ -230,11 +210,9 @@ class TestDataProtection:
         # Test that users can only access their own data
         user1_id = 1
         user2_id = 2
-
         # Simulate data access
         user1_data = {"user_id": user1_id, "data": "user1_data"}
         user2_data = {"user_id": user2_id, "data": "user2_data"}
-
         # User 1 should not be able to access user 2's data
         assert user1_data["user_id"] != user2_data["user_id"]
 
@@ -252,7 +230,6 @@ class TestErrorHandling:
             assert "connection" in str(e)
             assert "password" not in str(e)
             assert "localhost" not in str(e)
-
         # Test validation error handling
         try:
             raise ValidationError("Invalid input provided")
@@ -268,14 +245,12 @@ class TestErrorHandling:
             raise APIError("Generic application error")
         except APIError as e:
             assert isinstance(e, APIError)
-
         # Test specific error types
         try:
             raise DatabaseError("Database operation failed")
         except DatabaseError as e:
             assert isinstance(e, APIError)
             assert isinstance(e, DatabaseError)
-
         try:
             raise ValidationError("Input validation failed")
         except ValidationError as e:
@@ -289,15 +264,12 @@ class TestFeatureFlags:
     def test_feature_flag_validation(self, app):
         """Test feature flag validation"""
         feature_flags = APIV4FeatureFlags()
-
         # Test valid feature flag
         with patch.dict("os.environ", {"API_V4_REVIEWS": "true"}):
             assert feature_flags.is_api_v4_reviews_enabled() is True
-
         # Test invalid feature flag
         with patch.dict("os.environ", {"API_V4_REVIEWS": "invalid"}):
             assert feature_flags.is_api_v4_reviews_enabled() is False
-
         # Test missing feature flag
         with patch.dict("os.environ", {}, clear=True):
             assert feature_flags.is_api_v4_reviews_enabled() is False
@@ -316,7 +288,6 @@ class TestAPISecurity:
                 "Access-Control-Request-Method": "POST",
             },
         )
-
         # Should not allow requests from malicious sites
         assert response.status_code in [400, 403, 404]
 
@@ -326,7 +297,6 @@ class TestAPISecurity:
         response = client.post(
             "/api/restaurants", data="invalid data", content_type="text/plain"
         )
-
         # Should reject invalid content types
         assert response.status_code in [400, 415]
 
@@ -334,11 +304,9 @@ class TestAPISecurity:
         """Test request size limiting"""
         # Test with oversized request
         large_data = "x" * (1024 * 1024)  # 1MB
-
         response = client.post(
             "/api/restaurants", data=large_data, content_type="application/json"
         )
-
         # Should reject oversized requests
         assert response.status_code in [400, 413]
 
@@ -349,10 +317,8 @@ class TestSecurityHeaders:
     def test_security_headers_present(self, client):
         """Test that security headers are present"""
         response = client.get("/api/health")
-
         # Check for security headers
         headers = response.headers
-
         # These headers should be present for security
         security_headers = [
             "X-Content-Type-Options",
@@ -360,7 +326,6 @@ class TestSecurityHeaders:
             "X-XSS-Protection",
             "Strict-Transport-Security",
         ]
-
         for header in security_headers:
             # In a real implementation, these headers would be checked
             assert header in security_headers

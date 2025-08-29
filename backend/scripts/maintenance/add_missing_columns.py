@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Script to add missing columns to the restaurants table.
 This fixes the issue where the eatery page shows no listings due to schema mismatch.
 """
-
 import os
 import sys
-
 import psycopg2
 from database.database_manager_v3 import EnhancedDatabaseManager
 from dotenv import load_dotenv
@@ -16,17 +14,14 @@ def add_missing_columns() -> None:
     """Add missing columns to the restaurants table."""
     # Load environment variables
     load_dotenv()
-
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         sys.exit(1)
-
     try:
         # Connect to database
         conn = psycopg2.connect(database_url)
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor()
-
         # Check if columns already exist
         cur.execute(
             """
@@ -37,7 +32,6 @@ def add_missing_columns() -> None:
         """
         )
         existing_columns = [row[0] for row in cur.fetchall()]
-
         # Add missing columns
         if "current_time_local" not in existing_columns:
             cur.execute(
@@ -46,7 +40,6 @@ def add_missing_columns() -> None:
                 ADD COLUMN current_time_local TIMESTAMP
             """
             )
-
         if "hours_parsed" not in existing_columns:
             cur.execute(
                 """
@@ -54,7 +47,6 @@ def add_missing_columns() -> None:
                 ADD COLUMN hours_parsed BOOLEAN DEFAULT FALSE
             """
             )
-
         # Verify the columns were added
         cur.execute(
             """
@@ -65,21 +57,17 @@ def add_missing_columns() -> None:
         """
         )
         new_columns = [row[0] for row in cur.fetchall()]
-
         # Test the database manager
         db = EnhancedDatabaseManager(database_url)
         if db.connect():
             # Test getting restaurants
             restaurants = db.get_restaurants(limit=5, as_dict=True)
-
             if restaurants:
                 sample = restaurants[0]
         else:
             pass
-
         cur.close()
         conn.close()
-
     except Exception as e:
         sys.exit(1)
 

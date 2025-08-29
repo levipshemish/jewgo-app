@@ -2,43 +2,36 @@ import os
 import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
-
 from utils.logging_config import get_logger
 from werkzeug.exceptions import HTTPException
 
 logger = get_logger(__name__)
-
 # Import services with fallbacks
 try:
     from services.restaurant_service_v4 import RestaurantServiceV4
 except ImportError as e:
     logger.warning(f"Could not import RestaurantServiceV4: {e}")
     RestaurantServiceV4 = None
-
 try:
     from services.review_service_v4 import ReviewServiceV4
 except ImportError as e:
     logger.warning(f"Could not import ReviewServiceV4: {e}")
     ReviewServiceV4 = None
-
 try:
     from services.user_service_v4 import UserServiceV4
 except ImportError as e:
     logger.warning(f"Could not import UserServiceV4: {e}")
     UserServiceV4 = None
-
 try:
     from services.marketplace_service_v4 import MarketplaceServiceV4
 except ImportError as e:
     logger.warning(f"Could not import MarketplaceServiceV4: {e}")
     MarketplaceServiceV4 = None
-
 try:
     from services.order_service_v4 import OrderServiceV4
 except ImportError as e:
     logger.warning(f"Could not import OrderServiceV4: {e}")
     OrderServiceV4 = None
-
 try:
     from utils.unified_search_service import (
         SearchFilters,
@@ -50,7 +43,6 @@ except ImportError as e:
     UnifiedSearchService = None
     SearchFilters = None
     SearchType = None
-
 try:
     from utils.error_handler import (
         APIError,
@@ -66,19 +58,16 @@ except ImportError as e:
     NotFoundError = None
     DatabaseError = None
     ExternalServiceError = None
-
 try:
     from utils.cache_manager_v4 import CacheManagerV4
 except ImportError as e:
     logger.warning(f"Could not import CacheManagerV4: {e}")
     CacheManagerV4 = None
-
 try:
     from utils.config_manager import ConfigManager
 except ImportError as e:
     logger.warning(f"Could not import ConfigManager: {e}")
     ConfigManager = None
-
 # Import authentication decorators
 try:
     from utils.security import require_admin_auth
@@ -135,23 +124,17 @@ except ImportError:
 from flask import Blueprint, current_app, jsonify, request
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """API Routes v4 - Using the new service layer architecture.
-
 This module provides API endpoints that use the v4 service layer instead of
 directly calling the database manager. This provides better separation of
 concerns, improved testability, and enhanced error handling.
-
 Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-
 # Add the backend directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-
 # Create Blueprint for v4 API routes - be more lenient with dependencies
 # Only require the most essential dependencies
 essential_dependencies = [
@@ -161,15 +144,12 @@ essential_dependencies = [
     DatabaseError,
     ExternalServiceError,
 ]
-
 missing_essential = [
     dep.__name__ if dep else "None" for dep in essential_dependencies if not dep
 ]
-
 if all(essential_dependencies):
     api_v4 = Blueprint("api_v4", __name__, url_prefix="/api/v4")
     logger.info("API v4 blueprint created successfully")
-
     # Log which optional dependencies are missing
     optional_dependencies = [
         MarketplaceServiceV4,
@@ -198,7 +178,6 @@ def safe_route(path, methods=None, **kwargs):
             return f
 
         return no_op_decorator
-
     return api_v4.route(path, methods=methods, **kwargs)
 
 
@@ -207,26 +186,21 @@ def get_service_dependencies():
     try:
         # Get dependencies from app context
         deps = current_app.config.get("dependencies", {})
-
         # Get database manager v4
         db_manager = deps.get("get_db_manager_v4")()
         if not db_manager:
             logger.error("Database manager v4 not available")
             raise DatabaseError("Database not available")
-
         # Get cache manager v4
         cache_manager = deps.get("cache_manager_v4")
         if not cache_manager:
             logger.warning("Cache manager v4 not available, using fallback")
             cache_manager = CacheManagerV4(enable_cache=False)
-
         # Get config manager
         config = deps.get("config_manager")
         if not config:
             config = ConfigManager()
-
         return db_manager, cache_manager, config
-
     except ImportError as e:
         logger.error(f"Failed to import required modules: {e}")
         raise DatabaseError("Required modules not available")
@@ -263,7 +237,6 @@ def create_restaurant_service():
             db_manager.connect()
             cache_manager = CacheManagerV4(enable_cache=False)
             config = ConfigManager()
-
             return RestaurantServiceV4(
                 db_manager=db_manager, cache_manager=cache_manager, config=config
             )
@@ -305,7 +278,6 @@ def create_marketplace_service():
         if not db_manager:
             logger.error("Database manager not available for marketplace service")
             return None
-
         service = MarketplaceServiceV4(
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
@@ -372,7 +344,6 @@ def get_restaurants():
         limit = min(int(request.args.get("limit", 100)), 1000)
         offset = int(request.args.get("offset", 0))
         business_types = request.args.getlist("business_types")
-
         # Build filters
         filters = {}
         if kosher_type:
@@ -381,18 +352,14 @@ def get_restaurants():
             filters["status"] = status
         if business_types:
             filters["business_types"] = business_types
-
         # Use v4 service
         service = create_restaurant_service()
         restaurants = service.get_all_restaurants(filters=filters)
-
         # Apply pagination
         total_count = len(restaurants)
         paginated_restaurants = restaurants[offset : offset + limit]
-
         # Calculate total pages for frontend compatibility
         total_pages = (total_count + limit - 1) // limit
-
         # Return response in the format expected by frontend
         return (
             jsonify(
@@ -408,7 +375,6 @@ def get_restaurants():
             ),
             200,
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -428,10 +394,8 @@ def search_restaurants():
         query = request.args.get("q", "").strip()
         if not query:
             return error_response("Query parameter 'q' is required", 400)
-
         limit = min(int(request.args.get("limit", 20)), 100)
         offset = max(int(request.args.get("offset", 0)), 0)
-
         # Get search filters from query parameters
         filters = SearchFilters(
             query=query,
@@ -482,11 +446,9 @@ def search_restaurants():
             limit=limit,
             offset=offset,
         )
-
         # Use unified search service
         db_manager, cache_manager, config = get_service_dependencies()
         search_service = UnifiedSearchService(db_manager, cache_manager)
-
         # Determine search type based on parameters
         if filters.lat and filters.lng:
             search_type = SearchType.LOCATION
@@ -494,10 +456,8 @@ def search_restaurants():
             search_type = SearchType.ADVANCED
         else:
             search_type = SearchType.BASIC
-
         # Perform search
         search_response = search_service.search(filters, search_type)
-
         return success_response(
             {
                 "results": [result.to_dict() for result in search_response.results],
@@ -508,7 +468,6 @@ def search_restaurants():
                 "statistics": search_response.statistics,
             }
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -525,14 +484,11 @@ def get_restaurant(restaurant_id: int):
     try:
         service = create_restaurant_service()
         restaurant = service.get_restaurant_by_id(restaurant_id)
-
         if not restaurant:
             return not_found_response(
                 f"Restaurant with ID {restaurant_id}", "restaurant"
             )
-
         return success_response({"restaurant": restaurant})
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -553,7 +509,6 @@ def create_restaurant():
     try:
         data = request.get_json(silent=True) or {}
         logger.info("Received restaurant creation request", data=data)
-
         # Debug business_images field
         if "business_images" in data:
             logger.info(
@@ -561,7 +516,6 @@ def create_restaurant():
                 type=type(data["business_images"]),
                 value=data["business_images"],
             )
-
             # Check if it's a JSON string that needs to be parsed
             if isinstance(data["business_images"], str):
                 try:
@@ -578,13 +532,10 @@ def create_restaurant():
                     logger.warning(
                         "Failed to parse business_images as JSON", error=str(e)
                     )
-
         service = create_restaurant_service()
         logger.info("Restaurant service created successfully")
-
         restaurant_data = service.create_restaurant(data)
         logger.info("Restaurant creation result", result=restaurant_data)
-
         if restaurant_data:
             return success_response(
                 {"restaurant": restaurant_data},
@@ -593,7 +544,6 @@ def create_restaurant():
             )
         else:
             return error_response("Failed to create restaurant", 500)
-
     except ValidationError as e:
         logger.error("Validation error", error=str(e))
         return error_response(str(e), 400, {"validation_errors": e.details})
@@ -611,10 +561,8 @@ def update_restaurant(restaurant_id: int):
     """Update a restaurant using v4 service."""
     try:
         data = request.get_json(silent=True) or {}
-
         service = create_restaurant_service()
         success = service.update_restaurant(restaurant_id, data)
-
         if success:
             # Get the updated restaurant
             restaurant = service.get_restaurant_by_id(restaurant_id)
@@ -623,7 +571,6 @@ def update_restaurant(restaurant_id: int):
             )
         else:
             return error_response("Failed to update restaurant", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -644,14 +591,12 @@ def delete_restaurant(restaurant_id: int):
     try:
         service = create_restaurant_service()
         success = service.delete_restaurant(restaurant_id)
-
         if success:
             return success_response(
                 {"restaurant_id": restaurant_id}, "Restaurant deleted successfully"
             )
         else:
             return error_response("Failed to delete restaurant", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -671,10 +616,8 @@ def get_restaurant_filter_options():
     """Get filter options for restaurants using v4 service."""
     try:
         service = create_restaurant_service()
-
         # Get all restaurants to extract filter options
         restaurants = service.get_all_restaurants()
-
         # Extract unique values for each filter category
         agencies = sorted(
             list(
@@ -685,7 +628,6 @@ def get_restaurant_filter_options():
                 )
             )
         )
-
         kosher_categories = sorted(
             list(
                 set(
@@ -695,23 +637,18 @@ def get_restaurant_filter_options():
                 )
             )
         )
-
         listing_types = sorted(
             list(
                 set(r.get("listing_type") for r in restaurants if r.get("listing_type"))
             )
         )
-
         price_ranges = sorted(
             list(set(r.get("price_range") for r in restaurants if r.get("price_range")))
         )
-
         cities = sorted(list(set(r.get("city") for r in restaurants if r.get("city"))))
-
         states = sorted(
             list(set(r.get("state") for r in restaurants if r.get("state")))
         )
-
         return success_response(
             {
                 "agencies": agencies,
@@ -722,7 +659,6 @@ def get_restaurant_filter_options():
                 "states": states,
             }
         )
-
     except Exception as e:
         logger.exception("Error fetching filter options", error=str(e))
         return error_response("Failed to fetch filter options", 500)
@@ -736,10 +672,8 @@ def approve_restaurant(restaurant_id: int):
     try:
         data = request.get_json(silent=True) or {}
         status = data.get("status", "approved")
-
         service = create_restaurant_service()
         success = service.update_restaurant_status(restaurant_id, status, "approved")
-
         if success:
             # Get the updated restaurant
             restaurant = service.get_restaurant_by_id(restaurant_id)
@@ -749,7 +683,6 @@ def approve_restaurant(restaurant_id: int):
             )
         else:
             return error_response("Failed to approve restaurant", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -771,12 +704,10 @@ def reject_restaurant(restaurant_id: int):
         data = request.get_json(silent=True) or {}
         status = data.get("status", "rejected")
         reason = data.get("reason", "Rejected by admin")
-
         service = create_restaurant_service()
         success = service.update_restaurant_status(
             restaurant_id, status, "rejected", reason
         )
-
         if success:
             # Get the updated restaurant
             restaurant = service.get_restaurant_by_id(restaurant_id)
@@ -786,7 +717,6 @@ def reject_restaurant(restaurant_id: int):
             )
         else:
             return error_response("Failed to reject restaurant", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -807,10 +737,8 @@ def get_restaurant_hours(restaurant_id: int):
     try:
         service = create_restaurant_service()
         restaurant = service.get_restaurant_by_id(restaurant_id)
-
         if not restaurant:
             return not_found_response("Restaurant not found", "restaurant")
-
         # Extract hours data from restaurant
         hours_data = {
             "status": "available" if restaurant.get("hours_open") else "unavailable",
@@ -829,9 +757,7 @@ def get_restaurant_hours(restaurant_id: int):
             "timezone": "America/New_York",  # Default timezone
             "last_updated": restaurant.get("updated_at", datetime.now().isoformat()),
         }
-
         return success_response(hours_data, "Restaurant hours retrieved successfully")
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -855,14 +781,12 @@ def get_reviews():
         status = request.args.get("status", "approved")
         limit = int(request.args.get("limit", 10))
         offset = int(request.args.get("offset", 0))
-
         # Build filters
         filters = {}
         if restaurant_id:
             filters["restaurant_id"] = int(restaurant_id)
         if status:
             filters["status"] = status
-
         service = create_review_service()
         reviews = service.get_reviews(
             restaurant_id=int(restaurant_id) if restaurant_id else None,
@@ -871,14 +795,12 @@ def get_reviews():
             offset=offset,
             filters=filters,
         )
-
         # Get total count for pagination
         total_count = service.get_reviews_count(
             restaurant_id=int(restaurant_id) if restaurant_id else None,
             status=status,
             filters=filters,
         )
-
         return success_response(
             {
                 "reviews": reviews,
@@ -890,7 +812,6 @@ def get_reviews():
                 },
             }
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -906,10 +827,8 @@ def create_review():
     """Create a new review using v4 service."""
     try:
         data = request.get_json(silent=True) or {}
-
         service = create_review_service()
         review_id = service.create_review(data)
-
         if review_id:
             # Get the created review
             review = service.get_review_by_id(review_id)
@@ -918,7 +837,6 @@ def create_review():
             )
         else:
             return error_response("Failed to create review", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -935,12 +853,9 @@ def get_review(review_id: int):
     try:
         service = create_review_service()
         review = service.get_review_by_id(review_id)
-
         if not review:
             return not_found_response(f"Review with ID {review_id}", "review")
-
         return success_response({"review": review})
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -958,17 +873,14 @@ def update_review(review_id: int):
     """Update a review using v4 service."""
     try:
         data = request.get_json(silent=True) or {}
-
         service = create_review_service()
         success = service.update_review(review_id, data)
-
         if success:
             # Get the updated review
             review = service.get_review_by_id(review_id)
             return success_response({"review": review}, "Review updated successfully")
         else:
             return error_response("Failed to update review", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -987,12 +899,10 @@ def delete_review(review_id: int):
     try:
         service = create_review_service()
         success = service.delete_review(review_id)
-
         if success:
             return success_response({"id": review_id}, "Review deleted successfully")
         else:
             return error_response("Failed to delete review", 500)
-
     except NotFoundError as e:
         return not_found_response(str(e), "review")
     except DatabaseError as e:
@@ -1012,18 +922,15 @@ def admin_get_users():
         page = int(request.args.get("page", 1))
         limit = min(int(request.args.get("limit", 20)), 100)
         search = request.args.get("search", "").strip()
-
         # Build filters
         filters = {}
         if search:
             filters["search"] = search
-
         service = create_user_service()
         users = service.get_users(
             limit=limit, offset=(page - 1) * limit, filters=filters
         )
         total_count = service.get_users_count(filters=filters)
-
         return success_response(
             {
                 "users": users,
@@ -1035,7 +942,6 @@ def admin_get_users():
                 },
             }
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -1054,18 +960,14 @@ def admin_update_user():
         data = request.get_json(silent=True) or {}
         user_id = data.get("userId") or data.get("id")
         is_super_admin = data.get("isSuperAdmin")
-
         if not user_id or is_super_admin is None:
             return error_response("userId and isSuperAdmin are required", 400)
-
         service = create_user_service()
         success = service.update_user_role(user_id, is_super_admin)
-
         if success:
             return success_response({"success": True}, "User updated successfully")
         else:
             return error_response("Failed to update user", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except DatabaseError as e:
@@ -1083,18 +985,14 @@ def admin_delete_user():
     try:
         data = request.get_json(silent=True) or {}
         user_id = data.get("userId") or data.get("id")
-
         if not user_id:
             return error_response("userId is required", 400)
-
         service = create_user_service()
         success = service.delete_user(user_id)
-
         if success:
             return success_response({"success": True}, "User deleted successfully")
         else:
             return error_response("Failed to delete user", 500)
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -1114,9 +1012,7 @@ def get_statistics():
     try:
         service = create_restaurant_service()
         stats = service.get_restaurant_statistics()
-
         return success_response(stats, "Statistics retrieved successfully")
-
     except DatabaseError as e:
         return error_response(str(e), 503)
     except Exception as e:
@@ -1130,9 +1026,7 @@ def get_migration_status():
     """Get the current migration status for v4 API."""
     try:
         status = get_v4_migration_status()
-
         return success_response(status, "Migration status retrieved successfully")
-
     except Exception as e:
         logger.exception("Error fetching migration status", error=str(e))
         return error_response("Failed to fetch migration status", 500)
@@ -1148,7 +1042,6 @@ def get_migration_health():
             "services_v4": False,
             "overall": False,
         }
-
         # Check database v4
         try:
             db_manager, _, _ = get_service_dependencies()
@@ -1156,7 +1049,6 @@ def get_migration_health():
                 health_status["database_v4"] = True
         except Exception as e:
             logger.warning(f"Database v4 health check failed: {e}")
-
         # Check cache v4
         try:
             _, cache_manager, _ = get_service_dependencies()
@@ -1164,7 +1056,6 @@ def get_migration_health():
                 health_status["cache_v4"] = cache_manager.health_check()
         except Exception as e:
             logger.warning(f"Cache v4 health check failed: {e}")
-
         # Check services v4
         try:
             restaurant_service = create_restaurant_service()
@@ -1172,7 +1063,6 @@ def get_migration_health():
                 health_status["services_v4"] = restaurant_service.health_check()
         except Exception as e:
             logger.warning(f"Services v4 health check failed: {e}")
-
         # Overall health
         health_status["overall"] = all(
             [
@@ -1181,9 +1071,7 @@ def get_migration_health():
                 health_status["services_v4"],
             ]
         )
-
         return success_response(health_status, "Migration health check completed")
-
     except Exception as e:
         logger.exception("Error checking migration health", error=str(e))
         return error_response("Failed to check migration health", 500)
@@ -1211,7 +1099,6 @@ def get_marketplace_listings():
                     },
                 }
             )
-
         # Get query parameters
         limit = min(int(request.args.get("limit", 50)), 1000)
         offset = max(int(request.args.get("offset", 0)), 0)
@@ -1228,7 +1115,6 @@ def get_marketplace_listings():
         lat = request.args.get("lat", type=float)
         lng = request.args.get("lng", type=float)
         radius = min(request.args.get("radius", 10, type=float), 1000)  # miles
-
         # Use marketplace service
         logger.info("Creating marketplace service...")
         service = create_marketplace_service()
@@ -1248,9 +1134,7 @@ def get_marketplace_listings():
                     },
                 }
             )
-
         logger.info("Marketplace service created successfully, calling get_listings...")
-
         result = service.get_listings(
             limit=limit,
             offset=offset,
@@ -1268,14 +1152,11 @@ def get_marketplace_listings():
             lng=lng,
             radius=radius,
         )
-
         logger.info(f"Service result: {result}")
-
         if result["success"]:
             return success_response(result["data"])
         else:
             return error_response(result.get("error", "Failed to fetch listings"), 500)
-
     except Exception as e:
         logger.exception("Error fetching marketplace listings")
         return error_response(
@@ -1293,13 +1174,11 @@ def get_marketplace_listing(listing_id):
         if not service:
             logger.warning("Marketplace service not available")
             return not_found_response(f"Listing with ID {listing_id}", "listing")
-
         result = service.get_listing_by_id(listing_id)
         if result["success"]:
             return success_response(result["data"])
         else:
             return not_found_response(f"Listing with ID {listing_id}", "listing")
-
     except Exception as e:
         logger.exception("Error fetching marketplace listing")
         return error_response(
@@ -1316,12 +1195,10 @@ def create_marketplace_listing():
         data = request.get_json()
         if not data:
             return error_response("Request body is required", 400)
-
         # Get authenticated user information
         user = get_current_supabase_user()
         if not user:
             return error_response("User authentication required", 401)
-
         # Add user information to listing data
         listing_data = {
             **data,
@@ -1329,19 +1206,15 @@ def create_marketplace_listing():
             "seller_email": user.get("email"),
             "created_by": user.get("user_id"),
         }
-
         # Use marketplace service
         service = create_marketplace_service()
         if not service:
             return error_response("Marketplace service unavailable", 503)
-
         result = service.create_listing(listing_data)
-
         if result["success"]:
             return success_response(result["data"], "Listing created successfully", 201)
         else:
             return error_response(result.get("error", "Failed to create listing"), 400)
-
     except Exception as e:
         logger.exception("Error creating marketplace listing")
         return error_response(
@@ -1358,17 +1231,14 @@ def update_marketplace_listing(listing_id: str):
         data = request.get_json()
         if not data:
             return error_response("Request body is required", 400)
-
         # Get authenticated user information
         user = get_current_supabase_user()
         if not user:
             return error_response("User authentication required", 401)
-
         # Use marketplace service
         service = create_marketplace_service()
         if not service:
             return error_response("Marketplace service unavailable", 503)
-
         # Add user information to update data
         update_data = {
             **data,
@@ -1377,14 +1247,11 @@ def update_marketplace_listing(listing_id: str):
                 "user_id"
             ),  # Ensure seller can only update their own listings
         }
-
         result = service.update_listing(listing_id, update_data)
-
         if result["success"]:
             return success_response(result["data"], "Listing updated successfully")
         else:
             return error_response(result.get("error", "Failed to update listing"), 400)
-
     except Exception as e:
         logger.exception("Error updating marketplace listing")
         return error_response(
@@ -1402,12 +1269,10 @@ def delete_marketplace_listing(listing_id: str):
         user = get_current_supabase_user()
         if not user:
             return error_response("User authentication required", 401)
-
         # Use marketplace service
         service = create_marketplace_service()
         if not service:
             return error_response("Marketplace service unavailable", 503)
-
         # Add user information for verification
         delete_data = {
             "deleted_by": user.get("user_id"),
@@ -1415,14 +1280,11 @@ def delete_marketplace_listing(listing_id: str):
                 "user_id"
             ),  # Ensure seller can only delete their own listings
         }
-
         result = service.delete_listing(listing_id, delete_data)
-
         if result["success"]:
             return success_response(result["data"], "Listing deleted successfully")
         else:
             return error_response(result.get("error", "Failed to delete listing"), 400)
-
     except Exception as e:
         logger.exception("Error deleting marketplace listing")
         return error_response(
@@ -1444,7 +1306,6 @@ def get_marketplace_categories():
             config = ConfigManager()
             fallback_categories = config.get_marketplace_categories()
             return success_response(fallback_categories)
-
         # Try to use the marketplace service if available
         try:
             service = get_marketplace_service()
@@ -1460,7 +1321,6 @@ def get_marketplace_categories():
                 logger.warning("Could not create marketplace service, using fallback")
         except Exception as e:
             logger.warning(f"Error using marketplace service: {e}, using fallback")
-
         # Return fallback categories if service fails
         logger.info("Returning fallback categories for marketplace")
         fallback_categories = [
@@ -1558,7 +1418,6 @@ def get_marketplace_categories():
             },
         ]
         return success_response(fallback_categories)
-
     except Exception as e:
         logger.exception("Error fetching marketplace categories")
         return error_response(
@@ -1574,10 +1433,8 @@ def migrate_marketplace_tables():
         from database.migrations.create_marketplace_unified import run_migration
 
         logger.info("Starting marketplace migration via API v4")
-
         # Run the migration
         success = run_migration()
-
         if success:
             logger.info("Marketplace migration completed successfully")
             return (
@@ -1605,7 +1462,6 @@ def migrate_marketplace_tables():
                 jsonify({"success": False, "message": "Marketplace migration failed"}),
                 500,
             )
-
     except Exception as e:
         logger.exception("Error during marketplace migration")
         return (
@@ -1627,9 +1483,7 @@ def create_marketplace_tables():
                 jsonify({"success": False, "message": "DATABASE_URL not configured"}),
                 500,
             )
-
         engine = create_engine(database_url)
-
         with engine.begin() as conn:
             # Create categories table
             conn.execute(
@@ -1647,7 +1501,6 @@ def create_marketplace_tables():
             """
                 )
             )
-
             # Create subcategories table
             conn.execute(
                 text(
@@ -1665,26 +1518,31 @@ def create_marketplace_tables():
             """
                 )
             )
-
             # Insert sample categories
             conn.execute(
                 text(
                     """
-                INSERT INTO categories (id, name, slug, sort_order, active) 
-                VALUES 
+                INSERT INTO categories (id, name, slug, sort_order, active)
+                VALUES
                     (1, 'Baked Goods', 'baked-goods', 1, true),
                     (2, 'Accessories', 'accessories', 2, true)
                 ON CONFLICT (id) DO NOTHING
             """
                 )
             )
-
             # Insert sample subcategories
             conn.execute(
                 text(
                     """
-                INSERT INTO subcategories (id, category_id, name, slug, sort_order, active) 
-                VALUES 
+                INSERT INTO subcategories (
+                    id,
+                    category_id,
+                    name,
+                    slug,
+                    sort_order,
+                    active
+                )
+                VALUES
                     (1, 1, 'Bread', 'bread', 1, true),
                     (2, 1, 'Pastries', 'pastries', 2, true),
                     (3, 2, 'Jewelry', 'jewelry', 1, true),
@@ -1693,7 +1551,6 @@ def create_marketplace_tables():
             """
                 )
             )
-
         logger.info("Marketplace tables created successfully")
         return (
             jsonify(
@@ -1701,7 +1558,6 @@ def create_marketplace_tables():
             ),
             200,
         )
-
     except Exception as e:
         logger.exception("Error creating marketplace tables")
         return (
@@ -1734,9 +1590,7 @@ def create_order():
     try:
         if not request.is_json:
             return error_response("Content-Type must be application/json", 400)
-
         order_data = request.get_json()
-
         # Validate required fields
         required_fields = [
             "restaurant_id",
@@ -1747,22 +1601,18 @@ def create_order():
             "payment_method",
             "items",
         ]
-
         for field in required_fields:
             if field not in order_data:
                 return error_response(f"Missing required field: {field}", 400)
-
         # Create order service and submit order
         service = create_order_service()
         order = service.create_order(order_data)
-
         return success_response(
             {
                 "order": order,
                 "message": f"Order {order['order_number']} created successfully",
             }
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -1781,9 +1631,7 @@ def get_order(order_id: int):
     try:
         service = create_order_service()
         order = service.get_order_by_id(order_id)
-
         return success_response({"order": order})
-
     except NotFoundError as e:
         return not_found_response(str(e), "order")
     except DatabaseError as e:
@@ -1800,9 +1648,7 @@ def get_order_by_number(order_number: str):
     try:
         service = create_order_service()
         order = service.get_order_by_number(order_number)
-
         return success_response({"order": order})
-
     except NotFoundError as e:
         return not_found_response(str(e), "order")
     except DatabaseError as e:
@@ -1819,17 +1665,14 @@ def get_restaurant_orders(restaurant_id: int):
     try:
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = max(int(request.args.get("offset", 0)), 0)
-
         service = create_order_service()
         orders = service.get_orders_by_restaurant(restaurant_id, limit, offset)
-
         return success_response(
             {
                 "orders": orders,
                 "pagination": {"limit": limit, "offset": offset, "count": len(orders)},
             }
         )
-
     except DatabaseError as e:
         return error_response(str(e), 503)
     except Exception as e:
@@ -1844,17 +1687,14 @@ def get_customer_orders(email: str):
     try:
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = max(int(request.args.get("offset", 0)), 0)
-
         service = create_order_service()
         orders = service.get_orders_by_customer(email, limit, offset)
-
         return success_response(
             {
                 "orders": orders,
                 "pagination": {"limit": limit, "offset": offset, "count": len(orders)},
             }
         )
-
     except DatabaseError as e:
         return error_response(str(e), 503)
     except Exception as e:
@@ -1869,20 +1709,15 @@ def update_order_status(order_id: int):
     try:
         if not request.is_json:
             return error_response("Content-Type must be application/json", 400)
-
         data = request.get_json()
         status = data.get("status")
-
         if not status:
             return error_response("Status field is required", 400)
-
         service = create_order_service()
         order = service.update_order_status(order_id, status)
-
         return success_response(
             {"order": order, "message": f"Order status updated to {status}"}
         )
-
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
     except NotFoundError as e:
@@ -1938,7 +1773,6 @@ def run_marketplace_migration():
         from database.migrations.create_marketplace_unified import run_migration
 
         success = run_migration()
-
         if success:
             return jsonify(
                 {
@@ -1961,7 +1795,6 @@ def run_marketplace_migration():
                 jsonify({"success": False, "error": "Marketplace migration failed"}),
                 500,
             )
-
     except Exception as e:
         logger.exception("Error running marketplace migration")
         return jsonify({"success": False, "error": str(e)}), 500

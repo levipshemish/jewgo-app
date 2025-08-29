@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Shtetl Stores Table.
 ==================================================
 Creates a shtetl_stores table for Jewish community marketplace store management.
 This table stores store information, settings, and metadata for store owners.
 """
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -18,7 +17,6 @@ depends_on = None
 
 def upgrade() -> None:
     """Create shtetl_stores table for Jewish community store management."""
-
     # Create shtetl_stores table
     op.create_table(
         "shtetl_stores",
@@ -192,7 +190,6 @@ def upgrade() -> None:
             "pickup_locations", JSONB, nullable=True
         ),  # JSON array of pickup locations
     )
-
     # Create indexes for performance
     op.create_index(
         "idx_shtetl_stores_owner_user_id", "shtetl_stores", ["owner_user_id"]
@@ -216,7 +213,6 @@ def upgrade() -> None:
     op.create_index("idx_shtetl_stores_rating", "shtetl_stores", ["average_rating"])
     op.create_index("idx_shtetl_stores_created_at", "shtetl_stores", ["created_at"])
     op.create_index("idx_shtetl_stores_updated_at", "shtetl_stores", ["updated_at"])
-
     # Composite indexes for common queries
     op.create_index(
         "idx_shtetl_stores_city_store_type", "shtetl_stores", ["city", "store_type"]
@@ -232,17 +228,16 @@ def upgrade() -> None:
     op.create_index(
         "idx_shtetl_stores_plan_active", "shtetl_stores", ["plan_type", "is_active"]
     )
-
     # Create full-text search index
     op.execute(
         """
-        CREATE INDEX idx_shtetl_stores_search_vector 
-        ON shtetl_stores 
-        USING gin(to_tsvector('english', 
-            COALESCE(store_name, '') || ' ' || 
-            COALESCE(store_description, '') || ' ' || 
-            COALESCE(city, '') || ' ' || 
-            COALESCE(store_type, '') || ' ' || 
+        CREATE INDEX idx_shtetl_stores_search_vector
+        ON shtetl_stores
+        USING gin(to_tsvector('english',
+            COALESCE(store_name, '') || ' ' ||
+            COALESCE(store_description, '') || ' ' ||
+            COALESCE(city, '') || ' ' ||
+            COALESCE(store_type, '') || ' ' ||
             COALESCE(store_category, '')
         ))
     """

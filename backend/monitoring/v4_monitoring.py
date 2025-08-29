@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Monitoring system for API v4 architecture.
-
 This module provides comprehensive monitoring capabilities for the v4 API,
 including performance metrics, error tracking, migration status, and health checks.
-
 Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-
 import json
 import os
 import sys
@@ -17,12 +14,10 @@ import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-
 import psutil
 
 # Add the backend directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
 from database.database_manager_v4 import DatabaseManager as DatabaseManagerV4
 from utils.cache_manager_v4 import CacheManagerV4
 from utils.feature_flags_v4 import get_migration_status
@@ -49,7 +44,6 @@ class V4MonitoringSystem:
         self.alerts = []
         self.monitoring_active = False
         self.monitoring_thread = None
-
         # Alert thresholds
         self.thresholds = {
             "response_time_ms": 1000,  # 1 second
@@ -65,7 +59,6 @@ class V4MonitoringSystem:
         if self.monitoring_active:
             logger.warning("Monitoring is already active")
             return
-
         self.monitoring_active = True
         self.monitoring_thread = threading.Thread(
             target=self._monitoring_loop, args=(interval_seconds,), daemon=True
@@ -95,16 +88,12 @@ class V4MonitoringSystem:
     def _collect_metrics(self):
         """Collect all monitoring metrics."""
         timestamp = datetime.now()
-
         # System metrics
         self._collect_system_metrics(timestamp)
-
         # Database metrics
         self._collect_database_metrics(timestamp)
-
         # Cache metrics
         self._collect_cache_metrics(timestamp)
-
         # Migration status
         self._collect_migration_metrics(timestamp)
 
@@ -122,13 +111,11 @@ class V4MonitoringSystem:
                     "percent": memory.percent,
                 }
             )
-
             # CPU usage
             cpu_percent = psutil.cpu_percent(interval=1)
             self.metrics["cpu"].append(
                 {"timestamp": timestamp.isoformat(), "percent": cpu_percent}
             )
-
         except Exception as e:
             logger.error(f"Error collecting system metrics: {e}")
 
@@ -136,21 +123,17 @@ class V4MonitoringSystem:
         """Collect database performance metrics."""
         try:
             db_manager = DatabaseManagerV4()
-
             # Test connection
             start_time = time.time()
             if db_manager.connect():
                 connection_time = (time.time() - start_time) * 1000  # Convert to ms
-
                 self.metrics["database"]["connection_time"].append(
                     {"timestamp": timestamp.isoformat(), "value": connection_time}
                 )
-
                 # Test basic query
                 start_time = time.time()
                 restaurants = db_manager.get_restaurants(limit=10, as_dict=True)
                 query_time = (time.time() - start_time) * 1000  # Convert to ms
-
                 self.metrics["database"]["query_time"].append(
                     {
                         "timestamp": timestamp.isoformat(),
@@ -158,7 +141,6 @@ class V4MonitoringSystem:
                         "result_count": len(restaurants),
                     }
                 )
-
                 db_manager.close()
             else:
                 self.metrics["database"]["connection_failures"].append(
@@ -167,7 +149,6 @@ class V4MonitoringSystem:
                         "error": "Database connection failed",
                     }
                 )
-
         except Exception as e:
             logger.error(f"Error collecting database metrics: {e}")
             self.metrics["database"]["connection_failures"].append(
@@ -178,25 +159,20 @@ class V4MonitoringSystem:
         """Collect cache performance metrics."""
         try:
             cache_manager = CacheManagerV4()
-
             # Test cache operations
             test_key = f"monitoring_test_{timestamp.timestamp()}"
             test_value = {"test": "data", "timestamp": timestamp.isoformat()}
-
             # Test set operation
             start_time = time.time()
             cache_manager.set(test_key, test_value, ttl=60)
             set_time = (time.time() - start_time) * 1000  # Convert to ms
-
             self.metrics["cache"]["set_time"].append(
                 {"timestamp": timestamp.isoformat(), "value": set_time}
             )
-
             # Test get operation
             start_time = time.time()
             retrieved_value = cache_manager.get(test_key)
             get_time = (time.time() - start_time) * 1000  # Convert to ms
-
             self.metrics["cache"]["get_time"].append(
                 {
                     "timestamp": timestamp.isoformat(),
@@ -204,10 +180,8 @@ class V4MonitoringSystem:
                     "hit": retrieved_value is not None,
                 }
             )
-
             # Clean up test key
             cache_manager.delete(test_key)
-
         except Exception as e:
             logger.error(f"Error collecting cache metrics: {e}")
             self.metrics["cache"]["errors"].append(
@@ -218,11 +192,9 @@ class V4MonitoringSystem:
         """Collect migration status metrics."""
         try:
             migration_status = get_migration_status()
-
             self.metrics["migration_status"].append(
                 {"timestamp": timestamp.isoformat(), "status": migration_status}
             )
-
         except Exception as e:
             logger.error(f"Error collecting migration metrics: {e}")
 
@@ -236,7 +208,6 @@ class V4MonitoringSystem:
     ):
         """Record a request metric."""
         timestamp = datetime.now()
-
         self.metrics["requests"][endpoint].append(
             {
                 "timestamp": timestamp.isoformat(),
@@ -246,7 +217,6 @@ class V4MonitoringSystem:
                 "user_id": user_id,
             }
         )
-
         # Record performance metric
         self.metrics["performance"][endpoint].append(
             {
@@ -255,7 +225,6 @@ class V4MonitoringSystem:
                 "status_code": status_code,
             }
         )
-
         # Check for slow requests
         if response_time_ms > self.thresholds["response_time_ms"]:
             self._create_alert(
@@ -276,7 +245,6 @@ class V4MonitoringSystem:
     ):
         """Record an error metric."""
         timestamp = datetime.now()
-
         self.metrics["errors"][endpoint].append(
             {
                 "timestamp": timestamp.isoformat(),
@@ -285,7 +253,6 @@ class V4MonitoringSystem:
                 "user_id": user_id,
             }
         )
-
         # Check error rate
         self._check_error_rate(endpoint)
 
@@ -297,17 +264,14 @@ class V4MonitoringSystem:
             if datetime.fromisoformat(e["timestamp"])
             > datetime.now() - timedelta(minutes=5)
         ]
-
         recent_requests = [
             r
             for r in self.metrics["requests"][endpoint]
             if datetime.fromisoformat(r["timestamp"])
             > datetime.now() - timedelta(minutes=5)
         ]
-
         if recent_requests:
             error_rate = (len(recent_errors) / len(recent_requests)) * 100
-
             if error_rate > self.thresholds["error_rate_percent"]:
                 self._create_alert(
                     "high_error_rate",
@@ -323,7 +287,6 @@ class V4MonitoringSystem:
     def _check_alerts(self):
         """Check for alert conditions."""
         timestamp = datetime.now()
-
         # Check memory usage
         if self.metrics["memory"]:
             latest_memory = self.metrics["memory"][-1]
@@ -335,7 +298,6 @@ class V4MonitoringSystem:
                         "threshold_percent": self.thresholds["memory_usage_percent"],
                     },
                 )
-
         # Check CPU usage
         if self.metrics["cpu"]:
             latest_cpu = self.metrics["cpu"][-1]
@@ -347,14 +309,12 @@ class V4MonitoringSystem:
                         "threshold_percent": self.thresholds["cpu_usage_percent"],
                     },
                 )
-
         # Check database connection failures
         recent_failures = [
             f
             for f in self.metrics["database"]["connection_failures"]
             if datetime.fromisoformat(f["timestamp"]) > timestamp - timedelta(minutes=5)
         ]
-
         if len(recent_failures) >= self.thresholds["database_connection_failures"]:
             self._create_alert(
                 "database_connection_issues",
@@ -374,14 +334,12 @@ class V4MonitoringSystem:
             "acknowledged": False,
             "resolved": False,
         }
-
         self.alerts.append(alert)
         logger.warning(f"Alert created: {alert_type}", **details)
 
     def _cleanup_old_metrics(self):
         """Clean up old metrics based on retention period."""
         cutoff_time = datetime.now() - timedelta(hours=self.metrics_retention_hours)
-
         for category in self.metrics:
             if isinstance(self.metrics[category], defaultdict):
                 for key in list(self.metrics[category].keys()):
@@ -406,7 +364,6 @@ class V4MonitoringSystem:
     def get_metrics_summary(self, hours: int = 1) -> Dict[str, Any]:
         """Get a summary of metrics for the specified time period."""
         cutoff_time = datetime.now() - timedelta(hours=hours)
-
         summary = {
             "period_hours": hours,
             "timestamp": datetime.now().isoformat(),
@@ -415,7 +372,6 @@ class V4MonitoringSystem:
             "system": {},
             "migration": {},
         }
-
         # Performance summary
         for endpoint, metrics in self.metrics["performance"].items():
             recent_metrics = [
@@ -423,7 +379,6 @@ class V4MonitoringSystem:
                 for m in metrics
                 if datetime.fromisoformat(m["timestamp"]) > cutoff_time
             ]
-
             if recent_metrics:
                 response_times = [m["response_time_ms"] for m in recent_metrics]
                 summary["performance"][endpoint] = {
@@ -435,7 +390,6 @@ class V4MonitoringSystem:
                         int(len(response_times) * 0.95)
                     ],
                 }
-
         # Error summary
         for endpoint, errors in self.metrics["errors"].items():
             recent_errors = [
@@ -443,17 +397,14 @@ class V4MonitoringSystem:
                 for e in errors
                 if datetime.fromisoformat(e["timestamp"]) > cutoff_time
             ]
-
             if recent_errors:
                 error_types = defaultdict(int)
                 for error in recent_errors:
                     error_types[error["error_type"]] += 1
-
                 summary["errors"][endpoint] = {
                     "total_errors": len(recent_errors),
                     "error_types": dict(error_types),
                 }
-
         # System summary
         if self.metrics["memory"]:
             recent_memory = [
@@ -467,7 +418,6 @@ class V4MonitoringSystem:
                     "avg_percent": sum(memory_percents) / len(memory_percents),
                     "max_percent": max(memory_percents),
                 }
-
         if self.metrics["cpu"]:
             recent_cpu = [
                 c
@@ -480,12 +430,10 @@ class V4MonitoringSystem:
                     "avg_percent": sum(cpu_percents) / len(cpu_percents),
                     "max_percent": max(cpu_percents),
                 }
-
         # Migration summary
         if self.metrics["migration_status"]:
             latest_migration = self.metrics["migration_status"][-1]
             summary["migration"] = latest_migration["status"]
-
         return summary
 
     def get_active_alerts(self) -> List[Dict[str, Any]]:
@@ -528,10 +476,8 @@ class V4MonitoringSystem:
             },
             "alerts": self.alerts,
         }
-
         with open(filepath, "w") as f:
             json.dump(export_data, f, indent=2)
-
         logger.info(f"Metrics exported to {filepath}")
 
 

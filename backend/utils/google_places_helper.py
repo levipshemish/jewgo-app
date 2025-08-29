@@ -1,16 +1,12 @@
 from utils.logging_config import get_logger
-
 from .google_places_searcher import GooglePlacesSearcher
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Google Places Helper.
 ===================
-
 Helper functions for Google Places API integration.
 Used to fetch website links as backup when restaurants don't have them.
-
 Author: JewGo Development Team
 Version: 1.0
 """

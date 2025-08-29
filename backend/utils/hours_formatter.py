@@ -1,16 +1,12 @@
 import datetime
 from typing import Any, Dict, List, Optional
-
 import pytz
-
 from .logging_config import get_logger
 
 """Unified hours formatting utilities.
-
 This module provides a centralized location for all hours formatting functions
 that were previously duplicated across multiple files in the codebase.
 """
-
 logger = get_logger(__name__)
 
 
@@ -27,7 +23,6 @@ class HoursFormatter:
         "Saturday": "Sat",
         "Sunday": "Sun",
     }
-
     SHORT_DAY_NAMES = {
         "mon": "Monday",
         "tue": "Tuesday",
@@ -37,7 +32,6 @@ class HoursFormatter:
         "sat": "Saturday",
         "sun": "Sunday",
     }
-
     DAY_NAMES = {
         "mon": "Monday",
         "tue": "Tuesday",
@@ -51,21 +45,21 @@ class HoursFormatter:
     @staticmethod
     def from_google_places(opening_hours: Dict[str, Any]) -> str:
         """Convert Google Places API format to text format.
-
         Args:
             opening_hours: Google Places API opening_hours object
-
         Returns:
-            Formatted hours string (e.g., "Mon 11:00 AM – 10:00 PM, Tue 11:00 AM – 10:00 PM")
+            Formatted hours string (
+                e.g.,
+                "Mon 11:00 AM – 10:00 PM,
+                Tue 11:00 AM – 10:00 PM"
+            )
         """
         try:
             if not opening_hours or "weekday_text" not in opening_hours:
                 return ""
-
             # Google Places API provides weekday_text as a list of formatted strings
             # e.g., ["Monday: 11:00 AM – 10:00 PM", "Tuesday: 11:00 AM – 10:00 PM", ...]
             weekday_text = opening_hours["weekday_text"]
-
             # Convert to our format: "Mon 11:00 AM – 10:00 PM, Tue 11:00 AM – 10:00 PM, ..."
             formatted_hours = []
             for day_text in weekday_text:
@@ -74,9 +68,7 @@ class HoursFormatter:
                     day, hours = day_text.split(": ", 1)
                     short_day = HoursFormatter.DAY_MAPPING.get(day, day[:3])
                     formatted_hours.append(f"{short_day} {hours}")
-
             return ", ".join(formatted_hours)
-
         except Exception as e:
             logger.exception(
                 "Error formatting hours from Google Places API", error=str(e)
@@ -86,11 +78,9 @@ class HoursFormatter:
     @staticmethod
     def for_ui(hours_json: Dict[str, Any], format_type: str = "dropdown") -> Any:
         """Format hours for UI display.
-
         Args:
             hours_json: Normalized hours data
             format_type: 'dropdown', 'compact', 'detailed', 'today'
-
         Returns:
             Formatted hours data for UI
         """
@@ -105,7 +95,6 @@ class HoursFormatter:
                 return HoursFormatter._format_today(hours_json)
             else:
                 return HoursFormatter._format_compact(hours_json)
-
         except Exception as e:
             logger.exception("Error formatting hours for UI", error=str(e))
             return []
@@ -113,32 +102,25 @@ class HoursFormatter:
     @staticmethod
     def for_display(hours_doc: Dict[str, Any]) -> Dict[str, Any]:
         """Format hours document for frontend display.
-
         Args:
             hours_doc: Hours document from database
-
         Returns:
             Formatted hours data for frontend display
         """
         try:
             if not hours_doc:
                 return HoursFormatter._get_empty_hours_response()
-
             # Extract basic info
             hours_data = hours_doc.get("hours", {})
             timezone = hours_doc.get("timezone", "America/New_York")
             last_updated = hours_doc.get("last_updated")
-
             # Calculate current status
             is_open_now_status = HoursFormatter._is_open_now(hours_doc)
             status = "open" if is_open_now_status else "closed"
-
             # Format weekly hours
             formatted_hours = HoursFormatter._format_weekly_hours(hours_data)
-
             # Get today's hours
             today_hours = HoursFormatter._get_today_hours(hours_data, timezone)
-
             # Create response
             response = {
                 "status": status,
@@ -149,9 +131,7 @@ class HoursFormatter:
                 "timezone": timezone,
                 "last_updated": last_updated,
             }
-
             return response
-
         except Exception as e:
             logger.exception("Error formatting hours for display", error=str(e))
             return HoursFormatter._get_empty_hours_response()
@@ -159,41 +139,32 @@ class HoursFormatter:
     @staticmethod
     def to_text(opening_hours: Dict[str, Any]) -> str:
         """Format opening hours into human-readable text.
-
         Args:
             opening_hours: Google Places API opening_hours object
-
         Returns:
             Formatted text with each day on a new line
         """
         try:
             if not opening_hours or "weekday_text" not in opening_hours:
                 return ""
-
             return "\n".join(opening_hours["weekday_text"])
-
         except Exception as e:
             logger.exception("Error formatting hours to text", error=str(e))
             return ""
 
     # Private helper methods
-
     @staticmethod
     def _format_for_dropdown(hours_json: Dict[str, Any]) -> List[Dict[str, str]]:
         """Format hours for dropdown display."""
         result = []
-
         if "hours" not in hours_json:
             return result
-
         for day_abbr, day_name in HoursFormatter.SHORT_DAY_NAMES.items():
             day_hours = hours_json["hours"].get(day_abbr, {})
-
             if day_hours.get("is_open", False):
                 hours_str = f"{day_hours['open']} - {day_hours['close']}"
             else:
                 hours_str = "Closed"
-
             result.append(
                 {
                     "day": day_name,
@@ -201,7 +172,6 @@ class HoursFormatter:
                     "is_open": day_hours.get("is_open", False),
                 }
             )
-
         return result
 
     @staticmethod
@@ -209,31 +179,24 @@ class HoursFormatter:
         """Format hours in compact string format."""
         if "hours" not in hours_json:
             return "Hours not available"
-
         parts = []
         for day_abbr, day_name in HoursFormatter.SHORT_DAY_NAMES.items():
             day_hours = hours_json["hours"].get(day_abbr, {})
-
             if day_hours.get("is_open", False):
                 hours_str = f"{day_hours['open']}-{day_hours['close']}"
             else:
                 hours_str = "Closed"
-
             parts.append(f"{day_name} {hours_str}")
-
         return ", ".join(parts)
 
     @staticmethod
     def _format_detailed(hours_json: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format hours in detailed format with additional info."""
         result = []
-
         if "hours" not in hours_json:
             return result
-
         for day_abbr, day_name in HoursFormatter.DAY_NAMES.items():
             day_hours = hours_json["hours"].get(day_abbr, {})
-
             result.append(
                 {
                     "day": day_name,
@@ -248,7 +211,6 @@ class HoursFormatter:
                     ),
                 }
             )
-
         return result
 
     @staticmethod
@@ -257,12 +219,9 @@ class HoursFormatter:
         try:
             today = datetime.datetime.now().strftime("%A").lower()
             day_abbr = HoursFormatter._get_day_abbreviation(today)
-
             if "hours" not in hours_json:
                 return {"is_open": False, "hours": "Hours not available"}
-
             day_hours = hours_json["hours"].get(day_abbr, {})
-
             if day_hours.get("is_open", False):
                 return {
                     "is_open": True,
@@ -272,7 +231,6 @@ class HoursFormatter:
                 }
             else:
                 return {"is_open": False, "hours": "Closed"}
-
         except Exception as e:
             logger.exception("Error formatting today's hours", error=str(e))
             return {"is_open": False, "hours": "Hours not available"}
@@ -281,10 +239,8 @@ class HoursFormatter:
     def _format_weekly_hours(hours_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format weekly hours for display."""
         result = []
-
         for day_abbr, day_name in HoursFormatter.SHORT_DAY_NAMES.items():
             day_hours = hours_data.get(day_abbr, {})
-
             result.append(
                 {
                     "day": day_name,
@@ -294,7 +250,6 @@ class HoursFormatter:
                     "is_open": day_hours.get("is_open", False),
                 }
             )
-
         return result
 
     @staticmethod
@@ -307,9 +262,7 @@ class HoursFormatter:
             now = datetime.datetime.now(tz)
             current_day = now.strftime("%A").lower()
             day_abbr = HoursFormatter._get_day_abbreviation(current_day)
-
             today_hours = hours_data.get(day_abbr, {})
-
             if today_hours.get("is_open", False):
                 return {
                     "day": current_day.title(),
@@ -324,7 +277,6 @@ class HoursFormatter:
                     "close": "",
                     "is_open": False,
                 }
-
         except Exception as e:
             logger.exception("Error getting today's hours", error=str(e))
             return None
@@ -335,35 +287,27 @@ class HoursFormatter:
         try:
             if not hours_doc:
                 return False
-
             hours_data = hours_doc.get("hours", {})
             timezone = hours_doc.get("timezone", "America/New_York")
-
             # Get current time in restaurant's timezone
             tz = pytz.timezone(timezone)
             now = datetime.datetime.now(tz)
             current_day = now.strftime("%A").lower()
             current_time = now.time()
-
             # Get today's hours
             day_abbr = HoursFormatter._get_day_abbreviation(current_day)
             today_hours = hours_data.get(day_abbr, {})
-
             if not today_hours.get("is_open", False):
                 return False
-
             # Parse open and close times
             open_time = HoursFormatter._parse_time_string(today_hours.get("open", ""))
             close_time = HoursFormatter._parse_time_string(today_hours.get("close", ""))
-
             if not open_time or not close_time:
                 return False
-
             # Handle overnight hours (e.g., 11PM - 2AM)
             if close_time < open_time:
                 return current_time >= open_time or current_time <= close_time
             return open_time <= current_time <= close_time
-
         except Exception as e:
             logger.exception("Error checking if open now", error=str(e))
             return False
@@ -411,18 +355,14 @@ class HoursFormatter:
         try:
             if not time_str:
                 return None
-
             # Handle various time formats
             time_str = time_str.strip().upper()
-
             # Remove AM/PM for parsing
             if "AM" in time_str or "PM" in time_str:
                 time_obj = datetime.datetime.strptime(time_str, "%I:%M %p").time()
             else:
                 time_obj = datetime.datetime.strptime(time_str, "%H:%M").time()
-
             return time_obj
-
         except Exception as e:
             logger.exception(
                 "Error parsing time string", time_str=time_str, error=str(e)

@@ -1,6 +1,5 @@
 """
 Enhanced Monitoring Utilities v2
-
 This module provides monitoring and alerting capabilities for the new
 error handling and timeout patterns implemented across the application.
 """
@@ -11,7 +10,6 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
-
 # Global monitoring state
 _monitoring_data = {
     "timeouts": defaultdict(lambda: deque(maxlen=1000)),
@@ -44,10 +42,8 @@ class MonitoringManager:
             "context": context or {},
         }
         _monitoring_data["timeouts"][operation].append(event)
-
         # Check for alert conditions
         self._check_timeout_alerts(operation)
-
         logger.warning(
             f"Timeout recorded for {operation}",
             extra={
@@ -75,10 +71,8 @@ class MonitoringManager:
             "context": context or {},
         }
         _monitoring_data["errors"][operation].append(event)
-
         # Check for alert conditions
         self._check_error_alerts(operation)
-
         logger.error(
             f"Error recorded for {operation}: {error_type}",
             extra={
@@ -103,7 +97,6 @@ class MonitoringManager:
             "context": context or {},
         }
         _monitoring_data["retries"][operation].append(event)
-
         logger.info(
             f"Retry recorded for {operation} (attempt {attempt})",
             extra={
@@ -132,10 +125,8 @@ class MonitoringManager:
             "context": context or {},
         }
         _monitoring_data["api_calls"][operation].append(event)
-
         # Check for alert conditions
         self._check_latency_alerts(operation)
-
         logger.info(
             f"API call recorded for {operation}",
             extra={
@@ -151,15 +142,12 @@ class MonitoringManager:
         """Check for timeout alert conditions."""
         timeouts = _monitoring_data["timeouts"][operation]
         api_calls = _monitoring_data["api_calls"][operation]
-
         if len(api_calls) < 10:  # Need minimum data points
             return
-
         # Calculate timeout rate
         timeout_count = len(timeouts)
         total_calls = len(api_calls)
         timeout_rate = timeout_count / total_calls
-
         if timeout_rate > self.alert_thresholds["timeout_rate"]:
             logger.warning(
                 f"High timeout rate detected for {operation}: {timeout_rate:.2%}",
@@ -175,15 +163,12 @@ class MonitoringManager:
         """Check for error alert conditions."""
         errors = _monitoring_data["errors"][operation]
         api_calls = _monitoring_data["api_calls"][operation]
-
         if len(api_calls) < 10:  # Need minimum data points
             return
-
         # Calculate error rate
         error_count = len(errors)
         total_calls = len(api_calls)
         error_rate = error_count / total_calls
-
         if error_rate > self.alert_thresholds["error_rate"]:
             logger.warning(
                 f"High error rate detected for {operation}: {error_rate:.2%}",
@@ -198,16 +183,13 @@ class MonitoringManager:
     def _check_latency_alerts(self, operation: str):
         """Check for latency alert conditions."""
         api_calls = _monitoring_data["api_calls"][operation]
-
         if len(api_calls) < 10:  # Need minimum data points
             return
-
         # Calculate P95 latency
         durations = [call["duration"] for call in api_calls]
         durations.sort()
         p95_index = int(len(durations) * 0.95)
         p95_latency = durations[p95_index]
-
         if p95_latency > self.alert_thresholds["api_latency_p95"]:
             logger.warning(
                 f"High P95 latency detected for {operation}: {p95_latency:.2f}s",
@@ -225,28 +207,23 @@ class MonitoringManager:
         """Get monitoring metrics for specified operation and time window."""
         if time_window is None:
             time_window = timedelta(hours=1)
-
         cutoff_time = datetime.utcnow() - time_window
-
         metrics = {
             "timeouts": {},
             "errors": {},
             "retries": {},
             "api_calls": {},
         }
-
         for metric_type in metrics:
             if operation:
                 operations = [operation]
             else:
                 operations = list(_monitoring_data[metric_type].keys())
-
             for op in operations:
                 events = _monitoring_data[metric_type][op]
                 recent_events = [
                     event for event in events if event["timestamp"] >= cutoff_time
                 ]
-
                 if metric_type == "api_calls":
                     metrics[metric_type][op] = {
                         "count": len(recent_events),
@@ -267,20 +244,17 @@ class MonitoringManager:
                         "count": len(recent_events),
                         "recent_events": recent_events[-10:],  # Last 10 events
                     }
-
         return metrics
 
     def clear_old_data(self, max_age: timedelta = timedelta(days=7)):
         """Clear old monitoring data."""
         cutoff_time = datetime.utcnow() - max_age
-
         for metric_type in _monitoring_data:
             for operation in list(_monitoring_data[metric_type].keys()):
                 events = _monitoring_data[metric_type][operation]
                 # Remove old events
                 while events and events[0]["timestamp"] < cutoff_time:
                     events.popleft()
-
                 # Remove empty operations
                 if not events:
                     del _monitoring_data[metric_type][operation]

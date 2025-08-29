@@ -1,17 +1,14 @@
 """
 Distance Filtering Service for JewGo Backend
 ===========================================
-
 This service provides efficient distance-based filtering using PostgreSQL's earthdistance extension.
 It handles radius queries, distance calculations, and location-based sorting.
-
 Features:
 - Efficient radius queries using earthdistance extension
 - Distance calculations in miles/kilometers
 - Location-based sorting and filtering
 - Integration with existing restaurant queries
 - Performance optimized with spatial indexes
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-01-27
@@ -60,27 +57,23 @@ class DistanceFilteringService:
     ) -> Tuple[str, Dict[str, Any]]:
         """
         Build a SQL query with distance filtering using earthdistance extension.
-
         Args:
             base_query: Base SELECT query without WHERE clause
             location_filter: Location filter parameters
             additional_filters: Additional filter conditions
-
         Returns:
             Tuple of (query, parameters)
         """
         # Convert miles to meters for earthdistance functions
         radius_meters = location_filter.max_distance_miles * 1609.34
-
         # Build the distance-aware query
-        query = f"""
+        query = """
         {base_query}
-        WHERE latitude IS NOT NULL 
+        WHERE latitude IS NOT NULL
           AND longitude IS NOT NULL
           AND earth_box(ll_to_earth(%(lat)s, %(lng)s), %(radius_meters)s) @> ll_to_earth(latitude, longitude)
           AND earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%(lat)s, %(lng)s)) <= %(radius_meters)s
         """
-
         # Add additional filters
         if additional_filters:
             filter_conditions = []
@@ -95,15 +88,12 @@ class DistanceFilteringService:
                             additional_filters[f"{key}_{i}"] = val
                     else:
                         filter_conditions.append(f"{key} = %({key})s")
-
             if filter_conditions:
                 query += " AND " + " AND ".join(filter_conditions)
-
         # Add distance calculation and sorting
         query += """
         ORDER BY earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%(lat)s, %(lng)s)) ASC
         """
-
         # Build parameters
         params = {
             "lat": location_filter.latitude,
@@ -111,7 +101,6 @@ class DistanceFilteringService:
             "radius_meters": radius_meters,
             **(additional_filters or {}),
         }
-
         return query, params
 
     def get_restaurants_within_radius(
@@ -125,7 +114,6 @@ class DistanceFilteringService:
     ) -> List[DistanceResult]:
         """
         Get restaurants within a specified radius with distance calculations.
-
         Args:
             latitude: User's latitude
             longitude: User's longitude
@@ -133,7 +121,6 @@ class DistanceFilteringService:
             additional_filters: Additional filter conditions
             limit: Maximum number of results
             offset: Number of results to skip
-
         Returns:
             List of DistanceResult objects with restaurant data and distances
         """
@@ -143,37 +130,31 @@ class DistanceFilteringService:
                 longitude=longitude,
                 max_distance_miles=max_distance_miles,
             )
-
             # Build base query
             base_query = """
-            SELECT 
+            SELECT
                 *,
                 earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%(lat)s, %(lng)s)) AS distance_meters
             FROM restaurants
             """
-
             # Build complete query with distance filtering
             query, params = self.build_distance_query(
                 base_query, location_filter, additional_filters
             )
-
             # Add pagination
             query += " LIMIT %(limit)s OFFSET %(offset)s"
             params.update({"limit": limit, "offset": offset})
-
             # Execute query
             with self.db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(query, params)
                     results = cursor.fetchall()
-
                     # Convert to DistanceResult objects
                     distance_results = []
                     for row in results:
                         restaurant = dict(row)
                         distance_meters = restaurant.pop("distance_meters", 0)
                         distance_miles = distance_meters / 1609.34
-
                         distance_results.append(
                             DistanceResult(
                                 restaurant=restaurant,
@@ -181,9 +162,7 @@ class DistanceFilteringService:
                                 distance_meters=distance_meters,
                             )
                         )
-
                     return distance_results
-
         except Exception as e:
             logger.error(f"Error in distance filtering: {e}")
             return []
@@ -193,11 +172,9 @@ class DistanceFilteringService:
     ) -> float:
         """
         Calculate distance between two points using Haversine formula.
-
         Args:
             lat1, lon1: First point coordinates
             lat2, lon2: Second point coordinates
-
         Returns:
             Distance in miles
         """
@@ -208,7 +185,6 @@ class DistanceFilteringService:
         lon1_rad = math.radians(lon1)
         lat2_rad = math.radians(lat2)
         lon2_rad = math.radians(lon2)
-
         # Haversine formula
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
@@ -217,16 +193,13 @@ class DistanceFilteringService:
             + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
         return self.earth_radius_miles * c
 
     def format_distance(self, distance_miles: float) -> str:
         """
         Format distance for display.
-
         Args:
             distance_miles: Distance in miles
-
         Returns:
             Formatted distance string
         """
@@ -240,11 +213,9 @@ class DistanceFilteringService:
     def validate_coordinates(self, latitude: float, longitude: float) -> bool:
         """
         Validate coordinate values.
-
         Args:
             latitude: Latitude value
             longitude: Longitude value
-
         Returns:
             True if coordinates are valid
         """
@@ -259,13 +230,11 @@ class DistanceFilteringService:
     ) -> Dict[str, Any]:
         """
         Get statistics about restaurants within radius.
-
         Args:
             latitude: User's latitude
             longitude: User's longitude
             max_distance_miles: Maximum distance in miles
             additional_filters: Additional filter conditions
-
         Returns:
             Dictionary with distance statistics
         """
@@ -275,7 +244,6 @@ class DistanceFilteringService:
                 longitude=longitude,
                 max_distance_miles=max_distance_miles,
             )
-
             # Build count query
             base_query = """
             SELECT COUNT(*) as total_count,
@@ -284,17 +252,14 @@ class DistanceFilteringService:
                    AVG(earth_distance(ll_to_earth(latitude, longitude), ll_to_earth(%(lat)s, %(lng)s))) as avg_distance
             FROM restaurants
             """
-
             query, params = self.build_distance_query(
                 base_query, location_filter, additional_filters
             )
-
             # Execute query
             with self.db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(query, params)
                     result = cursor.fetchone()
-
                     if result:
                         return {
                             "total_count": result["total_count"],
@@ -315,7 +280,6 @@ class DistanceFilteringService:
                             ),
                             "radius_miles": max_distance_miles,
                         }
-
                     return {
                         "total_count": 0,
                         "min_distance_miles": 0,
@@ -323,7 +287,6 @@ class DistanceFilteringService:
                         "avg_distance_miles": 0,
                         "radius_miles": max_distance_miles,
                     }
-
         except Exception as e:
             logger.error(f"Error getting distance stats: {e}")
             return {

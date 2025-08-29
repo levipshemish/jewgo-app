@@ -4,11 +4,9 @@ from .review_repository import ReviewRepository
 from .user_repository import UserRepository
 
 """Database repositories package.
-
 This package contains repository classes that handle database operations
 for specific entities, following the repository pattern.
 """
-
 __all__ = [
     "RestaurantRepository",
     "ReviewRepository",

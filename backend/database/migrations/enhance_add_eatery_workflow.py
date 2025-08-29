@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Enhance Add Eatery Workflow.
 ========================================
 Adds new fields to the restaurants table for enhanced add eatery form functionality.
-
 New Fields:
 - Owner management fields
 - Additional business contact fields
@@ -10,16 +9,13 @@ New Fields:
 - Multiple image support
 - Enhanced status tracking
 """
-
 import os
 import sys
-
 from sqlalchemy import (
     create_engine,
     text,
 )
 from sqlalchemy.exc import SQLAlchemyError
-
 import logging
 
 # Configure logging
@@ -32,24 +28,19 @@ logger = logging.getLogger(__name__)
 def run_migration() -> bool | None:
     """Run the migration to enhance the restaurants table for add eatery workflow."""
     database_url = os.environ.get("DATABASE_URL")
-
     if not database_url:
         logger.error("DATABASE_URL environment variable is required")
         return False
-
     try:
         # Create engine
         engine = create_engine(database_url)
-
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-
             try:
                 logger.info(
                     "Starting restaurants table enhancement for add eatery workflow"
                 )
-
                 # 1. Add new fields for enhanced add eatery workflow
                 new_columns = [
                     # Owner management fields
@@ -83,13 +74,12 @@ def run_migration() -> bool | None:
                     ("preferred_contact_time", "TEXT"),  # morning, afternoon, evening
                     ("contact_notes", "TEXT"),
                 ]
-
                 for column_name, column_type in new_columns:
                     try:
                         # Check if column exists
                         result = conn.execute(
                             text(
-                                f"""
+                                """
                             SELECT column_name
                             FROM information_schema.columns
                             WHERE table_name = 'restaurants'
@@ -97,7 +87,6 @@ def run_migration() -> bool | None:
                         """,
                             ),
                         )
-
                         if not result.fetchone():
                             logger.info(
                                 f"Adding column {column_name} to restaurants table"
@@ -110,11 +99,9 @@ def run_migration() -> bool | None:
                             logger.info(f"Successfully added column {column_name}")
                         else:
                             logger.info(f"Column {column_name} already exists")
-
                     except SQLAlchemyError as e:
                         logger.error(f"Error adding column {column_name}: {str(e)}")
                         raise e
-
                 # 2. Add indexes for performance optimization
                 new_indexes = [
                     ("idx_restaurants_submission_status", "submission_status"),
@@ -123,13 +110,12 @@ def run_migration() -> bool | None:
                     ("idx_restaurants_owner_email", "owner_email"),
                     ("idx_restaurants_business_email", "business_email"),
                 ]
-
                 for index_name, column_name in new_indexes:
                     try:
                         # Check if index exists
                         result = conn.execute(
                             text(
-                                f"""
+                                """
                             SELECT indexname
                             FROM pg_indexes
                             WHERE tablename = 'restaurants'
@@ -137,7 +123,6 @@ def run_migration() -> bool | None:
                         """,
                             ),
                         )
-
                         if not result.fetchone():
                             logger.info(f"Creating index {index_name}")
                             conn.execute(
@@ -148,21 +133,18 @@ def run_migration() -> bool | None:
                             logger.info(f"Successfully created index {index_name}")
                         else:
                             logger.info(f"Index {index_name} already exists")
-
                     except SQLAlchemyError as e:
                         logger.error(f"Error creating index {index_name}: {str(e)}")
                         # Don't fail the migration for index creation errors
                         logger.warning(f"Skipping index {index_name} due to error")
-
                 # 3. Update existing records to set default values
                 logger.info("Updating existing records with default values")
-
                 # Set submission_status for existing records
                 conn.execute(
                     text(
                         """
-                    UPDATE restaurants 
-                    SET submission_status = 'approved', 
+                    UPDATE restaurants
+                    SET submission_status = 'approved',
                         submission_date = created_at,
                         approval_date = created_at,
                         approved_by = 'system'
@@ -170,28 +152,25 @@ def run_migration() -> bool | None:
                 """
                     )
                 )
-
                 # Set is_owner_submission to false for existing records
                 conn.execute(
                     text(
                         """
-                    UPDATE restaurants 
+                    UPDATE restaurants
                     SET is_owner_submission = FALSE
                     WHERE is_owner_submission IS NULL
                 """
                     )
                 )
-
                 # 4. Add constraints for data integrity
                 logger.info("Adding constraints for data integrity")
-
                 # Add check constraint for submission_status
                 try:
                     conn.execute(
                         text(
                             """
-                        ALTER TABLE restaurants 
-                        ADD CONSTRAINT check_submission_status 
+                        ALTER TABLE restaurants
+                        ADD CONSTRAINT check_submission_status
                         CHECK (submission_status IN ('pending_approval', 'approved', 'rejected', 'draft'))
                     """
                         )
@@ -199,14 +178,13 @@ def run_migration() -> bool | None:
                     logger.info("Added submission_status check constraint")
                 except SQLAlchemyError as e:
                     logger.warning(f"Could not add submission_status constraint: {e}")
-
                 # Add check constraint for preferred_contact_method
                 try:
                     conn.execute(
                         text(
                             """
-                        ALTER TABLE restaurants 
-                        ADD CONSTRAINT check_preferred_contact_method 
+                        ALTER TABLE restaurants
+                        ADD CONSTRAINT check_preferred_contact_method
                         CHECK (preferred_contact_method IN ('email', 'phone', 'text', 'any'))
                     """
                         )
@@ -216,7 +194,6 @@ def run_migration() -> bool | None:
                     logger.warning(
                         f"Could not add preferred_contact_method constraint: {e}"
                     )
-
                 # 5. Create a view for pending submissions (for admin dashboard)
                 logger.info("Creating view for pending submissions")
                 try:
@@ -224,7 +201,7 @@ def run_migration() -> bool | None:
                         text(
                             """
                         CREATE OR REPLACE VIEW pending_restaurant_submissions AS
-                        SELECT 
+                        SELECT
                             id,
                             name,
                             address,
@@ -242,7 +219,7 @@ def run_migration() -> bool | None:
                             tiktok_link,
                             business_images,
                             created_at
-                        FROM restaurants 
+                        FROM restaurants
                         WHERE submission_status = 'pending_approval'
                         ORDER BY submission_date DESC
                     """
@@ -251,14 +228,11 @@ def run_migration() -> bool | None:
                     logger.info("Created pending_restaurant_submissions view")
                 except SQLAlchemyError as e:
                     logger.warning(f"Could not create pending submissions view: {e}")
-
                 # Commit the transaction
                 trans.commit()
                 logger.info("✅ Successfully completed restaurants table enhancement")
-
                 # 6. Verify the changes
                 logger.info("Verifying migration results")
-
                 # Check column count
                 result = conn.execute(
                     text(
@@ -271,13 +245,12 @@ def run_migration() -> bool | None:
                 )
                 column_count = result.fetchone()[0]
                 logger.info(f"Total columns in restaurants table: {column_count}")
-
                 # Check new columns exist
                 new_column_names = [col[0] for col in new_columns]
                 for column_name in new_column_names:
                     result = conn.execute(
                         text(
-                            f"""
+                            """
                         SELECT column_name, data_type, is_nullable
                         FROM information_schema.columns
                         WHERE table_name = 'restaurants'
@@ -294,15 +267,12 @@ def run_migration() -> bool | None:
                         logger.warning(
                             f"Column {column_name} not found after migration"
                         )
-
                 return True
-
             except Exception as e:
                 # Rollback the transaction
                 trans.rollback()
                 logger.exception("Error during migration, rolling back")
                 raise e
-
     except SQLAlchemyError as e:
         logger.exception("Database error during migration")
         return False
@@ -319,17 +289,13 @@ def rollback_migration() -> bool | None:
         if not database_url:
             logger.error("DATABASE_URL environment variable is required")
             return False
-
         # Create engine
         engine = create_engine(database_url)
-
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-
             try:
                 logger.info("Starting rollback of add eatery workflow enhancement")
-
                 # Columns to remove (in reverse order of dependencies)
                 columns_to_remove = [
                     "contact_notes",
@@ -357,13 +323,12 @@ def rollback_migration() -> bool | None:
                     "owner_email",
                     "owner_name",
                 ]
-
                 for column_name in columns_to_remove:
                     try:
                         # Check if column exists
                         result = conn.execute(
                             text(
-                                f"""
+                                """
                             SELECT column_name
                             FROM information_schema.columns
                             WHERE table_name = 'restaurants'
@@ -371,7 +336,6 @@ def rollback_migration() -> bool | None:
                         """,
                             ),
                         )
-
                         if result.fetchone():
                             logger.info(f"Removing column {column_name}")
                             conn.execute(
@@ -384,14 +348,12 @@ def rollback_migration() -> bool | None:
                             logger.info(
                                 f"Column {column_name} does not exist, skipping"
                             )
-
                     except SQLAlchemyError as e:
                         logger.error(
                             f"Error removing column {column_name}",
                             error=str(e),
                         )
                         # Continue with other columns even if one fails
-
                 # Remove indexes
                 indexes_to_remove = [
                     "idx_restaurants_submission_status",
@@ -400,13 +362,12 @@ def rollback_migration() -> bool | None:
                     "idx_restaurants_owner_email",
                     "idx_restaurants_business_email",
                 ]
-
                 for index_name in indexes_to_remove:
                     try:
                         # Check if index exists
                         result = conn.execute(
                             text(
-                                f"""
+                                """
                             SELECT indexname
                             FROM pg_indexes
                             WHERE tablename = 'restaurants'
@@ -414,24 +375,20 @@ def rollback_migration() -> bool | None:
                         """,
                             ),
                         )
-
                         if result.fetchone():
                             logger.info(f"Removing index {index_name}")
                             conn.execute(text(f"DROP INDEX {index_name}"))
                             logger.info(f"Successfully removed index {index_name}")
                         else:
                             logger.info(f"Index {index_name} does not exist, skipping")
-
                     except SQLAlchemyError as e:
                         logger.error(f"Error removing index {index_name}: {str(e)}")
                         # Continue with other indexes even if one fails
-
                 # Remove constraints
                 constraints_to_remove = [
                     "check_submission_status",
                     "check_preferred_contact_method",
                 ]
-
                 for constraint_name in constraints_to_remove:
                     try:
                         logger.info(f"Removing constraint {constraint_name}")
@@ -447,7 +404,6 @@ def rollback_migration() -> bool | None:
                         logger.warning(
                             f"Could not remove constraint {constraint_name}: {e}"
                         )
-
                 # Remove view
                 try:
                     logger.info("Removing pending_restaurant_submissions view")
@@ -459,19 +415,15 @@ def rollback_migration() -> bool | None:
                     )
                 except SQLAlchemyError as e:
                     logger.warning(f"Could not remove view: {e}")
-
                 # Commit the rollback
                 trans.commit()
                 logger.info("✅ Successfully completed rollback")
-
                 return True
-
             except Exception as e:
                 # Rollback the transaction
                 trans.rollback()
                 logger.exception("Error during rollback, rolling back")
                 raise e
-
     except SQLAlchemyError as e:
         logger.exception("Database error during rollback")
         return False
@@ -491,16 +443,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Rollback the migration instead of running it",
     )
-
     args = parser.parse_args()
-
     if args.rollback:
         logger.info("Running rollback...")
         success = rollback_migration()
     else:
         logger.info("Running migration...")
         success = run_migration()
-
     if success:
         logger.info("✅ Migration completed successfully")
         sys.exit(0)

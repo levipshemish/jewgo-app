@@ -1,12 +1,11 @@
 import sqlalchemy as sa
 from alembic import op
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Feedback Table.
 ========================================
 Creates the feedback table for storing user feedback submissions.
 """
-
 # revision identifiers, used by Alembic.
 revision = "create_feedback_table"
 down_revision = "add_specials_limit_constraint"
@@ -73,7 +72,6 @@ def upgrade() -> None:
         sa.Index("idx_feedback_created_at", "created_at"),
         sa.Index("idx_feedback_contact_email", "contact_email"),
     )
-
     # Add comments
     op.execute(
         "COMMENT ON TABLE feedback IS 'User feedback submissions for restaurants and general app feedback'",

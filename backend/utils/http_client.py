@@ -1,6 +1,5 @@
 """
 Shared HTTP client utility with default timeouts and retry logic.
-
 This module provides a standardized way to make HTTP requests with proper
 timeouts, retries, and error handling across the application.
 """
@@ -9,7 +8,6 @@ import logging
 import time
 from typing import Any, Dict, Optional, Union
 from urllib3.util.retry import Retry
-
 import requests
 from requests.adapters import HTTPAdapter
 from requests.exceptions import (
@@ -22,7 +20,6 @@ from requests.exceptions import (
 from .monitoring_v2 import record_timeout, record_error, record_api_call
 
 logger = logging.getLogger(__name__)
-
 # Default timeout configuration
 DEFAULT_TIMEOUT = (3.05, 10)  # (connect_timeout, read_timeout)
 DEFAULT_RETRY_STRATEGY = Retry(
@@ -44,7 +41,6 @@ class HTTPClient:
     ):
         """
         Initialize HTTP client.
-
         Args:
             timeout: Tuple of (connect_timeout, read_timeout) in seconds
             retry_strategy: urllib3 Retry strategy
@@ -52,7 +48,6 @@ class HTTPClient:
         """
         self.timeout = timeout
         self.session = session or requests.Session()
-
         if retry_strategy:
             adapter = HTTPAdapter(max_retries=retry_strategy)
             self.session.mount("http://", adapter)
@@ -69,7 +64,6 @@ class HTTPClient:
     ) -> requests.Response:
         """
         Make a GET request with standardized error handling and monitoring.
-
         Args:
             url: Request URL
             params: Query parameters
@@ -77,30 +71,24 @@ class HTTPClient:
             timeout: Override default timeout
             operation_name: Name for monitoring (defaults to URL)
             **kwargs: Additional arguments for requests.get
-
         Returns:
             requests.Response object
-
         Raises:
             RequestException: For network or HTTP errors
         """
         timeout = timeout or self.timeout
         operation = operation_name or url
         start_time = time.time()
-
         try:
             logger.debug(f"Making GET request to {url}")
             response = self.session.get(
                 url, params=params, headers=headers, timeout=timeout, **kwargs
             )
             response.raise_for_status()
-
             # Record successful API call
             duration = time.time() - start_time
             record_api_call(operation, duration, response.status_code, {"url": url})
-
             return response
-
         except Timeout as e:
             duration = time.time() - start_time
             record_timeout(operation, duration, {"url": url, "timeout": timeout})
@@ -143,7 +131,6 @@ class HTTPClient:
     ) -> requests.Response:
         """
         Make a POST request with standardized error handling.
-
         Args:
             url: Request URL
             data: Form data
@@ -151,15 +138,12 @@ class HTTPClient:
             headers: Request headers
             timeout: Override default timeout
             **kwargs: Additional arguments for requests.post
-
         Returns:
             requests.Response object
-
         Raises:
             RequestException: For network or HTTP errors
         """
         timeout = timeout or self.timeout
-
         try:
             logger.debug(f"Making POST request to {url}")
             response = self.session.post(
@@ -167,7 +151,6 @@ class HTTPClient:
             )
             response.raise_for_status()
             return response
-
         except Timeout as e:
             logger.error(f"Timeout error for POST {url}: {e}")
             raise RequestException(f"Request timeout: {e}")

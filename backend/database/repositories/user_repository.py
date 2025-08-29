@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
 from sqlalchemy import and_, or_
 from utils.logging_config import get_logger
-
 from ..base_repository import BaseRepository
 from ..connection_manager import DatabaseConnectionManager
 from ..models import Account
@@ -11,10 +9,8 @@ from ..models import Session as UserSession
 from ..models import User
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """User repository for database operations.
-
 This module handles all user-related database operations,
 separating data access logic from business logic.
 """
@@ -38,7 +34,6 @@ class UserRepository(BaseRepository[User]):
         try:
             session = self.connection_manager.get_session()
             query = session.query(User)
-
             # Apply filters
             if filters:
                 if filters.get("search"):
@@ -48,22 +43,20 @@ class UserRepository(BaseRepository[User]):
                     )
                 if filters.get("role"):
                     if filters["role"] == "admin":
-                        query = query.filter(User.isSuperAdmin == True)
+                        query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdmin == False)
+                        query = query.filter(User.isSuperAdminot n)
                 if filters.get("email_verified"):
                     if filters["email_verified"]:
                         query = query.filter(User.emailVerified.isnot(None))
                     else:
                         query = query.filter(User.emailVerified.is_(None))
-
             # Apply pagination and ordering
             users = (
                 query.order_by(User.createdAt.desc()).offset(offset).limit(limit).all()
             )
             session.close()
             return users
-
         except Exception as e:
             self.logger.exception("Error getting users", error=str(e))
             return []
@@ -73,7 +66,6 @@ class UserRepository(BaseRepository[User]):
         try:
             session = self.connection_manager.get_session()
             query = session.query(User)
-
             # Apply filters
             if filters:
                 if filters.get("search"):
@@ -83,19 +75,17 @@ class UserRepository(BaseRepository[User]):
                     )
                 if filters.get("role"):
                     if filters["role"] == "admin":
-                        query = query.filter(User.isSuperAdmin == True)
+                        query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdmin == False)
+                        query = query.filter(User.isSuperAdminot n)
                 if filters.get("email_verified"):
                     if filters["email_verified"]:
                         query = query.filter(User.emailVerified.isnot(None))
                     else:
                         query = query.filter(User.emailVerified.is_(None))
-
             count = query.count()
             session.close()
             return count
-
         except Exception as e:
             self.logger.exception("Error getting users count", error=str(e))
             return 0
@@ -107,7 +97,6 @@ class UserRepository(BaseRepository[User]):
             user = session.query(User).filter(User.email == email).first()
             session.close()
             return user
-
         except Exception as e:
             self.logger.exception("Error getting user by email", error=str(e))
             return None
@@ -118,13 +107,12 @@ class UserRepository(BaseRepository[User]):
             session = self.connection_manager.get_session()
             admins = (
                 session.query(User)
-                .filter(User.isSuperAdmin == True)
+                .filter(User.isSuperAdmin)
                 .order_by(User.createdAt.desc())
                 .all()
             )
             session.close()
             return admins
-
         except Exception as e:
             self.logger.exception("Error getting admin users", error=str(e))
             return []
@@ -133,10 +121,9 @@ class UserRepository(BaseRepository[User]):
         """Get count of admin users."""
         try:
             session = self.connection_manager.get_session()
-            count = session.query(User).filter(User.isSuperAdmin == True).count()
+            count = session.query(User).filter(User.isSuperAdmin).count()
             session.close()
             return count
-
         except Exception as e:
             self.logger.exception("Error getting admin count", error=str(e))
             return 0
@@ -148,14 +135,12 @@ class UserRepository(BaseRepository[User]):
                 "isSuperAdmin": is_super_admin,
                 "updatedAt": datetime.utcnow(),
             }
-
             success = self.update(user_id, update_data)
             if success:
                 self.logger.info(
                     "Updated user role", user_id=user_id, is_super_admin=is_super_admin
                 )
             return success
-
         except Exception as e:
             self.logger.exception("Error updating user role", error=str(e))
             return False
@@ -167,12 +152,10 @@ class UserRepository(BaseRepository[User]):
             if self._is_last_admin(user_id):
                 self.logger.warning("Cannot delete last super admin", user_id=user_id)
                 return False
-
             success = super().delete(user_id)
             if success:
                 self.logger.info("Deleted user", user_id=user_id)
             return success
-
         except Exception as e:
             self.logger.exception("Error deleting user", error=str(e))
             return False
@@ -182,16 +165,12 @@ class UserRepository(BaseRepository[User]):
         try:
             session = self.connection_manager.get_session()
             user = session.query(User).filter(User.id == user_id).first()
-
             if not user or not user.isSuperAdmin:
                 session.close()
                 return False
-
-            admin_count = session.query(User).filter(User.isSuperAdmin == True).count()
+            admin_count = session.query(User).filter(User.isSuperAdmin).count()
             session.close()
-
             return admin_count <= 1
-
         except Exception as e:
             self.logger.exception("Error checking if last admin", error=str(e))
             return False
@@ -200,26 +179,20 @@ class UserRepository(BaseRepository[User]):
         """Get user statistics."""
         try:
             session = self.connection_manager.get_session()
-
             # Total users
             total_users = session.query(User).count()
-
             # Admin users
-            admin_count = session.query(User).filter(User.isSuperAdmin == True).count()
-
+            admin_count = session.query(User).filter(User.isSuperAdmin).count()
             # Users with verified email
             verified_count = (
                 session.query(User).filter(User.emailVerified.isnot(None)).count()
             )
-
             # Users by creation date (last 30 days)
             thirty_days_ago = datetime.utcnow() - datetime.timedelta(days=30)
             recent_users = (
                 session.query(User).filter(User.createdAt >= thirty_days_ago).count()
             )
-
             session.close()
-
             return {
                 "total_users": total_users,
                 "admin_users": admin_count,
@@ -228,7 +201,6 @@ class UserRepository(BaseRepository[User]):
                 "unverified_users": total_users - verified_count,
                 "recent_users_30_days": recent_users,
             }
-
         except Exception as e:
             self.logger.exception("Error getting user statistics", error=str(e))
             return {}
@@ -248,7 +220,6 @@ class UserRepository(BaseRepository[User]):
                 .order_by(UserSession.expires.desc())
                 .all()
             )
-
             result = []
             for user_session in user_sessions:
                 session_dict = {
@@ -262,10 +233,8 @@ class UserRepository(BaseRepository[User]):
                     ),
                 }
                 result.append(session_dict)
-
             session.close()
             return result
-
         except Exception as e:
             self.logger.exception("Error getting user sessions", error=str(e))
             return []
@@ -280,7 +249,6 @@ class UserRepository(BaseRepository[User]):
                 .order_by(Account.provider)
                 .all()
             )
-
             result = []
             for account in accounts:
                 account_dict = {
@@ -294,10 +262,8 @@ class UserRepository(BaseRepository[User]):
                     "scope": account.scope,
                 }
                 result.append(account_dict)
-
             session.close()
             return result
-
         except Exception as e:
             self.logger.exception("Error getting user accounts", error=str(e))
             return []
@@ -313,12 +279,10 @@ class UserRepository(BaseRepository[User]):
             )
             session.commit()
             session.close()
-
             self.logger.info(
                 "Deleted user sessions", user_id=user_id, count=deleted_count
             )
             return True
-
         except Exception as e:
             self.logger.exception("Error deleting user sessions", error=str(e))
             return False
@@ -332,12 +296,10 @@ class UserRepository(BaseRepository[User]):
             )
             session.commit()
             session.close()
-
             self.logger.info(
                 "Deleted user accounts", user_id=user_id, count=deleted_count
             )
             return True
-
         except Exception as e:
             self.logger.exception("Error deleting user accounts", error=str(e))
             return False

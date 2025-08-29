@@ -2,18 +2,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Abstract Base Search Interface.
 ==============================
-
 This module defines the abstract base class for all search providers in the JewGo app.
 All search implementations must inherit from this base class and implement the required methods.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -54,7 +50,6 @@ class BaseSearchProvider(ABC):
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
         """Initialize the search provider.
-
         Args:
             name: Name of the search provider
             config: Configuration dictionary
@@ -73,17 +68,14 @@ class BaseSearchProvider(ABC):
         **kwargs,
     ) -> List[SearchResult]:
         """Execute search and return results.
-
         Args:
             query: Search query string
             filters: Optional search filters
             limit: Maximum number of results to return
             offset: Number of results to skip
             **kwargs: Additional search parameters
-
         Returns:
             List of search results
-
         Raises:
             SearchError: If search fails
         """
@@ -91,11 +83,9 @@ class BaseSearchProvider(ABC):
     @abstractmethod
     async def get_suggestions(self, query: str, limit: int = 10) -> List[str]:
         """Get search suggestions for autocomplete.
-
         Args:
             query: Partial query string
             limit: Maximum number of suggestions
-
         Returns:
             List of suggestion strings
         """
@@ -103,7 +93,6 @@ class BaseSearchProvider(ABC):
     @abstractmethod
     def get_search_type(self) -> str:
         """Return the type of search this provider implements.
-
         Returns:
             Search type string (e.g., 'postgresql', 'fuzzy')
         """
@@ -111,17 +100,14 @@ class BaseSearchProvider(ABC):
     @abstractmethod
     async def is_healthy(self) -> bool:
         """Check if the search provider is healthy and available.
-
         Returns:
             True if healthy, False otherwise
         """
 
     async def preprocess_query(self, query: str) -> str:
         """Preprocess the search query.
-
         Args:
             query: Raw query string
-
         Returns:
             Preprocessed query string
         """
@@ -132,11 +118,9 @@ class BaseSearchProvider(ABC):
         self, base_query: Any, filters: Optional[SearchFilters] = None
     ) -> Any:
         """Apply search filters to the base query.
-
         Args:
             base_query: Base query object
             filters: Search filters to apply
-
         Returns:
             Filtered query object
         """
@@ -145,7 +129,6 @@ class BaseSearchProvider(ABC):
 
     async def get_search_stats(self) -> Dict[str, Any]:
         """Get search provider statistics.
-
         Returns:
             Dictionary containing search statistics
         """

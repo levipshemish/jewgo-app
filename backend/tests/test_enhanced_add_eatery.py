@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Test script for Enhanced Add Eatery Workflow components."""
-
 import os
 import sys
 
@@ -21,9 +20,9 @@ def test_database_connection():
             result = conn.execute(
                 text(
                     """
-                SELECT column_name, data_type 
-                FROM information_schema.columns 
-                WHERE table_name = 'restaurants' 
+                SELECT column_name, data_type
+                FROM information_schema.columns
+                WHERE table_name = 'restaurants'
                 AND column_name IN (
                     'owner_name', 'owner_email', 'owner_phone', 'is_owner_submission',
                     'business_email', 'instagram_link', 'facebook_link', 'tiktok_link',
@@ -34,32 +33,27 @@ def test_database_connection():
             """
                 )
             )
-
             new_fields = result.fetchall()
             print(f"✅ Found {len(new_fields)} new fields in restaurants table:")
             for field in new_fields:
                 print(f"   - {field[0]}: {field[1]}")
-
             # Check if indexes exist
             result = conn.execute(
                 text(
                     """
-                SELECT indexname 
-                FROM pg_indexes 
-                WHERE tablename = 'restaurants' 
+                SELECT indexname
+                FROM pg_indexes
+                WHERE tablename = 'restaurants'
                 AND indexname LIKE 'idx_restaurants_%'
                 ORDER BY indexname
             """
                 )
             )
-
             indexes = result.fetchall()
             print(f"✅ Found {len(indexes)} new indexes:")
             for index in indexes:
                 print(f"   - {index[0]}")
-
             return True
-
     except Exception as e:
         print(f"❌ Database connection test failed: {e}")
         return False
@@ -73,17 +67,14 @@ def test_backend_api():
         from routes.api_v4 import app
 
         print("✅ Backend API imported successfully")
-
         # Test if the app has the expected routes
         routes = []
         for rule in app.url_map.iter_rules():
             routes.append(rule.rule)
-
         expected_routes = [
             "/api/v4/restaurants/<int:restaurant_id>/approve",
             "/api/v4/restaurants/<int:restaurant_id>/reject",
         ]
-
         found_routes = []
         for route in expected_routes:
             if route in routes:
@@ -91,9 +82,7 @@ def test_backend_api():
                 print(f"✅ Found route: {route}")
             else:
                 print(f"❌ Missing route: {route}")
-
         return len(found_routes) == len(expected_routes)
-
     except Exception as e:
         print(f"❌ Backend API test failed: {e}")
         return False
@@ -111,7 +100,6 @@ def test_validation_schema():
         else:
             print("❌ Validation schema file not found")
             return False
-
     except Exception as e:
         print(f"❌ Validation schema test failed: {e}")
         return False
@@ -125,16 +113,13 @@ def test_frontend_components():
             "../frontend/components/forms/MultipleImageUpload.tsx",
             "../frontend/app/admin/restaurants/page.tsx",
         ]
-
         for component in components:
             if os.path.exists(component):
                 print(f"✅ Component exists: {os.path.basename(component)}")
             else:
                 print(f"❌ Component missing: {os.path.basename(component)}")
                 return False
-
         return True
-
     except Exception as e:
         print(f"❌ Frontend components test failed: {e}")
         return False
@@ -144,14 +129,12 @@ def main():
     """Run all tests."""
     print("🧪 Testing Enhanced Add Eatery Workflow Components")
     print("=" * 50)
-
     tests = [
         ("Database Connection", test_database_connection),
         ("Backend API", test_backend_api),
         ("Validation Schema", test_validation_schema),
         ("Frontend Components", test_frontend_components),
     ]
-
     results = []
     for test_name, test_func in tests:
         print(f"\n🔍 Running {test_name} test...")
@@ -161,22 +144,17 @@ def main():
         except Exception as e:
             print(f"❌ {test_name} test failed with exception: {e}")
             results.append((test_name, False))
-
     print("\n" + "=" * 50)
     print("📊 Test Results Summary:")
     print("=" * 50)
-
     passed = 0
     total = len(results)
-
     for test_name, result in results:
         status = "✅ PASS" if result else "❌ FAIL"
         print(f"{status} {test_name}")
         if result:
             passed += 1
-
     print(f"\n🎯 Overall: {passed}/{total} tests passed")
-
     if passed == total:
         print(
             "🎉 All tests passed! Enhanced Add Eatery Workflow is ready for deployment."

@@ -7,13 +7,10 @@ try:
 except ImportError:
     CacheManagerV4 = None
     CACHE_AVAILABLE = False
-
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
 from sqlalchemy.orm import Session
-
 from .core.base_search import SearchError
 from .core.search_config import SearchConfig, get_search_config
 from .core.search_types import (
@@ -25,20 +22,16 @@ from .core.search_types import (
 from .providers.postgresql_search import PostgreSQLSearchProvider
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Unified Search Service for JewGo App.
 ====================================
-
 This module provides a unified interface for all search capabilities in the JewGo app.
-
 Features:
 - Single entry point for all search operations
 - Provider management and health monitoring
 - Search analytics and metrics
 - Caching and performance optimization
 - Error handling and fallback mechanisms
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -50,18 +43,15 @@ class SearchService:
 
     def __init__(self, db_session: Session, config: Optional[SearchConfig] = None):
         """Initialize the search service.
-
         Args:
             db_session: Database session
             config: Search configuration
         """
         self.db_session = db_session
         self.config = config or get_search_config()
-
         # Initialize providers
         self.providers = {}
         self._initialize_providers()
-
         # Initialize cache manager
         if CACHE_AVAILABLE:
             self.cache_manager = CacheManagerV4(
@@ -75,7 +65,6 @@ class SearchService:
         else:
             self.cache_manager = None
             logger.warning("Cache manager not available, caching disabled")
-
         # Search statistics
         self.stats = {
             "total_searches": 0,
@@ -85,7 +74,6 @@ class SearchService:
             "search_type_distribution": {},
             "last_updated": datetime.utcnow(),
         }
-
         logger.info(
             "Search service initialized",
             providers=list(self.providers.keys()),
@@ -100,10 +88,8 @@ class SearchService:
                 self.providers["postgresql"] = PostgreSQLSearchProvider(
                     self.db_session, config=self.config.postgresql.__dict__
                 )
-
             # Only PostgreSQL provider is available
             # Vector, semantic, and hybrid providers have been removed
-
         except Exception as e:
             logger.error("Failed to initialize search providers", error=str(e))
             raise
@@ -118,7 +104,6 @@ class SearchService:
         **kwargs,
     ) -> SearchResponse:
         """Execute search using the specified or default provider.
-
         Args:
             query: Search query string
             search_type: Type of search to use (postgresql)
@@ -126,20 +111,16 @@ class SearchService:
             limit: Maximum number of results to return
             offset: Number of results to skip
             **kwargs: Additional search parameters
-
         Returns:
             SearchResponse with results and metadata
-
         Raises:
             SearchError: If search fails
         """
         start_time = time.time()
-
         try:
             # Determine search type
             if not search_type:
                 search_type = self.config.default_search_type
-
             # Generate cache key and try to get from cache first
             if self.cache_manager:
                 cache_key = self._generate_search_cache_key(
@@ -160,29 +141,23 @@ class SearchService:
                     # Update statistics for cache hit
                     self._update_stats(search_type, 0, True, cache_hit=True)
                     return cached_result
-
             # Get provider
             provider = self.providers.get(search_type)
             if not provider:
                 raise SearchError(
                     f"Search provider '{search_type}' not available", search_type, query
                 )
-
             # Check provider health
             if not await provider.is_healthy():
                 raise SearchError(
                     f"Search provider '{search_type}' is unhealthy", search_type, query
                 )
-
             # Execute search
             results = await provider.search(query, filters, limit, offset, **kwargs)
-
             # Calculate execution time
             execution_time_ms = int((time.time() - start_time) * 1000)
-
             # Get suggestions
             suggestions = await provider.get_suggestions(query, limit=10)
-
             # Create search metadata (this is a fresh search, not from cache)
             search_metadata = SearchMetadata(
                 query=query,
@@ -193,7 +168,6 @@ class SearchService:
                 cache_hit=False,  # This is a fresh search result
                 timestamp=datetime.utcnow(),
             )
-
             # Create response
             response = SearchResponse(
                 results=results,
@@ -202,14 +176,11 @@ class SearchService:
                 suggestions=suggestions,
                 filters_applied=filters or SearchFilters(),
             )
-
             # Cache the result
             if self.cache_manager:
                 self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
-
             # Update statistics
             self._update_stats(search_type, execution_time_ms, True)
-
             logger.info(
                 "Search completed successfully",
                 query=query,
@@ -217,13 +188,10 @@ class SearchService:
                 results_count=len(results),
                 execution_time_ms=execution_time_ms,
             )
-
             return response
-
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             self._update_stats(search_type or "unknown", execution_time_ms, False)
-
             logger.error(
                 "Search failed",
                 query=query,
@@ -231,19 +199,16 @@ class SearchService:
                 error=str(e),
                 execution_time_ms=execution_time_ms,
             )
-
             raise
 
     async def get_suggestions(
         self, query: str, search_type: Optional[str] = None, limit: int = 10
     ) -> List[str]:
         """Get search suggestions.
-
         Args:
             query: Partial query string
             search_type: Type of search to use
             limit: Maximum number of suggestions
-
         Returns:
             List of suggestion strings
         """
@@ -251,28 +216,23 @@ class SearchService:
             # Determine search type
             if not search_type:
                 search_type = self.config.default_search_type
-
             # Get provider
             provider = self.providers.get(search_type)
             if not provider:
                 return []
-
             # Get suggestions
             suggestions = await provider.get_suggestions(query, limit)
             return suggestions
-
         except Exception as e:
             logger.error("Failed to get suggestions", error=str(e), query=query)
             return []
 
     async def get_available_providers(self) -> Dict[str, Dict[str, Any]]:
         """Get information about available search providers.
-
         Returns:
             Dictionary of provider information
         """
         provider_info = {}
-
         for provider_name, provider in self.providers.items():
             try:
                 is_healthy = await provider.is_healthy()
@@ -292,12 +252,10 @@ class SearchService:
                     "healthy": False,
                     "error": str(e),
                 }
-
         return provider_info
 
     async def get_search_stats(self) -> Dict[str, Any]:
         """Get search service statistics.
-
         Returns:
             Dictionary of search statistics
         """
@@ -309,7 +267,6 @@ class SearchService:
 
     async def health_check(self) -> Dict[str, Any]:
         """Perform health check on all providers.
-
         Returns:
             Dictionary with health status
         """
@@ -318,9 +275,7 @@ class SearchService:
             "providers": {},
             "timestamp": datetime.utcnow(),
         }
-
         all_healthy = True
-
         for provider_name, provider in self.providers.items():
             try:
                 is_healthy = await provider.is_healthy()
@@ -328,10 +283,8 @@ class SearchService:
                     "healthy": is_healthy,
                     "type": provider.get_search_type(),
                 }
-
                 if not is_healthy:
                     all_healthy = False
-
             except Exception as e:
                 health_status["providers"][provider_name] = {
                     "healthy": False,
@@ -339,9 +292,7 @@ class SearchService:
                     "type": "unknown",
                 }
                 all_healthy = False
-
         health_status["overall_status"] = "healthy" if all_healthy else "unhealthy"
-
         return health_status
 
     def _update_stats(
@@ -353,12 +304,10 @@ class SearchService:
     ):
         """Update search statistics."""
         self.stats["total_searches"] += 1
-
         if success:
             self.stats["successful_searches"] += 1
         else:
             self.stats["failed_searches"] += 1
-
         # Update average response time (only for non-cache hits)
         if not cache_hit:
             current_avg = self.stats["average_response_time_ms"]
@@ -366,12 +315,10 @@ class SearchService:
             self.stats["average_response_time_ms"] = (
                 current_avg * (total_searches - 1) + execution_time_ms
             ) / total_searches
-
         # Update search type distribution
         self.stats["search_type_distribution"][search_type] = (
             self.stats["search_type_distribution"].get(search_type, 0) + 1
         )
-
         self.stats["last_updated"] = datetime.utcnow()
 
     def _generate_search_cache_key(
@@ -384,7 +331,6 @@ class SearchService:
         **kwargs,
     ) -> str:
         """Generate a unique cache key for search results.
-
         Args:
             query: Search query
             search_type: Type of search
@@ -392,7 +338,6 @@ class SearchService:
             limit: Result limit
             offset: Result offset
             **kwargs: Additional parameters
-
         Returns:
             Unique cache key string
         """
@@ -408,11 +353,9 @@ class SearchService:
             "offset": offset,
             **kwargs,
         }
-
         # Convert to JSON string and hash
         key_string = json.dumps(key_data, sort_keys=True)
         key_hash = hashlib.md5(key_string.encode()).hexdigest()
-
         return f"search:{key_hash}"
 
     # Embedding generation methods removed - vector search is no longer supported

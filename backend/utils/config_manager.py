@@ -1,6 +1,5 @@
 """
 Configuration manager for the application.
-
 This module provides centralized configuration management to replace
 hardcoded values throughout the application.
 """
@@ -16,7 +15,6 @@ def _load_config_env():
     """Load environment variables from root .env file if it exists."""
     # Look for .env file in the project root (2 levels up from utils/)
     root_env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
-
     if os.path.exists(root_env_path):
         try:
             with open(root_env_path, "r") as f:
@@ -26,18 +24,15 @@ def _load_config_env():
                         key, value = line.split("=", 1)
                         key = key.strip()
                         value = value.strip()
-
                         # Remove quotes if present
                         if (value.startswith('"') and value.endswith('"')) or (
                             value.startswith("'") and value.endswith("'")
                         ):
                             value = value[1:-1]
-
                         # Only set if not already in environment
                         if key not in os.environ:
                             os.environ[key] = value
                             logger.debug(f"ConfigManager: Loaded .env variable: {key}")
-
             logger.info(
                 f"ConfigManager: Loaded environment variables from {root_env_path}"
             )
@@ -45,7 +40,6 @@ def _load_config_env():
             logger.warning(f"ConfigManager: Failed to load .env file: {e}")
     else:
         logger.debug(f"ConfigManager: .env file not found at {root_env_path}")
-
         # Fallback to backend/config.env for backward compatibility
         config_env_path = os.path.join(os.path.dirname(__file__), "..", "config.env")
         if os.path.exists(config_env_path):
@@ -57,27 +51,24 @@ def _load_config_env():
                             key, value = line.split("=", 1)
                             key = key.strip()
                             value = value.strip()
-
                             # Remove quotes if present
                             if (value.startswith('"') and value.endswith('"')) or (
                                 value.startswith("'") and value.endswith("'")
                             ):
                                 value = value[1:-1]
-
                             # Only set if not already in environment
                             if key not in os.environ:
                                 os.environ[key] = value
                                 logger.debug(
                                     f"ConfigManager: Loaded config.env variable: {key}"
                                 )
-
                 logger.info(
                     f"ConfigManager: Loaded environment variables from {config_env_path} (fallback)"
                 )
             except Exception as e:
                 logger.warning(f"ConfigManager: Failed to load config.env file: {e}")
         else:
-            logger.debug(f"ConfigManager: No .env or config.env file found")
+            logger.debug("ConfigManager: No .env or config.env file found")
 
 
 class ConfigManager:
@@ -86,7 +77,6 @@ class ConfigManager:
     def __init__(self):
         # Load config.env file first
         _load_config_env()
-
         self._config_cache: Dict[str, Any] = {}
         self._load_configuration()
 
@@ -173,7 +163,6 @@ class ConfigManager:
                 },
             }
         )
-
         # Log feature flag status
         logger.info(
             f"Feature flags loaded: API_V4_ENABLED={self._config_cache['features']['api_v4_enabled']}, API_V4_REVIEWS={self._config_cache['features']['api_v4_reviews']}"
@@ -183,7 +172,6 @@ class ConfigManager:
         """Get a configuration value by key."""
         keys = key.split(".")
         value = self._config_cache
-
         try:
             for k in keys:
                 value = value[k]
@@ -333,26 +321,22 @@ class ConfigManager:
     def validate(self) -> List[str]:
         """Validate required configuration values."""
         errors = []
-
         # Check required database configuration
         db_config = self.get_database_config()
         if not db_config.get("host"):
             errors.append("DATABASE_HOST is required")
         if not db_config.get("name"):
             errors.append("DATABASE_NAME is required")
-
         # Check required security configuration
         security_config = self.get_security_config()
         if not security_config.get("admin_token"):
             errors.append("ADMIN_TOKEN is required for admin operations")
-
         # Check required external services
         ext_config = self.get_external_services_config()
         if not ext_config.get("supabase_url"):
             errors.append("SUPABASE_URL is required")
         if not ext_config.get("supabase_key"):
             errors.append("SUPABASE_KEY is required")
-
         return errors
 
 

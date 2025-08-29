@@ -3,12 +3,10 @@ import csv
 import json
 from datetime import datetime
 from pathlib import Path
-
 from playwright.async_api import async_playwright
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Kosher Miami Scraper.
-
 Web scraping functionality for koshermiami.org to extract kosher establishment data.
 """
 
@@ -20,43 +18,34 @@ class KosherMiamiScraper:
         # Use the main data directory at project root
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
-
         # Output file paths
         self.csv_file = self.output_dir / "kosher_miami_establishments.csv"
         self.json_file = self.output_dir / "kosher_miami_establishments.json"
         self.html_file = self.output_dir / "kosher_miami_table.html"
-
         # Scraping configuration
         self.base_url = "https://koshermiami.org/establishments/"
         self.timeout = 30000  # 30 seconds
 
     async def scrape_data(self) -> list[dict]:
         """Scrape kosher establishment data from koshermiami.org.
-
         Returns:
             List of establishment dictionaries
-
         """
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-
             try:
                 await page.goto(self.base_url, timeout=self.timeout)
-
                 # Ensure we're in List View mode
                 await page.click("text=List View")
                 await page.wait_for_selector("div.row.desctop", timeout=self.timeout)
-
                 rows = await page.locator("div.row.desctop").all()
-
                 data = []
                 for i, row in enumerate(rows):
                     try:
                         fields = await row.locator(".value").all_inner_texts()
                         if len(fields) < 9:
                             continue  # Skip malformed rows
-
                         entry = {
                             "Name": fields[0].strip(),
                             "Type": fields[1].strip(),
@@ -69,20 +58,14 @@ class KosherMiamiScraper:
                             "Bishul Yisroel Tuna": fields[8].strip(),
                         }
                         data.append(entry)
-
                         if (i + 1) % 10 == 0:
                             pass
-
                     except Exception as e:
                         continue
-
                 await browser.close()
-
                 # Save data to files
                 await self._save_data(data)
-
                 return data
-
             except Exception as e:
                 await browser.close()
                 msg = f"Scraping failed: {e}"
@@ -92,7 +75,6 @@ class KosherMiamiScraper:
         """Save scraped data to CSV and JSON files."""
         if not data:
             return
-
         # Save to CSV
         try:
             with open(self.csv_file, mode="w", newline="", encoding="utf-8") as f:
@@ -101,7 +83,6 @@ class KosherMiamiScraper:
                 writer.writerows(data)
         except Exception as e:
             pass
-
         # Save to JSON
         try:
             with open(self.json_file, mode="w", encoding="utf-8") as f:

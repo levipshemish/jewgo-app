@@ -1,10 +1,8 @@
 """
 WebSocket Service for JewGo Backend
 ==================================
-
 This service provides real-time WebSocket capabilities for the JewGo backend,
 including live restaurant status updates, user notifications, and real-time filtering.
-
 Features:
 - Real-time restaurant status updates
 - Live user notifications
@@ -12,7 +10,6 @@ Features:
 - Connection management
 - Message broadcasting
 - Room-based subscriptions
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-01-27
@@ -92,7 +89,6 @@ class WebSocketService:
         self.message_handlers: Dict[MessageType, List[Callable]] = {}
         self.server = None
         self.is_running = False
-
         # Register default message handlers
         self._register_default_handlers()
 
@@ -115,11 +111,9 @@ class WebSocketService:
             self.server = await websockets.serve(self._handle_connection, host, port)
             self.is_running = True
             logger.info(f"WebSocket server started on ws://{host}:{port}")
-
             # Start background tasks
             asyncio.create_task(self._cleanup_inactive_connections())
             asyncio.create_task(self._broadcast_heartbeat())
-
         except Exception as e:
             logger.error(f"Failed to start WebSocket server: {e}")
             raise
@@ -136,16 +130,12 @@ class WebSocketService:
         """Handle a new WebSocket connection."""
         connection_id = str(uuid.uuid4())
         connection_info = ConnectionInfo(connection_id=connection_id)
-
         self.connections[connection_id] = websocket
         self.connection_info[connection_id] = connection_info
-
         logger.info(f"New WebSocket connection: {connection_id}")
-
         try:
             async for message in websocket:
                 await self._process_message(connection_id, message)
-
         except ConnectionClosed:
             logger.info(f"WebSocket connection closed: {connection_id}")
         except Exception as e:
@@ -159,11 +149,9 @@ class WebSocketService:
             data = json.loads(message)
             message_type = MessageType(data.get("type"))
             message_data = data.get("data", {})
-
             # Update last activity
             if connection_id in self.connection_info:
                 self.connection_info[connection_id].last_activity = datetime.now()
-
             # Handle message
             if message_type in self.message_handlers:
                 for handler in self.message_handlers[message_type]:
@@ -173,7 +161,6 @@ class WebSocketService:
                         logger.error(f"Error in message handler: {e}")
             else:
                 logger.warning(f"Unknown message type: {message_type}")
-
         except json.JSONDecodeError:
             logger.error(f"Invalid JSON message from {connection_id}")
         except Exception as e:
@@ -184,15 +171,11 @@ class WebSocketService:
         room_id = data.get("room_id")
         if not room_id:
             return
-
         if room_id not in self.rooms:
             self.rooms[room_id] = set()
-
         self.rooms[room_id].add(connection_id)
-
         if connection_id in self.connection_info:
             self.connection_info[connection_id].subscribed_rooms.add(room_id)
-
         # Send confirmation
         await self._send_to_connection(
             connection_id,
@@ -202,7 +185,6 @@ class WebSocketService:
                 "timestamp": datetime.now().isoformat(),
             },
         )
-
         logger.info(f"Connection {connection_id} subscribed to room {room_id}")
 
     async def _handle_unsubscribe(self, connection_id: str, data: Dict[str, Any]):
@@ -210,13 +192,10 @@ class WebSocketService:
         room_id = data.get("room_id")
         if not room_id:
             return
-
         if room_id in self.rooms:
             self.rooms[room_id].discard(connection_id)
-
         if connection_id in self.connection_info:
             self.connection_info[connection_id].subscribed_rooms.discard(room_id)
-
         logger.info(f"Connection {connection_id} unsubscribed from room {room_id}")
 
     async def _handle_ping(self, connection_id: str, data: Dict[str, Any]):
@@ -246,11 +225,9 @@ class WebSocketService:
             for room_id in self.connection_info[connection_id].subscribed_rooms:
                 if room_id in self.rooms:
                     self.rooms[room_id].discard(connection_id)
-
         # Remove connection
         self.connections.pop(connection_id, None)
         self.connection_info.pop(connection_id, None)
-
         logger.info(f"Cleaned up connection: {connection_id}")
 
     async def _send_to_connection(self, connection_id: str, message: Dict[str, Any]):
@@ -267,16 +244,13 @@ class WebSocketService:
         """Broadcast a message to all connections in a room."""
         if room_id not in self.rooms:
             return
-
         disconnected_connections = []
-
         for connection_id in self.rooms[room_id]:
             try:
                 await self._send_to_connection(connection_id, message)
             except Exception as e:
                 logger.error(f"Error broadcasting to {connection_id}: {e}")
                 disconnected_connections.append(connection_id)
-
         # Clean up disconnected connections
         for connection_id in disconnected_connections:
             await self._cleanup_connection(connection_id)
@@ -284,14 +258,12 @@ class WebSocketService:
     async def broadcast_to_all(self, message: Dict[str, Any]):
         """Broadcast a message to all connections."""
         disconnected_connections = []
-
         for connection_id in list(self.connections.keys()):
             try:
                 await self._send_to_connection(connection_id, message)
             except Exception as e:
                 logger.error(f"Error broadcasting to {connection_id}: {e}")
                 disconnected_connections.append(connection_id)
-
         # Clean up disconnected connections
         for connection_id in disconnected_connections:
             await self._cleanup_connection(connection_id)
@@ -312,11 +284,9 @@ class WebSocketService:
             },
             "timestamp": datetime.now().isoformat(),
         }
-
         # Send to restaurant-specific room
         room_id = f"restaurant_{restaurant_id}"
         await self.broadcast_to_room(room_id, message)
-
         # Send to location-based rooms if location provided
         if location:
             await self._send_location_based_update(message, location)
@@ -335,11 +305,9 @@ class WebSocketService:
             },
             "timestamp": datetime.now().isoformat(),
         }
-
         # Send to restaurant-specific room
         room_id = f"restaurant_{restaurant_id}"
         await self.broadcast_to_room(room_id, message)
-
         # Send to open now room
         await self.broadcast_to_room("open_now_updates", message)
 
@@ -359,11 +327,9 @@ class WebSocketService:
             },
             "timestamp": datetime.now().isoformat(),
         }
-
         # Send to filter-specific room
         room_id = f"filters_{filter_type}"
         await self.broadcast_to_room(room_id, message)
-
         # Send to location-based rooms if location provided
         if location:
             await self._send_location_based_update(message, location)
@@ -381,7 +347,6 @@ class WebSocketService:
             },
             "timestamp": datetime.now().isoformat(),
         }
-
         # Send to user-specific room
         room_id = f"user_{user_id}"
         await self.broadcast_to_room(room_id, message)
@@ -392,10 +357,8 @@ class WebSocketService:
         """Send location-based updates to nearby connections."""
         latitude = location.get("latitude")
         longitude = location.get("longitude")
-
         if not latitude or not longitude:
             return
-
         # Find connections within a certain radius
         for connection_id, connection_info in self.connection_info.items():
             if connection_info.location:
@@ -405,7 +368,6 @@ class WebSocketService:
                     connection_info.location["latitude"],
                     connection_info.location["longitude"],
                 )
-
                 # Send to connections within 10 miles
                 if distance <= 10:
                     await self._send_to_connection(connection_id, message)
@@ -421,7 +383,6 @@ class WebSocketService:
         lon1_rad = math.radians(lon1)
         lat2_rad = math.radians(lat2)
         lon2_rad = math.radians(lon2)
-
         # Haversine formula
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
@@ -430,7 +391,6 @@ class WebSocketService:
             + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
         return 3959 * c  # Earth's radius in miles
 
     async def _cleanup_inactive_connections(self):
@@ -439,18 +399,14 @@ class WebSocketService:
             try:
                 current_time = datetime.now()
                 inactive_connections = []
-
                 for connection_id, connection_info in self.connection_info.items():
                     if (current_time - connection_info.last_activity) > timedelta(
                         minutes=30
                     ):
                         inactive_connections.append(connection_id)
-
                 for connection_id in inactive_connections:
                     await self._cleanup_connection(connection_id)
-
                 await asyncio.sleep(300)  # Check every 5 minutes
-
             except Exception as e:
                 logger.error(f"Error in cleanup task: {e}")
                 await asyncio.sleep(60)
@@ -466,9 +422,7 @@ class WebSocketService:
                         "timestamp": datetime.now().isoformat(),
                     }
                 )
-
                 await asyncio.sleep(30)  # Send heartbeat every 30 seconds
-
             except Exception as e:
                 logger.error(f"Error in heartbeat task: {e}")
                 await asyncio.sleep(60)

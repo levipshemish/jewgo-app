@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Profiles Table.
 ========================================
 Creates the profiles table for storing user profile information.
 """
-
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import JSONB
@@ -41,43 +39,35 @@ def upgrade() -> None:
             onupdate=sa.func.now(),
         ),
     )
-
     # Create indexes for better performance
     op.create_index("idx_profiles_username", "profiles", ["username"])
     op.create_index("idx_profiles_display_name", "profiles", ["display_name"])
     op.create_index("idx_profiles_created_at", "profiles", ["created_at"])
-
     # Add constraints
     op.create_check_constraint(
         "check_username_format", "profiles", "username ~ '^[a-zA-Z0-9_-]+$'"
     )
-
     op.create_check_constraint(
         "check_username_length",
         "profiles",
         "length(username) >= 3 AND length(username) <= 30",
     )
-
     op.create_check_constraint(
         "check_display_name_length",
         "profiles",
         "length(display_name) >= 1 AND length(display_name) <= 50",
     )
-
     op.create_check_constraint(
         "check_bio_length", "profiles", "bio IS NULL OR length(bio) <= 500"
     )
-
     op.create_check_constraint(
         "check_location_length",
         "profiles",
         "location IS NULL OR length(location) <= 100",
     )
-
     op.create_check_constraint(
         "check_website_length", "profiles", "website IS NULL OR length(website) <= 500"
     )
-
     op.create_check_constraint(
         "check_phone_format",
         "profiles",
@@ -91,7 +81,6 @@ def downgrade() -> None:
     op.drop_index("idx_profiles_username", "profiles")
     op.drop_index("idx_profiles_display_name", "profiles")
     op.drop_index("idx_profiles_created_at", "profiles")
-
     # Drop constraints
     op.drop_constraint("check_username_format", "profiles", type_="check")
     op.drop_constraint("check_username_length", "profiles", type_="check")
@@ -100,6 +89,5 @@ def downgrade() -> None:
     op.drop_constraint("check_location_length", "profiles", type_="check")
     op.drop_constraint("check_website_length", "profiles", type_="check")
     op.drop_constraint("check_phone_format", "profiles", type_="check")
-
     # Drop table
     op.drop_table("profiles")

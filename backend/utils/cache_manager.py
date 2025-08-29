@@ -1,34 +1,28 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Cache Manager for JewGo Backend.
 ==============================
-
 This module provides caching functionality using Redis with memory fallback
 to improve API performance and reduce database load.
-
 Features:
 - Redis-based caching with memory fallback
 - TTL-based cache expiration
 - Intelligent cache key generation
 - Cache invalidation patterns
 - Decorator-based caching
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 import hashlib
 import json
 import os
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Callable, Dict, Optional
-
 import redis
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 # In-memory cache fallback
 _memory_cache: Dict[str, Dict[str, Any]] = {}
 
@@ -41,7 +35,6 @@ class CacheManager:
         self.redis_url = redis_url or os.getenv("REDIS_URL")
         self.redis_client = None
         self.use_redis = False
-
         if self.redis_url:
             try:
                 self.redis_client = redis.from_url(self.redis_url)
@@ -58,14 +51,11 @@ class CacheManager:
     def _generate_key(self, prefix: str, *args, **kwargs) -> str:
         """Generate cache key from prefix and arguments."""
         key_parts = [prefix]
-
         if args:
             key_parts.extend([str(arg) for arg in args])
-
         if kwargs:
             sorted_kwargs = sorted(kwargs.items())
             key_parts.extend([f"{k}:{v}" for k, v in sorted_kwargs])
-
         key_string = "|".join(key_parts)
         return hashlib.md5(key_string.encode()).hexdigest()
 
@@ -87,7 +77,6 @@ class CacheManager:
                         del _memory_cache[key]
         except Exception as e:
             logger.error(f"Error getting cache key {key}: {e}")
-
         return None
 
     def set(self, key: str, value: Any, ttl: int = 300) -> bool:
@@ -116,7 +105,6 @@ class CacheManager:
                     return True
         except Exception as e:
             logger.error(f"Error deleting cache key {key}: {e}")
-
         return False
 
     def clear_pattern(self, pattern: str) -> int:
@@ -133,15 +121,12 @@ class CacheManager:
                 for key in _memory_cache:
                     if pattern.replace("*", "") in key:
                         keys_to_delete.append(key)
-
                 for key in keys_to_delete:
                     del _memory_cache[key]
                     deleted_count += 1
-
                 return deleted_count
         except Exception as e:
             logger.error(f"Error clearing cache pattern {pattern}: {e}")
-
         return 0
 
     def get_stats(self) -> Dict[str, Any]:
@@ -169,7 +154,6 @@ class CacheManager:
 
 # Global cache manager instance
 _cache_manager = CacheManager()
-
 # Public export for external imports
 cache_manager = _cache_manager
 
@@ -204,18 +188,15 @@ def cached(ttl: int = 300, key_prefix: str = "cache") -> Callable:
             cache_key = _cache_manager._generate_key(
                 key_prefix, func.__name__, *args, **kwargs
             )
-
             # Try to get from cache
             cached_result = get_cache(cache_key)
             if cached_result is not None:
                 logger.debug(f"Cache hit for {func.__name__}")
                 return cached_result
-
             # Execute function and cache result
             result = func(*args, **kwargs)
             set_cache(cache_key, result, ttl)
             logger.debug(f"Cache miss for {func.__name__}, cached result")
-
             return result
 
         return wrapper

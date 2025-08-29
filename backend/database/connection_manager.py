@@ -1,21 +1,17 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database connection manager for JewGo App.
-
 This module handles database connections, session management, and connection pooling.
 Separated from business logic to follow single responsibility principle.
 """
-
 import os
 import time
 from typing import Optional
 from urllib.parse import urlparse
-
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 # Import ConfigManager at module level
 try:
     from utils.unified_database_config import ConfigManager
@@ -79,24 +75,20 @@ class DatabaseConnectionManager:
     def __init__(self, database_url: Optional[str] = None) -> None:
         """Initialize connection manager with connection string."""
         self.database_url = database_url or ConfigManager.get_database_url()
-
         # Validate that DATABASE_URL is provided
         if not self.database_url:
             msg = "DATABASE_URL environment variable is required"
             raise ValueError(msg)
-
         # Fix database URL format if needed (postgres:// -> postgresql://)
         if self.database_url.startswith("postgres://"):
             self.database_url = self.database_url.replace(
                 "postgres://", "postgresql://"
             )
             logger.info("Fixed database URL format from postgres:// to postgresql://")
-
         # Initialize SQLAlchemy components
         self.engine = None
         self.SessionLocal = None
         self._session_factory = None
-
         # Connection state
         self._is_connected = False
         self._connection_attempts = 0
@@ -107,34 +99,27 @@ class DatabaseConnectionManager:
         if self._is_connected:
             logger.info("Database already connected")
             return True
-
         while self._connection_attempts < self._max_retries:
             try:
                 logger.info("Attempting database connection")
-
                 # Create engine with optimized settings
                 self.engine = self._create_engine()
-
                 # Test connection
                 with self.engine.connect() as connection:
                     connection.execute(text("SELECT 1"))
-
                 # Create session factory
                 self._session_factory = sessionmaker(
                     bind=self.engine, autocommit=False, autoflush=False
                 )
-
                 self._is_connected = True
                 self._connection_attempts = 0
                 logger.info("Database connection established successfully")
                 return True
-
             except Exception as e:
                 self._connection_attempts += 1
                 logger.error(
                     f"Database connection attempt {self._connection_attempts} failed: {e}"
                 )
-
                 if self._connection_attempts < self._max_retries:
                     wait_time = 2**self._connection_attempts  # Exponential backoff
                     logger.info(f"Retrying in {wait_time} seconds...")
@@ -142,25 +127,21 @@ class DatabaseConnectionManager:
                 else:
                     logger.error("Max connection attempts reached")
                     return False
-
         return False
 
     def _create_engine(self):
         """Create SQLAlchemy engine with optimized settings."""
         # Parse database URL
         parsed_url = urlparse(self.database_url)
-
         # Build connection arguments
         connect_args = {
             "connect_timeout": 10,
             "application_name": "jewgo_app",
         }
-
         # Check if using Neon pooled connection (which doesn't support statement_timeout)
         is_neon_pooler = (
             "pooler" in parsed_url.hostname if parsed_url.hostname else False
         )
-
         if not is_neon_pooler:
             # Only add statement_timeout for non-pooled connections
             connect_args["options"] = (
@@ -171,13 +152,11 @@ class DatabaseConnectionManager:
             logger.info(
                 "Using Neon pooled connection - skipping statement_timeout parameter"
             )
-
         # Add SSL configuration if specified
         if ConfigManager.get_pg_sslmode():
             connect_args["sslmode"] = ConfigManager.get_pg_sslmode()
             if ConfigManager.get_pg_sslrootcert():
                 connect_args["sslrootcert"] = ConfigManager.get_pg_sslrootcert()
-
         # Add TCP keepalive settings
         connect_args.update(
             {
@@ -186,7 +165,6 @@ class DatabaseConnectionManager:
                 "keepalives_count": ConfigManager.get_pg_keepalives_count(),
             }
         )
-
         # Create engine with connection pooling
         engine = create_engine(
             self.database_url,
@@ -198,10 +176,8 @@ class DatabaseConnectionManager:
             echo=False,  # Set to True for SQL debugging
             connect_args=connect_args,
         )
-
         # Add connection event listeners
         self._setup_connection_events(engine)
-
         return engine
 
     def _setup_connection_events(self, engine):
@@ -232,20 +208,16 @@ class DatabaseConnectionManager:
         """Get a new database session."""
         if not self._is_connected:
             raise RuntimeError("Database not connected. Call connect() first.")
-
         if not self._session_factory:
             raise RuntimeError("Session factory not initialized")
-
         return self._session_factory()
 
     def get_session_context(self):
         """Get a session context manager."""
         if not self._is_connected:
             raise RuntimeError("Database not connected. Call connect() first.")
-
         if not self._session_factory:
             raise RuntimeError("Session factory not initialized")
-
         return SessionContextManager(self._session_factory)
 
     def session_scope(self):
@@ -257,7 +229,6 @@ class DatabaseConnectionManager:
         if self.engine:
             self.engine.dispose()
             logger.info("Database connection closed")
-
         self._is_connected = False
         self._session_factory = None
 
@@ -269,13 +240,11 @@ class DatabaseConnectionManager:
         """Perform database health check."""
         if not self._is_connected:
             return {"status": "disconnected", "error": "Database not connected"}
-
         try:
             with self.get_session() as session:
                 # Test basic query
                 result = session.execute(text("SELECT 1 as test"))
                 test_value = result.scalar()
-
                 if test_value == 1:
                     return {
                         "status": "healthy",
@@ -283,7 +252,6 @@ class DatabaseConnectionManager:
                     }
                 else:
                     return {"status": "unhealthy", "error": "Unexpected test result"}
-
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
 

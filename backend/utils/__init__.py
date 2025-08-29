@@ -1,5 +1,4 @@
 """Utils package for JewGo backend.
-
 This package contains utility modules for the JewGo application.
 """
 

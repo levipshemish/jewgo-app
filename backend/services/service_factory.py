@@ -1,6 +1,5 @@
 """
 Service Factory
-
 This module provides a centralized factory for creating service instances,
 reducing circular dependencies and improving dependency management.
 """
@@ -45,7 +44,6 @@ class ServiceFactory:
             except Exception as e:
                 logger.error(f"Error creating RestaurantServiceV4: {e}")
                 return None
-
         return self._services["restaurant"]
 
     def get_review_service(self) -> Optional[Any]:
@@ -66,7 +64,6 @@ class ServiceFactory:
             except Exception as e:
                 logger.error(f"Error creating ReviewServiceV4: {e}")
                 return None
-
         return self._services["review"]
 
     def get_user_service(self) -> Optional[Any]:
@@ -87,7 +84,6 @@ class ServiceFactory:
             except Exception as e:
                 logger.error(f"Error creating UserServiceV4: {e}")
                 return None
-
         return self._services["user"]
 
     def get_marketplace_service(self) -> Optional[Any]:
@@ -108,7 +104,6 @@ class ServiceFactory:
             except Exception as e:
                 logger.error(f"Error creating MarketplaceServiceV4: {e}")
                 return None
-
         return self._services["marketplace"]
 
     def get_search_service(self) -> Optional[Any]:
@@ -127,7 +122,6 @@ class ServiceFactory:
             except Exception as e:
                 logger.error(f"Error creating UnifiedSearchService: {e}")
                 return None
-
         return self._services["search"]
 
     def get_service(self, service_name: str) -> Optional[Any]:
@@ -139,11 +133,9 @@ class ServiceFactory:
             "marketplace": self.get_marketplace_service,
             "search": self.get_search_service,
         }
-
         if service_name not in service_map:
             logger.error(f"Unknown service: {service_name}")
             return None
-
         return service_map[service_name]()
 
     def clear_services(self):

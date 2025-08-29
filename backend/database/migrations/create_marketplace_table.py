@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Marketplace Table.
 ===========================================
 Creates the marketplace table for storing marketplace product listings.
@@ -6,8 +6,6 @@ This follows the same design pattern as the restaurants table with
 comprehensive fields for product management, vendor information, and
 kosher certification details.
 """
-
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -21,7 +19,6 @@ depends_on = None
 
 def upgrade() -> None:
     """Create marketplace table with comprehensive product and vendor information."""
-
     # Create marketplace table
     op.create_table(
         "marketplace",
@@ -169,7 +166,6 @@ def upgrade() -> None:
             postgresql_using="gin",
         ),
     )
-
     # Add table and column comments
     op.execute(
         "COMMENT ON TABLE marketplace IS 'Marketplace product listings with kosher certification and vendor information'"

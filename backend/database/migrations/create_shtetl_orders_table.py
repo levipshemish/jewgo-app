@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Shtetl Orders Table.
 ==================================================
 Creates a shtetl_orders table for Jewish community marketplace order management.
 This table stores order information, customer details, and order status for store transactions.
 """
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -18,7 +17,6 @@ depends_on = None
 
 def upgrade() -> None:
     """Create shtetl_orders table for Jewish community order management."""
-
     # Create shtetl_orders table
     op.create_table(
         "shtetl_orders",
@@ -143,7 +141,6 @@ def upgrade() -> None:
             "integration_data", JSONB, nullable=True
         ),  # Data from external systems
     )
-
     # Create indexes for performance
     op.create_index("idx_shtetl_orders_store_id", "shtetl_orders", ["store_id"])
     op.create_index(
@@ -159,7 +156,6 @@ def upgrade() -> None:
         "idx_shtetl_orders_delivery_date", "shtetl_orders", ["estimated_delivery_date"]
     )
     op.create_index("idx_shtetl_orders_total_amount", "shtetl_orders", ["total_amount"])
-
     # Composite indexes for common queries
     op.create_index(
         "idx_shtetl_orders_store_status", "shtetl_orders", ["store_id", "order_status"]
@@ -177,18 +173,17 @@ def upgrade() -> None:
         "shtetl_orders",
         ["payment_status", "created_at"],
     )
-
     # Create full-text search index
     op.execute(
         """
-        CREATE INDEX idx_shtetl_orders_search_vector 
-        ON shtetl_orders 
-        USING gin(to_tsvector('english', 
-            COALESCE(order_id, '') || ' ' || 
-            COALESCE(customer_name, '') || ' ' || 
-            COALESCE(customer_email, '') || ' ' || 
-            COALESCE(store_name, '') || ' ' || 
-            COALESCE(delivery_city, '') || ' ' || 
+        CREATE INDEX idx_shtetl_orders_search_vector
+        ON shtetl_orders
+        USING gin(to_tsvector('english',
+            COALESCE(order_id, '') || ' ' ||
+            COALESCE(customer_name, '') || ' ' ||
+            COALESCE(customer_email, '') || ' ' ||
+            COALESCE(store_name, '') || ' ' ||
+            COALESCE(delivery_city, '') || ' ' ||
             COALESCE(tracking_number, '')
         ))
     """

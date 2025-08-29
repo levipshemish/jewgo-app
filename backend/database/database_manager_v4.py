@@ -2,13 +2,11 @@ import ast
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
 from utils.error_handler import (
     handle_database_operation,
     handle_operation_with_fallback,
 )
 from utils.logging_config import get_logger
-
 from .connection_manager import DatabaseConnectionManager
 from .models import Base
 from .repositories import (
@@ -35,13 +33,10 @@ except ImportError:
 
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Enhanced Database Manager for JewGo App v4.
-
 This module provides a comprehensive database management system for the JewGo application,
 using the repository pattern to separate concerns and improve maintainability.
-
 Key Features:
 - Repository pattern implementation
 - SQLAlchemy 1.4 compatibility with PostgreSQL
@@ -51,18 +46,15 @@ Key Features:
 - Search and filtering capabilities
 - Geographic location support
 - Statistics and reporting
-
 Architecture:
 - ConnectionManager: Handles database connections and sessions
 - BaseRepository: Generic CRUD operations
 - Specific Repositories: Restaurant, Review, User, Image
 - DatabaseManager: Orchestrates repositories and provides unified interface
-
 Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-
 from .repositories import (
     ImageRepository,
     RestaurantRepository,
@@ -93,13 +85,11 @@ class DatabaseManager:
         """Initialize database manager with connection string."""
         # Initialize connection manager
         self.connection_manager = DatabaseConnectionManager(database_url)
-
         # Initialize repositories
         self.restaurant_repo = RestaurantRepository(self.connection_manager)
         self.review_repo = ReviewRepository(self.connection_manager)
         self.user_repo = UserRepository(self.connection_manager)
         self.image_repo = ImageRepository(self.connection_manager)
-
         logger.info("Database manager v4 initialized with repository pattern")
 
     def connect(self) -> bool:
@@ -150,19 +140,16 @@ class DatabaseManager:
             if not restaurant_data.get(field):
                 logger.error("Missing required field", field=field)
                 return False
-
         # Set default values
         restaurant_data.setdefault("certifying_agency", "ORB")
         restaurant_data.setdefault("created_at", datetime.utcnow())
         restaurant_data.setdefault("updated_at", datetime.utcnow())
         restaurant_data.setdefault("hours_parsed", False)
-
         # Handle specials field
         if "specials" in restaurant_data and isinstance(
             restaurant_data["specials"], list
         ):
             restaurant_data["specials"] = json.dumps(restaurant_data["specials"])
-
         result = self.restaurant_repo.create(restaurant_data)
         if result and result.get("created"):
             logger.info(
@@ -191,10 +178,8 @@ class DatabaseManager:
             offset=offset,
             filters=filters,
         )
-
         if as_dict:
             return [self._restaurant_to_dict(restaurant) for restaurant in restaurants]
-
         return restaurants
 
     @handle_operation_with_fallback(fallback_value=0)
@@ -253,7 +238,6 @@ class DatabaseManager:
         """Delete a restaurant."""
         # Delete associated images first
         self.image_repo.delete_all_restaurant_images(restaurant_id)
-
         # Delete the restaurant
         return self.restaurant_repo.delete(restaurant_id)
 
@@ -371,7 +355,6 @@ class DatabaseManager:
             # Delete associated sessions and accounts first
             self.user_repo.delete_user_sessions(user_id)
             self.user_repo.delete_user_accounts(user_id)
-
             # Delete the user
             return self.user_repo.delete_user(user_id)
         except Exception as e:
@@ -426,7 +409,6 @@ class DatabaseManager:
             # Get restaurant images
             images = self.image_repo.get_restaurant_images(restaurant.id)
             image_dicts = [self._image_to_dict(img) for img in images]
-
             # Get restaurant status
             status_info = get_restaurant_status(
                 {
@@ -434,7 +416,6 @@ class DatabaseManager:
                     "timezone": restaurant.timezone,
                 }
             )
-
             return {
                 "id": restaurant.id,
                 "name": restaurant.name,
@@ -543,7 +524,6 @@ class DatabaseManager:
         """Safely parse JSON string or Python literal with fallback to default value."""
         if not json_str:
             return default_value
-
         # Handle non-string inputs (e.g., already parsed JSON objects)
         if not isinstance(json_str, str):
             # If it's already a list, dict, or other JSON-compatible type, return as is
@@ -553,14 +533,11 @@ class DatabaseManager:
                 f"Non-string JSON input: {type(json_str)}, using default value"
             )
             return default_value
-
         # Remove leading/trailing whitespace
         json_str = json_str.strip()
-
         # Handle empty strings
         if not json_str:
             return default_value
-
         # First try to parse as JSON
         try:
             return json.loads(json_str)

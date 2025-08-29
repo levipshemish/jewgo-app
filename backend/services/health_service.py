@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Any
-
 from .base_service import BaseService
 
 """Health service - handles health check operations."""
@@ -11,32 +10,25 @@ class HealthService(BaseService):
 
     def get_health_status(self) -> dict[str, Any]:
         """Get comprehensive health status of the application.
-
         Returns:
             Dictionary with health status information
-
         """
         self.log_operation("health_check")
-
         health_status = {
             "status": "healthy",
             "timestamp": self._get_current_timestamp(),
             "version": self._get_app_version(),
             "checks": {},
         }
-
         # Check database connectivity
         db_status = self._check_database_health()
         health_status["checks"]["database"] = db_status
-
         # Check external services
         external_services_status = self._check_external_services()
         health_status["checks"]["external_services"] = external_services_status
-
         # Determine overall status
         if not db_status["healthy"] or not external_services_status["healthy"]:
             health_status["status"] = "unhealthy"
-
         return health_status
 
     def _check_database_health(self) -> dict[str, Any]:
@@ -44,7 +36,6 @@ class HealthService(BaseService):
         try:
             # Try a simple database operation
             result = self.db_manager.health_check() if self.db_manager else False
-
             return {
                 "healthy": bool(result),
                 "message": (

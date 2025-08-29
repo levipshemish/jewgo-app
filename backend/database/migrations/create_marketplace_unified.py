@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Unified Marketplace Migration
 ============================
-
 This migration consolidates functionality from all marketplace migration files:
 - create_marketplace_schema.py
 - create_marketplace_schema_simple.py
@@ -10,22 +9,17 @@ This migration consolidates functionality from all marketplace migration files:
 - create_marketplace_streamlined.py
 - simple_marketplace_migration.py
 - execute_marketplace_migration.py
-
 This is the single source of truth for marketplace table creation.
 """
-
 import os
 import sys
 from typing import Optional
-
 from sqlalchemy import create_engine, text, MetaData
-
 
 # Add the parent directory to the path
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -39,7 +33,6 @@ class MarketplaceMigration:
         self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
         self.metadata = MetaData()
-
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -48,15 +41,12 @@ class MarketplaceMigration:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-
             # Test connection
             with self.engine.connect() as conn:
                 result = conn.execute(text("SELECT 1"))
                 result.fetchone()
-
             logger.info("✅ Database connection established successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Database connection failed: {e}")
             return False
@@ -69,7 +59,7 @@ class MarketplaceMigration:
                     text(
                         """
                     SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
+                        SELECT FROM information_schema.tables
                         WHERE table_name = :table_name
                     )
                 """
@@ -87,9 +77,7 @@ class MarketplaceMigration:
             if self.check_table_exists("marketplace"):
                 logger.info("✅ Marketplace table already exists, skipping creation")
                 return True
-
             logger.info("🏗️ Creating marketplace table...")
-
             with self.engine.begin() as conn:
                 # Create marketplace table
                 conn.execute(
@@ -124,7 +112,6 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
                 # Create indexes for better performance
                 conn.execute(
                     text(
@@ -137,10 +124,8 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
             logger.info("✅ Marketplace table created successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to create marketplace table: {e}")
             return False
@@ -151,9 +136,7 @@ class MarketplaceMigration:
             if self.check_table_exists("marketplace_categories"):
                 logger.info("✅ Categories table already exists, skipping creation")
                 return True
-
             logger.info("🏗️ Creating categories table...")
-
             with self.engine.begin() as conn:
                 conn.execute(
                     text(
@@ -172,10 +155,8 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
             logger.info("✅ Categories table created successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to create categories table: {e}")
             return False
@@ -186,9 +167,7 @@ class MarketplaceMigration:
             if self.check_table_exists("marketplace_subcategories"):
                 logger.info("✅ Subcategories table already exists, skipping creation")
                 return True
-
             logger.info("🏗️ Creating subcategories table...")
-
             with self.engine.begin() as conn:
                 conn.execute(
                     text(
@@ -207,10 +186,8 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
             logger.info("✅ Subcategories table created successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to create subcategories table: {e}")
             return False
@@ -221,9 +198,7 @@ class MarketplaceMigration:
             if self.check_table_exists("marketplace_listing_images"):
                 logger.info("✅ Listing images table already exists, skipping creation")
                 return True
-
             logger.info("🏗️ Creating listing images table...")
-
             with self.engine.begin() as conn:
                 conn.execute(
                     text(
@@ -240,10 +215,8 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
             logger.info("✅ Listing images table created successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to create listing images table: {e}")
             return False
@@ -254,9 +227,7 @@ class MarketplaceMigration:
             if self.check_table_exists("marketplace_favorites"):
                 logger.info("✅ Favorites table already exists, skipping creation")
                 return True
-
             logger.info("🏗️ Creating favorites table...")
-
             with self.engine.begin() as conn:
                 conn.execute(
                     text(
@@ -271,10 +242,8 @@ class MarketplaceMigration:
                 """
                     )
                 )
-
             logger.info("✅ Favorites table created successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to create favorites table: {e}")
             return False
@@ -283,13 +252,12 @@ class MarketplaceMigration:
         """Add sample categories to the database."""
         try:
             logger.info("📝 Adding sample categories...")
-
             sample_categories = [
                 {
                     "name": "Electronics",
                     "description": "Electronic devices and gadgets",
                     "icon": "📱",
-                    "color": "#007bff",
+                    "color": "#007bf",
                 },
                 {
                     "name": "Furniture",
@@ -334,23 +302,25 @@ class MarketplaceMigration:
                     "color": "#20c997",
                 },
             ]
-
             with self.engine.begin() as conn:
                 for category in sample_categories:
                     conn.execute(
                         text(
                             """
-                        INSERT INTO marketplace_categories (name, description, icon, color)
+                        INSERT INTO marketplace_categories (
+                            name,
+                            description,
+                            icon,
+                            color
+                        )
                         VALUES (:name, :description, :icon, :color)
                         ON CONFLICT (name) DO NOTHING
                     """
                         ),
                         category,
                     )
-
             logger.info("✅ Sample categories added successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to add sample categories: {e}")
             return False
@@ -359,7 +329,6 @@ class MarketplaceMigration:
         """Add sample listings to the database."""
         try:
             logger.info("📝 Adding sample listings...")
-
             sample_listings = [
                 {
                     "title": "iPhone 12 Pro - Excellent Condition",
@@ -404,14 +373,13 @@ class MarketplaceMigration:
                     "contact_phone": "305-555-0789",
                 },
             ]
-
             with self.engine.begin() as conn:
                 for listing in sample_listings:
                     conn.execute(
                         text(
                             """
-                        INSERT INTO marketplace (title, description, price, category, subcategory, 
-                                               city, state, zip_code, latitude, longitude, 
+                        INSERT INTO marketplace (title, description, price, category, subcategory,
+                                               city, state, zip_code, latitude, longitude,
                                                contact_email, contact_phone)
                         VALUES (:title, :description, :price, :category, :subcategory,
                                 :city, :state, :zip_code, :latitude, :longitude,
@@ -420,10 +388,8 @@ class MarketplaceMigration:
                         ),
                         listing,
                     )
-
             logger.info("✅ Sample listings added successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Failed to add sample listings: {e}")
             return False
@@ -431,12 +397,10 @@ class MarketplaceMigration:
     def run_migration(self) -> bool:
         """Run the complete marketplace migration."""
         logger.info("🚀 Starting unified marketplace migration...")
-
         try:
             # Connect to database
             if not self.connect():
                 return False
-
             # Create tables
             tables_to_create = [
                 self.create_marketplace_table,
@@ -445,19 +409,15 @@ class MarketplaceMigration:
                 self.create_listing_images_table,
                 self.create_favorites_table,
             ]
-
             for create_table in tables_to_create:
                 if not create_table():
-                    logger.error(f"❌ Failed to create table")
+                    logger.error("❌ Failed to create table")
                     return False
-
             # Add sample data
             self.add_sample_categories()
             self.add_sample_listings()
-
             logger.info("🎉 Marketplace migration completed successfully!")
             return True
-
         except Exception as e:
             logger.error(f"❌ Migration failed: {e}")
             return False
@@ -465,11 +425,9 @@ class MarketplaceMigration:
     def rollback(self) -> bool:
         """Rollback the marketplace migration."""
         logger.info("🔄 Rolling back marketplace migration...")
-
         try:
             if not self.connect():
                 return False
-
             tables_to_drop = [
                 "marketplace_favorites",
                 "marketplace_listing_images",
@@ -477,16 +435,13 @@ class MarketplaceMigration:
                 "marketplace_categories",
                 "marketplace",
             ]
-
             with self.engine.begin() as conn:
                 for table in tables_to_drop:
                     if self.check_table_exists(table):
                         conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
                         logger.info(f"🗑️ Dropped table: {table}")
-
             logger.info("✅ Rollback completed successfully")
             return True
-
         except Exception as e:
             logger.error(f"❌ Rollback failed: {e}")
             return False
@@ -513,16 +468,12 @@ def main():
         "--rollback", action="store_true", help="Rollback the migration"
     )
     parser.add_argument("--database-url", help="Database URL (optional)")
-
     args = parser.parse_args()
-
     migration = MarketplaceMigration(database_url=args.database_url)
-
     if args.rollback:
         success = migration.rollback()
     else:
         success = migration.run_migration()
-
     return 0 if success else 1
 
 

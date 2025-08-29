@@ -1,6 +1,5 @@
 """
 Integration tests for enhanced error handling and timeout features.
-
 These tests verify that the new error handling patterns work correctly
 and that timeout protection is functioning as expected.
 """
@@ -8,7 +7,6 @@ and that timeout protection is functioning as expected.
 import pytest
 import time
 from datetime import timedelta
-
 from utils.error_handler_v2 import (
     handle_database_operation,
     handle_external_api_call,
@@ -34,7 +32,6 @@ class TestErrorHandlerV2:
             operation_name="test_operation",
             context=create_error_context(test_id=1),
         )
-
         assert result == {"id": 1, "name": "Test Restaurant"}
 
     def test_handle_database_operation_with_default_return(self):
@@ -49,7 +46,6 @@ class TestErrorHandlerV2:
             context=create_error_context(test_id=1),
             default_return=[],
         )
-
         assert result == []
 
     def test_handle_database_operation_raises_exception(self):
@@ -76,7 +72,6 @@ class TestErrorHandlerV2:
             operation_name="test_api_call",
             context=create_error_context(api_endpoint="/test"),
         )
-
         assert result == {"status": "success", "data": "test"}
 
     def test_handle_external_api_call_timeout(self):
@@ -93,7 +88,6 @@ class TestErrorHandlerV2:
             context=create_error_context(api_endpoint="/test"),
             default_return=None,
         )
-
         assert result is None
 
     def test_handle_validation_operation_success(self):
@@ -107,7 +101,6 @@ class TestErrorHandlerV2:
             operation_name="test_validation",
             context=create_error_context(field="name"),
         )
-
         assert result is True
 
     def test_handle_validation_operation_value_error(self):
@@ -122,7 +115,6 @@ class TestErrorHandlerV2:
             context=create_error_context(field="name"),
             default_return=False,
         )
-
         assert result is False
 
     def test_create_error_context(self):
@@ -130,7 +122,6 @@ class TestErrorHandlerV2:
         context = create_error_context(
             user_id=123, operation="test", timestamp="2025-08-26T10:30:00Z"
         )
-
         assert "user_id" in context
         assert "operation" in context
         assert "timestamp" in context
@@ -143,7 +134,6 @@ class TestHTTPClient:
     def test_http_client_timeout(self):
         """Test HTTP client timeout behavior."""
         client = get_http_client()
-
         # Test with a URL that will timeout
         with pytest.raises(Exception) as exc_info:
             client.get(
@@ -151,15 +141,12 @@ class TestHTTPClient:
                 timeout=(1, 1),  # 1 second timeout
                 operation_name="test_timeout",
             )
-
         assert "timeout" in str(exc_info.value).lower()
 
     def test_http_client_success(self):
         """Test successful HTTP client request."""
         client = get_http_client()
-
         response = client.get("http://httpbin.org/get", operation_name="test_success")
-
         assert response.status_code == 200
         data = response.json()
         assert "url" in data
@@ -167,13 +154,11 @@ class TestHTTPClient:
     def test_http_client_with_params(self):
         """Test HTTP client with query parameters."""
         client = get_http_client()
-
         response = client.get(
             "http://httpbin.org/get",
             params={"test": "value", "number": 123},
             operation_name="test_params",
         )
-
         assert response.status_code == 200
         data = response.json()
         assert data["args"]["test"] == "value"
@@ -197,22 +182,17 @@ class TestMonitoring:
             "test_operation", "TestError", "Test error message", {"test": True}
         )
         record_timeout("test_operation", 5.0, {"test": True})
-
         # Get metrics
         metrics = get_metrics("test_operation")
-
         assert "api_calls" in metrics
         assert "errors" in metrics
         assert "timeouts" in metrics
-
         # Check API calls
         api_calls = metrics["api_calls"].get("test_operation", {})
         assert api_calls.get("count", 0) >= 1
-
         # Check errors
         errors = metrics["errors"].get("test_operation", {})
         assert errors.get("count", 0) >= 1
-
         # Check timeouts
         timeouts = metrics["timeouts"].get("test_operation", {})
         assert timeouts.get("count", 0) >= 1
@@ -225,10 +205,8 @@ class TestMonitoring:
         for i in range(10):
             record_api_call("test_operation", 1.0, 200, {"test": True})
             record_error("test_operation", "TestError", f"Error {i}", {"test": True})
-
         # Get metrics
         metrics = get_metrics("test_operation")
-
         # Should have recorded events
         assert metrics["api_calls"]["test_operation"]["count"] >= 10
         assert metrics["errors"]["test_operation"]["count"] >= 10
@@ -255,30 +233,25 @@ class TestIntegration:
         context = create_error_context(
             service="test_service", operation="test_operation"
         )
-
         result = handle_database_operation(
             operation=mock_service_operation,
             operation_name="service_operation",
             context=context,
             default_return={"success": False, "error": "Operation failed"},
         )
-
         # Should return either success or default
         assert "success" in result
 
     def test_http_client_monitoring_integration(self):
         """Test HTTP client integration with monitoring."""
         client = get_http_client()
-
         # Make a request that should succeed
         response = client.get(
             "http://httpbin.org/get", operation_name="integration_test"
         )
-
         # Check that monitoring data was recorded
         metrics = get_metrics("integration_test")
         api_calls = metrics["api_calls"].get("integration_test", {})
-
         assert api_calls.get("count", 0) >= 1
         assert api_calls.get("avg_duration", 0) > 0
 
@@ -301,13 +274,11 @@ class TestIntegration:
 
         # Create initial context
         initial_context = create_error_context(user_id=123, operation="main_operation")
-
         result = handle_database_operation(
             operation=mock_operation,
             operation_name="test_context_propagation",
             context=initial_context,
         )
-
         # Verify context was created
         assert captured_context is not None
         assert captured_context["operation"] == "nested_operation"

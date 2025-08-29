@@ -1,39 +1,32 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 JewGo Backend API Server - Application Factory
 ==============================================
-
 This module creates and configures the Flask application with all necessary
 routes, middleware, and error handlers.
-
 Author: JewGo Development Team
 Version: 4.1
 Last Updated: 2024
 """
-
 import os
 import traceback
 from datetime import datetime, timezone
-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 # Import dependencies with fallbacks
 try:
     from database.database_manager_v3 import EnhancedDatabaseManager
 except ImportError as e:
     logger.warning(f"Could not import DatabaseManager: {e}")
     EnhancedDatabaseManager = None
-
 try:
     from utils.cache_manager import cache_manager
 except ImportError as e:
     logger.warning(f"Could not import cache_manager: {e}")
     cache_manager = None
-
 try:
     from utils.config_manager import ConfigManager
 except ImportError as e:
@@ -59,9 +52,7 @@ def create_app():
         logger.info("Loaded environment variables from config.env")
     except Exception as e:
         logger.warning(f"Failed to load config.env: {e}")
-
     app = Flask(__name__)
-
     # Configure CORS
     # Get CORS origins from environment or use defaults
     cors_origins_env = os.environ.get("CORS_ORIGINS", "")
@@ -74,7 +65,6 @@ def create_app():
     else:
         cors_origins = []
         logger.info("No CORS_ORIGINS environment variable found, using defaults")
-
     # Add default origins if not specified in environment
     if not cors_origins:
         cors_origins = [
@@ -90,9 +80,7 @@ def create_app():
             "http://127.0.0.1:3001",
         ]
         logger.info("Using default CORS origins", cors_origins=cors_origins)
-
     logger.info("Final CORS origins configuration", cors_origins=cors_origins)
-
     # Configure CORS with more robust settings
     CORS(
         app,
@@ -119,7 +107,6 @@ def create_app():
         max_age=86400,  # Cache preflight for 24 hours
         send_wildcard=False,  # Don't send wildcard, send specific origin
     )
-
     # Initialize database manager
     db_manager = None
     if EnhancedDatabaseManager:
@@ -128,10 +115,8 @@ def create_app():
             logger.info("Database manager initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize database manager: {e}")
-
     # Initialize dependencies for API v4 routes
     deps = {}
-
     # Import v4 dependencies
     try:
         from database.database_manager_v4 import DatabaseManager
@@ -141,7 +126,6 @@ def create_app():
     except ImportError as e:
         logger.warning(f"Could not import DatabaseManagerV4: {e}")
         deps["DatabaseManagerV4"] = None
-
     try:
         from utils.cache_manager_v4 import CacheManagerV4
 
@@ -150,7 +134,6 @@ def create_app():
     except ImportError as e:
         logger.warning(f"Could not import CacheManagerV4: {e}")
         deps["CacheManagerV4"] = None
-
     try:
         from utils.config_manager import ConfigManager
 
@@ -159,7 +142,6 @@ def create_app():
     except ImportError as e:
         logger.warning(f"Could not import ConfigManager: {e}")
         deps["ConfigManager"] = None
-
     # Initialize v4 database manager as singleton
     db_manager_v4_instance = None
     cache_manager_v4_instance = None
@@ -222,7 +204,6 @@ def create_app():
     deps["get_db_manager_v4"] = get_db_manager_v4
     deps["cache_manager_v4"] = get_cache_manager_v4()
     deps["config_manager"] = deps.get("ConfigManager", None)
-
     # Make dependencies available to routes
     app.config["dependencies"] = deps
 
@@ -240,7 +221,6 @@ def create_app():
                             db_healthy = True
                 except Exception as e:
                     logger.error(f"Database health check failed: {e}")
-
             return jsonify(
                 {
                     "status": "healthy" if db_healthy else "unhealthy",
@@ -296,7 +276,6 @@ def create_app():
                     jsonify({"success": False, "error": "Database not available"}),
                     503,
                 )
-
             # Get unique values for filter options
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
@@ -305,51 +284,42 @@ def create_app():
                         "SELECT DISTINCT certifying_agency FROM restaurants WHERE certifying_agency IS NOT NULL AND certifying_agency != '' ORDER BY certifying_agency"
                     )
                     agencies = [row[0] for row in cursor.fetchall()]
-
                     # Get kosher categories
                     cursor.execute(
                         "SELECT DISTINCT kosher_category FROM restaurants WHERE kosher_category IS NOT NULL AND kosher_category != '' ORDER BY kosher_category"
                     )
                     kosher_categories = [row[0] for row in cursor.fetchall()]
-
                     # Get listing types
                     cursor.execute(
                         "SELECT DISTINCT listing_type FROM restaurants WHERE listing_type IS NOT NULL AND listing_type != '' ORDER BY listing_type"
                     )
                     listing_types = [row[0] for row in cursor.fetchall()]
-
                     # Get price ranges
                     cursor.execute(
                         "SELECT DISTINCT price_range FROM restaurants WHERE price_range IS NOT NULL AND price_range != '' ORDER BY price_range"
                     )
                     price_ranges = [row[0] for row in cursor.fetchall()]
-
                     # Get counts
                     cursor.execute(
                         "SELECT COUNT(*) FROM restaurants WHERE status = 'active'"
                     )
                     total_count = cursor.fetchone()[0]
-
                     cursor.execute(
                         "SELECT certifying_agency, COUNT(*) FROM restaurants WHERE status = 'active' AND certifying_agency IS NOT NULL GROUP BY certifying_agency"
                     )
                     agency_counts = dict(cursor.fetchall())
-
                     cursor.execute(
                         "SELECT kosher_category, COUNT(*) FROM restaurants WHERE status = 'active' AND kosher_category IS NOT NULL GROUP BY kosher_category"
                     )
                     category_counts = dict(cursor.fetchall())
-
                     cursor.execute(
                         "SELECT listing_type, COUNT(*) FROM restaurants WHERE status = 'active' AND listing_type IS NOT NULL GROUP BY listing_type"
                     )
                     type_counts = dict(cursor.fetchall())
-
                     cursor.execute(
                         "SELECT price_range, COUNT(*) FROM restaurants WHERE status = 'active' AND price_range IS NOT NULL GROUP BY price_range"
                     )
                     price_counts = dict(cursor.fetchall())
-
             return jsonify(
                 {
                     "success": True,
@@ -368,7 +338,6 @@ def create_app():
                     },
                 }
             )
-
         except Exception as e:
             logger.error(f"Error fetching filter options: {e}")
             return (
@@ -388,7 +357,6 @@ def create_app():
         """Get restaurants with filtering and pagination"""
         try:
             start_time = datetime.now()
-
             # Parse query parameters
             limit = request.args.get("limit", type=int, default=50)
             offset = request.args.get("offset", type=int, default=0)
@@ -399,73 +367,58 @@ def create_app():
             kosher_category = request.args.get("kosher_category", type=str)
             listing_type = request.args.get("listing_type", type=str)
             status = request.args.get("status", type=str, default="active")
-
             # Validate parameters
             if limit > 1000:
                 limit = 1000
             if limit < 1:
                 limit = 50
-
             if not db_manager:
                 return (
                     jsonify({"success": False, "error": "Database not available"}),
                     503,
                 )
-
             # Build query
             query = "SELECT * FROM restaurants WHERE 1=1"
             params = []
-
             if status:
                 query += " AND status = %s"
                 params.append(status)
-
             if search:
                 query += " AND (name ILIKE %s OR address ILIKE %s OR city ILIKE %s)"
                 search_param = f"%{search}%"
                 params.extend([search_param, search_param, search_param])
-
             if city:
                 query += " AND city ILIKE %s"
                 params.append(f"%{city}%")
-
             if state:
                 query += " AND state ILIKE %s"
                 params.append(f"%{state}%")
-
             if certifying_agency:
                 query += " AND certifying_agency ILIKE %s"
                 params.append(f"%{certifying_agency}%")
-
             if kosher_category:
                 query += " AND kosher_category ILIKE %s"
                 params.append(f"%{kosher_category}%")
-
             if listing_type:
                 query += " AND listing_type ILIKE %s"
                 params.append(f"%{listing_type}%")
-
             # Get total count
             count_query = query.replace("SELECT *", "SELECT COUNT(*)")
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(count_query, params)
                     total = cursor.fetchone()[0]
-
             # Add pagination and ordering
             query += " ORDER BY name ASC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
-
             # Execute main query
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(query, params)
                     restaurants = cursor.fetchall()
-
                     # Convert to list of dictionaries
                     columns = [desc[0] for desc in cursor.description]
                     restaurants_data = []
-
                     for row in restaurants:
                         restaurant_dict = dict(zip(columns, row))
                         # Convert datetime objects to strings
@@ -473,7 +426,6 @@ def create_app():
                             if isinstance(value, datetime):
                                 restaurant_dict[key] = value.isoformat()
                         restaurants_data.append(restaurant_dict)
-
             response_data = {
                 "success": True,
                 "restaurants": restaurants_data,
@@ -485,9 +437,7 @@ def create_app():
                     * 1000
                 },
             }
-
             return jsonify(response_data)
-
         except Exception as e:
             logger.error(f"Error fetching restaurants: {e}")
             logger.error(traceback.format_exc())
@@ -511,14 +461,11 @@ def create_app():
                     jsonify({"success": False, "error": "Database not available"}),
                     503,
                 )
-
             query = "SELECT * FROM restaurants WHERE id = %s"
-
             with db_manager.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(query, [restaurant_id])
                     restaurant = cursor.fetchone()
-
                     if not restaurant:
                         return (
                             jsonify(
@@ -526,18 +473,14 @@ def create_app():
                             ),
                             404,
                         )
-
                     # Convert to dictionary
                     columns = [desc[0] for desc in cursor.description]
                     restaurant_dict = dict(zip(columns, restaurant))
-
                     # Convert datetime objects to strings
                     for key, value in restaurant_dict.items():
                         if isinstance(value, datetime):
                             restaurant_dict[key] = value.isoformat()
-
             return jsonify({"success": True, "restaurant": restaurant_dict})
-
         except Exception as e:
             logger.error(f"Error fetching restaurant {restaurant_id}: {e}")
             logger.error(traceback.format_exc())
@@ -583,66 +526,55 @@ def create_app():
     # Register API v4 routes
     try:
         logger.info("Attempting to import simple API v4 routes...")
-
         # Try to import the simple API v4 routes
         from routes.api_v4_simple import api_v4_simple
 
         logger.info(f"Simple API v4 blueprint imported: {api_v4_simple}")
-
         if api_v4_simple is not None:
             app.register_blueprint(api_v4_simple)
             logger.info("Simple API v4 routes registered successfully")
         else:
             logger.warning("Simple API v4 blueprint is None - not registering routes")
-
     except ImportError as e:
         logger.warning(f"Could not import simple API v4 routes: {e}")
     except Exception as e:
         logger.error(f"Error registering simple API v4 routes: {e}")
         logger.error(traceback.format_exc())
-
     # Try to register the original API v4 routes as well
     try:
         logger.info("Attempting to import original API v4 routes...")
         from routes.api_v4 import api_v4
 
         logger.info(f"Original API v4 blueprint imported: {api_v4}")
-
         if api_v4 is not None:
             app.register_blueprint(api_v4)
             logger.info("Original API v4 routes registered successfully")
         else:
             logger.warning("Original API v4 blueprint is None - not registering routes")
-
     except ImportError as e:
         logger.warning(f"Could not import original API v4 routes: {e}")
     except Exception as e:
         logger.error(f"Error registering original API v4 routes: {e}")
         logger.error(traceback.format_exc())
-
     # Register user API routes
     try:
         logger.info("Attempting to import user API routes...")
         from routes.user_api import user_api
 
         logger.info(f"User API blueprint imported: {user_api}")
-
         if user_api is not None:
             app.register_blueprint(user_api)
             logger.info("User API routes registered successfully")
         else:
             logger.warning("User API blueprint is None - not registering routes")
-
     except ImportError as e:
         logger.warning(f"Could not import user API routes: {e}")
-
     # Register shtetl marketplace API routes
     try:
         logger.info("Attempting to import shtetl marketplace API routes...")
         from routes.shtetl_api import shtetl_bp
 
         logger.info(f"Shtetl marketplace blueprint imported: {shtetl_bp}")
-
         if shtetl_bp is not None:
             app.register_blueprint(shtetl_bp)
             logger.info("Shtetl marketplace API routes registered successfully")
@@ -650,7 +582,6 @@ def create_app():
             logger.warning(
                 "Shtetl marketplace blueprint is None - not registering routes"
             )
-
     except ImportError as e:
         logger.warning(f"Could not import shtetl marketplace API routes: {e}")
     except Exception as e:
@@ -659,7 +590,6 @@ def create_app():
 
     # Shtetl store functionality has been merged into the main shtetl blueprint
     # All store routes are now available under /api/v4/shtetl/stores/*
-
     # Add a simple test endpoint directly in app_factory to verify routing works
     @app.route("/api/v4/direct-test", methods=["GET"])
     def api_v4_direct_test():
@@ -787,7 +717,6 @@ def create_app():
             from routes.api_v4 import create_restaurant_service
 
             service = create_restaurant_service()
-
             data = {
                 "name": "Test Restaurant Debug",
                 "address": "789 Test St",
@@ -798,7 +727,6 @@ def create_app():
                 "kosher_category": "dairy",
                 "listing_type": "restaurant",
             }
-
             result = service.create_restaurant(data)
             return jsonify(
                 {
@@ -848,17 +776,17 @@ def create_app():
 
         supabase_auth.pre_warm_jwks()
         logger.info("JWKS cache pre-warmed successfully")
-        
         # Schedule periodic JWKS refresh (every hour)
         try:
             from apscheduler.schedulers.background import BackgroundScheduler
+
             scheduler = BackgroundScheduler()
             scheduler.add_job(
                 func=supabase_auth.pre_warm_jwks,
                 trigger="interval",
                 hours=1,
                 id="jwks_refresh",
-                name="JWKS Cache Refresh"
+                name="JWKS Cache Refresh",
             )
             scheduler.start()
             logger.info("JWKS periodic refresh scheduled successfully")
@@ -866,7 +794,6 @@ def create_app():
             logger.warning("APScheduler not available - JWKS periodic refresh disabled")
         except Exception as e:
             logger.warning(f"Failed to schedule JWKS periodic refresh: {e}")
-            
     except Exception as e:
         logger.warning(f"Failed to pre-warm JWKS cache: {e}")
 
@@ -875,10 +802,11 @@ def create_app():
     def teardown_request(exception=None):
         """Clear Flask g context after each request."""
         from flask import g
-        if hasattr(g, 'user'):
-            delattr(g, 'user')
-        if hasattr(g, 'admin_role'):
-            delattr(g, 'admin_role')
+
+        if hasattr(g, "user"):
+            delattr(g, "user")
+        if hasattr(g, "admin_role"):
+            delattr(g, "admin_role")
 
     logger.info("JewGo Backend application created successfully")
     return app

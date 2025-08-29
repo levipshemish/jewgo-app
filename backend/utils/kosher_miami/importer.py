@@ -2,20 +2,15 @@ import json
 import os
 import sys
 import time
-
 import requests
 from database.database_manager_v3 import EnhancedDatabaseManager
-
 from config.config import get_config
-
 from .processor import KosherMiamiProcessor
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Kosher Miami Importer.
-
 Database import functionality with geocoding for kosher establishment data.
 """
-
 # Add backend to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -26,7 +21,6 @@ class KosherMiamiImporter:
     def __init__(self, database_url: str | None = None) -> None:
         self.database_url = database_url or os.environ.get("DATABASE_URL")
         self.google_api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
-
         # Initialize database manager
         if not self.database_url:
             try:
@@ -35,9 +29,7 @@ class KosherMiamiImporter:
             except Exception as e:
                 msg = f"Database URL not found: {e}"
                 raise Exception(msg)
-
         self.db_manager = EnhancedDatabaseManager(self.database_url)
-
         # Connect to database
         if not self.db_manager.connect():
             msg = "Failed to connect to database"
@@ -55,33 +47,27 @@ class KosherMiamiImporter:
                 "longitude": None,
                 "geocoded": False,
             }
-
         try:
             # Add Miami, FL to incomplete addresses
             search_address = address
             if "," not in address and address.strip():
                 search_address = f"{address}, Miami, FL"
-
             url = "https://maps.googleapis.com/maps/api/geocode/json"
             params = {
                 "address": search_address,
                 "key": self.google_api_key,
             }
-
             response = requests.get(url, params=params, timeout=10)
             data = response.json()
-
             if data["status"] == "OK" and data["results"]:
                 result = data["results"][0]
                 location = result["geometry"]["location"]
-
                 # Parse address components
                 address_components = result["address_components"]
                 street_address = address
                 city = ""
                 state = ""
                 zip_code = ""
-
                 for component in address_components:
                     types = component["types"]
                     if "locality" in types:
@@ -90,7 +76,6 @@ class KosherMiamiImporter:
                         state = component["short_name"]
                     elif "postal_code" in types:
                         zip_code = component["long_name"]
-
                 return {
                     "street_address": street_address,
                     "city": city,
@@ -100,10 +85,8 @@ class KosherMiamiImporter:
                     "longitude": location["lng"],
                     "geocoded": True,
                 }
-
         except Exception as e:
             pass
-
         return {
             "street_address": address,
             "city": "",
@@ -116,13 +99,10 @@ class KosherMiamiImporter:
 
     def prepare_restaurant_data(self, restaurant: dict) -> dict:
         """Prepare restaurant data for database import with geocoding and validation.
-
         Args:
             restaurant (Dict): Restaurant data dictionary
-
         Returns:
             Dict: Prepared restaurant data ready for database insertion
-
         """
         # Check if data is already normalized (has lowercase field names)
         if "name" in restaurant and "type" in restaurant:
@@ -132,29 +112,24 @@ class KosherMiamiImporter:
             # Normalize the restaurant data first
             processor = KosherMiamiProcessor()
             normalized_restaurant = processor.normalize_restaurant_data(restaurant)
-
         # Set kosher_type if not present (derived from 'Type' field)
         if "kosher_type" not in normalized_restaurant:
             processor = KosherMiamiProcessor()
             normalized_restaurant["kosher_type"] = processor.determine_kosher_type(
                 normalized_restaurant.get("type", ""),
             )
-
         # Parse certifications from the certification fields
         cholov_text = normalized_restaurant.get("cholov_yisroel", "")
         pas_text = normalized_restaurant.get("pas_yisroel", "")
-
         certifications = {
             "is_cholov_yisroel": "all items" in cholov_text.lower()
             or "available" in cholov_text.lower(),
             "is_pas_yisroel": "all items" in pas_text.lower()
             or "available" in pas_text.lower(),
         }
-
         # Geocode address to get precise location data
         address = normalized_restaurant.get("address", "")
         parsed_address = self.geocode_address(address)
-
         # Prepare database record, using geocoded data or falling back to normalized data
         db_record = {
             "name": normalized_restaurant["name"],
@@ -185,12 +160,10 @@ class KosherMiamiImporter:
             "is_cholov_yisroel": certifications["is_cholov_yisroel"],
             "is_pas_yisroel": certifications["is_pas_yisroel"],
         }
-
         # Add coordinates if available from geocoding
         if parsed_address["latitude"] and parsed_address["longitude"]:
             db_record["latitude"] = parsed_address["latitude"]
             db_record["longitude"] = parsed_address["longitude"]
-
         return db_record
 
     def import_restaurants(self, restaurants: list[dict]) -> dict:
@@ -204,7 +177,6 @@ class KosherMiamiImporter:
             "geocoded_addresses": 0,
             "errors": [],
         }
-
         for _i, restaurant in enumerate(restaurants, 1):
             try:
                 # Normalize restaurant data for display
@@ -214,17 +186,13 @@ class KosherMiamiImporter:
                     "name",
                     "Unknown Restaurant",
                 )
-
                 # Prepare data for import
                 db_record = self.prepare_restaurant_data(restaurant)
-
                 # Count geocoded addresses
                 if db_record.get("latitude") and db_record.get("longitude"):
                     results["geocoded_addresses"] += 1
-
                 # Use upsert to handle duplicates
                 upsert_result = self.db_manager.upsert_restaurant(db_record)
-
                 if upsert_result["action"] == "inserted":
                     results["successful_imports"] += 1
                     results["new_imports"] += 1
@@ -235,11 +203,9 @@ class KosherMiamiImporter:
                     results["failed_imports"] += 1
                     error_msg = f"Failed to import {restaurant_name}: {upsert_result.get('error', 'Unknown error')}"
                     results["errors"].append(error_msg)
-
                 # Rate limiting for geocoding
                 if self.google_api_key:
                     time.sleep(0.1)
-
             except Exception as e:
                 # Get restaurant name for error message
                 try:
@@ -253,11 +219,9 @@ class KosherMiamiImporter:
                     )
                 except:
                     restaurant_name = "Unknown Restaurant"
-
                 error_msg = f"Error importing {restaurant_name}: {e}"
                 results["errors"].append(error_msg)
                 results["failed_imports"] += 1
-
         return results
 
     def import_from_file(self, file_path: str) -> dict:
@@ -265,9 +229,7 @@ class KosherMiamiImporter:
         try:
             with open(file_path, encoding="utf-8") as f:
                 restaurants = json.load(f)
-
             return self.import_restaurants(restaurants)
-
         except Exception as e:
             msg = f"Failed to import from file {file_path}: {e}"
             raise Exception(msg)
@@ -291,7 +253,6 @@ def main() -> None:
             "kosher_type": "Dairy",
         },
     ]
-
     try:
         importer = KosherMiamiImporter()
         results = importer.import_restaurants(sample_restaurants)

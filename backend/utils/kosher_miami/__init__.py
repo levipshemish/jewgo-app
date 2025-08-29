@@ -1,5 +1,4 @@
 """Kosher Miami Utility Module.
-
 A comprehensive utility for scraping, processing, and importing kosher establishment data
 This module provides:
 - Web scraping functionality for koshermiami.org
@@ -16,7 +15,6 @@ from .scraper import KosherMiamiScraper
 
 __version__ = "1.0.0"
 __author__ = "JewGo Development Team"
-
 __all__ = [
     "KosherMiamiAnalyzer",
     "KosherMiamiImporter",

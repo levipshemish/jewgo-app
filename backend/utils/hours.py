@@ -2,7 +2,6 @@ import json
 import logging
 import re
 from datetime import datetime, time, timedelta
-
 import pytz
 from dateutil import parser as date_parser
 
@@ -13,13 +12,10 @@ try:
 except ImportError:
     TimezoneFinder = None
     TIMEZONEFINDER_AVAILABLE = False
-
 """Unified Hours Utility Module.
-
 This module provides centralized time parsing and business hours management functions
 for the JewGo application. It consolidates all time-related utilities into a single
 reusable module.
-
 Features:
 - Timezone-aware time parsing
 - Business hours format parsing
@@ -27,14 +23,12 @@ Features:
 - Status calculation helpers
 - Caching for performance optimization
 """
-
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
 class HoursParser:
     """Unified parser for business hours in various formats.
-
     Supports formats like:
     - "Mon-Fri: 9:00 AM - 10:00 PM"
     - "Monday: 9:00 AM - 10:00 PM"
@@ -61,36 +55,28 @@ class HoursParser:
             "sun": "sun",
             "daily": "daily",
         }
-
         self.day_order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
     def parse_hours(self, hours_data: str | None) -> tuple[bool, list[dict]]:
         """Parse business hours from various formats.
-
         Args:
             hours_data: String containing business hours
-
         Returns:
             Tuple of (success, parsed_hours_list)
-
         """
         if not hours_data:
             return False, []
-
         try:
             # Try structured parsing first
             parsed = self._parse_structured_hours(hours_data)
             if parsed:
                 return True, parsed
-
             # Fallback to regex parsing
             parsed = self._parse_regex_hours(hours_data)
             if parsed:
                 return True, parsed
-
             # Final fallback
             return self._fallback_parsing(hours_data)
-
         except Exception as e:
             logger.exception("Error parsing hours", hours_data=hours_data, error=str(e))
             return False, []
@@ -117,16 +103,13 @@ class HoursParser:
                     error=str(e),
                     error_type=type(e).__name__,
                 )
-
         # Handle common structured formats
         lines = hours_data.split("\n")
         parsed_hours = []
-
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-
             # Pattern: "Mon-Fri: 9:00 AM - 10:00 PM"
             match = re.match(
                 r"([A-Za-z-,\s]+):\s*([0-9:]+)\s*(AM|PM)\s*-\s*([0-9:]+)\s*(AM|PM)",
@@ -137,10 +120,8 @@ class HoursParser:
                 days = self._parse_days(days_str)
                 start = self._parse_time(f"{start_time} {start_ampm}")
                 end = self._parse_time(f"{end_time} {end_ampm}")
-
                 for day in days:
                     parsed_hours.append({"day": day, "start": start, "end": end})
-
         return parsed_hours if parsed_hours else None
 
     def _parse_regex_hours(self, hours_data: str) -> list[dict] | None:
@@ -153,11 +134,9 @@ class HoursParser:
             # Daily: 9:00 AM - 10:00 PM
             r"Daily:\s*([0-9:]+)\s*(AM|PM)\s*-\s*([0-9:]+)\s*(AM|PM)",
         ]
-
         for pattern in patterns:
             matches = re.finditer(pattern, hours_data, re.IGNORECASE)
             parsed_hours = []
-
             for match in matches:
                 groups = match.groups()
                 if "Daily" in pattern:
@@ -178,16 +157,12 @@ class HoursParser:
                     days = self._parse_days(days_str)
                 else:
                     continue  # Skip unexpected patterns
-
                 start = self._parse_time(f"{start_time} {start_ampm}")
                 end = self._parse_time(f"{end_time} {end_ampm}")
-
                 for day in days:
                     parsed_hours.append({"day": day, "start": start, "end": end})
-
             if parsed_hours:
                 return parsed_hours
-
         return None
 
     def _fallback_parsing(self, hours_data: str) -> tuple[bool, list[dict]]:
@@ -196,7 +171,6 @@ class HoursParser:
             # Try to extract any time-like patterns
             time_pattern = r"([0-9]{1,2}):?([0-9]{2})?\s*(AM|PM)"
             times = re.findall(time_pattern, hours_data, re.IGNORECASE)
-
             if len(times) >= 2:
                 # Assume first two times are start and end
                 start_time = self._parse_time(
@@ -205,12 +179,9 @@ class HoursParser:
                 end_time = self._parse_time(
                     f"{times[1][0]}:{times[1][1] or '00'} {times[1][2]}",
                 )
-
                 # Assume daily hours
                 return True, [{"day": "daily", "start": start_time, "end": end_time}]
-
             return False, []
-
         except Exception as e:
             logger.exception("Fallback parsing failed", error=str(e))
             return False, []
@@ -219,7 +190,6 @@ class HoursParser:
         """Parse day specifications into list of day codes."""
         days = []
         parts = [part.strip().lower() for part in days_str.split(",")]
-
         for part in parts:
             if part in self.day_mapping:
                 day_code = self.day_mapping[part]
@@ -227,23 +197,18 @@ class HoursParser:
                     days.extend(self.day_order)
                 else:
                     days.append(day_code)
-
         return days
 
     def _get_days_between(self, start_day: str, end_day: str) -> list[str]:
         """Get all days between start_day and end_day inclusive."""
         start = self.day_mapping.get(start_day.lower())
         end = self.day_mapping.get(end_day.lower())
-
         if not start or not end:
             return []
-
         if start == "daily" or end == "daily":
             return self.day_order
-
         start_idx = self.day_order.index(start)
         end_idx = self.day_order.index(end)
-
         if start_idx <= end_idx:
             return self.day_order[start_idx : end_idx + 1]
         # Handle wraparound (e.g., Sat-Mon)
@@ -254,24 +219,19 @@ class HoursParser:
         try:
             # Handle various time formats
             time_str = time_str.strip().upper()
-
             # Pattern: "9:00 AM" or "9 AM"
             match = re.match(r"([0-9]{1,2}):?([0-9]{2})?\s*(AM|PM)", time_str)
             if match:
                 hour = int(match.group(1))
                 minute = int(match.group(2) or "0")
                 ampm = match.group(3)
-
                 if ampm == "PM" and hour != 12:
                     hour += 12
                 elif ampm == "AM" and hour == 12:
                     hour = 0
-
                 return time(hour, minute)
-
             # Try direct parsing
             return date_parser.parse(time_str).time()
-
         except Exception as e:
             logger.exception("Error parsing time", time_str=time_str, error=str(e))
             return time(0, 0)
@@ -279,7 +239,6 @@ class HoursParser:
     def _convert_json_hours(self, data: dict | list) -> list[dict]:
         """Convert JSON hours data to standard format."""
         parsed_hours = []
-
         if isinstance(data, dict):
             for day, hours in data.items():
                 if isinstance(hours, dict) and "open" in hours and "close" in hours:
@@ -288,7 +247,6 @@ class HoursParser:
                     parsed_hours.append(
                         {"day": day.lower()[:3], "start": start, "end": end},
                     )
-
         elif isinstance(data, list):
             for item in data:
                 if isinstance(item, dict) and "day" in item and "hours" in item:
@@ -306,7 +264,6 @@ class HoursParser:
                                     "end": end,
                                 },
                             )
-
         return parsed_hours
 
 
@@ -321,26 +278,21 @@ class TimezoneHelper:
         state: str | None,
     ) -> str:
         """Determine timezone based on location.
-
         Args:
             latitude: Restaurant latitude
             longitude: Restaurant longitude
             city: Restaurant city
             state: Restaurant state
-
         Returns:
             Timezone string (e.g., 'America/New_York')
-
         """
         # Default to Eastern Time for Florida
         default_tz = "America/New_York"
-
         if not latitude or not longitude:
             # Fallback based on state/city
             if state and state.upper() == "FL":
                 return default_tz
             return default_tz
-
         if TIMEZONEFINDER_AVAILABLE:
             try:
                 # Use timezonefinder for precise timezone lookup
@@ -354,7 +306,6 @@ class TimezoneHelper:
                     latitude=latitude,
                     longitude=longitude,
                 )
-
         # Fallback to manual mapping
         return TimezoneHelper._manual_timezone_lookup(
             latitude,
@@ -386,33 +337,28 @@ class TimezoneHelper:
                 "Jackson",
                 "Calhoun",
                 "Liberty",
-                "Gulf",
+                "Gul",
                 "Franklin",
                 "Wakulla",
                 "Jefferson",
                 "Leon",
                 "Gadsden",
             ]
-
             if city and any(
                 county.lower() in city.lower() for county in central_counties
             ):
                 return "America/Chicago"
             return "America/New_York"
-
         # Default to Eastern Time
         return "America/New_York"
 
     @staticmethod
     def get_current_time_in_timezone(timezone_str: str) -> datetime:
         """Get current time in specified timezone.
-
         Args:
             timezone_str: Timezone string
-
         Returns:
             Current datetime in specified timezone
-
         """
         try:
             tz = pytz.timezone(timezone_str)
@@ -436,26 +382,20 @@ class StatusCalculator:
         current_time: datetime,
     ) -> tuple[bool, datetime | None, str]:
         """Check if restaurant is currently open.
-
         Args:
             parsed_hours: List of parsed business hours
             current_time: Current time in restaurant's timezone
-
         Returns:
             Tuple of (is_open, next_open_time, reason)
-
         """
         if not parsed_hours:
             return False, None, "No business hours available"
-
         current_day = current_time.strftime("%a").lower()[:3]
         current_time_obj = current_time.time()
-
         # Check today's hours
         today_hours = [
             h for h in parsed_hours if h["day"] == current_day or h["day"] == "daily"
         ]
-
         if not today_hours:
             # Check if closed today
             next_open = StatusCalculator._calculate_next_open_time(
@@ -463,12 +403,10 @@ class StatusCalculator:
                 current_time,
             )
             return False, next_open, "Closed today"
-
         # Check if currently open
         for hours in today_hours:
             start = hours["start"]
             end = hours["end"]
-
             # Handle overnight hours (e.g., 10 PM - 2 AM)
             if end < start:
                 # Current time is after start OR before end
@@ -477,7 +415,6 @@ class StatusCalculator:
             # Normal hours
             elif start <= current_time_obj <= end:
                 return True, None, "Open"
-
         # Not open now, calculate next open time
         next_open = StatusCalculator._calculate_next_open_time(
             parsed_hours,
@@ -493,15 +430,12 @@ class StatusCalculator:
         """Calculate the next time the restaurant will open."""
         if not parsed_hours:
             return None
-
         current_day = current_time.strftime("%a").lower()[:3]
         current_time_obj = current_time.time()
-
         # Check remaining hours today
         today_hours = [
             h for h in parsed_hours if h["day"] == current_day or h["day"] == "daily"
         ]
-
         for hours in today_hours:
             start = hours["start"]
             if start > current_time_obj:
@@ -511,15 +445,12 @@ class StatusCalculator:
                     start,
                     tzinfo=current_time.tzinfo,
                 )
-
         # Check future days
         day_order = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         current_day_idx = day_order.index(current_day)
-
         for i in range(1, 8):  # Check next 7 days
             check_day_idx = (current_day_idx + i) % 7
             check_day = day_order[check_day_idx]
-
             day_hours = [
                 h for h in parsed_hours if h["day"] == check_day or h["day"] == "daily"
             ]
@@ -532,7 +463,6 @@ class StatusCalculator:
                     next_open_time,
                     tzinfo=current_time.tzinfo,
                 )
-
         return None
 
 

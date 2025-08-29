@@ -1,20 +1,16 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Feature flags for v4 API migration.
-
 This module provides feature flags to control the gradual migration from v3 to v4 APIs.
 It allows for A/B testing, gradual rollout, and easy rollback if needed.
-
 Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-
 import hashlib
 import os
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +20,6 @@ def _load_config_env():
     """Load environment variables from root .env file if it exists."""
     # Look for .env file in the project root (2 levels up from utils/)
     root_env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
-
     if os.path.exists(root_env_path):
         try:
             with open(root_env_path, "r") as f:
@@ -34,24 +29,20 @@ def _load_config_env():
                         key, value = line.split("=", 1)
                         key = key.strip()
                         value = value.strip()
-
                         # Remove quotes if present
                         if (value.startswith('"') and value.endswith('"')) or (
                             value.startswith("'") and value.endswith("'")
                         ):
                             value = value[1:-1]
-
                         # Only set if not already in environment
                         if key not in os.environ:
                             os.environ[key] = value
                             logger.debug(f"Loaded .env variable: {key}")
-
             logger.info(f"Loaded environment variables from {root_env_path}")
         except Exception as e:
             logger.warning(f"Failed to load .env file: {e}")
     else:
         logger.debug(f".env file not found at {root_env_path}")
-
         # Fallback to backend/config.env for backward compatibility
         config_env_path = os.path.join(os.path.dirname(__file__), "..", "config.env")
         if os.path.exists(config_env_path):
@@ -63,25 +54,22 @@ def _load_config_env():
                             key, value = line.split("=", 1)
                             key = key.strip()
                             value = value.strip()
-
                             # Remove quotes if present
                             if (value.startswith('"') and value.endswith('"')) or (
                                 value.startswith("'") and value.endswith("'")
                             ):
                                 value = value[1:-1]
-
                             # Only set if not already in environment
                             if key not in os.environ:
                                 os.environ[key] = value
                                 logger.debug(f"Loaded config.env variable: {key}")
-
                 logger.info(
                     f"Loaded environment variables from {config_env_path} (fallback)"
                 )
             except Exception as e:
                 logger.warning(f"Failed to load config.env file: {e}")
         else:
-            logger.debug(f"No .env or config.env file found")
+            logger.debug("No .env or config.env file found")
 
 
 class MigrationStage(Enum):
@@ -100,7 +88,6 @@ class APIV4FeatureFlags:
     def __init__(self):
         # Load config.env file first
         _load_config_env()
-
         self.flags = {
             "api_v4_enabled": {
                 "default": False,
@@ -164,13 +151,11 @@ class APIV4FeatureFlags:
         """Load feature flags from environment variables."""
         # Ensure config.env is loaded first
         _load_config_env()
-
         for flag_name in self.flags:
             # Fix the environment variable name construction
             # Remove the 'api_v4_' prefix from flag_name when constructing env var name
             env_var_name = flag_name.replace("api_v4_", "").upper()
             env_var = f"API_V4_{env_var_name}"
-
             if env_var in os.environ:
                 try:
                     value = os.environ[env_var].lower()
@@ -179,7 +164,7 @@ class APIV4FeatureFlags:
                         logger.info(
                             f"Loaded feature flag from env: {flag_name}=True (from {env_var})"
                         )
-                    elif value in ("false", "0", "no", "off"):
+                    elif value in ("false", "0", "no", "of"):
                         self.flags[flag_name]["default"] = False
                         logger.info(
                             f"Loaded feature flag from env: {flag_name}=False (from {env_var})"
@@ -194,7 +179,6 @@ class APIV4FeatureFlags:
                 logger.debug(
                     f"Environment variable {env_var} not found, using default value"
                 )
-
         # Log the final state of the flags
         logger.info("Feature flags loaded from environment:")
         for flag_name, flag_info in self.flags.items():
@@ -207,21 +191,16 @@ class APIV4FeatureFlags:
         if flag_name not in self.flags:
             logger.warning(f"Unknown feature flag: {flag_name}")
             return False
-
         flag = self.flags[flag_name]
-
         # Check user override first
         if user_id and self._get_user_override(flag_name, user_id):
             return True
-
         # Check percentage rollout
         if self._is_percentage_rollout(flag_name, user_id):
             return True
-
         # Check stage - if stage is not DISABLED, consider it enabled
         if flag["stage"] != MigrationStage.DISABLED:
             return True
-
         # Return default value
         return flag["default"]
 
@@ -239,23 +218,18 @@ class APIV4FeatureFlags:
         """Check if user is in the percentage rollout for this flag."""
         if not user_id:
             return False
-
         # Get rollout percentage from environment
         env_var = f"API_V4_{flag_name.upper()}_ROLLOUT"
         if env_var not in os.environ:
             return False
-
         try:
             rollout_percentage = float(os.environ[env_var])
             if rollout_percentage <= 0 or rollout_percentage > 100:
                 return False
-
             # Use consistent hashing to determine user assignment
             hash_value = int(hashlib.md5(user_id.encode()).hexdigest(), 16)
             user_percentage = (hash_value % 100) + 1
-
             return user_percentage <= rollout_percentage
-
         except (ValueError, TypeError):
             logger.warning(f"Invalid rollout percentage for {flag_name}")
             return False
@@ -264,7 +238,6 @@ class APIV4FeatureFlags:
         """Get the current stage for a feature flag."""
         if flag_name not in self.flags:
             return MigrationStage.DISABLED
-
         return self.flags[flag_name]["stage"]
 
     def set_stage(self, flag_name: str, stage: MigrationStage):
@@ -272,7 +245,6 @@ class APIV4FeatureFlags:
         if flag_name not in self.flags:
             logger.warning(f"Unknown feature flag: {flag_name}")
             return
-
         self.flags[flag_name]["stage"] = stage
         logger.info(f"Set feature flag {flag_name} to stage: {stage.value}")
 
@@ -292,7 +264,6 @@ class APIV4FeatureFlags:
         if flag_name not in self.flags:
             logger.warning(f"Unknown feature flag: {flag_name}")
             return
-
         self.flags[flag_name]["default"] = True
         logger.info(f"Enabled feature flag: {flag_name}")
 
@@ -301,7 +272,6 @@ class APIV4FeatureFlags:
         if flag_name not in self.flags:
             logger.warning(f"Unknown feature flag: {flag_name}")
             return
-
         self.flags[flag_name]["default"] = False
         logger.info(f"Disabled feature flag: {flag_name}")
 
@@ -310,11 +280,9 @@ class APIV4FeatureFlags:
         if flag_name not in self.flags:
             logger.warning(f"Unknown feature flag: {flag_name}")
             return
-
         if percentage < 0 or percentage > 100:
             logger.warning(f"Invalid rollout percentage: {percentage}")
             return
-
         env_var = f"API_V4_{flag_name.upper()}_ROLLOUT"
         os.environ[env_var] = str(percentage)
         logger.info(f"Set rollout percentage for {flag_name}: {percentage}%")
@@ -333,18 +301,15 @@ def require_api_v4_flag(flag_name: str, default: bool = False):
                 from flask import request
 
                 user_id = None
-
                 # Try to get user ID from request
                 if hasattr(request, "user_id"):
                     user_id = request.user_id
                 elif hasattr(request, "headers") and "X-User-ID" in request.headers:
                     user_id = request.headers["X-User-ID"]
-
                 if api_v4_flags.is_enabled(flag_name, user_id):
                     return f(*args, **kwargs)
                 else:
                     return _handle_fallback(flag_name, default)
-
             except Exception as e:
                 logger.error(f"Error checking feature flag {flag_name}: {e}")
                 return _handle_fallback(flag_name, default)
@@ -396,11 +361,9 @@ def _handle_fallback(flag_name: str, default: bool):
 def get_migration_status() -> Dict[str, Any]:
     """Get the current migration status."""
     flags = api_v4_flags.get_all_flags()
-
     # Calculate overall status
     enabled_count = sum(1 for flag in flags.values() if flag["enabled"])
     total_count = len(flags)
-
     return {
         "timestamp": datetime.now().isoformat(),
         "overall_status": {
@@ -428,7 +391,6 @@ def get_migration_status() -> Dict[str, Any]:
 def migrate_stage(flag_name: str, target_stage: MigrationStage):
     """Migrate a feature flag to a specific stage."""
     api_v4_flags.set_stage(flag_name, target_stage)
-
     # Update default value based on stage
     if target_stage in [
         MigrationStage.TESTING,
@@ -439,19 +401,16 @@ def migrate_stage(flag_name: str, target_stage: MigrationStage):
         api_v4_flags.enable_flag(flag_name)
     else:
         api_v4_flags.disable_flag(flag_name)
-
     logger.info(f"Migrated {flag_name} to {target_stage.value}")
 
 
 def bulk_migrate_stage(flag_prefix: str, target_stage: MigrationStage):
     """Migrate all flags with a specific prefix to a target stage."""
     migrated_count = 0
-
     for flag_name in api_v4_flags.flags:
         if flag_name.startswith(flag_prefix):
             migrate_stage(flag_name, target_stage)
             migrated_count += 1
-
     logger.info(
         f"Bulk migrated {migrated_count} flags with prefix '{flag_prefix}' to {target_stage.value}"
     )

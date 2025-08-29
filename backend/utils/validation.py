@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from typing import Any, Dict, Optional
-
 from pydantic import (
     BaseModel,
     EmailStr,
@@ -11,12 +9,10 @@ from pydantic import ValidationError as PydanticValidationError
 from pydantic import (
     conint,
 )
-
 from .error_handler import ValidationError
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Request schema validation helpers using Pydantic.
-
 Provides lightweight request validation utilities for Flask routes.
 """
 

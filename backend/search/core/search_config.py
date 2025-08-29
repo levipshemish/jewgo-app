@@ -1,17 +1,13 @@
 import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Search Configuration Management.
 ===============================
-
 This module handles configuration for all search providers and components.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -28,8 +24,6 @@ class PostgreSQLSearchConfig:
 
 
 # Vector, semantic, and hybrid search configurations removed
-
-
 @dataclass
 class CacheConfig:
     """Configuration for search caching."""
@@ -62,11 +56,9 @@ class SearchConfig:
     # Provider configurations
     postgresql: PostgreSQLSearchConfig = field(default_factory=PostgreSQLSearchConfig)
     # Vector, semantic, and hybrid configurations removed
-
     # System configurations
     cache: CacheConfig = field(default_factory=CacheConfig)
     performance: PerformanceConfig = field(default_factory=PerformanceConfig)
-
     # General settings
     default_search_type: str = "postgresql"
     enable_logging: bool = True
@@ -77,7 +69,6 @@ class SearchConfig:
     def from_env(cls) -> "SearchConfig":
         """Create configuration from environment variables."""
         config = cls()
-
         # PostgreSQL configuration
         config.postgresql.enabled = (
             os.getenv("POSTGRESQL_SEARCH_ENABLED", "true").lower() == "true"
@@ -86,16 +77,13 @@ class SearchConfig:
             os.getenv("POSTGRESQL_FUZZY_THRESHOLD", "0.3")
         )
         config.postgresql.max_results = int(os.getenv("POSTGRESQL_MAX_RESULTS", "100"))
-
         # Vector, semantic, and hybrid search configurations removed
-
         # Cache configuration
         config.cache.enabled = (
             os.getenv("SEARCH_CACHE_ENABLED", "true").lower() == "true"
         )
         config.cache.redis_url = os.getenv("REDIS_URL")
         config.cache.default_ttl = int(os.getenv("SEARCH_CACHE_TTL", "300"))
-
         # Performance configuration
         config.performance.timeout_seconds = int(
             os.getenv("SEARCH_TIMEOUT_SECONDS", "10")
@@ -103,7 +91,6 @@ class SearchConfig:
         config.performance.max_results_per_request = int(
             os.getenv("SEARCH_MAX_RESULTS", "100")
         )
-
         # General settings
         config.default_search_type = os.getenv("DEFAULT_SEARCH_TYPE", "postgresql")
         config.enable_logging = (
@@ -112,7 +99,6 @@ class SearchConfig:
         config.enable_metrics = (
             os.getenv("SEARCH_METRICS_ENABLED", "true").lower() == "true"
         )
-
         return config
 
     def to_dict(self) -> Dict[str, Any]:
@@ -150,37 +136,30 @@ class SearchConfig:
     def validate(self) -> List[str]:
         """Validate configuration and return list of errors."""
         errors = []
-
         # Validate PostgreSQL configuration
         if self.postgresql.enabled:
             if not 0.0 <= self.postgresql.fuzzy_threshold <= 1.0:
                 errors.append("PostgreSQL fuzzy threshold must be between 0.0 and 1.0")
             if self.postgresql.max_results <= 0:
                 errors.append("PostgreSQL max results must be positive")
-
         # Vector, semantic, and hybrid validation removed
-
         # Validate cache configuration
         if self.cache.enabled and self.cache.redis_url:
             if not self.cache.redis_url.startswith(("redis://", "rediss://")):
                 errors.append("Redis URL must start with redis:// or rediss://")
-
         # Validate performance configuration
         if self.performance.timeout_seconds <= 0:
             errors.append("Performance timeout must be positive")
         if self.performance.max_results_per_request <= 0:
             errors.append("Performance max results must be positive")
-
         return errors
 
     def get_enabled_providers(self) -> List[str]:
         """Get list of enabled search providers."""
         providers = []
-
         if self.postgresql.enabled:
             providers.append("postgresql")
         # Vector, semantic, and hybrid providers removed
-
         return providers
 
     def is_provider_enabled(self, provider_name: str) -> bool:
@@ -210,6 +189,5 @@ def validate_search_config() -> bool:
     if errors:
         logger.error("Search configuration validation failed", errors=errors)
         return False
-
     logger.info("Search configuration validation passed")
     return True

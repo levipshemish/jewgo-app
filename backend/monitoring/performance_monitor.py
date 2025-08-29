@@ -1,10 +1,8 @@
 """
 Performance Monitor for JewGo Backend
 ====================================
-
 This module provides comprehensive performance monitoring for the JewGo backend,
 with specific focus on distance filtering and "open now" filtering performance.
-
 Features:
 - Query execution time tracking
 - Distance filtering performance metrics
@@ -12,7 +10,6 @@ Features:
 - Database query optimization monitoring
 - Cache hit/miss ratio tracking
 - Performance alerting
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-01-27
@@ -80,7 +77,6 @@ class PerformanceMonitor:
         self.open_now_metrics: deque = deque(maxlen=max_metrics)
         self.cache_stats = defaultdict(int)
         self.lock = threading.Lock()
-
         # Performance thresholds
         self.distance_query_threshold_ms = 1000  # 1 second
         self.open_now_query_threshold_ms = 500  # 500ms
@@ -103,10 +99,8 @@ class PerformanceMonitor:
             error_message=error_message,
             metadata=metadata,
         )
-
         with self.lock:
             self.metrics.append(metric)
-
             # Check for performance alerts
             self._check_performance_alerts(metric)
 
@@ -125,7 +119,6 @@ class PerformanceMonitor:
             "restaurants_count": restaurants_count,
             "cache_hit": cache_hit,
         }
-
         self.record_metric(
             operation="distance_filtering",
             duration_ms=duration_ms,
@@ -133,7 +126,6 @@ class PerformanceMonitor:
             error_message=error_message,
             metadata=metadata,
         )
-
         # Store detailed distance metrics
         distance_metric = {
             "duration_ms": duration_ms,
@@ -144,7 +136,6 @@ class PerformanceMonitor:
             "timestamp": datetime.now(),
             "error_message": error_message,
         }
-
         with self.lock:
             self.distance_metrics.append(distance_metric)
 
@@ -165,7 +156,6 @@ class PerformanceMonitor:
             "timezone_error": timezone_error,
             "parsing_error": parsing_error,
         }
-
         self.record_metric(
             operation="open_now_filtering",
             duration_ms=duration_ms,
@@ -173,7 +163,6 @@ class PerformanceMonitor:
             error_message=error_message,
             metadata=metadata,
         )
-
         # Store detailed open now metrics
         open_now_metric = {
             "duration_ms": duration_ms,
@@ -185,7 +174,6 @@ class PerformanceMonitor:
             "timestamp": datetime.now(),
             "error_message": error_message,
         }
-
         with self.lock:
             self.open_now_metrics.append(open_now_metric)
 
@@ -209,7 +197,6 @@ class PerformanceMonitor:
                 f"Slow distance filtering query: {metric.duration_ms:.2f}ms "
                 f"(threshold: {self.distance_query_threshold_ms}ms)"
             )
-
         elif (
             metric.operation == "open_now_filtering"
             and metric.duration_ms > self.open_now_query_threshold_ms
@@ -218,7 +205,6 @@ class PerformanceMonitor:
                 f"Slow open now filtering query: {metric.duration_ms:.2f}ms "
                 f"(threshold: {self.open_now_query_threshold_ms}ms)"
             )
-
         if not metric.success:
             logger.error(
                 f"Performance metric failure: {metric.operation} - {metric.error_message}"
@@ -227,12 +213,10 @@ class PerformanceMonitor:
     def get_distance_filtering_stats(self, hours: int = 24) -> DistanceFilteringMetrics:
         """Get distance filtering statistics for the specified time period."""
         cutoff_time = datetime.now() - timedelta(hours=hours)
-
         with self.lock:
             recent_metrics = [
                 m for m in self.distance_metrics if m["timestamp"] >= cutoff_time
             ]
-
         if not recent_metrics:
             return DistanceFilteringMetrics(
                 total_queries=0,
@@ -244,14 +228,12 @@ class PerformanceMonitor:
                 max_distance_miles=0.0,
                 restaurants_returned=0,
             )
-
         # Calculate statistics
         total_queries = len(recent_metrics)
         durations = [m["duration_ms"] for m in recent_metrics]
         distances = [m["distance_miles"] for m in recent_metrics if m["distance_miles"]]
         restaurants_counts = [m["restaurants_count"] for m in recent_metrics]
         cache_hits = sum(1 for m in recent_metrics if m["cache_hit"])
-
         return DistanceFilteringMetrics(
             total_queries=total_queries,
             avg_query_time_ms=sum(durations) / len(durations),
@@ -270,12 +252,10 @@ class PerformanceMonitor:
     def get_open_now_filtering_stats(self, hours: int = 24) -> OpenNowFilteringMetrics:
         """Get open now filtering statistics for the specified time period."""
         cutoff_time = datetime.now() - timedelta(hours=hours)
-
         with self.lock:
             recent_metrics = [
                 m for m in self.open_now_metrics if m["timestamp"] >= cutoff_time
             ]
-
         if not recent_metrics:
             return OpenNowFilteringMetrics(
                 total_queries=0,
@@ -286,7 +266,6 @@ class PerformanceMonitor:
                 timezone_errors=0,
                 parsing_errors=0,
             )
-
         # Calculate statistics
         total_queries = len(recent_metrics)
         durations = [m["duration_ms"] for m in recent_metrics]
@@ -294,7 +273,6 @@ class PerformanceMonitor:
         open_restaurants = sum(m["open_restaurants"] for m in recent_metrics)
         timezone_errors = sum(1 for m in recent_metrics if m["timezone_error"])
         parsing_errors = sum(1 for m in recent_metrics if m["parsing_error"])
-
         return OpenNowFilteringMetrics(
             total_queries=total_queries,
             avg_query_time_ms=sum(durations) / len(durations),
@@ -315,14 +293,12 @@ class PerformanceMonitor:
                 hits = self.cache_stats.get(f"{cache_type}_hits", 0)
                 misses = self.cache_stats.get(f"{cache_type}_misses", 0)
                 total = hits + misses
-
                 if total > 0:
                     stats[f"{cache_type}_hit_ratio"] = hits / total
                     stats[f"{cache_type}_total_requests"] = total
                 else:
                     stats[f"{cache_type}_hit_ratio"] = 0.0
                     stats[f"{cache_type}_total_requests"] = 0
-
             return stats
 
     def get_overall_stats(self, hours: int = 24) -> Dict[str, Any]:
@@ -330,7 +306,6 @@ class PerformanceMonitor:
         distance_stats = self.get_distance_filtering_stats(hours)
         open_now_stats = self.get_open_now_filtering_stats(hours)
         cache_stats = self.get_cache_stats()
-
         return {
             "distance_filtering": asdict(distance_stats),
             "open_now_filtering": asdict(open_now_stats),
@@ -350,36 +325,29 @@ class PerformanceMonitor:
                     "cache_stats": dict(self.cache_stats),
                     "export_timestamp": datetime.now().isoformat(),
                 }
-
             with open(filepath, "w") as f:
                 json.dump(data, f, default=str, indent=2)
-
             logger.info(f"Metrics exported to {filepath}")
-
         except Exception as e:
             logger.error(f"Failed to export metrics: {e}")
 
     def clear_old_metrics(self, hours: int = 24):
         """Clear metrics older than specified hours."""
         cutoff_time = datetime.now() - timedelta(hours=hours)
-
         with self.lock:
             # Clear old metrics
             self.metrics = deque(
                 [m for m in self.metrics if m.timestamp >= cutoff_time],
                 maxlen=self.max_metrics,
             )
-
             self.distance_metrics = deque(
                 [m for m in self.distance_metrics if m["timestamp"] >= cutoff_time],
                 maxlen=self.max_metrics,
             )
-
             self.open_now_metrics = deque(
                 [m for m in self.open_now_metrics if m["timestamp"] >= cutoff_time],
                 maxlen=self.max_metrics,
             )
-
         logger.info(f"Cleared metrics older than {hours} hours")
 
 
@@ -395,7 +363,6 @@ def performance_decorator(operation: str):
             start_time = time.time()
             success = True
             error_message = None
-
             try:
                 result = func(*args, **kwargs)
                 return result

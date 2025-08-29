@@ -1,24 +1,19 @@
 import re
 from datetime import datetime, time
 from typing import Any
-
 import pytz
 from utils.logging_config import get_logger
-
 from .hours_formatter import HoursFormatter
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Hours Management System for JewGo App.
 ====================================
-
 This module provides comprehensive hours management functionality including:
 - Normalization of hours from various sources (Google Places API, ORB, manual entry)
 - Standardized JSON format for hours storage
 - Helper functions for checking open/closed status
 - Formatting functions for UI display
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -38,7 +33,6 @@ class HoursManager:
         "saturday": "sat",
         "sunday": "sun",
     }
-
     # Day names for display
     DAY_NAMES = {
         "mon": "Monday",
@@ -49,7 +43,6 @@ class HoursManager:
         "sat": "Saturday",
         "sun": "Sunday",
     }
-
     # Short day names for compact display
     SHORT_DAY_NAMES = {
         "mon": "Mon",
@@ -63,10 +56,8 @@ class HoursManager:
 
     def __init__(self, timezone: str = "America/New_York") -> None:
         """Initialize HoursManager with timezone.
-
         Args:
             timezone: Timezone string (default: America/New_York for Miami)
-
         """
         self.timezone = pytz.timezone(timezone)
 
@@ -76,14 +67,11 @@ class HoursManager:
         source: str = "unknown",
     ) -> dict[str, Any]:
         """Normalize hours data from various sources to standard JSON format.
-
         Args:
             hours_data: Raw hours data from various sources
             source: Source of the hours data ('google_places', 'orb', 'manual')
-
         Returns:
             Normalized hours in standard JSON format
-
         """
         try:
             if source == "google_places":
@@ -104,7 +92,6 @@ class HoursManager:
         hours_data: dict[str, Any],
     ) -> dict[str, Any]:
         """Normalize Google Places API hours format.
-
         Google Places format:
         {
             "open_now": true,
@@ -123,9 +110,7 @@ class HoursManager:
         """
         if not hours_data:
             return self._get_empty_hours()
-
         normalized = self._get_empty_hours()
-
         # Parse periods if available
         if "periods" in hours_data:
             for period in hours_data["periods"]:
@@ -133,7 +118,6 @@ class HoursManager:
                     day_num = period["open"]["day"]
                     open_time = period["open"]["time"]
                     close_time = period["close"]["time"]
-
                     day_name = self._get_day_name_from_number(day_num)
                     if day_name:
                         normalized["hours"][day_name] = {
@@ -141,7 +125,6 @@ class HoursManager:
                             "close": self._format_time_from_google(close_time),
                             "is_open": True,
                         }
-
         # Parse weekday_text if periods are not available
         elif "weekday_text" in hours_data:
             for day_text in hours_data["weekday_text"]:
@@ -154,15 +137,12 @@ class HoursManager:
                             "close": close_time,
                             "is_open": True,
                         }
-
         # Set open_now status
         normalized["open_now"] = hours_data.get("open_now", False)
-
         return normalized
 
     def _normalize_orb_hours(self, hours_text: str) -> dict[str, Any]:
         """Normalize ORB hours text format.
-
         ORB format examples:
         - "Mon-Fri: 11AM-9PM, Sat: 12PM-10PM, Sun: Closed"
         - "Daily: 11AM-11PM"
@@ -170,9 +150,7 @@ class HoursManager:
         """
         if not hours_text:
             return self._get_empty_hours()
-
         normalized = self._get_empty_hours()
-
         # Parse common ORB patterns
         patterns = [
             # "Mon-Fri: 11AM-9PM, Sat: 12PM-10PM, Sun: Closed"
@@ -182,7 +160,6 @@ class HoursManager:
             # "Mon-Sat: 6AM-8PM, Sun: 7AM-6PM"
             r"(\w{3})-(\w{3}):\s*([^,]+),\s*(\w{3}):\s*([^,]+)",
         ]
-
         for pattern in patterns:
             matches = re.findall(pattern, hours_text, re.IGNORECASE)
             for match in matches:
@@ -196,7 +173,6 @@ class HoursManager:
                     start_day, end_day, hours1, day2, hours2 = match
                     self._apply_hours_range(normalized, start_day, end_day, hours1)
                     self._apply_hours_to_day(normalized, day2, hours2)
-
         return normalized
 
     def _normalize_manual_hours(self, hours_data: Any) -> dict[str, Any]:
@@ -213,33 +189,25 @@ class HoursManager:
             # Check if it's already in our format
             if "hours" in hours_data and isinstance(hours_data["hours"], dict):
                 return hours_data
-
             # Try to parse as Google Places format
             if "periods" in hours_data or "weekday_text" in hours_data:
                 return self._normalize_google_places_hours(hours_data)
-
         elif isinstance(hours_data, str):
             return self._normalize_orb_hours(hours_data)
-
         return self._get_empty_hours()
 
     def get_today_hours(self, hours_json: dict[str, Any]) -> dict[str, Any] | None:
         """Get today's hours from normalized hours data.
-
         Args:
             hours_json: Normalized hours data
-
         Returns:
             Today's hours or None if not available
-
         """
         try:
             today = datetime.now(self.timezone).strftime("%A").lower()
             day_abbr = self.DAYS.get(today)
-
             if day_abbr and "hours" in hours_json:
                 return hours_json["hours"].get(day_abbr)
-
             return None
         except Exception as e:
             logger.exception("Error getting today's hours", error=str(e))
@@ -247,33 +215,25 @@ class HoursManager:
 
     def is_open_now(self, hours_json: dict[str, Any]) -> bool:
         """Check if restaurant is currently open.
-
         Args:
             hours_json: Normalized hours data
-
         Returns:
             True if currently open, False otherwise
-
         """
         try:
             today_hours = self.get_today_hours(hours_json)
             if not today_hours or not today_hours.get("is_open", False):
                 return False
-
             now = datetime.now(self.timezone)
             current_time = now.time()
-
             open_time = self._parse_time_string(today_hours["open"])
             close_time = self._parse_time_string(today_hours["close"])
-
             if not open_time or not close_time:
                 return False
-
             # Handle overnight hours (e.g., 11PM - 2AM)
             if close_time < open_time:
                 return current_time >= open_time or current_time <= close_time
             return open_time <= current_time <= close_time
-
         except Exception as e:
             logger.exception("Error checking if open now", error=str(e))
             return False
@@ -284,14 +244,11 @@ class HoursManager:
         format_type: str = "dropdown",
     ) -> Any:
         """Get formatted hours for UI display.
-
         Args:
             hours_json: Normalized hours data
             format_type: 'dropdown', 'compact', 'detailed', 'today'
-
         Returns:
             Formatted hours data
-
         """
         return HoursFormatter.for_ui(hours_json, format_type)
 
@@ -317,21 +274,18 @@ class HoursManager:
         """Format today's hours with status."""
         today_hours = self.get_today_hours(hours_json)
         is_open = self.is_open_now(hours_json)
-
         if not today_hours:
             return {
                 "status": "unknown",
                 "message": "Hours not available",
                 "is_open": False,
             }
-
         if not today_hours.get("is_open", False):
             return {
                 "status": "closed",
                 "message": "Closed today",
                 "is_open": False,
             }
-
         if is_open:
             return {
                 "status": "open",
@@ -347,7 +301,6 @@ class HoursManager:
         }
 
     # Helper methods for parsing and formatting
-
     def _get_empty_hours(self) -> dict[str, Any]:
         """Get empty hours structure."""
         return {
@@ -375,7 +328,6 @@ class HoursManager:
         if len(time_str) == 4:
             hour = int(time_str[:2])
             minute = int(time_str[2:])
-
             if hour == 0:
                 hour = 12
                 period = "AM"
@@ -386,9 +338,7 @@ class HoursManager:
             else:
                 hour -= 12
                 period = "PM"
-
             return f"{hour}:{minute:02d} {period}"
-
         return time_str
 
     def _parse_weekday_text(self, day_text: str) -> tuple[str | None, str | None]:
@@ -412,7 +362,6 @@ class HoursManager:
                     open_time = parts[0].strip()
                     close_time = parts[1].strip()
                     return open_time, close_time
-
         return None, None
 
     def _apply_hours_range(
@@ -426,14 +375,12 @@ class HoursManager:
         days = list(self.DAYS.keys())
         start_idx = None
         end_idx = None
-
         # Find start and end day indices
         for i, day in enumerate(days):
             if day.startswith(start_day.lower()):
                 start_idx = i
             if day.startswith(end_day.lower()):
                 end_idx = i
-
         if start_idx is not None and end_idx is not None:
             open_time, close_time = self._parse_hours_string(hours)
             if open_time and close_time:
@@ -475,7 +422,6 @@ class HoursManager:
         """Parse time string to time object."""
         if not time_str:
             return None
-
         # Handle various time formats
         patterns = [
             r"(\d{1,2}):(\d{2})\s*(AM|PM)",
@@ -483,19 +429,15 @@ class HoursManager:
             r"(\d{1,2}):(\d{2})(AM|PM)",
             r"(\d{1,2})(AM|PM)",
         ]
-
         for pattern in patterns:
             match = re.match(pattern, time_str, re.IGNORECASE)
             if match:
                 hour = int(match.group(1))
                 minute = int(match.group(2)) if match.group(2) else 0
                 period = match.group(3) or match.group(4)
-
                 if period.upper() == "PM" and hour != 12:
                     hour += 12
                 elif period.upper() == "AM" and hour == 12:
                     hour = 0
-
                 return time(hour, minute)
-
         return None

@@ -1,6 +1,5 @@
 """
 Marketplace Configuration
-
 This module centralizes marketplace-related configuration including categories,
 subcategories, and other marketplace settings to replace hardcoded values.
 """

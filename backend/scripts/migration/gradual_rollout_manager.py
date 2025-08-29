@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Gradual Rollout Manager for API v4.
-
 This module manages the gradual rollout of the v4 API to users, with integrated
 monitoring and automatic rollback capabilities based on performance and error metrics.
-
 Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-
 import argparse
 import hashlib
 import json
@@ -22,7 +19,6 @@ from typing import Any, Dict, List, Optional
 
 # Add the backend directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
 from monitoring.v4_monitoring import get_v4_alerts, get_v4_metrics_summary, v4_monitor
 from utils.feature_flags_v4 import (
     MigrationStage,
@@ -75,7 +71,6 @@ class GradualRolloutManager:
         self.rollout_thread = None
         self.rollout_history = []
         self.user_assignments = {}  # Cache user assignments for consistency
-
         # Try to load existing status, otherwise create new
         self.status = self._load_rollout_status() or RolloutStatus(
             current_percentage=0.0,
@@ -95,27 +90,22 @@ class GradualRolloutManager:
         """Start the gradual rollout process."""
         if self.rollout_active:
             return {"error": "Rollout is already active"}
-
         logger.info("Starting gradual rollout of v4 API", config=asdict(self.config))
-
         # Initialize with testing mode
         self._set_rollout_percentage(self.config.initial_percentage)
         self.status.current_stage = "testing"
         self.status.start_time = datetime.now().isoformat()
-
         # Start monitoring if not already active
         try:
             v4_monitor.start_monitoring(interval_seconds=30)
         except Exception as e:
             logger.warning(f"Monitoring already active or failed to start: {e}")
-
         # Start rollout thread
         self.rollout_active = True
         self.rollout_thread = threading.Thread(
             target=self._rollout_monitoring_loop, daemon=True
         )
         self.rollout_thread.start()
-
         return {
             "status": "started",
             "current_percentage": self.status.current_percentage,
@@ -127,16 +117,12 @@ class GradualRolloutManager:
         """Stop the gradual rollout process."""
         if not self.rollout_active:
             return {"error": "Rollout is not active"}
-
         logger.info("Stopping gradual rollout of v4 API")
-
         self.rollout_active = False
         if self.rollout_thread:
             self.rollout_thread.join(timeout=5)
-
         # Save final status
         self._save_rollout_status()
-
         return {
             "status": "stopped",
             "final_percentage": self.status.current_percentage,
@@ -150,7 +136,6 @@ class GradualRolloutManager:
             try:
                 # Evaluate current health
                 health_status = self._evaluate_health()
-
                 if health_status["is_healthy"]:
                     # Consider incrementing rollout
                     if (
@@ -162,13 +147,10 @@ class GradualRolloutManager:
                     # Consider rollback
                     if self.config.enable_auto_rollback:
                         self._handle_unhealthy_status(health_status)
-
                 # Update status
                 self._update_rollout_status()
-
                 # Sleep for monitoring period
                 time.sleep(self.config.monitoring_period_hours * 3600)
-
             except Exception as e:
                 logger.error(f"Error in rollout monitoring loop: {e}")
                 time.sleep(300)  # 5 minutes before retry
@@ -179,23 +161,19 @@ class GradualRolloutManager:
             # Get metrics for the monitoring period
             metrics = get_v4_metrics_summary(hours=self.config.monitoring_period_hours)
             alerts = get_v4_alerts()
-
             # Calculate health metrics
             total_requests = 0
             total_errors = 0
             total_response_time = 0
             request_count = 0
-
             for endpoint, perf in metrics.get("performance", {}).items():
                 total_requests += perf.get("request_count", 0)
                 total_response_time += perf.get("avg_response_time_ms", 0) * perf.get(
                     "request_count", 0
                 )
                 request_count += perf.get("request_count", 0)
-
             for endpoint, errors in metrics.get("errors", {}).items():
                 total_errors += errors.get("total_errors", 0)
-
             # Calculate error rate
             error_rate = (
                 (total_errors / total_requests * 100) if total_requests > 0 else 0
@@ -203,14 +181,12 @@ class GradualRolloutManager:
             avg_response_time = (
                 (total_response_time / request_count) if request_count > 0 else 0
             )
-
             # Determine if healthy
             is_healthy = (
                 error_rate < self.config.auto_rollback_threshold
                 and len(alerts) == 0
                 and total_requests >= self.config.min_requests_for_evaluation
             )
-
             health_status = {
                 "is_healthy": is_healthy,
                 "error_rate": error_rate,
@@ -221,10 +197,8 @@ class GradualRolloutManager:
                 "alerts": [alert["type"] for alert in alerts],
                 "evaluation_time": datetime.now().isoformat(),
             }
-
             logger.info("Health evaluation completed", **health_status)
             return health_status
-
         except Exception as e:
             logger.error(f"Error evaluating health: {e}")
             return {
@@ -238,21 +212,17 @@ class GradualRolloutManager:
         # Check if enough time has passed since last increment
         last_increment = datetime.fromisoformat(self.status.last_increment_time)
         time_since_increment = datetime.now() - last_increment
-
         if time_since_increment < timedelta(hours=self.config.increment_interval_hours):
             return False
-
         # Check if we haven't reached max percentage
         if self.status.current_percentage >= self.config.max_percentage:
             return False
-
         # Check if we have enough data for evaluation
         metrics = get_v4_metrics_summary(hours=self.config.monitoring_period_hours)
         total_requests = sum(
             perf.get("request_count", 0)
             for perf in metrics.get("performance", {}).values()
         )
-
         if total_requests < self.config.min_requests_for_evaluation:
             logger.info(
                 "Insufficient requests for evaluation",
@@ -260,7 +230,6 @@ class GradualRolloutManager:
                 min_required=self.config.min_requests_for_evaluation,
             )
             return False
-
         return True
 
     def _increment_rollout(self):
@@ -269,16 +238,13 @@ class GradualRolloutManager:
             self.status.current_percentage + self.config.increment_percentage,
             self.config.max_percentage,
         )
-
         logger.info(
             "Incrementing rollout percentage",
             from_percentage=self.status.current_percentage,
             to_percentage=new_percentage,
         )
-
         self._set_rollout_percentage(new_percentage)
         self.status.last_increment_time = datetime.now().isoformat()
-
         # Update stage based on percentage
         if new_percentage >= 100:
             self.status.current_stage = "complete"
@@ -292,7 +258,6 @@ class GradualRolloutManager:
     def _handle_unhealthy_status(self, health_status: Dict[str, Any]):
         """Handle unhealthy status with potential rollback."""
         logger.warning("Unhealthy status detected", **health_status)
-
         # Determine rollback action based on severity
         if health_status["error_rate"] > self.config.auto_rollback_threshold * 2:
             # Critical error rate - immediate rollback
@@ -307,10 +272,8 @@ class GradualRolloutManager:
     def _emergency_rollback(self, reason: str):
         """Emergency rollback to 0%."""
         logger.error(f"Emergency rollback: {reason}")
-
         self._set_rollout_percentage(0.0)
         self.status.current_stage = "emergency_rollback"
-
         # Record rollback in history
         self.rollout_history.append(
             {
@@ -326,16 +289,13 @@ class GradualRolloutManager:
         """Gradual rollback by reducing percentage."""
         current_percentage = self.status.current_percentage
         new_percentage = max(0.0, current_percentage - self.config.increment_percentage)
-
         logger.warning(
             f"Gradual rollback: {reason}",
             from_percentage=current_percentage,
             to_percentage=new_percentage,
         )
-
         self._set_rollout_percentage(new_percentage)
         self.status.current_stage = "rollback"
-
         # Record rollback in history
         self.rollout_history.append(
             {
@@ -350,9 +310,7 @@ class GradualRolloutManager:
     def _pause_rollout(self, reason: str):
         """Pause rollout without changing percentage."""
         logger.info(f"Pausing rollout: {reason}")
-
         self.status.current_stage = "paused"
-
         # Record pause in history
         self.rollout_history.append(
             {
@@ -366,14 +324,11 @@ class GradualRolloutManager:
     def _set_rollout_percentage(self, percentage: float):
         """Set the rollout percentage for all v4 features."""
         logger.info(f"Setting rollout percentage to {percentage}%")
-
         # Set percentage for all v4 flags
         for flag_name in api_v4_flags.flags:
             if flag_name.startswith("api_v4_"):
                 api_v4_flags.set_rollout_percentage(flag_name, percentage)
-
         self.status.current_percentage = percentage
-
         # Update feature flag stages based on percentage
         if percentage >= 100:
             target_stage = MigrationStage.COMPLETE
@@ -383,14 +338,11 @@ class GradualRolloutManager:
             target_stage = MigrationStage.PARTIAL
         else:
             target_stage = MigrationStage.TESTING
-
         # Update all v4 feature flags to the target stage
         for flag_name in api_v4_flags.flags:
             if flag_name.startswith("api_v4_"):
                 api_v4_flags.set_stage(flag_name, target_stage)
-
         self.status.current_stage = target_stage.value
-
         # Estimate affected users (this would need to be calculated based on actual user base)
         # For now, we'll use a simple estimation
         self.status.total_users_affected = int(
@@ -402,23 +354,19 @@ class GradualRolloutManager:
         try:
             # Get current metrics
             metrics = get_v4_metrics_summary(hours=1)  # Last hour
-
             # Calculate totals
             total_requests = 0
             total_errors = 0
             total_response_time = 0
             request_count = 0
-
             for endpoint, perf in metrics.get("performance", {}).items():
                 total_requests += perf.get("request_count", 0)
                 total_response_time += perf.get("avg_response_time_ms", 0) * perf.get(
                     "request_count", 0
                 )
                 request_count += perf.get("request_count", 0)
-
             for endpoint, errors in metrics.get("errors", {}).items():
                 total_errors += errors.get("total_errors", 0)
-
             # Update status
             self.status.successful_requests = total_requests - total_errors
             self.status.failed_requests = total_errors
@@ -429,13 +377,11 @@ class GradualRolloutManager:
                 (total_response_time / request_count) if request_count > 0 else 0
             )
             self.status.alerts_count = len(get_v4_alerts())
-
             # Determine overall health
             self.status.is_healthy = (
                 self.status.error_rate < self.config.auto_rollback_threshold
                 and self.status.alerts_count == 0
             )
-
         except Exception as e:
             logger.error(f"Error updating rollout status: {e}")
 
@@ -443,23 +389,17 @@ class GradualRolloutManager:
         """Load rollout status from file."""
         try:
             status_file = os.path.join(os.path.dirname(__file__), "rollout_status.json")
-
             if not os.path.exists(status_file):
                 return None
-
             with open(status_file, "r") as f:
                 status_data = json.load(f)
-
             # Create RolloutStatus from saved data
             status = RolloutStatus(**status_data["status"])
-
             # Load history if available
             if "history" in status_data:
                 self.rollout_history = status_data["history"]
-
             logger.info(f"Rollout status loaded from {status_file}")
             return status
-
         except Exception as e:
             logger.error(f"Error loading rollout status: {e}")
             return None
@@ -468,19 +408,15 @@ class GradualRolloutManager:
         """Save rollout status to file."""
         try:
             status_file = os.path.join(os.path.dirname(__file__), "rollout_status.json")
-
             status_data = {
                 "config": asdict(self.config),
                 "status": asdict(self.status),
                 "history": self.rollout_history,
                 "saved_at": datetime.now().isoformat(),
             }
-
             with open(status_file, "w") as f:
                 json.dump(status_data, f, indent=2)
-
             logger.info(f"Rollout status saved to {status_file}")
-
         except Exception as e:
             logger.error(f"Error saving rollout status: {e}")
 
@@ -497,24 +433,18 @@ class GradualRolloutManager:
         """Check if a specific user is in the v4 rollout."""
         if user_id in self.user_assignments:
             return self.user_assignments[user_id]
-
         # Use consistent hashing to determine user assignment
         hash_value = int(hashlib.md5(user_id.encode()).hexdigest(), 16)
         user_percentage = (hash_value % 100) + 1
-
         is_in_rollout = user_percentage <= self.status.current_percentage
-
         # Cache the assignment
         self.user_assignments[user_id] = is_in_rollout
-
         return is_in_rollout
 
     def force_rollout_percentage(self, percentage: float) -> Dict[str, Any]:
         """Force set rollout percentage (admin override)."""
         logger.warning(f"Admin override: forcing rollout percentage to {percentage}%")
-
         self._set_rollout_percentage(percentage)
-
         return {
             "status": "forced",
             "percentage": percentage,
@@ -527,7 +457,6 @@ class GradualRolloutManager:
         history = self.get_rollout_history()
         metrics = get_v4_metrics_summary(hours=24)  # Last 24 hours
         alerts = get_v4_alerts()
-
         return {
             "report_timestamp": datetime.now().isoformat(),
             "config": asdict(self.config),
@@ -543,36 +472,30 @@ class GradualRolloutManager:
     ) -> List[str]:
         """Generate recommendations based on current status."""
         recommendations = []
-
         # Check error rate
         if status["error_rate"] > self.config.auto_rollback_threshold:
             recommendations.append(
                 f"High error rate ({status['error_rate']:.1f}%). Consider rollback."
             )
-
         # Check response time
         if status["avg_response_time_ms"] > 1000:  # 1 second
             recommendations.append(
                 f"High response time ({status['avg_response_time_ms']:.0f}ms). Consider optimization."
             )
-
         # Check alerts
         if status["alerts_count"] > 0:
             recommendations.append(
                 f"{status['alerts_count']} active alerts. Review system health."
             )
-
         # Check rollout progress
         if status["current_percentage"] < 50 and status["is_healthy"]:
             recommendations.append(
                 "System is healthy. Consider increasing rollout percentage."
             )
-
         if not recommendations:
             recommendations.append(
                 "System is performing well. Continue with rollout plan."
             )
-
         return recommendations
 
 
@@ -589,9 +512,7 @@ def main():
         "--percentage", type=float, help="Rollout percentage (for force action)"
     )
     parser.add_argument("--config", help="Configuration file path")
-
     args = parser.parse_args()
-
     # Load configuration
     config = RolloutConfig()
     if args.config:
@@ -602,26 +523,20 @@ def main():
         except Exception as e:
             logger.error(f"Error loading config: {e}")
             return
-
     # Create rollout manager
     manager = GradualRolloutManager(config)
-
     if args.action == "start":
         result = manager.start_rollout()
         print(json.dumps(result, indent=2))
-
     elif args.action == "stop":
         result = manager.stop_rollout()
         print(json.dumps(result, indent=2))
-
     elif args.action == "status":
         status = manager.get_rollout_status()
         print(json.dumps(status, indent=2))
-
     elif args.action == "report":
         report = manager.get_rollout_report()
         print(json.dumps(report, indent=2))
-
     elif args.action == "force":
         if args.percentage is None:
             print("Error: --percentage required for force action")

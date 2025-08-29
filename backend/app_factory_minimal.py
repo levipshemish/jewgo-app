@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Minimal working version of app_factory.py for testing Docker setup
 """
-
 from flask import Flask, jsonify
 from flask_cors import CORS
 import logging
@@ -15,7 +14,6 @@ logger = logging.getLogger(__name__)
 def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
-
     # Configure CORS
     CORS(
         app,

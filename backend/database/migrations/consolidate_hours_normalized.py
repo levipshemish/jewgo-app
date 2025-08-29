@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Migration: Consolidate hours into normalized JSONB field.
 =======================================================
-
 This migration consolidates the hours data into a single normalized JSONB field
 `hours_of_operation` and prepares for dropping the old `hours_open` field.
-
 The normalized structure will be:
 {
   "timezone": "America/New_York",
@@ -27,17 +25,14 @@ The normalized structure will be:
     "manual": {"updated_by":"admin@jewgo","updated_at":"ISO8601"}
   }
 }
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 import json
 import os
 from datetime import datetime
 from typing import Any, Dict
-
 from sqlalchemy import create_engine, text
 from utils.logging_config import get_logger
 
@@ -66,7 +61,6 @@ def _normalize_hours_string(
     hours_str: str, timezone: str = "America/New_York"
 ) -> Dict[str, Any]:
     """Convert legacy hours string to normalized JSONB structure.
-
     This is a basic parser that handles common formats like:
     - "Mon-Fri: 9AM-5PM"
     - "Monday: 9:00 AM - 5:00 PM"
@@ -93,7 +87,6 @@ def _normalize_hours_string(
                 }
             },
         }
-
     # Handle "Open 24/7" case
     if "24/7" in hours_str.lower() or "24 hours" in hours_str.lower():
         return {
@@ -115,7 +108,6 @@ def _normalize_hours_string(
                 }
             },
         }
-
     # Basic parsing for common formats
     # This is a simplified parser - the full implementation will be in the hours_normalizer service
     try:
@@ -172,10 +164,10 @@ def _check_column_exists(engine, table_name: str, column_name: str) -> bool:
         with engine.connect() as conn:
             result = conn.execute(
                 text(
-                    f"""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = '{table_name}' 
+                    """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = '{table_name}'
                 AND column_name = '{column_name}'
             """
                 )
@@ -194,7 +186,6 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
         "migrated_from_hours_of_operation": 0,
         "errors": 0,
     }
-
     try:
         with engine.connect() as conn:
             # Get all restaurants
@@ -206,10 +197,8 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
             """
                 )
             )
-
             restaurants = result.fetchall()
             stats["total_restaurants"] = len(restaurants)
-
             for restaurant in restaurants:
                 (
                     restaurant_id,
@@ -220,7 +209,6 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                     city,
                     state,
                 ) = restaurant
-
                 # Determine timezone
                 if not timezone:
                     # Infer timezone from location (simplified)
@@ -259,12 +247,10 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                         timezone = "America/Los_Angeles"
                     else:
                         timezone = "America/New_York"  # Default
-
                 try:
                     # Determine which hours field to migrate from
                     source_hours = None
                     source_field = None
-
                     if hours_of_operation and hours_of_operation.strip() not in [
                         "",
                         "None",
@@ -281,18 +267,16 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                         source_hours = hours_open
                         source_field = "hours_open"
                         stats["migrated_from_hours_open"] += 1
-
                     if source_hours:
                         # Normalize the hours data
                         normalized_hours = _normalize_hours_string(
                             source_hours, timezone
                         )
-
                         # Update the hours_of_operation field with normalized JSONB
                         conn.execute(
                             text(
                                 """
-                            UPDATE restaurants 
+                            UPDATE restaurants
                             SET hours_of_operation = :hours_json,
                                 hours_last_updated = CURRENT_TIMESTAMP
                             WHERE id = :restaurant_id
@@ -303,7 +287,6 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                                 "restaurant_id": restaurant_id,
                             },
                         )
-
                         logger.info(
                             f"Migrated hours for restaurant {name} (ID: {restaurant_id})",
                             source_field=source_field,
@@ -331,11 +314,10 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                                 }
                             },
                         }
-
                         conn.execute(
                             text(
                                 """
-                            UPDATE restaurants 
+                            UPDATE restaurants
                             SET hours_of_operation = :hours_json,
                                 hours_last_updated = CURRENT_TIMESTAMP
                             WHERE id = :restaurant_id
@@ -346,26 +328,21 @@ def _migrate_hours_data(engine) -> Dict[str, int]:
                                 "restaurant_id": restaurant_id,
                             },
                         )
-
                         logger.info(
                             f"Set empty hours structure for restaurant {name} (ID: {restaurant_id})",
                             timezone=timezone,
                         )
-
                 except Exception as e:
                     stats["errors"] += 1
                     logger.error(
                         f"Error migrating hours for restaurant {name} (ID: {restaurant_id})",
                         error=str(e),
                     )
-
             # Commit the transaction
             conn.commit()
-
     except Exception as e:
         logger.error(f"Error during hours migration: {e}")
         stats["errors"] += 1
-
     return stats
 
 
@@ -377,26 +354,23 @@ def _add_hours_indexes(engine) -> bool:
             conn.execute(
                 text(
                     """
-                CREATE INDEX IF NOT EXISTS idx_restaurants_hours_operation_gin 
+                CREATE INDEX IF NOT EXISTS idx_restaurants_hours_operation_gin
                 ON restaurants USING GIN ((hours_of_operation::jsonb))
             """
                 )
             )
-
             # Add index for hours_last_updated for refresh queries
             conn.execute(
                 text(
                     """
-                CREATE INDEX IF NOT EXISTS idx_restaurants_hours_last_updated 
+                CREATE INDEX IF NOT EXISTS idx_restaurants_hours_last_updated
                 ON restaurants (hours_last_updated)
             """
                 )
             )
-
             conn.commit()
             logger.info("Added hours-related indexes")
             return True
-
     except Exception as e:
         logger.error(f"Error adding hours indexes: {e}")
         return False
@@ -405,56 +379,45 @@ def _add_hours_indexes(engine) -> bool:
 def run_migration():
     """Run the hours consolidation migration."""
     logger.info("Starting hours consolidation migration")
-
     try:
         engine = _create_engine()
-
         # Check if hours_open column exists
         hours_open_exists = _check_column_exists(engine, "restaurants", "hours_open")
         hours_of_operation_exists = _check_column_exists(
             engine, "restaurants", "hours_of_operation"
         )
-
         logger.info(
             "Column status",
             hours_open_exists=hours_open_exists,
             hours_of_operation_exists=hours_of_operation_exists,
         )
-
         # Migrate hours data
         migration_stats = _migrate_hours_data(engine)
-
         # Add indexes
         indexes_added = _add_hours_indexes(engine)
-
         # Log results
         logger.info(
             "Hours migration completed",
             stats=migration_stats,
             indexes_added=indexes_added,
         )
-
         # Print summary
         print(
-            f"""
+            """
 🎉 Hours Consolidation Migration Complete!
-
 📊 Migration Statistics:
 - Total restaurants processed: {migration_stats['total_restaurants']}
 - Migrated from hours_open: {migration_stats['migrated_from_hours_open']}
 - Migrated from hours_of_operation: {migration_stats['migrated_from_hours_of_operation']}
 - Errors: {migration_stats['errors']}
 - Indexes added: {indexes_added}
-
 ✅ Next steps:
 1. Verify the migration by checking a few restaurants
 2. Run the hours backfill script to populate with real data
 3. Create follow-up migration to drop hours_open column
         """
         )
-
         return True
-
     except Exception as e:
         logger.error(f"Migration failed: {e}")
         print(f"❌ Migration failed: {e}")

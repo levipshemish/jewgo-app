@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Migration script to create the shuls table.
 This migration creates a new shuls table with structure adapted for synagogue facilities.
-
 Shuls table will contain:
 - Basic synagogue information (name, description, address, etc.)
 - Contact information (phone, website, email)
@@ -12,10 +11,8 @@ Shuls table will contain:
 - Images and media
 - Religious and cultural information
 """
-
 import os
 import sys
-
 from sqlalchemy import (
     create_engine,
     text,
@@ -32,22 +29,17 @@ logging.basicConfig(level=logging.INFO)
 def run_migration() -> bool | None:
     """Run the migration to create the shuls table."""
     database_url = os.environ.get("DATABASE_URL")
-
     if not database_url:
         logger.error("DATABASE_URL environment variable is required")
         return False
-
     try:
         # Create engine
         engine = create_engine(database_url)
-
         with engine.connect() as conn:
             # Start transaction
             trans = conn.begin()
-
             try:
                 logger.info("Starting shuls table creation")
-
                 # Create shuls table
                 create_shuls_table_sql = """
                 CREATE TABLE IF NOT EXISTS shuls (
@@ -64,7 +56,6 @@ def run_migration() -> bool | None:
                     phone_number VARCHAR(50),
                     website VARCHAR(500),
                     email VARCHAR(255),
-                    
                     -- Shul specific fields
                     shul_type VARCHAR(100), -- orthodox, conservative, reform, etc.
                     shul_category VARCHAR(100), -- ashkenazi, sephardic, chabad, etc.
@@ -72,7 +63,6 @@ def run_migration() -> bool | None:
                     business_hours TEXT,
                     hours_parsed BOOLEAN DEFAULT FALSE,
                     timezone VARCHAR(50),
-                    
                     -- Services and minyanim
                     has_daily_minyan BOOLEAN DEFAULT FALSE,
                     has_shabbat_services BOOLEAN DEFAULT TRUE,
@@ -80,21 +70,17 @@ def run_migration() -> bool | None:
                     has_women_section BOOLEAN DEFAULT TRUE,
                     has_mechitza BOOLEAN DEFAULT TRUE,
                     has_separate_entrance BOOLEAN DEFAULT FALSE,
-                    
                     -- Location and distance
                     distance VARCHAR(50),
                     distance_miles DECIMAL(8, 2),
-                    
                     -- Ratings and reviews
                     rating DECIMAL(3, 2),
                     review_count INTEGER DEFAULT 0,
                     star_rating DECIMAL(3, 2),
                     google_rating DECIMAL(3, 2),
-                    
                     -- Images and media
                     image_url TEXT,
                     logo_url TEXT,
-                    
                     -- Shul facilities and features
                     has_parking BOOLEAN DEFAULT FALSE,
                     has_disabled_access BOOLEAN DEFAULT FALSE,
@@ -105,7 +91,6 @@ def run_migration() -> bool | None:
                     has_adult_education BOOLEAN DEFAULT FALSE,
                     has_youth_programs BOOLEAN DEFAULT FALSE,
                     has_senior_programs BOOLEAN DEFAULT FALSE,
-                    
                     -- Religious and cultural
                     rabbi_name VARCHAR(255),
                     rabbi_phone VARCHAR(50),
@@ -113,31 +98,26 @@ def run_migration() -> bool | None:
                     religious_authority VARCHAR(255),
                     community_affiliation VARCHAR(255),
                     kosher_certification VARCHAR(255),
-                    
                     -- Membership and fees
                     membership_required BOOLEAN DEFAULT FALSE,
                     membership_fee DECIMAL(10, 2),
                     fee_currency VARCHAR(3) DEFAULT 'USD',
                     accepts_visitors BOOLEAN DEFAULT TRUE,
                     visitor_policy TEXT,
-                    
                     -- Status and metadata
                     is_active BOOLEAN DEFAULT TRUE,
                     is_verified BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    
                     -- Search and filtering
                     search_vector tsvector,
                     tags TEXT[],
-                    
                     -- Admin fields
                     admin_notes TEXT,
                     specials TEXT,
                     listing_type VARCHAR(100) DEFAULT 'shul'
                 );
                 """
-
                 # Create indexes for performance
                 create_indexes_sql = """
                 -- Basic indexes
@@ -148,32 +128,32 @@ def run_migration() -> bool | None:
                 CREATE INDEX IF NOT EXISTS idx_shuls_denomination ON shuls(denomination);
                 CREATE INDEX IF NOT EXISTS idx_shuls_is_active ON shuls(is_active);
                 CREATE INDEX IF NOT EXISTS idx_shuls_is_verified ON shuls(is_verified);
-                
                 -- Location indexes
                 CREATE INDEX IF NOT EXISTS idx_shuls_latitude ON shuls(latitude);
                 CREATE INDEX IF NOT EXISTS idx_shuls_longitude ON shuls(longitude);
                 CREATE INDEX IF NOT EXISTS idx_shuls_distance_miles ON shuls(distance_miles);
-                
                 -- Rating indexes
                 CREATE INDEX IF NOT EXISTS idx_shuls_rating ON shuls(rating);
                 CREATE INDEX IF NOT EXISTS idx_shuls_review_count ON shuls(review_count);
-                
                 -- Service indexes
                 CREATE INDEX IF NOT EXISTS idx_shuls_has_daily_minyan ON shuls(has_daily_minyan);
                 CREATE INDEX IF NOT EXISTS idx_shuls_has_shabbat_services ON shuls(has_shabbat_services);
                 CREATE INDEX IF NOT EXISTS idx_shuls_has_women_section ON shuls(has_women_section);
                 CREATE INDEX IF NOT EXISTS idx_shuls_has_mechitza ON shuls(has_mechitza);
-                
                 -- Search index
                 CREATE INDEX IF NOT EXISTS idx_shuls_search_vector ON shuls USING gin(search_vector);
-                
                 -- Composite indexes for common queries
-                CREATE INDEX IF NOT EXISTS idx_shuls_city_shul_type ON shuls(city, shul_type);
-                CREATE INDEX IF NOT EXISTS idx_shuls_city_denomination ON shuls(city, denomination);
+                CREATE INDEX IF NOT EXISTS idx_shuls_city_shul_type ON shuls(
+                    city,
+                    shul_type
+                );
+                CREATE INDEX IF NOT EXISTS idx_shuls_city_denomination ON shuls(
+                    city,
+                    denomination
+                );
                 CREATE INDEX IF NOT EXISTS idx_shuls_city_has_daily_minyan ON shuls(city, has_daily_minyan);
                 CREATE INDEX IF NOT EXISTS idx_shuls_rating_review_count ON shuls(rating, review_count);
                 """
-
                 # Create full-text search trigger
                 create_search_trigger_sql = """
                 -- Create function to update search vector
@@ -190,7 +170,6 @@ def run_migration() -> bool | None:
                     RETURN NEW;
                 END;
                 $$ LANGUAGE plpgsql;
-
                 -- Create trigger to automatically update search vector
                 DROP TRIGGER IF EXISTS shuls_search_vector_trigger ON shuls;
                 CREATE TRIGGER shuls_search_vector_trigger
@@ -198,31 +177,24 @@ def run_migration() -> bool | None:
                     FOR EACH ROW
                     EXECUTE FUNCTION shuls_search_vector_update();
                 """
-
                 # Execute the SQL statements
                 logger.info("Creating shuls table...")
                 conn.execute(text(create_shuls_table_sql))
-
                 logger.info("Creating indexes...")
                 conn.execute(text(create_indexes_sql))
-
                 logger.info("Creating search trigger...")
                 conn.execute(text(create_search_trigger_sql))
-
                 # Commit transaction
                 trans.commit()
                 logger.info(
                     "Successfully created shuls table with all indexes and triggers"
                 )
-
                 return True
-
             except SQLAlchemyError as e:
                 # Rollback transaction on error
                 trans.rollback()
                 logger.error("Error creating shuls table", error=str(e))
                 return False
-
     except Exception as e:
         logger.error("Failed to create shuls table", error=str(e))
         return False

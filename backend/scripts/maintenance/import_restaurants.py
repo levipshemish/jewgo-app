@@ -1,17 +1,14 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Simple script to import restaurants from Kosher Miami data."""
-
 import json
 import os
 import sys
 from pathlib import Path
-
 from database.database_manager_v3 import EnhancedDatabaseManager
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
 # Add current directory to Python path
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -23,24 +20,18 @@ def import_restaurants() -> bool | None:
         db_manager = EnhancedDatabaseManager(os.getenv("DATABASE_URL"))
         if not db_manager.connect():
             return False
-
         # Load the Kosher Miami data
         data_file = (
             Path(__file__).parent.parent / "data" / "kosher_miami_establishments.json"
         )
-
         if not data_file.exists():
             return False
-
         with open(data_file, encoding="utf-8") as f:
             restaurants_data = json.load(f)
-
         # Import restaurants (limit to first 50 for now)
         restaurants_to_import = restaurants_data[:50]
-
         successful_imports = 0
         failed_imports = 0
-
         for restaurant_data in restaurants_to_import:
             try:
                 # Convert Kosher Miami format to our database format
@@ -59,22 +50,17 @@ def import_restaurants() -> bool | None:
                     "hours_parsed": False,
                     "current_time_local": None,
                 }
-
                 # Insert restaurant into database
                 result = db_manager.add_restaurant(restaurant_dict)
                 if result:
                     successful_imports += 1
                 else:
                     failed_imports += 1
-
             except Exception as e:
                 failed_imports += 1
-
         # Close database connection
         db_manager.close()
-
         return True
-
     except Exception as e:
         return False
 

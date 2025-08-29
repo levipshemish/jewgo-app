@@ -1,6 +1,5 @@
 """
 Error handling utilities for the Flask application.
-
 This module provides specific exception classes and error handling patterns
 to replace broad Exception catches throughout the application.
 """
@@ -109,16 +108,13 @@ def handle_api_error(error: APIError) -> tuple[Dict[str, Any], int]:
             "error_type": error.__class__.__name__,
         },
     )
-
     response = {
         "success": False,
         "error": error.message,
         "status_code": error.status_code,
     }
-
     if error.details:
         response["details"] = error.details
-
     return response, error.status_code
 
 
@@ -128,17 +124,14 @@ def handle_validation_error(error: ValidationError) -> tuple[Dict[str, Any], int
         f"Validation Error: {error.message}",
         extra={"field": error.field, "details": error.details},
     )
-
     response = {
         "success": False,
         "error": error.message,
         "status_code": 400,
         "validation_errors": error.details or {},
     }
-
     if error.field:
         response["field"] = error.field
-
     return response, 400
 
 
@@ -148,17 +141,14 @@ def handle_database_error(error: DatabaseError) -> tuple[Dict[str, Any], int]:
         f"Database Error: {error.message}",
         extra={"operation": error.operation, "details": error.details},
     )
-
     response = {
         "success": False,
         "error": "Database operation failed",
         "status_code": 503,
     }
-
     # Don't expose internal database details in production
     if logger.isEnabledFor(logging.DEBUG):
         response["details"] = error.details
-
     return response, 503
 
 
@@ -170,33 +160,27 @@ def handle_external_service_error(
         f"External Service Error: {error.message}",
         extra={"service": error.service, "details": error.details},
     )
-
     response = {
         "success": False,
         "error": "External service temporarily unavailable",
         "status_code": 502,
     }
-
     # Don't expose external service details in production
     if logger.isEnabledFor(logging.DEBUG):
         response["details"] = error.details
-
     return response, 502
 
 
 def handle_generic_error(error: Exception) -> tuple[Dict[str, Any], int]:
     """Handle unexpected errors."""
     logger.exception(f"Unexpected error: {str(error)}")
-
     response = {"success": False, "error": "Internal server error", "status_code": 500}
-
     # Only include error details in debug mode
     if logger.isEnabledFor(logging.DEBUG):
         response["debug_info"] = {
             "error_type": error.__class__.__name__,
             "error_message": str(error),
         }
-
     return response, 500
 
 
@@ -205,9 +189,7 @@ def handle_http_exception(error: HTTPException) -> tuple[Dict[str, Any], int]:
     logger.warning(
         f"HTTP Exception: {error.description}", extra={"status_code": error.code}
     )
-
     response = {"success": False, "error": error.description, "status_code": error.code}
-
     return response, error.code
 
 
@@ -281,10 +263,8 @@ def create_error_response(
 ) -> tuple[Dict[str, Any], int]:
     """Create a standardized error response."""
     response = {"success": False, "error": message, "status_code": status_code}
-
     if details:
         response["details"] = details
-
     return response, status_code
 
 
@@ -298,5 +278,4 @@ def create_success_response(
         "data": data,
         "status_code": status_code,
     }
-
     return response, status_code

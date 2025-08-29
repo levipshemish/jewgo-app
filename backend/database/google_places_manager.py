@@ -1,28 +1,23 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Google Places Data Manager.
 ==========================
-
 This module manages Google Places data storage and periodic updates.
 It stores Google Places information in the database and periodically
 checks for updates to reduce API calls and improve performance.
-
 Features:
 - Store Google Places data in database
 - Periodic updates with configurable intervals
 - Cache management and cleanup
 - API quota management
 - Error handling and retry logic
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 import os
 import time
 from datetime import datetime, timedelta
 from typing import Any
-
 import requests
 from sqlalchemy import (
     JSON,
@@ -41,20 +36,17 @@ from utils.hours import HoursFormatter
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 # SQLAlchemy Base
 Base = declarative_base()
 
 
 class GooglePlacesData(Base):
     """Google Places data storage table.
-
     Stores Google Places information for restaurants to reduce API calls
     and improve performance. Data is periodically updated.
     """
 
     __tablename__ = "google_places_data"
-
     id = Column(Integer, primary_key=True)
     restaurant_id = Column(
         Integer,
@@ -62,7 +54,6 @@ class GooglePlacesData(Base):
         index=True,
     )  # Foreign key to restaurants table
     google_place_id = Column(String(255), unique=True, index=True)  # Google's place_id
-
     # Basic information
     name = Column(String(255))
     formatted_address = Column(String(500))
@@ -71,25 +62,20 @@ class GooglePlacesData(Base):
     rating = Column(Float)
     user_ratings_total = Column(Integer)
     price_level = Column(Integer)  # 0-4 scale
-
     # Location data
     latitude = Column(Float)
     longitude = Column(Float)
-
     # Hours and business info
     hours_json = Column(JSON)  # Structured hours data
     hours_text = Column(Text)  # Human-readable hours
     timezone = Column(String(50))
-
     # Photos and media
     photos_json = Column(JSON)  # Photo references and metadata
     primary_photo_url = Column(String(500))
-
     # Additional data
     types_json = Column(JSON)  # Business types
     opening_hours_json = Column(JSON)  # Raw opening hours data
     reviews_json = Column(JSON)  # Recent reviews (limited)
-
     # Metadata
     last_updated = Column(DateTime, default=datetime.utcnow, nullable=False)
     next_update = Column(DateTime, nullable=False)  # When to check for updates
@@ -97,7 +83,6 @@ class GooglePlacesData(Base):
     is_active = Column(Boolean, default=True)  # Whether this place is still active
     error_count = Column(Integer, default=0)  # Track API errors
     last_error = Column(Text)  # Last error message
-
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -112,17 +97,14 @@ class GooglePlacesManager:
         if not self.database_url:
             msg = "DATABASE_URL environment variable is required"
             raise ValueError(msg)
-
         self.api_key = os.getenv("GOOGLE_PLACES_API_KEY")
         if not self.api_key:
             logger.warning(
                 "GOOGLE_PLACES_API_KEY not set - some features will be limited",
             )
-
         self.engine = None
         self.SessionLocal = None
         self.connect()
-
         # Configuration
         self.default_update_frequency = 168  # 1 week in hours
         self.max_retries = 3
@@ -139,7 +121,6 @@ class GooglePlacesManager:
                     + ("&" if "?" in connect_url else "?")
                     + "sslmode=require"
                 )
-
             self.engine = create_engine(
                 connect_url,
                 echo=False,
@@ -157,13 +138,10 @@ class GooglePlacesManager:
                 autoflush=False,
                 bind=self.engine,
             )
-
             # Create tables if they don't exist
             Base.metadata.create_all(bind=self.engine)
-
             logger.info("Connected to database successfully")
             return True
-
         except Exception as e:
             logger.exception("Failed to connect to database", error=str(e))
             return False
@@ -179,32 +157,26 @@ class GooglePlacesManager:
         google_place_id: str | None = None,
     ) -> bool:
         """Store Google Places data for a restaurant.
-
         Args:
             restaurant_id: ID of the restaurant in the main restaurants table
             place_data: Google Places API response data
             google_place_id: Google's place_id (if not in place_data)
-
         Returns:
             bool: True if successful, False otherwise
-
         """
         try:
             session = self.get_session()
-
             # Extract place_id
             place_id = google_place_id or place_data.get("place_id")
             if not place_id:
                 logger.error("No place_id provided or found in place_data")
                 return False
-
             # Check if data already exists
             existing = (
                 session.query(GooglePlacesData)
                 .filter_by(google_place_id=place_id)
                 .first()
             )
-
             if existing:
                 # Update existing record
                 self._update_place_data(existing, place_data)
@@ -220,10 +192,8 @@ class GooglePlacesManager:
                     "Stored new Google Places data for restaurant",
                     restaurant_id=restaurant_id,
                 )
-
             session.commit()
             return True
-
         except Exception as e:
             logger.exception(
                 "Error storing place data for restaurant",
@@ -245,10 +215,8 @@ class GooglePlacesManager:
     ) -> GooglePlacesData:
         """Create a new GooglePlacesData record."""
         result = place_data.get("result", place_data)
-
         # Calculate next update time
         next_update = datetime.utcnow() + timedelta(hours=self.default_update_frequency)
-
         return GooglePlacesData(
             restaurant_id=restaurant_id,
             google_place_id=place_id,
@@ -280,7 +248,6 @@ class GooglePlacesManager:
     ) -> None:
         """Update existing GooglePlacesData record."""
         result = place_data.get("result", place_data)
-
         # Update fields
         existing_data.name = result.get("name", existing_data.name)
         existing_data.formatted_address = result.get(
@@ -298,7 +265,6 @@ class GooglePlacesManager:
             existing_data.user_ratings_total,
         )
         existing_data.price_level = result.get("price_level", existing_data.price_level)
-
         # Update location if available
         if "geometry" in result and "location" in result["geometry"]:
             existing_data.latitude = result["geometry"]["location"].get(
@@ -309,12 +275,10 @@ class GooglePlacesManager:
                 "lng",
                 existing_data.longitude,
             )
-
         # Update hours
         if "opening_hours" in result:
             existing_data.hours_json = result["opening_hours"]
             existing_data.hours_text = self._format_hours_text(result["opening_hours"])
-
         # Update other fields
         existing_data.timezone = result.get("utc_offset", existing_data.timezone)
         existing_data.photos_json = result.get("photos", existing_data.photos_json)
@@ -328,7 +292,6 @@ class GooglePlacesManager:
             existing_data.opening_hours_json,
         )
         existing_data.reviews_json = result.get("reviews", existing_data.reviews_json)
-
         # Update metadata
         existing_data.last_updated = datetime.utcnow()
         existing_data.next_update = datetime.utcnow() + timedelta(
@@ -345,24 +308,19 @@ class GooglePlacesManager:
         """Get the primary photo URL from photos array."""
         if not photos:
             return ""
-
         # Get the first photo reference
         photo_ref = photos[0].get("photo_reference")
         if not photo_ref:
             return ""
-
         # Build photo URL
         return f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_ref}&key={self.api_key}"
 
     def get_place_data(self, restaurant_id: int) -> dict[str, Any] | None:
         """Get stored Google Places data for a restaurant.
-
         Args:
             restaurant_id: ID of the restaurant
-
         Returns:
             Dict containing the place data or None if not found
-
         """
         try:
             session = self.get_session()
@@ -371,12 +329,9 @@ class GooglePlacesManager:
                 .filter_by(restaurant_id=restaurant_id, is_active=True)
                 .first()
             )
-
             if place_data:
                 return self._place_data_to_dict(place_data)
-
             return None
-
         except Exception as e:
             logger.exception(
                 "Error getting place data for restaurant",
@@ -423,18 +378,14 @@ class GooglePlacesManager:
 
     def get_places_needing_update(self, limit: int = 50) -> list[GooglePlacesData]:
         """Get places that need to be updated.
-
         Args:
             limit: Maximum number of places to return
-
         Returns:
             List of GooglePlacesData objects needing updates
-
         """
         try:
             session = self.get_session()
             now = datetime.utcnow()
-
             return (
                 session.query(GooglePlacesData)
                 .filter(
@@ -444,7 +395,6 @@ class GooglePlacesManager:
                 .limit(limit)
                 .all()
             )
-
         except Exception as e:
             logger.exception("Error getting places needing update", error=str(e))
             return []
@@ -454,18 +404,14 @@ class GooglePlacesManager:
 
     def update_place_from_api(self, place_data: GooglePlacesData) -> bool:
         """Update place data from Google Places API.
-
         Args:
             place_data: GooglePlacesData object to update
-
         Returns:
             bool: True if successful, False otherwise
-
         """
         if not self.api_key:
             logger.warning("No API key available for Google Places update")
             return False
-
         try:
             # Get place details from Google Places API
             details_url = "https://maps.googleapis.com/maps/api/place/details/json"
@@ -474,19 +420,15 @@ class GooglePlacesManager:
                 "fields": "name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,price_level,geometry,opening_hours,utc_offset,photos,types,reviews",
                 "key": self.api_key,
             }
-
             response = requests.get(details_url, params=params, timeout=10)
             response.raise_for_status()
-
             data = response.json()
-
             if data["status"] == "OK":
                 # Update the place data
                 session = self.get_session()
                 self._update_place_data(place_data, data)
                 session.commit()
                 session.close()
-
                 logger.info(
                     "Successfully updated Google Places data",
                     google_place_id=place_data.google_place_id,
@@ -495,34 +437,28 @@ class GooglePlacesManager:
             # Handle API errors
             place_data.error_count += 1
             place_data.last_error = f"API Error: {data.get('status')} - {data.get('error_message', 'Unknown error')}"
-
             # Increase update interval on repeated errors
             if place_data.error_count > 3:
                 place_data.update_frequency_hours = min(
                     place_data.update_frequency_hours * 2,
                     1680,
                 )  # Max 1 week
-
             session = self.get_session()
             session.commit()
             session.close()
-
             logger.warning(
                 "Failed to update Google Places data",
                 google_place_id=place_data.google_place_id,
                 status=data.get("status"),
             )
             return False
-
         except Exception as e:
             # Handle other errors
             place_data.error_count += 1
             place_data.last_error = str(e)
-
             session = self.get_session()
             session.commit()
             session.close()
-
             logger.exception(
                 "Error updating Google Places data",
                 google_place_id=place_data.google_place_id,
@@ -532,13 +468,10 @@ class GooglePlacesManager:
 
     def run_periodic_updates(self, batch_size: int = 10) -> dict[str, Any]:
         """Run periodic updates for places that need updating.
-
         Args:
             batch_size: Number of places to update in this batch
-
         Returns:
             Dict with update statistics
-
         """
         stats = {
             "total_processed": 0,
@@ -546,11 +479,9 @@ class GooglePlacesManager:
             "failed_updates": 0,
             "skipped_updates": 0,
         }
-
         try:
             places_to_update = self.get_places_needing_update(batch_size)
             stats["total_processed"] = len(places_to_update)
-
             for place_data in places_to_update:
                 # Skip if too many errors
                 if place_data.error_count > 5:
@@ -560,37 +491,29 @@ class GooglePlacesManager:
                         google_place_id=place_data.google_place_id,
                     )
                     continue
-
                 # Update the place
                 if self.update_place_from_api(place_data):
                     stats["successful_updates"] += 1
                 else:
                     stats["failed_updates"] += 1
-
                 # Add delay between API calls to respect rate limits
                 time.sleep(0.1)
-
             logger.info("Periodic update completed", **stats)
             return stats
-
         except Exception as e:
             logger.exception("Error running periodic updates", error=str(e))
             return stats
 
     def cleanup_old_data(self, days_old: int = 7) -> int:
         """Clean up old Google Places data.
-
         Args:
             days_old: Remove data older than this many days
-
         Returns:
             int: Number of records removed
-
         """
         try:
             session = self.get_session()
             cutoff_date = datetime.utcnow() - timedelta(days=days_old)
-
             # Mark old inactive records as inactive
             result = (
                 session.query(GooglePlacesData)
@@ -600,13 +523,10 @@ class GooglePlacesManager:
                 )
                 .update({"is_active": False})
             )
-
             session.commit()
             session.close()
-
             logger.info("Marked old Google Places records as inactive", count=result)
             return result
-
         except Exception as e:
             logger.exception("Error cleaning up old data", error=str(e))
             return 0
@@ -615,7 +535,6 @@ class GooglePlacesManager:
         """Get statistics about stored Google Places data."""
         try:
             session = self.get_session()
-
             total_records = session.query(GooglePlacesData).count()
             active_records = (
                 session.query(GooglePlacesData).filter_by(is_active=True).count()
@@ -628,16 +547,13 @@ class GooglePlacesManager:
                 )
                 .count()
             )
-
             # Get error statistics
             error_records = (
                 session.query(GooglePlacesData)
                 .filter(GooglePlacesData.error_count > 0)
                 .count()
             )
-
             session.close()
-
             return {
                 "total_records": total_records,
                 "active_records": active_records,
@@ -645,7 +561,6 @@ class GooglePlacesManager:
                 "error_records": error_records,
                 "last_updated": datetime.utcnow().isoformat(),
             }
-
         except Exception as e:
             logger.exception("Error getting statistics", error=str(e))
             return {}

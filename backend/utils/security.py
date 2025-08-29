@@ -1,6 +1,5 @@
 """
 Security utilities for the Flask application.
-
 This module provides authentication and authorization decorators
 to replace simple token checking throughout the application.
 """
@@ -22,7 +21,6 @@ except ImportError:
     SUPABASE_ROLES_ENABLED = False
     logger = get_logger(__name__)
     logger.warning("Supabase roles not available - falling back to legacy auth")
-
 logger = get_logger(__name__)
 
 
@@ -32,7 +30,6 @@ def verify_admin_token(token: str) -> bool:
     if not admin_token:
         logger.error("ADMIN_TOKEN not configured")
         return False
-
     return token == admin_token
 
 
@@ -46,17 +43,13 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
         if not jwt_secret:
             logger.error("JWT_SECRET not configured")
             return None
-
         # Decode and verify the token
         payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
-
         # Check if token is expired
         if "exp" in payload and payload["exp"] < time.time():
             logger.warning("JWT token expired")
             return None
-
         return payload
-
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid JWT token: {e}")
         return None
@@ -68,7 +61,6 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
 def require_admin_auth(f):
     """
     Decorator to require admin authentication.
-
     This function accepts only Supabase RS256 JWTs with admin roles.
     Legacy token fallback is disabled by default and can be enabled with ENABLE_LEGACY_ADMIN_AUTH=true.
     """
@@ -80,15 +72,12 @@ def require_admin_auth(f):
             auth_header = request.headers.get("Authorization")
             if not auth_header:
                 raise AuthenticationError("Authorization header required")
-
             # Check Bearer token format
             if not auth_header.startswith("Bearer "):
                 raise AuthenticationError("Bearer token required")
-
             token = auth_header.split(" ")[1]
             if not token:
                 raise AuthenticationError("Token required")
-
             # Try Supabase role-based authentication
             if SUPABASE_ROLES_ENABLED:
                 try:
@@ -98,7 +87,6 @@ def require_admin_auth(f):
                         from flask import g
 
                         g.admin_role = role_data
-
                         # Log successful Supabase admin authentication
                         logger.info(
                             "AUTH_SUCCESS",
@@ -108,7 +96,6 @@ def require_admin_auth(f):
                                 "level": role_data.get("level"),
                             },
                         )
-
                         return f(*args, **kwargs)
                     else:
                         logger.warning(
@@ -119,8 +106,7 @@ def require_admin_auth(f):
                     logger.error(
                         f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint}
                     )
-                    raise AuthenticationError("Authentication service unavailable")
-
+                    raise
             # Legacy token fallback (disabled by default)
             enable_legacy = (
                 os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
@@ -134,7 +120,6 @@ def require_admin_auth(f):
                             "AUTH_LEGACY_SUCCESS", extra={"endpoint": request.endpoint}
                         )
                         return f(*args, **kwargs)
-
                 logger.warning("AUTH_401_LEGACY", extra={"endpoint": request.endpoint})
                 raise AuthenticationError("Invalid admin token")
             else:
@@ -142,7 +127,6 @@ def require_admin_auth(f):
                     "AUTH_401_NO_LEGACY", extra={"endpoint": request.endpoint}
                 )
                 raise AuthenticationError("Legacy admin authentication disabled")
-
         except AuthenticationError as e:
             logger.warning(
                 f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint}
@@ -150,13 +134,11 @@ def require_admin_auth(f):
             response = jsonify({"error": "unauthorized"})
             response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
             return response, 401
-
         except AuthorizationError as e:
             logger.warning(
                 f"AUTH_403_ROLE: {e.message}", extra={"endpoint": request.endpoint}
             )
             return jsonify({"error": "forbidden"}), 403
-
         except Exception as e:
             logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
             return jsonify({"error": "unavailable"}), 503
@@ -174,25 +156,20 @@ def require_user_auth(f):
             auth_header = request.headers.get("Authorization")
             if not auth_header:
                 raise AuthenticationError("Authorization header required")
-
             # Check Bearer token format
             if not auth_header.startswith("Bearer "):
                 raise AuthenticationError("Bearer token required")
-
             token = auth_header.split(" ")[1]
             if not token:
                 raise AuthenticationError("Token required")
-
             # Verify JWT token
             payload = verify_jwt_token(token)
             if not payload:
                 raise AuthenticationError("Invalid or expired token")
-
             # Add user info to Flask g context
             from flask import g
 
             g.user = payload
-
             # Log successful user authentication
             logger.info(
                 "AUTH_SUCCESS",
@@ -200,9 +177,7 @@ def require_user_auth(f):
                     "endpoint": request.endpoint,
                 },
             )
-
             return f(*args, **kwargs)
-
         except AuthenticationError as e:
             logger.warning(
                 f"AUTH_401_SIG: {e.message}",
@@ -211,7 +186,6 @@ def require_user_auth(f):
             response = jsonify({"error": "unauthorized"})
             response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
             return response, 401
-
         except Exception as e:
             logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
             return jsonify({"error": "unavailable"}), 503
@@ -248,9 +222,7 @@ def optional_user_auth(f):
                     logger.debug("Empty token in optional authentication")
             else:
                 logger.debug("No authorization header in optional authentication")
-
             return f(*args, **kwargs)
-
         except Exception as e:
             logger.error(f"Unexpected error in optional authentication: {e}")
             # Continue without authentication
@@ -269,20 +241,16 @@ def require_super_admin(f):
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
                 raise AuthenticationError("Authorization header required")
-
             token = auth_header.split(" ")[1]
             if not verify_admin_token(token):
                 raise AuthenticationError("Invalid admin token")
-
             # Check for super admin token specifically
             super_admin_token = os.getenv("SUPER_ADMIN_TOKEN")
             if not super_admin_token:
                 logger.error("SUPER_ADMIN_TOKEN not configured")
                 raise AuthorizationError("Super admin access not configured")
-
             if token != super_admin_token:
                 raise AuthorizationError("Super admin privileges required")
-
             # Log successful super admin authentication
             logger.info(
                 "Super admin authentication successful",
@@ -292,9 +260,7 @@ def require_super_admin(f):
                     "endpoint": request.endpoint,
                 },
             )
-
             return f(*args, **kwargs)
-
         except (AuthenticationError, AuthorizationError) as e:
             logger.warning(
                 f"Super admin authentication failed: {e.message}",
@@ -310,7 +276,6 @@ def require_super_admin(f):
                 ),
                 e.status_code,
             )
-
         except Exception as e:
             logger.error(f"Unexpected error in super admin authentication: {e}")
             return (
@@ -336,7 +301,6 @@ def rate_limit(max_requests: int = 100, window_seconds: int = 3600):
             try:
                 # Get client identifier (IP address)
                 client_ip = request.remote_addr
-
                 # Import Redis here to avoid circular imports
                 try:
                     import redis
@@ -348,10 +312,8 @@ def rate_limit(max_requests: int = 100, window_seconds: int = 3600):
                         password=os.getenv("REDIS_PASSWORD"),
                         decode_responses=True,
                     )
-
                     # Create rate limit key
                     key = f"rate_limit:{client_ip}:{request.endpoint}"
-
                     # Check current request count
                     current_count = redis_client.get(key)
                     if current_count and int(current_count) >= max_requests:
@@ -375,19 +337,15 @@ def rate_limit(max_requests: int = 100, window_seconds: int = 3600):
                             ),
                             429,
                         )
-
                     # Increment request count
                     pipe = redis_client.pipeline()
                     pipe.incr(key)
                     pipe.expire(key, window_seconds)
                     pipe.execute()
-
                 except Exception as e:
                     logger.warning(f"Rate limiting not available: {e}")
                     # Continue without rate limiting if Redis is not available
-
                 return f(*args, **kwargs)
-
             except Exception as e:
                 logger.error(f"Error in rate limiting: {e}")
                 return f(*args, **kwargs)

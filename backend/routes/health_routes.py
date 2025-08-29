@@ -1,19 +1,15 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Health Check Routes for JewGo Backend.
 =====================================
-
 This module provides health check endpoints for monitoring the application
 status, database connectivity, and cache performance.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 import time
 from datetime import datetime
 from typing import Any, Dict
-
 from flask import Blueprint, jsonify, request
 from utils.logging_config import get_logger
 
@@ -23,9 +19,7 @@ try:
     CACHE_AVAILABLE = True
 except ImportError:
     CACHE_AVAILABLE = False
-
 logger = get_logger(__name__)
-
 health_bp = Blueprint("health", __name__)
 
 
@@ -33,7 +27,6 @@ health_bp = Blueprint("health", __name__)
 def health_check() -> Dict[str, Any]:
     """Basic health check endpoint."""
     start_time = time.time()
-
     try:
         # Basic health status
         health_data = {
@@ -43,7 +36,6 @@ def health_check() -> Dict[str, Any]:
             "environment": "production",
             "response_time_ms": 0,
         }
-
         # Add cache status if available
         if CACHE_AVAILABLE:
             try:
@@ -52,13 +44,10 @@ def health_check() -> Dict[str, Any]:
             except Exception as e:
                 logger.warning(f"Failed to get cache stats: {e}")
                 health_data["cache"] = {"status": "error", "error": str(e)}
-
         # Calculate response time
         response_time = (time.time() - start_time) * 1000
         health_data["response_time_ms"] = round(response_time, 2)
-
         return jsonify(health_data)
-
     except Exception as e:
         logger.exception("Health check failed")
         return (
@@ -78,7 +67,6 @@ def health_check() -> Dict[str, Any]:
 def detailed_health_check() -> Dict[str, Any]:
     """Detailed health check with database and service status."""
     start_time = time.time()
-
     try:
         health_data = {
             "status": "healthy",
@@ -88,14 +76,12 @@ def detailed_health_check() -> Dict[str, Any]:
             "services": {},
             "response_time_ms": 0,
         }
-
         # Check database connectivity
         try:
             from database.database_manager_v3 import EnhancedDatabaseManager
 
             db_manager = EnhancedDatabaseManager()
             db_manager.connect()
-
             # Test a simple query
             with db_manager.session as session:
                 result = session.execute("SELECT 1").scalar()
@@ -116,7 +102,6 @@ def detailed_health_check() -> Dict[str, Any]:
                 "error": str(e),
             }
             health_data["status"] = "degraded"
-
         # Check cache status
         if CACHE_AVAILABLE:
             try:
@@ -125,7 +110,6 @@ def detailed_health_check() -> Dict[str, Any]:
             except Exception as e:
                 logger.warning(f"Cache health check failed: {e}")
                 health_data["services"]["cache"] = {"status": "error", "error": str(e)}
-
         # Check external services
         try:
             import requests
@@ -154,11 +138,9 @@ def detailed_health_check() -> Dict[str, Any]:
                 "status": "error",
                 "error": str(e),
             }
-
         # Calculate response time
         response_time = (time.time() - start_time) * 1000
         health_data["response_time_ms"] = round(response_time, 2)
-
         # Determine overall status
         if health_data["status"] != "degraded":
             all_healthy = all(
@@ -167,9 +149,7 @@ def detailed_health_check() -> Dict[str, Any]:
             )
             if not all_healthy:
                 health_data["status"] = "degraded"
-
         return jsonify(health_data)
-
     except Exception as e:
         logger.exception("Detailed health check failed")
         return (
@@ -194,7 +174,6 @@ def readiness_check() -> Dict[str, Any]:
 
         db_manager = EnhancedDatabaseManager()
         db_manager.connect()
-
         # Test database connection
         with db_manager.session as session:
             result = session.execute("SELECT 1").scalar()
@@ -209,9 +188,7 @@ def readiness_check() -> Dict[str, Any]:
                     ),
                     503,
                 )
-
         return jsonify({"status": "ready", "timestamp": datetime.utcnow().isoformat()})
-
     except Exception as e:
         logger.exception("Readiness check failed")
         return (

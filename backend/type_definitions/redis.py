@@ -1,12 +1,10 @@
 """
 Redis Type Definitions for JewGo Backend
-
 This module provides comprehensive type definitions for Redis operations,
 including cache management, session handling, and rate limiting.
 """
 
 from __future__ import annotations
-
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import (

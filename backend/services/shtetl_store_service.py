@@ -1,20 +1,16 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Shtetl Store Service.
-
 Comprehensive service for managing Jewish community marketplace stores.
 Handles store creation, management, analytics, and business logic.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-08-28
 """
-
 import uuid
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
-
 from utils.logging_config import get_logger
 from utils.cache_manager_v4 import CacheManagerV4
 from utils.config_manager import ConfigManager
@@ -34,12 +30,10 @@ class StoreData:
     store_type: str = "general"
     store_category: str = "general"
     subcategory: Optional[str] = None
-
     # Owner information
     owner_name: str = ""
     owner_email: str = ""
     owner_phone: Optional[str] = None
-
     # Location
     address: str = ""
     city: str = ""
@@ -48,23 +42,19 @@ class StoreData:
     country: str = "USA"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-
     # Contact
     phone_number: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
-
     # Business hours
     business_hours: Optional[str] = None
     timezone: Optional[str] = None
-
     # Delivery settings
     delivery_enabled: bool = False
     delivery_radius_miles: float = 10.0
     delivery_fee: float = 0.0
     delivery_minimum: float = 0.0
     pickup_enabled: bool = True
-
     # Kosher settings
     kosher_certification: Optional[str] = None
     kosher_agency: Optional[str] = None
@@ -73,23 +63,19 @@ class StoreData:
     is_pas_yisroel: bool = False
     shabbos_orders: bool = False
     shabbos_delivery: bool = False
-
     # Customization
     logo_url: Optional[str] = None
     banner_url: Optional[str] = None
     color_scheme: str = "blue"
     custom_domain: Optional[str] = None
-
     # Plan and billing
     plan_type: str = "free"
     stripe_customer_id: Optional[str] = None
     stripe_subscription_id: Optional[str] = None
-
     # Status
     is_active: bool = True
     is_approved: bool = False
     status: str = "pending"
-
     # Statistics (computed)
     total_products: int = 0
     total_orders: int = 0
@@ -97,7 +83,6 @@ class StoreData:
     total_customers: int = 0
     average_rating: float = 0.0
     review_count: int = 0
-
     # Metadata
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -109,33 +94,27 @@ class StoreAnalytics:
 
     store_id: str
     period: str  # daily, weekly, monthly, total
-
     # Revenue metrics
     revenue: float = 0.0
     revenue_growth: float = 0.0
-
     # Order metrics
     orders: int = 0
     orders_growth: float = 0.0
     average_order_value: float = 0.0
-
     # Customer metrics
     new_customers: int = 0
     returning_customers: int = 0
     total_customers: int = 0
     customer_growth: float = 0.0
-
     # Product metrics
     active_products: int = 0
     featured_products: int = 0
     low_stock_products: int = 0
     total_products: int = 0
-
     # Performance metrics
     page_views: int = 0
     unique_visitors: int = 0
     conversion_rate: float = 0.0
-
     # Date range
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
@@ -160,20 +139,17 @@ class ShtetlStoreService:
             store_data.store_id = str(uuid.uuid4())
             store_data.created_at = datetime.utcnow()
             store_data.updated_at = datetime.utcnow()
-
             # Validate required fields
             if not store_data.store_name or not store_data.owner_user_id:
                 return False, "Store name and owner user ID are required", None
-
             # Check if user already has a store
             existing_store = self.get_store_by_owner(store_data.owner_user_id)
             if existing_store:
                 return False, "User already has a store", None
-
             # Insert store into database
             query = """
                 INSERT INTO shtetl_stores (
-                    store_id, owner_user_id, store_name, store_description, store_type, 
+                    store_id, owner_user_id, store_name, store_description, store_type,
                     store_category, subcategory, owner_name, owner_email, owner_phone,
                     address, city, state, zip_code, country, latitude, longitude,
                     phone_number, email, website, business_hours, timezone,
@@ -187,7 +163,6 @@ class ShtetlStoreService:
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 ) RETURNING id
             """
-
             params = (
                 store_data.store_id,
                 store_data.owner_user_id,
@@ -236,20 +211,16 @@ class ShtetlStoreService:
                 store_data.created_at,
                 store_data.updated_at,
             )
-
             result = self.db_manager.execute_query(query, params, fetch_one=True)
             if not result:
                 return False, "Failed to create store", None
-
             # Clear cache
             self.cache_manager.delete(f"store:{store_data.store_id}")
             self.cache_manager.delete(f"store_owner:{store_data.owner_user_id}")
-
             self.logger.info(
                 f"Created store {store_data.store_id} for user {store_data.owner_user_id}"
             )
             return True, "Store created successfully", {"store_id": store_data.store_id}
-
         except Exception as e:
             self.logger.error(f"Error creating store: {e}")
             return False, f"Error creating store: {str(e)}", None
@@ -262,24 +233,18 @@ class ShtetlStoreService:
             cached_store = self.cache_manager.get(cache_key)
             if cached_store:
                 return StoreData(**json.loads(cached_store))
-
             # Query database
             query = """
                 SELECT * FROM shtetl_stores WHERE store_id = %s
             """
             result = self.db_manager.execute_query(query, (store_id,), fetch_one=True)
-
             if not result:
                 return None
-
             # Convert to StoreData
             store_data = StoreData(**result)
-
             # Cache the result
             self.cache_manager.set(cache_key, json.dumps(asdict(store_data)), ttl=300)
-
             return store_data
-
         except Exception as e:
             self.logger.error(f"Error getting store {store_id}: {e}")
             return None
@@ -292,7 +257,6 @@ class ShtetlStoreService:
             cached_store = self.cache_manager.get(cache_key)
             if cached_store:
                 return StoreData(**json.loads(cached_store))
-
             # Query database
             query = """
                 SELECT * FROM shtetl_stores WHERE owner_user_id = %s
@@ -300,18 +264,13 @@ class ShtetlStoreService:
             result = self.db_manager.execute_query(
                 query, (owner_user_id,), fetch_one=True
             )
-
             if not result:
                 return None
-
             # Convert to StoreData
             store_data = StoreData(**result)
-
             # Cache the result
             self.cache_manager.set(cache_key, json.dumps(asdict(store_data)), ttl=300)
-
             return store_data
-
         except Exception as e:
             self.logger.error(f"Error getting store for owner {owner_user_id}: {e}")
             return None
@@ -323,41 +282,32 @@ class ShtetlStoreService:
             current_store = self.get_store(store_id)
             if not current_store:
                 return False, "Store not found"
-
             # Build update query
             set_clauses = []
             params = []
-
             for key, value in updates.items():
                 if hasattr(current_store, key):
                     set_clauses.append(f"{key} = %s")
                     params.append(value)
-
             if not set_clauses:
                 return False, "No valid fields to update"
-
             # Add updated_at
             set_clauses.append("updated_at = %s")
             params.append(datetime.utcnow())
             params.append(store_id)
-
-            query = f"""
-                UPDATE shtetl_stores 
+            query = """
+                UPDATE shtetl_stores
                 SET {', '.join(set_clauses)}
                 WHERE store_id = %s
             """
-
             result = self.db_manager.execute_query(query, params)
             if not result:
                 return False, "Failed to update store"
-
             # Clear cache
             self.cache_manager.delete(f"store:{store_id}")
             self.cache_manager.delete(f"store_owner:{current_store.owner_user_id}")
-
             self.logger.info(f"Updated store {store_id}")
             return True, "Store updated successfully"
-
         except Exception as e:
             self.logger.error(f"Error updating store {store_id}: {e}")
             return False, f"Error updating store: {str(e)}"
@@ -369,25 +319,20 @@ class ShtetlStoreService:
             store = self.get_store(store_id)
             if not store:
                 return False, "Store not found"
-
             # Soft delete - set status to closed
             query = """
-                UPDATE shtetl_stores 
+                UPDATE shtetl_stores
                 SET status = 'closed', is_active = false, updated_at = %s
                 WHERE store_id = %s
             """
-
             result = self.db_manager.execute_query(query, (datetime.utcnow(), store_id))
             if not result:
                 return False, "Failed to delete store"
-
             # Clear cache
             self.cache_manager.delete(f"store:{store_id}")
             self.cache_manager.delete(f"store_owner:{store.owner_user_id}")
-
             self.logger.info(f"Deleted store {store_id}")
             return True, "Store deleted successfully"
-
         except Exception as e:
             self.logger.error(f"Error deleting store {store_id}: {e}")
             return False, f"Error deleting store: {str(e)}"
@@ -410,50 +355,37 @@ class ShtetlStoreService:
             # Build query
             query = "SELECT * FROM shtetl_stores WHERE 1=1"
             params = []
-
             if city:
                 query += " AND city ILIKE %s"
                 params.append(f"%{city}%")
-
             if state:
                 query += " AND state ILIKE %s"
                 params.append(f"%{state}%")
-
             if store_type:
                 query += " AND store_type = %s"
                 params.append(store_type)
-
             if store_category:
                 query += " AND store_category = %s"
                 params.append(store_category)
-
             if kosher_agency:
                 query += " AND kosher_agency = %s"
                 params.append(kosher_agency)
-
             if is_active is not None:
                 query += " AND is_active = %s"
                 params.append(is_active)
-
             if is_approved is not None:
                 query += " AND is_approved = %s"
                 params.append(is_approved)
-
             if plan_type:
                 query += " AND plan_type = %s"
                 params.append(plan_type)
-
             query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
-
             results = self.db_manager.execute_query(query, params, fetch_all=True)
-
             stores = []
             for result in results:
                 stores.append(StoreData(**result))
-
             return stores
-
         except Exception as e:
             self.logger.error(f"Error getting stores: {e}")
             return []
@@ -467,9 +399,7 @@ class ShtetlStoreService:
                 "approved_by": approved_by,
                 "status": "active",
             }
-
             return self.update_store(store_id, updates)
-
         except Exception as e:
             self.logger.error(f"Error approving store {store_id}: {e}")
             return False, f"Error approving store: {str(e)}"
@@ -482,9 +412,7 @@ class ShtetlStoreService:
                 "status": "suspended",
                 "admin_notes": f"Store suspended: {reason}",
             }
-
             return self.update_store(store_id, updates)
-
         except Exception as e:
             self.logger.error(f"Error suspending store {store_id}: {e}")
             return False, f"Error suspending store: {str(e)}"
@@ -499,7 +427,6 @@ class ShtetlStoreService:
             cached_analytics = self.cache_manager.get(cache_key)
             if cached_analytics:
                 return StoreAnalytics(**json.loads(cached_analytics))
-
             # Calculate date range
             end_date = datetime.utcnow()
             if period == "daily":
@@ -510,7 +437,6 @@ class ShtetlStoreService:
                 start_date = end_date - timedelta(days=30)
             else:  # total
                 start_date = None
-
             # Get analytics data
             analytics = StoreAnalytics(
                 store_id=store_id,
@@ -518,13 +444,12 @@ class ShtetlStoreService:
                 start_date=start_date,
                 end_date=end_date,
             )
-
             # Query revenue and orders
             if start_date:
                 revenue_query = """
                     SELECT COALESCE(SUM(total_amount), 0) as revenue,
                            COUNT(*) as orders
-                    FROM shtetl_orders 
+                    FROM shtetl_orders
                     WHERE store_id = %s AND created_at >= %s AND created_at <= %s
                 """
                 revenue_result = self.db_manager.execute_query(
@@ -534,33 +459,30 @@ class ShtetlStoreService:
                 revenue_query = """
                     SELECT COALESCE(SUM(total_amount), 0) as revenue,
                        COUNT(*) as orders
-                    FROM shtetl_orders 
+                    FROM shtetl_orders
                     WHERE store_id = %s
                 """
                 revenue_result = self.db_manager.execute_query(
                     revenue_query, (store_id,), fetch_one=True
                 )
-
             if revenue_result:
                 analytics.revenue = float(revenue_result.get("revenue", 0))
                 analytics.orders = int(revenue_result.get("orders", 0))
                 analytics.average_order_value = (
                     analytics.revenue / analytics.orders if analytics.orders > 0 else 0
                 )
-
             # Query products
             products_query = """
                 SELECT COUNT(*) as total_products,
                        COUNT(CASE WHEN is_available = true THEN 1 END) as active_products,
                        COUNT(CASE WHEN is_featured = true THEN 1 END) as featured_products,
                        COUNT(CASE WHEN stock_quantity <= 5 THEN 1 END) as low_stock_products
-                FROM shtetl_marketplace 
+                FROM shtetl_marketplace
                 WHERE seller_user_id = %s
             """
             products_result = self.db_manager.execute_query(
                 products_query, (store_id,), fetch_one=True
             )
-
             if products_result:
                 analytics.total_products = int(products_result.get("total_products", 0))
                 analytics.active_products = int(
@@ -572,27 +494,22 @@ class ShtetlStoreService:
                 analytics.low_stock_products = int(
                     products_result.get("low_stock_products", 0)
                 )
-
             # Query customers
             customers_query = """
                 SELECT COUNT(DISTINCT customer_user_id) as total_customers
-                FROM shtetl_orders 
+                FROM shtetl_orders
                 WHERE store_id = %s
             """
             customers_result = self.db_manager.execute_query(
                 customers_query, (store_id,), fetch_one=True
             )
-
             if customers_result:
                 analytics.total_customers = int(
                     customers_result.get("total_customers", 0)
                 )
-
             # Cache the result
             self.cache_manager.set(cache_key, json.dumps(asdict(analytics)), ttl=600)
-
             return analytics
-
         except Exception as e:
             self.logger.error(f"Error getting analytics for store {store_id}: {e}")
             return None
@@ -604,7 +521,6 @@ class ShtetlStoreService:
             analytics = self.get_store_analytics(store_id, "total")
             if not analytics:
                 return False, "Could not calculate analytics"
-
             # Update store record
             updates = {
                 "total_products": analytics.total_products,
@@ -613,9 +529,7 @@ class ShtetlStoreService:
                 "total_customers": analytics.total_customers,
                 "average_order_value": analytics.average_order_value,
             }
-
             return self.update_store(store_id, updates)
-
         except Exception as e:
             self.logger.error(f"Error updating stats for store {store_id}: {e}")
             return False, f"Error updating stats: {str(e)}"
@@ -626,17 +540,17 @@ class ShtetlStoreService:
         """Search stores by name, description, or location."""
         try:
             query = """
-                SELECT * FROM shtetl_stores 
+                SELECT * FROM shtetl_stores
                 WHERE is_active = true AND is_approved = true
                 AND (
-                    store_name ILIKE %s OR 
-                    store_description ILIKE %s OR 
-                    city ILIKE %s OR 
+                    store_name ILIKE %s OR
+                    store_description ILIKE %s OR
+                    city ILIKE %s OR
                     state ILIKE %s OR
                     store_type ILIKE %s OR
                     store_category ILIKE %s
                 )
-                ORDER BY 
+                ORDER BY
                     CASE WHEN store_name ILIKE %s THEN 1
                          WHEN city ILIKE %s THEN 2
                          ELSE 3
@@ -645,7 +559,6 @@ class ShtetlStoreService:
                     total_orders DESC
                 LIMIT %s OFFSET %s
             """
-
             search_pattern = f"%{search_term}%"
             params = [
                 search_pattern,
@@ -659,15 +572,11 @@ class ShtetlStoreService:
                 limit,
                 offset,
             ]
-
             results = self.db_manager.execute_query(query, params, fetch_all=True)
-
             stores = []
             for result in results:
                 stores.append(StoreData(**result))
-
             return stores
-
         except Exception as e:
             self.logger.error(f"Error searching stores: {e}")
             return []
@@ -678,18 +587,15 @@ class ShtetlStoreService:
         """Get products for a store."""
         try:
             query = """
-                SELECT * FROM shtetl_marketplace 
+                SELECT * FROM shtetl_marketplace
                 WHERE seller_user_id = %s
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
             """
-
             results = self.db_manager.execute_query(
                 query, (store_id, limit, offset), fetch_all=True
             )
-
             return results if results else []
-
         except Exception as e:
             self.logger.error(f"Error getting products for store {store_id}: {e}")
             return []
@@ -700,18 +606,15 @@ class ShtetlStoreService:
         """Get orders for a store."""
         try:
             query = """
-                SELECT * FROM shtetl_orders 
+                SELECT * FROM shtetl_orders
                 WHERE store_id = %s
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
             """
-
             results = self.db_manager.execute_query(
                 query, (store_id, limit, offset), fetch_all=True
             )
-
             return results if results else []
-
         except Exception as e:
             self.logger.error(f"Error getting orders for store {store_id}: {e}")
             return []
@@ -722,18 +625,15 @@ class ShtetlStoreService:
         """Get messages for a store."""
         try:
             query = """
-                SELECT * FROM shtetl_messages 
+                SELECT * FROM shtetl_messages
                 WHERE store_id = %s
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
             """
-
             results = self.db_manager.execute_query(
                 query, (store_id, limit, offset), fetch_all=True
             )
-
             return results if results else []
-
         except Exception as e:
             self.logger.error(f"Error getting messages for store {store_id}: {e}")
             return []
@@ -775,7 +675,6 @@ class ShtetlStoreService:
                 "api_access": True,
             },
         }
-
         return plans.get(plan_type, plans["free"])
 
     def check_plan_limits(self, store_id: str, operation: str) -> Tuple[bool, str]:
@@ -784,13 +683,10 @@ class ShtetlStoreService:
             store = self.get_store(store_id)
             if not store:
                 return False, "Store not found"
-
             plan_limits = self.get_plan_limits(store.plan_type)
-
             if operation == "add_product":
                 if store.total_products >= plan_limits["max_products"]:
                     return False, f"Product limit reached for {store.plan_type} plan"
-
             elif operation == "add_message":
                 # Count current messages
                 messages_query = (
@@ -800,12 +696,9 @@ class ShtetlStoreService:
                     messages_query, (store_id,), fetch_one=True
                 )
                 message_count = result.get("count", 0) if result else 0
-
                 if message_count >= plan_limits["max_messages"]:
                     return False, f"Message limit reached for {store.plan_type} plan"
-
             return True, "Operation allowed"
-
         except Exception as e:
             self.logger.error(f"Error checking plan limits for store {store_id}: {e}")
             return False, "Error checking plan limits"

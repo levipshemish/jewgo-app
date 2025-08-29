@@ -2,12 +2,11 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Reviews Tables.
 ========================================
 Creates the reviews and review_flags tables for storing user reviews and moderation data.
 """
-
 # revision identifiers, used by Alembic.
 revision = "create_reviews_tables"
 down_revision = "create_feedback_table"
@@ -56,7 +55,6 @@ def upgrade() -> None:
         sa.Index("idx_reviews_created_at", "created_at"),
         sa.Index("idx_reviews_rating", "rating"),
     )
-
     # Create review_flags table
     op.create_table(
         "review_flags",
@@ -77,7 +75,6 @@ def upgrade() -> None:
         sa.Index("idx_review_flags_status", "status"),
         sa.Index("idx_review_flags_reported_at", "reported_at"),
     )
-
     # Add comments
     op.execute("COMMENT ON TABLE reviews IS 'User reviews for restaurants'")
     op.execute("COMMENT ON COLUMN reviews.id IS 'Unique review identifier'")
@@ -111,7 +108,6 @@ def upgrade() -> None:
     op.execute(
         "COMMENT ON COLUMN reviews.report_count IS 'Number of times review was reported'",
     )
-
     op.execute(
         "COMMENT ON TABLE review_flags IS 'Flags/reports for reviews requiring moderation'",
     )

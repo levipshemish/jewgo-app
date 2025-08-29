@@ -1,17 +1,13 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Redis Health Monitoring Routes.
 ============================
-
 Provides endpoints for monitoring Redis health and performance.
-
 Author: JewGo Development Team
 Version: 2.0
 Last Updated: 2024
 """
-
 import os
 import time
-
 import redis
 from flask import Blueprint, current_app, jsonify
 from utils.api_response import redis_health_response, redis_stats_response
@@ -20,7 +16,6 @@ from utils.config_manager import ConfigManager
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
 redis_bp = Blueprint("redis_health", __name__, url_prefix="/api/redis")
 
 
@@ -44,33 +39,26 @@ def redis_health_check_route():
             return redis_health_response(
                 status="not_configured", error="Redis URL not configured"
             )
-
         # Test Redis connection
         r = redis.from_url(redis_url)
         start_time = time.time()
         r.ping()
         ping_time = (time.time() - start_time) * 1000  # Convert to milliseconds
-
         # Get Redis info
         info = r.info()
-
         # Test basic operations
         test_key = f"health_check_{int(time.time())}"
         test_value = "test"
-
         # Test set operation
         start_time = time.time()
         r.setex(test_key, 60, test_value)
         set_time = (time.time() - start_time) * 1000
-
         # Test get operation
         start_time = time.time()
         retrieved = r.get(test_key)
         get_time = (time.time() - start_time) * 1000
-
         # Clean up test key
         r.delete(test_key)
-
         return redis_health_response(
             status="healthy",
             redis_url=redis_url,
@@ -82,7 +70,6 @@ def redis_health_check_route():
             used_memory_human=info.get("used_memory_human", "Unknown"),
             total_commands_processed=info.get("total_commands_processed", 0),
         )
-
     except Exception as e:
         logger.error("Redis health check failed", error=str(e))
         return redis_health_response(status="unhealthy", error=str(e))
@@ -98,10 +85,8 @@ def redis_stats():
             return redis_stats_response(
                 status="not_configured", error="Redis URL not configured"
             )
-
         r = redis.from_url(redis_url)
         info = r.info()
-
         # Get cache statistics from Flask-Cache if available
         cache_stats = {}
         if hasattr(current_app, "cache"):
@@ -117,7 +102,6 @@ def redis_stats():
                 }
             except Exception:
                 cache_stats = {"error": "Could not retrieve cache stats"}
-
         stats = {
             "redis_info": {
                 "version": info.get("redis_version"),
@@ -135,9 +119,7 @@ def redis_stats():
             },
             "cache_stats": cache_stats,
         }
-
         return redis_stats_response(status="ok", stats=stats)
-
     except Exception as e:
         logger.error("Redis stats failed", error=str(e))
         return redis_stats_response(status="error", error=str(e))
@@ -155,18 +137,14 @@ def redis_test():
                 ),
                 200,
             )
-
         r = redis.from_url(redis_url)
-
         # Test various operations
         test_results = {}
-
         # Test string operations
         test_key = f"test_string_{int(time.time())}"
         r.setex(test_key, 60, "test_value")
         test_results["string_set"] = r.get(test_key) == b"test_value"
         r.delete(test_key)
-
         # Test hash operations
         test_hash = f"test_hash_{int(time.time())}"
         r.hset(test_hash, "field1", "value1")
@@ -177,21 +155,18 @@ def redis_test():
             b"field2": b"value2",
         }
         r.delete(test_hash)
-
         # Test list operations
         test_list = f"test_list_{int(time.time())}"
         r.lpush(test_list, "item1", "item2", "item3")
         test_results["list_push"] = r.llen(test_list) == 3
         test_results["list_pop"] = r.lpop(test_list) == b"item3"
         r.delete(test_list)
-
         # Test set operations
         test_set = f"test_set_{int(time.time())}"
         r.sadd(test_set, "member1", "member2")
         test_results["set_add"] = r.scard(test_set) == 2
         test_results["set_members"] = r.smembers(test_set) == {b"member1", b"member2"}
         r.delete(test_set)
-
         return (
             jsonify(
                 {
@@ -203,7 +178,6 @@ def redis_test():
             ),
             200,
         )
-
     except Exception as e:
         logger.error("Redis test failed", error=str(e))
         return (
@@ -218,7 +192,6 @@ def cache_health_check():
     try:
         # Get cache health status
         health_status = cache_manager.get_health_status()
-
         # Add additional cache metrics
         cache_metrics = {
             "cache_operations": {
@@ -236,13 +209,11 @@ def cache_health_check():
             },
             "recommendations": [],
         }
-
         # Generate recommendations based on health status
         if health_status.get("error_count", 0) > 10:
             cache_metrics["recommendations"].append(
                 "High error rate detected - check Redis connectivity"
             )
-
         if (
             health_status.get("cache_type") == "memory"
             and health_status.get("redis_connected") is False
@@ -250,12 +221,10 @@ def cache_health_check():
             cache_metrics["recommendations"].append(
                 "Using memory cache - Redis connection failed"
             )
-
         if health_status.get("memory_cache_size", 0) > 1000:
             cache_metrics["recommendations"].append(
                 "Large memory cache - consider Redis for better performance"
             )
-
         return (
             jsonify(
                 {
@@ -271,7 +240,6 @@ def cache_health_check():
             ),
             200,
         )
-
     except ImportError as e:
         logger.error("Cache manager import failed", error=str(e))
         return (

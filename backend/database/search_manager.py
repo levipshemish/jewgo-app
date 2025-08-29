@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Advanced Search Manager for JewGo App.
 ====================================
-
 This module provides advanced search capabilities using PostgreSQL full-text search
 with fuzzy matching, relevance scoring, and multi-field search.
-
 Features:
 - PostgreSQL full-text search with trigram similarity
 - Fuzzy matching with typo tolerance
@@ -12,14 +10,11 @@ Features:
 - Relevance scoring and ranking
 - Autocomplete suggestions
 - Phonetic matching (soundex)
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 from typing import Any
-
 from database.database_manager_v3 import Restaurant
 from sqlalchemy import func, or_, text
 from sqlalchemy.orm import Session
@@ -46,7 +41,6 @@ class AdvancedSearchManager:
         fuzzy_threshold: float = 0.3,
     ) -> tuple[list[dict[str, Any]], int]:
         """Advanced restaurant search with fuzzy matching and relevance scoring.
-
         Args:
             query: Search query string
             limit: Maximum number of results
@@ -56,10 +50,8 @@ class AdvancedSearchManager:
             city: Filter by city
             state: Filter by state
             fuzzy_threshold: Minimum similarity threshold for fuzzy matching
-
         Returns:
             Tuple of (results, total_count)
-
         """
         try:
             # Build the base query with full-text search
@@ -70,17 +62,13 @@ class AdvancedSearchManager:
                 city,
                 state,
             )
-
             # Add relevance scoring
             scored_query = self._add_relevance_scoring(base_query, query)
-
             # Add fuzzy matching for typo tolerance
             fuzzy_query = self._add_fuzzy_matching(scored_query, query, fuzzy_threshold)
-
             # Get total count
             count_query = self.session.query(func.count(fuzzy_query.subquery().c.id))
             total_count = count_query.scalar()
-
             # Get paginated results
             results = (
                 fuzzy_query.order_by(
@@ -90,7 +78,6 @@ class AdvancedSearchManager:
                 .offset(offset)
                 .all()
             )
-
             # Convert to dictionaries
             restaurant_list = []
             for result in results:
@@ -126,9 +113,7 @@ class AdvancedSearchManager:
                     "similarity_score": getattr(result, "similarity_score", 0),
                 }
                 restaurant_list.append(restaurant_dict)
-
             return restaurant_list, total_count
-
         except Exception as e:
             logger.exception("Error in advanced search", error=str(e))
             return [], 0
@@ -144,7 +129,6 @@ class AdvancedSearchManager:
         """Build the base search query with filters."""
         # Start with base query
         base_query = self.session.query(Restaurant)
-
         # Add text search across multiple fields
         if query:
             search_conditions = [
@@ -155,22 +139,17 @@ class AdvancedSearchManager:
                 Restaurant.address.ilike(f"%{query}%"),
             ]
             base_query = base_query.filter(or_(*search_conditions))
-
         # Add filters
         if kosher_type:
             base_query = base_query.filter(Restaurant.kosher_category == kosher_type)
-
         if certifying_agency:
             base_query = base_query.filter(
                 Restaurant.certifying_agency.ilike(f"%{certifying_agency}%"),
             )
-
         if city:
             base_query = base_query.filter(Restaurant.city.ilike(f"%{city}%"))
-
         if state:
             base_query = base_query.filter(Restaurant.state.ilike(f"%{state}%"))
-
         return base_query
 
     def _add_relevance_scoring(self, query, search_query: str):
@@ -193,7 +172,6 @@ class AdvancedSearchManager:
             query_start=f"{search_query}%",
             query_any=f"%{search_query}%",
         )
-
         return query.add_columns(relevance_expr)
 
     def _add_fuzzy_matching(self, query, search_query: str, threshold: float):
@@ -208,19 +186,15 @@ class AdvancedSearchManager:
             ) as similarity_score
         """,
         ).bindparams(query=search_query)
-
         return query.add_columns(similarity_expr)
 
     def get_autocomplete_suggestions(self, query: str, limit: int = 10) -> list[str]:
         """Get autocomplete suggestions for search queries.
-
         Args:
             query: Partial search query
             limit: Maximum number of suggestions
-
         Returns:
             List of suggestion strings
-
         """
         try:
             # Get suggestions from restaurant names
@@ -231,7 +205,6 @@ class AdvancedSearchManager:
                 .limit(limit // 2)
                 .all()
             )
-
             # Get suggestions from cities
             city_suggestions = (
                 self.session.query(Restaurant.city)
@@ -240,7 +213,6 @@ class AdvancedSearchManager:
                 .limit(limit // 2)
                 .all()
             )
-
             # Get suggestions from certifying agencies
             agency_suggestions = (
                 self.session.query(Restaurant.certifying_agency)
@@ -249,7 +221,6 @@ class AdvancedSearchManager:
                 .limit(limit // 4)
                 .all()
             )
-
             # Combine and deduplicate suggestions
             suggestions = set()
             for suggestion_list in [
@@ -259,9 +230,7 @@ class AdvancedSearchManager:
             ]:
                 for suggestion in suggestion_list:
                     suggestions.add(suggestion[0])
-
             return sorted(suggestions)[:limit]
-
         except Exception as e:
             logger.exception("Error getting autocomplete suggestions", error=str(e))
             return []
@@ -272,14 +241,11 @@ class AdvancedSearchManager:
         limit: int = 5,
     ) -> list[dict[str, Any]]:
         """Get search suggestions with additional context.
-
         Args:
             query: Search query
             limit: Maximum number of suggestions
-
         Returns:
             List of suggestion objects with context
-
         """
         try:
             # Get restaurants that match the query
@@ -300,7 +266,6 @@ class AdvancedSearchManager:
                 .limit(limit)
                 .all()
             )
-
             suggestions = []
             for restaurant in matching_restaurants:
                 suggestion = {
@@ -310,9 +275,7 @@ class AdvancedSearchManager:
                     "kosher_type": restaurant.kosher_category,
                 }
                 suggestions.append(suggestion)
-
             return suggestions
-
         except Exception as e:
             logger.exception("Error getting search suggestions", error=str(e))
             return []

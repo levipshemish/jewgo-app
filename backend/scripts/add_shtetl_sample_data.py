@@ -1,24 +1,20 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Add Shtetl Community Sample Data
 ===============================
-
 Adds Jewish community-specific sample data to the shtetl_marketplace table.
 """
-
 import os
 import sys
 from datetime import datetime, timezone
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 # Load environment variables
 load_dotenv()
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -31,7 +27,6 @@ class ShtetlSampleDataManager:
         """Initialize the data manager."""
         self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -40,11 +35,9 @@ class ShtetlSampleDataManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-
             # Test connection
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-
             logger.info("✅ Database connection successful")
             return True
         except Exception as e:
@@ -265,9 +258,7 @@ class ShtetlSampleDataManager:
         """Add sample data to shtetl_marketplace table."""
         try:
             listings = self.get_sample_listings()
-
             logger.info(f"🏛️ Adding {len(listings)} shtetl community sample listings...")
-
             with self.engine.connect() as conn:
                 for listing in listings:
                     # Add timestamps and defaults
@@ -281,7 +272,6 @@ class ShtetlSampleDataManager:
                             "review_count": 0,
                         }
                     )
-
                     # Set defaults if not provided
                     listing.setdefault("kosher_agency", None)
                     listing.setdefault("kosher_level", None)
@@ -297,10 +287,9 @@ class ShtetlSampleDataManager:
                     listing.setdefault("is_featured", False)
                     listing.setdefault("pickup_instructions", None)
                     listing.setdefault("notes", None)
-
                     # Insert listing
                     insert_sql = """
-                        INSERT INTO shtetl_marketplace 
+                        INSERT INTO shtetl_marketplace
                         (title, description, price_cents, currency, city, state, zip_code, latitude, longitude,
                          category_name, subcategory, seller_name, seller_phone, seller_email,
                          kosher_agency, kosher_level, kosher_verified, rabbi_endorsed, community_verified,
@@ -308,7 +297,7 @@ class ShtetlSampleDataManager:
                          seasonal_item, condition, stock_quantity, is_available, is_featured,
                          rating, review_count, status, transaction_type, contact_preference,
                          pickup_instructions, notes, created_at, updated_at)
-                        VALUES 
+                        VALUES
                         (:title, :description, :price_cents, :currency, :city, :state, :zip_code, :latitude, :longitude,
                          :category_name, :subcategory, :seller_name, :seller_phone, :seller_email,
                          :kosher_agency, :kosher_level, :kosher_verified, :rabbi_endorsed, :community_verified,
@@ -317,17 +306,13 @@ class ShtetlSampleDataManager:
                          :rating, :review_count, :status, :transaction_type, :contact_preference,
                          :pickup_instructions, :notes, :created_at, :updated_at)
                     """
-
                     conn.execute(text(insert_sql), listing)
                     logger.info(f"✅ Added: {listing['title']}")
-
                 conn.commit()
-
             logger.info(
                 f"🎉 Successfully added {len(listings)} shtetl community listings!"
             )
             return True
-
         except Exception as e:
             logger.error(f"❌ Error adding shtetl sample data: {e}")
             return False
@@ -335,13 +320,10 @@ class ShtetlSampleDataManager:
     def run(self):
         """Run the shtetl sample data population."""
         logger.info("🏛️ Starting Shtetl Community Sample Data Population...")
-
         if not self.connect():
             logger.error("❌ Failed to connect to database")
             return False
-
         success = self.add_sample_data()
-
         if success:
             logger.info(
                 "🎉 Shtetl community sample data population completed successfully!"
@@ -354,7 +336,6 @@ class ShtetlSampleDataManager:
             logger.info("4. Test kosher verification and community sorting")
         else:
             logger.error("❌ Shtetl sample data population failed")
-
         return success
 
 

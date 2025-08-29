@@ -1,18 +1,14 @@
 from datetime import datetime
 from typing import Any
-
 from flask import Response, g, jsonify
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """API Response Utilities for JewGo Backend.
 =======================================
-
 Provides standardized response formatting for consistent API responses
 across all endpoints.
-
 Author: JewGo Development Team
 Version: 2.0
 """
@@ -41,13 +37,10 @@ class APIResponse:
             "timestamp": self.timestamp,
             "status_code": self.status_code,
         }
-
         if self.data is not None:
             response["data"] = self.data
-
         if self.message:
             response["message"] = self.message
-
         # Always include meta to carry request_id and any provided metadata
         meta: dict[str, Any] = {}
         try:
@@ -57,13 +50,10 @@ class APIResponse:
         except (RuntimeError, Exception):
             # Flask application context not available or other error
             pass
-
         if self.meta:
             meta.update(self.meta)
-
         if meta:
             response["meta"] = meta
-
         return response
 
     def to_response(self) -> Response:
@@ -74,8 +64,6 @@ class APIResponse:
 # ============================================================================
 # SUCCESS RESPONSES
 # ============================================================================
-
-
 def success_response(
     data: Any = None,
     message: str = "Success",
@@ -105,7 +93,6 @@ def paginated_response(
 ) -> Response:
     """Create a paginated response."""
     total_pages = (total + limit - 1) // limit
-
     meta = {
         "pagination": {
             "page": page,
@@ -116,7 +103,6 @@ def paginated_response(
             "has_prev": page > 1,
         },
     }
-
     response = APIResponse(data=data, message=message, status_code=200, meta=meta)
     return response.to_response()
 
@@ -124,8 +110,6 @@ def paginated_response(
 # ============================================================================
 # DOMAIN-SPECIFIC RESPONSES
 # ============================================================================
-
-
 def restaurants_response(
     restaurants: list[dict[str, Any]],
     total: int | None = None,
@@ -136,25 +120,19 @@ def restaurants_response(
     """Create a standardized restaurants response."""
     if total is None:
         total = len(restaurants)
-
     meta = {"count": len(restaurants), "total": total}
-
     if limit is not None:
         meta["limit"] = limit
-
     if offset is not None:
         meta["offset"] = offset
-
     if filters:
         meta["filters"] = filters
-
     base = APIResponse(
         data={"restaurants": restaurants},
         message=f"Retrieved {len(restaurants)} restaurants",
         status_code=200,
         meta=meta,
     ).to_dict()
-
     # Backward compatibility: also expose top-level key expected by existing clients
     base["restaurants"] = restaurants
     # Provide a top-level pagination block similar to legacy responses
@@ -175,7 +153,6 @@ def restaurant_response(restaurant: dict[str, Any]) -> Response:
         message="Restaurant retrieved successfully",
         status_code=200,
     ).to_dict()
-
     # Backward compatibility
     base["restaurant"] = restaurant
     return jsonify(base), 200
@@ -188,7 +165,6 @@ def statistics_response(stats: dict[str, Any]) -> Response:
         message="Statistics retrieved successfully",
         status_code=200,
     ).to_dict()
-
     base["statistics"] = stats
     return jsonify(base), 200
 
@@ -200,7 +176,6 @@ def kosher_types_response(kosher_types: list[dict[str, Any]]) -> Response:
         message=f"Retrieved {len(kosher_types)} kosher types",
         status_code=200,
     ).to_dict()
-
     base["kosher_types"] = kosher_types
     return jsonify(base), 200
 
@@ -213,24 +188,19 @@ def search_response(
     """Create a standardized search response."""
     if total is None:
         total = len(results)
-
     meta = {"query": query, "count": len(results), "total": total}
-
     response = APIResponse(
         data={"results": results},
         message=f"Found {len(results)} results for '{query}'",
         status_code=200,
         meta=meta,
     )
-
     return response.to_response()
 
 
 # ============================================================================
 # HEALTH CHECK RESPONSES
 # ============================================================================
-
-
 def health_response(
     status: str = "ok",
     checks: dict[str, Any] | None = None,
@@ -239,31 +209,23 @@ def health_response(
 ) -> Response:
     """Create a standardized health check response."""
     data = {"status": status}
-
     if checks:
         data["checks"] = checks
-
     if warnings:
         data["warnings"] = warnings
-
     if error:
         data["error"] = error
-
     # Health checks use a simpler format without the standard APIResponse wrapper
     response_data = {
         "status": status,
         "ts": datetime.utcnow().isoformat(),
     }
-
     if checks:
         response_data["checks"] = checks
-
     if warnings:
         response_data["warnings"] = warnings
-
     if error:
         response_data["error"] = error
-
     return jsonify(response_data), 200 if status in ["ok", "healthy"] else 503
 
 
@@ -284,34 +246,24 @@ def redis_health_response(
         "status": status,
         "timestamp": datetime.utcnow().timestamp(),
     }
-
     if redis_url:
         response_data["redis_url"] = redis_url
-
     if ping_time_ms is not None:
         response_data["ping_time_ms"] = round(ping_time_ms, 2)
-
     if set_time_ms is not None:
         response_data["set_time_ms"] = round(set_time_ms, 2)
-
     if get_time_ms is not None:
         response_data["get_time_ms"] = round(get_time_ms, 2)
-
     if redis_version:
         response_data["redis_version"] = redis_version
-
     if connected_clients is not None:
         response_data["connected_clients"] = connected_clients
-
     if used_memory_human:
         response_data["used_memory_human"] = used_memory_human
-
     if total_commands_processed is not None:
         response_data["total_commands_processed"] = total_commands_processed
-
     if error:
         response_data["error"] = error
-
     status_code = 200 if status in ["healthy", "not_configured"] else 503
     return jsonify(response_data), status_code
 
@@ -326,13 +278,10 @@ def redis_stats_response(
         "status": status,
         "timestamp": datetime.utcnow().timestamp(),
     }
-
     if stats:
         response_data["stats"] = stats
-
     if error:
         response_data["error"] = error
-
     status_code = 200 if status in ["ok", "not_configured"] else 503
     return jsonify(response_data), status_code
 
@@ -340,8 +289,6 @@ def redis_stats_response(
 # ============================================================================
 # ERROR RESPONSES
 # ============================================================================
-
-
 def no_content_response() -> Response:
     """Create a 204 No Content response."""
     return "", 204
@@ -357,7 +304,6 @@ def not_found_response(
         status_code=404,
         meta={"resource_type": resource_type},
     )
-
     return response.to_response()
 
 
@@ -379,9 +325,7 @@ def validation_error_response(
     meta = {}
     if errors:
         meta["validation_errors"] = errors
-
     response = APIResponse(message=message, status_code=400, meta=meta)
-
     return response.to_response()
 
 
@@ -393,7 +337,6 @@ def unauthorized_response(
     meta = {}
     if details:
         meta["details"] = details
-
     response = APIResponse(message=message, status_code=401, meta=meta)
     return response.to_response()
 
@@ -406,7 +349,6 @@ def forbidden_response(
     meta = {}
     if details:
         meta["details"] = details
-
     response = APIResponse(message=message, status_code=403, meta=meta)
     return response.to_response()
 
@@ -419,7 +361,6 @@ def service_unavailable_response(
     meta = {}
     if details:
         meta["details"] = details
-
     response = APIResponse(message=message, status_code=503, meta=meta)
     return response.to_response()
 
@@ -427,21 +368,16 @@ def service_unavailable_response(
 # ============================================================================
 # LEGACY COMPATIBILITY RESPONSES
 # ============================================================================
-
-
 def legacy_success_response(
     message: str = "Success",
     data: dict[str, Any] | None = None,
 ) -> Response:
     """Create a legacy-style success response for backward compatibility."""
     response_data = {"success": True}
-
     if message:
         response_data["message"] = message
-
     if data:
         response_data.update(data)
-
     return jsonify(response_data), 200
 
 
@@ -451,8 +387,6 @@ def legacy_error_response(
 ) -> Response:
     """Create a legacy-style error response for backward compatibility."""
     response_data = {"error": message}
-
     if status_code == 500:
         response_data["error"] = "Internal server error"
-
     return jsonify(response_data), status_code

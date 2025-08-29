@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Shtetl Store API Routes.
-
 Comprehensive API routes for Jewish community marketplace store management.
 Handles store creation, management, analytics, and admin functions.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2025-08-28
 """
-
 from flask import Blueprint, request
 from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response, not_found_response
@@ -20,7 +17,6 @@ from utils.admin_auth import require_admin_auth
 from services.shtetl_store_service import ShtetlStoreService, StoreData
 
 logger = get_logger(__name__)
-
 # Create blueprint
 shtetl_store_bp = Blueprint(
     "shtetl_store", __name__, url_prefix="/api/v4/shtetl/stores"
@@ -37,7 +33,6 @@ def create_shtetl_store_service():
         db_manager = DatabaseManagerV4()
         cache_manager = CacheManagerV4()
         config = ConfigManager()
-
         return ShtetlStoreService(
             db_manager=db_manager, cache_manager=cache_manager, config=config
         )
@@ -56,17 +51,14 @@ def create_store():
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Get request data
         data = request.get_json()
         if not data:
             return error_response("Request data required", 400)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Create store data object
         store_data = StoreData(
             owner_user_id=current_user.get("id"),
@@ -105,18 +97,14 @@ def create_store():
             custom_domain=data.get("custom_domain"),
             plan_type=data.get("plan_type", "free"),
         )
-
         # Create store
         success, message, result = service.create_store(store_data)
-
         if not success:
             return error_response(message, 400)
-
         logger.info(
             f"Store created: {result.get('store_id')} by user {current_user.get('id')}"
         )
         return success_response(message, result)
-
     except Exception as e:
         logger.error(f"Error creating store: {e}")
         return error_response("Internal server error", 500)
@@ -132,18 +120,14 @@ def get_my_store():
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store by owner
         store = service.get_store_by_owner(current_user.get("id"))
-
         if not store:
             return not_found_response("Store not found")
-
         # Convert to dict for response
         store_dict = {
             "store_id": store.store_id,
@@ -189,9 +173,7 @@ def get_my_store():
             "created_at": store.created_at.isoformat() if store.created_at else None,
             "updated_at": store.updated_at.isoformat() if store.updated_at else None,
         }
-
         return success_response("Store retrieved successfully", store_dict)
-
     except Exception as e:
         logger.error(f"Error getting store: {e}")
         return error_response("Internal server error", 500)
@@ -206,17 +188,13 @@ def get_store(store_id):
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store
         store = service.get_store(store_id)
-
         if not store:
             return not_found_response("Store not found")
-
         # Only return active and approved stores for public access
         if not store.is_active or not store.is_approved:
             return not_found_response("Store not found")
-
         # Convert to dict for response (limited public data)
         store_dict = {
             "store_id": store.store_id,
@@ -251,9 +229,7 @@ def get_store(store_id):
             "total_products": store.total_products,
             "total_orders": store.total_orders,
         }
-
         return success_response("Store retrieved successfully", store_dict)
-
     except Exception as e:
         logger.error(f"Error getting store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -269,34 +245,26 @@ def update_store(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Get request data
         data = request.get_json()
         if not data:
             return error_response("Request data required", 400)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Update store
         success, message = service.update_store(store_id, data)
-
         if not success:
             return error_response(message, 400)
-
         logger.info(f"Store updated: {store_id} by user {current_user.get('id')}")
         return success_response(message)
-
     except Exception as e:
         logger.error(f"Error updating store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -312,29 +280,22 @@ def delete_store(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Delete store
         success, message = service.delete_store(store_id)
-
         if not success:
             return error_response(message, 400)
-
         logger.info(f"Store deleted: {store_id} by user {current_user.get('id')}")
         return success_response(message)
-
     except Exception as e:
         logger.error(f"Error deleting store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -356,18 +317,15 @@ def get_stores():
         is_active = request.args.get("is_active")
         is_approved = request.args.get("is_approved")
         plan_type = request.args.get("plan_type")
-
         # Convert string parameters to appropriate types
         if is_active is not None:
             is_active = is_active.lower() in ("true", "1", "yes")
         if is_approved is not None:
             is_approved = is_approved.lower() in ("true", "1", "yes")
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get stores
         stores = service.get_stores(
             limit=limit,
@@ -381,7 +339,6 @@ def get_stores():
             is_approved=is_approved,
             plan_type=plan_type,
         )
-
         # Convert to list of dicts
         stores_list = []
         for store in stores:
@@ -405,7 +362,6 @@ def get_stores():
                 ),
             }
             stores_list.append(store_dict)
-
         return success_response(
             "Stores retrieved successfully",
             {
@@ -415,7 +371,6 @@ def get_stores():
                 "offset": offset,
             },
         )
-
     except Exception as e:
         logger.error(f"Error getting stores: {e}")
         return error_response("Internal server error", 500)
@@ -430,18 +385,14 @@ def search_stores():
         search_term = request.args.get("q", "")
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = int(request.args.get("offset", 0))
-
         if not search_term:
             return error_response("Search term required", 400)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Search stores
         stores = service.search_stores(search_term, limit, offset)
-
         # Convert to list of dicts
         stores_list = []
         for store in stores:
@@ -462,7 +413,6 @@ def search_stores():
                 "total_orders": store.total_orders,
             }
             stores_list.append(store_dict)
-
         return success_response(
             "Stores search completed",
             {
@@ -473,7 +423,6 @@ def search_stores():
                 "offset": offset,
             },
         )
-
     except Exception as e:
         logger.error(f"Error searching stores: {e}")
         return error_response("Internal server error", 500)
@@ -489,29 +438,22 @@ def get_store_analytics(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Extract query parameters
         period = request.args.get("period", "total")
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Get analytics
         analytics = service.get_store_analytics(store_id, period)
-
         if not analytics:
             return error_response("Could not retrieve analytics", 500)
-
         # Convert to dict for response
         analytics_dict = {
             "store_id": analytics.store_id,
@@ -537,9 +479,7 @@ def get_store_analytics(store_id):
             ),
             "end_date": analytics.end_date.isoformat() if analytics.end_date else None,
         }
-
         return success_response("Analytics retrieved successfully", analytics_dict)
-
     except Exception as e:
         logger.error(f"Error getting analytics for store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -555,27 +495,21 @@ def get_store_products(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Extract query parameters
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = int(request.args.get("offset", 0))
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Get products
         products = service.get_store_products(store_id, limit, offset)
-
         return success_response(
             "Products retrieved successfully",
             {
@@ -585,7 +519,6 @@ def get_store_products(store_id):
                 "offset": offset,
             },
         )
-
     except Exception as e:
         logger.error(f"Error getting products for store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -601,32 +534,25 @@ def get_store_orders(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Extract query parameters
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = int(request.args.get("offset", 0))
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Get orders
         orders = service.get_store_orders(store_id, limit, offset)
-
         return success_response(
             "Orders retrieved successfully",
             {"orders": orders, "total": len(orders), "limit": limit, "offset": offset},
         )
-
     except Exception as e:
         logger.error(f"Error getting orders for store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -642,27 +568,21 @@ def get_store_messages(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Extract query parameters
         limit = min(int(request.args.get("limit", 50)), 100)
         offset = int(request.args.get("offset", 0))
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get store and verify ownership
         store = service.get_store(store_id)
         if not store:
             return not_found_response("Store not found")
-
         if store.owner_user_id != current_user.get("id"):
             return error_response("Unauthorized", 403)
-
         # Get messages
         messages = service.get_store_messages(store_id, limit, offset)
-
         return success_response(
             "Messages retrieved successfully",
             {
@@ -672,7 +592,6 @@ def get_store_messages(store_id):
                 "offset": offset,
             },
         )
-
     except Exception as e:
         logger.error(f"Error getting messages for store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -684,20 +603,16 @@ def get_plan_limits():
     """Get plan limits and features."""
     try:
         plan_type = request.args.get("plan_type", "free")
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get plan limits
         plan_limits = service.get_plan_limits(plan_type)
-
         return success_response(
             "Plan limits retrieved successfully",
             {"plan_type": plan_type, "limits": plan_limits},
         )
-
     except Exception as e:
         logger.error(f"Error getting plan limits: {e}")
         return error_response("Internal server error", 500)
@@ -715,23 +630,18 @@ def admin_get_stores():
         offset = int(request.args.get("offset", 0))
         status = request.args.get("status")
         is_approved = request.args.get("is_approved")
-
         # Convert string parameters to appropriate types
         if is_approved is not None:
             is_approved = is_approved.lower() in ("true", "1", "yes")
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get stores with admin filters
         stores = service.get_stores(limit=limit, offset=offset, is_approved=is_approved)
-
         # Filter by status if provided
         if status:
             stores = [s for s in stores if s.status == status]
-
         # Convert to list of dicts with admin data
         stores_list = []
         for store in stores:
@@ -760,7 +670,6 @@ def admin_get_stores():
                 ),
             }
             stores_list.append(store_dict)
-
         return success_response(
             "Stores retrieved successfully",
             {
@@ -770,7 +679,6 @@ def admin_get_stores():
                 "offset": offset,
             },
         )
-
     except Exception as e:
         logger.error(f"Error getting stores (admin): {e}")
         return error_response("Internal server error", 500)
@@ -786,21 +694,16 @@ def admin_approve_store(store_id):
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Approve store
         success, message = service.approve_store(store_id, current_user.get("id"))
-
         if not success:
             return error_response(message, 400)
-
         logger.info(f"Store approved: {store_id} by admin {current_user.get('id')}")
         return success_response(message)
-
     except Exception as e:
         logger.error(f"Error approving store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -817,28 +720,22 @@ def admin_suspend_store(store_id):
         reason = (
             data.get("reason", "No reason provided") if data else "No reason provided"
         )
-
         # Get current admin user
         current_user = get_current_supabase_user()
         if not current_user:
             return error_response("Authentication required", 401)
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Suspend store
         success, message = service.suspend_store(store_id, reason)
-
         if not success:
             return error_response(message, 400)
-
         logger.info(
             f"Store suspended: {store_id} by admin {current_user.get('id')} - Reason: {reason}"
         )
         return success_response(message)
-
     except Exception as e:
         logger.error(f"Error suspending store {store_id}: {e}")
         return error_response("Internal server error", 500)
@@ -852,18 +749,14 @@ def admin_get_store_analytics(store_id):
     try:
         # Extract query parameters
         period = request.args.get("period", "total")
-
         # Create service instance
         service = create_shtetl_store_service()
         if not service:
             return error_response("Store service unavailable", 503)
-
         # Get analytics
         analytics = service.get_store_analytics(store_id, period)
-
         if not analytics:
             return error_response("Could not retrieve analytics", 500)
-
         # Convert to dict for response
         analytics_dict = {
             "store_id": analytics.store_id,
@@ -889,9 +782,7 @@ def admin_get_store_analytics(store_id):
             ),
             "end_date": analytics.end_date.isoformat() if analytics.end_date else None,
         }
-
         return success_response("Analytics retrieved successfully", analytics_dict)
-
     except Exception as e:
         logger.error(f"Error getting analytics for store {store_id} (admin): {e}")
         return error_response("Internal server error", 500)

@@ -3,22 +3,18 @@ import time
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse, urlunparse
-
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Unified Database Connection Manager for JewGo App.
 ===============================================
-
 This module provides a unified database connection management system that consolidates
 all database connection patterns across the JewGo application. It provides consistent
 session management, error handling, and connection pooling for all database operations.
-
 Key Features:
 - Unified session creation and management
 - Context manager for automatic session handling
@@ -26,13 +22,11 @@ Key Features:
 - Connection pooling and SSL configuration
 - Comprehensive error handling
 - Support for both direct SQL and ORM operations
-
 Usage Examples:
     # Using context manager (recommended)
     with db_manager.session_scope() as session:
         result = session.execute(text("SELECT * FROM restaurants"))
         return result.fetchall()
-    
     # Using direct session
     session = db_manager.get_session()
     try:
@@ -44,10 +38,11 @@ Usage Examples:
         raise
     finally:
         session.close()
-    
     # Using execute_query helper
-    result = db_manager.execute_query("SELECT * FROM restaurants WHERE city = :city", {"city": "Miami"})
-
+    result = db_manager.execute_query(
+        "SELECT * FROM restaurants WHERE city = :city",
+        {"city": "Miami"}
+    )
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -59,29 +54,24 @@ class DatabaseConnectionManager:
 
     def __init__(self, database_url: Optional[str] = None) -> None:
         """Initialize database connection manager with connection string.
-
         Args:
             database_url: Database connection URL. If not provided, uses DATABASE_URL environment variable.
         """
         self.database_url = database_url or os.environ.get("DATABASE_URL")
-
         # Validate that DATABASE_URL is provided
         if not self.database_url:
             msg = "DATABASE_URL environment variable is required"
             raise ValueError(msg)
-
         # Fix database URL format if needed (postgres:// -> postgresql://)
         if self.database_url.startswith("postgres://"):
             self.database_url = self.database_url.replace(
                 "postgres://", "postgresql://"
             )
             logger.info("Fixed database URL format from postgres:// to postgresql://")
-
         # Initialize SQLAlchemy components
         self.engine = None
         self.SessionLocal = None
         self._is_connected = False
-
         logger.info(
             "Database connection manager initialized",
             database_url=self.database_url[:50] + "...",
@@ -89,27 +79,21 @@ class DatabaseConnectionManager:
 
     def connect(self) -> bool:
         """Connect to the database and create session factory.
-
         Returns:
             bool: True if connection successful, False otherwise
         """
         try:
             # Ensure SSL for all non-local Postgres connections
             self._configure_ssl()
-
             # Create the engine with optimized settings
             self._create_engine()
-
             # Test the connection
             self._test_connection()
-
             # Create session factory
             self._create_session_factory()
-
             self._is_connected = True
             logger.info("Database connection successful")
             return True
-
         except Exception as e:
             logger.exception(
                 "Failed to connect to database",
@@ -124,7 +108,6 @@ class DatabaseConnectionManager:
             parsed = urlparse(self.database_url)
             hostname = (parsed.hostname or "").lower()
             is_local = hostname in ("localhost", "127.0.0.1")
-
             if (
                 parsed.scheme.startswith("postgres")
                 and (not is_local)
@@ -155,7 +138,6 @@ class DatabaseConnectionManager:
         keepalives_count = int(os.environ.get("PG_KEEPALIVES_COUNT", "3"))
         statement_timeout = os.environ.get("PG_STATEMENT_TIMEOUT", "30000")  # ms
         idle_tx_timeout = os.environ.get("PG_IDLE_TX_TIMEOUT", "60000")  # ms
-
         connect_args = {
             "connect_timeout": 30,
             "application_name": "jewgo-backend",
@@ -166,18 +148,15 @@ class DatabaseConnectionManager:
             "keepalives_count": keepalives_count,
             "options": f"-c statement_timeout={statement_timeout} -c idle_in_transaction_session_timeout={idle_tx_timeout}",
         }
-
         # Optional certificate pinning
         if os.environ.get("PGSSLROOTCERT"):
             connect_args["sslrootcert"] = os.environ.get("PGSSLROOTCERT")
-
         # Detect Neon and remove unsupported startup options
         parsed = urlparse(self.database_url)
         hostname = (parsed.hostname or "").lower()
         is_neon = "neon.tech" in hostname
         if is_neon:
             connect_args.pop("options", None)
-
         self.engine = create_engine(
             self.database_url,
             echo=False,
@@ -188,7 +167,6 @@ class DatabaseConnectionManager:
             pool_pre_ping=True,
             connect_args=connect_args,
         )
-
         # Set per-connection timeouts for Neon
         if is_neon:
             self._setup_neon_timeouts(statement_timeout, idle_tx_timeout)
@@ -249,10 +227,8 @@ class DatabaseConnectionManager:
 
     def get_session(self) -> Session:
         """Get a new database session, auto-connecting if needed.
-
         Returns:
             Session: SQLAlchemy session object
-
         Raises:
             RuntimeError: If database connection fails
         """
@@ -267,10 +243,8 @@ class DatabaseConnectionManager:
     @contextmanager
     def session_scope(self):
         """Context manager for database sessions with proper error handling.
-
         Yields:
             Session: SQLAlchemy session object
-
         Example:
             with db_manager.session_scope() as session:
                 result = session.execute(text("SELECT * FROM restaurants"))
@@ -295,14 +269,11 @@ class DatabaseConnectionManager:
         self, query: str, params: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """Execute a SQL query and return results as list of dictionaries.
-
         Args:
             query: SQL query string
             params: Query parameters (optional)
-
         Returns:
             List[Dict[str, Any]]: Query results as list of dictionaries
-
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -314,14 +285,11 @@ class DatabaseConnectionManager:
         self, query: str, params: Optional[Dict[str, Any]] = None
     ) -> int:
         """Execute an UPDATE query and return number of affected rows.
-
         Args:
             query: SQL UPDATE query string
             params: Query parameters (optional)
-
         Returns:
             int: Number of affected rows
-
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -333,14 +301,11 @@ class DatabaseConnectionManager:
         self, query: str, params: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Execute an INSERT query and return the inserted ID.
-
         Args:
             query: SQL INSERT query string
             params: Query parameters (optional)
-
         Returns:
             Any: Inserted ID or result
-
         Raises:
             SQLAlchemyError: If query execution fails
         """
@@ -351,15 +316,12 @@ class DatabaseConnectionManager:
 
     def with_retry(self, fn, retries: int = 2, delay: float = 0.2):
         """Retry function with exponential backoff for OperationalError.
-
         Args:
             fn: Function to retry
             retries: Number of retry attempts
             delay: Initial delay between retries (will be multiplied by retry number)
-
         Returns:
             Any: Result of the function
-
         Raises:
             OperationalError: If all retries fail
         """
@@ -379,7 +341,6 @@ class DatabaseConnectionManager:
 
     def health_check(self) -> Dict[str, Any]:
         """Perform database health check.
-
         Returns:
             Dict[str, Any]: Health check results
         """
@@ -388,11 +349,9 @@ class DatabaseConnectionManager:
                 # Test basic connectivity
                 result = session.execute(text("SELECT 1 as test"))
                 test_result = result.fetchone()
-
                 # Get database info
                 version_result = session.execute(text("SELECT version()"))
                 version = version_result.fetchone()[0]
-
                 # Get connection count
                 connections_result = session.execute(
                     text(
@@ -400,7 +359,6 @@ class DatabaseConnectionManager:
                     )
                 )
                 connection_count = connections_result.fetchone()[0]
-
                 return {
                     "status": "healthy",
                     "test_result": test_result[0] if test_result else None,
@@ -444,10 +402,8 @@ _db_manager = None
 
 def get_db_manager(database_url: Optional[str] = None) -> DatabaseConnectionManager:
     """Get or create global database connection manager instance.
-
     Args:
         database_url: Database connection URL (optional)
-
     Returns:
         DatabaseConnectionManager: Database connection manager instance
     """

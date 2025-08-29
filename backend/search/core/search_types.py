@@ -3,12 +3,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Search Types and Enums.
 ======================
-
 This module defines the types, enums, and data structures used throughout the search system.
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
@@ -86,30 +84,25 @@ class SearchFilters:
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None
-
     # Kosher-specific filters
     is_cholov_yisroel: Optional[bool] = None
     is_pas_yisroel: Optional[bool] = None
     is_glatt: Optional[bool] = None
     is_mehadrin: Optional[bool] = None
-
     # Location filters
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     max_distance: Optional[float] = None  # in miles
-
     # Rating and price filters
     min_rating: Optional[float] = None
     max_rating: Optional[float] = None
     price_range: Optional[PriceRange] = None
     min_price: Optional[float] = None
     max_price: Optional[float] = None
-
     # Status filters
     is_open: Optional[bool] = None
     has_website: Optional[bool] = None
     has_phone: Optional[bool] = None
-
     # Search-specific filters
     fuzzy_threshold: Optional[float] = None
     similarity_threshold: Optional[float] = None
@@ -132,13 +125,10 @@ class SearchFilters:
         # Convert enum values back to enums
         if "kosher_category" in data and data["kosher_category"]:
             data["kosher_category"] = KosherCategory(data["kosher_category"])
-
         if "certifying_agency" in data and data["certifying_agency"]:
             data["certifying_agency"] = CertifyingAgency(data["certifying_agency"])
-
         if "price_range" in data and data["price_range"]:
             data["price_range"] = PriceRange(data["price_range"])
-
         return cls(**data)
 
 
@@ -153,32 +143,26 @@ class SearchResult:
     city: str
     state: str
     zip_code: Optional[str] = None
-
     # Contact info
     phone_number: Optional[str] = None
     website: Optional[str] = None
-
     # Kosher info
     kosher_category: Optional[KosherCategory] = None
     certifying_agency: Optional[CertifyingAgency] = None
     is_cholov_yisroel: Optional[bool] = None
     is_pas_yisroel: Optional[bool] = None
-
     # Location
     latitude: Optional[float] = None
     longitude: Optional[float] = None
-
     # Ratings and pricing
     rating: Optional[float] = None
     price_range: Optional[PriceRange] = None
-
     # Search-specific fields
     relevance_score: float = 0.0
     search_type: SearchType = SearchType.POSTGRESQL
     similarity_score: Optional[float] = None
     # Semantic matches removed - vector search is no longer supported
     distance_miles: Optional[float] = None
-
     # Metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -186,7 +170,6 @@ class SearchResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary."""
         result = self.__dict__.copy()
-
         # Convert enums to values
         if self.kosher_category:
             result["kosher_category"] = self.kosher_category.value
@@ -196,11 +179,9 @@ class SearchResult:
             result["price_range"] = self.price_range.value
         if self.search_type:
             result["search_type"] = self.search_type.value
-
         # Convert datetime to ISO string
         if self.created_at:
             result["created_at"] = self.created_at.isoformat()
-
         return result
 
     @classmethod
@@ -215,12 +196,10 @@ class SearchResult:
             data["price_range"] = PriceRange(data["price_range"])
         if "search_type" in data and data["search_type"]:
             data["search_type"] = SearchType(data["search_type"])
-
         # Convert ISO string back to datetime
         if "created_at" in data and data["created_at"]:
             if isinstance(data["created_at"], str):
                 data["created_at"] = datetime.fromisoformat(data["created_at"])
-
         return cls(**data)
 
 

@@ -2,7 +2,6 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
-
 from utils.error_handler import handle_cache_operation
 from utils.logging_config import get_logger
 
@@ -13,12 +12,9 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
     redis = None
-
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Cache Manager v4 for DatabaseManager v4 with Redis integration and performance optimizations."""
-
 try:
     REDIS_AVAILABLE = True
 except ImportError:
@@ -37,7 +33,6 @@ class CacheManagerV4:
         cache_prefix: str = "jewgo:v4:",
     ) -> None:
         """Initialize the cache manager.
-
         Args:
             redis_url: Redis connection URL
             default_ttl: Default time-to-live in seconds
@@ -51,7 +46,6 @@ class CacheManagerV4:
         self._is_healthy = True
         self._last_error = None
         self._error_count = 0
-
         if enable_cache and REDIS_AVAILABLE:
             self._initialize_redis(redis_url)
         elif enable_cache and not REDIS_AVAILABLE:
@@ -66,12 +60,10 @@ class CacheManagerV4:
             else:
                 # Default to localhost
                 self.redis_client = redis.Redis(host="localhost", port=6379, db=0)
-
             # Test connection
             self.redis_client.ping()
             logger.info("Redis cache initialized successfully")
             self._is_healthy = True
-
         except Exception as e:
             logger.error("Failed to initialize Redis cache", error=str(e))
             self._is_healthy = False
@@ -87,26 +79,21 @@ class CacheManagerV4:
         """Generate a unique cache key."""
         # Create a string representation of the arguments
         key_parts = [prefix]
-
         # Add positional arguments
         for arg in args:
             key_parts.append(str(arg))
-
         # Add keyword arguments (sorted for consistency)
         for key, value in sorted(kwargs.items()):
             key_parts.append(f"{key}:{value}")
-
         # Create a hash of the key parts
         key_string = ":".join(key_parts)
         key_hash = hashlib.md5(key_string.encode()).hexdigest()
-
         return f"{self.cache_prefix}{key_hash}"
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a value from cache."""
         if not self.enable_cache:
             return default
-
         try:
             if self.redis_client:
                 value = self.redis_client.get(key)
@@ -120,9 +107,7 @@ class CacheManagerV4:
                     else:
                         # Remove expired entry
                         del self._memory_cache[key]
-
             return default
-
         except Exception as e:
             self._handle_cache_error("get", e)
             return default
@@ -131,20 +116,16 @@ class CacheManagerV4:
         """Set a value in cache."""
         if not self.enable_cache:
             return False
-
         try:
             ttl = ttl or self.default_ttl
             serialized_value = json.dumps(value, default=str)
-
             if self.redis_client:
                 return self.redis_client.setex(key, ttl, serialized_value)
             elif hasattr(self, "_memory_cache"):
                 expires_at = datetime.now() + timedelta(seconds=ttl)
                 self._memory_cache[key] = {"value": value, "expires_at": expires_at}
                 return True
-
             return False
-
         except Exception as e:
             self._handle_cache_error("set", e)
             return False
@@ -153,7 +134,6 @@ class CacheManagerV4:
         """Delete a value from cache."""
         if not self.enable_cache:
             return False
-
         try:
             if self.redis_client:
                 return bool(self.redis_client.delete(key))
@@ -161,9 +141,7 @@ class CacheManagerV4:
                 if key in self._memory_cache:
                     del self._memory_cache[key]
                     return True
-
             return False
-
         except Exception as e:
             self._handle_cache_error("delete", e)
             return False
@@ -172,7 +150,6 @@ class CacheManagerV4:
         """Delete multiple keys matching a pattern."""
         if not self.enable_cache:
             return 0
-
         try:
             if self.redis_client:
                 keys = self.redis_client.keys(pattern)
@@ -185,9 +162,7 @@ class CacheManagerV4:
                     del self._memory_cache[key]
                     deleted_count += 1
                 return deleted_count
-
             return 0
-
         except Exception as e:
             self._handle_cache_error("delete_pattern", e)
             return 0
@@ -196,7 +171,6 @@ class CacheManagerV4:
         """Check if a key exists in cache."""
         if not self.enable_cache:
             return False
-
         try:
             if self.redis_client:
                 return bool(self.redis_client.exists(key))
@@ -208,9 +182,7 @@ class CacheManagerV4:
                     else:
                         # Remove expired entry
                         del self._memory_cache[key]
-
             return False
-
         except Exception as e:
             self._handle_cache_error("exists", e)
             return False
@@ -219,16 +191,13 @@ class CacheManagerV4:
         """Clear all cache entries."""
         if not self.enable_cache:
             return False
-
         try:
             if self.redis_client:
                 return bool(self.redis_client.flushdb())
             elif hasattr(self, "_memory_cache"):
                 self._memory_cache.clear()
                 return True
-
             return False
-
         except Exception as e:
             self._handle_cache_error("clear", e)
             return False
@@ -238,7 +207,6 @@ class CacheManagerV4:
         value = self.get(key)
         if value is not None:
             return value
-
         # Value not in cache, compute it
         value = default_func()
         self.set(key, value, ttl)
@@ -250,7 +218,6 @@ class CacheManagerV4:
             pattern = f"{self.cache_prefix}restaurant:{restaurant_id}:*"
         else:
             pattern = f"{self.cache_prefix}restaurant:*"
-
         return self.delete_pattern(pattern)
 
     def invalidate_review_cache(
@@ -263,7 +230,6 @@ class CacheManagerV4:
             pattern = f"{self.cache_prefix}review:restaurant:{restaurant_id}:*"
         else:
             pattern = f"{self.cache_prefix}review:*"
-
         return self.delete_pattern(pattern)
 
     def invalidate_user_cache(self, user_id: Optional[str] = None) -> int:
@@ -272,7 +238,6 @@ class CacheManagerV4:
             pattern = f"{self.cache_prefix}user:{user_id}:*"
         else:
             pattern = f"{self.cache_prefix}user:*"
-
         return self.delete_pattern(pattern)
 
     def invalidate_image_cache(self, restaurant_id: Optional[int] = None) -> int:
@@ -281,34 +246,28 @@ class CacheManagerV4:
             pattern = f"{self.cache_prefix}image:restaurant:{restaurant_id}:*"
         else:
             pattern = f"{self.cache_prefix}image:*"
-
         return self.delete_pattern(pattern)
 
     def get_cached_restaurant_details(
         self, restaurant_id: int
     ) -> Optional[Dict[str, Any]]:
         """Get cached restaurant details by ID.
-
         Args:
             restaurant_id: Restaurant ID to retrieve from cache
-
         Returns:
             Cached restaurant data or None if not found
         """
         if not self.enable_cache:
             return None
-
         try:
             cache_key = f"{self.cache_prefix}restaurant:{restaurant_id}:details"
             cached_data = self.get(cache_key)
-
             if cached_data:
                 logger.info(f"Cache hit for restaurant {restaurant_id}")
                 return cached_data
             else:
                 logger.info(f"Cache miss for restaurant {restaurant_id}")
                 return None
-
         except Exception as e:
             self._handle_cache_error("get_cached_restaurant_details", e)
             return None
@@ -317,33 +276,26 @@ class CacheManagerV4:
         self, restaurant_id: int, data: Dict[str, Any], ttl: Optional[int] = None
     ) -> bool:
         """Cache restaurant details.
-
         Args:
             restaurant_id: Restaurant ID to cache
             data: Restaurant data to cache
             ttl: Time to live in seconds (defaults to 1800 = 30 minutes)
-
         Returns:
             True if successfully cached, False otherwise
         """
         if not self.enable_cache:
             return False
-
         try:
             cache_key = f"{self.cache_prefix}restaurant:{restaurant_id}:details"
             cache_ttl = ttl or 1800  # Default 30 minutes
-
             success = self.set(cache_key, data, cache_ttl)
-
             if success:
                 logger.info(
                     f"Successfully cached restaurant {restaurant_id} for {cache_ttl}s"
                 )
             else:
                 logger.warning(f"Failed to cache restaurant {restaurant_id}")
-
             return success
-
         except Exception as e:
             self._handle_cache_error("cache_restaurant_details", e)
             return False
@@ -356,7 +308,6 @@ class CacheManagerV4:
             "error_count": self._error_count,
             "last_error": self._last_error,
         }
-
         try:
             if self.redis_client:
                 info = self.redis_client.info()
@@ -376,18 +327,15 @@ class CacheManagerV4:
                         "cache_size": len(self._memory_cache),
                     }
                 )
-
         except Exception as e:
             logger.error("Error getting cache stats", error=str(e))
             stats["error"] = str(e)
-
         return stats
 
     def health_check(self) -> bool:
         """Check cache health."""
         if not self.enable_cache:
             return True
-
         try:
             if self.redis_client:
                 self.redis_client.ping()
@@ -397,9 +345,7 @@ class CacheManagerV4:
                 # Memory cache is always healthy
                 self._is_healthy = True
                 return True
-
             return False
-
         except Exception as e:
             self._is_healthy = False
             self._last_error = str(e)
@@ -431,7 +377,6 @@ class CacheDecorator:
         key_prefix: str = "",
     ):
         """Initialize the cache decorator.
-
         Args:
             cache_manager: Cache manager instance
             ttl: Time-to-live for cached values
@@ -449,12 +394,10 @@ class CacheDecorator:
             cache_key = self.cache_manager._generate_cache_key(
                 f"{self.key_prefix}{func.__name__}", *args, **kwargs
             )
-
             # Try to get from cache
             cached_result = self.cache_manager.get(cache_key)
             if cached_result is not None:
                 return cached_result
-
             # Execute function and cache result
             result = func(*args, **kwargs)
             self.cache_manager.set(cache_key, result, self.ttl)

@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Simple API v4 routes for testing."""
-
 from flask import Blueprint, jsonify
 from datetime import datetime, timezone
 

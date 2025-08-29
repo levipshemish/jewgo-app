@@ -1,25 +1,21 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Shtetl Community Data Population Script
 =======================================
-
 This script adds Jewish community-specific marketplace listings
 that are perfect for the shtetl marketplace page.
 """
-
 import os
 import sys
 from datetime import datetime, timezone
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
 # Load environment variables
 load_dotenv()
-
 from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +28,6 @@ class ShtelCommunityDataManager:
         """Initialize the data manager."""
         self.database_url = database_url or os.getenv("DATABASE_URL")
         self.engine = None
-
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
@@ -41,11 +36,9 @@ class ShtelCommunityDataManager:
         try:
             logger.info("🔗 Connecting to database...")
             self.engine = create_engine(self.database_url)
-
             # Test connection
             with self.engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-
             logger.info("✅ Database connection successful")
             return True
         except Exception as e:
@@ -245,9 +238,7 @@ class ShtelCommunityDataManager:
         """Add shtetl community listings to the marketplace."""
         try:
             listings = self.get_shtel_community_listings()
-
             logger.info(f"🏛️ Adding {len(listings)} shtetl community listings...")
-
             with self.engine.connect() as conn:
                 for listing in listings:
                     # Add timestamps and required fields
@@ -273,12 +264,11 @@ class ShtelCommunityDataManager:
                             "is_vegetarian": False,
                         }
                     )
-
                     # Insert listing with all required fields
                     result = conn.execute(
                         text(
                             """
-                        INSERT INTO marketplace 
+                        INSERT INTO marketplace
                         (name, title, description, price, currency, category, subcategory, location, city, state, zip_code,
                          vendor_name, vendor_phone, vendor_email, kosher_agency, kosher_level, is_available,
                          is_featured, is_on_sale, stock, rating, review_count, status, latitude, longitude,
@@ -295,17 +285,13 @@ class ShtelCommunityDataManager:
                         ),
                         listing,
                     )
-
                     logger.info(f"✅ Added: {listing['title']}")
-
                 # Commit the transaction
                 conn.commit()
-
             logger.info(
                 f"🎉 Successfully added {len(listings)} shtetl community listings!"
             )
             return True
-
         except Exception as e:
             logger.error(f"❌ Error adding shtetl listings: {e}")
             return False
@@ -313,13 +299,10 @@ class ShtelCommunityDataManager:
     def run(self):
         """Run the shtetl data population."""
         logger.info("🏛️ Starting Shtetl Community Data Population...")
-
         if not self.connect():
             logger.error("❌ Failed to connect to database")
             return False
-
         success = self.add_shtel_listings()
-
         if success:
             logger.info("🎉 Shtetl community data population completed successfully!")
             logger.info("")
@@ -330,7 +313,6 @@ class ShtelCommunityDataManager:
             logger.info("4. Check kosher verification indicators")
         else:
             logger.error("❌ Shtetl data population failed")
-
         return success
 
 

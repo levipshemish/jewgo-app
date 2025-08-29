@@ -1,26 +1,19 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Orders Tables.
 ========================================
 Creates the orders and order_items tables for storing customer orders and order details.
 """
-
 import uuid
-
 import sqlalchemy as sa
 from alembic import op
-
 # revision identifiers, used by Alembic.
 revision = "create_orders_tables"
 down_revision = "create_reviews_tables"
 branch_labels = None
 depends_on = None
-
-
 def generate_order_number() -> str:
     """Generate a unique order number."""
     return f"ORD-{uuid.uuid4().hex[:8].upper()}"
-
-
 def upgrade() -> None:
     """Create orders and order_items tables."""
     # Create orders table
@@ -68,7 +61,14 @@ def upgrade() -> None:
             "payment_method IN ('cash', 'card', 'online')", name="check_payment_method"
         ),
         sa.CheckConstraint(
-            "status IN ('pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled')",
+            "status IN (
+                'pending',
+                'confirmed',
+                'preparing',
+                'ready',
+                'delivered',
+                'cancelled'
+            )",
             name="check_order_status",
         ),
         sa.CheckConstraint("subtotal >= 0", name="check_subtotal_positive"),
@@ -82,7 +82,6 @@ def upgrade() -> None:
         sa.Index("idx_orders_status", "status"),
         sa.Index("idx_orders_created_at", "created_at"),
     )
-
     # Create order_items table
     op.create_table(
         "order_items",
@@ -109,7 +108,6 @@ def upgrade() -> None:
         sa.Index("idx_order_items_order_id", "order_id"),
         sa.Index("idx_order_items_item_id", "item_id"),
     )
-
     # Add comments
     op.execute(
         "COMMENT ON TABLE orders IS 'Customer orders placed through JewGo platform'"
@@ -146,7 +144,6 @@ def upgrade() -> None:
     op.execute(
         "COMMENT ON COLUMN orders.status IS 'Order status: pending, confirmed, preparing, ready, delivered, cancelled'"
     )
-
     op.execute("COMMENT ON TABLE order_items IS 'Individual items in customer orders'")
     op.execute("COMMENT ON COLUMN order_items.id IS 'Unique order item identifier'")
     op.execute("COMMENT ON COLUMN order_items.order_id IS 'Associated order ID'")
@@ -160,8 +157,6 @@ def upgrade() -> None:
     op.execute(
         "COMMENT ON COLUMN order_items.subtotal IS 'Item subtotal (price * quantity)'"
     )
-
-
 def downgrade() -> None:
     """Drop orders and order_items tables."""
     op.drop_table("order_items")

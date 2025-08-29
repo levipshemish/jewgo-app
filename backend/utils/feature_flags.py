@@ -1,19 +1,16 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Feature Flags System for JewGo App.
 ==================================
-
 This module provides a comprehensive feature flag system that supports:
 - Environment-based feature toggles
 - Dynamic feature flags with database storage
 - Feature flag validation and management
 - Integration with Split.io (optional)
 - Feature flag analytics and monitoring
-
 Author: JewGo Development Team
 Version: 1.0
 Last Updated: 2024
 """
-
 import hashlib
 import json
 import os
@@ -21,7 +18,6 @@ import random
 from datetime import datetime
 from functools import wraps
 from typing import Any
-
 from flask import jsonify, make_response, request
 from utils.logging_config import get_logger
 
@@ -30,7 +26,6 @@ try:
     from splitio import get_factory
 except ImportError:
     get_factory = None
-
 logger = get_logger(__name__)
 
 
@@ -119,20 +114,16 @@ class FeatureFlag:
         # Check if feature is globally enabled
         if not self.enabled:
             return False
-
         # Check if feature has expired
         if self.is_expired():
             return False
-
         # Check environment targeting
         if environment and self.target_environments:
             if environment not in self.target_environments:
                 return False
-
         # Check user targeting
         if user_id and self.target_users and user_id not in self.target_users:
             return False
-
         # Check rollout percentage
         if self.rollout_percentage < 100.0:
             if user_id:
@@ -142,7 +133,6 @@ class FeatureFlag:
                 return user_percentage <= self.rollout_percentage
             # Use random rollout for anonymous users
             return random.random() * 100 <= self.rollout_percentage
-
         return True
 
 
@@ -178,10 +168,8 @@ class FeatureFlagManager:
             logger.warning(
                 "Failed to parse FEATURE_FLAGS environment variable", error=str(e)
             )
-
         # Load default flags
         self._load_default_flags()
-
         logger.info("Loaded feature flags", count=len(self.flags))
 
     def _load_default_flags(self) -> None:
@@ -277,7 +265,6 @@ class FeatureFlagManager:
                 rollout_percentage=100.0,
             ),
         }
-
         # Only add default flags if they don't already exist
         for flag_name, flag in default_flags.items():
             if flag_name not in self.flags:
@@ -305,15 +292,12 @@ class FeatureFlagManager:
         default: bool = False,
     ) -> bool:
         """Check if a feature flag is enabled.
-
         Args:
             flag_name: Name of the feature flag
             user_id: Optional user ID for user-specific targeting
             default: Default value if flag is not found
-
         Returns:
             True if feature is enabled, False otherwise
-
         """
         # Check Split.io first if available
         if self.split_io_client:
@@ -322,18 +306,16 @@ class FeatureFlagManager:
                     user_id or "anonymous",
                     flag_name,
                 )
-                if split_result in ["on", "off"]:
+                if split_result in ["on", "of"]:
                     return split_result == "on"
             except Exception as e:
                 logger.warning(
                     "Split.io error for flag", flag_name=flag_name, error=str(e)
                 )
-
         # Check local flags
         flag = self.flags.get(flag_name)
         if not flag:
             return default
-
         return flag.should_enable_for_user(user_id, self.environment)
 
     def get_flag(self, flag_name: str) -> FeatureFlag | None:
@@ -361,12 +343,10 @@ class FeatureFlagManager:
         flag = self.flags.get(flag_name)
         if not flag:
             return False
-
         try:
             for key, value in updates.items():
                 if hasattr(flag, key):
                     setattr(flag, key, value)
-
             flag.updated_at = datetime.utcnow()
             logger.info("Updated feature flag", flag_name=flag_name)
             return True
@@ -395,15 +375,12 @@ class FeatureFlagManager:
         """Validate feature flag configuration."""
         errors = []
         warnings = []
-
         # Check required fields
         if "name" not in flag_data:
             errors.append("Missing required field: name")
-
         # Check field types
         if "enabled" in flag_data and not isinstance(flag_data["enabled"], bool):
             errors.append("'enabled' must be a boolean")
-
         if "rollout_percentage" in flag_data:
             try:
                 percentage = float(flag_data["rollout_percentage"])
@@ -411,7 +388,6 @@ class FeatureFlagManager:
                     errors.append("'rollout_percentage' must be between 0 and 100")
             except (ValueError, TypeError):
                 errors.append("'rollout_percentage' must be a number")
-
         # Check date formats
         for date_field in ["created_at", "updated_at", "expires_at"]:
             if flag_data.get(date_field):
@@ -419,7 +395,6 @@ class FeatureFlagManager:
                     datetime.fromisoformat(flag_data[date_field])
                 except ValueError:
                     errors.append(f"'{date_field}' must be a valid ISO datetime string")
-
         return {
             "valid": len(errors) == 0,
             "errors": errors,
@@ -433,11 +408,9 @@ feature_flag_manager = FeatureFlagManager()
 
 def require_feature_flag(flag_name: str, default: bool = False):
     """Decorator to require a feature flag for an endpoint.
-
     Args:
         flag_name: Name of the feature flag
         default: Default value if flag is not found
-
     """
 
     def decorator(f):
@@ -447,7 +420,6 @@ def require_feature_flag(flag_name: str, default: bool = False):
             user_id = None
             if hasattr(request, "token_info") and request.token_info:
                 user_id = request.token_info.get("user_id")
-
             # Check if feature is enabled
             if not feature_flag_manager.is_enabled(flag_name, user_id, default):
                 return make_response(
@@ -460,7 +432,6 @@ def require_feature_flag(flag_name: str, default: bool = False):
                     ),
                     403,
                 )
-
             return f(*args, **kwargs)
 
         return decorated_function
@@ -470,11 +441,9 @@ def require_feature_flag(flag_name: str, default: bool = False):
 
 def feature_flag_context(flag_name: str, default: bool = False):
     """Context manager for feature flag checks.
-
     Args:
         flag_name: Name of the feature flag
         default: Default value if flag is not found
-
     """
 
     class FeatureFlagContext:
@@ -487,7 +456,6 @@ def feature_flag_context(flag_name: str, default: bool = False):
             user_id = None
             if hasattr(request, "token_info") and request.token_info:
                 user_id = request.token_info.get("user_id")
-
             self.enabled = feature_flag_manager.is_enabled(
                 self.flag_name,
                 user_id,

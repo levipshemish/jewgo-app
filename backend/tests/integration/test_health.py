@@ -25,7 +25,6 @@ def test_database_connection():
 def test_environment_configuration():
     """Test that environment is properly configured for integration tests."""
     required_vars = ["DATABASE_URL", "GOOGLE_MAPS_API_KEY", "SECRET_KEY"]
-
     for var in required_vars:
         assert os.getenv(var) is not None, f"{var} should be set for integration tests"
 

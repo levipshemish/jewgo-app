@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Shtetl Messages Table.
 ===================================================
 Creates a shtetl_messages table for Jewish community marketplace messaging.
 This table stores communication between customers and store owners, including inquiries, support, and order-related messages.
 """
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -18,7 +17,6 @@ depends_on = None
 
 def upgrade() -> None:
     """Create shtetl_messages table for Jewish community messaging."""
-
     # Create shtetl_messages table
     op.create_table(
         "shtetl_messages",
@@ -156,7 +154,6 @@ def upgrade() -> None:
             "integration_data", JSONB, nullable=True
         ),  # Data from external messaging systems
     )
-
     # Create indexes for performance
     op.create_index("idx_shtetl_messages_store_id", "shtetl_messages", ["store_id"])
     op.create_index(
@@ -185,7 +182,6 @@ def upgrade() -> None:
         "idx_shtetl_messages_message_type", "shtetl_messages", ["message_type"]
     )
     op.create_index("idx_shtetl_messages_priority", "shtetl_messages", ["priority"])
-
     # Composite indexes for common queries
     op.create_index(
         "idx_shtetl_messages_store_status",
@@ -215,18 +211,17 @@ def upgrade() -> None:
         "shtetl_messages",
         ["kosher_related", "message_type"],
     )
-
     # Create full-text search index
     op.execute(
         """
-        CREATE INDEX idx_shtetl_messages_search_vector 
-        ON shtetl_messages 
-        USING gin(to_tsvector('english', 
-            COALESCE(subject, '') || ' ' || 
-            COALESCE(message_text, '') || ' ' || 
-            COALESCE(sender_name, '') || ' ' || 
-            COALESCE(recipient_name, '') || ' ' || 
-            COALESCE(store_name, '') || ' ' || 
+        CREATE INDEX idx_shtetl_messages_search_vector
+        ON shtetl_messages
+        USING gin(to_tsvector('english',
+            COALESCE(subject, '') || ' ' ||
+            COALESCE(message_text, '') || ' ' ||
+            COALESCE(sender_name, '') || ' ' ||
+            COALESCE(recipient_name, '') || ' ' ||
+            COALESCE(store_name, '') || ' ' ||
             COALESCE(keywords, '')
         ))
     """

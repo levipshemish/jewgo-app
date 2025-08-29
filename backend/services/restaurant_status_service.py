@@ -1,17 +1,13 @@
 import logging
 import re
 from datetime import datetime, time, timedelta
-
 import pytz
-
 from .base_service import BaseService
 
 """Restaurant Status Service.
-
 This service provides restaurant status calculation based on business hours
 and current time, with proper timezone support.
 """
-
 logger = logging.getLogger(__name__)
 
 
@@ -25,11 +21,9 @@ class RestaurantStatusService(BaseService):
 
     def get_restaurant_status(self, restaurant_data: dict) -> dict[str, any]:
         """Calculate the current status of a restaurant based on business hours.
-
         Args:
             restaurant_data: Dictionary containing restaurant information including
                            hours_open, hours, latitude, longitude, city, state
-
         Returns:
             Dictionary with status information:
             {
@@ -41,7 +35,6 @@ class RestaurantStatusService(BaseService):
                 'hours_parsed': bool,
                 'status_reason': str
             }
-
         """
         try:
             # Extract restaurant information
@@ -52,16 +45,12 @@ class RestaurantStatusService(BaseService):
             longitude = restaurant_data.get("longitude")
             city = restaurant_data.get("city")
             state = restaurant_data.get("state")
-
             # Determine timezone
             timezone_str = self._get_timezone(latitude, longitude, city, state)
-
             # Get current time in restaurant's timezone
             current_time_local = self._get_current_time_in_timezone(timezone_str)
-
             # Parse business hours
             hours_parsed, parsed_hours = self._parse_business_hours(hours_data)
-
             if not hours_parsed:
                 return {
                     "is_open": False,
@@ -72,15 +61,12 @@ class RestaurantStatusService(BaseService):
                     "hours_parsed": False,
                     "status_reason": "Unable to parse business hours",
                 }
-
             # Check if restaurant is currently open
             is_open, next_open_time, status_reason = self._check_if_open(
                 parsed_hours,
                 current_time_local,
             )
-
             status = "open" if is_open else "closed"
-
             return {
                 "is_open": is_open,
                 "status": status,
@@ -92,7 +78,6 @@ class RestaurantStatusService(BaseService):
                 "hours_parsed": True,
                 "status_reason": status_reason,
             }
-
         except Exception as e:
             logger.exception("Error calculating restaurant status", error=str(e))
             return {
@@ -107,13 +92,10 @@ class RestaurantStatusService(BaseService):
 
     def is_restaurant_open(self, restaurant_data: dict) -> bool:
         """Simple function to check if restaurant is currently open.
-
         Args:
             restaurant_data: Restaurant data dictionary
-
         Returns:
             True if restaurant is open, False otherwise
-
         """
         status_info = self.get_restaurant_status(restaurant_data)
         return status_info.get("is_open", False)
@@ -140,7 +122,6 @@ class RestaurantStatusService(BaseService):
                 return "America/Los_Angeles"
             except Exception:
                 pass
-
         # Fallback to city/state mapping
         if city and state:
             timezone_mapping = {
@@ -195,7 +176,6 @@ class RestaurantStatusService(BaseService):
                 "AK": "America/Anchorage",
             }
             return timezone_mapping.get(state.upper(), "America/New_York")
-
         # Default to Eastern Time
         return "America/New_York"
 
@@ -215,7 +195,6 @@ class RestaurantStatusService(BaseService):
         """Parse business hours from various formats."""
         if not hours_data:
             return False, []
-
         # Common patterns for business hours
         patterns = [
             # Mon-Fri 9:00 AM-5:00 PM
@@ -225,12 +204,10 @@ class RestaurantStatusService(BaseService):
             # Mon 9:00 AM-5:00 PM, Tue 9:00 AM-5:00 PM
             r"(\w{3})\s+(\d{1,2}):(\d{2})\s*(AM|PM)-(\d{1,2}):(\d{2})\s*(AM|PM)",
         ]
-
         for pattern in patterns:
             matches = re.findall(pattern, hours_data, re.IGNORECASE)
             if matches:
                 return True, self._parse_day_hours(matches, pattern)
-
         # Fallback parsing
         return self._fallback_hours_parsing(hours_data)
 
@@ -246,7 +223,6 @@ class RestaurantStatusService(BaseService):
             "sat": "saturday",
             "sun": "sunday",
         }
-
         for match in matches:
             if len(match) == 8:  # Range format (Mon-Fri)
                 (
@@ -271,10 +247,8 @@ class RestaurantStatusService(BaseService):
                     end_ampm,
                 ) = match
                 days = [day_mapping.get(day.lower(), day.lower())]
-
             start_time = self._time_from_components(start_hour, start_min, start_ampm)
             end_time = self._time_from_components(end_hour, end_min, end_ampm)
-
             for day in days:
                 parsed_hours.append(
                     {
@@ -283,19 +257,16 @@ class RestaurantStatusService(BaseService):
                         "close": end_time,
                     }
                 )
-
         return parsed_hours
 
     def _time_from_components(self, hour: str, minute: str, ampm: str) -> time:
         """Convert time components to time object."""
         hour = int(hour)
         minute = int(minute)
-
         if ampm.upper() == "PM" and hour != 12:
             hour += 12
         elif ampm.upper() == "AM" and hour == 12:
             hour = 0
-
         return time(hour, minute)
 
     def _get_days_between(self, start_day: str, end_day: str) -> list[str]:
@@ -318,10 +289,8 @@ class RestaurantStatusService(BaseService):
             "sat": "saturday",
             "sun": "sunday",
         }
-
         start_day = day_mapping.get(start_day, start_day)
         end_day = day_mapping.get(end_day, end_day)
-
         try:
             start_idx = days.index(start_day)
             end_idx = days.index(end_day)
@@ -345,24 +314,19 @@ class RestaurantStatusService(BaseService):
         """Check if restaurant is currently open."""
         if not parsed_hours:
             return False, None, "No hours data available"
-
         current_day = current_time.strftime("%A").lower()
         current_time_obj = current_time.time()
-
         # Find today's hours
         today_hours = None
         for hours in parsed_hours:
             if hours["day"].lower() == current_day:
                 today_hours = hours
                 break
-
         if not today_hours:
             return False, None, f"Closed on {current_day}"
-
         # Check if current time is within open hours
         open_time = today_hours["open"]
         close_time = today_hours["close"]
-
         # Handle overnight hours (e.g., 11 PM - 2 AM)
         if close_time < open_time:
             if current_time_obj >= open_time or current_time_obj <= close_time:
@@ -382,7 +346,6 @@ class RestaurantStatusService(BaseService):
         """Calculate the next time the restaurant will be open."""
         if not parsed_hours:
             return None
-
         current_day = current_time.strftime("%A").lower()
         days = [
             "monday",
@@ -393,25 +356,21 @@ class RestaurantStatusService(BaseService):
             "saturday",
             "sunday",
         ]
-
         # Find current day index
         try:
             current_day_idx = days.index(current_day)
         except ValueError:
             return None
-
         # Check next 7 days
         for i in range(7):
             check_day_idx = (current_day_idx + i) % 7
             check_day = days[check_day_idx]
-
             # Find hours for this day
             day_hours = None
             for hours in parsed_hours:
                 if hours["day"].lower() == check_day:
                     day_hours = hours
                     break
-
             if day_hours:
                 open_time = day_hours["open"]
                 if i == 0:  # Today
@@ -426,5 +385,4 @@ class RestaurantStatusService(BaseService):
                     return datetime.combine(
                         future_date, open_time, tzinfo=current_time.tzinfo
                     )
-
         return None

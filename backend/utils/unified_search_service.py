@@ -7,7 +7,6 @@ try:
 except ImportError:
     CacheManagerV4 = None
     CACHE_AVAILABLE = False
-
 import hashlib
 import json
 import time
@@ -27,26 +26,21 @@ except ImportError:
 
     ERROR_HANDLER_AVAILABLE = False
 import math
-
 from database.database_manager_v3 import Restaurant
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 from utils.config_manager import ConfigManager
 
 logger = get_logger(__name__)
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Unified Search Service for JewGo Backend.
 ==========================================
-
 Provides a unified interface for all search operations across the application,
 consolidating search functionality from multiple implementations into a single,
 consistent service.
-
 Author: JewGo Development Team
 Version: 1.0
 """
-
 # Import Restaurant model at module level to avoid repeated imports
 try:
     from database.database_manager_v3 import Restaurant
@@ -205,7 +199,6 @@ class UnifiedSearchService:
         """Initialize the unified search service."""
         self.session = db_session
         self.config = ConfigManager()
-
         # Initialize cache manager
         if CACHE_AVAILABLE:
             self.cache_manager = CacheManagerV4(
@@ -225,26 +218,21 @@ class UnifiedSearchService:
         **kwargs,
     ) -> SearchResponse:
         """Search restaurants using the specified search type.
-
         Args:
             search_type: Type of search to perform
             filters: Search filters to apply
             **kwargs: Additional search parameters
-
         Returns:
             SearchResponse with results and metadata
         """
         start_time = time.time()
-
         if filters is None:
             filters = SearchFilters(**kwargs)
-
         logger.info(
             "Starting restaurant search",
             search_type=search_type.value,
             filters=filters.to_dict(),
         )
-
         # Generate cache key and try to get from cache first
         if self.cache_manager:
             cache_key = self._generate_search_cache_key(search_type, filters)
@@ -259,7 +247,6 @@ class UnifiedSearchService:
                 cached_result.cache_hit = True
                 cached_result.timestamp = datetime.utcnow()
                 return cached_result
-
         try:
             if search_type == SearchType.BASIC:
                 results, total_count = self._basic_search(filters)
@@ -273,12 +260,9 @@ class UnifiedSearchService:
                 results, total_count = self._fuzzy_search(filters)
             else:
                 raise ValueError(f"Unsupported search type: {search_type}")
-
             execution_time_ms = int((time.time() - start_time) * 1000)
-
             # Get suggestions
             suggestions = self._get_suggestions(filters.query, limit=10)
-
             response = SearchResponse(
                 results=results,
                 total_count=total_count,
@@ -287,11 +271,9 @@ class UnifiedSearchService:
                 filters_applied=filters,
                 suggestions=suggestions,
             )
-
             # Cache the result
             if self.cache_manager:
                 self.cache_manager.set(cache_key, response, ttl=1800)  # 30 minutes
-
             logger.info(
                 "Search completed successfully",
                 search_type=search_type.value,
@@ -299,9 +281,7 @@ class UnifiedSearchService:
                 total_count=total_count,
                 execution_time_ms=execution_time_ms,
             )
-
             return response
-
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             logger.error(
@@ -314,66 +294,50 @@ class UnifiedSearchService:
 
     def _basic_search(self, filters: SearchFilters) -> Tuple[List[SearchResult], int]:
         """Perform basic search with simple filters."""
-
         query = self.session.query(Restaurant)
-
         # Apply filters
         if filters.query:
             query = query.filter(Restaurant.name.ilike(f"%{filters.query}%"))
-
         if filters.city:
             query = query.filter(Restaurant.city.ilike(f"%{filters.city}%"))
-
         if filters.state:
             query = query.filter(Restaurant.state.ilike(f"%{filters.state}%"))
-
         if filters.kosher_type:
             query = query.filter(
                 Restaurant.kosher_category.ilike(f"%{filters.kosher_type}%")
             )
-
         if filters.certifying_agency:
             query = query.filter(
                 Restaurant.certifying_agency.ilike(f"%{filters.certifying_agency}%")
             )
-
         # Get total count
         total_count = query.count()
-
         # Get paginated results
         restaurants = query.limit(filters.limit).offset(filters.offset).all()
-
         # Convert to search results
         results = [
             SearchResult.from_restaurant(restaurant) for restaurant in restaurants
         ]
-
         return results, total_count
 
     def _advanced_search(
         self, filters: SearchFilters
     ) -> Tuple[List[SearchResult], int]:
         """Perform advanced search with full-text search capabilities."""
-
         # Build the base query with full-text search
         base_query = self._build_search_query(filters)
-
         # Add relevance scoring
         scored_query = self._add_relevance_scoring(base_query, filters.query)
-
         # Get total count
         count_query = self.session.query(func.count(scored_query.subquery().c.id))
         total_count = count_query.scalar()
-
         # Get paginated results
         results_query = (
             scored_query.order_by(text("relevance_score DESC"))
             .limit(filters.limit)
             .offset(filters.offset)
         )
-
         restaurants = results_query.all()
-
         # Convert to search results
         results = []
         for restaurant in restaurants:
@@ -381,61 +345,49 @@ class UnifiedSearchService:
                 restaurant, relevance_score=getattr(restaurant, "relevance_score", 0)
             )
             results.append(result)
-
         return results, total_count
 
     def _location_search(
         self, filters: SearchFilters
     ) -> Tuple[List[SearchResult], int]:
         """Perform location-based search."""
-
         if not filters.lat or not filters.lng:
             raise ValueError("Location search requires lat and lng coordinates")
-
         query = self.session.query(Restaurant)
-
         # Apply basic filters
         if filters.query:
             query = query.filter(
                 Restaurant.name.ilike(f"%{filters.query}%")
                 | Restaurant.short_description.ilike(f"%{filters.query}%")
             )
-
         # Get restaurants with coordinates
         restaurants = query.filter(
             Restaurant.latitude.isnot(None), Restaurant.longitude.isnot(None)
         ).all()
-
         # Calculate distances and filter by radius
         nearby_restaurants = []
         for restaurant in restaurants:
             distance = self._calculate_distance(
                 filters.lat, filters.lng, restaurant.latitude, restaurant.longitude
             )
-
             if distance <= (filters.radius or 50):
                 result = SearchResult.from_restaurant(restaurant, distance=distance)
                 nearby_restaurants.append(result)
-
         # Sort by distance
-        nearby_restaurants.sort(key=lambda x: x.distance or float("inf"))
-
+        nearby_restaurants.sort(key=lambda x: x.distance or float("in"))
         # Apply pagination
         total_count = len(nearby_restaurants)
         start_idx = filters.offset
         end_idx = start_idx + filters.limit
         results = nearby_restaurants[start_idx:end_idx]
-
         return results, total_count
 
     def _full_text_search(
         self, filters: SearchFilters
     ) -> Tuple[List[SearchResult], int]:
         """Perform full-text search using PostgreSQL capabilities."""
-
         if not filters.query:
             return self._basic_search(filters)
-
         # Use PostgreSQL full-text search
         search_query = text(
             """
@@ -446,28 +398,22 @@ class UnifiedSearchService:
             WHERE to_tsvector('english', name || ' ' || COALESCE(short_description, '')) @@ plainto_tsquery('english', :query)
         """
         )
-
         # Apply additional filters
         where_conditions = []
         params = {"query": filters.query}
-
         if filters.city:
             where_conditions.append("city ILIKE :city")
             params["city"] = f"%{filters.city}%"
-
         if filters.state:
             where_conditions.append("state ILIKE :state")
             params["state"] = f"%{filters.state}%"
-
         if where_conditions:
             search_query = text(
                 str(search_query) + " AND " + " AND ".join(where_conditions)
             )
-
         # Execute query
         result = self.session.execute(search_query, params)
         restaurants = result.fetchall()
-
         # Convert to search results
         results = []
         for row in restaurants:
@@ -475,21 +421,17 @@ class UnifiedSearchService:
                 row, relevance_score=row.relevance_score
             )
             results.append(result)
-
         # Apply pagination
         total_count = len(results)
         start_idx = filters.offset
         end_idx = start_idx + filters.limit
         results = results[start_idx:end_idx]
-
         return results, total_count
 
     def _fuzzy_search(self, filters: SearchFilters) -> Tuple[List[SearchResult], int]:
         """Perform fuzzy search with typo tolerance."""
-
         if not filters.query:
             return self._basic_search(filters)
-
         # Use PostgreSQL similarity function for fuzzy matching
         similarity_query = text(
             """
@@ -502,13 +444,10 @@ class UnifiedSearchService:
                OR to_tsvector('english', name || ' ' || COALESCE(short_description, '')) @@ plainto_tsquery('english', :query)
         """
         )
-
         params = {"query": filters.query, "threshold": filters.fuzzy_threshold}
-
         # Execute query
         result = self.session.execute(similarity_query, params)
         restaurants = result.fetchall()
-
         # Convert to search results
         results = []
         for row in restaurants:
@@ -518,75 +457,59 @@ class UnifiedSearchService:
                 relevance_score=row.relevance_score,
             )
             results.append(result)
-
         # Sort by similarity and relevance
         results.sort(
             key=lambda x: (x.similarity_score or 0, x.relevance_score or 0),
             reverse=True,
         )
-
         # Apply pagination
         total_count = len(results)
         start_idx = filters.offset
         end_idx = start_idx + filters.limit
         results = results[start_idx:end_idx]
-
         return results, total_count
 
     def _build_search_query(self, filters: SearchFilters):
         """Build base search query with filters."""
-
         query = self.session.query(Restaurant)
-
         # Apply filters
         if filters.query:
             query = query.filter(
                 Restaurant.name.ilike(f"%{filters.query}%")
                 | Restaurant.short_description.ilike(f"%{filters.query}%")
             )
-
         if filters.city:
             query = query.filter(Restaurant.city.ilike(f"%{filters.city}%"))
-
         if filters.state:
             query = query.filter(Restaurant.state.ilike(f"%{filters.state}%"))
-
         if filters.kosher_type:
             query = query.filter(
                 Restaurant.kosher_category.ilike(f"%{filters.kosher_type}%")
             )
-
         if filters.certifying_agency:
             query = query.filter(
                 Restaurant.certifying_agency.ilike(f"%{filters.certifying_agency}%")
             )
-
         if filters.listing_type:
             query = query.filter(
                 Restaurant.listing_type.ilike(f"%{filters.listing_type}%")
             )
-
         if filters.price_range:
             query = query.filter(Restaurant.price_range == filters.price_range)
-
         if filters.is_cholov_yisroel is not None:
             query = query.filter(
                 Restaurant.is_cholov_yisroel == filters.is_cholov_yisroel
             )
-
         if filters.is_pas_yisroel is not None:
             query = query.filter(Restaurant.is_pas_yisroel == filters.is_pas_yisroel)
-
         if filters.cholov_stam is not None:
             query = query.filter(Restaurant.cholov_stam == filters.cholov_stam)
-
         return query
 
     def _add_relevance_scoring(self, query, search_query: Optional[str]):
         """Add relevance scoring to query."""
         if not search_query:
             return query
-
         # Add relevance scoring using PostgreSQL full-text search
         scored_query = query.add_columns(
             func.ts_rank(
@@ -599,7 +522,6 @@ class UnifiedSearchService:
                 func.plainto_tsquery("english", search_query),
             ).label("relevance_score")
         )
-
         return scored_query
 
     def _calculate_distance(
@@ -608,7 +530,6 @@ class UnifiedSearchService:
         """Calculate distance between two points using Haversine formula."""
         # Convert to radians
         lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
-
         # Haversine formula
         dlat = lat2 - lat1
         dlng = lng2 - lng1
@@ -617,17 +538,14 @@ class UnifiedSearchService:
             + math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2
         )
         c = 2 * math.asin(math.sqrt(a))
-
         # Earth's radius in miles
         r = 3956
-
         return c * r
 
     def _get_suggestions(self, query: Optional[str], limit: int = 10) -> List[str]:
         """Get search suggestions based on query."""
         if not query or len(query) < 2:
             return []
-
         # Get restaurant names that start with the query
         suggestions = (
             self.session.query(Restaurant.name)
@@ -635,15 +553,12 @@ class UnifiedSearchService:
             .limit(limit)
             .all()
         )
-
         return [suggestion[0] for suggestion in suggestions]
 
     @handle_database_operation
     def get_search_statistics(self) -> Dict[str, Any]:
         """Get search statistics and metrics."""
-
         total_restaurants = self.session.query(Restaurant).count()
-
         # Get counts by various criteria
         stats = {
             "total_restaurants": total_restaurants,
@@ -652,7 +567,6 @@ class UnifiedSearchService:
             "by_certifying_agency": {},
             "by_listing_type": {},
         }
-
         # Count by state
         state_counts = (
             self.session.query(Restaurant.state, func.count(Restaurant.id))
@@ -660,7 +574,6 @@ class UnifiedSearchService:
             .all()
         )
         stats["by_state"] = {state: count for state, count in state_counts if state}
-
         # Count by kosher category
         category_counts = (
             self.session.query(Restaurant.kosher_category, func.count(Restaurant.id))
@@ -670,7 +583,6 @@ class UnifiedSearchService:
         stats["by_kosher_category"] = {
             category: count for category, count in category_counts if category
         }
-
         # Count by certifying agency
         agency_counts = (
             self.session.query(Restaurant.certifying_agency, func.count(Restaurant.id))
@@ -680,7 +592,6 @@ class UnifiedSearchService:
         stats["by_certifying_agency"] = {
             agency: count for agency, count in agency_counts if agency
         }
-
         # Count by listing type
         type_counts = (
             self.session.query(Restaurant.listing_type, func.count(Restaurant.id))
@@ -690,28 +601,23 @@ class UnifiedSearchService:
         stats["by_listing_type"] = {
             listing_type: count for listing_type, count in type_counts if listing_type
         }
-
         return stats
 
     def _generate_search_cache_key(
         self, search_type: SearchType, filters: SearchFilters
     ) -> str:
         """Generate a unique cache key for search results.
-
         Args:
             search_type: Type of search
             filters: Search filters
-
         Returns:
             Unique cache key string
         """
         # Create a dictionary of all parameters
         key_data = {"search_type": search_type.value, "filters": filters.to_dict()}
-
         # Convert to JSON string and hash
         key_string = json.dumps(key_data, sort_keys=True)
         key_hash = hashlib.md5(key_string.encode()).hexdigest()
-
         return f"unified_search:{key_hash}"
 
 

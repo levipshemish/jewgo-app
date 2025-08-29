@@ -1,6 +1,5 @@
 """
 Supabase Role Manager for admin role operations with strict fail-closed security.
-
 This module handles Supabase admin role queries with production-hardened caching,
 stampede control, and strict security boundaries that never serve expired privileges.
 """
@@ -25,17 +24,14 @@ class SupabaseRoleManager:
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
         self.base_ttl = int(os.getenv("ADMIN_ROLE_CACHE_SECONDS", "90"))
         self.redis = get_redis_client()
-
         if not self.supabase_url or not self.supabase_anon_key:
             raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
 
     def get_user_admin_role(self, user_token: str) -> Optional[Dict[str, Any]]:
         """
         Get admin role for user from verified JWT token.
-
         Args:
             user_token: Verified Supabase JWT token
-
         Returns:
             Dict with role data or None if no admin role or system failure
         """
@@ -45,10 +41,8 @@ class SupabaseRoleManager:
             if not user_id:
                 logger.warning("Could not extract user_id from token")
                 return None
-
             # Get role with strict singleflight control
             return self._call_supabase_rpc_with_strict_locking(user_token, user_id)
-
         except Exception as e:
             logger.error(f"Error getting admin role: {e}")
             return None
@@ -56,10 +50,8 @@ class SupabaseRoleManager:
     def _parse_sub_from_verified_token(self, token: str) -> Optional[str]:
         """
         Extract user_id from verified JWT token sub claim.
-
         Args:
             token: Verified Supabase JWT token
-
         Returns:
             User ID from sub claim or None if invalid
         """
@@ -69,13 +61,10 @@ class SupabaseRoleManager:
             # Decode without verification (token already verified)
             payload = jwt.decode(token, options={"verify_signature": False})
             user_id = payload.get("sub")
-
             if not user_id or not self._is_valid_uuid(user_id):
                 logger.warning(f"Invalid sub claim in token: {user_id}")
                 return None
-
             return user_id
-
         except Exception as e:
             logger.error(f"Error parsing token sub claim: {e}")
             return None
@@ -85,17 +74,14 @@ class SupabaseRoleManager:
     ) -> Optional[Dict[str, Any]]:
         """
         Call Supabase RPC with strict singleflight locking and fail-closed behavior.
-
         Args:
             user_token: User's JWT token for authentication
             user_id: User ID for caching and locking
-
         Returns:
             Role data or None if system failure or expired cache
         """
         cache_key = f"admin_role:{user_id}"
         lock_key = f"lock:role:{user_id}"
-
         # Check cache first - only serve if within TTL
         cached = self.redis.get(cache_key)
         if cached:
@@ -108,7 +94,6 @@ class SupabaseRoleManager:
                     logger.info(f"ROLE_CACHE_EXPIRED for user {user_id}")
             except (json.JSONDecodeError, KeyError) as e:
                 logger.warning(f"Invalid cache data for user {user_id}: {e}")
-
         # Try to acquire lock
         got_lock = self.redis.set(lock_key, "1", nx=True, ex=5)
         if got_lock:
@@ -122,7 +107,6 @@ class SupabaseRoleManager:
             # Lock exists - check cache again (within TTL only)
             logger.info(f"ROLE_LOCK_WAIT for user {user_id}")
             time.sleep(min(150, 150) / 1000.0)  # Wait up to 150ms
-
             cached = self.redis.get(cache_key)
             if cached:
                 try:
@@ -132,7 +116,6 @@ class SupabaseRoleManager:
                         return cache_data
                 except (json.JSONDecodeError, KeyError):
                     pass
-
             # Cache expired and lock exists - fail closed
             logger.warning(
                 f"ROLE_FAIL_CLOSED for user {user_id} - expired cache with lock"
@@ -144,12 +127,10 @@ class SupabaseRoleManager:
     ) -> Optional[Dict[str, Any]]:
         """
         Fetch role from Supabase RPC with strict timeout and error handling.
-
         Args:
             user_token: User's JWT token
             user_id: User ID for logging
             cache_key: Redis cache key
-
         Returns:
             Role data or None on failure
         """
@@ -160,7 +141,6 @@ class SupabaseRoleManager:
                 "apikey": self.supabase_anon_key,
                 "Content-Type": "application/json",
             }
-
             # Strict timeout: connect 200ms, read 400ms, total ≤600ms
             response = requests.post(
                 url,
@@ -168,14 +148,12 @@ class SupabaseRoleManager:
                 timeout=(0.2, 0.4),  # (connect_timeout, read_timeout)
                 json={},
             )
-
             if response.status_code == 200:
                 data = response.json()
                 if data and len(data) > 0:
                     role_data = data[0]  # First row
                     role = role_data.get("admin_role")
                     level = role_data.get("role_level", 0)
-
                     if role and level > 0:
                         # Cache positive result
                         self._cache_set_role(user_id, {"role": role, "level": level})
@@ -196,7 +174,6 @@ class SupabaseRoleManager:
                     f"ROLE_DB_FAIL for user {user_id}: HTTP {response.status_code}"
                 )
                 return None
-
         except requests.Timeout:
             logger.error(f"ROLE_DB_TIMEOUT for user {user_id}")
             return None
@@ -210,7 +187,6 @@ class SupabaseRoleManager:
     def _cache_set_role(self, user_id: str, role_data: Dict[str, Any]) -> None:
         """
         Cache role data with TTL and jitter.
-
         Args:
             user_id: User ID for cache key
             role_data: Role data to cache
@@ -218,27 +194,22 @@ class SupabaseRoleManager:
         try:
             ttl = self._ttl_with_jitter(self.base_ttl)
             expires_at = time.time() + ttl
-
             cache_data = {
                 "role": role_data.get("role"),
                 "level": role_data.get("level", 0),
                 "expires_at": expires_at,
             }
-
             cache_key = f"admin_role:{user_id}"
             self.redis.setex(cache_key, ttl, json.dumps(cache_data))
             logger.debug(f"Cached role for user {user_id} with TTL {ttl}s")
-
         except Exception as e:
             logger.error(f"Error caching role for user {user_id}: {e}")
 
     def _ttl_with_jitter(self, base_ttl: int) -> int:
         """
         Add jitter to TTL to prevent cache stampede.
-
         Args:
             base_ttl: Base TTL in seconds
-
         Returns:
             TTL with ±10% jitter
         """
@@ -248,10 +219,8 @@ class SupabaseRoleManager:
     def _is_valid_uuid(self, uuid_string: str) -> bool:
         """
         Validate UUID format.
-
         Args:
             uuid_string: String to validate
-
         Returns:
             True if valid UUID format
         """
@@ -266,7 +235,6 @@ class SupabaseRoleManager:
     def invalidate_user_role(self, user_id: str) -> None:
         """
         Invalidate cached role for user.
-
         Args:
             user_id: User ID to invalidate
         """

@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """Database Migration: Create Shtetl Marketplace Table.
 =======================================================
 Creates a separate shtetl_marketplace table specifically for
 Jewish community marketplace items, completely independent
 from the regular marketplace table.
 """
-
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -19,7 +18,6 @@ depends_on = None
 
 def upgrade() -> None:
     """Create shtetl_marketplace table for Jewish community items."""
-
     # Create shtetl_marketplace table
     op.create_table(
         "shtetl_marketplace",
@@ -169,7 +167,6 @@ def upgrade() -> None:
             postgresql_using="gin",
         ),
     )
-
     # Add table and column comments
     op.execute(
         "COMMENT ON TABLE shtetl_marketplace IS 'Shtetl marketplace for Jewish community items, Gemach loans, and kosher products'"

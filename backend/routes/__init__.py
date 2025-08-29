@@ -1,8 +1,6 @@
 """Routes module for JewGo Backend.
 ==============================
-
 Organizes route blueprints and provides centralized route management.
-
 Author: JewGo Development Team
 Version: 1.0
 """

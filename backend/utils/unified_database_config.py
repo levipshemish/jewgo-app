@@ -1,18 +1,14 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 """
 Unified Database Configuration Module
 ====================================
-
 Centralized database configuration functionality to eliminate code duplication.
 This module consolidates all database configuration logic that was previously duplicated.
-
 Author: JewGo Development Team
 Version: 1.0
 """
-
 import os
 from typing import Optional
-
 from .logging_config import get_logger
 
 logger = get_logger(__name__)
