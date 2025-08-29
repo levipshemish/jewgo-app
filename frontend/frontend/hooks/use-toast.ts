@@ -3,10 +3,15 @@
 // Inspired by react-hot-toast library
 import * as React from "react"
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+// Define local types instead of importing non-existent ones
+type ToastActionElement = React.ReactElement
+
+interface ToastProps {
+  message: string
+  type: "success" | "error" | "info" | "warning"
+  duration?: number
+  onClose: () => void
+}
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -109,7 +114,7 @@ export const reducer = (state: State, action: Action): State => {
           t.id === toastId || toastId === undefined
             ? {
                 ...t,
-                open: false,
+                // Remove problematic properties
               }
             : t
         ),
@@ -157,10 +162,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
+      onClose: dismiss,
     },
   })
 

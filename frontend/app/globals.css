@@ -523,7 +523,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   grid-auto-rows: min-content;
   justify-items: stretch;
   padding: 0.25rem;
-  margin-bottom: 80px;
+  margin-bottom: 2rem;
   gap: 8px;
   row-gap: 8px;
 }
@@ -600,6 +600,7 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   align-items: start !important;
   max-width: 1400px !important;
   margin: 0 auto !important;
+  margin-bottom: 2rem !important;
 }
 
 @media (max-width: 640px) {
@@ -3195,7 +3196,7 @@ div[class*="specials-dynamic-grid"] {
     gap: 8px !important;
     row-gap: 8px !important;
     padding: 0.25rem !important;
-    margin-bottom: 80px !important;
+    margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
     transform: translateZ(0) !important;
@@ -3214,7 +3215,7 @@ div[class*="specials-dynamic-grid"] {
     gap: 8px !important;
     row-gap: 8px !important;
     padding: 0.25rem !important;
-    margin-bottom: 80px !important;
+    margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
     transform: translateZ(0) !important;
@@ -3233,7 +3234,7 @@ div[class*="specials-dynamic-grid"] {
     gap: 8px !important;
     row-gap: 8px !important;
     padding: 0.25rem !important;
-    margin-bottom: 80px !important;
+    margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
     transform: translateZ(0) !important;
@@ -3252,7 +3253,7 @@ div[class*="specials-dynamic-grid"] {
     gap: 8px !important;
     row-gap: 8px !important;
     padding: 0.25rem !important;
-    margin-bottom: 80px !important;
+    margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
     transform: translateZ(0) !important;
@@ -3271,7 +3272,7 @@ div[class*="specials-dynamic-grid"] {
     gap: 8px !important;
     row-gap: 8px !important;
     padding: 0.25rem !important;
-    margin-bottom: 80px !important;
+    margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
     transform: translateZ(0) !important;
@@ -3694,7 +3695,7 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
-    margin-bottom: 80px !important; /* Ensure space for bottom navigation */
+    margin-bottom: 2rem !important; /* Ensure space for bottom navigation */
     /* Prevent layout thrashing during scroll */
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3737,7 +3738,7 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 1rem !important;
     padding: 1rem !important;
-    margin-bottom: 80px !important; /* Ensure space for bottom navigation */
+    margin-bottom: 2rem !important; /* Ensure space for bottom navigation */
     /* Prevent layout thrashing during scroll */
     contain: layout style paint !important;
     will-change: auto !important;

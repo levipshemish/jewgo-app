@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
 import { securityMiddleware, corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
-import { getAdminRole } from '@/lib/admin/auth';
 
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
@@ -154,35 +153,14 @@ async function handleAuthenticatedUser(
   user: any, 
   response: NextResponse
 ): Promise<NextResponse> {
-  // Check admin role for both API and UI routes
-  try {
-    const adminRole = await getAdminRole(user.id);
-    if (!adminRole) {
-      if (isApi) {
-        return NextResponse.json(
-          { error: 'Insufficient permissions' }, 
-          { status: 403, headers: corsHeaders(request) }
-        );
-      } else {
-        // For UI routes, redirect to home page
-        return NextResponse.redirect(new URL('/', request.url), 302);
-      }
-    }
-    
-    // Add admin role to request headers for downstream use
-    response.headers.set('X-Admin-Role', adminRole);
+  // For middleware, we just check that the user is authenticated
+  // Admin role checking will be handled in the API routes and components
+  if (isApi) {
+    // For API routes, let the route handler check admin permissions
     return response;
-  } catch (roleError) {
-    console.error('Error checking admin role:', roleError);
-    if (isApi) {
-      return NextResponse.json(
-        { error: 'Role verification failed' }, 
-        { status: 500, headers: corsHeaders(request) }
-      );
-    } else {
-      // For UI routes, redirect to home page on error
-      return NextResponse.redirect(new URL('/', request.url), 302);
-    }
+  } else {
+    // For UI routes, allow access to admin pages (permissions will be checked in components)
+    return response;
   }
 }
 

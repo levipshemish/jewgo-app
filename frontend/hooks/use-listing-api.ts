@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { BackendListingData, ListingApiResponse } from "@/types/listing"
-import type { ListingData } from "@/components/listing/listing-page"
+import type { ListingData } from "@/types/listing"
 
 interface UseListingApiOptions {
   listingId?: string
@@ -20,12 +20,11 @@ export function useListingApi(options: UseListingApiOptions = {}) {
   // Convert backend data to frontend format
   const transformToListingData = useCallback((backendData: BackendListingData): ListingData => {
     return {
-      title: backendData.title || "Untitled Listing",
       image: backendData.imageUrl
         ? {
-            src: backendData.imageUrl,
-            alt: backendData.imageAlt || backendData.title || "Listing image",
-            actionLabel: backendData.imageActionLabel || "View",
+            imageUrl: backendData.imageUrl,
+            imageAlt: backendData.imageAlt || backendData.title || "Listing image",
+            imageActionLabel: backendData.imageActionLabel || "View",
           }
         : undefined,
       content:
@@ -33,8 +32,8 @@ export function useListingApi(options: UseListingApiOptions = {}) {
           ? {
               leftText: backendData.leftText,
               rightText: backendData.rightText,
-              leftAction: backendData.leftActionLabel,
-              rightAction: backendData.rightActionLabel,
+              leftActionLabel: backendData.leftActionLabel,
+              rightActionLabel: backendData.rightActionLabel,
             }
           : undefined,
       actions: {
@@ -48,7 +47,7 @@ export function useListingApi(options: UseListingApiOptions = {}) {
           label,
           onClick: () => console.log(`Secondary action: ${label}`),
         })),
-        tags: backendData.tags,
+        kosherTags: backendData.tags,
         bottomAction: backendData.bottomActionLabel
           ? {
               label: backendData.bottomActionLabel,

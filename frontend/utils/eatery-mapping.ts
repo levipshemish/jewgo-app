@@ -1,57 +1,26 @@
-import { EateryDB, ListingData, UserLocation } from '@/types/listing'
+import { ListingData, EateryDB, UserLocation } from '@/types/listing'
 
-/**
- * Calculate distance between two coordinates using Haversine formula
- */
-function calculateDistance(
-  eateryLocation: { latitude: number; longitude: number },
-  userLocation: UserLocation
-): string {
+// Helper function to calculate distance using Haversine formula
+function calculateDistance(location1: { latitude: number; longitude: number }, location2: { latitude: number; longitude: number }): number {
   const R = 3959 // Earth's radius in miles
-  const lat1 = userLocation.lat * Math.PI / 180
-  const lat2 = eateryLocation.latitude * Math.PI / 180
-  const deltaLat = (eateryLocation.latitude - userLocation.lat) * Math.PI / 180
-  const deltaLon = (eateryLocation.longitude - userLocation.lng) * Math.PI / 180
-
-  const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-            Math.cos(lat1) * Math.cos(lat2) *
-            Math.sin(deltaLon/2) * Math.sin(deltaLon/2)
+  const dLat = (location2.latitude - location1.latitude) * Math.PI / 180
+  const dLon = (location2.longitude - location1.longitude) * Math.PI / 180
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.latitude * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-  const distance = R * c
+  return R * c
+}
 
+function formatDistance(distance: number): string {
   if (distance < 1) {
     return `${Math.round(distance * 5280)} ft`
+  } else if (distance < 10) {
+    return `${distance.toFixed(1)} miles`
   } else {
-    return `${distance.toFixed(1)} mi`
+    return `${Math.round(distance)} miles`
   }
-}
-
-/**
- * Format hours for popup display
- */
-function formatHoursForPopup(hours: any): Array<{ day: string; time: string }> {
-  const dayNames = {
-    monday: 'Monday',
-    tuesday: 'Tuesday', 
-    wednesday: 'Wednesday',
-    thursday: 'Thursday',
-    friday: 'Friday',
-    saturday: 'Saturday',
-    sunday: 'Sunday'
-  }
-
-  return Object.entries(hours).map(([day, hoursData]: [string, any]) => ({
-    day: dayNames[day as keyof typeof dayNames] || day,
-    time: hoursData.closed ? 'Closed' : `${hoursData.open} - ${hoursData.close}`
-  }))
-}
-
-/**
- * Helper functions for actions
- */
-function openImageCarousel(images: string[]) {
-  // This would open the image carousel popup
-  console.log('Opening image carousel with:', images)
 }
 
 function openDirections(location: { latitude: number; longitude: number }) {
@@ -132,68 +101,53 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      src: eatery.images[0], // Main image
-      alt: `${eatery.name} restaurant`,
-      actionLabel: "View Gallery",
-      allImages: eatery.images, // Pass all images for carousel
+      imageUrl: eatery.image_url, // Main image
+      imageAlt: `${eatery.name} restaurant`,
+      imageActionLabel: "View Gallery",
+      images: [eatery.image_url, ...(eatery.additional_images || [])], // Pass all images for carousel
       viewCount: eatery.stats.view_count, // Pass view count for image overlay
-      onAction: () => {
-        // Open image carousel popup with all images
-        openImageCarousel(eatery.images)
-      },
     },
 
     // Content Section
     content: {
       leftText: eatery.name, // Will be bolded in component
       rightText: formatRating(eatery.rating),
-      leftAction: formatPriceRange(eatery.price_range),
-      rightAction: userLocation ? calculateDistance(eatery.location, userLocation) : undefined,
-      leftBold: true, // Restaurant name should be bold
-      rightBold: false,
+      leftActionLabel: formatPriceRange(eatery.price_range),
+      rightActionLabel: userLocation ? formatDistance(calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, { latitude: userLocation.lat, longitude: userLocation.lng })) : undefined,
       leftIcon: undefined,
       rightIcon: undefined, // Remove icon from rating line
-      onLeftAction: undefined,
-      onRightAction: userLocation ? () => openDirections(eatery.location) : undefined,
-      // Make rating clickable for reviews
-      onRightTextClick: () => {
-        // TODO: Open reviews popup
-        alert(`Reviews for ${eatery.name} - This would open a reviews popup with rating details`)
-      },
     },
 
     // Actions Section
     actions: {
       // Primary Action (Order Now - conditional)
-      primaryAction: eatery.admin_settings?.show_order_button ? {
+      primaryAction: eatery.is_open ? {
         label: "Order Now",
-        onClick: () => handleOrder(eatery.admin_settings.order_url),
+        onClick: () => handleOrder(eatery.website_url),
       } : undefined,
 
       // Secondary Actions - Website, Call, Email in order
       secondaryActions: [
-        ...(eatery.contact.website ? [{
+        ...(eatery.website_url ? [{
           label: "Website",
-          onClick: () => window.open(eatery.contact.website, '_blank'),
+          onClick: () => window.open(eatery.website_url, '_blank'),
         }] : []),
-        ...(eatery.contact.phone ? [{
+        ...(eatery.phone_number ? [{
           label: "Call",
-          onClick: () => window.location.href = `tel:${eatery.contact.phone}`,
+          onClick: () => window.location.href = `tel:${eatery.phone_number}`,
         }] : []),
         {
           label: "Email",
-          onClick: () => handleEmail(eatery.contact.email),
+          onClick: () => handleEmail(eatery.email),
         },
       ].slice(0, 3), // Max 3 secondary actions
 
-      // Tags (Kosher info)
-      tags: [
+      // Kosher Tags
+      kosherTags: [
         eatery.kosher_type,
         eatery.kosher_agency,
         eatery.kosher_certification,
-      ].filter(Boolean).slice(0, 3), // Max 3 tags
-
-      onTagClick: handleTagClick,
+      ].filter(Boolean).slice(0, 3).map(String), // Max 3 tags, ensure strings
 
       // Bottom Action (Hours)
       bottomAction: {
@@ -216,6 +170,26 @@ export function mapEateryToListingData(
 }
 
 /**
+ * Format hours for popup display
+ */
+function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: string; time: string }> {
+  const dayNames = {
+    monday: 'Monday',
+    tuesday: 'Tuesday', 
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday'
+  }
+
+  return Object.entries(hours).map(([day, time]) => ({
+    day: dayNames[day as keyof typeof dayNames] || day,
+    time: time
+  }))
+}
+
+/**
  * Create mock eatery data for testing
  */
 export function createMockEateryData(): EateryDB {
@@ -230,33 +204,26 @@ export function createMockEateryData(): EateryDB {
     kosher_type: "Glatt Kosher",
     kosher_agency: "OU",
     kosher_certification: "Pas Yisroel",
-    images: [
-      "/modern-product-showcase-with-clean-background.png",
+    is_open: true,
+    image_url: "/modern-product-showcase-with-clean-background.png",
+    additional_images: [
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: { open: "9:00 AM", close: "10:00 PM" },
-      tuesday: { open: "9:00 AM", close: "10:00 PM" },
-      wednesday: { open: "9:00 AM", close: "10:00 PM" },
-      thursday: { open: "9:00 AM", close: "11:00 PM" },
-      friday: { open: "9:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
-      sunday: { open: "10:00 AM", close: "9:00 PM" },
+      monday: "9:00 AM - 10:00 PM",
+      tuesday: "9:00 AM - 10:00 PM",
+      wednesday: "9:00 AM - 10:00 PM",
+      thursday: "9:00 AM - 11:00 PM",
+      friday: "9:00 AM - 3:00 PM",
+      saturday: "Closed",
+      sunday: "10:00 AM - 9:00 PM",
     },
-    contact: {
-      phone: "+1-555-123-4567",
-      email: "info@kosherdelight.com",
-      website: "https://kosherdelight.com",
-    },
-    location: {
-      latitude: 40.7128,
-      longitude: -74.0060,
-    },
-    admin_settings: {
-      show_order_button: true,
-      order_url: "https://kosherdelight.com/order",
-    },
+    phone_number: "+1-555-123-4567",
+    email: "info@kosherdelight.com",
+    website_url: "https://kosherdelight.com",
+    latitude: 40.7128,
+    longitude: -74.0060,
     stats: {
       view_count: 1250,
       share_count: 89,
@@ -279,32 +246,25 @@ export function createMockEateryDataNoEmail(): EateryDB {
     kosher_type: "Dairy",
     kosher_agency: "Kof-K",
     kosher_certification: "Cholov Yisroel",
-    images: [
-      "/placeholder.svg?height=400&width=400",
+    is_open: false, // No order button
+    image_url: "/placeholder.svg?height=400&width=400",
+    additional_images: [
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: { open: "11:00 AM", close: "9:00 PM" },
-      tuesday: { open: "11:00 AM", close: "9:00 PM" },
-      wednesday: { open: "11:00 AM", close: "9:00 PM" },
-      thursday: { open: "11:00 AM", close: "9:00 PM" },
-      friday: { open: "11:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
-      sunday: { open: "12:00 PM", close: "8:00 PM" },
+      monday: "11:00 AM - 9:00 PM",
+      tuesday: "11:00 AM - 9:00 PM",
+      wednesday: "11:00 AM - 9:00 PM",
+      thursday: "11:00 AM - 9:00 PM",
+      friday: "11:00 AM - 3:00 PM",
+      saturday: "Closed",
+      sunday: "12:00 PM - 8:00 PM",
     },
-    contact: {
-      phone: "+1-555-987-6543",
-      email: undefined, // No email for testing
-      website: "https://shalompizza.com",
-    },
-    location: {
-      latitude: 40.7589,
-      longitude: -73.9851,
-    },
-    admin_settings: {
-      show_order_button: false, // No order button
-      order_url: undefined,
-    },
+    phone_number: "+1-555-987-6543",
+    email: undefined, // No email for testing
+    website_url: "https://shalompizza.com",
+    latitude: 40.7589,
+    longitude: -73.9851,
     stats: {
       view_count: 890,
       share_count: 45,

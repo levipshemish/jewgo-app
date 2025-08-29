@@ -2,6 +2,13 @@ import 'server-only';
 
 // DEPRECATED: This file is deprecated and will be removed in the next phase
 // Use lib/server/admin-utils.ts instead
+//
+// IMPORTANT: Importing this file from client components will cause errors due to 'server-only'
+// directive. If you need admin functions in client components, use the useAuth hook instead.
+//
+// Migration guide:
+// - Server components: import from '@/lib/server/admin-utils'
+// - Client components: use useAuth hook with isAdmin property
 
 console.warn('[ADMIN] lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
 
@@ -12,71 +19,82 @@ import type { TransformedUser } from '@/lib/utils/auth-utils';
 export async function isAdmin(...args: any[]) {
   console.warn('[ADMIN] isAdmin from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { isAdmin: newIsAdmin } = await import('../server/admin-utils');
-  return newIsAdmin(...args);
+  return newIsAdmin(args[0]);
 }
 
 export async function hasAdminPermission(...args: any[]) {
   console.warn('[ADMIN] hasAdminPermission from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
-  const { hasAdminPermission: newHasAdminPermission } = await import('../server/admin-utils');
-  return newHasAdminPermission(...args);
+  const { hasPermission: newHasPermission } = await import('../server/admin-utils');
+  return newHasPermission(args[0], args[1]);
 }
 
 export async function hasMinimumAdminLevel(...args: any[]) {
   console.warn('[ADMIN] hasMinimumAdminLevel from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { hasMinimumAdminLevel: newHasMinimumAdminLevel } = await import('../server/admin-utils');
-  return newHasMinimumAdminLevel(...args);
+  return newHasMinimumAdminLevel(args[0], args[1]);
 }
 
 export async function isSuperAdmin(...args: any[]) {
   console.warn('[ADMIN] isSuperAdmin from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { isSuperAdmin: newIsSuperAdmin } = await import('../server/admin-utils');
-  return newIsSuperAdmin(...args);
+  return newIsSuperAdmin(args[0]);
 }
 
 export async function getAdminRole(...args: any[]) {
   console.warn('[ADMIN] getAdminRole from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { getAdminRole: newGetAdminRole } = await import('../server/admin-utils');
-  return newGetAdminRole(...args);
+  return newGetAdminRole(args[0]);
 }
 
 export async function getRoleLevel(...args: any[]) {
   console.warn('[ADMIN] getRoleLevel from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { getRoleLevel: newGetRoleLevel } = await import('../server/admin-utils');
-  return newGetRoleLevel(...args);
+  return newGetRoleLevel(args[0]);
 }
 
 export async function getUserPermissions(...args: any[]) {
   console.warn('[ADMIN] getUserPermissions from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { getUserPermissions: newGetUserPermissions } = await import('../server/admin-utils');
-  return newGetUserPermissions(...args);
+  return newGetUserPermissions(args[0]);
 }
 
 export async function assertIsAdmin(...args: any[]) {
   console.warn('[ADMIN] assertIsAdmin from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { assertIsAdmin: newAssertIsAdmin } = await import('../server/admin-utils');
-  return newAssertIsAdmin(...args);
+  return newAssertIsAdmin(args[0]);
 }
 
 export async function getAdminSummary(...args: any[]) {
   console.warn('[ADMIN] getAdminSummary from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { getAdminSummary: newGetAdminSummary } = await import('../server/admin-utils');
-  return newGetAdminSummary(...args);
+  return newGetAdminSummary(args[0]);
 }
 
 export async function validateAdminAction(...args: any[]) {
   console.warn('[ADMIN] validateAdminAction from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { validateAdminAction: newValidateAdminAction } = await import('../server/admin-utils');
-  return newValidateAdminAction(...args);
+  return newValidateAdminAction(args[0], args[1], args[2]);
 }
 
 export async function migrateAdminCheck(...args: any[]) {
   console.warn('[ADMIN] migrateAdminCheck from lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
   const { migrateAdminCheck: newMigrateAdminCheck } = await import('../server/admin-utils');
-  return newMigrateAdminCheck(...args);
+  return newMigrateAdminCheck(args[0]);
 }
 
 // Hard deprecated function with strong warning
 export function isAdminEmail(email: string): boolean {
+  // Runtime check to prevent usage in production
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[ADMIN] isAdminEmail should not be used in production. Use role-based authentication.');
+    return false;
+  }
+  
+  // Development warning with error in development mode
+  if (process.env.NODE_ENV === 'development') {
+    throw new Error('[ADMIN] isAdminEmail is deprecated and unsafe. Use isAdmin(user) with TransformedUser instead.');
+  }
+  
   console.error('[ADMIN] isAdminEmail is deprecated and unsafe. Use isAdmin(user) with TransformedUser instead.');
   
   // Legacy fallback with strong deprecation warning

@@ -5,6 +5,9 @@ import React from 'react';
 import { useState } from 'react';
 
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
+import { useSupabase } from '@/lib/contexts/SupabaseContext';
+import { useAuth } from '@/hooks/useAuth';
+import { getBackendUrl } from '@/lib/utils/apiRouteUtils';
 
 interface FeatureFlagFormData {
   name: string;
@@ -18,6 +21,8 @@ interface FeatureFlagFormData {
 
 export default function FeatureFlagManager() {
   const { flags, environment, loading, error, refreshFlags } = useFeatureFlags({ autoRefresh: true });
+  const { session } = useSupabase();
+  const { isAdmin } = useAuth();
   const [editingFlag, setEditingFlag] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState<FeatureFlagFormData>({
@@ -32,6 +37,29 @@ export default function FeatureFlagManager() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const environments = ['development', 'staging', 'production'];
+
+  // Check if user is authenticated and has admin privileges
+  if (!session) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+          <span className="text-red-800">Authentication required to manage feature flags</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+          <span className="text-red-800">Admin privileges required to manage feature flags</span>
+        </div>
+      </div>
+    );
+  }
 
   const resetForm = () => {
     setFormData({
@@ -78,11 +106,11 @@ export default function FeatureFlagManager() {
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get from auth context
+      const backendUrl = getBackendUrl();
+      const accessToken = session?.access_token;
 
-      if (!adminToken) {
-        throw new Error('Admin token not available');
+      if (!accessToken) {
+        throw new Error('Authentication required');
       }
 
       const url = editingFlag 
@@ -90,10 +118,10 @@ const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get
         : `${backendUrl}/api/feature-flags`;
 
       const response = await fetch(url, {
-        method: editingFlag ? 'POST' : 'POST',
+        method: editingFlag ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(formData)
       });
@@ -123,17 +151,17 @@ const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-      const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN'];
+      const backendUrl = getBackendUrl();
+      const accessToken = session?.access_token;
 
-      if (!adminToken) {
-        throw new Error('Admin token not available');
+      if (!accessToken) {
+        throw new Error('Authentication required');
       }
 
       const response = await fetch(`${backendUrl}/api/feature-flags/${flagName}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${adminToken}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
@@ -157,18 +185,18 @@ const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN']; // In production, get
     setMessage(null);
 
     try {
-      const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-      const adminToken = process.env['NEXT_PUBLIC_ADMIN_TOKEN'];
+      const backendUrl = getBackendUrl();
+      const accessToken = session?.access_token;
 
-      if (!adminToken) {
-        throw new Error('Admin token not available');
+      if (!accessToken) {
+        throw new Error('Authentication required');
       }
 
       const response = await fetch(`${backendUrl}/api/feature-flags/${flagName}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ enabled })
       });

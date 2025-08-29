@@ -1,7 +1,8 @@
 "use client"
 
-import { ArrowLeft, Heart, Share, Eye, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ArrowLeft, Heart, Share } from "lucide-react"
+import styles from "./listing.module.css"
 
 interface ListingHeaderProps {
   kosherType?: string
@@ -12,78 +13,71 @@ interface ListingHeaderProps {
   isFavorited?: boolean
 }
 
-export function ListingHeader({ 
-  title, 
-  kosherType, 
-  kosherAgency, 
+export function ListingHeader({
+  kosherType,
+  kosherAgency,
   shareCount,
-  onBack, 
-  onFavorite, 
-  isFavorited = false 
+  onBack,
+  onFavorite,
+  isFavorited = false
 }: ListingHeaderProps) {
   return (
-    <div className="space-y-2 flex justify-center">
-      {/* Single header bar with back, kosher info, stats, and action buttons */}
-      <div className="inline-flex items-center gap-2 p-2 sm:p-3 px-3 sm:px-4 bg-white/80 backdrop-blur-sm rounded-full mt-4">
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 hover:bg-white/50 transition-colors">
+    <div className={styles.listingHeader}>
+      <div className={styles.listingHeaderBar}>
+        {/* Back button */}
+        <button
+          onClick={onBack}
+          className={styles.listingHeaderButton}
+        >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
 
-        {/* Kosher info and stats in the middle */}
-        <div className="flex items-center gap-2">
-          {/* Kosher info */}
+        {/* Kosher info */}
+        <div className="flex gap-2">
           {kosherType && (
-            <span className="text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
+            <span className={styles.listingHeaderTag}>
               {kosherType}
             </span>
           )}
           {kosherAgency && (
-            <span className="text-xs text-gray-600">
+            <span className={styles.listingHeaderTag}>
               {kosherAgency}
             </span>
           )}
-
-          {/* Stats */}
-          {shareCount !== undefined && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: 'Check out this restaurant!',
-                    url: window.location.href
-                  }).catch(console.error);
-                } else {
-                  // Fallback: copy to clipboard
-                  navigator.clipboard.writeText(window.location.href).then(() => {
-                    alert('Link copied to clipboard!');
-                  }).catch(() => {
-                    // Final fallback: prompt
-                    prompt('Copy this link:', window.location.href);
-                  });
-                }
-              }}
-              className="flex items-center gap-1 text-xs text-gray-600 h-auto p-1 hover:bg-white/50 transition-colors rounded"
-            >
-              <Share className="h-3 w-3" />
-              <span>{shareCount.toLocaleString()}</span>
-            </Button>
-          )}
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* Stats */}
+        {shareCount !== undefined && (
           <Button
             variant="ghost"
-            size="icon"
-            onClick={onFavorite}
-            className="h-8 w-8 hover:bg-white/50 transition-colors group"
+            size="sm"
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: 'Check out this restaurant!',
+                  url: window.location.href
+                }).catch(console.error);
+              } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                  alert('Link copied to clipboard!');
+                }).catch(console.error);
+              }
+            }}
+            className={styles.listingHeaderStats}
           >
-            <Heart
-              className={`h-4 w-4 transition-colors ${isFavorited ? "fill-red-500 text-red-500" : "text-gray-700 group-hover:fill-red-500 group-hover:text-red-500"}`}
-            />
+            <Share className="h-3 w-3" />
+            <span>{shareCount.toLocaleString()}</span>
           </Button>
-        </div>
+        )}
+
+        {/* Heart button */}
+        <button
+          onClick={onFavorite}
+          className={`${styles.listingHeaderButton} ${isFavorited ? 'text-red-500' : ''}`}
+        >
+          <Heart className={`h-4 w-4 ${isFavorited ? 'fill-red-500' : ''}`} />
+        </button>
       </div>
     </div>
   )

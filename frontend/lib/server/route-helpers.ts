@@ -1,7 +1,7 @@
 import { withReqStore, setRequestId } from './memo';
 import { AdminAuthError } from './security';
 import { secureLog } from './security';
-import { createHash } from 'node:crypto';
+import { createHash } from 'crypto';
 
 // Runtime guard for Node-only features
 if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {

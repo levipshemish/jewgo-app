@@ -1,82 +1,129 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
 import { useState } from "react"
-import { ImageCarouselPopup } from "./image-carousel-popup"
+import { Button } from "@/components/ui/button"
+import { Eye, X } from "lucide-react"
+import styles from "./listing.module.css"
 
 interface ListingImageProps {
-  src?: string
-  alt: string
-  actionLabel?: string
-  onAction?: () => void
-  className?: string
-  restaurantName?: string
-  allImages?: string[]
+  imageUrl?: string
+  imageAlt?: string
+  imageActionLabel?: string
   viewCount?: number
+  onViewGallery?: () => void
+  className?: string
 }
 
-export function ListingImage({ 
-  src, 
-  alt, 
-  actionLabel = "action", 
-  onAction, 
-  className = "",
-  restaurantName = "Restaurant",
-  allImages = [],
-  viewCount
+export function ListingImage({
+  imageUrl,
+  imageAlt,
+  imageActionLabel,
+  viewCount,
+  onViewGallery,
+  className
 }: ListingImageProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [showCarousel, setShowCarousel] = useState(false)
 
+  // Mock images for demonstration
+  const images = [
+    imageUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&h=600&fit=crop"
+  ]
+
   const handleViewGallery = () => {
-    if (allImages.length > 0) {
-      setShowCarousel(true)
-    } else if (onAction) {
-      onAction()
-    }
+    setShowCarousel(true)
+    onViewGallery?.()
+  }
+
+  const handleCloseCarousel = () => {
+    setShowCarousel(false)
+    setCurrentImageIndex(0)
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
   return (
-    <div className={`relative aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden ${className}`}>
-      {src ? (
-        <Image src={src || "/placeholder.svg"} alt={alt} fill className="object-cover rounded-3xl" />
-      ) : (
-        <div className="relative h-full rounded-3xl overflow-hidden">
-          <Image
-            src="/modern-product-showcase-with-clean-background.png"
-            alt="Mock product image"
-            fill
-            className="object-cover rounded-3xl"
-          />
-        </div>
-      )}
+    <>
+      <div className={`${styles.listingImage} ${className}`}>
+        <img
+          src={imageUrl || images[0]}
+          alt={imageAlt || "Restaurant image"}
+          className="w-full h-full object-cover"
+        />
+        
+        <div className={styles.listingImageOverlay} />
+        
+        {/* View Gallery Tag - Top Right */}
+        {imageActionLabel && (
+          <div className={styles.listingImageTag} onClick={handleViewGallery}>
+            <Eye className="h-3 w-3 mr-1" />
+            {imageActionLabel}
+          </div>
+        )}
 
-      {/* View Count Tag - Bottom Left */}
-      {viewCount !== undefined && (
-        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm text-gray-600 rounded-full px-2 py-1 text-xs font-medium shadow-sm group">
-          <span className="group-hover:hidden">👁️ {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}</span>
-          <span className="hidden group-hover:inline">👁️ {viewCount.toLocaleString()} views</span>
-        </div>
-      )}
-
-      {/* View Gallery Button - Bottom Right */}
-      {(onAction || allImages.length > 0) && (
-        <Button
-          onClick={handleViewGallery}
-          className="absolute bottom-4 right-4 bg-white text-gray-600 hover:bg-gray-50 hover:scale-105 transition-all rounded-full px-6"
-          size="sm"
-        >
-          {actionLabel}
-        </Button>
-      )}
+        {/* View Count Tag - Bottom Left */}
+        {viewCount !== undefined && (
+          <div className={`${styles.listingViewCount} group`}>
+            <span className="group-hover:hidden">
+              👁️ {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount}
+            </span>
+            <span className="hidden group-hover:inline">
+              👁️ {viewCount.toLocaleString()} views
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Image Carousel Popup */}
-      <ImageCarouselPopup
-        isOpen={showCarousel}
-        onClose={() => setShowCarousel(false)}
-        images={allImages.length > 0 ? allImages : [src || ""]}
-        restaurantName={restaurantName}
-      />
-    </div>
+      {showCarousel && (
+        <div className={styles.listingPopup} onClick={handleCloseCarousel}>
+          <div className={styles.listingPopupContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.listingPopupHeader}>
+              <h3 className={styles.listingPopupTitle}>Gallery</h3>
+              <button className={styles.listingPopupClose} onClick={handleCloseCarousel}>
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="relative">
+              <img
+                src={images[currentImageIndex]}
+                alt={`Image ${currentImageIndex + 1}`}
+                className="w-full h-64 object-cover rounded-lg"
+              />
+              
+              {/* Navigation buttons */}
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+              >
+                ←
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+              >
+                →
+              </button>
+              
+              {/* Image counter */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                {currentImageIndex + 1} / {images.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

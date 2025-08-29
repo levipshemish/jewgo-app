@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import type { ListingData } from "@/components/listing/listing-page"
+import type { ListingData } from "@/types/listing"
 
 export function useListing(initialData: ListingData) {
   const [listingData, setListingData] = useState<ListingData>(initialData)
@@ -44,17 +44,18 @@ export function useListing(initialData: ListingData) {
   }, [listingData.header, updateListing])
 
   const handleShare = useCallback(() => {
+    const title = listingData.content?.leftText || 'Listing';
     if (navigator.share) {
       navigator.share({
-        title: listingData.title,
-        text: `Check out this listing: ${listingData.title}`,
+        title: title,
+        text: `Check out this listing: ${title}`,
         url: window.location.href,
       })
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
     }
-  }, [listingData.title])
+  }, [listingData.content?.leftText])
 
   return {
     listingData: {

@@ -46,11 +46,20 @@ jest.mock('next/navigation', () => ({
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_BACKEND_URL = 'https://jewgo-app-oyoh.onrender.com'
-process.env.NEXT_PUBLIC_ADMIN_TOKEN = 'test-admin-token'
+
+// Enhanced Supabase mocks for role-based testing
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+
+// Mock admin user for testing
+process.env.TEST_ADMIN_USER_ID = 'test-admin-user-id'
+process.env.TEST_ADMIN_EMAIL = 'test-admin@jewgo.com'
+
 process.env.APPLE_OAUTH_ENABLED = 'true'
 process.env.ANONYMOUS_AUTH = 'true'
+
+// For testing admin functionality, mock the useAuth hook
+// to return a user with adminRole and roleLevel properties
 
 // Mock fetch globally
 global.fetch = jest.fn()
@@ -150,6 +159,27 @@ jest.mock('@/lib/rate-limiting', () => ({
 }))
 
 // Allow tests to control Supabase mocks per-suite
+
+// Mock useAuth hook for testing
+jest.mock('@/hooks/useAuth', () => ({
+  useAuth: jest.fn(() => ({
+    user: null,
+    isLoading: false,
+    error: null,
+    isAnonymous: false,
+    isAnonymousLoading: false,
+    isAdmin: false,
+    signOut: jest.fn(),
+    refreshUser: jest.fn(),
+    signInAnonymously: jest.fn(),
+    verifyTokenRotationStatus: jest.fn(),
+    hasPermission: jest.fn(() => false),
+    hasMinimumRoleLevel: jest.fn(() => false)
+  }))
+}))
+
+// Export test utilities for auth mocking
+// Import in tests: import { mockAdmin, mockUser, mockUnauthenticated } from '@/lib/test-utils/auth'
 
 // Mock Next.js cookies
 jest.mock('next/headers', () => ({

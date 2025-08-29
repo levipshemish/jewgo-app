@@ -21,33 +21,26 @@ const mockEateryData: Record<string, EateryDB> = {
     kosher_type: "Glatt Kosher",
     kosher_agency: "OU",
     kosher_certification: "Pas Yisroel",
-    images: [
-      "/modern-product-showcase-with-clean-background.png",
+    is_open: true,
+    image_url: "/modern-product-showcase-with-clean-background.png",
+    additional_images: [
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: { open: "9:00 AM", close: "10:00 PM" },
-      tuesday: { open: "9:00 AM", close: "10:00 PM" },
-      wednesday: { open: "9:00 AM", close: "10:00 PM" },
-      thursday: { open: "9:00 AM", close: "11:00 PM" },
-      friday: { open: "9:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
-      sunday: { open: "10:00 AM", close: "9:00 PM" },
+      monday: "9:00 AM - 10:00 PM",
+      tuesday: "9:00 AM - 10:00 PM",
+      wednesday: "9:00 AM - 10:00 PM",
+      thursday: "9:00 AM - 11:00 PM",
+      friday: "9:00 AM - 3:00 PM",
+      saturday: "Closed",
+      sunday: "10:00 AM - 9:00 PM",
     },
-    contact: {
-      phone: "+1-555-123-4567",
-      email: "info@kosherdelight.com",
-      website: "https://kosherdelight.com",
-    },
-    location: {
-      latitude: 40.7128,
-      longitude: -74.0060,
-    },
-    admin_settings: {
-      show_order_button: true,
-      order_url: "https://kosherdelight.com/order",
-    },
+    phone_number: "+1-555-123-4567",
+    email: "info@kosherdelight.com",
+    website_url: "https://kosherdelight.com",
+    latitude: 40.7128,
+    longitude: -74.0060,
     stats: {
       view_count: 1250,
       share_count: 89,
@@ -64,32 +57,25 @@ const mockEateryData: Record<string, EateryDB> = {
     kosher_type: "Dairy",
     kosher_agency: "Kof-K",
     kosher_certification: "Cholov Yisroel",
-    images: [
-      "/placeholder.svg?height=400&width=400",
+    is_open: true,
+    image_url: "/placeholder.svg?height=400&width=400",
+    additional_images: [
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: { open: "11:00 AM", close: "9:00 PM" },
-      tuesday: { open: "11:00 AM", close: "9:00 PM" },
-      wednesday: { open: "11:00 AM", close: "9:00 PM" },
-      thursday: { open: "11:00 AM", close: "9:00 PM" },
-      friday: { open: "11:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
-      sunday: { open: "12:00 PM", close: "8:00 PM" },
+      monday: "11:00 AM - 9:00 PM",
+      tuesday: "11:00 AM - 9:00 PM",
+      wednesday: "11:00 AM - 9:00 PM",
+      thursday: "11:00 AM - 9:00 PM",
+      friday: "11:00 AM - 3:00 PM",
+      saturday: "Closed",
+      sunday: "12:00 PM - 8:00 PM",
     },
-    contact: {
-      phone: "+1-555-987-6543",
-      email: undefined, // No email for testing
-      website: "https://shalompizza.com",
-    },
-    location: {
-      latitude: 40.7589,
-      longitude: -73.9851,
-    },
-    admin_settings: {
-      show_order_button: false, // No order button
-      order_url: undefined,
-    },
+    phone_number: "+1-555-987-6543",
+    email: undefined, // No email for testing
+    website_url: "https://shalompizza.com",
+    latitude: 40.7589,
+    longitude: -73.9851,
     stats: {
       view_count: 890,
       share_count: 45,

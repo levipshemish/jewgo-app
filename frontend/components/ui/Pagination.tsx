@@ -56,7 +56,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1 || isLoading}
-        className="flex items-center justify-center w-10 h-10 text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center justify-center w-12 h-8 text-gray-600 bg-white border border-green-600 rounded-full hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         aria-label="Previous page"
       >
         <ChevronLeft size={16} />
@@ -73,10 +73,10 @@ export const Pagination: React.FC<PaginationProps> = ({
             <button
               onClick={() => onPageChange(page as number)}
               disabled={isLoading}
-              className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-colors ${
+              className={`flex items-center justify-center w-12 h-8 rounded-full border transition-colors ${
                 currentPage === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-gray-700 border-green-600 hover:bg-gray-50'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
               aria-label={`Page ${page}`}
               aria-current={currentPage === page ? 'page' : undefined}
@@ -91,7 +91,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages || isLoading}
-        className="flex items-center justify-center w-10 h-10 text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center justify-center w-12 h-8 text-gray-600 bg-white border border-green-600 rounded-full hover:bg-gray-50 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         aria-label="Next page"
       >
         <ChevronRight size={16} />

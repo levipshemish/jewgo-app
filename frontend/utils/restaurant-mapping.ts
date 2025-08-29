@@ -1,10 +1,16 @@
 import { Restaurant } from '@/lib/types/restaurant';
-import { ListingData } from '@/components/listing/listing-page';
-import { formatDistance } from '@/lib/utils/distance';
+import { ListingData } from '@/types/listing';
+
+// Type to match the UserLocation from LocationContext
+interface LocationContextLocation {
+  latitude: number;
+  longitude: number;
+  timestamp?: number;
+}
 
 export function mapRestaurantToListingData(
   restaurant: Restaurant,
-  userLocation?: { latitude: number; longitude: number }
+  userLocation?: LocationContextLocation | null
 ): ListingData {
   // Calculate distance if user location is available
   let distance: string | undefined;
@@ -69,31 +75,20 @@ export function mapRestaurantToListingData(
   };
 
   return {
-    title: restaurant.name,
     image: {
-      src: restaurant.image_url || '/placeholder-restaurant.jpg',
-      alt: restaurant.name,
-      actionLabel: 'View Gallery',
-      onAction: () => {
-        // Handle image gallery action
-        console.log('View gallery clicked');
-      },
-      allImages: restaurant.additional_images || [restaurant.image_url].filter(Boolean),
-      viewCount: restaurant.review_count || 0
+      imageUrl: restaurant.image_url || '/placeholder-restaurant.jpg',
+      imageAlt: restaurant.name,
+      imageActionLabel: 'View Gallery',
+      viewCount: restaurant.review_count || 0,
+      images: (restaurant.additional_images || [restaurant.image_url]).filter(Boolean) as string[]
     },
     content: {
       leftText: restaurant.name,
       rightText: restaurant.google_rating ? restaurant.google_rating.toString() : undefined,
-      leftAction: restaurant.price_range,
-      rightAction: distance,
-      leftBold: true,
-      rightBold: false,
+      leftActionLabel: restaurant.price_range,
+      rightActionLabel: distance,
       leftIcon: undefined,
-      rightIcon: distance ? 'map-pin' : undefined,
-      onRightTextClick: () => {
-        // Handle reviews popup
-        console.log('Reviews clicked');
-      }
+      rightIcon: distance ? 'map-pin' : undefined
     },
     actions: {
       primaryAction: restaurant.is_open ? {
@@ -123,15 +118,11 @@ export function mapRestaurantToListingData(
         {
           label: 'Email',
           onClick: () => {
-            // Handle email action - would need email field in restaurant data
-            console.log('Email clicked');
-          }
+            alert('No email available for this restaurant');
+          },
+          disabled: true
         }
       ],
-      tags: kosherTags,
-      onTagClick: (tag: string) => {
-        console.log('Tag clicked:', tag);
-      },
       bottomAction: {
         label: 'Hours',
         onClick: () => {
@@ -139,7 +130,8 @@ export function mapRestaurantToListingData(
           console.log('Hours clicked');
         },
         hoursInfo
-      }
+      },
+      kosherTags
     },
     header: {
       kosherType: restaurant.kosher_category,
@@ -160,14 +152,26 @@ export function mapRestaurantToListingData(
   };
 }
 
-// Calculate distance between two coordinates using Haversine formula
+// Helper function to calculate distance using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 3959; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
+}
+
+// Helper function to format distance
+function formatDistance(distance: number): string {
+  if (distance < 1) {
+    return `${Math.round(distance * 5280)} ft`;
+  } else if (distance < 10) {
+    return `${distance.toFixed(1)} miles`;
+  } else {
+    return `${Math.round(distance)} miles`;
+  }
 }

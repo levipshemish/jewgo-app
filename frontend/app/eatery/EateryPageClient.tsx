@@ -819,13 +819,13 @@ export function EateryPageClient() {
       )}
       
       {isHydrated && !isMobile && totalPages > 1 && (
-        <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
+        <div className="mt-4 mb-8" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
             isLoading={loading}
-            className="mb-4"
+            className="mb-2"
           />
           <div className="text-center text-sm text-gray-600">
             Showing {restaurantsWithDistance.length} of {restaurants.length * totalPages} restaurants

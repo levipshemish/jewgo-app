@@ -39,13 +39,14 @@ export function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: stri
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   
   return days.map(day => {
-    const dayHours = hours[day.toLowerCase()]
-    if (!dayHours || dayHours.closed) {
+    const dayKey = day.toLowerCase() as keyof EateryDB['hours']
+    const dayHours = hours[dayKey]
+    if (!dayHours) {
       return { day, time: 'Closed' }
     }
     return { 
       day, 
-      time: `${dayHours.open} - ${dayHours.close}` 
+      time: dayHours 
     }
   })
 }

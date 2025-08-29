@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/layout';
 import { DashboardBottomNavigation } from '@/components/navigation/ui';
 import { useSupabase } from '@/lib/contexts/SupabaseContext';
+import { useAuth } from '@/hooks/useAuth';
 import { appLogger } from '@/lib/utils/logger';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 
@@ -81,6 +82,7 @@ function Tab({ label, icon, isActive, onClick, badge }: TabProps) {
 function ShtelDashboardContent() {
   const router = useRouter();
   const { session } = useSupabase();
+  const { user, isAdmin } = useAuth();
   const { isMobile } = useMobileOptimization();
   
   // State
@@ -94,6 +96,19 @@ function ShtelDashboardContent() {
     products: 0
   });
 
+  // Initialize admin setup
+  const initializeForAdmin = () => {
+    setStoreData({
+      store_id: 'admin',
+      store_name: 'Admin Dashboard',
+      store_type: 'admin',
+      plan_type: 'admin',
+      is_approved: true,
+      is_admin: true
+    });
+    setLoading(false);
+  };
+
   // Check authentication
   useEffect(() => {
     if (!session) {
@@ -101,47 +116,23 @@ function ShtelDashboardContent() {
       return;
     }
     
-    // Check if user is admin
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    const isAdmin = adminEmail && session.user?.email === adminEmail;
-    
+    // Check if user is admin using role-based authentication
     if (isAdmin) {
-      // Admin users can access dashboard without a store
-      setStoreData({
-        store_id: 'admin',
-        store_name: 'Admin Dashboard',
-        store_type: 'admin',
-        plan_type: 'admin',
-        is_approved: true,
-        is_admin: true
-      });
-      setLoading(false);
+      initializeForAdmin();
       return;
     }
     
     loadStoreData();
-  }, [session, router]);
+  }, [session, router, isAdmin]);
 
   // Load store data
   const loadStoreData = async () => {
     try {
       setLoading(true);
       
-      // Check if user is admin
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      const isAdmin = adminEmail && session?.user?.email === adminEmail;
-      
+      // Check if user is admin using role-based authentication
       if (isAdmin) {
-        // Admin users can access dashboard without a store
-        setStoreData({
-          store_id: 'admin',
-          store_name: 'Admin Dashboard',
-          store_type: 'admin',
-          plan_type: 'admin',
-          is_approved: true,
-          is_admin: true
-        });
-        setLoading(false);
+        initializeForAdmin();
         return;
       }
       
@@ -178,10 +169,7 @@ function ShtelDashboardContent() {
   // Load notifications
   const loadNotifications = async () => {
     try {
-      // Check if user is admin
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      const isAdmin = adminEmail && session?.user?.email === adminEmail;
-      
+      // Check if user is admin using role-based authentication
       if (isAdmin) {
         // Admin users don't need notifications for now
         setNotifications({
@@ -193,8 +181,16 @@ function ShtelDashboardContent() {
       }
       
       const [ordersRes, messagesRes] = await Promise.all([
-        fetch('/api/shtel/orders?status=pending&limit=1'),
-        fetch('/api/shtel/messages?unread=true&limit=1')
+        fetch('/api/shtel/orders?status=pending&limit=1', {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        }),
+        fetch('/api/shtel/messages?unread=true&limit=1', {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        })
       ]);
       
       const ordersData = await ordersRes.json();
@@ -223,10 +219,7 @@ function ShtelDashboardContent() {
   const renderTabContent = () => {
     if (!storeData) {return null;}
     
-    // Check if user is admin
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    const isAdmin = adminEmail && session?.user?.email === adminEmail;
-    
+    // Check if user is admin using role-based authentication
     if (isAdmin) {
       // Admin users see a simplified dashboard
       switch (activeTab) {

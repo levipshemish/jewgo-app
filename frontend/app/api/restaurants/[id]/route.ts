@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
+import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { handleRoute } from '@/lib/server/route-helpers';
+
+// Ensure Node.js runtime for admin auth
+export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest, 
@@ -211,7 +216,8 @@ export async function PUT(
   request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return handleRoute(async () => {
+    const admin = await requireAdminOrThrow(request);
     const { id } = await params;
     const restaurantId = parseInt(id);
     
@@ -236,11 +242,14 @@ export async function PUT(
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
+    // Forward the user's authorization header to backend
+    const authHeader = request.headers.get('Authorization');
+
     const response = await fetch(apiUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+        ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify({
         ...body,
@@ -267,22 +276,15 @@ export async function PUT(
         updated_at: new Date().toISOString()
       }
     });
-
-  } catch (error) {
-    console.error('Error updating restaurant:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to update restaurant'
-    }, { status: 500 });
-  }
+  });
 }
 
 export async function DELETE(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return handleRoute(async () => {
+    const admin = await requireAdminOrThrow(request);
     const { id } = await params;
     const restaurantId = parseInt(id);
     
@@ -297,11 +299,14 @@ export async function DELETE(
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
+    // Forward the user's authorization header to backend
+    const authHeader = request.headers.get('Authorization');
+
     const response = await fetch(apiUrl, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+        ...(authHeader && { 'Authorization': authHeader }),
       },
     });
 
@@ -323,21 +328,15 @@ export async function DELETE(
         deleted_at: new Date().toISOString()
       }
     });
-
-  } catch (error) {
-    console.error('Error deleting restaurant:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to delete restaurant'
-    }, { status: 500 });
-  }
+  });
 }
 
 export async function PATCH(
   request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  return handleRoute(async () => {
+    const admin = await requireAdminOrThrow(request);
     const { id } = await params;
     const restaurantId = parseInt(id);
     
@@ -362,11 +361,14 @@ export async function PATCH(
     const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
+    // Forward the user's authorization header to backend
+    const authHeader = request.headers.get('Authorization');
+
     const response = await fetch(apiUrl, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env["ADMIN_TOKEN"] || ''}`,
+        ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify({
         ...body,
@@ -393,12 +395,5 @@ export async function PATCH(
         updated_at: new Date().toISOString()
       }
     });
-
-  } catch (error) {
-    console.error('Error partially updating restaurant:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to partially update restaurant'
-    }, { status: 500 });
-  }
+  });
 } 

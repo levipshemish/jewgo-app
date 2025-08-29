@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createHash } from 'node:crypto';
+import { createHash } from 'crypto';
 import { getRequestId } from './memo';
 
 // Runtime guard for Node-only features
