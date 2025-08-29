@@ -15,6 +15,9 @@ import OrderManagement from '@/components/shtel/dashboard/OrderManagement';
 import MessagingCenter from '@/components/shtel/dashboard/MessagingCenter';
 import StoreSettings from '@/components/shtel/dashboard/StoreSettings';
 
+// Prevent static generation - this page requires authentication
+export const dynamic = 'force-dynamic';
+
 // Loading component
 function DashboardLoading() {
   return (

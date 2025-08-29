@@ -10,6 +10,9 @@ datasource db {
   schemas  = ["public"]
 }
 
+// Note: During build time (especially in CI/CD), DATABASE_URL may not be available
+// This is expected behavior and the build will continue without database connection
+// The Prisma client will be generated but will not attempt to connect until runtime
 model Restaurant {
   id                       Int       @id @default(autoincrement())
   created_at               DateTime  @db.Timestamp(6)

@@ -14,6 +14,9 @@ import ProductsStep from '@/components/shtel/setup/ProductsStep';
 import CustomizeStep from '@/components/shtel/setup/CustomizeStep';
 import ReviewStep from '@/components/shtel/setup/ReviewStep';
 
+// Prevent static generation - this page requires authentication
+export const dynamic = 'force-dynamic';
+
 // Types
 interface StoreSetupData {
   // Step 1: Welcome

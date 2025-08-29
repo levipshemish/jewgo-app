@@ -12,6 +12,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration'
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import { LocationProvider } from '@/lib/contexts/LocationContext'
+import { SupabaseProvider } from '@/lib/contexts/SupabaseContext'
 import { sanitizeHtml } from '@/utils/htmlSanitizer'
 import DevNavigation from '@/components/dev/DevNavigation'
 import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
@@ -128,6 +129,7 @@ export default function RootLayout({
       <body className="h-full antialiased font-sans">
         <CustomHead />
         <ErrorBoundary>
+          <SupabaseProvider>
             <NotificationsProvider>
               <LocationProvider>
                 <div 
@@ -149,6 +151,7 @@ export default function RootLayout({
         
               </LocationProvider>
             </NotificationsProvider>
+          </SupabaseProvider>
         </ErrorBoundary>
       </body>
     </html>

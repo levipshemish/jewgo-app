@@ -11,7 +11,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
   # Dependency Vulnerability Scanning
@@ -98,8 +98,17 @@ jobs:
               }
             }
             
+            // Check for Bandit issues
+            if (fs.existsSync('backend/bandit-report.json')) {
+              const banditData = JSON.parse(fs.readFileSync('backend/bandit-report.json', 'utf8'));
+              if (banditData.results && banditData.results.length > 0) {
+                comment += '### 🔍 Code Security Issues\n';
+                comment += `Found ${banditData.results.length} potential security issues in code.\n\n`;
+              }
+            }
+            
             if (comment === '## 🔒 Security Scan Results\n\n') {
-              comment += '✅ No security vulnerabilities found in dependencies.\n';
+              comment += '✅ No security vulnerabilities found!\n';
             }
             
             github.rest.issues.createComment({
