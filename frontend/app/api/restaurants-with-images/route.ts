@@ -267,11 +267,18 @@ export async function GET(request: NextRequest) {
       restaurant.image_url !== '' && 
       restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
     );
+
+    // Respect pagination even if backend ignores limit/offset
+    const totalAvailable = data.total || data.count || restaurantsWithImages.length;
+    const needsClientSidePaging = restaurantsWithImages.length > limit;
+    const pagedRestaurants = needsClientSidePaging
+      ? restaurantsWithImages.slice(calculatedOffset, calculatedOffset + limit)
+      : restaurantsWithImages;
     
     return NextResponse.json({
       success: true,
-      data: restaurantsWithImages,
-      total: data.total || data.count || restaurantsWithImages.length, // Use backend total, not filtered length
+      data: pagedRestaurants,
+      total: totalAvailable,
       limit,
       offset: calculatedOffset,
       message: 'Restaurants with images only'
