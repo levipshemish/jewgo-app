@@ -987,24 +987,24 @@ function MarketplacePageContent() {
       role="main"
       aria-label="Marketplace listings"
     >
-      <Header
-        onSearch={handleSearch}
-        placeholder="Search marketplace listings..."
-        showFilters={true}
-        onShowFilters={handleShowFilters}
-      />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header
+          onSearch={handleSearch}
+          placeholder="Search marketplace listings..."
+          showFilters={true}
+          onShowFilters={handleShowFilters}
+        />
 
-      {/* Navigation Tabs - Always visible */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        </div>
+
+        <MarketplaceActionBar
+          onSell={handleSell}
+          onShowCategories={handleShowCategories}
+          onShowFilters={handleShowFilters}
+        />
       </div>
-
-      {/* Marketplace Action Bar - marketplace specific */}
-      <MarketplaceActionBar
-        onSell={handleSell}
-        onShowCategories={handleShowCategories}
-        onShowFilters={handleShowFilters}
-      />
 
       {/* Location Permission Banner */}
       {permissionStatus !== 'granted' && !locationLoading && (
@@ -1118,6 +1118,7 @@ function MarketplacePageContent() {
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/marketplace/product/${listing.id}`)}
                 className="w-full h-full"
+                showStarInBadge={true}
                   />
                 </div>
               ))}

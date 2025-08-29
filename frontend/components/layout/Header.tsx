@@ -24,7 +24,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-white shadow-soft border-b border-neutral-200 sticky top-0 z-50 backdrop-blur-lg bg-white/95 w-full">
+    <header className="bg-white shadow-soft border-b border-neutral-200 backdrop-blur-lg bg-white/95 w-full">
       <div className="px-4 py-3 sm:px-6 sm:py-4 lg:py-6">
         <div className="flex items-center space-x-4 lg:space-x-6">
           {/* Search Bar with inline logo */}

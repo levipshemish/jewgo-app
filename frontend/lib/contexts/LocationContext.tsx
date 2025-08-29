@@ -22,6 +22,7 @@ interface LocationContextType extends LocationState {
   setPermissionStatus: (status: LocationState['permissionStatus']) => void;
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
+  checkPermissionStatus: () => Promise<'granted' | 'denied' | 'prompt' | 'unsupported'>;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
@@ -48,40 +49,104 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [lastRequestTime, setLastRequestTime] = useState<number>(0);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Load location data from localStorage on mount
+  // Load location data from localStorage on mount and check actual browser permissions
   useEffect(() => {
     const savedLocationData = localStorage.getItem(LOCATION_STORAGE_KEY);
-    if (savedLocationData) {
+    
+    // First, check the actual browser permission status
+    const checkBrowserPermission = async () => {
+      if (!navigator.geolocation) {
+        setPermissionStatus('unsupported');
+        return 'unsupported';
+      }
+
       try {
-        const data = JSON.parse(savedLocationData);
-        
-        // Check if the saved location is still valid (less than 1 hour old)
-        if (data.userLocation && data.userLocation.timestamp) {
-          const age = Date.now() - data.userLocation.timestamp;
-          const maxAge = 60 * 60 * 1000; // 1 hour
+        // Check if we can get the permission state (modern browsers)
+        if ('permissions' in navigator && 'query' in navigator.permissions) {
+          const permission = await navigator.permissions.query({ name: 'geolocation' });
+          setPermissionStatus(permission.state);
           
-          if (age < maxAge) {
-            setUserLocation(data.userLocation);
-            if (process.env.NODE_ENV === 'development') {
-              // console.log('📍 LocationContext: Loaded saved location data');
+          // Create permission change handler
+          const handlePermissionChange = () => {
+            const newState = permission.state;
+            setPermissionStatus(newState);
+            
+            if (newState === 'denied') {
+              setUserLocation(null);
+              setError('Location access was denied');
+              // Clear localStorage when permission is denied
+              localStorage.removeItem(LOCATION_STORAGE_KEY);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('📍 LocationContext: Permission denied, cleared location data');
+              }
+            } else if (newState === 'granted') {
+              setError(null);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('📍 LocationContext: Permission granted');
+              }
             }
-          } else {
-            // Location is too old, clear it
-            localStorage.removeItem(LOCATION_STORAGE_KEY);
-            if (process.env.NODE_ENV === 'development') {
-              // console.log(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`);
-            }
-          }
-        }
-        
-        if (data.permissionStatus) {
-          setPermissionStatus(data.permissionStatus);
+          };
+          
+          // Listen for permission changes
+          permission.addEventListener('change', handlePermissionChange);
+          
+          // Store the handler for cleanup (if needed)
+          // Note: Permission listeners are automatically cleaned up when the page unloads
+          
+          return permission.state;
+        } else {
+          // Fallback for older browsers - we'll check when user actually requests location
+          setPermissionStatus('prompt');
+          return 'prompt';
         }
       } catch (error) {
-        // Clear corrupted data
-        localStorage.removeItem(LOCATION_STORAGE_KEY);
+        // If permission query fails, default to prompt
+        setPermissionStatus('prompt');
+        return 'prompt';
       }
-    }
+    };
+
+    // Check permission first, then load data only if permission is granted
+    const loadDataWithPermissionCheck = async () => {
+      const permissionState = await checkBrowserPermission();
+      
+      // Only load location data if permission is granted
+      if (permissionState === 'granted' && savedLocationData) {
+        try {
+          const data = JSON.parse(savedLocationData);
+          
+          // Check if the saved location is still valid (less than 1 hour old)
+          if (data.userLocation && data.userLocation.timestamp) {
+            const age = Date.now() - data.userLocation.timestamp;
+            const maxAge = 60 * 60 * 1000; // 1 hour
+            
+            if (age < maxAge) {
+              setUserLocation(data.userLocation);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('📍 LocationContext: Loaded saved location data');
+              }
+            } else {
+              // Location is too old, clear it
+              localStorage.removeItem(LOCATION_STORAGE_KEY);
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`);
+              }
+            }
+          }
+        } catch (error) {
+          // Clear corrupted data
+          localStorage.removeItem(LOCATION_STORAGE_KEY);
+        }
+      } else if (permissionState === 'denied') {
+        // Clear any saved location data if permission is denied
+        localStorage.removeItem(LOCATION_STORAGE_KEY);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 LocationContext: Cleared location data due to denied permission');
+        }
+      }
+    };
+
+    loadDataWithPermissionCheck();
     
     // Mark as initialized to prevent premature saves
     setHasInitialized(true);
@@ -94,8 +159,17 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       return;
     }
     
-    // Only save to localStorage if we have actual location data or meaningful permission status
-    if (userLocation || permissionStatus !== 'prompt') {
+    // Don't save if permission is denied
+    if (permissionStatus === 'denied') {
+      localStorage.removeItem(LOCATION_STORAGE_KEY);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📍 LocationContext: Removed location data due to denied permission');
+      }
+      return;
+    }
+    
+    // Only save to localStorage if we have actual location data
+    if (userLocation) {
       const locationData = {
         userLocation,
         permissionStatus,
@@ -105,11 +179,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       try {
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
         if (process.env.NODE_ENV === 'development') {
-          // console.log('📍 LocationContext: Saved location data to localStorage');
+          console.log('📍 LocationContext: Saved location data to localStorage');
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          // console.error('❌ LocationContext: Failed to save location data:', error);
+          console.error('❌ LocationContext: Failed to save location data:', error);
         }
       }
     }
@@ -209,6 +283,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setPermissionStatus('prompt');
     setError(null);
     localStorage.removeItem(LOCATION_STORAGE_KEY);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 LocationContext: Manually cleared all location data');
+    }
   }, []);
 
   const setPermissionStatusHandler = useCallback((status: LocationState['permissionStatus']) => {
@@ -223,6 +300,24 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setIsLoading(loading);
   }, []);
 
+  const checkPermissionStatus = useCallback(async (): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> => {
+    if (!navigator.geolocation) {
+      return 'unsupported';
+    }
+
+    try {
+      if ('permissions' in navigator && 'query' in navigator.permissions) {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        return permission.state;
+      } else {
+        // For older browsers, we can't check without actually requesting
+        return 'prompt';
+      }
+    } catch (error) {
+      return 'prompt';
+    }
+  }, []);
+
   const value: LocationContextType = {
     userLocation,
     permissionStatus,
@@ -234,6 +329,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setPermissionStatus: setPermissionStatusHandler,
     setError: setErrorHandler,
     setLoading: setLoadingHandler,
+    checkPermissionStatus,
   };
 
   // IMPORTANT: always render children regardless of location status

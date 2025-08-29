@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  User
+  User,
+  BarChart3
 } from 'lucide-react';
 import { AdminUser, hasPermission, ADMIN_PERMISSIONS } from '@/lib/admin/types';
 import { SignOutButton } from '@/components/auth';
@@ -43,7 +44,13 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       title: 'Dashboard',
       icon: LayoutDashboard,
       items: [
-        { title: 'Overview', href: '/admin', icon: LayoutDashboard }
+        { title: 'Overview', href: '/admin', icon: LayoutDashboard },
+        { 
+          title: 'Analytics', 
+          href: '/admin/analytics', 
+          icon: BarChart3,
+          permission: ADMIN_PERMISSIONS.ANALYTICS_VIEW
+        }
       ]
     },
     {

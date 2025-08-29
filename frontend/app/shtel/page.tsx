@@ -7,7 +7,7 @@ import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
-// import { EateryFilters } from '@/components/eatery/EateryFilters';
+import ShtelFilters, { ShtelFilters as ShtelFiltersType } from '@/components/shtel/ShtelFilters';
 import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { scrollToTop } from '@/lib/utils/scrollUtils';
@@ -460,9 +460,17 @@ function ShtelPageContent() {
     }
   };
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [shtelFilters, setShtelFilters] = useState<ShtelFiltersType>({});
+
   const handleShowFilters = () => {
-    // TODO: Implement shtel-specific filters
-    // console.log('Show shtel filters');
+    setShowFilters(true);
+  };
+
+  const handleFiltersChange = (filters: ShtelFiltersType) => {
+    setShtelFilters(filters);
+    // Apply filters to the search
+    fetchShtełListingsData();
   };
 
   const handleShowMap = () => {
@@ -530,25 +538,25 @@ function ShtelPageContent() {
       role="main"
       aria-label="Shtel community marketplace listings"
     >
-      <Header
-        onSearch={handleSearch}
-        placeholder="Search community listings..."
-        showFilters={true}
-        onShowFilters={handleShowFilters}
-      />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header
+          onSearch={handleSearch}
+          placeholder="Search community listings..."
+          showFilters={true}
+          onShowFilters={handleShowFilters}
+        />
 
-      {/* Navigation Tabs - Always visible */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab={activeTab} onTabChange={handleTabChange} />
+        </div>
+
+        <ActionButtons
+          onShowFilters={handleShowFilters}
+          onShowMap={handleShowMap}
+          onAddEatery={handleAddListing}
+          addButtonText="Add Listing"
+        />
       </div>
-
-      {/* Shtel Action Buttons */}
-      <ActionButtons
-        onShowFilters={handleShowFilters}
-        onShowMap={handleShowMap}
-        onAddEatery={handleAddListing}
-        addButtonText="Add Listing"
-      />
 
       {/* Location Permission Banner */}
       {!userLocation && !locationLoading && (
@@ -636,6 +644,7 @@ function ShtelPageContent() {
                 priority={index < 4} // Add priority to first 4 images for LCP optimization
                 onCardClick={() => router.push(`/shtel/product/${listing.id}`)}
                 className="w-full h-full"
+                showStarInBadge={true}
               />
             </div>
           ))}
@@ -686,6 +695,14 @@ function ShtelPageContent() {
 
       {/* Bottom navigation - visible on all screen sizes */}
       <BottomNavigation />
+
+      {/* Shtetl Filters */}
+      <ShtelFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        currentFilters={shtelFilters}
+        onFiltersChange={handleFiltersChange}
+      />
 
       {/* Location Prompt Popup */}
       <LocationPromptPopup

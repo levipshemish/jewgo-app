@@ -1,25 +1,55 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
+import { useLocation } from '@/lib/contexts/LocationContext';
+import LocationPromptPopup from '@/components/LocationPromptPopup';
+
+// Calculate distance between two coordinates using Haversine formula
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+// Utility function to format distance for display
+const formatDistance = (distance: number) => {
+  if (distance < 0.1) {
+    return `${Math.round(distance * 5280)}ft`; // Convert to feet
+  } else if (distance < 1) {
+    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
+  } else {
+    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
+  }
+};
 
 interface Restaurant {
-  id: string;
+  id: string | number;
   name: string;
   address: string;
-  phone: string;
+  phone?: string;
+  phone_number?: string;
   website: string;
-  cuisine: string;
-  rating: number | string;
+  cuisine?: string;
+  kosher_category?: string;
+  rating?: number | string;
+  google_rating?: number | string;
   price_range: string;
   image_url: string;
   is_open: boolean;
   distance?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ApiResponse {
@@ -38,7 +68,21 @@ export function EateryPageClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [limit, setLimit] = useState(8); // Dynamic limit based on screen size
+  
+  // Location state from context
+  const {
+    userLocation,
+    permissionStatus,
+    isLoading: locationLoading,
+    error: locationError,
+    requestLocation,
+    checkPermissionStatus,
+  } = useLocation();
+
+  // Location prompt popup state
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+
 
   const fetchRestaurants = useCallback(async (page: number = 1, query: string = '') => {
     try {
@@ -49,7 +93,7 @@ export function EateryPageClient() {
       const baseUrl = '/api/restaurants-with-images';
       const queryParams: string[] = [];
       queryParams.push(`page=${encodeURIComponent(page.toString())}`);
-      queryParams.push(`limit=${encodeURIComponent(limit.toString())}`);
+      queryParams.push(`limit=100`); // Higher limit to show more restaurants
       
       if (query && query.trim()) {
         queryParams.push(`search=${encodeURIComponent(query.trim())}`);
@@ -61,7 +105,7 @@ export function EateryPageClient() {
       
       if (data.success) {
         setRestaurants(data.data);
-        setTotalPages(Math.ceil(data.total / limit));
+        setTotalPages(Math.ceil(data.total / 100));
       } else {
         setError(data.error || 'Failed to fetch restaurants');
       }
@@ -71,38 +115,79 @@ export function EateryPageClient() {
     } finally {
       setLoading(false);
     }
-  }, [limit]);
-
-  // Calculate dynamic limit based on screen size (4 rows × columns)
-  useEffect(() => {
-    const calculateLimit = () => {
-      const width = window.innerWidth;
-      if (width <= 640) {
-        return 8; // 4 rows × 2 columns
-      } else if (width <= 768) {
-        return 12; // 4 rows × 3 columns
-      } else if (width <= 1024) {
-        return 16; // 4 rows × 4 columns
-      } else if (width <= 1440) {
-        return 24; // 4 rows × 6 columns
-      } else {
-        return 32; // 4 rows × 8 columns
-      }
-    };
-
-    setLimit(calculateLimit());
-
-    const handleResize = () => {
-      setLimit(calculateLimit());
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+
 
   useEffect(() => {
     fetchRestaurants(currentPage, searchQuery);
-  }, [currentPage, searchQuery, fetchRestaurants, limit]);
+  }, [currentPage, searchQuery, fetchRestaurants]);
+
+  // Show location prompt when page loads and user doesn't have location
+  useEffect(() => {
+    const checkAndShowLocationPrompt = async () => {
+      // Only show prompt if we haven't shown it before and user doesn't have location
+      if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
+        // Check the actual browser permission status
+        const actualPermissionStatus = await checkPermissionStatus();
+        
+        // Only show prompt if permission is not denied and not granted
+        if (actualPermissionStatus === 'prompt') {
+          setShowLocationPrompt(true);
+          setHasShownLocationPrompt(true);
+        }
+      }
+    };
+
+    checkAndShowLocationPrompt();
+  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus]);
+
+  // Close location prompt when user gets location
+  useEffect(() => {
+    if (showLocationPrompt && userLocation) {
+      setShowLocationPrompt(false);
+    }
+  }, [showLocationPrompt, userLocation]);
+
+  // Calculate distances and sort restaurants when location is available
+  const restaurantsWithDistance = useMemo(() => {
+    if (!userLocation || permissionStatus !== 'granted') {
+      return restaurants;
+    }
+
+    return restaurants.map(restaurant => {
+      let distance: number | undefined;
+      
+      // Calculate distance if restaurant has coordinates
+      if (restaurant.latitude && restaurant.longitude) {
+        distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        );
+      }
+      
+      return {
+        ...restaurant,
+        distance
+      };
+    }).sort((a, b) => {
+      // Sort by distance if both have distances
+      if (a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance;
+      }
+      // Put restaurants with distances first
+      if (a.distance !== undefined && b.distance === undefined) {
+        return -1;
+      }
+      if (a.distance === undefined && b.distance !== undefined) {
+        return 1;
+      }
+      // Keep original order for restaurants without coordinates
+      return 0;
+    });
+  }, [restaurants, userLocation, permissionStatus]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -153,22 +238,90 @@ export function EateryPageClient() {
 
   return (
     <div className="min-h-screen bg-[#f4f4f4] pb-20 eatery-page">
-      <Header 
-        onSearch={handleSearch}
-        placeholder="Search restaurants..."
-        showFilters={true}
-        onShowFilters={handleShowFilters}
-      />
-      
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
-        <CategoryTabs activeTab="eatery" />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search restaurants..."
+          showFilters={true}
+          onShowFilters={handleShowFilters}
+        />
+        
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab="eatery" />
+        </div>
+        
+        <ActionButtons 
+          onShowFilters={handleShowFilters}
+          onShowMap={() => router.push('/live-map')}
+          onAddEatery={() => router.push('/add-eatery')}
+        />
       </div>
       
-      <ActionButtons 
-        onShowFilters={handleShowFilters}
-        onShowMap={() => router.push('/live-map')}
-        onAddEatery={() => router.push('/add-eatery')}
-      />
+      {/* Location Permission Banner */}
+      {permissionStatus === 'prompt' && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-blue-800">
+                Enable location to see distance from you
+              </span>
+            </div>
+            <button
+              onClick={requestLocation}
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
+            >
+              Enable
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Loading Indicator */}
+      {locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-blue-50 border-b border-blue-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-blue-800">Getting your location...</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Error Banner */}
+      {locationError && permissionStatus !== 'granted' && !locationLoading && (
+        <div className="px-4 sm:px-6 py-3 bg-red-50 border-b border-red-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="text-sm text-red-800">{locationError}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location-Based Sorting Indicator */}
+      {permissionStatus === 'granted' && userLocation && (
+        <div className="px-4 sm:px-6 py-2 bg-green-50 border-b border-green-100">
+          <div className="max-w-7xl mx-auto flex items-center justify-center">
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-sm text-green-800 font-medium">
+                Restaurants sorted by distance from you
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
       
       {loading ? (
         <div className="flex justify-center items-center py-12">
@@ -198,7 +351,7 @@ export function EateryPageClient() {
             perspective: '1000px'
           }}
         >
-          {restaurants.map((restaurant, index) => (
+          {restaurantsWithDistance.map((restaurant, index) => (
             <div 
               key={restaurant.id} 
               className="w-full" 
@@ -212,17 +365,19 @@ export function EateryPageClient() {
             >
               <UnifiedCard
                 data={{
-                  id: restaurant.id,
+                  id: String(restaurant.id),
                   imageUrl: restaurant.image_url,
                   title: restaurant.name,
-                  badge: typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : String(restaurant.rating || ''),
+                  badge: typeof restaurant.google_rating === 'number' ? restaurant.google_rating.toFixed(1) : String(restaurant.google_rating || ''),
                   subtitle: restaurant.price_range || '',
-                  additionalText: restaurant.distance ? String(restaurant.distance) : '',
+                  additionalText: restaurant.distance ? formatDistance(restaurant.distance) : '',
                   showHeart: true,
                   isLiked: false,
-                  kosherCategory: restaurant.cuisine,
-                  city: restaurant.address
+                  kosherCategory: restaurant.kosher_category || restaurant.cuisine || '',
+                  city: restaurant.address,
+                  imageTag: restaurant.kosher_category || ''
                 }}
+                showStarInBadge={true}
                 onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
                 priority={index < 4}
                 className="w-full h-full"
@@ -242,13 +397,22 @@ export function EateryPageClient() {
             className="mb-4"
           />
           <div className="text-center text-sm text-gray-600">
-            Showing {restaurants.length} of {restaurants.length * totalPages} restaurants
+            Showing {restaurantsWithDistance.length} of {restaurantsWithDistance.length * totalPages} restaurants
           </div>
         </div>
       )}
 
       {/* Bottom navigation - visible on all screen sizes */}
       <BottomNavigation />
+
+      {/* Location Prompt Popup */}
+      <LocationPromptPopup
+        isOpen={showLocationPrompt}
+        onClose={() => setShowLocationPrompt(false)}
+        onSkip={() => {
+          setShowLocationPrompt(false);
+        }}
+      />
     </div>
   );
 }

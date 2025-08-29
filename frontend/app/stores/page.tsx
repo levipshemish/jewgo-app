@@ -616,25 +616,25 @@ function StoresPageContent() {
       role="main"
       aria-label="Store listings"
     >
-      <Header 
-        onSearch={handleSearch}
-        placeholder="Search stores..."
-        showFilters={true}
-        onShowFilters={() => setShowFilters(!showFilters)}
-      />
-      
-      {/* Navigation Tabs - Always visible */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab="stores" />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search stores..."
+          showFilters={true}
+          onShowFilters={() => setShowFilters(!showFilters)}
+        />
+        
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab="stores" />
+        </div>
+        
+        <ActionButtons 
+          onShowFilters={() => setShowFilters(!showFilters)}
+          onShowMap={() => router.push('/live-map')}
+          onAddEatery={() => router.push('/add-store')}
+          addButtonText="Add Store"
+        />
       </div>
-      
-      {/* Action buttons */}
-                <ActionButtons 
-            onShowFilters={() => setShowFilters(!showFilters)}
-            onShowMap={() => router.push('/live-map')}
-            onAddEatery={() => router.push('/add-store')}
-            addButtonText="Add Store"
-          />
       
       {/* Store Filters */}
       <StoreFilters

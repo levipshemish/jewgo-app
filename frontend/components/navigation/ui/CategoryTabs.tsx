@@ -131,7 +131,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
   };
 
   return (
-    <div className={`bg-white px-3 sm:px-4 lg:px-6 py-2 lg:py-3 ${className}`}>
+    <div className={`bg-white px-3 sm:px-4 lg:px-6 py-2 lg:py-3 border-b border-gray-100 ${className}`}>
       <div className="max-w-screen-sm sm:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl mx-auto">
         <div className="flex items-center justify-between space-x-1 lg:space-x-2">
           {categories.map((category) => {

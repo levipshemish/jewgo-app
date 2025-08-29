@@ -688,25 +688,25 @@ function ShulsPageContent() {
       role="main"
       aria-label="Synagogue listings"
     >
-      <Header 
-        onSearch={handleSearch}
-        placeholder="Search synagogues..."
-        showFilters={true}
-        onShowFilters={() => setShowFilters(!showFilters)}
-      />
-      
-      {/* Navigation Tabs - Always visible */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab="shuls" />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search synagogues..."
+          showFilters={true}
+          onShowFilters={() => setShowFilters(!showFilters)}
+        />
+        
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab="shuls" />
+        </div>
+        
+        <ActionButtons 
+          onShowFilters={() => setShowFilters(!showFilters)}
+          onShowMap={() => router.push('/live-map')}
+          onAddEatery={() => router.push('/add-shul')}
+          addButtonText="Add Shul"
+        />
       </div>
-      
-      {/* Action buttons */}
-                <ActionButtons 
-            onShowFilters={() => setShowFilters(!showFilters)}
-            onShowMap={() => router.push('/live-map')}
-            onAddEatery={() => router.push('/add-shul')}
-            addButtonText="Add Shul"
-          />
       
       {/* Shul Filters */}
       <ShulFilters

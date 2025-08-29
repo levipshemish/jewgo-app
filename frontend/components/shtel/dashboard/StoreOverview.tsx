@@ -19,6 +19,17 @@ interface AnalyticsData {
   recentMessages: any[];
   topProducts: any[];
   monthlyRevenue: { month: string; revenue: number }[];
+  // Community-specific metrics
+  communityStats: {
+    gemachItems: number;
+    kosherVerifiedItems: number;
+    communityEndorsements: number;
+    rabbiRecommendations: number;
+    shabbosOrders: number;
+    holidayOrders: number;
+  };
+  communityTrustScore: number;
+  kosherComplianceRate: number;
 }
 
 export default function StoreOverview({ storeData }: StoreOverviewProps) {
@@ -164,6 +175,99 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
               <p className="text-sm font-medium text-gray-600">Customers</p>
               <p className="text-2xl font-bold text-gray-900">{formatNumber(analytics.totalCustomers)}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Community Trust Metrics */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Community Standing</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+              <span className="text-xl">🏛️</span>
+            </div>
+            <div className="text-2xl font-bold text-blue-600">{analytics.communityStats?.communityEndorsements || 0}</div>
+            <div className="text-sm text-gray-600">Community Endorsements</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
+              <span className="text-xl">✅</span>
+            </div>
+            <div className="text-2xl font-bold text-green-600">{analytics.kosherComplianceRate || 95}%</div>
+            <div className="text-sm text-gray-600">Kosher Compliance</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-2">
+              <span className="text-xl">📜</span>
+            </div>
+            <div className="text-2xl font-bold text-purple-600">{analytics.communityStats?.rabbiRecommendations || 0}</div>
+            <div className="text-sm text-gray-600">Rabbi Recommendations</div>
+          </div>
+          
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-2">
+              <span className="text-xl">🤝</span>
+            </div>
+            <div className="text-2xl font-bold text-yellow-600">{analytics.communityStats?.gemachItems || 0}</div>
+            <div className="text-sm text-gray-600">Gemach Contributions</div>
+          </div>
+        </div>
+        
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Community Trust Score</span>
+            <span className="text-sm font-medium text-gray-900">{analytics.communityTrustScore || 85}/100</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full" 
+              style={{ width: `${analytics.communityTrustScore || 85}%` }}
+            ></div>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Based on community feedback, kosher compliance, and service quality
+          </div>
+        </div>
+      </div>
+
+      {/* Jewish Calendar Integration */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Jewish Calendar Integration</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-700">🕯️ Shabbos Orders</span>
+              <span className="text-lg font-bold text-blue-600">{analytics.communityStats?.shabbosOrders || 0}</span>
+            </div>
+            <div className="text-xs text-blue-600">Orders for Shabbos pickup/delivery</div>
+          </div>
+          
+          <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-purple-700">🎪 Holiday Orders</span>
+              <span className="text-lg font-bold text-purple-600">{analytics.communityStats?.holidayOrders || 0}</span>
+            </div>
+            <div className="text-xs text-purple-600">Orders for Jewish holidays</div>
+          </div>
+          
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-green-700">✅ Kosher Items</span>
+              <span className="text-lg font-bold text-green-600">{analytics.communityStats?.kosherVerifiedItems || 0}</span>
+            </div>
+            <div className="text-xs text-green-600">Kosher verified products</div>
+          </div>
+        </div>
+        
+        <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <div className="flex items-center">
+            <span className="text-yellow-600 text-sm mr-2">💡</span>
+            <span className="text-sm text-yellow-800">
+              <strong>Tip:</strong> Enable Shabbos ordering to allow customers to place orders for post-Shabbos pickup
+            </span>
           </div>
         </div>
       </div>

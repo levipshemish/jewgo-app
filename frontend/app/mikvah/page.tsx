@@ -671,25 +671,25 @@ function MikvahPageContent() {
       role="main"
       aria-label="Mikvah facility listings"
     >
-      <Header 
-        onSearch={handleSearch}
-        placeholder="Search mikvah facilities..."
-        showFilters={true}
-        onShowFilters={() => setShowFilters(!showFilters)}
-      />
-      
-      {/* Navigation Tabs - Always visible */}
-      <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100" style={{ zIndex: 999 }}>
-        <CategoryTabs activeTab="mikvah" />
+      <div className="sticky top-0 z-50 bg-white">
+        <Header 
+          onSearch={handleSearch}
+          placeholder="Search mikvah facilities..."
+          showFilters={true}
+          onShowFilters={() => setShowFilters(!showFilters)}
+        />
+        
+        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+          <CategoryTabs activeTab="mikvah" />
+        </div>
+        
+        <ActionButtons 
+          onShowFilters={() => setShowFilters(!showFilters)}
+          onShowMap={() => router.push('/live-map')}
+          onAddEatery={() => router.push('/add-mikvah')}
+          addButtonText="Add Mikvah"
+        />
       </div>
-      
-      {/* Action buttons */}
-                <ActionButtons 
-            onShowFilters={() => setShowFilters(!showFilters)}
-            onShowMap={() => router.push('/live-map')}
-            onAddEatery={() => router.push('/add-mikvah')}
-            addButtonText="Add Mikvah"
-          />
       
       {/* Mikvah Filters */}
       <MikvahFilters

@@ -5,7 +5,6 @@ import React from 'react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
-  Bell, 
   Search, 
   Settings, 
   User,
@@ -13,6 +12,7 @@ import {
   Clock as ClockIcon
 } from 'lucide-react';
 import Clock from './Clock';
+import NotificationSystem from './NotificationSystem';
 import { AdminUser } from '@/lib/admin/types';
 import { SignOutButton } from '@/components/auth';
 
@@ -63,8 +63,10 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement global search functionality
-
+    if (!searchQuery.trim()) return;
+    
+    // Redirect to search results page with query
+    window.location.href = `/admin/search?q=${encodeURIComponent(searchQuery.trim())}`;
   };
 
   // SignOut handled by SignOutButton
@@ -108,10 +110,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
             </form>
 
             {/* Notifications */}
-            <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationSystem />
 
             {/* User Menu */}
             <div className="relative">

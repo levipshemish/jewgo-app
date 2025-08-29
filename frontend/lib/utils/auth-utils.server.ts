@@ -443,7 +443,7 @@ export async function attemptIdentityLinking(userId: string, targetProvider: str
     }
     
     // Check if the target provider is already linked
-    const hasTargetProvider = user.identities.some(id => id.provider === targetProvider);
+    const hasTargetProvider = user.identities.some((id: any) => id.provider === targetProvider);
     if (hasTargetProvider) {
       return { success: true }; // Already linked
     }
@@ -453,7 +453,7 @@ export async function attemptIdentityLinking(userId: string, targetProvider: str
     authLogger.info('Identity linking requires re-authentication for security', { 
       userId, 
       targetProvider,
-      existingProviders: user.identities.map(id => id.provider)
+      existingProviders: user.identities.map((id: any) => id.provider)
     });
     
     return { 

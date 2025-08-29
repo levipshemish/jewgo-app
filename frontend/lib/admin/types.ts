@@ -57,6 +57,9 @@ export const ADMIN_PERMISSIONS = {
   
   // Kosher place management
   KOSHER_PLACE_VIEW: 'kosher_place:view',
+  
+  // Analytics
+  ANALYTICS_VIEW: 'analytics:view',
 } as const;
 
 // Role-based permission mapping
@@ -78,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
     ADMIN_PERMISSIONS.USER_VIEW,
     ADMIN_PERMISSIONS.BULK_OPERATIONS,
     ADMIN_PERMISSIONS.DATA_EXPORT,
+    ADMIN_PERMISSIONS.ANALYTICS_VIEW,
   ],
   system_admin: [
     ADMIN_PERMISSIONS.RESTAURANT_VIEW,

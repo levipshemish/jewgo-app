@@ -27,7 +27,7 @@ export default async function LinkAccountPage() {
   oauthLogger.info('Identity collision detected, showing linking interface', { 
     userId: user.id, 
     identityCount: user.identities.length,
-    providers: user.identities.map(id => id.provider)
+    providers: user.identities.map((id: any) => id.provider)
   });
 
   return (

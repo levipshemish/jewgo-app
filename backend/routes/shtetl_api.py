@@ -30,11 +30,11 @@ shtetl_bp = Blueprint('shtetl', __name__, url_prefix='/api/v4/shtetl')
 def create_shtetl_service():
     """Create shtetl marketplace service instance."""
     try:
-        from database.database_manager_v4 import DatabaseManagerV4
+        from database.database_manager_v4 import DatabaseManager
         from utils.cache_manager_v4 import CacheManagerV4
         from utils.config_manager import ConfigManager
         
-        db_manager = DatabaseManagerV4()
+        db_manager = DatabaseManager()
         cache_manager = CacheManagerV4()
         config = ConfigManager()
         
@@ -51,11 +51,11 @@ def create_shtetl_service():
 def create_shtetl_store_service():
     """Create shtetl store service instance."""
     try:
-        from database.database_manager_v4 import DatabaseManagerV4
+        from database.database_manager_v4 import DatabaseManager
         from utils.cache_manager_v4 import CacheManagerV4
         from utils.config_manager import ConfigManager
         
-        db_manager = DatabaseManagerV4()
+        db_manager = DatabaseManager()
         cache_manager = CacheManagerV4()
         config = ConfigManager()
         
@@ -74,7 +74,7 @@ def create_shtetl_store_service():
 # ============================================================================
 
 @shtetl_bp.route("/listings", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_shtetl_listings():
     """Get shtetl marketplace listings with community-specific filtering."""
     try:
@@ -149,7 +149,7 @@ def get_shtetl_listings():
 
 
 @shtetl_bp.route("/listings/<listing_id>", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_shtetl_listing(listing_id):
     """Get a specific shtetl marketplace listing."""
     try:
@@ -171,7 +171,7 @@ def get_shtetl_listing(listing_id):
 
 
 @shtetl_bp.route("/listings", methods=["POST"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def create_shtetl_listing():
     """Create a new shtetl marketplace listing."""
@@ -205,7 +205,7 @@ def create_shtetl_listing():
 
 
 @shtetl_bp.route("/categories", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_shtetl_categories():
     """Get shtetl marketplace categories and subcategories."""
     try:
@@ -236,7 +236,7 @@ def get_shtetl_categories():
 
 
 @shtetl_bp.route("/stats", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_shtetl_stats():
     """Get shtetl marketplace statistics."""
     try:
@@ -288,7 +288,7 @@ def get_shtetl_stats():
 # ============================================================================
 
 @shtetl_bp.route("/stores", methods=["POST"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def create_store():
     """Create a new store."""
@@ -363,7 +363,7 @@ def create_store():
 
 
 @shtetl_bp.route("/stores/my-store", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def get_my_store():
     """Get the current user's store."""
@@ -391,7 +391,7 @@ def get_my_store():
 
 
 @shtetl_bp.route("/stores/<store_id>", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_store(store_id):
     """Get a specific store by ID."""
     try:
@@ -414,7 +414,7 @@ def get_store(store_id):
 
 
 @shtetl_bp.route("/stores/<store_id>", methods=["PUT"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def update_store(store_id):
     """Update a store."""
@@ -455,7 +455,7 @@ def update_store(store_id):
 
 
 @shtetl_bp.route("/stores/<store_id>", methods=["DELETE"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def delete_store(store_id):
     """Delete a store."""
@@ -492,7 +492,7 @@ def delete_store(store_id):
 
 
 @shtetl_bp.route("/stores", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_stores():
     """Get all stores with filtering."""
     try:
@@ -544,7 +544,7 @@ def get_stores():
 
 
 @shtetl_bp.route("/stores/search", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def search_stores():
     """Search stores with advanced filtering."""
     try:
@@ -604,7 +604,7 @@ def search_stores():
 
 
 @shtetl_bp.route("/stores/<store_id>/analytics", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def get_store_analytics(store_id):
     """Get store analytics."""
@@ -641,7 +641,7 @@ def get_store_analytics(store_id):
 
 
 @shtetl_bp.route("/stores/<store_id>/products", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_store_products(store_id):
     """Get products for a specific store."""
     try:
@@ -675,7 +675,7 @@ def get_store_products(store_id):
 
 
 @shtetl_bp.route("/stores/<store_id>/orders", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def get_store_orders(store_id):
     """Get orders for a specific store."""
@@ -720,7 +720,7 @@ def get_store_orders(store_id):
 
 
 @shtetl_bp.route("/stores/<store_id>/messages", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_supabase_auth
 def get_store_messages(store_id):
     """Get messages for a specific store."""
@@ -763,7 +763,7 @@ def get_store_messages(store_id):
 
 
 @shtetl_bp.route("/stores/plan-limits", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 def get_plan_limits():
     """Get store plan limits and features."""
     try:
@@ -790,7 +790,7 @@ def get_plan_limits():
 # ============================================================================
 
 @shtetl_bp.route("/stores/admin/stores", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_get_stores():
     """Admin endpoint to get all stores."""
@@ -822,7 +822,7 @@ def admin_get_stores():
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/approve", methods=["POST"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_approve_store(store_id):
     """Admin endpoint to approve a store."""
@@ -846,7 +846,7 @@ def admin_approve_store(store_id):
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/suspend", methods=["POST"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_suspend_store(store_id):
     """Admin endpoint to suspend a store."""
@@ -873,7 +873,7 @@ def admin_suspend_store(store_id):
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/analytics", methods=["GET"])
-@require_api_v4_flag("api_v4_shtetl")
+@require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_get_store_analytics(store_id):
     """Admin endpoint to get store analytics."""

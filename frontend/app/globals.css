@@ -3251,10 +3251,64 @@ div[class*="specials-dynamic-grid"] {
 }
 
 .restaurant-grid {
+  --card-height: 220px; /* Reduced card height for tighter spacing */
   display: grid !important;
   align-items: start !important; /* Ensure cards align to top */
   width: 100% !important;
   box-sizing: border-box !important;
+  grid-template-rows: repeat(4, 1fr) !important; /* Enforce exactly 4 rows */
+}
+
+/* Limit grid items based on screen size */
+/* Mobile: 2 columns × 4 rows = 8 items */
+@media (max-width: 640px) {
+  .restaurant-grid > div:nth-child(n+9) {
+    display: none !important;
+  }
+}
+
+/* Tablet: 3 columns × 4 rows = 12 items */
+@media (min-width: 641px) and (max-width: 768px) {
+  .restaurant-grid > div:nth-child(n+13) {
+    display: none !important;
+  }
+}
+
+/* Large tablet: 4 columns × 4 rows = 16 items */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .restaurant-grid > div:nth-child(n+17) {
+    display: none !important;
+  }
+}
+
+/* Desktop: 6 columns × 4 rows = 24 items */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .restaurant-grid > div:nth-child(n+25) {
+    display: none !important;
+  }
+}
+
+/* Large desktop: 8 columns × 4 rows = 32 items */
+@media (min-width: 1441px) {
+  .restaurant-grid > div:nth-child(n+33) {
+    display: none !important;
+  }
+}
+
+/* Mobile and tablet: Use overflow hidden for infinite scroll */
+@media (max-width: 1024px) {
+  .restaurant-grid {
+    max-height: calc(4 * (var(--card-height) + 1rem)) !important; /* Limit height to 4 rows */
+    overflow: hidden !important; /* Hide overflow beyond 4 rows */
+  }
+}
+
+/* Desktop: 4-row limit but no overflow hidden for pagination */
+@media (min-width: 1025px) {
+  .restaurant-grid {
+    max-height: calc(4 * (var(--card-height) + 1rem)) !important; /* Limit height to 4 rows */
+    overflow: visible !important; /* Show pagination controls */
+  }
 }
 
 /* Ensure proper card sizing without forcing height */

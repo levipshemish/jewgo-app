@@ -319,5 +319,62 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST, PUT, DELETE methods can be added here for creating/updating/deleting shtel listings
-// These would proxy to the existing marketplace API with community-specific validation
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    
+    // Add community-specific enhancements to the listing
+    const communityListing = {
+      ...body,
+      // Ensure community focus
+      community_focus: true,
+      // Auto-detect Jewish community categories
+      is_community_item: JEWISH_COMMUNITY_CATEGORIES.some(cat => 
+        body.category?.toLowerCase().includes(cat.toLowerCase())
+      )
+    };
+
+    // Call the backend shtetl marketplace API
+    const backendUrl = `${BACKEND_BASE_URL}/api/v4/shtetl/listings`;
+    
+    const response = await fetch(backendUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        // Forward authorization header if present
+        ...(request.headers.get('authorization') && {
+          'Authorization': request.headers.get('authorization')!
+        })
+      },
+      body: JSON.stringify(communityListing)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: data.error || 'Failed to create community listing',
+          details: data.details
+        },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(data, { status: 201 });
+
+  } catch (error) {
+    console.error('Shtel listing creation error:', error);
+    
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to create community listing',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}

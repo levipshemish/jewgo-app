@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
             success: true, 
             message: 'Re-authentication required',
             requiresReAuth: true,
-            providers: user.identities?.map(id => id.provider) || []
+            providers: user.identities?.map((id: any) => id.provider) || []
           });
         }
         

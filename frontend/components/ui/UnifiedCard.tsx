@@ -319,16 +319,22 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           animation: isScrolling ? 'none' : undefined
         }}
       >
-        <div className="flex justify-between items-start gap-2 mb-0.5 min-h-[32px]">
+        <div className="flex justify-between items-start gap-1 mb-0 min-h-[32px]">
           <h3 
             className={cn(
               variantStyles.titleClass,
-              "text-gray-800 m-0 flex-1 min-w-0 transition-colors duration-200 group-hover:text-gray-900 line-clamp-2 leading-tight"
+              "text-gray-800 m-0 flex-1 min-w-0 transition-colors duration-200 group-hover:text-gray-900 leading-tight"
             )}
-            style={{ minHeight: '32px' }}
+            style={{ 
+              minHeight: '32px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%'
+            }}
             aria-label={`Title: ${cardData.title}`}
           >
-            {cardData.title}
+            {cardData.title.length > 10 ? `${cardData.title.substring(0, 10)}...` : cardData.title}
           </h3>
           {cardData.badge && (
             <div
@@ -351,7 +357,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center h-[20px] relative">
+        <div className="flex justify-between items-center h-[16px] relative">
           {/* Subtitle - Locked to left */}
           <div className="flex-1 min-w-0">
             <p 
@@ -370,7 +376,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           </div>
           
           {/* Spacer to ensure proper separation */}
-          <div className="flex-shrink-0 w-3" />
+          <div className="flex-shrink-0 w-2" />
           
           {/* Additional Text - Locked to right */}
           <div className="flex-shrink-0">

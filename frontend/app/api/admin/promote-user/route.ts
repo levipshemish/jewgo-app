@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
       }
       
-      const user = users.users.find(u => u.email === targetEmail);
+      const user = users.users.find((u: any) => u.email === targetEmail);
       if (!user) {
         adminLogger.error('User not found by email', { targetEmail });
         return NextResponse.json({ error: 'User not found' }, { status: 404 });

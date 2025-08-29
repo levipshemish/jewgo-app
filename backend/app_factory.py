@@ -52,6 +52,14 @@ except ImportError as e:
 
 def create_app():
     """Create and configure the Flask application"""
+    # Load environment variables from config.env first
+    try:
+        from utils.config_manager import _load_config_env
+        _load_config_env()
+        logger.info("Loaded environment variables from config.env")
+    except Exception as e:
+        logger.warning(f"Failed to load config.env: {e}")
+    
     app = Flask(__name__)
     
     # Configure CORS
@@ -637,6 +645,30 @@ def create_app():
                 'success': False,
                 'error': str(e),
                 'message': 'Database test failed'
+            })
+    
+    # Add a debug endpoint to test feature flags
+    @app.route('/debug/feature-flags', methods=['GET'])
+    def debug_feature_flags():
+        """Debug endpoint to test feature flags"""
+        try:
+            from utils.feature_flags_v4 import api_v4_flags
+            import os
+            
+            return jsonify({
+                'success': True,
+                'feature_flags': api_v4_flags.get_all_flags(),
+                'environment_variables': {
+                    'API_V4_SHTETL': os.getenv('API_V4_SHTETL', 'NOT_SET'),
+                    'API_V4_SHTETL_in_environ': 'API_V4_SHTETL' in os.environ
+                },
+                'shtetl_enabled': api_v4_flags.is_enabled('shtetl')
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Feature flags test failed'
             })
     
     # Add a debug endpoint to test restaurant service creation

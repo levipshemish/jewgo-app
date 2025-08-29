@@ -72,7 +72,7 @@ This is a **full-stack TypeScript/Python kosher restaurant discovery platform** 
 - **Database**: PostgreSQL (production) with Supabase for auth, admin system, and user management
 - **Deployment**: Frontend on Vercel, backend on Render, with Docker containerization support
 
-The system handles restaurant discovery, user reviews, admin management, and synagogue/marketplace listings.
+The system handles restaurant discovery, user reviews, admin management, synagogue listings, and a complete marketplace platform with full backend integration.
 
 ## Development Commands
 
@@ -143,9 +143,20 @@ npm run admin:test <email>    # Test admin access for user
 
 ### Key Services & Utilities
 - **Restaurant Service**: Core business logic in `backend/services/restaurant_service_v4.py`
+- **Marketplace Service**: Complete e-commerce platform in `backend/services/marketplace_service_v4.py`
 - **Database Managers**: V4 manager in `backend/database/database_manager_v4.py`
 - **Cache Management**: Redis integration in `backend/utils/cache_manager_v4.py`
 - **Search System**: Advanced filtering in `backend/search/` with PostgreSQL full-text search
+- **Authentication**: Supabase JWT verification in `backend/utils/supabase_auth.py`
+
+### Marketplace Platform (Production Ready)
+- **Frontend**: Complete UI at `/app/marketplace/` with responsive design and advanced filtering
+- **Backend API**: Full CRUD operations at `/api/v4/marketplace/` endpoints
+- **Database**: Comprehensive schema with 40+ columns for listings, categories, and user management
+- **Features**: Search, filtering, location-based sorting, user authentication, endorsements
+- **Types**: Support for regular items, vehicles, and appliances with specialized attributes
+- **Mobile**: Optimized mobile experience with infinite scroll and touch gestures
+- **Sample Data**: Development fallback system with 30+ realistic listings
 
 ## Important Development Notes
 
@@ -223,6 +234,14 @@ mcp_context7_get-library-docs "/supabase/supabase" "authentication" 4000
 4. Add API endpoint in `backend/routes/api_v4.py`
 5. Create frontend API route in `frontend/app/api/restaurants/`
 6. Update UI components in `frontend/components/`
+
+### Marketplace Development
+1. **Frontend Components**: Use existing marketplace components in `frontend/components/marketplace/`
+2. **API Integration**: Use `frontend/lib/api/marketplace.ts` for all marketplace API calls
+3. **Type Definitions**: Extend types in `frontend/lib/types/marketplace.ts`
+4. **Backend Services**: Modify `backend/services/marketplace_service_v4.py`
+5. **Database Schema**: Update marketplace tables via migrations
+6. **Authentication**: All marketplace operations require Supabase JWT verification
 
 ### Admin System Changes
 1. Update Supabase tables/RLS policies in `supabase/migrations/`
