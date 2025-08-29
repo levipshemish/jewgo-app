@@ -47,8 +47,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_jewgo
           NODE_ENV: production
         run: |
-          cd frontend
-          npm run build
+          chmod +x scripts/simple-pre-merge.sh
+          ./scripts/simple-pre-merge.sh
 
       - name: Check schema drift (if DB URL available)
         if: env.DATABASE_URL

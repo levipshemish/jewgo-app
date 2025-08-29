@@ -386,17 +386,19 @@ def get_restaurants():
         total_count = len(restaurants)
         paginated_restaurants = restaurants[offset : offset + limit]
 
-        return success_response(
-            {
-                "restaurants": paginated_restaurants,
-                "pagination": {
-                    "total": total_count,
-                    "limit": limit,
-                    "offset": offset,
-                    "hasMore": offset + limit < total_count,
-                },
-            }
-        )
+        # Calculate total pages for frontend compatibility
+        total_pages = (total_count + limit - 1) // limit
+        
+        # Return response in the format expected by frontend
+        return jsonify({
+            "success": True,
+            "restaurants": paginated_restaurants,
+            "totalPages": total_pages,
+            "totalRestaurants": total_count,
+            "page": (offset // limit) + 1,
+            "limit": limit,
+            "message": f"Retrieved {len(paginated_restaurants)} restaurants"
+        }), 200
 
     except ValidationError as e:
         return error_response(str(e), 400, {"validation_errors": e.details})
