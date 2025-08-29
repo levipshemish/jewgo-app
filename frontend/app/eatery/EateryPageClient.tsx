@@ -265,24 +265,24 @@ export function EateryPageClient() {
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
 
-  // Infinite scroll hook - only enabled on mobile
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    async () => {
-      // Don't fetch if already loading
-      if (loading) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Blocked by loading state');
-        }
-        return;
+  // Create stable infinite scroll handler with proper dependencies
+  const handleInfiniteScrollLoad = useCallback(async () => {
+    // Don't fetch if already loading
+    if (loading) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Infinite scroll: Blocked by loading state');
       }
-      
-      try {
-        // Calculate the correct offset for the next page
-        const nextOffset = allRestaurants.length;
+      return;
+    }
+    
+    try {
+      // Use functional update to get current state
+      setAllRestaurants(currentRestaurants => {
+        const nextOffset = currentRestaurants.length;
         const nextPage = Math.floor(nextOffset / mobileOptimizedItemsPerPage) + 1;
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems: allRestaurants.length });
+          console.log('Infinite scroll: Starting fetch', { nextOffset, nextPage, currentItems: currentRestaurants.length });
         }
         
         // Use unified buildQueryParams function to avoid duplication
@@ -298,54 +298,70 @@ export function EateryPageClient() {
           console.log('Infinite scroll: Fetching URL', url);
         }
         
+        // Perform async fetch operation
         const controller = new AbortController();
-        const response = await fetch(url, { signal: controller.signal });
-        const data: ApiResponse = await response.json();
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Response received', { 
-            success: data.success, 
-            dataLength: data.data?.length || 0, 
-            total: data.total,
-            hasData: !!data.data 
+        fetch(url, { signal: controller.signal })
+          .then(response => response.json())
+          .then((data: ApiResponse) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Infinite scroll: Response received', { 
+                success: data.success, 
+                dataLength: data.data?.length || 0, 
+                total: data.total,
+                hasData: !!data.data 
+              });
+            }
+            
+            if (data.success && data.data.length > 0) {
+              // Append new restaurants to the accumulated list
+              setAllRestaurants(prev => {
+                const newList = [...prev, ...data.data];
+                
+                // Check if we've reached the end using data from response
+                const hasMoreData = newList.length < data.total && data.data.length === mobileOptimizedItemsPerPage;
+                setHasMore(hasMoreData);
+                setTotalRestaurants(data.total);
+                
+                // Debug logging
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newList.length, 'total available:', data.total, 'hasMore:', hasMoreData);
+                }
+                
+                return newList;
+              });
+              setInfiniteScrollPage(nextPage);
+            } else {
+              // No more data available
+              setHasMore(false);
+              
+              // Debug logging
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Infinite scroll: No more data available (empty response)');
+              }
+            }
+          })
+          .catch(err => {
+            if (err instanceof Error && err.name === 'AbortError') {
+              return; // Request was aborted, ignore
+            }
+            console.error('Error fetching more restaurants:', err);
+            // Don't set hasMore to false on error, allow retry
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
+            }
           });
-        }
         
-        if (data.success && data.data.length > 0) {
-          // Append new restaurants to the accumulated list
-          setAllRestaurants(prev => [...prev, ...data.data]);
-          setInfiniteScrollPage(nextPage);
-          
-          // Check if we've reached the end using actual total count
-          const newTotalItems = allRestaurants.length + data.data.length;
-          const hasMoreData = newTotalItems < totalRestaurants;
-          setHasMore(hasMoreData);
-          
-          // Debug logging
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData);
-          }
-        } else {
-          // No more data available
-          setHasMore(false);
-          
-          // Debug logging
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Infinite scroll: No more data available (empty response)');
-          }
-        }
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          return; // Request was aborted, ignore
-        }
-        console.error('Error fetching more restaurants:', err);
-        // Don't set hasMore to false on error, allow retry
-        // Show a temporary error state that allows manual retry
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Error occurred, maintaining hasMore for retry');
-        }
-      }
-    },
+        // Return current state unchanged for the outer setter
+        return currentRestaurants;
+      });
+    } catch (err) {
+      console.error('Error in infinite scroll handler:', err);
+    }
+  }, [loading, buildQueryParams, searchQuery, activeFilters, mobileOptimizedItemsPerPage, setHasMore, setTotalRestaurants]);
+
+  // Infinite scroll hook - only enabled on mobile
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    handleInfiniteScrollLoad,
     { 
       threshold: isMobile ? 0.2 : 0.3, // Less aggressive on mobile for better UX
       rootMargin: isMobile ? '100px' : '200px', // Smaller margin to reduce premature loading
