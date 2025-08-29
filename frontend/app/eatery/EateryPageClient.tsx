@@ -97,7 +97,7 @@ export function EateryPageClient() {
   const mobileOptimizedItemsPerPage = useMemo(() => {
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile) {
-      return 10; // Slightly higher to reduce API round-trips on mobile
+      return 8; // Keep initial payload light on mobile for faster loads
     } else {
       // For desktop, calculate based on viewport width to ensure 4 rows
       let columnsPerRow = 3; // Default fallback
@@ -304,8 +304,10 @@ export function EateryPageClient() {
         }
         
         const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
         const response = await fetch(url, { signal: controller.signal });
         const data: ApiResponse = await response.json();
+        clearTimeout(timeoutId);
         
         if (process.env.NODE_ENV === 'development') {
           console.log('Infinite scroll: Response received', { 
@@ -352,8 +354,8 @@ export function EateryPageClient() {
       }
     },
     { 
-      threshold: isMobileView ? 0.05 : 0.2,
-      rootMargin: isMobileView ? '300px' : '300px',
+      threshold: isMobileView ? 0.15 : 0.2,
+      rootMargin: isMobileView ? '200px' : '200px',
       disabled: loading || !isMobileView
     }
   );
