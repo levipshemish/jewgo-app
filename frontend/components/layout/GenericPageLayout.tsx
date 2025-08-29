@@ -8,18 +8,17 @@ interface GenericPageLayoutProps<T> {
   pageTitle?: string;
   enableInfiniteScroll?: boolean;
   hasNextPage?: boolean;
-  onLoadMore?: () => void;
-  enablePagination?: boolean;
   gridClassName?: string;
   minColumnWidth?: string;
-  activeTab?: unknown;
-  onTabChange?: (tab: unknown) => void;
   isLoading?: boolean;
   isLoadingMore?: boolean;
   listLabel?: string;
   sentinelRef?: React.RefObject<HTMLDivElement>;
   emptyRenderer?: () => React.ReactNode;
   as?: React.ElementType;
+  containerClassName?: string;
+  ariaColCount?: number;
+  ariaRowCount?: number;
 }
 
 export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
@@ -31,20 +30,23 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     enableInfiniteScroll,
     hasNextPage,
     gridClassName,
-    minColumnWidth = '200px',
+    minColumnWidth = '150px',
     isLoading = false,
     isLoadingMore = false,
     listLabel,
     sentinelRef,
     emptyRenderer,
     as: Wrapper = 'section',
+    containerClassName,
+    ariaColCount,
+    ariaRowCount,
   } = props;
 
   const internalSentinelRef = useRef<HTMLDivElement | null>(null);
   const mergedRef = sentinelRef ?? internalSentinelRef;
 
   return (
-    <Wrapper className={styles.pageContainer}>
+    <Wrapper className={`${styles.pageContainer} ${containerClassName ?? ''}`}>
       {pageTitle && <h1 className={styles.pageTitle}>{pageTitle}</h1>}
 
       {items.length > 0 || isLoading ? (
@@ -55,6 +57,8 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
           role="grid"
           aria-busy={isLoading || isLoadingMore}
           aria-label={listLabel || pageTitle}
+          aria-colcount={ariaColCount}
+          aria-rowcount={ariaRowCount}
         >
           {items.map((item, index) => (
             <div key={getItemKey ? getItemKey(item, index) : index} role="gridcell">

@@ -8,8 +8,10 @@ The `GenericPageLayout` component provides a responsive grid container for listi
 - `renderItem`: render function for each item.
 - `getItemKey`: optional key extractor; defaults to index when omitted.
 - `emptyRenderer`: optional function to render when `items` is empty.
-- `minColumnWidth`: sets the `--min-col` CSS variable to control column count.
+- `minColumnWidth`: sets the `--min-col` CSS variable to control column count (default `150px`).
 - `gridClassName`: merges additional grid classes with the default module class.
+- `containerClassName`: optional class for the outer wrapper.
+- `ariaColCount` / `ariaRowCount`: optional accessibility hints for grid dimensions.
 - `as`: wrapper element, defaults to `section`.
 
 ### Accessibility
@@ -30,9 +32,9 @@ The Eatery page sets `minColumnWidth="150px"` and the layout caps its width at *
 
 ## Theming
 
-The layout uses `background-color: var(--color-bg)` in light mode and `--color-bg-dark` for dark mode. If `--color-bg-dark` is not provided, it falls back to `--color-bg` to avoid a black background. Override these CSS custom properties to theme the page background. Media queries also handle reduced motion preferences.
+The layout uses a white background by default. Override `.pageContainer` or use `containerClassName` to theme the page background. Media queries handle reduced motion preferences.
 
 ## Infinite scroll vs. pagination
 
-When `enableInfiniteScroll` is set, a sentinel element is rendered and observed via `IntersectionObserver`. For pagination, pass `enablePagination` and handle navigation externally.
+When `enableInfiniteScroll` is set, a sentinel element is rendered and observed via `IntersectionObserver`. Pagination can be implemented by the consumer with separate controls.
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { GenericPageLayout } from '@/components/layout/GenericPageLayout';
+import { GenericPageLayout } from '@/components/layout';
 
 describe('GenericPageLayout', () => {
   it('renders items in the grid', () => {
@@ -103,6 +103,33 @@ describe('GenericPageLayout', () => {
     expect(grid).toHaveAttribute('role', 'grid');
     expect(grid).toHaveAttribute('aria-busy', 'true');
     expect(grid).toHaveAttribute('aria-label', 'Custom label');
+  });
+
+  it('renders emptyRenderer when there are no items', () => {
+    const empty = jest.fn(() => <div data-testid="empty">No items</div>);
+    render(
+      <GenericPageLayout
+        items={[]}
+        renderItem={() => null}
+        emptyRenderer={empty}
+      />
+    );
+
+    expect(empty).toHaveBeenCalled();
+    expect(screen.getByTestId('empty')).toBeInTheDocument();
+  });
+
+  it('marks grid busy when loading more items', () => {
+    render(
+      <GenericPageLayout
+        items={[1]}
+        renderItem={(item) => <div data-testid={`item-${item}`}>{item}</div>}
+        isLoadingMore
+      />
+    );
+
+    const grid = screen.getByTestId('gpl-grid');
+    expect(grid).toHaveAttribute('aria-busy', 'true');
   });
 });
 

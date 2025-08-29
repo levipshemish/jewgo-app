@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout';
-import { GenericPageLayout } from '@/components/layout/GenericPageLayout';
+import { Header, GenericPageLayout } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
@@ -239,7 +238,8 @@ export function EateryPageClient() {
       if (data.success) {
         setRestaurants(data.data);
         setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
-        
+        setTotalRestaurants(data.total);
+
         // Reset infinite scroll state for mobile
         if (isMobileView) {
           // Ensure no duplicates in initial data
@@ -248,7 +248,6 @@ export function EateryPageClient() {
           );
           setAllRestaurants(uniqueRestaurants); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
-          setTotalRestaurants(data.total); // Track total count
           // Set hasMore based on whether there are more items available
           const hasMoreData = data.data.length < data.total;
           setHasMore(hasMoreData);
@@ -283,7 +282,7 @@ export function EateryPageClient() {
         controllerRef.current = null;
       }
     }
-  }, [buildQueryParams, mobileOptimizedItemsPerPage, isMobile]);
+  }, [buildQueryParams, mobileOptimizedItemsPerPage, isMobileView]);
 
   // Memoized query key to prevent unnecessary refetches
   const queryKey = useMemo(() => {
@@ -667,7 +666,7 @@ export function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] pb-20 eatery-page">
+    <div className="min-h-screen bg-white pb-20 eatery-page">
       <div className="sticky top-0 z-50 bg-white">
         <Header 
           onSearch={handleSearch}
@@ -842,7 +841,7 @@ export function EateryPageClient() {
                 className="mb-2"
               />
               <div className="text-center text-sm text-gray-600">
-                Showing {restaurantsWithDistance.length} of {restaurants.length * totalPages} restaurants
+                Showing {(currentPage - 1) * mobileOptimizedItemsPerPage + restaurantsWithDistance.length} of {totalRestaurants} restaurants
               </div>
             </div>
           </div>
