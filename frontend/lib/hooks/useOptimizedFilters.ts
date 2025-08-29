@@ -307,9 +307,9 @@ export const useOptimizedFilters = (
       }
 
       // Apply dietary filter
-      if (activeFilters.dietary) {
+      if (activeFilters.dietary && activeFilters.dietary.length > 0) {
         filtered = filtered.filter(restaurant => 
-          FILTER_FUNCTIONS.dietary(restaurant, activeFilters.dietary!)
+          activeFilters.dietary!.some(d => FILTER_FUNCTIONS.dietary(restaurant, d))
         );
       }
 
@@ -400,9 +400,9 @@ export const useOptimizedFilters = (
       }
 
       // Apply dietary filter
-      if (previewFilters.dietary) {
+      if (previewFilters.dietary && previewFilters.dietary.length > 0) {
         filtered = filtered.filter(restaurant => 
-          FILTER_FUNCTIONS.dietary(restaurant, previewFilters.dietary!)
+          previewFilters.dietary!.some(d => FILTER_FUNCTIONS.dietary(restaurant, d))
         );
       }
 

@@ -127,6 +127,11 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
+        // Added required TransformedUser fields
+        isEmailVerified: true,
+        isPhoneVerified: false,
+        role: 'admin',
+        subscriptionTier: 'free'
       };
       return mockUser;
     }
@@ -137,7 +142,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
     }
 
     // Transform user
-    const transformedUser = transformSupabaseUser(user);
+    const transformedUser = await transformSupabaseUser(user);
     if (!transformedUser) {
       return null;
     }
@@ -165,7 +170,7 @@ export async function requireAdmin(request: NextRequest): Promise<AdminUser | nu
           isSuperAdmin: true,
           adminRole: 'super_admin',
           permissions: Object.values(ADMIN_PERMISSIONS),
-        };
+        } as AdminUser;
       }
     }
 
@@ -255,6 +260,11 @@ export async function getAdminUser(): Promise<AdminUser | null> {
         isSuperAdmin: true,
         adminRole: 'super_admin',
         permissions: Object.values(ADMIN_PERMISSIONS),
+        // Added required TransformedUser fields
+        isEmailVerified: true,
+        isPhoneVerified: false,
+        role: 'admin',
+        subscriptionTier: 'free'
       };
       return mockUser;
     }
@@ -263,7 +273,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       return null;
     }
 
-    const transformedUser = transformSupabaseUser(user);
+    const transformedUser = await transformSupabaseUser(user);
     if (!transformedUser) {
       return null;
     }
@@ -282,7 +292,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       isSuperAdmin,
       adminRole,
       permissions,
-    };
+    } as AdminUser;
   } catch (error) {
     console.error('[ADMIN] getAdminUser error:', error);
     return null;

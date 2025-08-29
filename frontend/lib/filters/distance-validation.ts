@@ -49,7 +49,7 @@ export function validateDistanceFields<T extends Record<string, any>>(filters: T
 export function getCanonicalDistanceMi<T extends Record<string, any>>(filters: T): number | undefined {
   // Find the first set distance field in precedence order
   for (const field of DISTANCE_FIELDS) {
-    const value = filters[field];
+    const value = (filters as Record<string, any>)[field];
     if (value !== undefined && value !== null) {
       const config = DISTANCE_FIELD_CONFIG[field];
       return value * config.conversionToMiles;
@@ -67,19 +67,19 @@ export function normalizeDistanceFields<T extends Record<string, any>>(filters: 
   const canonicalDistance = getCanonicalDistanceMi(filters);
   
   // Create a new object without the legacy distance fields
-  const normalized = { ...filters };
+  const normalized: Record<string, any> = { ...filters };
   
   // Remove all legacy distance fields
   DISTANCE_FIELDS.forEach(field => {
-    delete normalized[field];
+    delete normalized[field as string];
   });
   
   // Set the canonical field if a distance was found
   if (canonicalDistance !== undefined) {
-    normalized.distanceMi = canonicalDistance;
+    (normalized as any).distanceMi = canonicalDistance;
   }
   
-  return normalized;
+  return normalized as T & { distanceMi?: number };
 }
 
 /**
@@ -91,26 +91,26 @@ export function toApiFormat<T extends Record<string, any>>(filters: T): T & { ma
   const canonicalDistance = getCanonicalDistanceMi(filters);
   
   // Create a new object without the legacy distance fields
-  const apiFormat = { ...filters };
+  const apiFormat: Record<string, any> = { ...filters };
   
   // Remove all legacy distance fields
   DISTANCE_FIELDS.forEach(field => {
-    delete apiFormat[field];
+    delete apiFormat[field as string];
   });
   
   // Set maxDistanceMi for API compatibility if a distance was found
   if (canonicalDistance !== undefined) {
-    apiFormat.maxDistanceMi = canonicalDistance;
+    (apiFormat as any).maxDistanceMi = canonicalDistance;
   }
   
-  return apiFormat;
+  return apiFormat as T & { maxDistanceMi?: number };
 }
 
 /**
  * Type guard to check if an object has any distance fields set
  */
 export function hasDistanceFields(obj: Record<string, any>): boolean {
-  return DISTANCE_FIELDS.some(field => obj[field] !== undefined && obj[field] !== null);
+  return DISTANCE_FIELDS.some(field => (obj as Record<string, any>)[field] !== undefined && (obj as Record<string, any>)[field] !== null);
 }
 
 /**
@@ -120,7 +120,7 @@ export function hasDistanceFields(obj: Record<string, any>): boolean {
  */
 export function getDistanceFieldInfo<T extends Record<string, any>>(filters: T): { field: string; unit: string } | null {
   for (const field of DISTANCE_FIELDS) {
-    const value = filters[field];
+    const value = (filters as Record<string, any>)[field];
     if (value !== undefined && value !== null) {
       return {
         field,

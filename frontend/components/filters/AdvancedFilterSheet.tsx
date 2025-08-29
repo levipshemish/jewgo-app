@@ -253,8 +253,8 @@ const AdvancedFilterSheet: React.FC<AdvancedFilterSheetProps> = ({
                   const val = normalizeKosherCategory(category);
                   return { value: val, label: val.charAt(0).toUpperCase() + val.slice(1) };
                 })]}
-                value={draftFilters.dietary || 'all'}
-                onChange={(value) => setDraftFilter('dietary', value === 'all' ? undefined : value)}
+                value={(Array.isArray(draftFilters.dietary) ? draftFilters.dietary[0] : draftFilters.dietary) || 'all'}
+                onChange={(value) => setDraftFilter('dietary', value === 'all' ? undefined : [value])}
                 placeholder="Select Dietary Preference"
               />
             </div>

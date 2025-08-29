@@ -45,8 +45,7 @@ export interface TransformedUser {
   subscriptionTier: string;
   // New role fields
   adminRole?: string | null;
-  roleLevel?: number;
-  permissions?: string[];
+  roleLevel?: number | null;
   isSuperAdmin?: boolean;
 }
 

@@ -38,9 +38,8 @@ const nextConfig = {
     ignoreDuringBuilds: !isCI,
   },
   typescript: {
-    // Skip type checking during build to prevent unrelated TS errors from blocking deploys
-    // This unblocks CI for scoped frontend fixes; keep local/type-check CI for catching issues
-    ignoreBuildErrors: true,
+    // Enforce type checking during build (re-enabled after fixes)
+    ignoreBuildErrors: false,
   },
   // Image optimization - disable in Docker to prevent issues
   images: {
