@@ -2,6 +2,10 @@ import { Metadata } from 'next';
 import { requireAdminUser } from '@/lib/server/admin-auth';
 import RoleManagementTable from '@/components/admin/RoleManagementTable';
 
+// Force dynamic rendering for admin routes to prevent static generation issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export const metadata: Metadata = {
   title: 'User Role Management - Admin Dashboard',
   description: 'Manage user admin roles and permissions',

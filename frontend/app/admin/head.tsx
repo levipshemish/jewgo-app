@@ -1,18 +1,23 @@
-import { generateSignedCSRFToken } from '@/lib/admin/csrf';
-import { getAdminUser } from '@/lib/admin/auth';
+import { getAdminUser } from '@/lib/server/admin-auth';
 import { sanitizeHtml } from '@/utils/htmlSanitizer';
 
+// Force dynamic rendering for admin routes to prevent static generation issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export default async function AdminHead() {
-  // Get admin user for CSRF token generation
   let signedToken = '';
+  
   try {
     const adminUser = await getAdminUser();
     if (adminUser) {
-      signedToken = generateSignedCSRFToken(adminUser.id);
+      // Generate a simple CSRF token for admin pages
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2);
+      signedToken = `admin_${timestamp}_${random}`;
     }
   } catch (e) {
-    // Silent failure - UI will handle missing token
-    console.error('[ADMIN] CSRF token generation failed:', e);
+    console.error('[ADMIN] Error generating CSRF token:', e);
   }
 
   return (

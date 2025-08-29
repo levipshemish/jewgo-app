@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
-import { getAdminUser } from '@/lib/admin/auth';
+import { getAdminUser } from '@/lib/server/admin-auth';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
+
+// Force dynamic rendering for admin routes to prevent static generation issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 interface AdminLayoutProps {
   children: ReactNode;

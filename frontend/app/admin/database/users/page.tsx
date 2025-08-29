@@ -1,3 +1,7 @@
+// Force dynamic rendering for admin routes to prevent static generation issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import AdvancedUserManagement from '@/components/admin/AdvancedUserManagement';
 import { AdminDatabaseService } from '@/lib/admin/database';
 import { mapUsersToApiResponse } from '@/lib/admin/dto/user';

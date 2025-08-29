@@ -1,5 +1,4 @@
 import ipaddr from 'ipaddr.js';
-import { createClient } from '@supabase/supabase-js';
 import { type TransformedUser, type AuthProvider } from '@/lib/types/supabase-auth';
 
 // User type definition - moved here to avoid circular dependencies
@@ -25,6 +24,13 @@ interface User {
  * across the JewGo authentication system.
  */
 
+// Runtime check to prevent Supabase client import in Edge Runtime
+let supabaseClient: any = null;
+if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
+  // Only import Supabase client in Node.js runtime
+  const { createClient } = require('@supabase/supabase-js');
+  supabaseClient = createClient;
+}
 
 // Re-export client-safe functions and types from auth-utils-client
 export { 
@@ -468,7 +474,7 @@ export function validateSupabaseFeatureSupport(): boolean {
     }
 
     // Create a lightweight test client to check feature availability
-    const testClient = createClient(supabaseUrl, supabaseAnonKey, {
+    const testClient = supabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false

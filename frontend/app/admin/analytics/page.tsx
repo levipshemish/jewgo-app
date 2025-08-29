@@ -1,6 +1,10 @@
-import { getAdminUser } from '@/lib/admin/auth';
-import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { redirect } from 'next/navigation';
+import { getAdminUser } from '@/lib/server/admin-auth';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
+
+// Force dynamic rendering for admin routes to prevent static generation issues
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function AdminAnalyticsPage() {
   try {
