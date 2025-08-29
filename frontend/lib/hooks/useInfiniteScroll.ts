@@ -46,7 +46,7 @@ export function useInfiniteScroll(
     // Prevent rapid-fire loading with a minimum delay
     const now = Date.now();
     const timeSinceLastLoad = now - lastLoadTimeRef.current;
-    if (timeSinceLastLoad < 500) { // Minimum 500ms between loads
+    if (timeSinceLastLoad < 300) { // Minimum 300ms between loads
       if (process.env.NODE_ENV === 'development') {
         console.log('Infinite scroll: Load more blocked - too soon', { timeSinceLastLoad });
       }

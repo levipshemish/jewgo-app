@@ -97,7 +97,7 @@ export function EateryPageClient() {
   const mobileOptimizedItemsPerPage = useMemo(() => {
     // Calculate items per page to ensure exactly 4 rows on every screen size
     if (isMobile) {
-      return 8; // 4 rows × 2 columns = 8 items
+      return 10; // Slightly higher to reduce API round-trips on mobile
     } else {
       // For desktop, calculate based on viewport width to ensure 4 rows
       let columnsPerRow = 3; // Default fallback
@@ -352,8 +352,8 @@ export function EateryPageClient() {
       }
     },
     { 
-      threshold: isMobileView ? 0.2 : 0.3,
-      rootMargin: isMobileView ? '100px' : '200px',
+      threshold: isMobileView ? 0.05 : 0.2,
+      rootMargin: isMobileView ? '300px' : '300px',
       disabled: loading || !isMobileView
     }
   );

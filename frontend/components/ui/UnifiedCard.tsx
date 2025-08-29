@@ -239,8 +239,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
                 // eslint-disable-next-line no-console
                 console.error(`Failed to load image: ${heroImageUrl}`);
               }}
-              sizes="180px"
-              unoptimized={heroImageUrl.includes('cloudinary.com')}
+              sizes="(max-width: 768px) 45vw, 200px"
+              unoptimized={false}
               priority={priority}
             />
           )}
