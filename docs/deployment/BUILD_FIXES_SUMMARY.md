@@ -76,7 +76,7 @@ const isBuildTime = process.env.NODE_ENV === 'production' && (isVercel || isCI);
 
 if (isBuildTime && !hasDatabaseUrl) {
   console.log('⚠️  Build time detected without DATABASE_URL - using temporary connection');
-  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp';
+  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp'; // TEMP: Remove by 2025-12-31
 }
 ```
 

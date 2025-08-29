@@ -185,6 +185,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const limit = searchParams.get('limit') || '50';
     const offset = searchParams.get('offset') || '0';
+    const page = searchParams.get('page') || '1';
     
     // Build query parameters
     const queryParams = new URLSearchParams({
@@ -196,8 +197,12 @@ export async function GET(request: NextRequest) {
       queryParams.append('status', status);
     }
     
+    // Use the correct backend URL - fallback to production URL if not set
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const fullBackendUrl = `${backendUrl}/api/restaurants?${queryParams}`;
+    
     // Fetch from backend API
-    const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants?${queryParams}`, {
+    const backendResponse = await fetch(fullBackendUrl, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -207,18 +212,31 @@ export async function GET(request: NextRequest) {
       throw new Error(`Backend API error: ${backendResponse.status}`);
     }
     
-    const data = await backendResponse.json();
+    const backendData = await backendResponse.json();
     
-    return NextResponse.json({
-      success: true,
-      data
-    });
+    // Transform the backend response to match frontend expectations
+    const transformedResponse = {
+      success: backendData.success,
+      restaurants: backendData.restaurants || [],
+      totalPages: Math.ceil((backendData.total || 0) / parseInt(limit)),
+      totalRestaurants: backendData.total || 0,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      message: backendData.message
+    };
+    
+    return NextResponse.json(transformedResponse);
     
   } catch (error) {
     console.error('Error fetching restaurants:', error);
     
     return NextResponse.json({
       success: false,
+      restaurants: [],
+      totalPages: 0,
+      totalRestaurants: 0,
+      page: 1,
+      limit: 50,
       message: 'Failed to fetch restaurants'
     }, { status: 500 });
   }
@@ -229,7 +247,8 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   try {
     // Fetch existing restaurants
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/restaurants?limit=1000`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const response = await fetch(`${backendUrl}/api/restaurants?limit=1000`, {
       headers: {
         'Content-Type': 'application/json',
       },

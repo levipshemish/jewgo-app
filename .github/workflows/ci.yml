@@ -222,9 +222,9 @@ jobs:
       run: |
         echo "🔍 Validating backend scripts for syntax and dependencies..."
         
-        # Install missing Python dependencies for script validation
+        # Install Python dependencies for script validation
         echo "📦 Installing script dependencies..."
-        pip install requests click python-dotenv python-dateutil pyyaml
+        pip install requests click python-dotenv python-dateutil pyyaml psycopg2-binary sqlalchemy
         
         # Python script validation
         echo "📝 Validating Python scripts..."

@@ -11,7 +11,7 @@ import { MarketplaceSearchParams, MarketplaceSearchResponse } from '@/lib/types/
  * - Enhanced Jewish calendar awareness
  */
 
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
 
 // Jewish holiday and community-specific categories
 const JEWISH_COMMUNITY_CATEGORIES = [

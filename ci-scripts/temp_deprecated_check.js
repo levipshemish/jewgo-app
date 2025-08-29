@@ -185,8 +185,8 @@ if (warnings > 0) {
   console.log('');
   console.log('💡 To fix warnings:');
   console.log('  - Add dates to TEMP/DEPRECATED comments');
-  console.log('  - Format: // TEMP: Remove by 2024-12-31');
-  console.log('  - Format: // DEPRECATED: Remove by 2025-01-15');
+  console.log('  - Format: // TEMP: Remove by 2025-12-31');
+  console.log('  - Format: // DEPRECATED: Remove by 2026-01-15');
 }
 
 // Exit with appropriate code

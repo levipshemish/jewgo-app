@@ -30,8 +30,7 @@ console.log(`Has DATABASE_URL: ${hasDatabaseUrl}`);
 if (isBuildTime && !hasDatabaseUrl) {
   console.log('⚠️  Build time detected without DATABASE_URL - using temporary connection');
   
-  // Set a temporary DATABASE_URL for Prisma generation
-  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp';
+  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp'; // TEMP: Remove by 2025-12-31
   
   console.log('✅ Temporary DATABASE_URL set for Prisma generation');
 }

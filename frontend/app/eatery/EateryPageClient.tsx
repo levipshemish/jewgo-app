@@ -22,6 +22,7 @@ import { SafeLoader } from '@/components/ui/SafeLoader';
 
 import { Restaurant } from '@/lib/types/restaurant';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
+import { fetchRestaurants, type RestaurantsResponse } from '@/lib/api/restaurants';
 
 // Main client component
 export function EateryPageClient() {
@@ -95,32 +96,32 @@ export function EateryPageClient() {
   // Scroll detection for header behavior
   const { isScrolling } = useScrollDetection();
 
-  // Fetch restaurants based on filters and location
-  const fetchRestaurants = useCallback(async (filters: Filters, location?: { latitude: number; longitude: number }) => {
+  // Fetch restaurants using the safe API client
+  const fetchRestaurantsData = useCallback(async (filters: Filters, location?: { latitude: number; longitude: number }) => {
     try {
       setLoading(true);
       setError(null);
 
-      const searchParams = toSearchParams(filters);
-      if (location) {
-        searchParams.set('lat', location.latitude.toString());
-        searchParams.set('lng', location.longitude.toString());
-      }
-
-      const response = await fetch(`/api/restaurants?${searchParams.toString()}`);
+      const data = await fetchRestaurants({
+        page: currentPage,
+        limit: 50,
+        filters,
+        location,
+      });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      // Add debug logging
+      console.log('API Response:', data);
       
       if (data.success) {
-        let sortedRestaurants = data.restaurants;
+        let sortedRestaurants = data.restaurants || [];
+        
+        // Add debug logging for restaurants array
+        console.log('Restaurants array:', sortedRestaurants);
+        console.log('Restaurants length:', sortedRestaurants.length);
         
         // Sort by distance if location is available
-        if (location && data.restaurants.length > 0) {
-          sortedRestaurants = sortRestaurantsByDistance(data.restaurants, location);
+        if (location && sortedRestaurants.length > 0) {
+          sortedRestaurants = sortRestaurantsByDistance(sortedRestaurants, location);
         }
         
         setRestaurants(sortedRestaurants);
@@ -133,16 +134,25 @@ export function EateryPageClient() {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMessage);
       appLogger.error('Failed to fetch restaurants', { error: errorMessage, filters });
+      
+      // Add debug logging for errors
+      console.error('Fetch restaurants error:', err);
+      console.error('Error details:', {
+        message: errorMessage,
+        filters,
+        currentPage,
+        location
+      });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   // Fetch restaurants when filters or location changes
   useEffect(() => {
     const filters = activeFilters as Filters;
-    fetchRestaurants(filters, userLocation || undefined);
-  }, [filtersKey, userLocation, fetchRestaurants]);
+    fetchRestaurantsData(filters, userLocation || undefined);
+  }, [filtersKey, userLocation, fetchRestaurantsData]);
 
   // Request location on mount if not already available
   useEffect(() => {
@@ -210,7 +220,7 @@ export function EateryPageClient() {
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">Loading is taking longer than expected</h2>
                 <p className="text-gray-600 mb-4">Try refreshing the page or check your connection</p>
                 <button 
-                  onClick={() => fetchRestaurants(activeFilters as Filters, userLocation || undefined)}
+                  onClick={() => fetchRestaurantsData(activeFilters as Filters, userLocation || undefined)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Retry
@@ -239,7 +249,7 @@ export function EateryPageClient() {
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Something went wrong</h2>
             <p className="text-gray-600 mb-4">{error}</p>
             <button 
-              onClick={() => fetchRestaurants(activeFilters as Filters, userLocation || undefined)}
+              onClick={() => fetchRestaurantsData(activeFilters as Filters, userLocation || undefined)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Try Again

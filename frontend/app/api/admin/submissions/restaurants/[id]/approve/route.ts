@@ -21,7 +21,7 @@ export async function POST(
     }
 
     const restaurantId = id;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
 
     if (!backendUrl) {
       return NextResponse.json(

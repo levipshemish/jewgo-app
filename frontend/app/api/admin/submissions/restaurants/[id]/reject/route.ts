@@ -24,7 +24,7 @@ export async function POST(
     const body = await request.json();
     const { reason } = body;
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
 
     if (!backendUrl) {
       return NextResponse.json(
