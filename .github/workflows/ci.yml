@@ -222,7 +222,7 @@ jobs:
         
         # Validate script dependencies
         echo "📦 Checking script dependencies..."
-        python -c "import requests, psycopg2, sqlalchemy, click, python_dotenv, dateutil, yaml" || (echo "❌ Script dependencies check failed" && exit 1)
+        python -c "import requests, psycopg2, sqlalchemy, click, dotenv, dateutil, yaml" || (echo "❌ Script dependencies check failed" && exit 1)
         
         echo "✅ All backend scripts validated successfully"
         
