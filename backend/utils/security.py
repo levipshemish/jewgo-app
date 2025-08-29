@@ -34,7 +34,15 @@ def verify_admin_token(token: str) -> bool:
 
 
 def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
-    """Verify JWT token and return payload."""
+    """Verify JWT token and return payload (DEPRECATED - use Supabase auth instead)."""
+    # Check if legacy auth is enabled
+    enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
+    if not enable_legacy:
+        logger.warning("DEPRECATED: Legacy JWT verification disabled - use Supabase auth")
+        return None
+    
+    logger.warning("DEPRECATED: Using legacy HS256 JWT verification - migrate to Supabase auth")
+    
     try:
         # Import JWT handling here to avoid circular imports
         import jwt
@@ -87,6 +95,17 @@ def require_admin_auth(f):
                         from flask import g
 
                         g.admin_role = role_data
+                        
+                        # Also populate g.user with user info and admin role
+                        from utils.supabase_auth import verify_supabase_token
+                        user_info = verify_supabase_token(token)
+                        if user_info:
+                            user_info.update({
+                                'admin_role': role_data.get('role'),
+                                'admin_level': role_data.get('level', 0)
+                            })
+                            g.user = user_info
+                        
                         # Log successful Supabase admin authentication
                         logger.info(
                             "AUTH_SUCCESS",
@@ -112,10 +131,10 @@ def require_admin_auth(f):
                 os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
             )
             if enable_legacy:
-                # Check for AdminBearer header for legacy auth
-                admin_header = request.headers.get("AdminBearer")
-                if admin_header and admin_header == token:
-                    if verify_admin_token(token):
+                # Check for AdminBearer header pattern: Authorization: AdminBearer <token>
+                if auth_header.startswith("AdminBearer "):
+                    admin_token = auth_header.split(" ")[1]
+                    if verify_admin_token(admin_token):
                         logger.info(
                             "AUTH_LEGACY_SUCCESS", extra={"endpoint": request.endpoint}
                         )
@@ -147,10 +166,18 @@ def require_admin_auth(f):
 
 
 def require_user_auth(f):
-    """Decorator to require user authentication via JWT."""
+    """Decorator to require user authentication via JWT (DEPRECATED - use Supabase auth instead)."""
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Check if legacy auth is enabled
+        enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
+        if not enable_legacy:
+            logger.warning("DEPRECATED: Legacy user auth disabled - use Supabase auth")
+            return jsonify({"error": "legacy auth disabled"}), 401
+        
+        logger.warning("DEPRECATED: Using legacy user auth - migrate to Supabase auth")
+        
         try:
             # Check for Authorization header
             auth_header = request.headers.get("Authorization")
@@ -194,7 +221,7 @@ def require_user_auth(f):
 
 
 def optional_user_auth(f):
-    """Decorator for optional user authentication via JWT."""
+    """Decorator for optional user authentication via JWT (DEPRECATED - use Supabase auth instead)."""
 
     @wraps(f)
     def decorated_function(*args, **kwargs):

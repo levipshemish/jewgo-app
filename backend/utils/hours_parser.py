@@ -17,7 +17,7 @@ UNICODE_SPACES = [
     "\u00a0",  # NO-BREAK SPACE
     "\u2007",  # FIGURE SPACE
     "\u2009",  # THIN SPACE
-    "\u202",  # NARROW NO-BREAK SPACE
+    "\u202f",  # NARROW NO-BREAK SPACE
     "\u200a",  # HAIR SPACE
 ]
 DASHES = ["\u2013", "\u2014", "\u2212"]  # en dash, em dash, minus

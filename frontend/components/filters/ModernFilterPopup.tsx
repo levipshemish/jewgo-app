@@ -189,7 +189,7 @@ export function ModernFilterPopup({
               <select
                 value={draftFilters.agency || ''}
                 onChange={(e) => setDraftFilter('agency', e.target.value || undefined)}
-                className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
                 <option value="">Select certifying agency</option>
@@ -209,7 +209,7 @@ export function ModernFilterPopup({
               <select
                 value={draftFilters.category || ''}
                 onChange={(e) => setDraftFilter('category', e.target.value || undefined)}
-                className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
                 <option value="">Select kosher type</option>
@@ -232,7 +232,7 @@ export function ModernFilterPopup({
                   const value = e.target.value;
                   setDraftFilter('priceRange', value ? [parseInt(value), parseInt(value) + 1] : undefined);
                 }}
-                className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
                 disabled={filterOptionsLoading}
               >
                 <option value="">Select price range</option>
@@ -254,7 +254,7 @@ export function ModernFilterPopup({
               <select
                 value={draftFilters.ratingMin || ''}
                 onChange={(e) => setDraftFilter('ratingMin', e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full bg-white border border-gray-300 text-black rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                className="w-full bg-black text-white border border-gray-600 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
               >
                 <option value="">Select minimum rating</option>
                 <option value="3">3+ Stars</option>
@@ -303,21 +303,29 @@ export function ModernFilterPopup({
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
           }
           
-          /* Select dropdown styling */
-          select {
+          /* Modern select dropdown styling */
+          .modern-select {
             background-color: black !important;
             color: white !important;
             border-radius: 9999px !important;
             border: 1px solid #4b5563 !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 0.75rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.5em 1.5em !important;
+            padding-right: 2.5rem !important;
           }
           
-          select:focus {
+          .modern-select:focus {
             outline: none !important;
             border-color: #16a34a !important;
             box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2) !important;
           }
           
-          select option {
+          .modern-select option {
             background-color: black !important;
             color: white !important;
             padding: 8px 12px !important;
@@ -325,21 +333,14 @@ export function ModernFilterPopup({
             margin: 2px 0 !important;
           }
           
-          select option:hover {
+          .modern-select option:hover {
             background-color: #16a34a !important;
             color: white !important;
           }
           
-          select option:checked {
+          .modern-select option:checked {
             background-color: #16a34a !important;
             color: white !important;
-          }
-          
-          /* Custom dropdown arrow */
-          select {
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            appearance: none !important;
           }
         `}</style>
       </div>

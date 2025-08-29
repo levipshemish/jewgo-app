@@ -140,11 +140,7 @@ class Order(Base):
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
     def __repr__(self):
-        return "<Order(
-            id={self.id},
-            order_number='{self.order_number}',
-            status='{self.status}'
-        )>"
+        return f"<Order(id={self.id}, order_number='{self.order_number}', status='{self.status}')>"
 class OrderItem(Base):
     """OrderItem model for individual items in an order.
     This model represents individual menu items that are part of a customer order.

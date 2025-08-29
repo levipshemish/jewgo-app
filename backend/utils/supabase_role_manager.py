@@ -27,22 +27,21 @@ class SupabaseRoleManager:
         if not self.supabase_url or not self.supabase_anon_key:
             raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
 
-    def get_user_admin_role(self, user_token: str) -> Optional[Dict[str, Any]]:
+    def get_user_admin_role(self, verified_sub: str, user_token: str) -> Optional[Dict[str, Any]]:
         """
         Get admin role for user from verified JWT token.
         Args:
-            user_token: Verified Supabase JWT token
+            verified_sub: Verified user ID from JWT sub claim
+            user_token: Verified Supabase JWT token for RPC call
         Returns:
             Dict with role data or None if no admin role or system failure
         """
         try:
-            # Extract user_id from verified token
-            user_id = self._parse_sub_from_verified_token(user_token)
-            if not user_id:
-                logger.warning("Could not extract user_id from token")
+            if not verified_sub:
+                logger.warning("No verified user ID provided")
                 return None
             # Get role with strict singleflight control
-            return self._call_supabase_rpc_with_strict_locking(user_token, user_id)
+            return self._call_supabase_rpc_with_strict_locking(user_token, verified_sub)
         except Exception as e:
             logger.error(f"Error getting admin role: {e}")
             return None

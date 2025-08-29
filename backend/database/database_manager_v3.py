@@ -403,11 +403,7 @@ class EnhancedDatabaseManager:
                 logger.info(
                     "Fixed database URL format from postgres:// to postgresql://"
                 )
-            # Ensure SSL for all non-local Postgres connections (
-                helps avoid TLS issues on hosts like Neon,
-                RDS,
-                etc.
-            )
+            # Ensure SSL for all non-local Postgres connections (helps avoid TLS issues on hosts like Neon, RDS, etc.)
             try:
                 parsed = urlparse(self.database_url)
                 hostname = (parsed.hostname or "").lower()
@@ -2870,7 +2866,7 @@ class EnhancedDatabaseManager:
                     if filters["role"] == "admin":
                         query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdminot n)
+                        query = query.filter(User.isSuperAdmin == False)
             # Apply pagination
             users = (
                 query.order_by(User.createdAt.desc()).offset(offset).limit(limit).all()
@@ -2915,7 +2911,7 @@ class EnhancedDatabaseManager:
                     if filters["role"] == "admin":
                         query = query.filter(User.isSuperAdmin)
                     elif filters["role"] == "user":
-                        query = query.filter(User.isSuperAdminot n)
+                        query = query.filter(User.isSuperAdmin == False)
             return query.count()
         except Exception as e:
             logger.exception("Error getting users count", error=str(e))
