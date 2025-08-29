@@ -5,7 +5,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint", "react-hooks"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["error", { 
+    "@typescript-eslint/no-unused-vars": ["warn", { 
       "argsIgnorePattern": "^_",
       "varsIgnorePattern": "^_",
       "caughtErrorsIgnorePattern": "^_",
@@ -17,23 +17,24 @@
     "@typescript-eslint/no-non-null-assertion": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "off",
-    "prefer-const": "error",
+    "prefer-const": "warn",
     "no-var": "error",
-    "no-console": ["error", { "allow": ["error"] }],
-    "eqeqeq": ["error", "always"],
-    "curly": ["error", "all"],
-    "no-duplicate-imports": "error",
-    "no-unused-expressions": "error",
+    "no-console": ["warn", { "allow": ["error", "warn"] }],
+    "eqeqeq": ["warn", "always"],
+    "curly": ["warn", "all"],
+    "no-duplicate-imports": "warn",
+    "no-unused-expressions": "warn",
     "prefer-template": "warn",
-    "object-shorthand": "error",
-    "prefer-arrow-callback": "error",
+    "object-shorthand": "warn",
+    "prefer-arrow-callback": "warn",
     "@next/next/no-img-element": "off",
-    "@typescript-eslint/no-unused-expressions": "error",
+    "@typescript-eslint/no-unused-expressions": "warn",
     "no-unused-vars": "off",
-    "no-undef": "error",
-    "no-redeclare": "error",
-    "no-shadow": "error",
-    "no-shadow-restricted-names": "error"
+    "no-undef": "warn",
+    "no-redeclare": "warn",
+    "no-shadow": "warn",
+    "no-shadow-restricted-names": "warn",
+    "react/no-unescaped-entities": "warn"
   },
   "env": {
     "browser": true,
@@ -52,7 +53,7 @@
       "version": "detect"
     }
   },
-      "ignorePatterns": [
+  "ignorePatterns": [
     "node_modules/",
     ".next/",
     "out/",

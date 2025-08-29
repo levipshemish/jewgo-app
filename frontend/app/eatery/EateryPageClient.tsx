@@ -185,6 +185,16 @@ export function EateryPageClient() {
     { disabled: currentPage >= totalPages }
   );
 
+  // Consistent responsive styles - moved before conditional returns
+  const responsiveStyles = useMemo(() => {
+    const isMobileView = isMobile || isMobileDevice;
+    return {
+      container: {
+        minHeight: isMobileView ? viewportHeight : 'auto',
+      },
+    };
+  }, [isMobile, isMobileDevice, viewportHeight]);
+
   // Render loading state with SafeLoader
   if (loading && restaurants.length === 0) {
     return (
@@ -239,16 +249,6 @@ export function EateryPageClient() {
       </div>
     );
   }
-
-  // Consistent responsive styles
-  const responsiveStyles = useMemo(() => {
-    const isMobileView = isMobile || isMobileDevice;
-    return {
-      container: {
-        minHeight: isMobileView ? viewportHeight : 'auto',
-      },
-    };
-  }, [isMobile, isMobileDevice, viewportHeight]);
 
   return (
     <div 
