@@ -18,7 +18,7 @@ Audience: agents. For contributor workflow, see `docs/AGENTS.md`.
 * **Database**: G‑DB‑1 migrations‑only; G‑DB‑2 rollback notes; G‑DB‑3 backward‑compat.
 * **Docs/Process**: G‑DOCS‑1 docs in same patch; G‑DOCS‑2 Context7 MCP; G‑DOCS‑3 ADRs for arch.
 * **CI/CD**: G‑CI‑1 required checks; G‑CI‑2 lockfile drift; G‑CI‑3 global timeouts; G‑CI‑4 artifacts & reports.
-* **Workflow**: G‑WF‑1 plan; G‑WF‑2 preamble; G‑WF‑3 search; G‑WF‑4 surgical patch; G‑WF‑5 quick validate; G‑WF‑6 docs update; G‑WF‑7 exit checklist.
+* **Workflow**: G‑WF‑1 plan; G‑WF‑2 preamble; G‑WF‑3 search; G‑WF‑4 surgical patch; G‑WF‑5 quick validate; G‑WF‑6 docs update; G‑WF‑7 exit checklist; G‑WF‑8 TypeScript errors.
 * **Logging/Obs**: G‑LOG‑1 JSON logs; G‑LOG‑2 redaction middleware; G‑OBS‑1 health/ready; G‑OBS‑2 error tracking.
 
 ---
@@ -79,9 +79,10 @@ Invariants: tests live in `frontend/__tests__/` and `backend/tests/`; no generat
 * **G‑WF‑2 Preamble** — 1–2 lines stating intent and expected output before running any command.
 * **G‑WF‑3 Search** — Use `rg` to target; preview with `sed -n '1,250p'`. Avoid big dumps.
 * **G‑WF‑4 Surgical Patch** — Use `apply_patch` with minimal diffs; one logical change per patch; comment non‑obvious code.
-* **G‑WF‑5 Quick Validate** — Run only validations that respect **G‑OPS‑1** (e.g., `pytest -q`). If slower, handoff to user.
+* **G‑WF‑5 Quick Validate** — Run only validations that respect **G‑OPS‑1** (e.g., `pytest -q`, `npx tsc --noEmit`). If slower, handoff to user.
 * **G‑WF‑6 Doc Update** — Update `docs/` (and env examples if shape changed) **in the same patch** (see **G‑DOCS‑1**).
 * **G‑WF‑7 Exit Checklist** — Confirm: path allowlist (G‑OPS‑4), no secrets (G‑SEC‑1), ≤90s (G‑OPS‑1), docs updated (G‑DOCS‑1), migrations + rollback when schema touched (G‑DB‑1/2).
+* **G‑WF‑8 TypeScript Errors <a id="G-WF-8"></a>** — Use `npx tsc --noEmit` for fast TypeScript error checking. Fix all type errors before proceeding. For complex interface changes, update mapping functions and mock data together.
 
 ---
 
@@ -191,6 +192,11 @@ jobs:
 
   ```json
   {"command":["bash","-lc","cd backend && pytest" ]}
+  ```
+* **Check TypeScript errors** (G‑WF‑8):
+
+  ```json
+  {"command":["bash","-lc","cd frontend && npx tsc --noEmit" ]}
   ```
 * **Run backend tests with coverage** (ensure ≤90s or handoff):
 

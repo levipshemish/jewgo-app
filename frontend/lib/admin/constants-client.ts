@@ -43,6 +43,7 @@ export const ADMIN_PERMISSIONS = {
   ROLE_VIEW: 'role:view',
   ROLE_EDIT: 'role:edit',
   ROLE_DELETE: 'role:delete',
+  ROLE_MANAGE: 'role:manage',
   
   // Synagogue management
   SYNAGOGUE_VIEW: 'synagogue:view',
@@ -91,7 +92,10 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
     ADMIN_PERMISSIONS.BULK_OPERATIONS,
     ADMIN_PERMISSIONS.DATA_EXPORT,
   ],
-  super_admin: Object.values(ADMIN_PERMISSIONS),
+  super_admin: [
+    ...Object.values(ADMIN_PERMISSIONS),
+    ADMIN_PERMISSIONS.ROLE_MANAGE,
+  ],
 };
 
 // Role hierarchy constants (client-safe)

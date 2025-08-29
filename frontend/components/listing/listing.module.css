@@ -5,6 +5,7 @@
   box-sizing: border-box !important;
 }
 
+/* Use higher specificity to override global styles */
 .listingContainer {
   /* Ensure our styles take precedence */
   all: unset !important;
@@ -14,6 +15,10 @@
   max-width: 24rem !important;
   margin: 0 auto !important;
   padding: 0 1rem !important;
+  /* Override any global container styles */
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
 }
 
 @media (min-width: 640px) {
@@ -37,6 +42,44 @@
 
 @media (min-width: 1280px) {
   .listingContainer {
+    padding: 0 5rem !important;
+  }
+}
+
+/* Override any global styles that might affect the listing page wrapper */
+.listingPageWrapper .listingContainer {
+  /* Ensure our container styles take precedence over any global styles */
+  max-width: 24rem !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .listingPageWrapper .listingContainer {
+    max-width: none !important;
+    padding: 0 2rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .listingPageWrapper .listingContainer {
+    padding: 0 3rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .listingPageWrapper .listingContainer {
+    padding: 0 4rem !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .listingPageWrapper .listingContainer {
     padding: 0 5rem !important;
   }
 }

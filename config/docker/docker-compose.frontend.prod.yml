@@ -26,9 +26,12 @@ services:
       # Google Maps API
       - NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
       
-      # Admin Configuration
-      - NEXT_PUBLIC_ADMIN_EMAIL=${NEXT_PUBLIC_ADMIN_EMAIL:-admin@jewgo.com}
-      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      # Admin Authentication (New System)
+      # Uses Supabase JWT-based roles - no additional env vars needed
+      
+      # DEPRECATED: Legacy admin authentication
+      # - NEXT_PUBLIC_ADMIN_EMAIL=${NEXT_PUBLIC_ADMIN_EMAIL:-admin@jewgo.com}
+      # - ADMIN_TOKEN=${ADMIN_TOKEN}
       
       # Additional production variables
       - NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}

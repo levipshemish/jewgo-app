@@ -17,7 +17,8 @@ import {
   ChevronRight,
   LogOut,
   User,
-  BarChart3
+  BarChart3,
+  Shield
 } from 'lucide-react';
 import { AdminUser } from '@/lib/admin/types';
 import { hasPermission } from '@/lib/admin/utils-client';
@@ -114,6 +115,19 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
           href: '/admin/database/kosher-places', 
           icon: Star,
           permission: ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW
+        }
+      ]
+    },
+    {
+      section: 'security',
+      title: 'Security',
+      icon: Shield,
+      items: [
+        { 
+          title: 'Role Management', 
+          href: '/admin/security/roles', 
+          icon: Users,
+          permission: ADMIN_PERMISSIONS.ROLE_MANAGE
         }
       ]
     },

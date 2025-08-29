@@ -719,14 +719,9 @@ def create_app(config_class=None):
                     ),
                     400,
                 )
-        # Auth for create
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid authorization header"}), 401
-        token = auth_header[7:]
-        sec = SecurityManager()
-        if not sec.validate_admin_token(token):
-            return jsonify({"error": "Invalid or expired token"}), 401
+        # Auth for create - use role-based authentication
+        from utils.security import require_admin
+        return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
         flag = FeatureFlag.from_dict(data)
         feature_flag_manager.add_flag(flag)
         return jsonify({"message": "Feature flag created successfully"}), 201
@@ -746,14 +741,9 @@ def create_app(config_class=None):
                 ),
                 200,
             )
-        # POST update or DELETE remove require admin auth
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid authorization header"}), 401
-        token = auth_header[7:]
-        sec = SecurityManager()
-        if not sec.validate_admin_token(token):
-            return jsonify({"error": "Invalid or expired token"}), 401
+        # POST update or DELETE remove require admin auth - use role-based authentication
+        from utils.security import require_admin
+        return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
         if request.method == "POST":
             data = request.get_json() or {}
             updated = feature_flag_manager.update_flag(flag_name, data)
@@ -1847,13 +1837,9 @@ def create_app(config_class=None):
         """Temporary admin endpoint to run marketplace migration."""
         try:
             # Check for admin token
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return jsonify({"error": "Unauthorized"}), 401
-            token = auth_header.split(" ")[1]
-            admin_token = os.getenv("ADMIN_TOKEN")
-            if not admin_token or token != admin_token:
-                return jsonify({"error": "Invalid admin token"}), 401
+            # Use role-based authentication instead of token-based
+            from utils.security import require_admin
+            return require_admin()(lambda: None)()  # This will handle auth and return appropriate response
             # Import and run the migration
             from database.migrations.create_marketplace_unified import run_migration
             success = run_migration()

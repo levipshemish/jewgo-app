@@ -759,18 +759,20 @@ export function EateryPageClient() {
           </p>
         </div>
       ) : (
-        <div 
-          className={`restaurant-grid ${isHydrated && isMobileView ? 'infinite-scroll' : ''}`}
-          role="grid"
-          aria-label="Restaurant listings"
-          style={{ 
-            contain: 'layout style paint',
-            willChange: 'auto',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden',
-            perspective: '1000px'
-          }}
-        >
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div 
+              className={`restaurant-grid ${isHydrated && isMobileView ? 'infinite-scroll' : ''}`}
+              role="grid"
+              aria-label="Restaurant listings"
+              style={{ 
+                contain: 'layout style paint',
+                willChange: 'auto',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                perspective: '1000px'
+              }}
+            >
           {restaurantsWithDistance.map((restaurant, index) => (
             <div 
               key={`restaurant-${restaurant.id}-${index}`} 
@@ -815,20 +817,26 @@ export function EateryPageClient() {
               </div>
             ))
           )}
+            </div>
+          </div>
         </div>
       )}
       
       {isHydrated && !isMobile && totalPages > 1 && (
-        <div className="mt-4 mb-8" role="navigation" aria-label="Pagination">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            isLoading={loading}
-            className="mb-2"
-          />
-          <div className="text-center text-sm text-gray-600">
-            Showing {restaurantsWithDistance.length} of {restaurants.length * totalPages} restaurants
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="mt-4 mb-8" role="navigation" aria-label="Pagination">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                isLoading={loading}
+                className="mb-2"
+              />
+              <div className="text-center text-sm text-gray-600">
+                Showing {restaurantsWithDistance.length} of {restaurants.length * totalPages} restaurants
+              </div>
+            </div>
           </div>
         </div>
       )}

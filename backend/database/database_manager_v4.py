@@ -1,5 +1,6 @@
 import ast
 import json
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from utils.error_handler import (
@@ -90,6 +91,18 @@ class DatabaseManager:
         self.review_repo = ReviewRepository(self.connection_manager)
         self.user_repo = UserRepository(self.connection_manager)
         self.image_repo = ImageRepository(self.connection_manager)
+        
+        # Initialize Supabase configuration for role management
+        self.supabase_url = os.getenv('SUPABASE_URL')
+        self.supabase_service_role_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if not self.supabase_url or not self.supabase_service_role_key:
+            logger.warning("Supabase configuration not found. Role management features will be disabled.")
+            self.supabase_enabled = False
+        else:
+            self.supabase_enabled = True
+            logger.info("Supabase configuration loaded for role management")
+        
         logger.info("Database manager v4 initialized with repository pattern")
 
     def connect(self) -> bool:
@@ -401,6 +414,266 @@ class DatabaseManager:
     def get_image_statistics(self) -> Dict[str, Any]:
         """Get image statistics."""
         return self.image_repo.get_image_statistics()
+
+    # Role Management Methods
+    @handle_database_operation("Supabase RPC call")
+    def call_supabase_rpc(self, function_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Call a Supabase RPC function with service role authentication.
+        
+        Args:
+            function_name: Name of the RPC function to call
+            params: Parameters to pass to the RPC function
+            
+        Returns:
+            Dict containing the RPC response
+        """
+        if not self.supabase_enabled:
+            logger.error("Supabase not configured for role management")
+            raise ExternalServiceError(
+                message="Role management service unavailable",
+                service="supabase",
+                details={"reason": "Supabase not configured"}
+            )
+        
+        try:
+            import requests
+            
+            # Construct the RPC URL
+            rpc_url = f"{self.supabase_url}/rest/v1/rpc/{function_name}"
+            
+            # Set up headers with service role key
+            headers = {
+                'Authorization': f'Bearer {self.supabase_service_role_key}',
+                'Content-Type': 'application/json',
+                'apikey': self.supabase_service_role_key
+            }
+            
+            # Make the RPC call
+            response = requests.post(
+                rpc_url,
+                json=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Supabase RPC call successful", function=function_name)
+                return result
+            else:
+                logger.error(
+                    f"Supabase RPC call failed",
+                    function=function_name,
+                    status_code=response.status_code,
+                    response=response.text
+                )
+                return {"error": f"RPC call failed: {response.status_code}"}
+                
+        except Exception as e:
+            logger.exception(f"Error calling Supabase RPC", function=function_name, error=str(e))
+            return {"error": f"RPC call error: {str(e)}"}
+
+    @handle_database_operation("assign admin role")
+    def assign_admin_role(
+        self,
+        target_user_id: str,
+        role: str,
+        assigned_by_user_id: str,
+        expires_at: Optional[str] = None,
+        notes: Optional[str] = None
+    ) -> bool:
+        """Assign an admin role to a user via Supabase RPC.
+        
+        Args:
+            target_user_id: ID of the user to assign role to
+            role: Role to assign
+            assigned_by_user_id: ID of the admin user making the assignment
+            expires_at: Optional expiration date
+            notes: Optional notes about the assignment
+            
+        Returns:
+            bool: True if role was assigned successfully
+        """
+        try:
+            params = {
+                'p_user_id': target_user_id,
+                'p_role': role,
+                'p_assigned_by': assigned_by_user_id
+            }
+            
+            if expires_at:
+                params['p_expires_at'] = expires_at
+            if notes:
+                params['p_notes'] = notes
+            
+            result = self.call_supabase_rpc('assign_admin_role', params)
+            
+            if 'error' in result:
+                logger.error("Failed to assign admin role", error=result['error'])
+                return False
+            
+            logger.info("Admin role assigned successfully", target_user_id=target_user_id, role=role)
+            return True
+            
+        except Exception as e:
+            logger.exception("Error assigning admin role", error=str(e))
+            return False
+
+    @handle_database_operation("remove admin role")
+    def remove_admin_role(
+        self,
+        target_user_id: str,
+        role: str,
+        removed_by_user_id: str
+    ) -> bool:
+        """Remove an admin role from a user via Supabase RPC.
+        
+        Args:
+            target_user_id: ID of the user to remove role from
+            role: Role to remove
+            removed_by_user_id: ID of the admin user making the removal
+            
+        Returns:
+            bool: True if role was removed successfully
+        """
+        try:
+            params = {
+                'p_user_id': target_user_id,
+                'p_role': role,
+                'p_removed_by': removed_by_user_id
+            }
+            
+            result = self.call_supabase_rpc('remove_admin_role', params)
+            
+            if 'error' in result:
+                logger.error("Failed to remove admin role", error=result['error'])
+                return False
+            
+            logger.info("Admin role removed successfully", target_user_id=target_user_id, role=role)
+            return True
+            
+        except Exception as e:
+            logger.exception("Error removing admin role", error=str(e))
+            return False
+
+    @handle_database_operation("get admin roles")
+    def get_admin_roles(
+        self,
+        user_id: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+        search: str = "",
+        role_filter: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Get admin roles from Supabase with optional filtering.
+        
+        Args:
+            user_id: Optional specific user ID
+            limit: Number of records to return
+            offset: Number of records to skip
+            search: Search term for user name or email
+            role_filter: Filter by specific role
+            
+        Returns:
+            Dict containing users with roles and pagination info
+        """
+        try:
+            if not self.supabase_enabled:
+                logger.error("Supabase not configured for role management")
+                raise ExternalServiceError(
+                    message="Role management service unavailable",
+                    service="supabase",
+                    details={"reason": "Supabase not configured"}
+                )
+            
+            import requests
+            
+            # Construct the query URL
+            query_url = f"{self.supabase_url}/rest/v1/admin_roles"
+            
+            # Set up headers with service role key and count preference
+            headers = {
+                'Authorization': f'Bearer {self.supabase_service_role_key}',
+                'apikey': self.supabase_service_role_key,
+                'Prefer': 'count=exact'
+            }
+            
+            # Build query parameters
+            params = {
+                'select': '*,users:users(id,name,email)',
+                'is_active': 'eq.true',
+                'limit': limit,
+                'offset': offset,
+                'order': 'assigned_at.desc'
+            }
+            
+            if user_id:
+                params['user_id'] = f'eq.{user_id}'
+            if role_filter:
+                params['role'] = f'eq.{role_filter}'
+            
+            # Add search filter if provided
+            if search:
+                params['or'] = f'(users.name.ilike.%{search}%,users.email.ilike.%{search}%)'
+            
+            # Make the request
+            response = requests.get(
+                query_url,
+                params=params,
+                headers=headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                roles_data = response.json()
+                
+                # Get total count from Content-Range header
+                total_count = len(roles_data)  # Fallback
+                content_range = response.headers.get('Content-Range')
+                if content_range:
+                    try:
+                        # Content-Range format: "0-9/100" where 100 is total count
+                        total_count = int(content_range.split('/')[-1])
+                    except (ValueError, IndexError):
+                        pass
+                
+                # Format the response - flatten nested user data
+                flattened_users = []
+                for role_record in roles_data:
+                    user_data = role_record.get('users', {})
+                    flattened_users.append({
+                        'id': role_record.get('user_id'),
+                        'name': user_data.get('name'),
+                        'email': user_data.get('email'),
+                        'role': role_record.get('role'),
+                        'role_level': role_record.get('role_level'),
+                        'assigned_at': role_record.get('assigned_at'),
+                        'expires_at': role_record.get('expires_at'),
+                        'notes': role_record.get('notes'),
+                        'assigned_by': role_record.get('assigned_by')
+                    })
+                
+                result = {
+                    "users": flattened_users,
+                    "total": total_count,
+                    "page": (offset // limit) + 1,
+                    "limit": limit,
+                    "has_more": len(roles_data) == limit
+                }
+                
+                logger.info("Admin roles retrieved successfully", count=len(roles_data))
+                return result
+            else:
+                logger.error(
+                    "Failed to retrieve admin roles",
+                    status_code=response.status_code,
+                    response=response.text
+                )
+                return {"users": [], "total": 0, "page": 1, "limit": limit}
+                
+        except Exception as e:
+            logger.exception("Error retrieving admin roles", error=str(e))
+            return {"users": [], "total": 0, "page": 1, "limit": limit}
 
     # Helper methods for data conversion
     def _restaurant_to_dict(self, restaurant) -> Dict[str, Any]:

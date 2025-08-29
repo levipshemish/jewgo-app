@@ -33,6 +33,11 @@ def verify_admin_token(token: str) -> bool:
         logger.warning("DEPRECATED: Legacy admin token verification disabled - use Supabase auth")
         raise RuntimeError("Legacy admin authentication is disabled. Use Supabase admin roles instead.")
     
+    # Production safety check
+    if os.getenv("NODE_ENV") == "production" and enable_legacy:
+        logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
+        raise RuntimeError("Legacy authentication cannot be enabled in production")
+    
     logger.warning("DEPRECATED: Using legacy admin token verification - migrate to Supabase auth")
     admin_token = os.getenv("ADMIN_TOKEN")
     if not admin_token:
@@ -48,6 +53,11 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     if not enable_legacy:
         logger.warning("DEPRECATED: Legacy JWT verification disabled - use Supabase auth")
         raise RuntimeError("Legacy user authentication is disabled. Use Supabase auth instead.")
+    
+    # Production safety check
+    if os.getenv("NODE_ENV") == "production" and enable_legacy:
+        logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
+        raise RuntimeError("Legacy authentication cannot be enabled in production")
     
     logger.warning("DEPRECATED: Using legacy HS256 JWT verification - migrate to Supabase auth")
     
@@ -223,6 +233,11 @@ def require_user_auth(f):
             logger.warning("DEPRECATED: Legacy user auth disabled - use Supabase auth")
             return jsonify({"error": "legacy auth disabled"}), 401
         
+        # Production safety check
+        if os.getenv("NODE_ENV") == "production" and enable_legacy:
+            logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
+            return jsonify({"error": "legacy auth disabled in production"}), 401
+        
         logger.warning("DEPRECATED: Using legacy user auth - migrate to Supabase auth")
         
         try:
@@ -320,6 +335,11 @@ def require_super_admin(f):
         if not enable_legacy:
             logger.warning("DEPRECATED: Legacy super admin auth disabled - use Supabase admin roles")
             raise RuntimeError("Legacy super admin authentication is disabled. Use Supabase admin roles instead.")
+        
+        # Production safety check
+        if os.getenv("NODE_ENV") == "production" and enable_legacy:
+            logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
+            raise RuntimeError("Legacy authentication cannot be enabled in production")
         
         logger.warning("DEPRECATED: Using legacy super admin auth - migrate to Supabase admin roles")
         

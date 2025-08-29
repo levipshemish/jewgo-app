@@ -1004,6 +1004,187 @@ def admin_delete_user():
         return error_response("Failed to delete user", 500)
 
 
+# Role Management Routes
+@api_v4.route('/admin/roles/assign', methods=['POST'])
+@require_admin_auth
+def assign_admin_role():
+    """Assign an admin role to a user"""
+    try:
+        data = request.get_json()
+        if not data:
+            return error_response('Request body is required', 400)
+        
+        user_id = data.get('user_id')
+        role = data.get('role')
+        expires_at = data.get('expires_at')
+        notes = data.get('notes')
+        
+        if not user_id or not role:
+            return error_response('user_id and role are required', 400)
+        
+        # Get current admin user from JWT
+        current_user = get_current_supabase_user()
+        if not current_user:
+            return error_response('Admin authentication required', 401)
+        
+        # Validate role is allowed
+        allowed_roles = ['moderator', 'data_admin', 'system_admin', 'super_admin']
+        if role not in allowed_roles:
+            return error_response(f'Invalid role. Must be one of: {", ".join(allowed_roles)}', 400)
+        
+        # Only super_admin can assign any admin role
+        if current_user.get('role') != 'super_admin':
+            return error_response('Only super_admin can assign admin roles', 403)
+        
+        # Create user service instance
+        user_service = create_user_service() if UserServiceV4 else None
+        if not user_service:
+            return error_response('User service not available', 503)
+        
+        success = user_service.assign_user_role(
+            target_user_id=user_id,
+            role=role,
+            assigned_by_user_id=current_user['id'],
+            expires_at=expires_at,
+            notes=notes
+        )
+        
+        if success:
+            return success_response({
+                'user_id': user_id,
+                'role': role,
+                'assigned_by': current_user['id'],
+                'assigned_at': datetime.utcnow().isoformat()
+            }, 'Role assigned successfully')
+        else:
+            return error_response('Failed to assign role', 500)
+            
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except ExternalServiceError as e:
+        return error_response('Role service unavailable', 503)
+    except Exception as e:
+        logger.exception(f"Error assigning admin role: {str(e)}")
+        return error_response('Internal server error', 500)
+
+
+@api_v4.route('/admin/roles/revoke', methods=['POST'])
+@require_admin_auth
+def revoke_admin_role():
+    """Revoke an admin role from a user"""
+    try:
+        data = request.get_json()
+        if not data:
+            return error_response('Request body is required', 400)
+        
+        user_id = data.get('user_id')
+        role = data.get('role')
+        
+        if not user_id or not role:
+            return error_response('user_id and role are required', 400)
+        
+        # Get current admin user from JWT
+        current_user = get_current_supabase_user()
+        if not current_user:
+            return error_response('Admin authentication required', 401)
+        
+        # Only super_admin can revoke admin roles
+        if current_user.get('role') != 'super_admin':
+            return error_response('Only super_admin can revoke admin roles', 403)
+        
+        # Prevent self-revocation of super_admin
+        if role == 'super_admin' and user_id == current_user['id']:
+            return error_response('Cannot revoke your own super_admin role', 400)
+        
+        # Create user service instance
+        user_service = create_user_service() if UserServiceV4 else None
+        if not user_service:
+            return error_response('User service not available', 503)
+        
+        success = user_service.revoke_user_role(
+            target_user_id=user_id,
+            role=role,
+            removed_by_user_id=current_user['id']
+        )
+        
+        if success:
+            return success_response({
+                'user_id': user_id,
+                'role': role,
+                'removed_by': current_user['id'],
+                'removed_at': datetime.utcnow().isoformat()
+            }, 'Role revoked successfully')
+        else:
+            return error_response('Failed to revoke role', 500)
+            
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except ExternalServiceError as e:
+        return error_response('Role service unavailable', 503)
+    except Exception as e:
+        logger.exception(f"Error revoking admin role: {str(e)}")
+        return error_response('Internal server error', 500)
+
+
+@api_v4.route('/admin/roles', methods=['GET'])
+@require_admin_auth
+def get_admin_roles():
+    """Get list of users with their admin roles"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 50, type=int)
+        search = request.args.get('search', '')
+        user_id = request.args.get('user_id')
+        role_filter = request.args.get('role')
+        
+        # Validate pagination parameters
+        if page < 1:
+            page = 1
+        if limit < 1 or limit > 100:
+            limit = 50
+        
+        # Create user service instance
+        user_service = create_user_service() if UserServiceV4 else None
+        if not user_service:
+            return error_response('User service not available', 503)
+        
+        users_with_roles = user_service.get_user_roles(
+            user_id=user_id,
+            page=page,
+            limit=limit,
+            search=search,
+            role_filter=role_filter
+        )
+        
+        return success_response(users_with_roles, 'Users with roles retrieved successfully')
+        
+    except ExternalServiceError as e:
+        return error_response('Role service unavailable', 503)
+    except Exception as e:
+        logger.exception(f"Error retrieving admin roles: {str(e)}")
+        return error_response('Internal server error', 500)
+
+
+@api_v4.route('/admin/roles/available', methods=['GET'])
+@require_admin_auth
+def get_available_roles():
+    """Get list of available admin roles and their descriptions"""
+    try:
+        # Create user service instance
+        user_service = create_user_service() if UserServiceV4 else None
+        if not user_service:
+            return error_response('User service not available', 503)
+        
+        available_roles = user_service.get_available_roles()
+        return success_response(available_roles, 'Available roles retrieved successfully')
+        
+    except ExternalServiceError as e:
+        return error_response('Role service unavailable', 503)
+    except Exception as e:
+        logger.exception(f"Error retrieving available roles: {str(e)}")
+        return error_response('Internal server error', 500)
+
+
 # Statistics Routes
 @safe_route("/statistics", methods=["GET"])
 @require_api_v4_flag("api_v4_statistics")

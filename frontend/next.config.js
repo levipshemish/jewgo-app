@@ -125,33 +125,31 @@ const nextConfig = {
       },
     };
 
-    // Configure CSS processing to prevent syntax errors
-    config.module.rules.forEach((rule) => {
-      if (rule.oneOf) {
-        rule.oneOf.forEach((oneOfRule) => {
-          if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
-            // Ensure CSS loaders are properly configured
-            if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
-              oneOfRule.use.forEach((loader) => {
-                if (loader.loader && loader.loader.includes('css-loader')) {
-                  // Configure CSS loader to handle syntax errors gracefully
-                  loader.options = {
-                    ...loader.options,
-                    sourceMap: false, // Disable source maps to prevent comment issues
-                    importLoaders: 1,
-                    // Add options to handle long comments and special characters
-                    url: false,
-                    import: false,
-                    // Disable CSS modules for global CSS
-                    modules: false,
-                  };
-                }
-              });
-            }
-          }
-        });
-      }
-    });
+                      // Configure CSS processing to prevent syntax errors
+                  config.module.rules.forEach((rule) => {
+                    if (rule.oneOf) {
+                      rule.oneOf.forEach((oneOfRule) => {
+                        if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
+                          // Ensure CSS loaders are properly configured
+                          if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
+                            oneOfRule.use.forEach((loader) => {
+                              if (loader.loader && loader.loader.includes('css-loader')) {
+                                // Configure CSS loader to handle syntax errors gracefully
+                                loader.options = {
+                                  ...loader.options,
+                                  sourceMap: false, // Disable source maps to prevent comment issues
+                                  importLoaders: 1,
+                                  // Add options to handle long comments and special characters
+                                  url: false,
+                                  import: false,
+                                };
+                              }
+                            });
+                          }
+                        }
+                      });
+                    }
+                  });
 
     // Suppress eval-related warnings and errors
     config.ignoreWarnings = [
@@ -188,7 +186,6 @@ const nextConfig = {
                     importLoaders: 1,
                     url: false,
                     import: false,
-                    modules: false,
                     // Disable comments to prevent parsing issues
                     comments: false,
                   };

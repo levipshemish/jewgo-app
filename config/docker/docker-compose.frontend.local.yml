@@ -17,9 +17,17 @@ services:
       # Google Maps API
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
       - NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
-      # Admin Configuration
-      - NEXT_PUBLIC_ADMIN_EMAIL=admin@jewgo.com
-      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      # Admin Authentication (Development)
+      # Use Supabase admin_roles table to assign roles to test users
+      # No hardcoded admin emails or tokens needed
+      
+      # DEPRECATED: Legacy admin authentication
+      # - NEXT_PUBLIC_ADMIN_EMAIL=admin@jewgo.com
+      # - ADMIN_TOKEN=${ADMIN_TOKEN}
+      
+      # Development Feature Flags
+      - ENABLE_LEGACY_ADMIN_AUTH=false
+      
       # Database URL
       - DATABASE_URL=${DATABASE_URL}
     volumes:

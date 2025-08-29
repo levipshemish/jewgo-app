@@ -10,6 +10,9 @@ import { ImageCarouselPopup } from "./image-carousel-popup"
 import { useState } from "react"
 import styles from "./listing.module.css"
 
+// Debug: Check if styles are being imported correctly
+console.log('ListingPage styles:', styles)
+
 interface ListingPageProps {
   data?: ListingData
   loading?: boolean
@@ -23,7 +26,7 @@ export function ListingPage({ data, loading, error, className }: ListingPageProp
 
   if (loading) {
     return (
-      <div className={`${styles.listingContainer} ${className}`}>
+      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
         <div className="animate-pulse space-y-4">
           <div className="h-64 bg-gray-300 rounded-3xl"></div>
           <div className="rounded-2xl p-2 space-y-2">
@@ -38,7 +41,7 @@ export function ListingPage({ data, loading, error, className }: ListingPageProp
 
   if (error) {
     return (
-      <div className={`${styles.listingContainer} ${className}`}>
+      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
         <div className="text-center py-8">
           <p className="text-red-500">Error: {error}</p>
         </div>
@@ -48,7 +51,7 @@ export function ListingPage({ data, loading, error, className }: ListingPageProp
 
   if (!data) {
     return (
-      <div className={`${styles.listingContainer} ${className}`}>
+      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
         <div className="text-center py-8">
           <p className="text-gray-500">No data available</p>
         </div>
@@ -57,7 +60,7 @@ export function ListingPage({ data, loading, error, className }: ListingPageProp
   }
 
   return (
-    <div className={`${styles.listingContainer} ${className}`}>
+    <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
       <div className="space-y-4">
         {/* Header */}
         <ListingHeader

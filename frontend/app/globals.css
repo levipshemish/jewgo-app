@@ -13,6 +13,49 @@
   margin: 0;
 }
 
+/* Ensure listing components take precedence over global styles */
+.listing-page-wrapper .listingContainer,
+.listing-page-wrapper div[class*="listingContainer"] {
+  /* Override any global container styles */
+  max-width: 24rem !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .listing-page-wrapper .listingContainer,
+  .listing-page-wrapper div[class*="listingContainer"] {
+    max-width: none !important;
+    padding: 0 2rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .listing-page-wrapper .listingContainer,
+  .listing-page-wrapper div[class*="listingContainer"] {
+    padding: 0 3rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .listing-page-wrapper .listingContainer,
+  .listing-page-wrapper div[class*="listingContainer"] {
+    padding: 0 4rem !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .listing-page-wrapper .listingContainer,
+  .listing-page-wrapper div[class*="listingContainer"] {
+    padding: 0 5rem !important;
+  }
+}
+
 /* Line clamp utility for consistent text truncation */
 .line-clamp-2 {
   display: -webkit-box !important;
@@ -640,18 +683,32 @@ p, h1, h2, h3, h4, h5, h6, span, div, button, input, textarea, label, a {
   justify-content: flex-start !important;
   background: transparent !important;
   background-color: transparent !important;
+  background-image: none !important;
   z-index: 1 !important;
   position: relative !important;
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
+  /* Ensure no background interferes with card rounded corners */
+  border-radius: 0 !important;
+  overflow: visible !important;
 }
 
 /* Let child elements size naturally */
 .unified-card-content > * {
   background: transparent !important;
   background-color: transparent !important;
+  background-image: none !important;
   z-index: 2 !important;
   position: relative !important;
+}
+
+/* Override any Tailwind background classes on content container */
+.unified-card-content.bg-white,
+.unified-card-content.bg-transparent,
+.unified-card-content[class*="bg-"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
 /* Ensure all text elements in unified cards are visible */
@@ -3195,7 +3252,6 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 8px !important;
     row-gap: 8px !important;
-    padding: 0.25rem !important;
     margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3214,7 +3270,6 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px !important;
     row-gap: 8px !important;
-    padding: 0.25rem !important;
     margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3233,7 +3288,6 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 8px !important;
     row-gap: 8px !important;
-    padding: 0.25rem !important;
     margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3252,7 +3306,6 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(6, 1fr) !important;
     gap: 8px !important;
     row-gap: 8px !important;
-    padding: 0.25rem !important;
     margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3271,7 +3324,6 @@ div[class*="specials-dynamic-grid"] {
     grid-template-columns: repeat(8, 1fr) !important;
     gap: 8px !important;
     row-gap: 8px !important;
-    padding: 0.25rem !important;
     margin-bottom: 2rem !important;
     contain: layout style paint !important;
     will-change: auto !important;
@@ -3456,8 +3508,8 @@ div[class*="specials-dynamic-grid"] {
 }
 
 /* Ensure consistent image aspect ratios */
-.restaurant-grid .unified-card .relative.w-full,
-.marketplace-page .restaurant-grid .unified-card .relative.w-full {
+.restaurant-grid .unified-card .relative,
+.marketplace-page .restaurant-grid .unified-card .relative {
   width: 100% !important;
   aspect-ratio: 4/3 !important;
   min-height: 0 !important;
@@ -3468,12 +3520,19 @@ div[class*="specials-dynamic-grid"] {
   align-self: stretch !important;
   /* Prevent stretching */
   object-fit: cover !important;
-  overflow: hidden !important;
+  /* Allow rounded corners to show through */
+  overflow: visible !important;
+  /* Preserve rounded corners on all sides */
+  border-radius: 1rem !important; /* equivalent to rounded-2xl */
+  border-top-left-radius: 1rem !important;
+  border-top-right-radius: 1rem !important;
+  border-bottom-left-radius: 1rem !important;
+  border-bottom-right-radius: 1rem !important;
 }
 
 /* Ensure image containers don't stretch */
-.restaurant-grid .unified-card .relative.w-full > div,
-.marketplace-page .restaurant-grid .unified-card .relative.w-full > div {
+.restaurant-grid .unified-card .relative > div,
+.marketplace-page .restaurant-grid .unified-card .relative > div {
   width: 100% !important;
   aspect-ratio: 4/3 !important;
   min-height: 0 !important;
@@ -3482,8 +3541,18 @@ div[class*="specials-dynamic-grid"] {
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
   align-self: stretch !important;
-  /* Prevent stretching */
-  overflow: hidden !important;
+  /* Allow rounded corners to show through */
+  overflow: visible !important;
+}
+
+/* Ensure Next.js Image component has rounded corners */
+.restaurant-grid .unified-card .relative img,
+.marketplace-page .restaurant-grid .unified-card .relative img {
+  border-radius: 1rem !important;
+  border-top-left-radius: 1rem !important;
+  border-top-right-radius: 1rem !important;
+  border-bottom-left-radius: 1rem !important;
+  border-bottom-right-radius: 1rem !important;
 }
 
 /* Ensure consistent content spacing */
@@ -3578,12 +3647,18 @@ div[class*="specials-dynamic-grid"] {
 }
 
 /* Nuclear option: Override ANY element with unified-card class that has any background */
-.unified-card,
+.unified-card {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
 .unified-card *,
 .unified-card[style*="background"],
 .unified-card[style*="background-color"],
 .unified-card[class*="bg-"],
-.unified-card[class*="bg-white"],
 .unified-card[class*="bg-transparent"] {
   background-color: transparent !important;
   background: transparent !important;
@@ -3598,23 +3673,31 @@ div[class*="specials-dynamic-grid"] {
 
 /* Override any restaurant-card or eatery-card rules that might affect unified-card */
 .unified-card {
-  /* Override any restaurant-card or eatery-card inheritance */
-  background-color: transparent !important;
-  background: transparent !important;
+  /* Give the card a white background so rounded corners are visible */
+  background-color: white !important;
+  background: white !important;
   background-image: none !important;
-  /* Override any potential inheritance from parent elements */
-  background-color: transparent !important;
-  background: transparent !important;
-  background-image: none !important;
-  /* Force override of any CSS rules */
-  background-color: transparent !important;
-  background: transparent !important;
-  background-image: none !important;
+  /* Ensure proper border radius */
+  border-radius: 1rem !important;
+  border-top-left-radius: 1rem !important;
+  border-top-right-radius: 1rem !important;
+  border-bottom-left-radius: 1rem !important;
+  border-bottom-right-radius: 1rem !important;
+  overflow: hidden !important;
+  /* Ensure content doesn't interfere with rounded corners */
+  position: relative !important;
 }
 
 /* Override any potential inheritance from parent containers */
 .restaurant-grid .unified-card,
-.marketplace-page .unified-card,
+.marketplace-page .unified-card {
+  background-color: white !important;
+  background: white !important;
+  background-image: none !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
 .restaurant-grid .unified-card *,
 .marketplace-page .unified-card * {
   background-color: transparent !important;

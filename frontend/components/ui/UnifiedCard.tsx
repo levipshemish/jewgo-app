@@ -212,7 +212,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       </span>
       
       {/* Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl">
+      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center">
@@ -227,7 +227,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             alt={cardData.title || 'Product image'}
             fill
             className={cn(
-              "object-cover transition-transform duration-300 opacity-100",
+              "object-cover transition-transform duration-300 opacity-100 rounded-2xl",
               "group-hover:scale-105"
             )}
             onLoad={() => setImageLoading(false)}
@@ -246,7 +246,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
 
         {/* Fallback image when hero image fails or is not available */}
         {(!heroImageUrl || imageError) && (
-          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center rounded-2xl">
             <div className="text-gray-400 text-sm text-center px-2">
               <div className="w-8 h-8 mx-auto mb-2">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">

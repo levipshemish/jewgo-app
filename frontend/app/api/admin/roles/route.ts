@@ -1,355 +1,166 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/admin/auth';
-import { hasPermission } from '@/lib/server/admin-utils';
-import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
-import { validateSignedCSRFToken } from '@/lib/admin/csrf';
-import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS } from '@/lib/admin/audit';
-import { prisma } from '@/lib/db/prisma';
-import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
-import { AdminErrors } from '@/lib/admin/errors';
+import { z } from 'zod';
+import { handleRoute } from '@/lib/server/route-helpers';
+import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
 
+export const runtime = 'nodejs';
+
+// Validation schemas
+const RoleAssignmentSchema = z.object({
+  action: z.literal('assign'),
+  user_id: z.string().min(1, 'User ID is required'),
+  role: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']),
+  expires_at: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const RoleRevocationSchema = z.object({
+  action: z.literal('revoke'),
+  user_id: z.string().min(1, 'User ID is required'),
+  role: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']),
+});
+
+const RoleActionSchema = z.union([RoleAssignmentSchema, RoleRevocationSchema]);
+
+const QuerySchema = z.object({
+  page: z.string().optional().transform(val => parseInt(val || '1')),
+  limit: z.string().optional().transform(val => parseInt(val || '50')),
+  search: z.string().optional(),
+  user_id: z.string().optional(),
+  role: z.string().optional(),
+});
+
+// GET handler - fetch users with roles
 export async function GET(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResponse = await rateLimit(RATE_LIMITS.DEFAULT)(request);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return AdminErrors.UNAUTHORIZED();
-    }
-
-    // Check permissions
-    if (!hasPermission(adminUser, ADMIN_PERMISSIONS.ROLE_VIEW)) {
-      return AdminErrors.INSUFFICIENT_PERMISSIONS();
-    }
-
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
-    const search = searchParams.get('search') || undefined;
-
-    // Build where conditions
-    const whereConditions: any = {};
-    if (search) {
-      whereConditions.OR = [
-        { user: { email: { contains: search, mode: 'insensitive' } } },
-        { user: { name: { contains: search, mode: 'insensitive' } } },
-        { role: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-
-    // Get paginated admin roles
-    const [roles, total] = await Promise.all([
-      prisma.adminRole.findMany({
-        where: whereConditions,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              issuperadmin: true,
-            },
-          },
-        },
-        orderBy: { assignedAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.adminRole.count({ where: whereConditions }),
-    ]);
-
-    const totalPages = Math.ceil(total / pageSize);
-
-    return NextResponse.json({
-      data: roles,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
+  return handleRoute(async () => {
+    const admin = await requireAdminOrThrow(request);
+    
+    // Parse and validate query parameters
+    const url = new URL(request.url);
+    const queryParams = Object.fromEntries(url.searchParams.entries());
+    const validatedQuery = QuerySchema.parse(queryParams);
+    
+    // Build backend URL with query parameters
+    const backendUrl = new URL('/api/v4/admin/roles', process.env.BACKEND_URL || 'http://localhost:5000');
+    Object.entries(validatedQuery).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        backendUrl.searchParams.set(key, value.toString());
+      }
     });
-
-  } catch (error) {
-    console.error('[ADMIN] Get admin roles error:', error);
-    return AdminErrors.INTERNAL_ERROR(`Failed to get admin roles: ${error instanceof Error ? error.message : String(error)}`);
-  }
+    
+    try {
+      // Forward request to backend
+      const response = await fetch(backendUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${admin.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const status = response.status;
+        const payload = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        return NextResponse.json(payload, { status });
+      }
+      
+      const data = await response.json();
+      
+      // Return backend response directly since it already has the correct format
+      return NextResponse.json(data);
+      
+    } catch (error) {
+      console.error('Error fetching admin roles:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch admin roles',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+        { status: 503 }
+      );
+    }
+  });
 }
 
+// POST handler - assign or revoke roles
 export async function POST(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return AdminErrors.UNAUTHORIZED();
-    }
-
-    // Check permissions - only super admins can create roles
-    if (!adminUser.isSuperAdmin) {
-      return AdminErrors.INSUFFICIENT_PERMISSIONS();
-    }
-
-    // Validate CSRF token
-    const headerToken = request.headers.get('x-csrf-token');
-    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_INVALID();
-    }
-
-    // Parse request body
+  return handleRoute(async () => {
+    const admin = await requireSuperAdmin(request);
+    
+    // Parse and validate request body
     const body = await request.json();
-    const { userId, role, expiresAt, notes } = body;
-
-    // Validate required fields
-    if (!userId || !role) {
-      return AdminErrors.VALIDATION_ERROR('User ID and role are required');
-    }
-
-    // Validate role
-    const validRoles = ['moderator', 'data_admin', 'system_admin'];
-    if (!validRoles.includes(role)) {
-      return AdminErrors.VALIDATION_ERROR('Invalid role');
-    }
-
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, issuperadmin: true },
-    });
-
-    if (!user) {
-      return AdminErrors.NOT_FOUND('User', 'User not found');
-    }
-
-    if (user.issuperadmin) {
-      return AdminErrors.VALIDATION_ERROR('Cannot assign roles to super admin users');
-    }
-
-    // Create admin role
-    const adminRole = await prisma.adminRole.create({
-      data: {
-        userId,
-        role,
-        assignedBy: adminUser.id,
-        assignedAt: new Date(),
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        notes,
-        isActive: true,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
+    const validatedBody = RoleActionSchema.parse(body);
+    
+    // Determine backend endpoint based on action
+    const endpoint = validatedBody.action === 'assign' ? 'assign' : 'revoke';
+    const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/${endpoint}`;
+    
+    try {
+      // Forward request to backend
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${admin.token}`,
+          'Content-Type': 'application/json',
         },
-      },
-    });
-
-    // Log the action
-    await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, ENTITY_TYPES.ADMIN_ROLE, {
-      entityId: String(adminRole.id),
-      newData: {
-        userId,
-        role,
-        assignedBy: adminUser.id,
-        expiresAt,
-        notes,
-      },
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Admin role created successfully',
-      data: adminRole 
-    }, { status: 201 });
-
-  } catch (error) {
-    console.error('[ADMIN] Create admin role error:', error);
-    return AdminErrors.INTERNAL_ERROR(`Failed to create admin role: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return AdminErrors.UNAUTHORIZED();
-    }
-
-    // Check permissions - only super admins can edit roles
-    if (!adminUser.isSuperAdmin) {
-      return AdminErrors.INSUFFICIENT_PERMISSIONS();
-    }
-
-    // Validate CSRF token
-    const headerToken = request.headers.get('x-csrf-token');
-    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_INVALID();
-    }
-
-    // Parse request body
-    const body = await request.json();
-    const { id, ...updateData } = body;
-
-    if (!id) {
-      return AdminErrors.VALIDATION_ERROR('Role ID is required');
-    }
-
-    // Get current role for audit
-    const currentRole = await prisma.adminRole.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            issuperadmin: true,
-          },
+        body: JSON.stringify({
+          user_id: validatedBody.user_id,
+          role: validatedBody.role,
+          ...(validatedBody.action === 'assign' && {
+            expires_at: validatedBody.expires_at,
+            notes: validatedBody.notes,
+          }),
+        }),
+      });
+      
+      if (!response.ok) {
+        const status = response.status;
+        const payload = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+        return NextResponse.json(payload, { status });
+      }
+      
+      const data = await response.json();
+      
+      // Return backend response directly since it already has the correct format
+      return NextResponse.json(data);
+      
+    } catch (error) {
+      console.error(`Error ${validatedBody.action}ing role:`, error);
+      
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes('403')) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Insufficient permissions for this operation',
+            },
+            { status: 403 }
+          );
+        }
+        
+        if (error.message.includes('400')) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Invalid request data',
+              details: error.message,
+            },
+            { status: 400 }
+          );
+        }
+      }
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Failed to ${validatedBody.action} role`,
+          details: error instanceof Error ? error.message : 'Unknown error',
         },
-      },
-    });
-
-    if (!currentRole) {
-      return AdminErrors.NOT_FOUND('Admin role', 'Admin role not found');
+        { status: 503 }
+      );
     }
-
-    if (currentRole.user.issuperadmin) {
-      return AdminErrors.VALIDATION_ERROR('Cannot modify roles for super admin users');
-    }
-
-    // Update admin role
-    const updatedRole = await prisma.adminRole.update({
-      where: { id: parseInt(id) },
-      data: {
-        ...updateData,
-        updatedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
-    });
-
-    // Log the action
-    await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, ENTITY_TYPES.ADMIN_ROLE, {
-      entityId: String(id),
-      oldData: currentRole,
-      newData: updatedRole,
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Admin role updated successfully',
-      data: updatedRole 
-    });
-
-  } catch (error) {
-    console.error('[ADMIN] Update admin role error:', error);
-    return AdminErrors.INTERNAL_ERROR(`Failed to update admin role: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    // Apply rate limiting
-    const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
-
-    // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return AdminErrors.UNAUTHORIZED();
-    }
-
-    // Check permissions - only super admins can delete roles
-    if (!adminUser.isSuperAdmin) {
-      return AdminErrors.INSUFFICIENT_PERMISSIONS();
-    }
-
-    // Validate CSRF token
-    const headerToken = request.headers.get('x-csrf-token');
-    if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return AdminErrors.CSRF_INVALID();
-    }
-
-    // Get role ID from query params
-    const { searchParams } = new URL(request.url);
-    const idParam = searchParams.get('id');
-    if (!idParam || isNaN(Number(idParam))) {
-      return AdminErrors.VALIDATION_ERROR('Valid role ID is required');
-    }
-
-    const id = parseInt(idParam);
-
-    // Get current role for audit
-    const currentRole = await prisma.adminRole.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            issuperadmin: true,
-          },
-        },
-      },
-    });
-
-    if (!currentRole) {
-      return AdminErrors.NOT_FOUND('Admin role', 'Admin role not found');
-    }
-
-    if (currentRole.user.issuperadmin) {
-      return AdminErrors.VALIDATION_ERROR('Cannot delete roles for super admin users');
-    }
-
-    // Delete admin role
-    await prisma.adminRole.delete({
-      where: { id },
-    });
-
-    // Log the action
-    await logAdminAction(adminUser, AUDIT_ACTIONS.USER_ROLE_CHANGE, ENTITY_TYPES.ADMIN_ROLE, {
-      entityId: String(id),
-      oldData: currentRole,
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Admin role deleted successfully' 
-    });
-
-  } catch (error) {
-    console.error('[ADMIN] Delete admin role error:', error);
-    return AdminErrors.INTERNAL_ERROR(`Failed to delete admin role: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  });
 }

@@ -17,7 +17,7 @@ export default function EateryDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Production-like full-screen view */}
-      <div className="w-full max-w-sm sm:max-w-none sm:px-8 md:px-12 lg:px-16 xl:px-20 mx-auto">
+      <div className="listing-page-wrapper w-full max-w-sm sm:max-w-none sm:px-8 md:px-12 lg:px-16 xl:px-20 mx-auto">
         <ListingPage
           data={listingData}
           loading={loading}

@@ -34,6 +34,10 @@ cd frontend
 npm test                 # Run all frontend tests
 npm run type-check       # TypeScript type checking
 npm run lint             # Code linting
+
+# Alternative: Fast TypeScript Error Checking
+npx tsc --noEmit         # Fast TypeScript compilation check (no build artifacts)
+npx tsc --noEmit --watch # Watch mode for real-time error checking
 ```
 
 ### Step 2: Commit Your Changes
@@ -93,6 +97,55 @@ git commit -m "fix: resolve user authentication timeout issue"
 git commit -m "docs: update deployment instructions"
 git commit -m "test: add unit tests for restaurant API endpoints"
 ```
+
+## Error Checking Best Practices
+
+### TypeScript Error Checking (Recommended)
+
+**Fastest Method:**
+```bash
+npx tsc --noEmit
+```
+- **Pros**: Fast, shows all TypeScript errors at once, no build artifacts
+- **Use when**: You want to quickly check for type errors without building
+
+**Watch Mode:**
+```bash
+npx tsc --noEmit --watch
+```
+- **Pros**: Watches for changes and re-checks automatically
+- **Use when**: Actively developing and want real-time feedback
+
+**Next.js Type Check:**
+```bash
+npm run type-check
+```
+- **Pros**: Uses Next.js's built-in type checking
+- **Use when**: You want framework-specific type checking
+
+### ESLint Error Checking
+
+```bash
+npx eslint . --ext .ts,.tsx
+```
+- **Pros**: Catches both TypeScript and linting issues
+- **Use when**: You want comprehensive code quality checks
+
+### Build Error Checking
+
+```bash
+npm run build
+```
+- **Pros**: Full build process, catches runtime issues
+- **Cons**: Slower, creates build artifacts
+- **Use when**: Final verification before deployment
+
+### Error Checking Priority
+
+1. **During Development**: Use `npx tsc --noEmit --watch` for real-time feedback
+2. **Before Committing**: Use `npx tsc --noEmit` for quick verification
+3. **Before Pushing**: Use `npm run build` for final verification
+4. **CI/CD**: Use `npm run type-check` and `npm run lint` for automated checks
 
 ## Exceptions
 

@@ -113,10 +113,10 @@ class ConfigManager:
                 },
                 # Security configuration
                 "security": {
-                    "admin_token": os.getenv("ADMIN_TOKEN"),
                     "jwt_secret": os.getenv("JWT_SECRET"),
                     "cors_origins": os.getenv("CORS_ORIGINS", "").split(","),
                     "session_timeout": int(os.getenv("SESSION_TIMEOUT", "3600")),
+                    "enable_legacy_admin_auth": os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true",
                 },
                 # External services
                 "external_services": {
@@ -329,8 +329,8 @@ class ConfigManager:
             errors.append("DATABASE_NAME is required")
         # Check required security configuration
         security_config = self.get_security_config()
-        if not security_config.get("admin_token"):
-            errors.append("ADMIN_TOKEN is required for admin operations")
+        if security_config.get("enable_legacy_admin_auth") and os.getenv("ENVIRONMENT") == "production":
+            errors.append("ENABLE_LEGACY_ADMIN_AUTH cannot be true in production")
         # Check required external services
         ext_config = self.get_external_services_config()
         if not ext_config.get("supabase_url"):

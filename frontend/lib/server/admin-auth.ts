@@ -6,6 +6,7 @@ import {
   type TransformedUser 
 } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
+import type { Permission } from '@/lib/constants/permissions';
 import { 
   ADMIN_PERMISSIONS, 
   ROLE_PERMISSIONS,
@@ -386,15 +387,21 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       normalizePermissions(ROLE_PERMISSIONS[user.adminRole as AdminRole] || [])
     );
 
-    const adminUser: TransformedUser = {
+    // Get the session to access the token
+    const supabase = await createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const adminUser: AdminUser = {
       ...user,
+      adminRole: user.adminRole as AdminRole,
       roleLevel: user.roleLevel || getRoleLevelForRole(user.adminRole as AdminRole),
       isSuperAdmin: user.isSuperAdmin || user.adminRole === 'super_admin',
-      permissions: permissions as any
+      permissions: permissions as Permission[] & string[],
+      token: session?.access_token || ''
     };
 
     assertAdmin(adminUser);
-    return adminUser as AdminUser;
+    return adminUser;
   } catch (error) {
     if (error instanceof AdminAuthError) {
       throw error;
