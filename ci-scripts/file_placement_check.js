@@ -20,7 +20,7 @@ const ALLOWED_DIRECTORIES = {
     'pages', 'styles', 'public', 'config', 'scripts', 'tests', '__tests__'
   ],
   backend: [
-    'backend/routes', 'backend/services', 'backend/database', 'backend/utils',
+    'backend', 'backend/routes', 'backend/services', 'backend/database', 'backend/utils',
     'backend/tests', 'backend/config', 'backend/scripts', 'backend/docs'
   ],
   root: [
@@ -79,11 +79,20 @@ function isInAllowedDirectory(filePath) {
   }
   
   // Check backend directories
-  if (parts[0] === 'backend' && parts.length > 1) {
-    const backendPath = parts.slice(1).join('/');
-    return ALLOWED_DIRECTORIES.backend.some(dir => 
-      backendPath.startsWith(dir.replace('backend/', '') + '/') || backendPath === dir.replace('backend/', '')
-    );
+  if (parts[0] === 'backend') {
+    if (parts.length === 1) {
+      // File is directly in backend directory
+      return ALLOWED_DIRECTORIES.backend.includes('backend');
+    } else {
+      const backendPath = parts.slice(1).join('/');
+      // Allow files directly in backend directory (no subdirectory)
+      if (parts.length === 2 && !backendPath.includes('/')) {
+        return true;
+      }
+      return ALLOWED_DIRECTORIES.backend.some(dir => 
+        backendPath.startsWith(dir.replace('backend/', '') + '/') || backendPath === dir.replace('backend/', '')
+      );
+    }
   }
   
   // Check root directories
