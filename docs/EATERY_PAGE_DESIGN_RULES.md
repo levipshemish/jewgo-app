@@ -1,7 +1,7 @@
 # Eatery Page Design Rules
 
 ## Overview
-This document captures the eatery page design requirements. The eatery page should match the marketplace page layout exactly for consistency across the application.
+This document captures the eatery page design requirements. The eatery page uses a responsive grid system with a maximum of 4 rows and up to 8 columns based on screen size.
 
 ## Core Design Requirements
 
@@ -9,9 +9,9 @@ This document captures the eatery page design requirements. The eatery page shou
 - **Mobile (≤640px)**: 2-column grid layout (`grid-cols-2`)
 - **Small tablet (641px-768px)**: 3-column grid layout
 - **Large tablet (769px-1024px)**: 4-column grid layout
-- **Desktop (1025px-1440px)**: 5-column grid layout
-- **Large desktop (≥1441px)**: 6-column grid layout
-- **All screen sizes**: Uses the same responsive grid system as marketplace page
+- **Desktop (1025px-1440px)**: 6-column grid layout
+- **Large desktop (≥1441px)**: 8-column grid layout
+- **All screen sizes**: Maximum of 4 rows for consistent pagination
 
 ### 2. API Endpoint
 - **Primary API**: `/api/restaurants-with-images` (not `/api/restaurants`)
@@ -30,8 +30,8 @@ This document captures the eatery page design requirements. The eatery page shou
   - Mobile: 8 items (4 rows × 2 columns)
   - Small tablet: 12 items (4 rows × 3 columns)
   - Large tablet: 16 items (4 rows × 4 columns)
-  - Desktop: 20 items (4 rows × 5 columns)
-  - Large desktop: 24 items (4 rows × 6 columns)
+  - Desktop: 24 items (4 rows × 6 columns)
+  - Large desktop: 32 items (4 rows × 8 columns)
 - **Infinite scroll**: Enabled only on mobile devices
 - **Desktop pagination**: Traditional pagination controls
 - **Touch gestures**: Swipe left/right/up/down for navigation
@@ -45,6 +45,7 @@ This document captures the eatery page design requirements. The eatery page shou
   - `ActionButtons` for quick actions
   - `UnifiedCard` for restaurant cards
   - `Pagination` for desktop pagination
+  - `BottomNavigation` for mobile navigation
 
 ### 5. State Management
 - **Filter state**: Local state management
@@ -75,8 +76,8 @@ This document captures the eatery page design requirements. The eatery page shou
 - **Touch targets**: Minimum 44px for mobile interactions
 
 ### 10. Layout Consistency
-- **Must match marketplace page**: Same grid system, spacing, and visual design
-- **Same CSS classes**: Uses `.restaurant-grid` with marketplace responsive rules
+- **Responsive grid**: Adapts to screen size with maximum 4 rows
+- **Same CSS classes**: Uses `.restaurant-grid` with responsive rules
 - **Same background**: `bg-[#f4f4f4]` background color
 - **Same pagination**: Desktop pagination with item count display
 
@@ -85,7 +86,7 @@ This document captures the eatery page design requirements. The eatery page shou
 ### Critical Dependencies
 - `UnifiedCard` component for restaurant cards
 - `restaurant-grid` CSS class for responsive grid layout
-- Same responsive breakpoints as marketplace page
+- Responsive breakpoints for different screen sizes
 
 ### API Requirements
 - Must support pagination with `page` and `limit` parameters
@@ -93,14 +94,14 @@ This document captures the eatery page design requirements. The eatery page shou
 - Must support search functionality
 
 ### CSS Requirements
-- `.restaurant-grid` class for grid layout (same as marketplace)
+- `.restaurant-grid` class for grid layout with responsive rules
 - Mobile-specific styles for touch interactions
 - Performance optimizations for scroll behavior
 - Consistent spacing and typography
 
 ## Migration Checklist
 When updating the eatery page, ensure:
-1. ✅ Grid layout matches marketplace page exactly
+1. ✅ Grid layout is responsive with maximum 4 rows
 2. ✅ API endpoint uses `/api/restaurants-with-images`
 3. ✅ Mobile optimization logic is preserved
 4. ✅ Component structure matches marketplace page
@@ -112,7 +113,7 @@ When updating the eatery page, ensure:
 10. ✅ Pagination matches marketplace page structure
 
 ## Breaking Changes
-Any changes that deviate from marketplace page design must be:
+Any changes that deviate from responsive grid design must be:
 1. Documented in the changelog
 2. Tested across all device types
 3. Validated for performance impact
@@ -120,14 +121,15 @@ Any changes that deviate from marketplace page design must be:
 5. Approved by the development team
 
 ## Design Consistency
-- **Eatery page must look identical to marketplace page** in terms of:
-  - Grid layout and responsive behavior
-  - Background colors and spacing
-  - Card styling and animations
-  - Pagination structure
-  - Loading and error states
-  - Overall visual hierarchy
+- **Eatery page uses responsive grid** with:
+  - Maximum of 4 rows for consistent pagination
+  - Up to 8 columns on large screens
+  - Responsive breakpoints for different screen sizes
+  - Same card styling and animations as marketplace
+  - Same pagination structure
+  - Same loading and error states
+  - Same overall visual hierarchy
 
 ---
 *Last Updated: 2025-01-27*
-*Source: Updated to match marketplace page design*
+*Source: Updated to responsive grid with max 4 rows, up to 8 columns*

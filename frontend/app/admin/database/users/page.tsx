@@ -13,24 +13,29 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
 
   let initialData: any[] = [];
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
-  try {
-    const result = await AdminDatabaseService.getPaginatedData(
-      prisma.user,
-      'user',
-      {
-        page,
-        pageSize,
-        search,
-        filters: {},
-        sortBy,
-        sortOrder,
-      }
-    );
-    initialData = mapUsersToApiResponse(result.data as any[]);
-    initialPagination = result.pagination || initialPagination;
-      } catch {
-    // ignore; client-side will fetch
+  
+  // Skip database access during build time
+  if (process.env.NODE_ENV === 'production' && process.env.SKIP_DB_ACCESS !== 'true') {
+    try {
+      const result = await AdminDatabaseService.getPaginatedData(
+        prisma.user,
+        'user',
+        {
+          page,
+          pageSize,
+          search,
+          filters: {},
+          sortBy,
+          sortOrder,
+        }
+      );
+      initialData = mapUsersToApiResponse(result.data as any[]);
+      initialPagination = result.pagination || initialPagination;
+    } catch {
+      // ignore; client-side will fetch
+    }
   }
+  // Use empty data during build time
 
   return (
     <div className="space-y-6">

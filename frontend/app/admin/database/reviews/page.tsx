@@ -20,9 +20,7 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   
   // Skip database access during build time
-  if (process.env.NODE_ENV !== 'production' || process.env.SKIP_DB_ACCESS === 'true') {
-    // Use empty data during build
-  } else {
+  if (process.env.NODE_ENV === 'production' && process.env.SKIP_DB_ACCESS !== 'true') {
     try {
       const result = await AdminDatabaseService.getPaginatedData(
         prisma.review,
@@ -42,6 +40,7 @@ export default async function ReviewDatabasePage({ searchParams }: { searchParam
       // ignore; client-side will fetch
     }
   }
+  // Use empty data during build time
 
   return (
     <div className="space-y-6">

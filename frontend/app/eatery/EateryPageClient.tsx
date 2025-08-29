@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
-import { CategoryTabs } from '@/components/navigation/ui';
+import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { Pagination } from '@/components/ui/Pagination';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -38,7 +38,7 @@ export function EateryPageClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [limit] = useState(50);
+  const [limit, setLimit] = useState(8); // Dynamic limit based on screen size
 
   const fetchRestaurants = useCallback(async (page: number = 1, query: string = '') => {
     try {
@@ -73,9 +73,36 @@ export function EateryPageClient() {
     }
   }, [limit]);
 
+  // Calculate dynamic limit based on screen size (4 rows × columns)
+  useEffect(() => {
+    const calculateLimit = () => {
+      const width = window.innerWidth;
+      if (width <= 640) {
+        return 8; // 4 rows × 2 columns
+      } else if (width <= 768) {
+        return 12; // 4 rows × 3 columns
+      } else if (width <= 1024) {
+        return 16; // 4 rows × 4 columns
+      } else if (width <= 1440) {
+        return 24; // 4 rows × 6 columns
+      } else {
+        return 32; // 4 rows × 8 columns
+      }
+    };
+
+    setLimit(calculateLimit());
+
+    const handleResize = () => {
+      setLimit(calculateLimit());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     fetchRestaurants(currentPage, searchQuery);
-  }, [currentPage, searchQuery, fetchRestaurants]);
+  }, [currentPage, searchQuery, fetchRestaurants, limit]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -93,7 +120,7 @@ export function EateryPageClient() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 eatery-page">
         <Header 
           onSearch={handleSearch}
           placeholder="Search restaurants..."
@@ -125,7 +152,7 @@ export function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] pb-20">
+    <div className="min-h-screen bg-[#f4f4f4] pb-20 eatery-page">
       <Header 
         onSearch={handleSearch}
         placeholder="Search restaurants..."
@@ -219,6 +246,9 @@ export function EateryPageClient() {
           </div>
         </div>
       )}
+
+      {/* Bottom navigation - visible on all screen sizes */}
+      <BottomNavigation />
     </div>
   );
 }
