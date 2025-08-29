@@ -101,6 +101,24 @@ function ShtelDashboardContent() {
       return;
     }
     
+    // Check if user is admin
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const isAdmin = adminEmail && session.user?.email === adminEmail;
+    
+    if (isAdmin) {
+      // Admin users can access dashboard without a store
+      setStoreData({
+        store_id: 'admin',
+        store_name: 'Admin Dashboard',
+        store_type: 'admin',
+        plan_type: 'admin',
+        is_approved: true,
+        is_admin: true
+      });
+      setLoading(false);
+      return;
+    }
+    
     loadStoreData();
   }, [session, router]);
 
@@ -108,6 +126,24 @@ function ShtelDashboardContent() {
   const loadStoreData = async () => {
     try {
       setLoading(true);
+      
+      // Check if user is admin
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+      const isAdmin = adminEmail && session?.user?.email === adminEmail;
+      
+      if (isAdmin) {
+        // Admin users can access dashboard without a store
+        setStoreData({
+          store_id: 'admin',
+          store_name: 'Admin Dashboard',
+          store_type: 'admin',
+          plan_type: 'admin',
+          is_approved: true,
+          is_admin: true
+        });
+        setLoading(false);
+        return;
+      }
       
       // Get store data for current user
       const response = await fetch('/api/shtel/store', {
@@ -142,6 +178,20 @@ function ShtelDashboardContent() {
   // Load notifications
   const loadNotifications = async () => {
     try {
+      // Check if user is admin
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+      const isAdmin = adminEmail && session?.user?.email === adminEmail;
+      
+      if (isAdmin) {
+        // Admin users don't need notifications for now
+        setNotifications({
+          orders: 0,
+          messages: 0,
+          products: 0
+        });
+        return;
+      }
+      
       const [ordersRes, messagesRes] = await Promise.all([
         fetch('/api/shtel/orders?status=pending&limit=1'),
         fetch('/api/shtel/messages?unread=true&limit=1')
@@ -173,6 +223,41 @@ function ShtelDashboardContent() {
   const renderTabContent = () => {
     if (!storeData) return null;
     
+    // Check if user is admin
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const isAdmin = adminEmail && session?.user?.email === adminEmail;
+    
+    if (isAdmin) {
+      // Admin users see a simplified dashboard
+      switch (activeTab) {
+        case 'overview':
+          return (
+            <div className="text-center py-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Admin Dashboard</h2>
+              <p className="text-gray-600 mb-4">Welcome to the Shtetl Admin Dashboard</p>
+              <p className="text-sm text-gray-500">Admin users have access to all store management features.</p>
+            </div>
+          );
+        case 'products':
+          return <ProductManagement storeData={storeData} onRefresh={loadStoreData} />;
+        case 'orders':
+          return <OrderManagement storeData={storeData} onRefresh={loadNotifications} />;
+        case 'messages':
+          return <MessagingCenter storeData={storeData} onRefresh={loadNotifications} />;
+        case 'settings':
+          return <StoreSettings storeData={storeData} onRefresh={loadStoreData} />;
+        default:
+          return (
+            <div className="text-center py-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Admin Dashboard</h2>
+              <p className="text-gray-600 mb-4">Welcome to the Shtetl Admin Dashboard</p>
+              <p className="text-sm text-gray-500">Admin users have access to all store management features.</p>
+            </div>
+          );
+      }
+    }
+    
+    // Regular store owners
     switch (activeTab) {
       case 'overview':
         return <StoreOverview storeData={storeData} onRefresh={loadStoreData} />;
@@ -220,16 +305,20 @@ function ShtelDashboardContent() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">{storeData.store_name}</h1>
-              <p className="text-blue-100">{storeData.store_type} • {storeData.plan_type} Plan</p>
+              <p className="text-blue-100">
+                {storeData.is_admin ? 'Admin Dashboard' : `${storeData.store_type} • ${storeData.plan_type} Plan`}
+              </p>
             </div>
             <div className="text-right">
               <div className="text-sm text-blue-100">Status</div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                storeData.is_approved 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-yellow-500 text-white'
+                storeData.is_admin 
+                  ? 'bg-purple-500 text-white'
+                  : storeData.is_approved 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-yellow-500 text-white'
               }`}>
-                {storeData.is_approved ? 'Approved' : 'Pending Approval'}
+                {storeData.is_admin ? 'Admin' : (storeData.is_approved ? 'Approved' : 'Pending Approval')}
               </div>
             </div>
           </div>

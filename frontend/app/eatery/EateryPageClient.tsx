@@ -77,6 +77,7 @@ export function EateryPageClient() {
     error: locationError,
     requestLocation,
     checkPermissionStatus,
+    refreshPermissionStatus,
   } = useLocation();
 
   // Location prompt popup state
@@ -128,6 +129,9 @@ export function EateryPageClient() {
     const checkAndShowLocationPrompt = async () => {
       // Only show prompt if we haven't shown it before and user doesn't have location
       if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
+        // Refresh permission status to ensure we have the latest state
+        await refreshPermissionStatus();
+        
         // Check the actual browser permission status
         const actualPermissionStatus = await checkPermissionStatus();
         
@@ -140,7 +144,7 @@ export function EateryPageClient() {
     };
 
     checkAndShowLocationPrompt();
-  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus]);
+  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus, refreshPermissionStatus]);
 
   // Close location prompt when user gets location
   useEffect(() => {
@@ -149,10 +153,44 @@ export function EateryPageClient() {
     }
   }, [showLocationPrompt, userLocation]);
 
+  // Force re-render when permission status changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 EateryPage: Permission status changed to:', permissionStatus);
+    }
+    
+    // If permission is granted but we don't have location, request it
+    if (permissionStatus === 'granted' && !userLocation && !locationLoading) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📍 EateryPage: Permission granted but no location, requesting location');
+      }
+      requestLocation();
+    }
+  }, [permissionStatus, userLocation, locationLoading, requestLocation]);
+
   // Calculate distances and sort restaurants when location is available
   const restaurantsWithDistance = useMemo(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 EateryPage: Recalculating restaurant sorting', {
+        hasUserLocation: !!userLocation,
+        permissionStatus,
+        restaurantCount: restaurants.length
+      });
+    }
+
+    // If no location or permission not granted, return original order
     if (!userLocation || permissionStatus !== 'granted') {
-      return restaurants;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📍 EateryPage: No location available, returning original order');
+      }
+      return restaurants.map(restaurant => ({
+        ...restaurant,
+        distance: undefined
+      }));
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 EateryPage: Calculating distances and sorting by distance');
     }
 
     return restaurants.map(restaurant => {
@@ -270,12 +308,21 @@ export function EateryPageClient() {
                 Enable location to see distance from you
               </span>
             </div>
-            <button
-              onClick={requestLocation}
-              className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
-            >
-              Enable
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={refreshPermissionStatus}
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-2 py-1 rounded-lg hover:bg-blue-100"
+                title="Refresh permission status"
+              >
+                Refresh
+              </button>
+              <button
+                onClick={requestLocation}
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium px-3 py-1 rounded-lg hover:bg-blue-100"
+              >
+                Enable
+              </button>
+            </div>
           </div>
         </div>
       )}

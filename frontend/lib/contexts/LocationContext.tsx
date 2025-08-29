@@ -23,6 +23,7 @@ interface LocationContextType extends LocationState {
   setError: (error: string | null) => void;
   setLoading: (loading: boolean) => void;
   checkPermissionStatus: () => Promise<'granted' | 'denied' | 'prompt' | 'unsupported'>;
+  refreshPermissionStatus: () => Promise<void>;
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
@@ -57,6 +58,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const checkBrowserPermission = async () => {
       if (!navigator.geolocation) {
         setPermissionStatus('unsupported');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 LocationContext: Geolocation not supported');
+        }
         return 'unsupported';
       }
 
@@ -64,11 +68,17 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         // Check if we can get the permission state (modern browsers)
         if ('permissions' in navigator && 'query' in navigator.permissions) {
           const permission = await navigator.permissions.query({ name: 'geolocation' });
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📍 LocationContext: Browser permission state:', permission.state);
+          }
           setPermissionStatus(permission.state);
           
           // Create permission change handler
           const handlePermissionChange = () => {
             const newState = permission.state;
+            if (process.env.NODE_ENV === 'development') {
+              console.log('📍 LocationContext: Permission state changed to:', newState);
+            }
             setPermissionStatus(newState);
             
             if (newState === 'denied') {
@@ -90,17 +100,20 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           // Listen for permission changes
           permission.addEventListener('change', handlePermissionChange);
           
-          // Store the handler for cleanup (if needed)
-          // Note: Permission listeners are automatically cleaned up when the page unloads
-          
           return permission.state;
         } else {
           // Fallback for older browsers - we'll check when user actually requests location
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📍 LocationContext: Permissions API not supported, defaulting to prompt');
+          }
           setPermissionStatus('prompt');
           return 'prompt';
         }
       } catch (error) {
         // If permission query fails, default to prompt
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📍 LocationContext: Permission query failed:', error);
+        }
         setPermissionStatus('prompt');
         return 'prompt';
       }
@@ -318,6 +331,28 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, []);
 
+  const refreshPermissionStatus = useCallback(async (): Promise<void> => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 LocationContext: Refreshing permission status...');
+    }
+    
+    const newStatus = await checkPermissionStatus();
+    setPermissionStatus(newStatus);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📍 LocationContext: Permission status refreshed to:', newStatus);
+    }
+    
+    // If permission is denied, clear any saved location data
+    if (newStatus === 'denied') {
+      setUserLocation(null);
+      setError('Location access was denied');
+      localStorage.removeItem(LOCATION_STORAGE_KEY);
+    } else if (newStatus === 'granted') {
+      setError(null);
+    }
+  }, [checkPermissionStatus]);
+
   const value: LocationContextType = {
     userLocation,
     permissionStatus,
@@ -330,6 +365,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setError: setErrorHandler,
     setLoading: setLoadingHandler,
     checkPermissionStatus,
+    refreshPermissionStatus,
   };
 
   // IMPORTANT: always render children regardless of location status
