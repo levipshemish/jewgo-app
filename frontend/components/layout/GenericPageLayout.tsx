@@ -115,4 +115,3 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     </Wrapper>
   );
 }
-

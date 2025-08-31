@@ -12,18 +12,24 @@ export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
 // Breakpoint-based column calculation matching existing UI expectations
+// Tailwind-like breakpoints for consistent grid behavior
+// <640: mobile baseline handled by MOBILE_COLUMNS
+// >=640 (sm): 3 cols, >=768 (md): 4 cols, >=1024 (lg): 4 cols, >=1280 (xl): 6 cols, >=1536 (2xl): 8 cols
 export function columnsPerRowFromViewport(viewportWidth: number): number {
-  if (viewportWidth >= 1441) return 8; // large desktop
-  if (viewportWidth >= 1025) return 6; // desktop
-  if (viewportWidth >= 769) return 4; // large tablet
-  if (viewportWidth >= 641) return 3; // small tablet
-  // Very small screens fall back to 2 columns via isMobile path.
-  return 1;
+  if (viewportWidth >= 1536) return 8; // 2xl
+  if (viewportWidth >= 1280) return 6; // xl
+  if (viewportWidth >= 1024) return 4; // lg
+  if (viewportWidth >= 768)  return 4; // md
+  if (viewportWidth >= 640)  return 3; // sm
+  return 2; // xs
 }
 
 // Compute items per page ensuring exactly GRID_ROWS rows.
+// Upper bound for cards per page regardless of columns x rows
+export const MAX_GRID_ITEMS_PER_PAGE = 50;
+
 export function itemsPerPageFromViewport(viewportWidth: number, isMobileLike: boolean): number {
   const columns = isMobileLike ? MOBILE_COLUMNS : columnsPerRowFromViewport(viewportWidth);
-  return columns * GRID_ROWS;
+  const target = columns * GRID_ROWS;
+  return Math.min(MAX_GRID_ITEMS_PER_PAGE, target);
 }
-
