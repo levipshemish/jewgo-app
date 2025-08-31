@@ -13,7 +13,6 @@ import ServiceWorkerRegistration from '@/components/ui/ServiceWorkerRegistration
 import { NotificationsProvider } from '@/lib/contexts/NotificationsContext'
 import { LocationProvider } from '@/lib/contexts/LocationContext'
 import { SupabaseProvider } from '@/lib/contexts/SupabaseContext'
-import { sanitizeHtml } from '@/utils/htmlSanitizer'
 import DevNavigation from '@/components/dev/DevNavigation'
 import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 
@@ -99,17 +98,20 @@ export default function RootLayout({
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
           <>
-            <script
-              async
+            <Script
+              id="ga-loader"
+              strategy="afterInteractive"
               src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
             />
-            <script
+            <Script
+              id="ga-init"
+              strategy="afterInteractive"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+                  gtag('config', ${JSON.stringify(process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID)}, {
                     page_title: document.title,
                     page_location: window.location.href,
                   });
@@ -120,11 +122,13 @@ export default function RootLayout({
         )}
         
         {/* App version tracking */}
-        <Script id="app-version" strategy="afterInteractive">
-          {`
-            window.APP_VERSION = '${process.env.NEXT_PUBLIC_APP_VERSION || Date.now()}';
-          `}
-        </Script>
+        <Script
+          id="app-version"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.APP_VERSION = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_VERSION || String(Date.now()))};`
+          }}
+        />
       </head>
       <body className="h-full antialiased font-sans">
         <CustomHead />

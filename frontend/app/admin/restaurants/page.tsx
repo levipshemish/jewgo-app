@@ -27,12 +27,13 @@ function AdminRestaurantsContent() {
 
   const [rows, setRows] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 0, hasNext: false, hasPrev: false });
+  const { DEFAULT_PAGE_SIZE } = require('@/lib/config/pagination');
+  const [pagination, setPagination] = useState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, total: 0, totalPages: 0, hasNext: false, hasPrev: false });
   const [error, setError] = useState<string | null>(null);
 
   // Controlled state derived from URL params
   const page = Number(searchParams.get('page') || '1');
-  const pageSize = Number(searchParams.get('pageSize') || '20');
+  const pageSize = Number(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE));
   const search = searchParams.get('search') || '';
   const sortBy = (searchParams.get('sortBy') || 'submission_date');
   const sortOrder = ((searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc');

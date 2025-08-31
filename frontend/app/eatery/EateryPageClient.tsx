@@ -107,29 +107,13 @@ export function EateryPageClient() {
     setIsHydrated(true);
   }, []);
   
-  // Responsive items per page calculation
+  // Responsive items per page calculation (centralized)
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    if (!isHydrated) {
-      return 8; // fall back to a reasonable payload before hydration
-    }
-
-    // Derive column count from viewport width so each page shows four rows
-    let columnsPerRow = 1;
-
-    if (viewportWidth >= 1441) {
-      columnsPerRow = 8; // Large desktop
-    } else if (viewportWidth >= 1025) {
-      columnsPerRow = 6; // Desktop
-    } else if (viewportWidth >= 769) {
-      columnsPerRow = 4; // Large tablet
-    } else if (viewportWidth >= 641) {
-      columnsPerRow = 3; // Small tablet
-    } else if (viewportWidth >= 360) {
-      columnsPerRow = 2; // Standard mobile
-    } // otherwise remain at 1 column for very small screens
-
-    return columnsPerRow * 4; // Always 4 rows
-  }, [isHydrated, viewportWidth]);
+    const { itemsPerPageFromViewport, FALLBACK_GRID_ITEMS } = require('@/lib/config/pagination');
+    if (!isHydrated) return FALLBACK_GRID_ITEMS;
+    const mobileLike = isMobile || viewportWidth <= 768;
+    return itemsPerPageFromViewport(viewportWidth, mobileLike);
+  }, [isHydrated, viewportWidth, isMobile]);
   
   // Unified mobile detection for infinite scroll and UI gating
   const isMobileView = useMemo(() => {

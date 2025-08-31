@@ -119,8 +119,12 @@ class SupabaseAuthManager:
         got_lock = self.redis.set(lock_key, "1", nx=True, ex=10)
         if got_lock:
             try:
-                # Fetch JWKS from Supabase
-                response = requests.get(self.jwks_url, timeout=5)
+                # Fetch JWKS from Supabase with proper headers
+                headers = {
+                    'apikey': self.supabase_anon_key,
+                    'Authorization': f'Bearer {self.supabase_anon_key}'
+                }
+                response = requests.get(self.jwks_url, headers=headers, timeout=5)
                 response.raise_for_status()
                 jwks = response.json()
                 # Cache each key by kid
@@ -197,8 +201,12 @@ class SupabaseAuthManager:
                     cached_key = self._jwks_fallback_cache.get(kid)
                     if cached_key and cached_key.get("expires_at", 0) > time.time():
                         return cached_key.get("key")
-                # Fetch JWKS
-                response = requests.get(self.jwks_url, timeout=5)
+                # Fetch JWKS with proper headers
+                headers = {
+                    'apikey': self.supabase_anon_key,
+                    'Authorization': f'Bearer {self.supabase_anon_key}'
+                }
+                response = requests.get(self.jwks_url, headers=headers, timeout=5)
                 response.raise_for_status()
                 jwks = response.json()
                 # Initialize cache if needed
@@ -251,7 +259,11 @@ class SupabaseAuthManager:
         if not self.redis or not self.jwks_url:
             return
         try:
-            response = requests.get(self.jwks_url, timeout=10)
+            headers = {
+                'apikey': self.supabase_anon_key,
+                'Authorization': f'Bearer {self.supabase_anon_key}'
+            }
+            response = requests.get(self.jwks_url, headers=headers, timeout=10)
             response.raise_for_status()
             jwks = response.json()
             cache_ttl = self._get_cache_ttl(response.headers)

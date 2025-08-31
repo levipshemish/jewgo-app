@@ -147,7 +147,6 @@ export function VirtualRestaurantList({
 }: VirtualRestaurantListProps) {
   const [displayedRestaurants, setDisplayedRestaurants] = useState<Restaurant[]>([]);
   const [_page, setPage] = useState(1);
-  const _itemsPerPage = 50;
 
   // Load more items when needed
   const handleEndReached = useCallback(() => {

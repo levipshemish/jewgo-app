@@ -77,12 +77,12 @@ export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
   
   // Build query string
   const queryParams = new URLSearchParams();
-  if (page) queryParams.set('page', page.toString());
-  if (limit) queryParams.set('limit', limit.toString());
-  if (search) queryParams.set('search', search);
-  if (role) queryParams.set('role', role);
-  if (user_id) queryParams.set('user_id', user_id);
-  if (include_all !== undefined) queryParams.set('include_all', include_all.toString());
+  if (page) { queryParams.set('page', page.toString()); }
+  if (limit) { queryParams.set('limit', limit.toString()); }
+  if (search) { queryParams.set('search', search); }
+  if (role) { queryParams.set('role', role); }
+  if (user_id) { queryParams.set('user_id', user_id); }
+  if (include_all !== undefined) { queryParams.set('include_all', include_all.toString()); }
   
   const url = `/api/admin/roles?${queryParams.toString()}`;
   
@@ -126,7 +126,7 @@ export function useAssignRole() {
       await mutate(
         (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
         (currentData: any) => {
-          if (!currentData?.data?.users) return currentData;
+          if (!currentData?.data?.users) { return currentData; }
           
           const updatedUsers = currentData.data.users.map((user: User) => {
             if (user.id === params.user_id) {
@@ -209,7 +209,7 @@ export function useRevokeRole() {
       await mutate(
         (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
         (currentData: any) => {
-          if (!currentData?.data?.users) return currentData;
+          if (!currentData?.data?.users) { return currentData; }
           
           const updatedUsers = currentData.data.users.map((user: User) => {
             if (user.id === params.user_id && user.role === params.role) {
@@ -308,7 +308,7 @@ export const updateUserRoleInCache = async (userId: string, roleData: Partial<Us
   await mutate(
     (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
-      if (!currentData?.data?.users) return currentData;
+      if (!currentData?.data?.users) { return currentData; }
       
       const updatedUsers = currentData.data.users.map((user: User) => {
         if (user.id === userId) {
@@ -333,7 +333,7 @@ export const removeUserRoleFromCache = async (userId: string, role: string) => {
   await mutate(
     (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
-      if (!currentData?.data?.users) return currentData;
+      if (!currentData?.data?.users) { return currentData; }
       
       const updatedUsers = currentData.data.users.map((user: User) => {
         if (user.id === userId && user.role === role) {
@@ -365,7 +365,7 @@ export const addUserRoleToCache = async (userId: string, roleData: User) => {
   await mutate(
     (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
-      if (!currentData?.data?.users) return currentData;
+      if (!currentData?.data?.users) { return currentData; }
       
       const updatedUsers = currentData.data.users.map((user: User) => {
         if (user.id === userId) {

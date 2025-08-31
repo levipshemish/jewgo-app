@@ -1,5 +1,6 @@
 import 'server-only';
-import type { AdminRole } from '@/lib/admin/types';
+// Local type definition to avoid restricted import
+type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
 
 // Permission definitions (server-only)
 export const ADMIN_PERMISSIONS = {

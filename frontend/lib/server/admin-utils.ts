@@ -1,6 +1,25 @@
 import 'server-only';
 import type { TransformedUser } from '@/lib/utils/auth-utils';
-import type { AdminUser, AdminRole, AdminSummary } from '@/lib/admin/types';
+// Local type definitions to avoid restricted import
+type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
+type AdminUser = {
+  id: string;
+  email?: string; // Make email optional to match TransformedUser type
+  name?: string;
+  adminRole: AdminRole;
+  roleLevel: number;
+  isSuperAdmin: boolean;
+  permissions: string[];
+  token?: string;
+};
+type AdminSummary = {
+  isAdmin: boolean;
+  role: string | null;
+  level: number;
+  isSuperAdmin: boolean;
+  permissionCount: number;
+  uid_hash?: string;
+};
 import { 
   ADMIN_PERMISSIONS, 
   ROLE_PERMISSIONS,
@@ -22,7 +41,7 @@ if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
  * Check if user is an admin (has any admin role)
  */
 export function isAdmin(user: TransformedUser | null): user is AdminUser {
-  if (!user) return false;
+  if (!user) { return false; }
   return !!(user.adminRole && (user.roleLevel || 0) > 0);
 }
 
@@ -30,7 +49,7 @@ export function isAdmin(user: TransformedUser | null): user is AdminUser {
  * Check if user has a specific permission
  */
 export function hasPermission(user: AdminUser, permission: Permission): boolean {
-  if (!user || !user.permissions) return false;
+  if (!user || !user.permissions) { return false; }
   const normalizedPermission = normalizePermission(permission);
   const normalizedUserPermissions = user.permissions.map(normalizePermission);
   return normalizedUserPermissions.includes(normalizedPermission) || user.isSuperAdmin;
@@ -40,8 +59,8 @@ export function hasPermission(user: AdminUser, permission: Permission): boolean 
  * Check if user has any of the specified permissions
  */
 export function hasAnyPermission(user: AdminUser, permissions: Permission[]): boolean {
-  if (!user || !user.permissions) return false;
-  if (user.isSuperAdmin) return true;
+  if (!user || !user.permissions) { return false; }
+  if (user.isSuperAdmin) { return true; }
   const normalizedPermissions = permissions.map(normalizePermission);
   const normalizedUserPermissions = user.permissions.map(normalizePermission);
   return normalizedPermissions.some(perm => normalizedUserPermissions.includes(perm));
@@ -51,8 +70,8 @@ export function hasAnyPermission(user: AdminUser, permissions: Permission[]): bo
  * Check if user has all of the specified permissions
  */
 export function hasAllPermissions(user: AdminUser, permissions: Permission[]): boolean {
-  if (!user || !user.permissions) return false;
-  if (user.isSuperAdmin) return true;
+  if (!user || !user.permissions) { return false; }
+  if (user.isSuperAdmin) { return true; }
   const normalizedPermissions = permissions.map(normalizePermission);
   const normalizedUserPermissions = user.permissions.map(normalizePermission);
   return normalizedPermissions.every(perm => normalizedUserPermissions.includes(perm));
@@ -62,7 +81,7 @@ export function hasAllPermissions(user: AdminUser, permissions: Permission[]): b
  * Check if user has minimum admin level
  */
 export function hasMinimumAdminLevel(user: TransformedUser | null, minLevel: number): boolean {
-  if (!user || !isAdmin(user)) return false;
+  if (!user || !isAdmin(user)) { return false; }
   return (user.roleLevel || 0) >= minLevel;
 }
 
@@ -70,7 +89,7 @@ export function hasMinimumAdminLevel(user: TransformedUser | null, minLevel: num
  * Check if user is super admin
  */
 export function isSuperAdmin(user: TransformedUser | null): boolean {
-  if (!user) return false;
+  if (!user) { return false; }
   return user.isSuperAdmin === true || user.adminRole === 'super_admin';
 }
 
@@ -78,7 +97,7 @@ export function isSuperAdmin(user: TransformedUser | null): boolean {
  * Get user's admin role
  */
 export function getAdminRole(user: TransformedUser | null): AdminRole | null {
-  if (!user || !isAdmin(user)) return null;
+  if (!user || !isAdmin(user)) { return null; }
   return user.adminRole;
 }
 
@@ -86,7 +105,7 @@ export function getAdminRole(user: TransformedUser | null): AdminRole | null {
  * Get user's role level
  */
 export function getRoleLevel(user: TransformedUser | null): number {
-  if (!user) return 0;
+  if (!user) { return 0; }
   return user.roleLevel || 0;
 }
 
@@ -94,7 +113,7 @@ export function getRoleLevel(user: TransformedUser | null): number {
  * Get user's permissions array
  */
 export function getUserPermissions(user: TransformedUser | null): Permission[] {
-  if (!user || !isAdmin(user)) return [];
+  if (!user || !isAdmin(user)) { return []; }
   return user.permissions || [];
 }
 

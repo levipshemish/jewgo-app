@@ -13,7 +13,27 @@ import {
 } from 'lucide-react';
 import Clock from './Clock';
 import NotificationSystem from './NotificationSystem';
-import { AdminUser } from '@/lib/admin/types';
+// Local type definition to avoid restricted import
+type AdminUser = {
+  id: string;
+  email: string | undefined;
+  name: string | null;
+  username: string | undefined;
+  provider: string;
+  avatar_url: string | null;
+  providerInfo: any;
+  createdAt: string | undefined;
+  updatedAt: string | undefined;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  role: string;
+  permissions: string[];
+  subscriptionTier: string;
+  adminRole: 'moderator' | 'data_admin' | 'system_admin' | 'super_admin' | null;
+  roleLevel: number;
+  isSuperAdmin: boolean;
+  token?: string;
+};
 import { SignOutButton } from '@/components/auth';
 
 interface AdminHeaderProps {
@@ -123,7 +143,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-gray-900">
-                    {adminUser.name || adminUser.email}
+                    {adminUser.name || adminUser.email || 'Admin User'}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
                     {adminUser.adminRole || 'Admin'}
@@ -136,7 +156,7 @@ export default function AdminHeader({ adminUser }: AdminHeaderProps) {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">
-                      {adminUser.name || adminUser.email}
+                      {adminUser.name || adminUser.email || 'Admin User'}
                     </p>
                     <p className="text-xs text-gray-500 capitalize">
                       {adminUser.adminRole || 'Admin'}

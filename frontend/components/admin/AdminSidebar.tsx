@@ -20,9 +20,47 @@ import {
   BarChart3,
   Shield
 } from 'lucide-react';
-import { AdminUser } from '@/lib/admin/types';
-import { hasPermission } from '@/lib/admin/utils-client';
-import { ADMIN_PERMISSIONS } from '@/lib/admin/constants-client';
+// Local type definition to avoid restricted import
+type AdminUser = {
+  id: string;
+  email: string | undefined;
+  name: string | null;
+  username: string | undefined;
+  provider: string;
+  avatar_url: string | null;
+  providerInfo: any;
+  createdAt: string | undefined;
+  updatedAt: string | undefined;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  role: string;
+  permissions: string[];
+  subscriptionTier: string;
+  adminRole: 'moderator' | 'data_admin' | 'system_admin' | 'super_admin' | null;
+  roleLevel: number;
+  isSuperAdmin: boolean;
+  token?: string;
+};
+
+// Local permission constants
+const ADMIN_PERMISSIONS = {
+  ANALYTICS_VIEW: 'analytics:view',
+  RESTAURANT_APPROVE: 'restaurant:approve',
+  REVIEW_MODERATE: 'review:moderate',
+  RESTAURANT_VIEW: 'restaurant:view',
+  REVIEW_VIEW: 'review:view',
+  USER_VIEW: 'user:view',
+  IMAGE_VIEW: 'image:view',
+  SYNAGOGUE_VIEW: 'synagogue:view',
+  KOSHER_PLACE_VIEW: 'kosher_place:view',
+  AUDIT_VIEW: 'audit:view',
+  SYSTEM_SETTINGS: 'system:settings'
+} as const;
+
+// Local permission check function
+const hasPermission = (userPermissions: string[], requiredPermission: string): boolean => {
+  return userPermissions.includes(requiredPermission);
+};
 import { SignOutButton } from '@/components/auth';
 
 interface AdminSidebarProps {
@@ -162,7 +200,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
       }
       // Check for permission requirement
       if ('permission' in item) {
-        return hasPermission(adminUser, (item as any).permission);
+        return hasPermission(adminUser.permissions, (item as any).permission);
       }
       // No restrictions, show the item
       return true;
@@ -201,7 +239,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {adminUser.name || adminUser.email}
+              {adminUser.name || adminUser.email || 'Admin User'}
             </p>
             <p className="text-xs text-gray-500 capitalize">
               {adminUser.adminRole || 'Admin'}

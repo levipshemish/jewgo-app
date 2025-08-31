@@ -1,6 +1,17 @@
 // Client-safe admin utilities (no server-only imports)
 import type { TransformedUser } from '@/lib/utils/auth-utils';
-import type { AdminUser, AdminRole } from '@/lib/admin/types';
+// Local type definitions to avoid restricted import
+type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
+type AdminUser = {
+  id: string;
+  email?: string; // Make email optional to match TransformedUser type
+  name?: string;
+  adminRole: AdminRole;
+  roleLevel: number;
+  isSuperAdmin: boolean;
+  permissions: string[];
+  token?: string;
+};
 import type { Permission } from '@/lib/constants/permissions';
 import { getPermissionsForRole } from './constants-client';
 
@@ -8,7 +19,7 @@ import { getPermissionsForRole } from './constants-client';
  * Check if user is an admin (has any admin role) - client-safe
  */
 export function isAdmin(user: TransformedUser | null): user is AdminUser {
-  if (!user) return false;
+  if (!user) { return false; }
   return !!(user.adminRole && (user.roleLevel || 0) > 0);
 }
 
@@ -16,7 +27,7 @@ export function isAdmin(user: TransformedUser | null): user is AdminUser {
  * Check if user has a specific permission - client-safe
  */
 export function hasPermission(user: AdminUser, permission: Permission): boolean {
-  if (!user || !user.permissions) return false;
+  if (!user || !user.permissions) { return false; }
   return user.permissions.includes(permission) || user.isSuperAdmin;
 }
 
@@ -24,8 +35,8 @@ export function hasPermission(user: AdminUser, permission: Permission): boolean 
  * Check if user has any of the specified permissions - client-safe
  */
 export function hasAnyPermission(user: AdminUser, permissions: Permission[]): boolean {
-  if (!user || !user.permissions) return false;
-  if (user.isSuperAdmin) return true;
+  if (!user || !user.permissions) { return false; }
+  if (user.isSuperAdmin) { return true; }
   return permissions.some(perm => user.permissions.includes(perm));
 }
 
@@ -33,8 +44,8 @@ export function hasAnyPermission(user: AdminUser, permissions: Permission[]): bo
  * Check if user has all of the specified permissions - client-safe
  */
 export function hasAllPermissions(user: AdminUser, permissions: Permission[]): boolean {
-  if (!user || !user.permissions) return false;
-  if (user.isSuperAdmin) return true;
+  if (!user || !user.permissions) { return false; }
+  if (user.isSuperAdmin) { return true; }
   return permissions.every(perm => user.permissions.includes(perm));
 }
 
@@ -42,7 +53,7 @@ export function hasAllPermissions(user: AdminUser, permissions: Permission[]): b
  * Check if user has minimum admin level - client-safe
  */
 export function hasMinimumAdminLevel(user: TransformedUser | null, minLevel: number): boolean {
-  if (!user || !isAdmin(user)) return false;
+  if (!user || !isAdmin(user)) { return false; }
   return (user.roleLevel || 0) >= minLevel;
 }
 
@@ -50,7 +61,7 @@ export function hasMinimumAdminLevel(user: TransformedUser | null, minLevel: num
  * Check if user is super admin - client-safe
  */
 export function isSuperAdmin(user: TransformedUser | null): boolean {
-  if (!user) return false;
+  if (!user) { return false; }
   return user.isSuperAdmin === true || user.adminRole === 'super_admin';
 }
 
@@ -58,7 +69,7 @@ export function isSuperAdmin(user: TransformedUser | null): boolean {
  * Get user's admin role - client-safe
  */
 export function getAdminRole(user: TransformedUser | null): AdminRole | null {
-  if (!user || !isAdmin(user)) return null;
+  if (!user || !isAdmin(user)) { return null; }
   return user.adminRole;
 }
 
@@ -66,7 +77,7 @@ export function getAdminRole(user: TransformedUser | null): AdminRole | null {
  * Get user's role level - client-safe
  */
 export function getRoleLevel(user: TransformedUser | null): number {
-  if (!user) return 0;
+  if (!user) { return 0; }
   return user.roleLevel || 0;
 }
 
@@ -74,7 +85,7 @@ export function getRoleLevel(user: TransformedUser | null): number {
  * Get user's permissions array - client-safe
  */
 export function getUserPermissions(user: TransformedUser | null): Permission[] {
-  if (!user || !isAdmin(user)) return [];
+  if (!user || !isAdmin(user)) { return []; }
   return user.permissions || [];
 }
 
@@ -82,7 +93,7 @@ export function getUserPermissions(user: TransformedUser | null): Permission[] {
  * Get permissions for user's role - client-safe
  */
 export function getRolePermissions(user: TransformedUser | null): Permission[] {
-  if (!user || !user.adminRole) return [];
+  if (!user || !user.adminRole) { return []; }
   return getPermissionsForRole(user.adminRole as AdminRole) as Permission[];
 }
 
@@ -90,8 +101,8 @@ export function getRolePermissions(user: TransformedUser | null): Permission[] {
  * Check if user can perform action based on role level - client-safe
  */
 export function canPerformAction(user: TransformedUser | null, requiredLevel: number): boolean {
-  if (!user || !isAdmin(user)) return false;
-  if (user.isSuperAdmin) return true;
+  if (!user || !isAdmin(user)) { return false; }
+  if (user.isSuperAdmin) { return true; }
   return (user.roleLevel || 0) >= requiredLevel;
 }
 

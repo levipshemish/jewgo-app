@@ -4,7 +4,7 @@ import { logAdminAction, AUDIT_ACTIONS } from './audit';
 
 // Constants for submission status
 const PENDING_STATUS = 'pending_approval';
-const MAX_PAGE_SIZE = 100;
+import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/lib/config/pagination';
 
 /**
  * Helper function to translate entity type and operation to audit action
@@ -173,7 +173,7 @@ export class AdminDatabaseService {
     const { page, pageSize: rawPageSize, search, filters, sortBy, sortOrder } = options;
     
     // Validate and clamp pageSize
-    const pageSize = Math.min(Math.max(1, rawPageSize || 20), 100);
+    const pageSize = Math.min(Math.max(1, rawPageSize || DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
 
     const safePageSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     const safePage = Math.max(page, 1);
