@@ -48,8 +48,7 @@ export function getSafeImageUrl(imageUrl?: string): string {
 
   // For Cloudinary URLs, ensure proper format
   if (imageUrl.includes('cloudinary.com')) {
-    // Normalize known broken 'image_1.{ext}' variants
-    let normalizedUrl = imageUrl.replace(/\/image_1\.(jpg|jpeg|png|webp|avif)$/i, '/image_1');
+    let normalizedUrl = imageUrl;
     
     // Add Cloudinary optimization parameters if missing
     if (!normalizedUrl.includes('/f_auto,q_auto/')) {
@@ -191,10 +190,8 @@ export function fixCloudinaryUrl(url: string): string {
       }
     }
 
-    // Pattern 3: Fix specifically broken public IDs that end with image_\d+.{ext}
-    // Our dataset often references image_# with a file extension that doesn't exist in Cloudinary.
-    // Cloudinary supports extensionless public IDs and will serve the best format with f_auto.
-    path = path.replace(/\/(image_\d+)\.(jpg|jpeg|png|webp|avif)$/i, '/$1');
+    // Pattern 3: Keep the original file extensions as they appear to be valid in the current dataset
+    // path = path.replace(/\/(image_\d+)\.(jpg|jpeg|png|webp|avif)$/i, '/$1');
 
     // Pattern 3b: Ensure sensible default transforms (f_auto,q_auto) are present
     const uploadPrefix = '/image/upload/';
