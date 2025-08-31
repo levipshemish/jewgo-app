@@ -133,8 +133,11 @@ export function EateryPageClient() {
   }, [isHydrated, viewportWidth]);
   
   // Unified mobile detection for infinite scroll and UI gating
+  // Include tablets (up to 1024px) in mobile view for better infinite scroll experience
   const isMobileView = useMemo(() => {
-    return isHydrated && (isMobile || viewportWidth <= 768);
+    // Consider tablets as mobile for infinite scroll (up to 1024px)
+    const isTabletOrMobile = viewportWidth <= 1024;
+    return isHydrated && (isMobile || isTabletOrMobile);
   }, [isHydrated, isMobile, viewportWidth]);
 
   // Advanced filters hook
@@ -551,6 +554,7 @@ export function EateryPageClient() {
         isHydrated,
         isMobile,
         viewportWidth,
+        deviceType: viewportWidth > 1024 ? 'desktop' : viewportWidth > 768 ? 'tablet' : 'mobile',
         allRestaurantsLength: allRestaurants.length,
         restaurantsLength: restaurants.length,
         dataSourceLength: dataSource.length,
