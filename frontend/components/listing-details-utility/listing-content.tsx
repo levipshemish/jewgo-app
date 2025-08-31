@@ -97,8 +97,14 @@ export function ListingContent({
   // Use passed reviews - no fallback to mock data
   const displayReviews = reviews
   
+  // Debug logging
+  console.log('=== LISTING CONTENT DEBUG ===')
+  console.log('rightAction:', rightAction)
+  console.log('onRightAction:', onRightAction)
+  console.log('rightIcon:', rightIcon)
   console.log('ListingContent received reviews:', reviews)
   console.log('Display reviews:', displayReviews)
+  console.log('============================')
 
   // Check if rightText is a rating
   const isRightTextRating = rightText && isRating(rightText)

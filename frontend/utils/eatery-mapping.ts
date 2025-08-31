@@ -116,9 +116,17 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      src: eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg',
+      src: (() => {
+        const src = eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg'
+        console.log('Image src:', src)
+        return src
+      })(),
       alt: `${eatery.name} - ${eatery.kosher_type || 'Kosher'} Restaurant`,
-      allImages: eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean),
+      allImages: (() => {
+        const allImages = eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean)
+        console.log('All images for gallery:', allImages)
+        return allImages
+      })(),
       onAction: () => {
         // This will trigger the gallery view in ListingImage component
         console.log('View gallery clicked for:', eatery.name)

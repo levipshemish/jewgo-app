@@ -28,6 +28,15 @@ export function ListingImage({
 }: ListingImageProps) {
   const [showCarousel, setShowCarousel] = useState(false)
 
+  // Debug logging
+  console.log('=== LISTING IMAGE DEBUG ===')
+  console.log('src:', src)
+  console.log('allImages:', allImages)
+  console.log('onAction:', onAction)
+  console.log('allImages.length:', allImages.length)
+  console.log('Should show gallery button:', onAction || allImages.length > 0)
+  console.log('==========================')
+
   const handleViewGallery = () => {
     if (allImages.length > 0) {
       setShowCarousel(true)
