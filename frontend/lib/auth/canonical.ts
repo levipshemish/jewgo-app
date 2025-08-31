@@ -33,7 +33,7 @@ export async function requireMinimumRoleLevel(minLevel: number) {
 export async function validateAdminAccess(options: {
   permissions?: string[];
   minRoleLevel?: number;
-  allowedRoles?: string[];
+  allowedRoles?: import('@/lib/admin/types').AdminRole[];
 }) {
   console.warn('[ADMIN] validateAdminAccess from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { validateAdminAccess: newValidateAdminAccess } = await import('../server/canonical-auth');

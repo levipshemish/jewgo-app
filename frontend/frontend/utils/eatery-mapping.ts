@@ -38,11 +38,10 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      imageUrl: eatery.image_url, // Main image
-      imageAlt: `${eatery.name} restaurant`,
-      imageActionLabel: "View Gallery",
-      images: eatery.additional_images || [eatery.image_url], // Pass all images for carousel
-      viewCount: eatery.stats.view_count, // Pass view count for image overlay
+      src: eatery.image_url, // Main image
+      alt: `${eatery.name} restaurant`,
+      actionLabel: "View Gallery",
+      allImages: eatery.additional_images || [eatery.image_url].filter((img): img is string => Boolean(img)), // Pass all images for carousel
     },
 
     // Content Section
@@ -145,14 +144,22 @@ export function createMockEateryData(): EateryDB {
       wednesday: { open: "9:00 AM", close: "10:00 PM" },
       thursday: { open: "9:00 AM", close: "11:00 PM" },
       friday: { open: "9:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
+      saturday: { open: "", close: "", closed: true },
       sunday: { open: "10:00 AM", close: "9:00 PM" },
     },
-    phone_number: "+1-555-123-4567",
-    email: "info@kosherdelight.com",
-    website_url: "https://kosherdelight.com",
-    latitude: 40.7128,
-    longitude: -74.0060,
+    contact: {
+      phone: "+1-555-123-4567",
+      email: "info@kosherdelight.com",
+      website: "https://kosherdelight.com",
+    },
+    location: {
+      latitude: 40.7128,
+      longitude: -74.0060,
+    },
+    admin_settings: {
+      show_order_button: true,
+      order_url: "https://kosherdelight.com/order",
+    },
     stats: {
       view_count: 1250,
       share_count: 89,
@@ -197,14 +204,20 @@ export function createMockEateryDataNoEmail(): EateryDB {
       wednesday: { open: "11:00 AM", close: "9:00 PM" },
       thursday: { open: "11:00 AM", close: "9:00 PM" },
       friday: { open: "11:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
+      saturday: { open: "", close: "", closed: true },
       sunday: { open: "12:00 PM", close: "8:00 PM" },
     },
-    phone_number: "+1-555-987-6543",
-    email: undefined, // No email for testing
-    website_url: "https://shalompizza.com",
-    latitude: 40.7589,
-    longitude: -73.9851,
+    contact: {
+      phone: "+1-555-987-6543",
+      website: "https://shalompizza.com",
+    },
+    location: {
+      latitude: 40.7589,
+      longitude: -73.9851,
+    },
+    admin_settings: {
+      show_order_button: false,
+    },
     stats: {
       view_count: 890,
       share_count: 45,

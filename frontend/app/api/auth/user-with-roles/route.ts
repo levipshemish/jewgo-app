@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
       const backendPermissionsRaw: unknown[] = roleData.permissions || [];
 
       // Use validatePermissions for consistent normalization and fallback handling
-      const { permissions } = validatePermissions(backendPermissionsRaw, rolePermissionsRaw);
+      const { permissions } = validatePermissions(backendPermissionsRaw, [...rolePermissionsRaw]);
 
       const res = NextResponse.json(
         { 

@@ -323,7 +323,7 @@ export function createMockEateryData(): EateryDB {
       wednesday: { open: "9:00 AM", close: "10:00 PM" },
       thursday: { open: "9:00 AM", close: "11:00 PM" },
       friday: { open: "9:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
+      saturday: { open: "", close: "", closed: true },
       sunday: { open: "10:00 AM", close: "9:00 PM" },
     },
     contact: {
@@ -380,7 +380,7 @@ export function createMockEateryDataNoEmail(): EateryDB {
       wednesday: { open: "11:00 AM", close: "9:00 PM" },
       thursday: { open: "11:00 AM", close: "9:00 PM" },
       friday: { open: "11:00 AM", close: "3:00 PM" },
-      saturday: { closed: true },
+      saturday: { open: "", close: "", closed: true },
       sunday: { open: "12:00 PM", close: "8:00 PM" },
     },
     contact: {

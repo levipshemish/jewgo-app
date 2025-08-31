@@ -38,17 +38,27 @@ function toRadians(degrees: number): number {
 export function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: string; time: string }> {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   
-  return days.map(day => {
-    const dayKey = day.toLowerCase() as keyof EateryDB["hours"]
+  const result: Array<{ day: string; time: string }> = days.map(day => {
+    const dayKey = day.toLowerCase() as keyof EateryDB['hours']
     const dayHours = hours[dayKey]
+    
+    // Default case
     if (!dayHours) {
       return { day, time: 'Closed' }
     }
+    
+    // Handle the hours object format
+    if (dayHours.closed) {
+      return { day, time: 'Closed' }
+    }
+    
     return { 
       day, 
-      time: dayHours 
+      time: `${dayHours.open} - ${dayHours.close}`
     }
   })
+  
+  return result
 }
 
 /**
