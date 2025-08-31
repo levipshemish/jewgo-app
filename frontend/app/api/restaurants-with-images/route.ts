@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
@@ -246,6 +245,7 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       // If backend is down, return sample data instead of throwing error
       if (response.status === 500 || response.status === 503) {
+        // eslint-disable-next-line no-console
         console.warn(`Backend API unavailable (${response.status}), returning sample data`);
         return NextResponse.json({
           success: true,
@@ -267,8 +267,11 @@ export async function GET(request: NextRequest) {
     
     // Log for debugging in production
     if (process.env.NODE_ENV === 'production') {
+      // eslint-disable-next-line no-console
       console.log('API Response - Total restaurants from backend:', allRestaurants.length);
+      // eslint-disable-next-line no-console
       console.log('First restaurant image URL (raw):', allRestaurants[0]?.image_url);
+      // eslint-disable-next-line no-console
       console.log('First restaurant image URL (sanitized):', sanitizedRestaurants[0]?.image_url);
     }
     
@@ -292,7 +295,9 @@ export async function GET(request: NextRequest) {
     
     // More debugging
     if (process.env.NODE_ENV === 'production') {
+      // eslint-disable-next-line no-console
       console.log('Restaurants with images count:', restaurantsWithImages.length);
+      // eslint-disable-next-line no-console
       console.log('Is sample data:', isSampleData);
     }
 
@@ -313,13 +318,17 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error fetching restaurants with images:', error);
+    // eslint-disable-next-line no-console
     console.error('Backend URL used:', backendUrl);
+    // eslint-disable-next-line no-console
     console.error('Full API URL:', apiUrl);
     
     // Handle timeout and network errors gracefully
     if (error instanceof Error) {
       if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        // eslint-disable-next-line no-console
         console.warn('Backend request timed out, returning sample data');
         return NextResponse.json({
           success: true,
@@ -340,5 +349,4 @@ export async function GET(request: NextRequest) {
       apiUrl: apiUrl
     }, { status: 500 });
   }
-} 
-/* eslint-disable no-console */
+}

@@ -247,6 +247,7 @@ export function EateryPageClient() {
       
       if (data.success) {
         if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          // eslint-disable-next-line no-console
           console.log('🎯 EateryPageClient: API Response Success', {
             dataLength: data.data?.length,
             total: data.total,
@@ -290,6 +291,7 @@ export function EateryPageClient() {
         }
       } else {
         if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          // eslint-disable-next-line no-console
           console.error('🚨 EateryPageClient: API Response Failed', {
             success: data.success,
             error: data.error,
@@ -303,6 +305,7 @@ export function EateryPageClient() {
         return; // Request was aborted, ignore
       }
       setError('Failed to fetch restaurants');
+      // eslint-disable-next-line no-console
       console.error('Error fetching restaurants:', err);
     } finally {
       setLoading(false);
@@ -436,6 +439,7 @@ export function EateryPageClient() {
         if (err instanceof Error && err.name === 'AbortError') {
           return; // Request was aborted, ignore
         }
+        // eslint-disable-next-line no-console
         console.error('Error fetching more restaurants:', err);
         // Back off after repeated failures to avoid infinite loading loop
         loadErrorCountRef.current += 1;
@@ -496,13 +500,16 @@ export function EateryPageClient() {
         // Check the actual browser permission status
         const actualPermissionStatus = await checkPermissionStatus();
         
-        console.log('🌍 Location prompt check:', {
-          hasShownLocationPrompt,
-          userLocation: !!userLocation,
-          locationLoading,
-          isHydrated,
-          actualPermissionStatus
-        });
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('🌍 Location prompt check:', {
+            hasShownLocationPrompt,
+            userLocation: !!userLocation,
+            locationLoading,
+            isHydrated,
+            actualPermissionStatus
+          });
+        }
         
         // Only show prompt if permission is not denied and not granted
         if (actualPermissionStatus === 'prompt') {
@@ -549,6 +556,7 @@ export function EateryPageClient() {
     const dataSource = isMobileView ? allRestaurants : restaurants;
     
     if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      // eslint-disable-next-line no-console
       console.log('📍 EateryPage: RestaurantsWithDistance Calculation', {
         isMobileView,
         isHydrated,
