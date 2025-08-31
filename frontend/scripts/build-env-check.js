@@ -30,9 +30,11 @@ console.log(`Has DATABASE_URL: ${hasDatabaseUrl}`);
 if (isBuildTime && !hasDatabaseUrl) {
   console.log('⚠️  Build time detected without DATABASE_URL - using temporary connection');
   
-  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp'; // TEMP: Remove by 2025-12-31
+  // Use a more realistic temporary connection string for Prisma generation
+  process.env.DATABASE_URL = 'postgresql://temp:temp@localhost:5432/temp?schema=public';
   
   console.log('✅ Temporary DATABASE_URL set for Prisma generation');
+  console.log('ℹ️  Note: Database connection will be skipped during build time');
 }
 
 // Check if Prisma schema exists
@@ -43,6 +45,13 @@ if (!fs.existsSync(schemaPath)) {
 }
 
 console.log('✅ Prisma schema found');
+
+// Set environment variable to indicate build time for Prisma client
+if (isBuildTime) {
+  process.env.SKIP_DB_ACCESS = 'true';
+  console.log('✅ SKIP_DB_ACCESS set for build time');
+}
+
 console.log('✅ Build environment check completed');
 
 module.exports = {

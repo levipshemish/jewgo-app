@@ -6,23 +6,50 @@ declare global {
   var __prisma__: PrismaClient | undefined;
 }
 
+// Check if we're in a build-time environment where database connection should be avoided
+const isBuildTime = process.env.NODE_ENV === 'production' && 
+  (process.env.VERCEL === '1' || process.env.CI === 'true') &&
+  typeof window === 'undefined';
+
+// Check if we're in a static generation context
+const isStaticGeneration = typeof window === 'undefined' && 
+  process.env.NODE_ENV === 'production' && 
+  (process.env.VERCEL === '1' || process.env.CI === 'true');
+
 const createPrismaClient = () => {
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     errorFormat: 'pretty',
   });
 
-  // Add connection error handling
-  client.$connect()
-    .catch((error) => {
-      console.error('[PRISMA] Database connection failed:', error);
-    });
+  // Only attempt connection if not in build time or static generation
+  if (!isBuildTime && !isStaticGeneration) {
+    client.$connect()
+      .catch((error) => {
+        console.error('[PRISMA] Database connection failed:', error);
+      });
+  } else {
+    console.log('[PRISMA] Skipping database connection during build/static generation');
+  }
 
   return client;
 };
 
-export const prisma: PrismaClient = global.__prisma__ || createPrismaClient();
+// Lazy-loaded Prisma client
+let _prisma: PrismaClient | undefined;
 
-if (process.env.NODE_ENV !== 'production') {
-  global.__prisma__ = prisma;
-}
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(target, prop) {
+    if (!_prisma) {
+      if (isStaticGeneration) {
+        console.log('[PRISMA] Skipping Prisma client initialization during static generation');
+        return () => Promise.resolve([]); // Return empty array for queries
+      }
+      _prisma = global.__prisma__ || createPrismaClient();
+      if (process.env.NODE_ENV !== 'production') {
+        global.__prisma__ = _prisma;
+      }
+    }
+    return _prisma[prop as keyof PrismaClient];
+  }
+});

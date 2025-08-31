@@ -261,12 +261,19 @@ export async function GET(request: NextRequest) {
     const allRestaurants = data.restaurants || data.data || data || [];
     const sanitizedRestaurants = sanitizeRestaurantData(allRestaurants);
     
-    const restaurantsWithImages = sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
-      restaurant.image_url && 
-      restaurant.image_url !== null && 
-      restaurant.image_url !== '' && 
-      restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
-    );
+    // Check if this is sample data (either from message or by checking if all restaurants have default images)
+    const isSampleData = data.message && data.message.includes('sample data') || 
+                        (sanitizedRestaurants.length > 0 && 
+                         sanitizedRestaurants.every((r: any) => r.image_url === '/images/default-restaurant.webp'));
+    
+    const restaurantsWithImages = isSampleData 
+      ? sanitizedRestaurants // Include all restaurants for sample data
+      : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
+          restaurant.image_url && 
+          restaurant.image_url !== null && 
+          restaurant.image_url !== '' && 
+          restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
+        );
 
     // Respect pagination even if backend ignores limit/offset
     const totalAvailable = data.total || data.count || restaurantsWithImages.length;
