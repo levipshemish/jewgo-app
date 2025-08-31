@@ -1,23 +1,23 @@
 import { AdminDatabaseService } from '@/lib/admin/database';
 
 // Mock Prisma
-jest.mock('@/lib/db/prisma', () => ({}
-  prisma: {}
-    restaurant: {}
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    restaurant: {
       findMany: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
-    user: {}
+    user: {
       findMany: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
     },
-    review: {}
+    review: {
       findMany: jest.fn(),
       count: jest.fn(),
       findUnique: jest.fn(),

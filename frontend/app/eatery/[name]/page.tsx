@@ -133,8 +133,8 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
 
     console.log('Parsed hours:', hours)
     return hours
-  } catch (error) {
-    console.error('Error parsing hours JSON:', error)
+  } catch (err) {
+    console.error('Error parsing hours JSON:', err)
     return {
       monday: { open: '', close: '', closed: true },
       tuesday: { open: '', close: '', closed: true },
