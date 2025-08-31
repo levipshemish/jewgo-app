@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ListingPage } from "@/components/listing-details-utility/listing-page"
 import { mapEateryToListingData } from "@/utils/eatery-mapping-utility"
@@ -173,7 +173,7 @@ function convertApiDataToEateryDB(apiData: ApiEateryData): EateryDB {
   }
 }
 
-export default function TestListingPage() {
+function TestListingContent() {
   const searchParams = useSearchParams()
   const [eatery, setEatery] = useState<EateryDB | null>(null)
   const [loading, setLoading] = useState(true)
@@ -275,5 +275,13 @@ export default function TestListingPage() {
         />
       </div>
     </main>
+  )
+}
+
+export default function TestListingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TestListingContent />
+    </Suspense>
   )
 }
