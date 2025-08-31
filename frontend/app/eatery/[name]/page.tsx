@@ -313,12 +313,25 @@ export default function EateryNamePage() {
             ].filter(Boolean)
             return addressParts.join(', ')
           })(),
+          city: detailData.city || foundRestaurant.city || '',
+          state: detailData.state || foundRestaurant.state || '',
+          zip_code: detailData.zip_code || foundRestaurant.zip_code || '',
+          phone_number: detailData.contact?.phone || foundRestaurant.phone_number || '',
+          listing_type: detailData.listing_type || foundRestaurant.listing_type || 'restaurant',
           rating: detailData.rating || foundRestaurant.google_rating || 0,
           price_range: detailData.price_range || foundRestaurant.price_range || '$',
           kosher_type: detailData.kosher_type || foundRestaurant.kosher_category || '',
           kosher_agency: detailData.kosher_agency || foundRestaurant.certifying_agency || '',
           kosher_certification: detailData.kosher_certification || '',
-          images: detailData.images || [foundRestaurant.image_url].filter(Boolean),
+          images: (() => {
+            // Ensure we have at least one image for the gallery
+            const allImages = [
+              ...(detailData.images || []),
+              ...(foundRestaurant.additional_images || []),
+              foundRestaurant.image_url
+            ].filter(Boolean)
+            return allImages.length > 0 ? allImages : ['/modern-product-showcase-with-clean-background.png']
+          })(),
           hours: (() => {
             console.log('Processing hours data...')
             console.log('detailData.hours_parsed:', detailData.hours_parsed)

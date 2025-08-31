@@ -73,7 +73,7 @@ export function mapRestaurantToListingData(restaurant: Restaurant, userLocation?
 
   return {
     image: {
-      src: restaurant.image_url || '/placeholder-restaurant.jpg',
+      src: restaurant.image_url || '/images/default-restaurant.jpg',
       alt: `${restaurant.name} restaurant`,
       actionLabel: "View Gallery",
     },

@@ -78,7 +78,7 @@ export class SpecialsAPI {
           discount: special.discount_percent ? `${special.discount_percent}% OFF` : 'Special Offer',
           validUntil: special.end_date || '2024-12-31',
           category: special.special_type || 'promotion',
-          image: '/images/placeholder-restaurant.jpg',
+          image: '/images/default-restaurant.jpg',
           restaurant_id: special.restaurant_id,
         }));
       }
@@ -122,7 +122,7 @@ export class SpecialsAPI {
         discount: '20% OFF',
         validUntil: '2024-01-31',
         category: 'shabbat',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       },
       {
         id: 2,
@@ -132,7 +132,7 @@ export class SpecialsAPI {
         discount: '15% OFF',
         validUntil: '2024-02-15',
         category: 'lunch',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       },
       {
         id: 3,
@@ -142,7 +142,7 @@ export class SpecialsAPI {
         discount: '50% OFF',
         validUntil: '2024-01-25',
         category: 'dessert',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       },
       {
         id: 4,
@@ -152,7 +152,7 @@ export class SpecialsAPI {
         discount: '25% OFF',
         validUntil: '2024-02-10',
         category: 'dinner',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       },
       {
         id: 5,
@@ -162,7 +162,7 @@ export class SpecialsAPI {
         discount: '10% OFF',
         validUntil: '2024-01-30',
         category: 'breakfast',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       },
       {
         id: 6,
@@ -172,7 +172,7 @@ export class SpecialsAPI {
         discount: '20% OFF',
         validUntil: '2024-03-01',
         category: 'catering',
-        image: '/images/placeholder-restaurant.jpg'
+        image: '/images/default-restaurant.jpg'
       }
     ];
   }

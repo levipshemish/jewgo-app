@@ -1,13 +1,13 @@
 import { ListingData, EateryDB, UserLocation } from '@/types/listing'
 
 // Helper function to calculate distance using Haversine formula
-function calculateDistance(location1: { latitude: number; longitude: number }, location2: { latitude: number; longitude: number }): number {
+function calculateDistance(location1: { latitude: number; longitude: number }, location2: { lat: number; lng: number }): number {
   const R = 3959 // Earth's radius in miles
-  const dLat = (location2.latitude - location1.latitude) * Math.PI / 180
-  const dLon = (location2.longitude - location1.longitude) * Math.PI / 180
+  const dLat = (location2.lat - location1.latitude) * Math.PI / 180
+  const dLon = (location2.lng - location1.longitude) * Math.PI / 180
   const a = 
     Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.latitude * Math.PI / 180) * 
+    Math.cos(location1.latitude * Math.PI / 180) * Math.cos(location2.lat * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
   return R * c
@@ -86,6 +86,17 @@ export function mapEateryToListingData(
   onLocationRequest?: () => void,
   locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
+  
+  // Debug logging
+  console.log('=== MAPPING DEBUG ===')
+  console.log('Eatery images:', eatery.images)
+  console.log('Eatery image_url:', eatery.image_url)
+  console.log('Eatery additional_images:', eatery.additional_images)
+  console.log('User location:', userLocation)
+  console.log('Eatery location:', eatery.location)
+  console.log('Location permission:', locationPermission)
+  console.log('========================')
+  
   const result = {
     // Header Section - Remove title from header, only show kosher info and stats
     header: {
@@ -105,9 +116,13 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      src: eatery.image_url || '/placeholder-eatery.jpg',
+      src: eatery.images?.[0] || eatery.image_url || '/images/default-restaurant.jpg',
       alt: `${eatery.name} - ${eatery.kosher_type || 'Kosher'} Restaurant`,
-      allImages: eatery.additional_images || [eatery.image_url].filter(Boolean),
+      allImages: eatery.images || eatery.additional_images || [eatery.image_url].filter(Boolean),
+      onAction: () => {
+        // This will trigger the gallery view in ListingImage component
+        console.log('View gallery clicked for:', eatery.name)
+      }
     },
 
     // Content Section
@@ -115,7 +130,9 @@ export function mapEateryToListingData(
       leftText: eatery.name,
       rightText: formatRating(eatery.rating),
       leftAction: formatPriceRange(eatery.price_range),
-      rightAction: userLocation && eatery.latitude && eatery.longitude ? calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, userLocation) : undefined,
+      rightAction: userLocation && eatery.location?.latitude && eatery.location?.longitude 
+        ? formatDistance(calculateDistance({ latitude: eatery.location.latitude, longitude: eatery.location.longitude }, userLocation))
+        : "Get Location",
       rightIcon: "map-pin",
       onRightAction: onLocationRequest,
       leftBold: true,
