@@ -6,7 +6,7 @@
   margin-inline: auto;
   width: 100%;
   max-width: 1440px;
-  background-color: #fff;
+  background-color: transparent;
   position: relative;
   z-index: 0;
 }

@@ -305,11 +305,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
               </span>
             </button>
         )}
+        </div>
       </div>
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="unified-card-content pt-2 flex flex-col bg-transparent"
+        className="unified-card-content pt-2 px-3 pb-3 flex flex-col bg-transparent"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
@@ -329,7 +330,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           {cardData.badge && (
             <div
               className={cn(
-                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm ml-auto",
+                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
                 variantStyles.badgeClass
               )}
               style={{
@@ -347,11 +348,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           )}
         </div>
         
-        <div className="flex justify-between items-center mt-0.5">
+        <div className="flex justify-between items-center mt-0.5 gap-3">
           <p className="text-xs text-muted-foreground line-clamp-1 flex-1 min-w-0">
             {cardData.subtitle || ''}
           </p>
-          <p className="text-xs text-muted-foreground line-clamp-1 ml-2 flex-shrink-0">
+          <p className="text-xs text-muted-foreground line-clamp-1 flex-shrink-0">
             {cardData.additionalText || ''}
           </p>
         </div>
@@ -426,7 +427,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       {cardContent}
     </motion.div>
   );
-}));
+});
 
 UnifiedCard.displayName = 'UnifiedCard';
 

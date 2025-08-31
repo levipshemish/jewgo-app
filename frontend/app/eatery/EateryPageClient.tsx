@@ -642,7 +642,7 @@ export function EateryPageClient() {
           onShowFilters={handleShowFilters}
         />
         
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
           <CategoryTabs activeTab="eatery" />
         </div>
         
@@ -666,7 +666,7 @@ export function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20 eatery-page">
+    <div className="min-h-screen bg-transparent pb-20 eatery-page">
       <div className="sticky top-0 z-50 bg-white">
         <Header 
           onSearch={handleSearch}
@@ -675,7 +675,7 @@ export function EateryPageClient() {
           onShowFilters={handleShowFilters}
         />
         
-        <div className="px-4 sm:px-6 py-2 bg-white border-b border-gray-100">
+        <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
           <CategoryTabs activeTab="eatery" />
         </div>
         
