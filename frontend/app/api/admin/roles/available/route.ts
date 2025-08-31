@@ -13,10 +13,11 @@ export async function GET(request: NextRequest) {
       // Forward request to backend
       const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/available`;
       
+      const authHeader = admin.token ? `Bearer ${admin.token}` : '';
       const response = await fetch(backendUrl, {
         method: 'GET',
         headers: {
-          'Authorization': admin.token ? `Bearer ${admin.token}` : '',
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
       });
