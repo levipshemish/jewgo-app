@@ -47,8 +47,9 @@ class SupabaseAuthManager:
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
         self.project_id = os.getenv("SUPABASE_PROJECT_ID")
         self.expected_audience = os.getenv("SUPABASE_JWT_AUD", "authenticated")
+        # Use the correct Supabase JWKS endpoint
         self.jwks_url = (
-            f"{self.supabase_url}/.well-known/jwks.json" if self.supabase_url else None
+            f"{self.supabase_url}/auth/v1/keys" if self.supabase_url else None
         )
         self.cache_ttl = int(os.getenv("JWKS_CACHE_TTL", "86400"))  # 24 hours
         self.refresh_interval = int(

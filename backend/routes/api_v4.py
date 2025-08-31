@@ -2,6 +2,7 @@ import os
 import re
 import sys
 from datetime import datetime
+from functools import wraps
 from typing import Any, Dict, Optional
 from utils.logging_config import get_logger
 from werkzeug.exceptions import HTTPException
@@ -80,6 +81,7 @@ except ImportError:
 # Super admin auth decorator
 def require_super_admin_auth(f):
     """Decorator to require super_admin role for endpoints."""
+    @wraps(f)
     def decorated_function(*args, **kwargs):
         # First check admin auth
         admin_result = require_admin_auth(lambda: None)()
