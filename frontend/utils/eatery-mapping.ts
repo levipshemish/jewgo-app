@@ -130,9 +130,29 @@ export function mapEateryToListingData(
       leftText: eatery.name,
       rightText: formatRating(eatery.rating),
       leftAction: formatPriceRange(eatery.price_range),
-      rightAction: userLocation && eatery.location?.latitude && eatery.location?.longitude 
-        ? formatDistance(calculateDistance({ latitude: eatery.location.latitude, longitude: eatery.location.longitude }, userLocation))
-        : "Get Location",
+      rightAction: (() => {
+        const hasUserLocation = !!userLocation
+        const hasEateryLocation = !!(eatery.location?.latitude && eatery.location?.longitude)
+        console.log('Distance calculation debug:')
+        console.log('  - Has user location:', hasUserLocation)
+        console.log('  - Has eatery location:', hasEateryLocation)
+        console.log('  - User location:', userLocation)
+        console.log('  - Eatery location:', eatery.location)
+        
+        if (hasUserLocation && hasEateryLocation) {
+          const distance = calculateDistance(
+            { latitude: eatery.location.latitude, longitude: eatery.location.longitude }, 
+            userLocation!
+          )
+          const formattedDistance = formatDistance(distance)
+          console.log('  - Calculated distance:', distance)
+          console.log('  - Formatted distance:', formattedDistance)
+          return formattedDistance
+        } else {
+          console.log('  - Returning "Get Location"')
+          return "Get Location"
+        }
+      })(),
       rightIcon: "map-pin",
       onRightAction: onLocationRequest,
       leftBold: true,
