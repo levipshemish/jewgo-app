@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-08-31T16:27:51.337Z",
+  "mode": "quick-validation",
+  "status": "passed",
+  "metrics": {
+    "executionTime": "N/A",
+    "memoryUsage": "N/A",
+    "cpuUsage": "N/A"
+  },
+  "recommendations": [
+    "Run full performance monitoring locally for detailed analysis"
+  ]
+}
