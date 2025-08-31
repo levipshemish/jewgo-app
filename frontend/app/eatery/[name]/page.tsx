@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -49,11 +50,13 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
     }
 
     weekdayText.forEach((dayText: string) => {
+      // eslint-disable-next-line no-console
       console.log('Parsing day text:', dayText)
       const dayMatch = dayText.match(/^(\w+):\s*(.+)$/i)
       if (dayMatch) {
         const dayName = dayMatch[1].toLowerCase()
         const rawTimeText = dayMatch[2].trim()
+        // eslint-disable-next-line no-console
         console.log('Day name:', dayName, 'Raw time text:', rawTimeText)
         
         if (dayMap[dayName]) {
@@ -69,11 +72,13 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
               .replace(/\s+/g, ' ') // normalize multiple spaces
               .trim()
             
+            // eslint-disable-next-line no-console
             console.log('Normalized time text:', normalizedTimeText)
             
             // More flexible regex to handle various time formats
             const timeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
             if (timeMatch) {
+              // eslint-disable-next-line no-console
               console.log('Time match found:', timeMatch)
               hours[dayMap[dayName]] = {
                 open: `${timeMatch[1]}:${timeMatch[2]} ${timeMatch[3]}`,
@@ -81,6 +86,7 @@ function parseHoursFromJson(hoursData: string | object): EateryDB['hours'] {
                 closed: false
               }
             } else {
+              // eslint-disable-next-line no-console
               console.log('No time match for normalized text:', normalizedTimeText)
               // Try alternative format without AM/PM for first time
               const altTimeMatch = normalizedTimeText.match(/(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i)
@@ -167,7 +173,8 @@ export default function EateryNamePage() {
       setReviewsLoading(true)
       console.log('Fetching reviews for restaurant:', restaurantId, 'offset:', offset, 'limit:', limit)
       
-      const response = await fetch(`http://127.0.0.1:8082/api/v4/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+      const response = await fetch(`${backendUrl}/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       if (!response.ok) {
         console.log('No reviews found or error fetching reviews')
         if (offset === 0) {
@@ -230,7 +237,8 @@ export default function EateryNamePage() {
 
         // Try to find the restaurant by name first (for URL slug to restaurant mapping)
         console.log('Fetching restaurants list...')
-        const searchResponse = await fetch(`http://127.0.0.1:8082/api/restaurants?limit=1000`)
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
+        const searchResponse = await fetch(`${backendUrl}/api/restaurants?limit=1000`)
         if (!searchResponse.ok) {
           throw new Error(`Failed to fetch restaurants: ${searchResponse.status}`)
         }
@@ -289,7 +297,7 @@ export default function EateryNamePage() {
 
         // Now use the backend's ID-based search utility
         console.log('Fetching restaurant details...')
-        const detailResponse = await fetch(`http://127.0.0.1:8082/api/restaurants/${foundRestaurant.id}`)
+        const detailResponse = await fetch(`${backendUrl}/api/restaurants/${foundRestaurant.id}`)
         if (!detailResponse.ok) {
           throw new Error(`Failed to fetch restaurant details: ${detailResponse.status}`)
         }
