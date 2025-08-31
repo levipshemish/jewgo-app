@@ -94,7 +94,14 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
         )}
 
         {enableInfiniteScroll && hasNextPage && (
-          <div ref={mergedRef} className={styles.sentinel} data-testid="gpl-sentinel" />
+          <div ref={mergedRef} className={styles.sentinel} data-testid="gpl-sentinel">
+            {isLoadingMore && (
+              <div className={styles.loadingIndicator}>
+                <div className={styles.spinner} />
+                <span>Loading more...</span>
+              </div>
+            )}
+          </div>
         )}
 
         {afterItems}

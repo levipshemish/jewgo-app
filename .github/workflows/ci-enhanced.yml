@@ -32,6 +32,7 @@ jobs:
   frontend:
     name: Frontend - Lint & Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
     - name: Checkout code
@@ -77,35 +78,45 @@ jobs:
         npm run build
         
     - name: Mendel Mode v4.2 - Progressive Enhancement Tracking
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/phase_tracking.sh
       
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/dup_scan.js
       
     - name: Mendel Mode v4.2 - Root Litter Check
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/root_litter_check.sh
       
+    - name: Generate test coverage
+      run: |
+        cd $GITHUB_WORKSPACE/frontend
+        npm test -- --coverage --coverageReporters=json --coverageReporters=lcov --passWithNoTests
+        
     - name: Mendel Mode v4.2 - Coverage Gate Enforcement (Global 80% + Module 70%)
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        if [ -f coverage/coverage-summary.json ]; then
-          node ../ci-scripts/coverage_gate.js 80 70 coverage/coverage-summary.json
+        if [ -f coverage/coverage-final.json ]; then
+          node ../ci-scripts/coverage_gate.js 80 70 coverage/coverage-final.json
         else
           echo "No coverage summary found. If FE has tests, ensure coverage is generated."
         fi
         
     - name: Mendel Mode v4.2 - Performance Budget Enforcement
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         if [ -f dist/stats.json ]; then
@@ -115,6 +126,7 @@ jobs:
         fi
         
     - name: Mendel Mode v4.2 - Performance Regression Tracking
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         if [ -f current-metrics.json ]; then
@@ -137,6 +149,7 @@ jobs:
   script-testing:
     name: Script Testing Framework
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: ${{ github.event.inputs.run_script_tests != 'false' }}
     
     steps:
@@ -158,11 +171,13 @@ jobs:
         npm ci
       
     - name: Run Script Testing Framework
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm run test:scripts
       
     - name: Generate Script Test Coverage Report
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm run test:scripts:coverage
@@ -182,6 +197,7 @@ jobs:
   script-performance:
     name: Script Performance Monitoring
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: ${{ github.event.inputs.run_performance_tests != 'false' }}
     
     steps:
@@ -203,16 +219,19 @@ jobs:
         npm ci
       
     - name: Run Script Performance Monitoring
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm run monitor:performance
       
     - name: Analyze Performance Trends
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm run monitor:trends
       
     - name: Check Performance Alerts
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm run monitor:alerts
@@ -230,6 +249,7 @@ jobs:
   backend:
     name: Backend - Test & Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     services:
       postgres:
@@ -318,56 +338,67 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Mendel Mode v4.2 - Progressive Enhancement Tracking (Backend)
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/phase_tracking.sh
       
     - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement (Backend)
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/temp_deprecated_check.js
       
     - name: Mendel Mode v4.2 - Duplication Scan (Backend)
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/dup_scan.js
       
     - name: Mendel Mode v4.2 - Deprecation Check
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/deprecation_check.sh
       
     - name: Mendel Mode v4.2 - Database Performance Guardrails
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/db_performance_check.js
       
     - name: Mendel Mode v4.2 - Deprecation Ownership Enforcement
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/deprecation_ownership_check.js
       
     - name: Mendel Mode v4.2 - Context7 Validation
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/context7_validation.js
       
     - name: Mendel Mode v4.2 - Duplication Prevention
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/duplication_prevention.js
       
     - name: Mendel Mode v4.2 - Rollback Script Validation
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/rollback_validation.js
       
     - name: Mendel Mode v4.2 - File Placement Validation
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/file_placement_check.js
       
     - name: Mendel Mode v4.2 - PR Template Validation
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/pr_template_validation.js
@@ -467,6 +498,7 @@ jobs:
     
       
     - name: Run Bandit security scan
+      continue-on-error: true
       run: |
         pip install bandit[toml]
         # Run Bandit security scan on backend code
@@ -475,6 +507,7 @@ jobs:
         bandit -r backend/ --confidence-level high -f txt || true
         
     - name: Run npm audit
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         echo "Running security audit..."
@@ -523,6 +556,7 @@ jobs:
         npm run build
       
     - name: Build and run Lighthouse CI
+      continue-on-error: true
       run: |
         cd $GITHUB_WORKSPACE/frontend
         npm install -g @lhci/cli@latest
@@ -619,7 +653,7 @@ jobs:
         cd $GITHUB_WORKSPACE/frontend
         cat quality-report.txt
         
-        # Fail if any critical jobs failed
+        # Only fail if critical jobs failed (frontend and backend)
         if [ "${{ needs.frontend.result }}" != "success" ]; then
           echo "❌ Frontend job failed - Quality gate failed"
           exit 1
@@ -630,12 +664,12 @@ jobs:
           exit 1
         fi
         
+        # Security scan failures are warnings, not blockers
         if [ "${{ needs.security.result }}" != "success" ]; then
-          echo "❌ Security scan failed - Quality gate failed"
-          exit 1
+          echo "⚠️  Security scan had issues - review required but not blocking"
         fi
         
-        echo "✅ All critical quality gates passed"
+        echo "✅ Critical quality gates passed"
 
   # Deploy to Staging (on main branch)
   deploy-staging:

@@ -248,8 +248,9 @@ export function EateryPageClient() {
           );
           setAllRestaurants(uniqueRestaurants); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
-          // Set hasMore based on whether there are more items available
-          const hasMoreData = data.data.length < data.total;
+          // Set hasMore based on whether we've loaded all items
+          const totalLoadedItems = data.data.length;
+          const hasMoreData = totalLoadedItems < data.total;
           setHasMore(hasMoreData);
           
           if (process.env.NODE_ENV === 'development') {
@@ -382,7 +383,8 @@ export function EateryPageClient() {
           // Update total and check if we have more data
           setTotalRestaurants(data.total);
           const newTotalItems = currentItems + data.data.length;
-          const hasMoreData = newTotalItems < data.total;
+          // Check both total count and actual data returned
+          const hasMoreData = data.data.length >= mobileOptimizedItemsPerPage && newTotalItems < data.total;
           setHasMore(hasMoreData);
           
           // Debug logging
@@ -437,10 +439,13 @@ export function EateryPageClient() {
 
 
 
-  // Reset hasMore when filters or search change
+  // Reset hasMore and clear data when filters or search change
   useEffect(() => {
     if (isMobileView) {
       setHasMore(true);
+      setAllRestaurants([]); // Clear previous data
+      setInfiniteScrollPage(1); // Reset page
+      loadErrorCountRef.current = 0; // Reset error count
       // kick off prefetch after new query change
       schedulePrefetch();
     }

@@ -95,7 +95,8 @@ export function useInfiniteScroll(
           console.log('Infinite scroll: Intersection observed', { 
             isIntersecting: entry.isIntersecting, 
             isLoadingMore, 
-            hasMore 
+            hasMore,
+            target: entry.target
           });
         }
 
@@ -115,23 +116,37 @@ export function useInfiniteScroll(
 
     observerRef.current = observer;
 
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Observer attached to element');
+    // Re-check for the element after a short delay if not found initially
+    const checkAndObserve = () => {
+      if (loadingRef.current) {
+        observer.observe(loadingRef.current);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: Observer attached to element');
+        }
+      } else {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Infinite scroll: No loading ref element found, retrying...');
+        }
+        // Retry after a short delay
+        setTimeout(() => {
+          if (loadingRef.current && observerRef.current) {
+            observerRef.current.observe(loadingRef.current);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Infinite scroll: Observer attached to element (retry)');
+            }
+          }
+        }, 100);
       }
-    } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: No loading ref element found');
-      }
-    }
+    };
+
+    checkAndObserve();
 
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
     };
-  }, [threshold, rootMargin, root, disabled, hasMore, isLoadingMore]); // Removed loadMore from dependencies
+  }, [threshold, rootMargin, root, disabled, hasMore, loadMore]); // Include loadMore in dependencies
 
 
 
