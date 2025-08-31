@@ -59,7 +59,7 @@ export function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: stri
     // Handle string format (legacy)
     return { 
       day, 
-      time: dayHours as string
+      time: typeof dayHours === 'string' ? dayHours : 'Closed'
     }
   })
 }

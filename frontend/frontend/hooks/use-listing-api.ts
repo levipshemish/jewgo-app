@@ -22,9 +22,9 @@ export function useListingApi(options: UseListingApiOptions = {}) {
     return {
       image: backendData.imageUrl
         ? {
-            imageUrl: backendData.imageUrl,
-            imageAlt: backendData.imageAlt || backendData.title || "Listing image",
-            imageActionLabel: backendData.imageActionLabel || "View",
+            src: backendData.imageUrl,
+            alt: backendData.imageAlt || backendData.title || "Listing image",
+            actionLabel: backendData.imageActionLabel || "View",
           }
         : undefined,
       content:
@@ -32,8 +32,8 @@ export function useListingApi(options: UseListingApiOptions = {}) {
           ? {
               leftText: backendData.leftText,
               rightText: backendData.rightText,
-              leftActionLabel: backendData.leftActionLabel,
-              rightActionLabel: backendData.rightActionLabel,
+              leftAction: backendData.leftActionLabel,
+              rightAction: backendData.rightActionLabel,
             }
           : undefined,
       actions: {
@@ -47,7 +47,7 @@ export function useListingApi(options: UseListingApiOptions = {}) {
           label,
           onClick: () => console.log(`Secondary action: ${label}`),
         })),
-        kosherTags: backendData.tags,
+        tags: backendData.tags,
         bottomAction: backendData.bottomActionLabel
           ? {
               label: backendData.bottomActionLabel,

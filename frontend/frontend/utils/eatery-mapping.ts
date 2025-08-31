@@ -49,8 +49,8 @@ export function mapEateryToListingData(
     content: {
       leftText: eatery.name, // Will be bolded in component
       rightText: formatRating(eatery.rating),
-      leftActionLabel: formatPriceRange(eatery.price_range),
-      rightActionLabel: userLocation ? calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, userLocation) : undefined,
+      leftAction: formatPriceRange(eatery.price_range),
+      rightAction: userLocation && eatery.latitude && eatery.longitude ? calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, userLocation) : undefined,
       leftIcon: undefined,
       rightIcon: undefined, // Remove icon from rating line
 
@@ -81,7 +81,7 @@ export function mapEateryToListingData(
       ].slice(0, 3), // Max 3 secondary actions
 
       // Kosher Tags
-      kosherTags: [
+      tags: [
         eatery.kosher_type,
         eatery.kosher_agency,
         eatery.kosher_certification,
@@ -117,6 +117,11 @@ export function createMockEateryData(): EateryDB {
     description: "A wonderful kosher restaurant serving delicious traditional and modern Jewish cuisine.",
     short_description: "Authentic kosher dining experience",
     address: "123 Main Street, New York, NY 10001",
+    city: "New York",
+    state: "NY",
+    zip_code: "10001",
+    phone_number: "+1-555-123-4567",
+    listing_type: "restaurant",
     rating: 4.5,
     price_range: "$$",
     kosher_type: "Glatt Kosher",
@@ -124,19 +129,24 @@ export function createMockEateryData(): EateryDB {
     kosher_certification: "Pas Yisroel",
     is_open: true,
     image_url: "/modern-product-showcase-with-clean-background.png",
+    images: [
+      "/modern-product-showcase-with-clean-background.png",
+      "/placeholder.svg?height=400&width=400",
+      "/placeholder.svg?height=400&width=400",
+    ],
     additional_images: [
       "/modern-product-showcase-with-clean-background.png",
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: "9:00 AM - 10:00 PM",
-      tuesday: "9:00 AM - 10:00 PM",
-      wednesday: "9:00 AM - 10:00 PM",
-      thursday: "9:00 AM - 11:00 PM",
-      friday: "9:00 AM - 3:00 PM",
-      saturday: "Closed",
-      sunday: "10:00 AM - 9:00 PM",
+      monday: { open: "9:00 AM", close: "10:00 PM" },
+      tuesday: { open: "9:00 AM", close: "10:00 PM" },
+      wednesday: { open: "9:00 AM", close: "10:00 PM" },
+      thursday: { open: "9:00 AM", close: "11:00 PM" },
+      friday: { open: "9:00 AM", close: "3:00 PM" },
+      saturday: { closed: true },
+      sunday: { open: "10:00 AM", close: "9:00 PM" },
     },
     phone_number: "+1-555-123-4567",
     email: "info@kosherdelight.com",
@@ -160,6 +170,11 @@ export function createMockEateryDataNoEmail(): EateryDB {
     description: "Delicious kosher pizza and Italian cuisine.",
     short_description: "Kosher pizza and Italian food",
     address: "456 Oak Avenue, Brooklyn, NY 11201",
+    city: "Brooklyn",
+    state: "NY",
+    zip_code: "11201",
+    phone_number: "+1-555-987-6543",
+    listing_type: "restaurant",
     rating: 4.2,
     price_range: "$",
     kosher_type: "Dairy",
@@ -167,18 +182,23 @@ export function createMockEateryDataNoEmail(): EateryDB {
     kosher_certification: "Cholov Yisroel",
     is_open: true,
     image_url: "/modern-product-showcase-with-clean-background.png",
+    images: [
+      "/modern-product-showcase-with-clean-background.png",
+      "/placeholder.svg?height=400&width=400",
+      "/placeholder.svg?height=400&width=400",
+    ],
     additional_images: [
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: "11:00 AM - 9:00 PM",
-      tuesday: "11:00 AM - 9:00 PM",
-      wednesday: "11:00 AM - 9:00 PM",
-      thursday: "11:00 AM - 9:00 PM",
-      friday: "11:00 AM - 3:00 PM",
-      saturday: "Closed",
-      sunday: "12:00 PM - 8:00 PM",
+      monday: { open: "11:00 AM", close: "9:00 PM" },
+      tuesday: { open: "11:00 AM", close: "9:00 PM" },
+      wednesday: { open: "11:00 AM", close: "9:00 PM" },
+      thursday: { open: "11:00 AM", close: "9:00 PM" },
+      friday: { open: "11:00 AM", close: "3:00 PM" },
+      saturday: { closed: true },
+      sunday: { open: "12:00 PM", close: "8:00 PM" },
     },
     phone_number: "+1-555-987-6543",
     email: undefined, // No email for testing

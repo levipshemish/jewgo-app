@@ -57,7 +57,7 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
     search: searchTerm,
     role: roleFilter,
     include_all: includeAll,
-    include_expired: includeExpired,
+
   }, initialData);
 
   const assignRoleMutation = useAssignRole();
@@ -384,7 +384,7 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
                       aria-label={`Select ${user.name || user.email}`}
                       checked={selectedUsers.includes(user.id)}
                       onChange={(e) => {
-                        setSelectedUsers(prev => e.target.checked ? [...new Set([...prev, user.id])] : prev.filter(id => id !== user.id));
+                        setSelectedUsers(prev => e.target.checked ? Array.from(new Set([...prev, user.id])) : prev.filter(id => id !== user.id));
                       }}
                       className="mr-3 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />

@@ -308,6 +308,11 @@ export function createMockEateryData(): EateryDB {
     kosher_certification: "Pas Yisroel",
     listing_type: "restaurant",
     image_url: "/modern-product-showcase-with-clean-background.png",
+    images: [
+      "/modern-product-showcase-with-clean-background.png",
+      "/placeholder.svg?height=400&width=400",
+      "/placeholder.svg?height=400&width=400",
+    ],
     additional_images: [
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
@@ -318,7 +323,7 @@ export function createMockEateryData(): EateryDB {
       wednesday: { open: "9:00 AM", close: "10:00 PM" },
       thursday: { open: "9:00 AM", close: "11:00 PM" },
       friday: { open: "9:00 AM", close: "3:00 PM" },
-      saturday: { open: "Closed", close: "Closed", closed: true },
+      saturday: { closed: true },
       sunday: { open: "10:00 AM", close: "9:00 PM" },
     },
     contact: {
@@ -362,6 +367,10 @@ export function createMockEateryDataNoEmail(): EateryDB {
     kosher_certification: "Cholov Yisroel",
     listing_type: "restaurant",
     image_url: "/placeholder.svg?height=400&width=400",
+    images: [
+      "/placeholder.svg?height=400&width=400",
+      "/placeholder.svg?height=400&width=400",
+    ],
     additional_images: [
       "/placeholder.svg?height=400&width=400",
     ],
@@ -371,7 +380,7 @@ export function createMockEateryDataNoEmail(): EateryDB {
       wednesday: { open: "11:00 AM", close: "9:00 PM" },
       thursday: { open: "11:00 AM", close: "9:00 PM" },
       friday: { open: "11:00 AM", close: "3:00 PM" },
-      saturday: { open: "Closed", close: "Closed", closed: true },
+      saturday: { closed: true },
       sunday: { open: "12:00 PM", close: "8:00 PM" },
     },
     contact: {

@@ -18,6 +18,8 @@ export type AdminUser = TransformedUser & {
   isSuperAdmin: boolean;
   /** Array of permission strings (normalized to lowercase) */
   permissions: string[];
+  /** Optional token for admin operations */
+  token?: string;
 };
 
 /**

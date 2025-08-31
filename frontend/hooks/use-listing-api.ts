@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import type { BackendListingData, ListingApiResponse } from "@/types/listing"
-import type { ListingData } from "@/types/listing"
+import type { BackendListingData, ListingApiResponse } from "../types/listing"
+import type { ListingData } from "../types/listing"
 
 interface UseListingApiOptions {
   listingId?: string
