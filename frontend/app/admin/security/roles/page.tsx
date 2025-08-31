@@ -52,7 +52,7 @@ export default async function RoleManagementPage() {
   try {
     const response = await fetch(new URL('/api/admin/roles?limit=50', process.env.NEXT_PUBLIC_APP_URL), { 
       cache: 'no-store',
-      headers: headers() // Include auth context from Next.js headers
+      headers: await headers() // Include auth context from Next.js headers
     });
     
     if (response.ok) {
