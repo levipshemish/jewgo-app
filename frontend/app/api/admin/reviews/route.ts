@@ -93,18 +93,19 @@ export async function POST(request: NextRequest) {
       'review',
       toCreate,
       adminUser,
-      'review',
-      false
+      'review'
     );
 
     // Log admin action
     await logAdminAction(
-      adminUser.id,
+      adminUser,
       'CREATE',
       ENTITY_TYPES.REVIEW,
-      review.id,
-      toCreate,
-      AUDIT_FIELD_ALLOWLISTS.REVIEW
+      {
+        entityId: review.id.toString(),
+        newData: toCreate,
+        whitelistFields: AUDIT_FIELD_ALLOWLISTS.REVIEW
+      }
     );
 
     return json({ success: true, data: review });
