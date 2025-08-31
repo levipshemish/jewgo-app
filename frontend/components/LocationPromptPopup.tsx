@@ -72,9 +72,12 @@ export default function LocationPromptPopup({
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-red-800">
-                {error}
-              </span>
+              <div className="text-sm text-red-800">
+                <p>{error}</p>
+                {error.includes('timed out') && (
+                  <p className="mt-1 text-xs">This can happen on slower connections. Please try again.</p>
+                )}
+              </div>
             </div>
           )}
 
@@ -109,9 +112,16 @@ export default function LocationPromptPopup({
               <button
                 onClick={handleRequestLocation}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
-                {isLoading ? 'Requesting...' : 'Enable Location'}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Getting location...</span>
+                  </>
+                ) : (
+                  'Enable Location'
+                )}
               </button>
             )}
             

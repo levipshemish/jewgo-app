@@ -212,10 +212,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     // Prevent multiple simultaneous requests
     const now = Date.now();
     const timeSinceLastRequest = now - lastRequestTime;
-    const minRequestInterval = 5000; // Reduced to 5 seconds for testing
+    const minRequestInterval = 2000; // Allow retry after 2 seconds
     
     if (isLoading || timeSinceLastRequest < minRequestInterval) {
-      // console.log('📍 LocationContext: Skipping request - too soon or already loading');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📍 LocationContext: Skipping request - too soon or already loading');
+      }
       return;
     }
     
@@ -232,7 +234,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     // Use timeout pattern to prevent hanging
     const getPosition = () =>
       new Promise<GeolocationPosition>((resolve, reject) => {
-        const kill = setTimeout(() => reject(new Error('timeout')), 4000);
+        // Increase timeout to 10 seconds
+        const timeoutMs = 10000;
+        const kill = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+        
+        // Try with low accuracy first for faster response
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             clearTimeout(kill);
@@ -240,9 +246,15 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           },
           (err) => {
             clearTimeout(kill);
+            // If it fails with low accuracy, don't retry with high accuracy
+            // as it will likely fail again and take longer
             reject(err);
           },
-          { enableHighAccuracy: false, timeout: 4000, maximumAge: 0 }
+          { 
+            enableHighAccuracy: false, // Use low accuracy for faster response
+            timeout: timeoutMs - 1000, // Browser timeout slightly less than our timeout
+            maximumAge: 300000 // Accept cached position up to 5 minutes old
+          }
         );
       });
 
@@ -266,7 +278,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         
         if (error.message === 'timeout') {
           errorMessage = 'Location request timed out. Please try again.';
+          // Keep permission status as prompt so user can retry
           setPermissionStatus('prompt');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📍 LocationContext: Location request timed out after 10 seconds');
+          }
         } else if (error.code) {
           switch (error.code) {
             case error.PERMISSION_DENIED:
