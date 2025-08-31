@@ -9,6 +9,7 @@ import { useFavorites } from '@/lib/utils/favorites';
 import { useMobileTouch } from '@/lib/hooks/useMobileTouch';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { getSafeImageUrl } from '@/lib/utils/imageUrlValidator';
+import styles from './UnifiedCard.module.css';
 
 // TypeScript Interfaces
 interface CardData {
@@ -206,13 +207,129 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     // Render content without motion during scroll to prevent flickering
   const cardContent = (
     <>
+      {/* Global styles for transparent surface, tag pill, and heart icon */}
+      <style jsx global>{`
+        .unified-card {
+          background: transparent !important;
+          box-shadow: none !important;
+          border: 0 !important;
+        }
+        .unified-card *, .unified-card > div {
+          background: transparent !important;
+        }
+
+        /* Tag pill (theme-aware glass) */
+        .unified-card-tag {
+          position: absolute !important;
+          top: 8px !important;
+          left: 8px !important;
+          width: 80px !important;
+          max-width: 80px !important;
+          min-width: 80px !important;
+          height: 24px !important;
+          max-height: 24px !important;
+          min-height: 24px !important;
+          overflow: hidden !important;
+          padding: 0 8px !important;
+          font-size: 12px !important;
+          line-height: 1 !important;
+          font-weight: 500 !important;
+          background-color: rgba(17, 24, 39, 0.70) !important; /* slate-900 at 70% */
+          color: #ffffff !important;
+          border-radius: 9999px !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
+          transition: all 0.2s ease-out !important;
+          transform: none !important;
+          backdrop-filter: blur(8px) !important;
+        }
+        .unified-card-tag:hover {
+          background-color: rgba(17, 24, 39, 0.85) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+          transform: translateY(-1px) !important;
+        }
+        .unified-card-tag { cursor: pointer !important; }
+        .unified-card-tag:active { transform: translateY(0px) !important; opacity: 1 !important; }
+        @media (prefers-color-scheme: dark) {
+          .unified-card-tag {
+            background-color: rgba(255, 255, 255, 0.14) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            backdrop-filter: blur(8px) !important;
+          }
+          .unified-card-tag:hover {
+            background-color: rgba(255, 255, 255, 0.22) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          }
+        }
+
+        /* Heart button and Lucide icon path fill */
+        .unified-card-heart {
+          position: absolute !important;
+          top: 4px !important;
+          right: 8px !important;
+          width: 28px !important;
+          max-width: 28px !important;
+          min-width: 28px !important;
+          height: 28px !important;
+          max-height: 28px !important;
+          min-height: 28px !important;
+          background-color: transparent !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          border: none !important;
+          min-height: 28px !important;
+          min-width: 28px !important;
+          padding: 0 !important;
+          cursor: pointer !important;
+          -webkit-tap-highlight-color: transparent !important;
+          touch-action: manipulation !important;
+          z-index: 10 !important;
+          transition: all 0.2s ease-out !important;
+        }
+        .unified-card-heart:hover { transform: scale(1.1) !important; }
+        .unified-card-heart:active { transform: scale(0.95) !important; opacity: 1 !important; }
+        .unified-card-heart svg {
+          width: 18px !important;
+          height: 18px !important;
+          transition: all 0.2s ease-out !important;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1)) !important;
+        }
+        /* Heart color control - light grey fill by default */
+        .unified-card-heart svg {
+          color: rgb(156, 163, 175) !important; /* light grey for default state */
+          fill: rgb(156, 163, 175) !important; /* light grey fill for default state */
+          stroke: #ffffff !important; /* white outline */
+          stroke-width: 1.5px !important;
+        }
+        .unified-card-heart:hover svg {
+          color: rgb(239, 68, 68) !important; /* red on hover */
+          fill: rgb(239, 68, 68) !important; /* red fill on hover */
+          stroke: #ffffff !important; /* keep white outline */
+        }
+        .unified-card-heart.liked svg {
+          color: rgb(239, 68, 68) !important; /* red when liked */
+          fill: rgb(239, 68, 68) !important; /* red fill when liked */
+          stroke: #ffffff !important; /* keep white outline */
+        }
+      `}</style>
       {/* Persistent live region for announcements */}
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {announcement}
       </span>
       
       {/* Image Container */}
-      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+      <div className="relative w-full">
+        <div className="relative w-full aspect-[4/3] rounded-[20px] overflow-hidden bg-transparent border-0 shadow-none">
         {/* Loading Placeholder */}
         {imageLoading && (
           <div className="absolute inset-0 bg-transparent animate-pulse flex items-center justify-center">
@@ -291,24 +408,24 @@ const UnifiedCard = memo<UnifiedCardProps>(({
             onKeyDown={handleHeartKeyDown}
             aria-label={liked ? 'Remove from favorites' : 'Add to favorites'}
             aria-pressed={liked}
-          >
-            <span className="relative block w-[18px] h-[18px]">
-              {/* Always use filled heart SVG with CSS controlling colors */}
-              <svg 
-                viewBox="0 0 24 24" 
-                className="w-[18px] h-[18px]"
-                aria-hidden
-              >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </span>
-          </button>
+                      >
+              <span className="relative block w-[18px] h-[18px]">
+                {/* Always use filled heart SVG with CSS controlling colors */}
+                <svg 
+                  viewBox="0 0 24 24" 
+                  className="w-[18px] h-[18px]"
+                  aria-hidden
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41 1.01 4.13 2.44h.74C13.09 5.01 14.76 4 16.5 4 19 4 21 6 21 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </span>
+            </button>
         )}
       </div>
       
       {/* Content - Enhanced hover effects */}
       <div 
-        className="unified-card-content px-2 pt-2 pb-0 flex flex-col min-w-0"
+        className="unified-card-content pt-2 flex flex-col bg-transparent"
         style={{
           transform: isScrolling ? 'none' : undefined,
           transition: isScrolling ? 'none' : undefined,
@@ -363,7 +480,10 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     return (
       <div
         className={cn(
-          'h-full flex flex-col rounded-2xl overflow-hidden border bg-white cursor-pointer group unified-card',
+          'relative bg-transparent cursor-pointer group unified-card',
+          'h-full flex flex-col',
+          'border-0',
+          'shadow-none',
           variantStyles.cardClass,
           sanitizedClassName
         )}
@@ -402,8 +522,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       whileHover={undefined}
       whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
       className={cn(
-        'h-full flex flex-col rounded-2xl overflow-hidden border bg-white cursor-pointer group unified-card',
+        'relative bg-transparent cursor-pointer group unified-card',
         'transition-all duration-200 ease-out',
+        'h-full flex flex-col',
+        'border-0',
+        'shadow-none',
         variantStyles.cardClass,
         sanitizedClassName
       )}
@@ -415,12 +538,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
       aria-label={`View details for ${cardData.title}`}
       aria-live="polite"
       aria-describedby={`card-${cardData.id.toString()}`}
-
     >
       {cardContent}
     </motion.div>
   );
-});
+}));
 
 UnifiedCard.displayName = 'UnifiedCard';
 
