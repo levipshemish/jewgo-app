@@ -82,6 +82,7 @@ interface ApiResponse {
   data: Restaurant[];
   total: number;
   error: string | null;
+  message?: string;
 }
 
 export function EateryPageClient() {
@@ -236,11 +237,13 @@ export function EateryPageClient() {
       const data: ApiResponse = await response.json();
       
       if (data.success) {
-        console.log('🎯 EateryPageClient: API Response Success', {
-          dataLength: data.data?.length,
-          total: data.total,
-          firstRestaurant: data.data?.[0]?.name
-        });
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          console.log('🎯 EateryPageClient: API Response Success', {
+            dataLength: data.data?.length,
+            total: data.total,
+            firstRestaurant: data.data?.[0]?.name
+          });
+        }
         
         setRestaurants(data.data);
         setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
@@ -275,11 +278,13 @@ export function EateryPageClient() {
           console.log('Initial load: Page', page, 'items:', data.data.length, 'total pages:', Math.ceil(data.total / mobileOptimizedItemsPerPage));
         }
       } else {
-        console.error('🚨 EateryPageClient: API Response Failed', {
-          success: data.success,
-          error: data.error,
-          message: data.message
-        });
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          console.error('🚨 EateryPageClient: API Response Failed', {
+            success: data.success,
+            error: data.error,
+            message: data.message
+          });
+        }
         setError(data.error || 'Failed to fetch restaurants');
       }
     } catch (err) {
@@ -521,14 +526,16 @@ export function EateryPageClient() {
     // Use the appropriate data source based on device type
     const dataSource = isMobileView ? allRestaurants : restaurants;
     
-    console.log('📍 EateryPage: RestaurantsWithDistance Calculation', {
-      isMobileView,
-      allRestaurantsLength: allRestaurants.length,
-      restaurantsLength: restaurants.length,
-      dataSourceLength: dataSource.length,
-      hasUserLocation: !!userLocation,
-      permissionStatus
-    });
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('📍 EateryPage: RestaurantsWithDistance Calculation', {
+        isMobileView,
+        allRestaurantsLength: allRestaurants.length,
+        restaurantsLength: restaurants.length,
+        dataSourceLength: dataSource.length,
+        hasUserLocation: !!userLocation,
+        permissionStatus
+      });
+    }
     
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
