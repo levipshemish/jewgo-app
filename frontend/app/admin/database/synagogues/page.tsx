@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { Building2, MapPin, Phone, Mail, Globe, Eye, Star } from 'lucide-react';
@@ -42,7 +42,7 @@ interface FloridaSynagogue {
   updated_at?: string;
 }
 
-export default function SynagogueDatabasePage() {
+function SynagogueDatabaseContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [synagogues, setSynagogues] = useState<FloridaSynagogue[]>([]);
@@ -356,5 +356,21 @@ export default function SynagogueDatabasePage() {
         onSortChange={handleSortChange}
       />
     </div>
+  );
+}
+
+export default function SynagogueDatabasePage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    }>
+      <SynagogueDatabaseContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { useAdminCsrf } from '@/lib/admin/hooks';
 import { adminFetch } from '@/lib/admin/fetch';
@@ -19,7 +19,7 @@ interface SubmissionRow {
   updated_at?: string;
 }
 
-export default function AdminRestaurantsPage() {
+function AdminRestaurantsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token: csrf, error: csrfError, loading: csrfLoading } = useAdminCsrf();
@@ -307,5 +307,21 @@ export default function AdminRestaurantsPage() {
         bulkActions={bulkActions}
       />
     </div>
+  );
+}
+
+export default function AdminRestaurantsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    }>
+      <AdminRestaurantsContent />
+    </Suspense>
   );
 }
