@@ -419,10 +419,27 @@ function MarketplacePageContent() {
   // Selected category state
   const [selectedCategory, setSelectedCategory] = useState<MarketplaceCategory | undefined>();
 
-  // Responsive grid items per page (centralized)
+  // Responsive grid with maximum 4 rows and up to 8 columns
   const mobileOptimizedItemsPerPage = useMemo(() => {
-    const { itemsPerPageFromViewport } = require('@/lib/config/pagination');
-    return itemsPerPageFromViewport(viewportWidth, (isMobile || isMobileDevice));
+    // Calculate items per page to ensure exactly 4 rows on every screen size
+    if (isMobile || isMobileDevice) {
+      return 8; // 4 rows × 2 columns = 8 items
+    } else {
+      // For desktop, calculate based on viewport width to ensure 4 rows
+      let columnsPerRow = 3; // Default fallback
+      
+      if (viewportWidth >= 1441) {
+        columnsPerRow = 8; // Large desktop: 8 columns × 4 rows = 32 items
+      } else if (viewportWidth >= 1025) {
+        columnsPerRow = 6; // Desktop: 6 columns × 4 rows = 24 items
+      } else if (viewportWidth >= 769) {
+        columnsPerRow = 4; // Large tablet: 4 columns × 4 rows = 16 items
+      } else if (viewportWidth >= 641) {
+        columnsPerRow = 3; // Small tablet: 3 columns × 4 rows = 12 items
+      }
+      
+      return columnsPerRow * 4; // Always 4 rows
+    }
   }, [isMobile, isMobileDevice, viewportWidth]);
 
   // Memoize marketplace listing transformation to prevent unnecessary re-renders
