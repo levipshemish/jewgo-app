@@ -251,13 +251,15 @@ export function EateryPageClient() {
         setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
         setTotalRestaurants(data.total);
 
+        // Always populate allRestaurants for mobile view
+        // This ensures data is available even if hydration hasn't completed
+        const uniqueRestaurants = data.data.filter((restaurant, index, self) => 
+          index === self.findIndex(r => r.id === restaurant.id)
+        );
+        setAllRestaurants(uniqueRestaurants); // Always set this for mobile
+        
         // Reset infinite scroll state for mobile
         if (isMobileView) {
-          // Ensure no duplicates in initial data
-          const uniqueRestaurants = data.data.filter((restaurant, index, self) => 
-            index === self.findIndex(r => r.id === restaurant.id)
-          );
-          setAllRestaurants(uniqueRestaurants); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
           // Set hasMore based on whether we've loaded all items
           const totalLoadedItems = data.data.length;
@@ -466,7 +468,8 @@ export function EateryPageClient() {
   useEffect(() => {
     if (isMobileView) {
       setHasMore(true);
-      setAllRestaurants([]); // Clear previous data
+      // Don't clear allRestaurants here - let fetchRestaurants handle it
+      // setAllRestaurants([]); // This was causing the mobile view to show no data
       setInfiniteScrollPage(1); // Reset page
       loadErrorCountRef.current = 0; // Reset error count
       // kick off prefetch after new query change
@@ -537,9 +540,13 @@ export function EateryPageClient() {
     if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log('📍 EateryPage: RestaurantsWithDistance Calculation', {
         isMobileView,
+        isHydrated,
+        isMobile,
+        viewportWidth,
         allRestaurantsLength: allRestaurants.length,
         restaurantsLength: restaurants.length,
         dataSourceLength: dataSource.length,
+        dataSourceUsed: isMobileView ? 'allRestaurants' : 'restaurants',
         hasUserLocation: !!userLocation,
         permissionStatus
       });
