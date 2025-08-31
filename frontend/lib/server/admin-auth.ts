@@ -5,18 +5,7 @@ import {
   isSupabaseConfigured,
   type TransformedUser 
 } from '@/lib/utils/auth-utils';
-// Local type definitions to avoid restricted import
-type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
-type AdminUser = {
-  id: string;
-  email?: string; // Make email optional to match TransformedUser type
-  name?: string;
-  adminRole: AdminRole;
-  roleLevel: number;
-  isSuperAdmin: boolean;
-  permissions: string[];
-  token?: string;
-};
+import type { AdminUser, AdminRole } from '@/lib/admin/types';
 import type { Permission } from '@/lib/constants/permissions';
 
 import { 

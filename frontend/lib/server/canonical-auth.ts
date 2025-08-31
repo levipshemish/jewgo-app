@@ -1,17 +1,6 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
-// Local type definitions to avoid restricted import
-type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
-type AdminUser = {
-  id: string;
-  email: string;
-  name?: string;
-  adminRole: AdminRole;
-  roleLevel: number;
-  isSuperAdmin: boolean;
-  permissions: string[];
-  token?: string;
-};
+import type { AdminUser, AdminRole } from '@/lib/admin/types';
 import { 
   hasPermission, 
   hasMinimumAdminLevel

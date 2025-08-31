@@ -9,9 +9,13 @@ const useAdminCsrf = () => {
   };
 };
 
-const adminFetch = async (url: string, options?: RequestInit) => {
-  const response = await fetch(url, options);
-  return response.json();
+const adminFetch = async (url: string, csrfToken: string, options?: RequestInit) => {
+  const headers = new Headers(options?.headers || {});
+  if (csrfToken) {
+    headers.set('x-csrf-token', csrfToken);
+  }
+  const response = await fetch(url, { ...options, headers, credentials: 'include' });
+  return response;
 };
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/lib/ui/toast';

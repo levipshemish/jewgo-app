@@ -1,25 +1,6 @@
 import 'server-only';
 import type { TransformedUser } from '@/lib/utils/auth-utils';
-// Local type definitions to avoid restricted import
-type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
-type AdminUser = {
-  id: string;
-  email?: string; // Make email optional to match TransformedUser type
-  name?: string;
-  adminRole: AdminRole;
-  roleLevel: number;
-  isSuperAdmin: boolean;
-  permissions: string[];
-  token?: string;
-};
-type AdminSummary = {
-  isAdmin: boolean;
-  role: string | null;
-  level: number;
-  isSuperAdmin: boolean;
-  permissionCount: number;
-  uid_hash?: string;
-};
+import type { AdminUser, AdminRole, AdminSummary } from '@/lib/admin/types';
 import { 
   ADMIN_PERMISSIONS, 
   ROLE_PERMISSIONS,

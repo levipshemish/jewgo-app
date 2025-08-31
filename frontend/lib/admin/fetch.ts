@@ -1,9 +1,9 @@
 export async function adminFetch(
   url: string,
-  csrfToken?: string,
-  options: RequestInit = {}
+  csrfToken: string,
+  options?: RequestInit
 ) {
-  const headers = new Headers(options.headers || {});
+  const headers = new Headers(options?.headers || {});
   if (csrfToken) {
     headers.set('x-csrf-token', csrfToken);
   }
