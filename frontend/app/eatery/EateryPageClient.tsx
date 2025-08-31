@@ -86,6 +86,8 @@ interface ApiResponse {
 }
 
 export function EateryPageClient() {
+  console.log('🚀 EateryPageClient: Component mounting');
+  
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -447,6 +449,12 @@ export function EateryPageClient() {
 
 
   useEffect(() => {
+    console.log('🔄 EateryPageClient: UseEffect triggered - calling fetchRestaurants', {
+      queryKey,
+      currentPage,
+      searchQuery,
+      activeFilters
+    });
     prefetchRef.current = null;
     prefetchAbortRef.current?.abort();
     fetchRestaurants(currentPage, searchQuery, activeFilters);
