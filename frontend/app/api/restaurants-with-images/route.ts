@@ -228,7 +228,7 @@ export async function GET(request: NextRequest) {
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
     const backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
-      : (process.env.NODE_ENV === 'production' ? 'https://jewgo-app-oyoh.onrender.com' : 'http://127.0.0.1:8082');
+      : (process.env.NODE_ENV === 'production' ? 'https://api.jewgo.app' : 'http://127.0.0.1:8082');
     const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {

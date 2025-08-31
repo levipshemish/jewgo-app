@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+const BACKEND_URL = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://api.jewgo.app';
 
 export async function GET(_request: NextRequest) {
   try {

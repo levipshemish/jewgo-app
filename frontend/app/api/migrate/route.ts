@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
     
     // Forward the request to the backend
     const backendResponse = await fetch(
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Get backend URL from environment
-    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
     
     // Forward the request to the backend
     const backendResponse = await fetch(

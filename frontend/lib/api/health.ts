@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env['NEXT_PUBLIC_BACKEND_URL'] 
   ? process.env['NEXT_PUBLIC_BACKEND_URL']
   : process.env.NODE_ENV === 'production'
-  ? 'https://jewgo-app-oyoh.onrender.com'
+  ? 'https://api.jewgo.app'
   : 'http://127.0.0.1:8081';
 
 interface HealthCheckResponse {

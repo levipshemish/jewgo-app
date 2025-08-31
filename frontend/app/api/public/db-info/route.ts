@@ -14,6 +14,13 @@ export async function GET(_request: NextRequest) {
       connection_info: {}
     };
 
+    // Skip database access during build time
+    if (process.env.SKIP_DB_ACCESS === 'true') {
+      result.database = 'skipped_build_time';
+      result.message = 'Database access skipped during build time';
+      return NextResponse.json(result);
+    }
+
     // Test database connection
     try {
 

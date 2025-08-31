@@ -3,7 +3,7 @@ import { NextRequest, NextResponse} from 'next/server';
 export async function GET(_request: NextRequest) {
   try {
     // Use production backend URL if environment variable is not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     
     // Fetch filter options from backend API
     const _backendResponse = await fetch(`${backendUrl}/api/restaurants/filter-options`, {

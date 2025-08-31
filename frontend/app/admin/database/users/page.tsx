@@ -19,7 +19,7 @@ export default async function UserDatabasePage({ searchParams }: { searchParams:
   let initialPagination = { page, pageSize, total: 2847, totalPages: 143, hasNext: true, hasPrev: false };
   
   // Skip database access during build time
-  if (process.env.NODE_ENV === 'production' && process.env.SKIP_DB_ACCESS !== 'true') {
+  if (process.env.SKIP_DB_ACCESS !== 'true') {
     try {
       const result = await AdminDatabaseService.getPaginatedData(
         prisma.user,

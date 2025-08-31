@@ -23,7 +23,7 @@ export default async function KosherPlaceDatabasePage({ searchParams }: { search
   let initialPagination = { page, pageSize, total: 0, totalPages: 0, hasNext: false, hasPrev: false };
   
   // Skip database access during build time
-  if (process.env.NODE_ENV === 'production' && process.env.SKIP_DB_ACCESS !== 'true') {
+  if (process.env.SKIP_DB_ACCESS !== 'true') {
     try {
       const result = await AdminDatabaseService.getPaginatedData(
         prisma.marketplace,

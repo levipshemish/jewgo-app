@@ -23,7 +23,7 @@ export async function POST(
       }
 
       // Fetch website data via backend API
-      const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+      const backendUrl = process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
       const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}/fetch-website`;
       
       if (process.env.NODE_ENV === 'development') {

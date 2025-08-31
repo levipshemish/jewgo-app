@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * Backend URL configuration
  */
 export function getBackendUrl(): string {
-  return process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://jewgo-app-oyoh.onrender.com';
+  return process.env["NEXT_PUBLIC_BACKEND_URL"] || 'https://api.jewgo.app';
 }
 
 /**

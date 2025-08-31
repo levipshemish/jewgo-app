@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Use the correct backend URL - fallback to production URL if not set
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     const fullBackendUrl = `${backendUrl}/api/restaurants?${queryParams}`;
     
     // Fetch from backend API
@@ -247,7 +247,7 @@ async function checkForDuplicates(data: any): Promise<{ isValid: boolean; errors
   
   try {
     // Fetch existing restaurants
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app';
     const response = await fetch(`${backendUrl}/api/restaurants?limit=1000`, {
       headers: {
         'Content-Type': 'application/json',
