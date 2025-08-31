@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       const response = await fetch(backendUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${admin.token}`,
+          'Authorization': admin.token ? `Bearer ${admin.token}` : '',
           'Content-Type': 'application/json',
         },
       });
