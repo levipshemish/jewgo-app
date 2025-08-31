@@ -261,19 +261,36 @@ export async function GET(request: NextRequest) {
     const allRestaurants = data.restaurants || data.data || data || [];
     const sanitizedRestaurants = sanitizeRestaurantData(allRestaurants);
     
+    // Log for debugging in production
+    if (process.env.NODE_ENV === 'production') {
+      console.log('API Response - Total restaurants from backend:', allRestaurants.length);
+      console.log('First restaurant image URL (raw):', allRestaurants[0]?.image_url);
+      console.log('First restaurant image URL (sanitized):', sanitizedRestaurants[0]?.image_url);
+    }
+    
     // Check if this is sample data (either from message or by checking if all restaurants have default images)
     const isSampleData = data.message && data.message.includes('sample data') || 
                         (sanitizedRestaurants.length > 0 && 
                          sanitizedRestaurants.every((r: any) => r.image_url === '/images/default-restaurant.webp'));
     
-    const restaurantsWithImages = isSampleData 
-      ? sanitizedRestaurants // Include all restaurants for sample data
-      : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
-          restaurant.image_url && 
-          restaurant.image_url !== null && 
-          restaurant.image_url !== '' && 
-          restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
-        );
+    // Temporarily show all restaurants to diagnose the issue
+    const restaurantsWithImages = sanitizedRestaurants;
+    
+    // Original filtering logic (commented out for debugging)
+    // const restaurantsWithImages = isSampleData 
+    //   ? sanitizedRestaurants // Include all restaurants for sample data
+    //   : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
+    //       restaurant.image_url && 
+    //       restaurant.image_url !== null && 
+    //       restaurant.image_url !== '' && 
+    //       restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
+    //     );
+    
+    // More debugging
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Restaurants with images count:', restaurantsWithImages.length);
+      console.log('Is sample data:', isSampleData);
+    }
 
     // Respect pagination even if backend ignores limit/offset
     const totalAvailable = data.total || data.count || restaurantsWithImages.length;
@@ -293,6 +310,8 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching restaurants with images:', error);
+    console.error('Backend URL used:', backendUrl);
+    console.error('Full API URL:', apiUrl);
     
     // Handle timeout and network errors gracefully
     if (error instanceof Error) {
@@ -312,7 +331,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       message: 'Failed to fetch restaurants with images',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      backendUrl: backendUrl,
+      apiUrl: apiUrl
     }, { status: 500 });
   }
 } 
