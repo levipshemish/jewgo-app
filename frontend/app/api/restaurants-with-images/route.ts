@@ -265,41 +265,24 @@ export async function GET(request: NextRequest) {
     const allRestaurants = data.restaurants || data.data || data || [];
     const sanitizedRestaurants = sanitizeRestaurantData(allRestaurants);
     
-    // Log for debugging in production
-    if (process.env.NODE_ENV === 'production') {
-      // eslint-disable-next-line no-console
-      console.log('API Response - Total restaurants from backend:', allRestaurants.length);
-      // eslint-disable-next-line no-console
-      console.log('First restaurant image URL (raw):', allRestaurants[0]?.image_url);
-      // eslint-disable-next-line no-console
-      console.log('First restaurant image URL (sanitized):', sanitizedRestaurants[0]?.image_url);
-    }
+
     
     // Check if this is sample data (either from message or by checking if all restaurants have default images)
     const isSampleData = data.message && data.message.includes('sample data') || 
                         (sanitizedRestaurants.length > 0 && 
                          sanitizedRestaurants.every((r: any) => r.image_url === '/images/default-restaurant.webp'));
     
-    // Temporarily show all restaurants to diagnose the issue
-    const restaurantsWithImages = sanitizedRestaurants;
+        // Filter restaurants to only include those with valid images
+    const restaurantsWithImages = isSampleData 
+      ? sanitizedRestaurants // Include all restaurants for sample data
+      : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) =>
+          restaurant.image_url && 
+          restaurant.image_url !== null && 
+          restaurant.image_url !== '' && 
+          restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
+        );
     
-    // Original filtering logic (commented out for debugging)
-    // const restaurantsWithImages = isSampleData 
-    //   ? sanitizedRestaurants // Include all restaurants for sample data
-    //   : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
-    //       restaurant.image_url && 
-    //       restaurant.image_url !== null && 
-    //       restaurant.image_url !== '' && 
-    //       restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
-    //     );
-    
-    // More debugging
-    if (process.env.NODE_ENV === 'production') {
-      // eslint-disable-next-line no-console
-      console.log('Restaurants with images count:', restaurantsWithImages.length);
-      // eslint-disable-next-line no-console
-      console.log('Is sample data:', isSampleData);
-    }
+
 
     // Respect pagination even if backend ignores limit/offset
     const totalAvailable = data.total || data.count || restaurantsWithImages.length;
