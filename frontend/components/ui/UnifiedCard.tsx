@@ -330,7 +330,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           {cardData.badge && (
             <div
               className={cn(
-                "inline-flex items-center gap-1 bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
+                "inline-flex items-center bg-transparent text-gray-700 rounded-lg font-medium whitespace-nowrap flex-shrink-0 transition-all duration-200 group-hover:bg-transparent group-hover:shadow-sm",
                 variantStyles.badgeClass
               )}
               style={{
