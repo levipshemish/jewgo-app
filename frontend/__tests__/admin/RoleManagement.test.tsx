@@ -9,6 +9,7 @@ jest.mock('@/hooks/useAdminRoles', () => ({
   useAdminRoles: jest.fn(),
   useAssignRole: jest.fn(),
   useRevokeRole: jest.fn(),
+  useAvailableRoles: jest.fn(),
 }));
 
 // Mock react-hot-toast
@@ -79,6 +80,17 @@ const mockUseRevokeRole = {
   error: null,
 };
 
+const mockUseAvailableRoles = {
+  roles: [
+    { id: '1', name: 'moderator', display_name: 'Moderator' },
+    { id: '2', name: 'data_admin', display_name: 'Data Admin' },
+    { id: '3', name: 'system_admin', display_name: 'System Admin' },
+    { id: '4', name: 'super_admin', display_name: 'Super Admin' },
+  ],
+  isLoading: false,
+  error: null,
+};
+
 const renderWithSWR = (component: React.ReactElement) => {
   return render(
     <SWRConfig value={{ provider: () => new Map() }}>
@@ -88,13 +100,14 @@ const renderWithSWR = (component: React.ReactElement) => {
 };
 
 describe('RoleManagementTable', () => {
-  const { useAdminRoles, useAssignRole, useRevokeRole } = require('@/hooks/useAdminRoles');
+  const { useAdminRoles, useAssignRole, useRevokeRole, useAvailableRoles } = require('@/hooks/useAdminRoles');
 
   beforeEach(() => {
     jest.clearAllMocks();
     useAdminRoles.mockReturnValue(mockUseAdminRoles);
     useAssignRole.mockReturnValue(mockUseAssignRole);
     useRevokeRole.mockReturnValue(mockUseRevokeRole);
+    useAvailableRoles.mockReturnValue(mockUseAvailableRoles);
   });
 
   describe('Rendering', () => {
@@ -208,6 +221,10 @@ describe('RoleManagementTable', () => {
       const assignButton = screen.getByText('Assign Role');
       await user.click(assignButton);
       
+      // Select a user before submitting (UI requires selection)
+      const userSelect = screen.getByLabelText('Select User');
+      await user.selectOptions(userSelect, 'user-3');
+      
       // Fill form
       const roleSelect = screen.getByDisplayValue('Select a role');
       await user.selectOptions(roleSelect, 'system_admin');
@@ -218,7 +235,7 @@ describe('RoleManagementTable', () => {
       
       await waitFor(() => {
         expect(mockUseAssignRole.mutateAsync).toHaveBeenCalledWith({
-          user_id: undefined, // No user selected in this case
+          user_id: 'user-3',
           role: 'system_admin',
           expires_at: undefined,
           notes: undefined,
@@ -363,7 +380,7 @@ describe('RoleManagementTable', () => {
       await user.selectOptions(roleSelect, 'moderator');
       
       // Add expiration date
-      const expiresInput = screen.getByLabelText('Expires At (Optional)');
+      const expiresInput = screen.getByLabelText('Expires At (UTC, Optional)');
       await user.type(expiresInput, '2024-12-31T23:59');
       
       expect(expiresInput).toHaveValue('2024-12-31T23:59');
@@ -391,7 +408,7 @@ describe('RoleManagementTable', () => {
       
       // Check for proper labels and descriptions
       expect(screen.getByLabelText('Search users by name or email...')).toBeInTheDocument();
-      expect(screen.getByLabelText('Expires At (Optional)')).toBeInTheDocument();
+      expect(screen.getByLabelText('Expires At (UTC, Optional)')).toBeInTheDocument();
     });
   });
 

@@ -61,8 +61,10 @@ process.env.ANONYMOUS_AUTH = 'true'
 // For testing admin functionality, mock the useAuth hook
 // to return a user with adminRole and roleLevel properties
 
-// Mock fetch globally
-global.fetch = jest.fn()
+// Mock fetch globally with default response
+global.fetch = jest.fn(() => 
+  Promise.resolve(new Response(JSON.stringify({}), { status: 200 }))
+)
 
 // Mock Next.js/WHATWG Request class
 global.Request = class Request {
@@ -95,6 +97,14 @@ global.Response = class Response {
   }
   
   json() {
+    // If body is a string, parse it as JSON, otherwise return as-is
+    if (typeof this.body === 'string') {
+      try {
+        return Promise.resolve(JSON.parse(this.body));
+      } catch {
+        return Promise.resolve(this.body);
+      }
+    }
     return Promise.resolve(this.body);
   }
 }

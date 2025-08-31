@@ -4,17 +4,16 @@ Restaurant Data Update Tool
 Updates restaurant data with missing information from Google Knowledge Graph
 """
 
-import sqlite3
+import psycopg2
 import time
 from typing import Dict, List, Optional
 from urllib.parse import quote_plus
 
 
 class RestaurantDataUpdater:
-    def __init__(self, db_path: str = "restaurants.db"):
-        self.db_path = db_path
-        self.conn = sqlite3.connect(db_path)
-        self.conn.row_factory = sqlite3.Row
+    def __init__(self, database_url: str = None):
+        self.database_url = database_url or os.getenv("DATABASE_URL")
+        self.conn = psycopg2.connect(self.database_url)
 
     def get_restaurants_needing_updates(self) -> Dict[str, List[Dict]]:
         """Get restaurants that need specific updates"""

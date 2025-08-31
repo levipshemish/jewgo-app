@@ -17,7 +17,7 @@ class Config:
         DATABASE_URL
         or os.environ.get("TEST_DATABASE_URL")
         or os.environ.get("CI", "")
-        and "sqlite:///:memory:"
+        and "postgresql://"
         or "postgresql://postgres:postgres@localhost:5432/postgres"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -111,7 +111,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "TEST_DATABASE_URL",
-        "sqlite:///:memory:",
+        "postgresql://postgres:postgres@localhost:5432/postgres",
     )
     WTF_CSRF_ENABLED = False
 

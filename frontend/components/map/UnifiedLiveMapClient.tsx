@@ -558,7 +558,17 @@ export default function UnifiedLiveMapClient() {
             <MapCard
               data={transformRestaurantToCardData(selectedRestaurant)}
               showStarInBadge={true}
-              onCardClick={() => router.push(`/restaurant/${selectedRestaurant.id}`)}
+                              onCardClick={() => {
+                  // Create URL-friendly eatery name
+                  const eateryName = selectedRestaurant.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+                    .replace(/\s+/g, '-') // Replace spaces with hyphens
+                    .replace(/-+/g, '-') // Replace multiple hyphens with single
+                    .trim()
+                  
+                  router.push(`/eatery/${eateryName}`)
+                }}
               onLikeToggle={(_id, _isLiked) => handleToggleFavorite(selectedRestaurant)}
               className="w-full shadow-2xl hover:shadow-3xl transition-shadow"
             />

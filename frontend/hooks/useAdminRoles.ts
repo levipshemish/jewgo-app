@@ -28,6 +28,7 @@ interface RoleParams {
   search?: string;
   role?: string;
   user_id?: string;
+  include_all?: boolean;
 }
 
 interface AssignRoleParams {
@@ -72,7 +73,7 @@ const roleApiCall = async (url: string, options: RequestInit) => {
 
 // Main data fetching hook
 export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
-  const { page = 1, limit = 50, search = '', role = '', user_id = '' } = params;
+  const { page = 1, limit = 50, search = '', role = '', user_id = '', include_all = false } = params;
   
   // Build query string
   const queryParams = new URLSearchParams();
@@ -81,6 +82,7 @@ export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
   if (search) queryParams.set('search', search);
   if (role) queryParams.set('role', role);
   if (user_id) queryParams.set('user_id', user_id);
+  if (include_all !== undefined) queryParams.set('include_all', include_all.toString());
   
   const url = `/api/admin/roles?${queryParams.toString()}`;
   
@@ -100,6 +102,7 @@ export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
     error,
     isLoading,
     mutate: swrMutate,
+    key: url,
   };
 }
 
@@ -119,9 +122,9 @@ export function useAssignRole() {
         ...params,
       };
       
-      // Update cache optimistically
+      // Update cache optimistically for all matching keys
       await mutate(
-        '/api/admin/roles',
+        (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
         (currentData: any) => {
           if (!currentData?.data?.users) return currentData;
           
@@ -157,14 +160,21 @@ export function useAssignRole() {
       });
       
       // Revalidate to get fresh data
-      await mutate('/api/admin/roles');
+      await mutate((key) => typeof key === 'string' && key.startsWith('/api/admin/roles'));
+      
+      // Invalidate admin user context to reflect new permissions immediately
+      try {
+        await fetch('/api/admin/auth/refresh', { method: 'POST' });
+      } catch (error) {
+        console.warn('Failed to refresh admin context:', error);
+      }
       
       return result;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       
       // Revert optimistic update on error
-      await mutate('/api/admin/roles');
+      await mutate((key) => typeof key === 'string' && key.startsWith('/api/admin/roles'));
       
       throw err;
     } finally {
@@ -195,9 +205,9 @@ export function useRevokeRole() {
         ...params,
       };
       
-      // Update cache optimistically
+      // Update cache optimistically for all matching keys
       await mutate(
-        '/api/admin/roles',
+        (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
         (currentData: any) => {
           if (!currentData?.data?.users) return currentData;
           
@@ -233,14 +243,21 @@ export function useRevokeRole() {
       });
       
       // Revalidate to get fresh data
-      await mutate('/api/admin/roles');
+      await mutate((key) => typeof key === 'string' && key.startsWith('/api/admin/roles'));
+      
+      // Invalidate admin user context to reflect new permissions immediately
+      try {
+        await fetch('/api/admin/auth/refresh', { method: 'POST' });
+      } catch (error) {
+        console.warn('Failed to refresh admin context:', error);
+      }
       
       return result;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       
       // Revert optimistic update on error
-      await mutate('/api/admin/roles');
+      await mutate((key) => typeof key === 'string' && key.startsWith('/api/admin/roles'));
       
       throw err;
     } finally {
@@ -289,7 +306,7 @@ function getRoleLevel(role: string): number {
 // Cache management utilities
 export const updateUserRoleInCache = async (userId: string, roleData: Partial<User>) => {
   await mutate(
-    '/api/admin/roles',
+    (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
       if (!currentData?.data?.users) return currentData;
       
@@ -314,7 +331,7 @@ export const updateUserRoleInCache = async (userId: string, roleData: Partial<Us
 
 export const removeUserRoleFromCache = async (userId: string, role: string) => {
   await mutate(
-    '/api/admin/roles',
+    (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
       if (!currentData?.data?.users) return currentData;
       
@@ -346,7 +363,7 @@ export const removeUserRoleFromCache = async (userId: string, role: string) => {
 
 export const addUserRoleToCache = async (userId: string, roleData: User) => {
   await mutate(
-    '/api/admin/roles',
+    (key) => typeof key === 'string' && key.startsWith('/api/admin/roles'),
     (currentData: any) => {
       if (!currentData?.data?.users) return currentData;
       
@@ -370,5 +387,5 @@ export const addUserRoleToCache = async (userId: string, roleData: User) => {
 };
 
 export const rollbackCacheUpdate = async () => {
-  await mutate('/api/admin/roles');
+  await mutate((key) => typeof key === 'string' && key.startsWith('/api/admin/roles'));
 };

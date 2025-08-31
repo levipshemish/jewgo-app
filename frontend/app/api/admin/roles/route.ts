@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { handleRoute } from '@/lib/server/route-helpers';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
-import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
+import { requireSuperAdmin, withPermission } from '@/lib/server/rbac-middleware';
 
 export const runtime = 'nodejs';
 
@@ -11,7 +11,7 @@ const RoleAssignmentSchema = z.object({
   action: z.literal('assign'),
   user_id: z.string().min(1, 'User ID is required'),
   role: z.enum(['moderator', 'data_admin', 'system_admin', 'super_admin']),
-  expires_at: z.string().optional(),
+  expires_at: z.string().datetime({ offset: true }).optional(),
   notes: z.string().optional(),
 });
 
@@ -29,12 +29,24 @@ const QuerySchema = z.object({
   search: z.string().optional(),
   user_id: z.string().optional(),
   role: z.string().optional(),
+  include_all: z.string().optional().transform(val => val === 'true'),
+  include_expired: z.string().optional().transform(v => v === 'true'),
 });
 
 // GET handler - fetch users with roles
 export async function GET(request: NextRequest) {
   return handleRoute(async () => {
-    const admin = await requireAdminOrThrow(request);
+    // Use RBAC middleware to ensure user has role management permissions
+    const admin = await withPermission('role:manage')(request);
+    
+    // Add rate limiting for GET requests (dev safeguard only)
+    if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_RATE_LIMITING === 'true') {
+      const limiter = getLimiter();
+      const key = `roles_get_${admin?.id || 'unknown'}`;
+      if (!limiter.allow(key, 30, 60_000)) { // 30 requests per minute for GET
+        return NextResponse.json({ success: false, error: 'Rate limit exceeded', message: 'Too many requests' }, { status: 429 });
+      }
+    }
     
     // Parse and validate query parameters
     const url = new URL(request.url);
@@ -50,37 +62,64 @@ export async function GET(request: NextRequest) {
     });
     
     try {
-      // Forward request to backend
+      // Forward request to backend with original Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Authorization header required',
+            message: 'No authorization header found',
+            status_code: 401,
+          },
+          { status: 401 }
+        );
+      }
+
       const response = await fetch(backendUrl.toString(), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${admin.token}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
       });
       
+      const status = response.status;
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const status = response.status;
-        const payload = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        return NextResponse.json(payload, { status });
+        const err = typeof payload === 'object' && payload ? payload : { error: 'Failed to fetch roles' };
+        return NextResponse.json(
+          {
+            success: false,
+            error: err.error || 'Failed to fetch roles',
+            message: err.message || 'Request failed',
+            status_code: status,
+          },
+          { status }
+        );
       }
+
+      // Normalize response to { success, data, message }
+      if (payload && payload.success === true && payload.data) {
+        return NextResponse.json(payload);
+      }
+      if (payload && typeof payload === 'object' && 'users' in payload) {
+        return NextResponse.json({ success: true, data: payload, message: 'Success' });
+      }
+      return NextResponse.json({ success: true, data: payload, message: 'Success' });
       
-      const data = await response.json();
-      
-      // Return backend response directly since it already has the correct format
-      return NextResponse.json(data);
-      
-    } catch (error) {
-      console.error('Error fetching admin roles:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch admin roles',
-          details: error instanceof Error ? error.message : 'Unknown error',
-        },
-        { status: 503 }
-      );
-    }
+          } catch (error) {
+        console.error('Error fetching admin roles:', error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to fetch admin roles',
+            message: error instanceof Error ? error.message : 'Unknown error',
+            status_code: 503,
+          },
+          { status: 503 }
+        );
+      }
   });
 }
 
@@ -88,6 +127,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return handleRoute(async () => {
     const admin = await requireSuperAdmin(request);
+    // Simple in-memory per-admin rate limiter (dev safeguard only)
+    if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_RATE_LIMITING === 'true') {
+      const limiter = getLimiter();
+      const key = `roles_post_${admin?.id || 'unknown'}`;
+      if (!limiter.allow(key, 10, 60_000)) {
+        return NextResponse.json({ success: false, error: 'Rate limit exceeded', message: 'Too many requests' }, { status: 429 });
+      }
+    }
     
     // Parse and validate request body
     const body = await request.json();
@@ -99,26 +146,63 @@ export async function POST(request: NextRequest) {
     
     try {
       // Forward request to backend
+      // Normalize expires_at to UTC
+      const normalizedBody = {
+        user_id: validatedBody.user_id,
+        role: validatedBody.role,
+        ...(validatedBody.action === 'assign' && {
+          expires_at: validatedBody.expires_at ? new Date(validatedBody.expires_at).toISOString() : undefined,
+          notes: (validatedBody as any).notes,
+        }),
+      };
+
+      // Forward request to backend with original Authorization header
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Authorization header required',
+            message: 'No authorization header found',
+            status_code: 401,
+          },
+          { status: 401 }
+        );
+      }
+
       const response = await fetch(backendUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${admin.token}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          user_id: validatedBody.user_id,
-          role: validatedBody.role,
-          ...(validatedBody.action === 'assign' && {
-            expires_at: validatedBody.expires_at,
-            notes: validatedBody.notes,
-          }),
-        }),
+        body: JSON.stringify(normalizedBody),
       });
       
       if (!response.ok) {
         const status = response.status;
         const payload = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        return NextResponse.json(payload, { status });
+        // Ensure clear 403 messaging alignment
+        if (status === 403) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: payload?.error || 'Insufficient permissions: super_admin role required',
+              message: payload?.message || 'Forbidden',
+              status_code: status,
+            },
+            { status }
+          );
+        }
+        return NextResponse.json(
+          {
+            success: false,
+            error: payload?.error || `Request failed: ${status}`,
+            message: payload?.message || 'Request failed',
+            status_code: status,
+          },
+          { status }
+        );
       }
       
       const data = await response.json();
@@ -128,39 +212,34 @@ export async function POST(request: NextRequest) {
       
     } catch (error) {
       console.error(`Error ${validatedBody.action}ing role:`, error);
-      
-      // Handle specific error cases
-      if (error instanceof Error) {
-        if (error.message.includes('403')) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Insufficient permissions for this operation',
-            },
-            { status: 403 }
-          );
-        }
-        
-        if (error.message.includes('400')) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Invalid request data',
-              details: error.message,
-            },
-            { status: 400 }
-          );
-        }
-      }
-      
       return NextResponse.json(
         {
           success: false,
           error: `Failed to ${validatedBody.action} role`,
-          details: error instanceof Error ? error.message : 'Unknown error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          status_code: 503,
         },
         { status: 503 }
       );
     }
   });
+}
+
+// Minimal in-memory rate limiter (dev safeguard only - production should use WAF)
+function getLimiter() {
+  const store: Record<string, { count: number; ts: number }> = (global as any).__ADMIN_ROLES_LIMITER__ || {};
+  (global as any).__ADMIN_ROLES_LIMITER__ = store;
+  return {
+    allow(key: string, max: number, windowMs: number) {
+      const now = Date.now();
+      const entry = store[key] || { count: 0, ts: now };
+      if (now - entry.ts > windowMs) {
+        entry.count = 0;
+        entry.ts = now;
+      }
+      entry.count += 1;
+      store[key] = entry;
+      return entry.count <= max;
+    },
+  };
 }

@@ -7,6 +7,7 @@ import {
 } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
 import type { Permission } from '@/lib/constants/permissions';
+
 import { 
   ADMIN_PERMISSIONS, 
   ROLE_PERMISSIONS,
@@ -24,13 +25,11 @@ import {
   secureLog,
   validatePermissions,
   getNoStoreHeaders,
-  normalizePermissions
+  normalizePermissions,
+  assertNodeRuntime
 } from './security';
 
-// Runtime guard for Node-only features
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Admin auth requires Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
-}
+
 
 // Production safety: Ensure dev overrides can't leak into production
 function assertNoDevOverridesInProd(): void {
@@ -139,6 +138,7 @@ async function getSessionUserWithRoles(): Promise<TransformedUser | null> {
  * Use requireAdminOrThrow for API routes to prevent silent bypasses
  */
 export async function requireAdmin(request: Request): Promise<AdminUser | null> {
+  assertNodeRuntime();
   try {
     // Development rate limiting (never in production)
     if (process.env.NODE_ENV === 'development') {
@@ -294,6 +294,7 @@ export async function requireAdmin(request: Request): Promise<AdminUser | null> 
  * Prevents silent bypasses by throwing instead of returning null
  */
 export async function requireAdminOrThrow(request: Request): Promise<AdminUser> {
+  assertNodeRuntime();
   // Enforce Origin on mutating requests
   if (requiresOriginCheck(request.method)) {
     enforceOrigin(request);
@@ -386,18 +387,13 @@ export async function getAdminUser(): Promise<AdminUser | null> {
       user.permissions,
       normalizePermissions(ROLE_PERMISSIONS[user.adminRole as AdminRole] || [])
     );
-
-    // Get the session to access the token
-    const supabase = await createServerSupabaseClient();
-    const { data: { session } } = await supabase.auth.getSession();
     
     const adminUser: AdminUser = {
       ...user,
       adminRole: user.adminRole as AdminRole,
       roleLevel: user.roleLevel || getRoleLevelForRole(user.adminRole as AdminRole),
       isSuperAdmin: user.isSuperAdmin || user.adminRole === 'super_admin',
-      permissions: permissions as Permission[] & string[],
-      token: session?.access_token || ''
+      permissions: permissions as Permission[]
     };
 
     assertAdmin(adminUser);
@@ -420,6 +416,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
  * Require admin user with throwing behavior
  */
 export async function requireAdminUser(): Promise<AdminUser> {
+  assertNodeRuntime();
   const adminUser = await getAdminUser();
   if (!adminUser) {
     throwAdminError('ADMIN_ACCESS_REQUIRED', 'Admin access required');

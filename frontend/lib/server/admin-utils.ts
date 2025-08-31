@@ -7,8 +7,11 @@ import {
   getRoleLevelForRole,
   getAllPermissions 
 } from './admin-constants';
-import { secureLog, hashUserId } from './security';
+import { secureLog, hashUserId, normalizePermission } from './security';
 import { getRequestId } from './memo';
+
+// Local Permission type definition using admin constants
+type Permission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
 
 // Runtime guard for Node-only features
 if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
@@ -26,27 +29,33 @@ export function isAdmin(user: TransformedUser | null): user is AdminUser {
 /**
  * Check if user has a specific permission
  */
-export function hasPermission(user: AdminUser, permission: string): boolean {
+export function hasPermission(user: AdminUser, permission: Permission): boolean {
   if (!user || !user.permissions) return false;
-  return user.permissions.includes(permission.toLowerCase()) || user.isSuperAdmin;
+  const normalizedPermission = normalizePermission(permission);
+  const normalizedUserPermissions = user.permissions.map(normalizePermission);
+  return normalizedUserPermissions.includes(normalizedPermission) || user.isSuperAdmin;
 }
 
 /**
  * Check if user has any of the specified permissions
  */
-export function hasAnyPermission(user: AdminUser, permissions: string[]): boolean {
+export function hasAnyPermission(user: AdminUser, permissions: Permission[]): boolean {
   if (!user || !user.permissions) return false;
   if (user.isSuperAdmin) return true;
-  return permissions.some(perm => user.permissions.includes(perm.toLowerCase()));
+  const normalizedPermissions = permissions.map(normalizePermission);
+  const normalizedUserPermissions = user.permissions.map(normalizePermission);
+  return normalizedPermissions.some(perm => normalizedUserPermissions.includes(perm));
 }
 
 /**
  * Check if user has all of the specified permissions
  */
-export function hasAllPermissions(user: AdminUser, permissions: string[]): boolean {
+export function hasAllPermissions(user: AdminUser, permissions: Permission[]): boolean {
   if (!user || !user.permissions) return false;
   if (user.isSuperAdmin) return true;
-  return permissions.every(perm => user.permissions.includes(perm.toLowerCase()));
+  const normalizedPermissions = permissions.map(normalizePermission);
+  const normalizedUserPermissions = user.permissions.map(normalizePermission);
+  return normalizedPermissions.every(perm => normalizedUserPermissions.includes(perm));
 }
 
 /**
@@ -84,7 +93,7 @@ export function getRoleLevel(user: TransformedUser | null): number {
 /**
  * Get user's permissions array
  */
-export function getUserPermissions(user: TransformedUser | null): string[] {
+export function getUserPermissions(user: TransformedUser | null): Permission[] {
   if (!user || !isAdmin(user)) return [];
   return user.permissions || [];
 }
@@ -134,7 +143,7 @@ export function getAdminSummary(user: TransformedUser | null): AdminSummary {
  */
 export function validateAdminAction(
   user: TransformedUser | null,
-  requiredPermission: string,
+  requiredPermission: Permission,
   action: string
 ): { valid: boolean; reason?: string; code?: string } {
   if (!user) {
@@ -237,14 +246,14 @@ export function getPermissionsByCategory(category: string): string[] {
 /**
  * Check if permission string is valid
  */
-export function isValidPermission(permission: string): boolean {
+export function isValidPermission(permission: string): permission is Permission {
   return getAllPermissions().includes(permission);
 }
 
 /**
  * Filter permissions to only valid ones
  */
-export function filterValidPermissions(permissions: string[]): string[] {
+export function filterValidPermissions(permissions: string[]): Permission[] {
   const validPerms = getAllPermissions();
-  return permissions.filter(perm => validPerms.includes(perm));
+  return permissions.filter(perm => validPerms.includes(perm)) as Permission[];
 }

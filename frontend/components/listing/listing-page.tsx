@@ -5,124 +5,138 @@ import { ListingHeader } from "./listing-header"
 import { ListingImage } from "./listing-image"
 import { ListingContent } from "./listing-content"
 import { ListingActions } from "./listing-actions"
-import { ReviewsPopup } from "./reviews-popup"
-import { ImageCarouselPopup } from "./image-carousel-popup"
-import { useState } from "react"
-import styles from "./listing.module.css"
-
-// Debug: Check if styles are being imported correctly
-console.log('ListingPage styles:', styles)
+import { Stack } from "@/components/ui/spacing"
 
 interface ListingPageProps {
   data?: ListingData
+  className?: string
   loading?: boolean
   error?: string | null
-  className?: string
 }
 
-export function ListingPage({ data, loading, error, className }: ListingPageProps) {
-  const [showReviews, setShowReviews] = useState(false)
-  const [showImageCarousel, setShowImageCarousel] = useState(false)
-
+export function ListingPage({ data, className = "", loading = false, error }: ListingPageProps) {
   if (loading) {
     return (
-      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
-        <div className="animate-pulse space-y-4">
-          <div className="h-64 bg-gray-300 rounded-3xl"></div>
-          <div className="rounded-2xl p-2 space-y-2">
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-            <div className="h-10 bg-gray-300 rounded"></div>
+      <div className={`w-full max-w-sm sm:max-w-none mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 ${className}`}>
+        <Stack gap={6}>
+          <div className="h-64 bg-gray-300 rounded-2xl" />
+          <div className="rounded-2xl p-4 md:p-6">
+            <Stack gap={4}>
+              <div className="h-4 bg-gray-300 rounded w-3/4" />
+              <div className="h-4 bg-gray-300 rounded w-1/2" />
+              <div className="h-10 bg-gray-300 rounded" />
+            </Stack>
           </div>
-        </div>
+        </Stack>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
-        <div className="text-center py-8">
-          <p className="text-red-500">Error: {error}</p>
+      <div className={`w-full max-w-sm sm:max-w-none mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 ${className}`}>
+        <div className="rounded-2xl p-4 md:p-6 text-center">
+          <Stack gap={2}>
+            <div className="text-red-500">⚠️</div>
+            <h3 className="text-lg font-semibold text-gray-900">Error Loading Listing</h3>
+            <p className="text-sm text-gray-600">{error}</p>
+          </Stack>
         </div>
       </div>
     )
   }
 
-  if (!data) {
-    return (
-      <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
-        <div className="text-center py-8">
-          <p className="text-gray-500">No data available</p>
-        </div>
-      </div>
-    )
+  const safeData: ListingData = {
+    title: data?.title || "Listing",
+    image: data?.image,
+    content: data?.content,
+    actions: data?.actions,
+    header: data?.header,
+    address: data?.address,
+    description: data?.description,
+    location: data?.location,
+    userLocation: data?.userLocation,
   }
 
   return (
-    <div className={`${styles.listingContainer || 'listingContainer'} ${className}`}>
-      <div className="space-y-4">
-        {/* Header */}
-        <ListingHeader
-          kosherType={data.header?.kosherType}
-          kosherAgency={data.header?.kosherAgency}
-          shareCount={data.header?.shareCount}
-          onBack={data.header?.onBack}
-          onFavorite={data.header?.onFavorite}
-          isFavorited={data.header?.isFavorited}
-        />
+    <div className={`w-full max-w-sm sm:max-w-none mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-8 ${className}`}>
+      <Stack gap={10}>
+        {/* Header overlaying the image */}
+        <div className="relative p-3">
+          {/* Image */}
+          {safeData.image && (
+            <ListingImage
+              src={safeData.image.src}
+              alt={safeData.image.alt || safeData.title || "Listing image"}
+              actionLabel={safeData.image.actionLabel}
+              onAction={safeData.image.onAction}
+              restaurantName={safeData.content?.leftText || safeData.title || "Restaurant"}
+              allImages={safeData.image.allImages || []}
+            />
+          )}
 
-        {/* Image */}
-        <ListingImage
-          imageUrl={data.image?.imageUrl}
-          imageAlt={data.image?.imageAlt}
-          imageActionLabel={data.image?.imageActionLabel}
-          viewCount={data.image?.viewCount}
-          onViewGallery={() => setShowImageCarousel(true)}
-        />
-
-        {/* Content */}
-        <ListingContent
-          leftText={data.content?.leftText}
-          rightText={data.content?.rightText}
-          leftActionLabel={data.content?.leftActionLabel}
-          rightActionLabel={data.content?.rightActionLabel}
-          leftIcon={data.content?.leftIcon}
-          rightIcon={data.content?.rightIcon}
-          onReviewsClick={() => setShowReviews(true)}
-        />
-
-        {/* Actions */}
-        <ListingActions
-          primaryAction={data.actions?.primaryAction}
-          secondaryActions={data.actions?.secondaryActions}
-          bottomAction={data.actions?.bottomAction}
-          kosherTags={data.actions?.kosherTags}
-          address={data.address}
-        />
-
-        {/* Description */}
-        {data.description && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-600 leading-relaxed">{data.description}</p>
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 z-10">
+            <ListingHeader
+              kosherType={safeData.header?.kosherType}
+              kosherAgency={safeData.header?.kosherAgency}
+              kosherAgencyWebsite={safeData.header?.kosherAgencyWebsite}
+              shareCount={safeData.header?.shareCount}
+              onBack={safeData.header?.onBack}
+              onFavorite={safeData.header?.onFavorite}
+              isFavorited={safeData.header?.isFavorited}
+            />
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Popups */}
-      {showReviews && (
-        <ReviewsPopup
-          reviews={data.reviews || []}
-          onClose={() => setShowReviews(false)}
-        />
-      )}
+        {/* Content sections */}
+        <Stack gap={3} className="pl-3 pr-3">
+          {/* Content */}
+          {safeData.content && (
+            <ListingContent
+              leftText={safeData.content.leftText}
+              rightText={safeData.content.rightText}
+              leftAction={safeData.content.leftAction}
+              rightAction={safeData.content.rightAction}
+              leftBold={safeData.content.leftBold}
+              rightBold={safeData.content.rightBold}
+              leftIcon={safeData.content.leftIcon}
+              rightIcon={safeData.content.rightIcon}
+              onLeftAction={safeData.content.onLeftAction}
+              onRightAction={safeData.content.onRightAction}
+            />
+          )}
 
-      {showImageCarousel && data.image?.images && (
-        <ImageCarouselPopup
-          images={data.image.images}
-          onClose={() => setShowImageCarousel(false)}
-        />
-      )}
+          {/* Actions */}
+          {safeData.actions && (
+            <ListingActions
+              primaryAction={safeData.actions.primaryAction}
+              secondaryActions={safeData.actions.secondaryActions}
+              tags={safeData.actions.tags}
+              onTagClick={safeData.actions.onTagClick}
+              bottomAction={safeData.actions.bottomAction}
+              address={safeData.address}
+              location={safeData.location}
+              userLocation={safeData.userLocation ? {
+                lat: safeData.userLocation.latitude,
+                lng: safeData.userLocation.longitude
+              } : undefined}
+            />
+          )}
+
+          {/* Description Section */}
+          {safeData.description && (
+            <div className="p-3 text-center">
+              <span className="text-sm text-gray-600 leading-relaxed">{safeData.description}</span>
+            </div>
+          )}
+        </Stack>
+
+        {/* Bottom indicator */}
+        <div className="flex justify-center">
+          <div className="w-48 h-0.5 bg-gray-300 rounded-full" />
+        </div>
+      </Stack>
     </div>
   )
 }

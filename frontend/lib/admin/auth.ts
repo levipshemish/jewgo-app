@@ -6,7 +6,7 @@ import 'server-only';
 // - lib/server/admin-utils.ts for admin utility functions
 // - lib/server/canonical-auth.ts for canonical admin authentication
 
-console.warn('[ADMIN] lib/admin/auth.ts is deprecated. Use lib/server/admin-auth.ts instead.');
+// Deprecation warning will be shown when functions are called
 
 // Re-export types only (safe for client)
 export type { AdminUser, AdminRole } from './types';
@@ -74,30 +74,13 @@ export async function getRolePermissions() {
   return ROLE_PERMISSIONS;
 }
 
-// Keep CSRF functions but mark as deprecated
-export function generateCSRFToken(): string {
-  console.warn('[ADMIN] generateCSRFToken is deprecated. Use Origin enforcement instead.');
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2);
-  return `admin_${timestamp}_${random}`;
+// DEPRECATED: CSRF functions replaced with Origin enforcement
+export function generateCSRFToken(): never {
+  throw new Error('[ADMIN] generateCSRFToken is deprecated. Use Origin enforcement/X-CSRF-Token instead. See lib/server/security.ts for enforceOrigin() function.');
 }
 
-export function validateCSRFToken(token: string): boolean {
-  console.warn('[ADMIN] validateCSRFToken is deprecated. Use Origin enforcement instead.');
-  if (!token || !token.startsWith('admin_')) {
-    return false;
-  }
-  
-  const parts = token.split('_');
-  if (parts.length !== 3) {
-    return false;
-  }
-  
-  const timestamp = parseInt(parts[1]);
-  const now = Date.now();
-  
-  // Token expires after 1 hour
-  return (now - timestamp) < 3600000;
+export function validateCSRFToken(token: string): never {
+  throw new Error('[ADMIN] validateCSRFToken is deprecated. Use Origin enforcement/X-CSRF-Token instead. See lib/server/security.ts for enforceOrigin() function.');
 }
 
 /**

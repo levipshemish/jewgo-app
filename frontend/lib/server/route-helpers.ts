@@ -1,23 +1,27 @@
 import { withReqStore, setRequestId } from './memo';
-import { AdminAuthError } from './security';
+import { AdminAuthError, assertNodeRuntime, getNoStoreHeaders } from './security';
 import { secureLog } from './security';
-import { createHash } from 'crypto';
-
-// Runtime guard for Node-only features
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Admin auth requires Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
-}
+import { randomUUID } from 'node:crypto';
 
 /**
  * Generate cryptographically secure request ID
  */
 function generateSecureRequestId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = createHash('sha256')
-    .update(Math.random().toString())
-    .digest('hex')
-    .slice(0, 8);
-  return `req_${timestamp}_${random}`;
+  return `req_${randomUUID()}`;
+}
+
+/**
+ * JSON response helper with no-store cache headers
+ * Use this for all admin API responses to prevent caching
+ */
+export function json(data: any, status: number = 200): Response {
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: getNoStoreHeaders()
+    }
+  );
 }
 
 /**
@@ -25,6 +29,7 @@ function generateSecureRequestId(): string {
  * Mandatory for all admin routes to prevent cross-request leaks
  */
 export async function handleRoute(fn: () => Promise<Response>): Promise<Response> {
+  assertNodeRuntime();
   return withReqStore(async () => {
     // Set request ID for correlation
     const requestId = generateSecureRequestId();
@@ -48,6 +53,29 @@ export async function handleRoute(fn: () => Promise<Response>): Promise<Response
         return error;
       }
       
+      // Handle errors with status codes (e.g., from RBAC middleware)
+      if (error instanceof Error && (error as any).status) {
+        const status = (error as any).status;
+        secureLog('warn', 'ADMIN', {
+          code: 'FORBIDDEN_ERROR',
+          requestId,
+          statusCode: status,
+          error: error.message
+        });
+        
+        return new Response(
+          JSON.stringify({ 
+            error: error.message, 
+            code: 'FORBIDDEN',
+            requestId 
+          }),
+          { 
+            status, 
+            headers: getNoStoreHeaders()
+          }
+        );
+      }
+      
       // Handle unexpected errors
       secureLog('error', 'ADMIN', {
         code: 'ROUTE_HANDLER_ERROR',
@@ -63,10 +91,7 @@ export async function handleRoute(fn: () => Promise<Response>): Promise<Response
         }),
         { 
           status: 500, 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
-          }
+          headers: getNoStoreHeaders()
         }
       );
     }

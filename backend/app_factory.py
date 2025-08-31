@@ -55,27 +55,31 @@ def create_app():
     
     # Pre-warm JWKS cache on startup
     try:
-        from utils.supabase_auth import supabase_auth
-        supabase_auth.pre_warm_jwks()
-        logger.info("JWKS pre-warming completed")
+        if os.getenv("ENABLE_JWKS_PREWARM", "true").lower() == "true":
+            from utils.supabase_auth import supabase_auth
+            supabase_auth.pre_warm_jwks()
+            logger.info("JWKS pre-warming completed")
+        else:
+            logger.info("JWKS pre-warming disabled by ENABLE_JWKS_PREWARM=false")
     except Exception as e:
         logger.warning(f"JWKS pre-warming failed: {e}")
     
     # Schedule JWKS refresh
     try:
-        from utils.supabase_auth import supabase_auth
-        supabase_auth.schedule_jwks_refresh()
-        logger.info("JWKS refresh scheduling completed")
+        if os.getenv("ENABLE_JWKS_SCHEDULER", "true").lower() == "true":
+            from utils.supabase_auth import supabase_auth
+            supabase_auth.schedule_jwks_refresh()
+            logger.info("JWKS refresh scheduling completed")
+        else:
+            logger.info("JWKS scheduler disabled by ENABLE_JWKS_SCHEDULER=false")
     except Exception as e:
         logger.warning(f"Failed to schedule JWKS refresh: {e}")
     
     # Start admin role cache invalidation listener
     try:
-        # Check if cache invalidation listener is enabled
-        if os.getenv("ENABLE_CACHE_INVALIDATION_LISTENER", "true").lower() == "true":
+        if os.getenv("ENABLE_CACHE_INVALIDATION_LISTENER", "false").lower() == "true":
             from utils.supabase_role_manager import get_role_manager
-            role_manager = get_role_manager()
-            role_manager.start_cache_invalidation_listener()
+            get_role_manager().start_cache_invalidation_listener()
             logger.info("Admin role cache invalidation listener startup completed")
         else:
             logger.info("Cache invalidation listener disabled by ENABLE_CACHE_INVALIDATION_LISTENER=false")
@@ -84,10 +88,14 @@ def create_app():
     
     app = Flask(__name__)
     
-    # Register teardown handler to clear user context
+    # Register teardown handler to clear user context (once per process)
     try:
         from utils.security import clear_user_context
-        app.teardown_request(clear_user_context)
+
+        @app.teardown_request
+        def _teardown(req_or_exc):
+            return clear_user_context(req_or_exc)
+
         logger.info("Registered user context cleanup handler")
     except Exception as e:
         logger.warning(f"Failed to register user context cleanup: {e}")
@@ -682,6 +690,20 @@ def create_app():
             logger.warning("User API blueprint is None - not registering routes")
     except ImportError as e:
         logger.warning(f"Could not import user API routes: {e}")
+
+    # Register auth API routes
+    try:
+        logger.info("Attempting to import auth API routes...")
+        from routes.user_api import auth_api
+
+        logger.info(f"Auth API blueprint imported: {auth_api}")
+        if auth_api is not None:
+            app.register_blueprint(auth_api)
+            logger.info("Auth API routes registered successfully")
+        else:
+            logger.warning("Auth API blueprint is None - not registering routes")
+    except ImportError as e:
+        logger.warning(f"Could not import auth API routes: {e}")
     # Register shtetl marketplace API routes
     try:
         logger.info("Attempting to import shtetl marketplace API routes...")
@@ -883,32 +905,6 @@ def create_app():
             }
         )
 
-    # Pre-warm JWKS cache on application startup
-    try:
-        from utils.supabase_auth import supabase_auth
-
-        supabase_auth.pre_warm_jwks()
-        logger.info("JWKS cache pre-warmed successfully")
-        # Schedule periodic JWKS refresh (every hour)
-        try:
-            from apscheduler.schedulers.background import BackgroundScheduler
-
-            scheduler = BackgroundScheduler()
-            scheduler.add_job(
-                func=supabase_auth.pre_warm_jwks,
-                trigger="interval",
-                hours=1,
-                id="jwks_refresh",
-                name="JWKS Cache Refresh",
-            )
-            scheduler.start()
-            logger.info("JWKS periodic refresh scheduled successfully")
-        except ImportError:
-            logger.warning("APScheduler not available - JWKS periodic refresh disabled")
-        except Exception as e:
-            logger.warning(f"Failed to schedule JWKS periodic refresh: {e}")
-    except Exception as e:
-        logger.warning(f"Failed to pre-warm JWKS cache: {e}")
 
     # Teardown handler already registered above (lines 87-93) to avoid duplication
 

@@ -1,68 +1,47 @@
 import 'server-only';
-import { redirect } from 'next/navigation';
+import { randomUUID } from 'node:crypto';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
-import { requireAdminUser, getAdminUser } from './admin-auth';
-import { hasPermission, hasMinimumAdminLevel } from './admin-utils';
-import { throwAdminError, secureLog } from './security';
+import { 
+  hasPermission, 
+  hasMinimumAdminLevel
+} from './admin-utils';
+import { 
+  requireAdminUser,
+  requireAdminOrThrow 
+} from './admin-auth';
+import { 
+  assertNodeRuntime,
+  secureLog,
+  throwAdminError
+} from './security';
 import { getRequestId, setRequestId } from './memo';
 
-// Runtime guard for Node-only features
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Canonical auth requires Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
+// Local Permission type definition
+type Permission = string;
+
+/**
+ * Require admin authentication
+ * Throws if user is not an admin
+ */
+export async function requireAdminAuth(request: Request): Promise<AdminUser> {
+  assertNodeRuntime();
+  // Set request ID for correlation
+  setRequestId(randomUUID() ?? String(Date.now()));
+  
+  return requireAdminOrThrow(request);
 }
 
 /**
- * Require admin authentication for page components
- * Redirects to signin if not authenticated, to home if not admin
+ * Check admin authentication (returns null on failure)
  */
-export async function requireAdminAuth(): Promise<AdminUser> {
+export async function checkAdminAuth(request: Request): Promise<AdminUser | null> {
+  assertNodeRuntime();
   // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
+  setRequestId(randomUUID() ?? String(Date.now()));
   
   try {
-    const adminUser = await getAdminUser();
-    
-    if (!adminUser) {
-      secureLog('info', 'ADMIN', {
-        code: 'CANONICAL_AUTH_REDIRECT',
-        reason: 'not_admin',
-        requestId: getRequestId()
-      });
-      
-      // Redirect to signin for unauthenticated users
-      // This will be caught by Next.js and handled appropriately
-      redirect('/auth/signin?reason=admin_required');
-    }
-    
-    return adminUser;
-  } catch (error) {
-    secureLog('error', 'ADMIN', {
-      code: 'CANONICAL_AUTH_ERROR',
-      requestId: getRequestId(),
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-    
-    // Redirect to home page on auth error
-    redirect('/?error=auth_failed');
-  }
-}
-
-/**
- * Check admin authentication without redirecting
- * Returns null if not admin, user if admin
- */
-export async function checkAdminAuth(): Promise<AdminUser | null> {
-  // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
-  
-  try {
-    return await getAdminUser();
-  } catch (error) {
-    secureLog('error', 'ADMIN', {
-      code: 'CHECK_ADMIN_AUTH_ERROR',
-      requestId: getRequestId(),
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return await requireAdminOrThrow(request);
+  } catch {
     return null;
   }
 }
@@ -72,12 +51,13 @@ export async function checkAdminAuth(): Promise<AdminUser | null> {
  * Throws if user doesn't have the permission
  */
 export async function requireAdminPermission(permission: string): Promise<AdminUser> {
+  assertNodeRuntime();
   // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
+  setRequestId(randomUUID() ?? String(Date.now()));
   
   const adminUser = await requireAdminUser();
   
-  if (!hasPermission(adminUser, permission)) {
+  if (!hasPermission(adminUser, permission as any)) {
     secureLog('warn', 'ADMIN', {
       code: 'CANONICAL_PERMISSION_DENIED',
       permission,
@@ -101,8 +81,9 @@ export async function requireAdminPermission(permission: string): Promise<AdminU
  * Throws if user doesn't meet minimum level
  */
 export async function requireMinimumRoleLevel(minLevel: number): Promise<AdminUser> {
+  assertNodeRuntime();
   // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
+  setRequestId(randomUUID() ?? String(Date.now()));
   
   const adminUser = await requireAdminUser();
   
@@ -134,14 +115,15 @@ export async function validateAdminAccess(options: {
   minRoleLevel?: number;
   allowedRoles?: AdminRole[];
 }): Promise<AdminUser> {
+  assertNodeRuntime();
   // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
+  setRequestId(randomUUID() ?? String(Date.now()));
   
   const adminUser = await requireAdminUser();
   
   // Check permissions
   if (options.permissions) {
-    const missingPerms = options.permissions.filter(perm => !hasPermission(adminUser, perm));
+    const missingPerms = options.permissions.filter(perm => !hasPermission(adminUser, perm as any));
     if (missingPerms.length > 0) {
       secureLog('warn', 'ADMIN', {
         code: 'CANONICAL_VALIDATE_PERMS_FAILED',
@@ -200,8 +182,9 @@ export async function validateAdminAccess(options: {
  * Assert user is admin (for type narrowing)
  */
 export async function assertAdminUser(): Promise<AdminUser> {
+  assertNodeRuntime();
   // Set request ID for correlation
-  setRequestId(crypto.randomUUID?.() ?? String(Date.now()));
+  setRequestId(randomUUID() ?? String(Date.now()));
   
   return await requireAdminUser();
 }
@@ -210,12 +193,12 @@ export async function assertAdminUser(): Promise<AdminUser> {
  * Legacy function for backwards compatibility (feature flagged)
  * DO NOT USE - will be removed
  */
-export async function requireAdminAuthLegacy(): Promise<AdminUser> {
+export async function requireAdminAuthLegacy(request?: Request): Promise<AdminUser> {
   if (process.env.ADMIN_LEGACY_AUTH !== 'true') {
     throw new Error('[ADMIN] Legacy auth function disabled. Use requireAdminAuth() instead.');
   }
   
   console.warn('[ADMIN] requireAdminAuthLegacy is deprecated. Use requireAdminAuth() instead.');
   
-  return await requireAdminAuth();
+  return await requireAdminAuth(request!);
 }

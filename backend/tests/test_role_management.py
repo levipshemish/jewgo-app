@@ -4,15 +4,29 @@ from unittest.mock import Mock, patch, MagicMock
 from services.user_service_v4 import UserServiceV4
 from database.database_manager_v4 import DatabaseManager
 from utils.error_handler import ValidationError
+from routes.api_v4 import api_v4
+from app_factory import create_app
 
 
 class TestRoleManagement:
     """Test suite for role management functionality."""
     
     @pytest.fixture
+    def app(self):
+        """Create Flask app for testing."""
+        app = create_app()
+        app.config['TESTING'] = True
+        return app
+    
+    @pytest.fixture
+    def client(self, app):
+        """Create test client."""
+        return app.test_client()
+    
+    @pytest.fixture
     def user_service(self):
         """Create a UserServiceV4 instance for testing."""
-        db_manager = DatabaseManager()
+        db_manager = Mock(spec=DatabaseManager)
         return UserServiceV4(db_manager=db_manager)
     
     @pytest.fixture
@@ -55,7 +69,7 @@ class TestRoleManagement:
 
     def test_assign_user_role_success(self, user_service, admin_user, regular_user):
         """Test successful role assignment."""
-        with patch.object(user_service.db_manager, 'assign_admin_role', return_value=True):
+        with patch.object(user_service.db_manager, 'assign_admin_role', return_value={'success': True}):
             result = user_service.assign_user_role(
                 target_user_id=regular_user['id'],
                 role='moderator',
@@ -64,7 +78,7 @@ class TestRoleManagement:
                 notes='Test assignment'
             )
             
-            assert result is True
+            assert result == {'success': True}
             user_service.db_manager.assign_admin_role.assert_called_once_with(
                 target_user_id=regular_user['id'],
                 role='moderator',
@@ -86,7 +100,7 @@ class TestRoleManagement:
         """Test role assignment with expiration date."""
         expires_at = (datetime.utcnow() + timedelta(days=30)).isoformat()
         
-        with patch.object(user_service.db_manager, 'assign_admin_role', return_value=True):
+        with patch.object(user_service.db_manager, 'assign_admin_role', return_value={'success': True}):
             result = user_service.assign_user_role(
                 target_user_id=regular_user['id'],
                 role='data_admin',
@@ -95,7 +109,7 @@ class TestRoleManagement:
                 notes='Temporary assignment'
             )
             
-            assert result is True
+            assert result == {'success': True}
             user_service.db_manager.assign_admin_role.assert_called_once_with(
                 target_user_id=regular_user['id'],
                 role='data_admin',
@@ -106,14 +120,14 @@ class TestRoleManagement:
 
     def test_revoke_user_role_success(self, user_service, admin_user, regular_user):
         """Test successful role revocation."""
-        with patch.object(user_service.db_manager, 'remove_admin_role', return_value=True):
+        with patch.object(user_service.db_manager, 'remove_admin_role', return_value={'success': True}):
             result = user_service.revoke_user_role(
                 target_user_id=regular_user['id'],
                 role='moderator',
                 removed_by_user_id=admin_user['id']
             )
             
-            assert result is True
+            assert result == {'success': True}
             user_service.db_manager.remove_admin_role.assert_called_once_with(
                 target_user_id=regular_user['id'],
                 role='moderator',
@@ -122,14 +136,14 @@ class TestRoleManagement:
 
     def test_revoke_user_role_failure(self, user_service, admin_user, regular_user):
         """Test role revocation failure."""
-        with patch.object(user_service.db_manager, 'remove_admin_role', return_value=False):
+        with patch.object(user_service.db_manager, 'remove_admin_role', return_value={'success': False, 'error': 'Failed'}):
             result = user_service.revoke_user_role(
                 target_user_id=regular_user['id'],
                 role='moderator',
                 removed_by_user_id=admin_user['id']
             )
             
-            assert result is False
+            assert result == {'success': False, 'error': 'Failed'}
 
     def test_get_user_roles_single_user(self, user_service, regular_user):
         """Test getting roles for a single user."""
@@ -157,7 +171,8 @@ class TestRoleManagement:
                 limit=50,
                 offset=0,
                 search='',
-                role_filter=None
+                role_filter=None,
+                include_all=False
             )
 
     def test_get_user_roles_with_pagination(self, user_service):
@@ -179,7 +194,8 @@ class TestRoleManagement:
                 limit=25,
                 offset=25,  # (page - 1) * limit
                 search='',
-                role_filter=None
+                role_filter=None,
+                include_all=False
             )
 
     def test_get_user_roles_with_search(self, user_service):
@@ -202,7 +218,8 @@ class TestRoleManagement:
                 limit=50,
                 offset=0,
                 search=search_term,
-                role_filter=None
+                role_filter=None,
+                include_all=False
             )
 
     def test_get_available_roles(self, user_service):
@@ -276,7 +293,7 @@ class TestRoleManagement:
                 notes='Test'
             )
             
-            assert result is True
+            assert result == {'success': True}
             db_manager.call_supabase_rpc.assert_called_once_with('assign_admin_role', {
                 'p_user_id': 'user-123',
                 'p_role': 'moderator',
@@ -293,7 +310,7 @@ class TestRoleManagement:
                 removed_by_user_id='admin-456'
             )
             
-            assert result is True
+            assert result == {'success': True}
             db_manager.call_supabase_rpc.assert_called_once_with('remove_admin_role', {
                 'p_user_id': 'user-123',
                 'p_role': 'moderator',
@@ -411,7 +428,7 @@ class TestRoleManagement:
 
     def test_logging_in_role_operations(self, user_service, admin_user, regular_user):
         """Test logging in role operations."""
-        with patch.object(user_service.db_manager, 'assign_admin_role', return_value=True):
+        with patch.object(user_service.db_manager, 'assign_admin_role', return_value={'success': True}):
             with patch.object(user_service.logger, 'info') as mock_logger:
                 user_service.assign_user_role(
                     target_user_id=regular_user['id'],
@@ -426,7 +443,7 @@ class TestRoleManagement:
                 assert regular_user['id'] in str(log_call)
                 assert 'moderator' in str(log_call)
 
-        with patch.object(user_service.db_manager, 'remove_admin_role', return_value=True):
+        with patch.object(user_service.db_manager, 'remove_admin_role', return_value={'success': True}):
             with patch.object(user_service.logger, 'info') as mock_logger:
                 user_service.revoke_user_role(
                     target_user_id=regular_user['id'],
@@ -440,3 +457,279 @@ class TestRoleManagement:
                 assert 'Successfully revoked admin role' in str(log_call)
                 assert regular_user['id'] in str(log_call)
                 assert 'moderator' in str(log_call)
+
+    # Flask endpoint tests
+    def test_assign_role_endpoint_success(self, client):
+        """Test successful role assignment via Flask endpoint."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                mock_service_instance = Mock()
+                mock_service_instance.assign_user_role.return_value = {'success': True}
+                mock_service.return_value = mock_service_instance
+                
+                response = client.post('/api/v4/admin/roles/assign', 
+                    json={
+                        'user_id': 'user-456',
+                        'role': 'moderator',
+                        'expires_at': None,
+                        'notes': 'Test assignment'
+                    }
+                )
+                
+                assert response.status_code == 200
+                data = response.get_json()
+                assert data['success'] is True
+                assert 'Role assigned successfully' in data['message']
+
+    def test_assign_role_endpoint_unauthorized(self, client):
+        """Test role assignment without authentication."""
+        response = client.post('/api/v4/admin/roles/assign', 
+            json={
+                'user_id': 'user-456',
+                'role': 'moderator'
+            }
+        )
+        
+        assert response.status_code == 401
+        data = response.get_json()
+        assert 'Authentication required' in data['error']
+
+    def test_assign_role_endpoint_insufficient_permissions(self, client):
+        """Test role assignment with insufficient permissions."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'moderator'  # Not super_admin
+            }
+            
+            response = client.post('/api/v4/admin/roles/assign', 
+                json={
+                    'user_id': 'user-456',
+                    'role': 'moderator'
+                }
+            )
+            
+            assert response.status_code == 403
+            data = response.get_json()
+            assert 'super_admin role required' in data['error']
+
+    def test_assign_role_endpoint_invalid_payload(self, client):
+        """Test role assignment with invalid payload."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            # Missing required fields
+            response = client.post('/api/v4/admin/roles/assign', 
+                json={'user_id': 'user-456'}  # Missing role
+            )
+            
+            assert response.status_code == 400
+            data = response.get_json()
+            assert 'role are required' in data['error']
+
+    def test_assign_role_endpoint_conflict(self, client):
+        """Test role assignment with conflict (user already has role)."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                mock_service_instance = Mock()
+                mock_service_instance.assign_user_role.return_value = {
+                    'success': False,
+                    'error': 'User already has this role',
+                    'error_type': 'conflict'
+                }
+                mock_service.return_value = mock_service_instance
+                
+                response = client.post('/api/v4/admin/roles/assign', 
+                    json={
+                        'user_id': 'user-456',
+                        'role': 'moderator'
+                    }
+                )
+                
+                assert response.status_code == 409
+                data = response.get_json()
+                assert 'User already has this role' in data['error']
+
+    def test_revoke_role_endpoint_success(self, client):
+        """Test successful role revocation via Flask endpoint."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                mock_service_instance = Mock()
+                mock_service_instance.revoke_user_role.return_value = {'success': True}
+                mock_service.return_value = mock_service_instance
+                
+                response = client.post('/api/v4/admin/roles/revoke', 
+                    json={
+                        'user_id': 'user-456',
+                        'role': 'moderator'
+                    }
+                )
+                
+                assert response.status_code == 200
+                data = response.get_json()
+                assert data['success'] is True
+                assert 'Role revoked successfully' in data['message']
+
+    def test_revoke_role_endpoint_self_revocation(self, client):
+        """Test self-revocation of super_admin role."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            response = client.post('/api/v4/admin/roles/revoke', 
+                json={
+                    'user_id': 'admin-123',  # Same as current user
+                    'role': 'super_admin'
+                }
+            )
+            
+            assert response.status_code == 409
+            data = response.get_json()
+            assert 'Cannot revoke your own super_admin role' in data['error']
+
+    def test_list_roles_endpoint_success(self, client):
+        """Test successful role listing via Flask endpoint."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                mock_service_instance = Mock()
+                mock_service_instance.get_user_roles.return_value = {
+                    'users': [
+                        {
+                            'id': 'user-456',
+                            'name': 'Test User',
+                            'email': 'test@example.com',
+                            'role': 'moderator',
+                            'role_level': 1,
+                            'assigned_at': '2024-01-01T00:00:00Z'
+                        }
+                    ],
+                    'total': 1,
+                    'page': 1,
+                    'limit': 50,
+                    'has_more': False
+                }
+                mock_service.return_value = mock_service_instance
+                
+                response = client.get('/api/v4/admin/roles')
+                
+                assert response.status_code == 200
+                data = response.get_json()
+                assert 'users' in data
+                assert len(data['users']) == 1
+                assert data['users'][0]['role'] == 'moderator'
+
+    def test_available_roles_endpoint_success(self, client):
+        """Test successful available roles endpoint."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            response = client.get('/api/v4/admin/roles/available')
+            
+            assert response.status_code == 200
+            data = response.get_json()
+            assert isinstance(data, list)
+            assert len(data) == 4
+            
+            # Check role structure
+            for role in data:
+                assert 'name' in role
+                assert 'level' in role
+                assert 'description' in role
+                assert 'permissions' in role
+            
+            # Check specific roles
+            role_names = [role['name'] for role in data]
+            assert 'moderator' in role_names
+            assert 'data_admin' in role_names
+            assert 'system_admin' in role_names
+            assert 'super_admin' in role_names
+
+    def test_available_roles_endpoint_unauthorized(self, client):
+        """Test available roles endpoint without authentication."""
+        response = client.get('/api/v4/admin/roles/available')
+        
+        assert response.status_code == 401
+        data = response.get_json()
+        assert 'Authentication required' in data['error']
+
+    def test_get_admin_roles_with_include_expired(self, client):
+        """Test GET /admin/roles with include_expired=true parameter."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-123',
+                'role': 'super_admin'
+            }
+            
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                mock_service_instance = Mock()
+                mock_service_instance.get_user_roles.return_value = {
+                    'users': [
+                        {
+                            'id': 'user-456',
+                            'name': 'Test User',
+                            'email': 'test@example.com',
+                            'role': 'moderator',
+                            'role_level': 1,
+                            'assigned_at': '2024-01-01T00:00:00Z',
+                            'expires_at': '2024-01-01T00:00:00Z'  # Expired role
+                        }
+                    ],
+                    'total': 1,
+                    'page': 1,
+                    'limit': 50,
+                    'has_more': False
+                }
+                mock_service.return_value = mock_service_instance
+                
+                response = client.get('/api/v4/admin/roles?include_expired=true')
+                
+                assert response.status_code == 200
+                data = response.get_json()
+                assert 'users' in data
+                assert len(data['users']) == 1
+                # Verify that the service was called with include_expired=True
+                mock_service_instance.get_user_roles.assert_called_once()
+                call_args = mock_service_instance.get_user_roles.call_args
+                assert call_args[1]['include_expired'] is True
+
+    def test_get_admin_roles_non_admin_access(self, client):
+        """Test GET /admin/roles with non-admin user access."""
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'user-123',
+                'role': 'user'  # Regular user, not admin
+            }
+            
+            response = client.get('/api/v4/admin/roles')
+            
+            assert response.status_code == 403
+            data = response.get_json()
+            assert 'forbidden' in data['error'].lower() or 'insufficient' in data['error'].lower()

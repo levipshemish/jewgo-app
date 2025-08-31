@@ -1,8 +1,3 @@
-import os
-import sys
-from sqlalchemy import create_engine, text
-from utils.logging_config import get_logger
-
 # !/usr/bin/env python3
 """Migration script to add missing columns to the restaurants table.
 This fixes the issue where the eatery page shows no listings due to schema mismatch.
@@ -12,6 +7,12 @@ Missing columns:
 """
 import os
 import sys
+
+# Add backend directory to Python path for utils imports
+backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from sqlalchemy import create_engine, text
 from utils.logging_config import get_logger
 

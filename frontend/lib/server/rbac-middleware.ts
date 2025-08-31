@@ -1,6 +1,13 @@
 import { NextRequest } from 'next/server';
 import { requireAdminOrThrow } from './admin-auth';
 
+// Helper function to throw forbidden errors with proper status
+function forbidden(message: string): never {
+  const error = new Error(message);
+  (error as any).status = 403;
+  throw error;
+}
+
 // Role hierarchy levels
 export const ROLE_LEVELS = {
   moderator: 1,
@@ -55,11 +62,12 @@ export function withMinRole(minRoleLevel: number) {
   return async function(request: NextRequest) {
     const admin = await requireAdminOrThrow(request);
     
-    // Get user's role level
-    const userRoleLevel = ROLE_LEVELS[admin.role as keyof typeof ROLE_LEVELS] || 0;
+    // Get user's role level - normalize to use adminRole property
+    const userRole = admin.adminRole || admin.role;
+    const userRoleLevel = ROLE_LEVELS[userRole as keyof typeof ROLE_LEVELS] || 0;
     
     if (userRoleLevel < minRoleLevel) {
-      throw new Error(`Insufficient permissions. Required role level: ${minRoleLevel}, User role level: ${userRoleLevel}`);
+      forbidden(`Insufficient permissions. Required role level: ${minRoleLevel}, User role level: ${userRoleLevel}`);
     }
     
     return admin;
@@ -72,17 +80,18 @@ export function withPermission(requiredPermission: string) {
     const admin = await requireAdminOrThrow(request);
     
     // Super admin has all permissions
-    if (admin.role === 'super_admin') {
+    const userRole = admin.adminRole || admin.role;
+    if (userRole === 'super_admin') {
       return admin;
     }
     
     // Get user's permissions
-    const userPermissions = getAllPermissionsForRole(admin.role as keyof typeof ROLE_LEVELS);
+    const userPermissions = getAllPermissionsForRole(userRole as keyof typeof ROLE_LEVELS);
     
     // Check if user has the required permission
     const hasPermission = userPermissions.some(permission => {
-      // Handle wildcard permissions
-      if (permission.endsWith(':*')) {
+      // Handle wildcard permissions (both :* and :all)
+      if (permission.endsWith(':*') || permission.endsWith(':all')) {
         const basePermission = permission.slice(0, -2);
         return requiredPermission.startsWith(basePermission);
       }
@@ -90,7 +99,7 @@ export function withPermission(requiredPermission: string) {
     });
     
     if (!hasPermission) {
-      throw new Error(`Insufficient permissions. Required: ${requiredPermission}`);
+      forbidden(`Insufficient permissions. Required: ${requiredPermission}`);
     }
     
     return admin;
@@ -103,18 +112,19 @@ export function withAnyPermission(requiredPermissions: string[]) {
     const admin = await requireAdminOrThrow(request);
     
     // Super admin has all permissions
-    if (admin.role === 'super_admin') {
+    const userRole = admin.adminRole || admin.role;
+    if (userRole === 'super_admin') {
       return admin;
     }
     
     // Get user's permissions
-    const userPermissions = getAllPermissionsForRole(admin.role as keyof typeof ROLE_LEVELS);
+    const userPermissions = getAllPermissionsForRole(userRole as keyof typeof ROLE_LEVELS);
     
     // Check if user has at least one of the required permissions
     const hasAnyPermission = requiredPermissions.some(requiredPermission => {
       return userPermissions.some(permission => {
-        // Handle wildcard permissions
-        if (permission.endsWith(':*')) {
+        // Handle wildcard permissions (both :* and :all)
+        if (permission.endsWith(':*') || permission.endsWith(':all')) {
           const basePermission = permission.slice(0, -2);
           return requiredPermission.startsWith(basePermission);
         }
@@ -123,7 +133,7 @@ export function withAnyPermission(requiredPermissions: string[]) {
     });
     
     if (!hasAnyPermission) {
-      throw new Error(`Insufficient permissions. Required one of: ${requiredPermissions.join(', ')}`);
+      forbidden(`Insufficient permissions. Required one of: ${requiredPermissions.join(', ')}`);
     }
     
     return admin;
@@ -159,7 +169,7 @@ export function hasPermission(userRole: string, requiredPermission: string): boo
   const userPermissions = getAllPermissionsForRole(userRole as keyof typeof ROLE_LEVELS);
   
   return userPermissions.some(permission => {
-    if (permission.endsWith(':*')) {
+    if (permission.endsWith(':*') || permission.endsWith(':all')) {
       const basePermission = permission.slice(0, -2);
       return requiredPermission.startsWith(basePermission);
     }

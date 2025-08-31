@@ -1,5 +1,7 @@
 # Docker Frontend Setup Guide
 
+> 🚨 **MIGRATION NOTICE:** This guide may contain deprecated ADMIN_TOKEN and NEXT_PUBLIC_ADMIN_EMAIL references. The application now uses **Supabase role-based authentication**. Please see [`docs/setup/ADMIN_SETUP.md`](../setup/ADMIN_SETUP.md) for current admin setup instructions.
+
 This guide covers setting up and running the JewGo frontend application using Docker.
 
 ## 🐳 Quick Start
@@ -225,7 +227,7 @@ curl http://localhost:3000/api/health
 ### Optional Variables
 - `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` - Google Maps map ID
 - `ADMIN_TOKEN` - Admin authentication token
-- `NEXT_PUBLIC_ADMIN_EMAIL` - Admin email address
+- `NEXT_PUBLIC_ADMIN_EMAIL` - (🚨 DEPRECATED) Use Supabase admin roles instead
 
 ## 🔄 Updates and Maintenance
 

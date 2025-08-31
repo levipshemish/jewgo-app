@@ -13,6 +13,9 @@ from flask import request, jsonify
 from utils.logging_config import get_logger
 from utils.error_handler import AuthenticationError, AuthorizationError
 
+# Feature flag for Supabase admin roles
+ENABLE_SUPABASE_ADMIN_ROLES = os.getenv('ENABLE_SUPABASE_ADMIN_ROLES', 'true').lower() == 'true'
+
 # Import Supabase auth and role manager
 try:
     from utils.supabase_auth import verify_supabase_admin_role, RoleLookupDependencyError
@@ -48,10 +51,11 @@ def verify_admin_token(token: str) -> bool:
 
 def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     """Verify JWT token and return payload (DEPRECATED - use Supabase auth instead)."""
-    # Check if legacy auth is enabled (default to true temporarily to avoid breaking non-admin endpoints)
-    enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "true").lower() == "true"
+    # Check if legacy auth is enabled (default to false for security - fail-closed)
+    enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
     if not enable_legacy:
         logger.warning("DEPRECATED: Legacy JWT verification disabled - use Supabase auth")
+        logger.info("MIGRATION: To enable legacy auth for migration purposes, set ENABLE_LEGACY_USER_AUTH=true. However, please migrate to Supabase authentication as soon as possible.")
         raise RuntimeError("Legacy user authentication is disabled. Use Supabase auth instead.")
     
     # Production safety check
@@ -111,78 +115,83 @@ def require_admin(min_level='system_admin'):
                 if not token:
                     raise AuthenticationError("Token required")
 
+                # Check if Supabase roles are available before calling verify_supabase_admin_role
+                if not (SUPABASE_ROLES_ENABLED and ENABLE_SUPABASE_ADMIN_ROLES):
+                    req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                    logger.error("AUTH_503_DEP: supabase-roles-unavailable", extra={"endpoint": request.endpoint, "request_id": req_id})
+                    return jsonify({"error": "unavailable"}), 503
+
                 # Try Supabase role-based authentication
-                if SUPABASE_ROLES_ENABLED:
-                    try:
-                        result = verify_supabase_admin_role(token, min_level)
-                        if result:
-                            # Extract payload and role data from result
-                            payload = result["payload"]
-                            role_data = result["role_data"]
-                            
-                            # Add role info to Flask g context
-                            from flask import g
+                try:
+                    result = verify_supabase_admin_role(token, min_level)
+                    if result:
+                        # Extract payload and role data from result
+                        payload = result["payload"]
+                        role_data = result["role_data"]
+                        
+                        # Add role info to Flask g context
+                        from flask import g
 
-                            g.admin_role = role_data
-                            
-                            # Build user info from the already-verified payload
-                            user_info = {
-                                "user_id": payload.get("sub"),
-                                "email": payload.get("email"),
-                                "jwt_role": payload.get("role", "authenticated"),
-                                "aud": payload.get("aud"),
-                                "exp": payload.get("exp"),
-                                "iat": payload.get("iat"),
-                                "admin_role": role_data.get('role'),
-                                "admin_level": role_data.get('level', 0)
-                            }
-                            # Add metadata if available
-                            if "app_metadata" in payload:
-                                user_info["app_metadata"] = payload["app_metadata"]
-                            if "user_metadata" in payload:
-                                user_info["user_metadata"] = payload["user_metadata"]
-                            
-                            g.user = user_info
-                            
-                            # Log successful Supabase admin authentication
-                            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
-                            logger.info(
-                                "AUTH_SUCCESS",
-                                extra={
-                                    "endpoint": request.endpoint,
-                                    "role": role_data.get("role"),
-                                    "level": role_data.get("level"),
-                                    "request_id": req_id
-                                },
-                            )
-
-                            return f(*args, **kwargs)
-                        else:
-                            req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
-                            logger.warning("AUTH_403_ROLE", extra={
+                        g.admin_role = role_data
+                        
+                        # Build user info from the already-verified payload
+                        user_info = {
+                            "user_id": payload.get("sub"),
+                            "email": payload.get("email"),
+                            "jwt_role": payload.get("role", "authenticated"),
+                            "aud": payload.get("aud"),
+                            "exp": payload.get("exp"),
+                            "iat": payload.get("iat"),
+                            "admin_role": role_data.get('role'),
+                            "admin_level": role_data.get('level', 0)
+                        }
+                        # Add metadata if available
+                        if "app_metadata" in payload:
+                            user_info["app_metadata"] = payload["app_metadata"]
+                        if "user_metadata" in payload:
+                            user_info["user_metadata"] = payload["user_metadata"]
+                        
+                        g.user = user_info
+                        
+                        # Log successful Supabase admin authentication
+                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                        logger.info(
+                            "AUTH_SUCCESS",
+                            extra={
                                 "endpoint": request.endpoint,
+                                "role": role_data.get("role"),
+                                "level": role_data.get("level"),
                                 "request_id": req_id
-                            })
-                            raise AuthorizationError("Insufficient admin privileges")
-                    except AuthenticationError as e:
-                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
-                        logger.warning(
-                            f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                            },
                         )
-                        raise
-                    except RoleLookupDependencyError as e:
-                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
-                        logger.error(
-                            f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
-                        )
-                        raise
-                    except Exception as e:
-                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
-                        logger.error(
-                            f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
-                        )
-                        raise
 
+                        return f(*args, **kwargs)
+                    else:
+                        req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                        logger.warning("AUTH_403_ROLE", extra={
+                            "endpoint": request.endpoint,
+                            "request_id": req_id
+                        })
+                        raise AuthorizationError("Insufficient admin privileges")
+                except AuthenticationError as e:
+                    req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                    logger.warning(
+                        f"AUTH_401_SIG: {getattr(e, 'message', str(e))}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                    )
+                    raise
+                except RoleLookupDependencyError as e:
+                    req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                    logger.error(
+                        f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                    )
+                    raise
+                except Exception as e:
+                    req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
+                    logger.error(
+                        f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                    )
+                    raise
+                
                 # No legacy fallback - pure fail-closed policy
                 logger.warning("AUTH_401_NO_LEGACY", extra={"endpoint": request.endpoint})
                 raise AuthenticationError("Legacy admin authentication disabled")
@@ -190,23 +199,23 @@ def require_admin(min_level='system_admin'):
             except AuthenticationError as e:
                 req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
                 logger.warning(
-                    f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                    f"AUTH_401_SIG: {getattr(e, 'message', str(e))}", extra={"endpoint": request.endpoint, "request_id": req_id}
                 )
-                response = jsonify({"error": "unauthorized"})
+                response = jsonify({"success": False, "error": "unauthorized"})
                 response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
                 return response, 401
 
             except AuthorizationError as e:
                 req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
                 logger.warning(
-                    f"AUTH_403_ROLE: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                    f"AUTH_403_ROLE: {getattr(e, 'message', str(e))}", extra={"endpoint": request.endpoint, "request_id": req_id}
                 )
-                return jsonify({"error": "forbidden"}), 403
+                return jsonify({"success": False, "error": "forbidden"}), 403
 
             except Exception as e:
                 req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
                 logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint, "request_id": req_id})
-                return jsonify({"error": "unavailable"}), 503
+                return jsonify({"success": False, "error": "unavailable"}), 503
 
         return decorated_function
     return decorator
@@ -227,16 +236,24 @@ def require_user_auth(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if legacy auth is enabled (default to true temporarily to avoid breaking non-admin endpoints)
-        enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "true").lower() == "true"
+        # Try Supabase auth first if available
+        if SUPABASE_ROLES_ENABLED:
+            try:
+                from utils.supabase_auth import require_supabase_auth
+                return require_supabase_auth(f)(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"Supabase auth failed, falling back to legacy: {e}")
+        
+        # Check if legacy auth is enabled (default to false for security - fail-closed)
+        enable_legacy = os.getenv("ENABLE_LEGACY_USER_AUTH", "false").lower() == "true"
         if not enable_legacy:
             logger.warning("DEPRECATED: Legacy user auth disabled - use Supabase auth")
-            return jsonify({"error": "legacy auth disabled"}), 401
+            return jsonify({"success": False, "error": "unavailable"}), 503
         
         # Production safety check
         if os.getenv("NODE_ENV") == "production" and enable_legacy:
             logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
-            return jsonify({"error": "legacy auth disabled in production"}), 401
+            return jsonify({"success": False, "error": "unavailable"}), 503
         
         logger.warning("DEPRECATED: Using legacy user auth - migrate to Supabase auth")
         
@@ -269,15 +286,15 @@ def require_user_auth(f):
             return f(*args, **kwargs)
         except AuthenticationError as e:
             logger.warning(
-                f"AUTH_401_SIG: {e.message}",
+                f"AUTH_401_SIG: {getattr(e, 'message', str(e))}",
                 extra={"endpoint": request.endpoint},
             )
-            response = jsonify({"error": "unauthorized"})
+            response = jsonify({"success": False, "error": "unauthorized"})
             response.headers["WWW-Authenticate"] = 'Bearer realm="api"'
             return response, 401
         except Exception as e:
             logger.error(f"AUTH_503_DEP: {e}", extra={"endpoint": request.endpoint})
-            return jsonify({"error": "unavailable"}), 503
+            return jsonify({"success": False, "error": "unavailable"}), 503
 
     return decorated_function
 
@@ -325,81 +342,8 @@ def optional_user_auth(f):
     return decorated_function
 
 
-def require_super_admin(f):
-    """Decorator to require super admin privileges (DEPRECATED - use Supabase admin roles instead)."""
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Check if legacy admin auth is enabled
-        enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
-        if not enable_legacy:
-            logger.warning("DEPRECATED: Legacy super admin auth disabled - use Supabase admin roles")
-            raise RuntimeError("Legacy super admin authentication is disabled. Use Supabase admin roles instead.")
-        
-        # Production safety check
-        if os.getenv("NODE_ENV") == "production" and enable_legacy:
-            logger.error("CRITICAL: Legacy authentication cannot be enabled in production")
-            raise RuntimeError("Legacy authentication cannot be enabled in production")
-        
-        logger.warning("DEPRECATED: Using legacy super admin auth - migrate to Supabase admin roles")
-        
-        try:
-            # Require AdminBearer header pattern: Authorization: AdminBearer <token>
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("AdminBearer "):
-                raise AuthenticationError("AdminBearer token required")
-            
-            token = auth_header.split(" ")[1]
-            if not verify_admin_token(token):
-                raise AuthenticationError("Invalid admin token")
-            
-            # Check for super admin token specifically
-            super_admin_token = os.getenv("SUPER_ADMIN_TOKEN")
-            if not super_admin_token:
-                logger.error("SUPER_ADMIN_TOKEN not configured")
-                raise AuthorizationError("Super admin access not configured")
-            if token != super_admin_token:
-                raise AuthorizationError("Super admin privileges required")
-            
-            # Log successful super admin authentication
-            logger.info(
-                "Super admin authentication successful",
-                extra={
-                    "ip_address": request.remote_addr,
-                    "user_agent": request.headers.get("User-Agent"),
-                    "endpoint": request.endpoint,
-                },
-            )
-            return f(*args, **kwargs)
-        except (AuthenticationError, AuthorizationError) as e:
-            logger.warning(
-                f"Super admin authentication failed: {e.message}",
-                extra={
-                    "ip_address": request.remote_addr,
-                    "user_agent": request.headers.get("User-Agent"),
-                    "endpoint": request.endpoint,
-                },
-            )
-            return (
-                jsonify(
-                    {"success": False, "error": e.message, "status_code": e.status_code}
-                ),
-                e.status_code,
-            )
-        except Exception as e:
-            logger.error(f"Unexpected error in super admin authentication: {e}")
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Authentication error",
-                        "status_code": 401,
-                    }
-                ),
-                401,
-            )
-
-    return decorated_function
+# REMOVED: require_super_admin decorator - no longer used
+# All admin authentication now uses Supabase JWT-based roles
 
 
 def rate_limit(max_requests: int = 100, window_seconds: int = 3600):

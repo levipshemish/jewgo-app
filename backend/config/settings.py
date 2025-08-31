@@ -9,7 +9,7 @@ including database connections, API keys, cron job schedules, and feature flags.
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 DEBUG = ENVIRONMENT == "development"
 # Database Configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///jewgo.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASE_POOL_SIZE = int(os.getenv("DATABASE_POOL_SIZE", "10"))
 DATABASE_MAX_OVERFLOW = int(os.getenv("DATABASE_MAX_OVERFLOW", "20"))
 DATABASE_POOL_TIMEOUT = int(os.getenv("DATABASE_POOL_TIMEOUT", "30"))

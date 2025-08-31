@@ -16,7 +16,15 @@ export default function SharePopup({ restaurant, isOpen, onClose }: SharePopupPr
 
   useEffect(() => {
     if (isOpen) {
-      setShareUrl(`${window.location.origin}/restaurant/${restaurant.id}`);
+      // Create URL-friendly eatery name for sharing
+    const eateryName = restaurant.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim()
+    
+    setShareUrl(`${window.location.origin}/eatery/${eateryName}`);
       setLinkCopied(false);
     }
   }, [isOpen, restaurant.id]);

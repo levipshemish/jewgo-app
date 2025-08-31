@@ -127,7 +127,7 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
           title: 'Role Management', 
           href: '/admin/security/roles', 
           icon: Users,
-          permission: ADMIN_PERMISSIONS.ROLE_MANAGE
+          requiresSuperAdmin: true
         }
       ]
     },
@@ -155,9 +155,18 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
   // Filter navigation items based on user permissions
   const filteredNavigationItems = navigationItems.map(section => ({
     ...section,
-    items: section.items.filter(item => 
-      !('permission' in item) || hasPermission(adminUser, (item as any).permission)
-    )
+    items: section.items.filter(item => {
+      // Check for super admin requirement
+      if ('requiresSuperAdmin' in item && (item as any).requiresSuperAdmin) {
+        return adminUser.isSuperAdmin;
+      }
+      // Check for permission requirement
+      if ('permission' in item) {
+        return hasPermission(adminUser, (item as any).permission);
+      }
+      // No restrictions, show the item
+      return true;
+    })
   })).filter(section => section.items.length > 0); // Remove sections with no visible items
 
   const isActive = (href: string) => {

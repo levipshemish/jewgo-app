@@ -8,10 +8,7 @@ interface LocationContextLocation {
   timestamp?: number;
 }
 
-export function mapRestaurantToListingData(
-  restaurant: Restaurant,
-  userLocation?: LocationContextLocation | null
-): ListingData {
+export function mapRestaurantToListingData(restaurant: Restaurant, userLocation?: LocationContextLocation | null): ListingData {
   // Calculate distance if user location is available
   let distance: string | undefined;
   if (userLocation && restaurant.latitude && restaurant.longitude) {
@@ -76,19 +73,15 @@ export function mapRestaurantToListingData(
 
   return {
     image: {
-      imageUrl: restaurant.image_url || '/placeholder-restaurant.jpg',
-      imageAlt: restaurant.name,
-      imageActionLabel: 'View Gallery',
-      viewCount: restaurant.review_count || 0,
-      images: (restaurant.additional_images || [restaurant.image_url]).filter(Boolean) as string[]
+      src: restaurant.image_url || '/placeholder-restaurant.jpg',
+      alt: `${restaurant.name} restaurant`,
+      actionLabel: "View Gallery",
     },
     content: {
       leftText: restaurant.name,
       rightText: restaurant.google_rating ? restaurant.google_rating.toString() : undefined,
-      leftActionLabel: restaurant.price_range,
-      rightActionLabel: distance,
-      leftIcon: undefined,
-      rightIcon: distance ? 'map-pin' : undefined
+      leftAction: restaurant.price_range,
+      rightAction: distance,
     },
     actions: {
       primaryAction: restaurant.is_open ? {
@@ -120,7 +113,7 @@ export function mapRestaurantToListingData(
           onClick: () => {
             alert('No email available for this restaurant');
           },
-          disabled: true
+          // disabled: true
         }
       ],
       bottomAction: {
@@ -131,7 +124,7 @@ export function mapRestaurantToListingData(
         },
         hoursInfo
       },
-      kosherTags
+      tags: kosherTags
     },
     header: {
       kosherType: restaurant.kosher_category,

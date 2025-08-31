@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from utils.error_handler import (
+    ExternalServiceError,
     handle_database_operation,
     handle_operation_with_fallback,
 )
@@ -11,6 +12,7 @@ from utils.logging_config import get_logger
 from .connection_manager import DatabaseConnectionManager
 from .models import Base
 from .repositories import (
+    GoogleReviewRepository,
     ImageRepository,
     RestaurantRepository,
     ReviewRepository,
@@ -56,27 +58,6 @@ Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-from .repositories import (
-    ImageRepository,
-    RestaurantRepository,
-    ReviewRepository,
-    UserRepository,
-)
-
-# Import the dynamic status calculation module
-try:
-    from utils.restaurant_status import get_restaurant_status, is_restaurant_open
-except ImportError:
-    # Fallback for when utils module is not available
-    def get_restaurant_status(restaurant_data):
-        return {
-            "is_open": False,
-            "status": "unknown",
-            "status_reason": "Status calculation not available",
-        }
-
-    def is_restaurant_open(restaurant_data) -> bool:
-        return False
 
 
 class DatabaseManager:
@@ -89,6 +70,7 @@ class DatabaseManager:
         # Initialize repositories
         self.restaurant_repo = RestaurantRepository(self.connection_manager)
         self.review_repo = ReviewRepository(self.connection_manager)
+        self.google_review_repo = GoogleReviewRepository(self.connection_manager)
         self.user_repo = UserRepository(self.connection_manager)
         self.image_repo = ImageRepository(self.connection_manager)
         
@@ -241,7 +223,7 @@ class DatabaseManager:
     @handle_database_operation
     def update_restaurant_data(
         self, restaurant_id: int, update_data: Dict[str, Any]
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """Update restaurant data."""
         update_data["updated_at"] = datetime.utcnow()
         return self.restaurant_repo.update(restaurant_id, update_data)
@@ -270,6 +252,7 @@ class DatabaseManager:
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Get reviews with optional filtering and pagination."""
+        logger.info(f"DatabaseManager: Getting reviews for restaurant_id={restaurant_id}, status={status}")
         reviews = self.review_repo.get_reviews(
             restaurant_id=restaurant_id,
             status=status,
@@ -277,7 +260,10 @@ class DatabaseManager:
             offset=offset,
             filters=filters,
         )
-        return [self._review_to_dict(review) for review in reviews]
+        logger.info(f"DatabaseManager: ReviewRepository returned {len(reviews)} reviews")
+        result = [self._review_to_dict(review) for review in reviews]
+        logger.info(f"DatabaseManager: Converted to {len(result)} review dicts")
+        return result
 
     @handle_operation_with_fallback(fallback_value=0)
     def get_reviews_count(
@@ -288,6 +274,58 @@ class DatabaseManager:
     ) -> int:
         """Get the total count of reviews with optional filtering."""
         return self.review_repo.get_reviews_count(restaurant_id, status, filters)
+
+    # Google Review Operations
+    @handle_database_operation
+    def get_google_reviews(
+        self,
+        restaurant_id: Optional[int] = None,
+        place_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
+        """Get Google reviews with optional filtering and pagination."""
+        logger.info(f"DatabaseManager: Getting Google reviews for restaurant_id={restaurant_id}, place_id={place_id}")
+        reviews = self.google_review_repo.get_google_reviews(
+            restaurant_id=restaurant_id,
+            place_id=place_id,
+            limit=limit,
+            offset=offset,
+        )
+        logger.info(f"DatabaseManager: GoogleReviewRepository returned {len(reviews)} reviews")
+        result = [self._google_review_to_dict(review) for review in reviews]
+        logger.info(f"DatabaseManager: Converted to {len(result)} Google review dicts")
+        return result
+
+    @handle_operation_with_fallback(fallback_value=0)
+    def get_google_reviews_count(
+        self,
+        restaurant_id: Optional[int] = None,
+        place_id: Optional[str] = None,
+    ) -> int:
+        """Get the total count of Google reviews with optional filtering."""
+        return self.google_review_repo.get_google_reviews_count(restaurant_id, place_id)
+
+    @handle_database_operation
+    def upsert_google_reviews(
+        self,
+        restaurant_id: int,
+        place_id: str,
+        google_reviews: List[Dict[str, Any]]
+    ) -> bool:
+        """Upsert Google reviews for a restaurant."""
+        logger.info(f"DatabaseManager: Upserting {len(google_reviews)} Google reviews for restaurant {restaurant_id}")
+        return self.google_review_repo.upsert_google_reviews(restaurant_id, place_id, google_reviews)
+
+    @handle_database_operation
+    def delete_old_google_reviews(
+        self,
+        restaurant_id: int,
+        place_id: str,
+        keep_review_ids: List[str]
+    ) -> bool:
+        """Delete Google reviews that are no longer in the Google Places API response."""
+        return self.google_review_repo.delete_old_google_reviews(restaurant_id, place_id, keep_review_ids)
 
     @handle_database_operation
     def get_review_by_id(self, review_id: str) -> Optional[Dict[str, Any]]:
@@ -427,13 +465,42 @@ class DatabaseManager:
         Returns:
             Dict containing the RPC response
         """
+        # Check if service role RPC is enabled
+        if os.getenv("ENABLE_SERVICE_ROLE_RPC", "false").lower() != "true":
+            logger.error("Service role RPC calls are disabled by ENABLE_SERVICE_ROLE_RPC=false")
+            return {
+                "success": False,
+                "error": "Service role RPC calls are disabled",
+                "error_type": "auth_error",
+                "status_code": 403,
+            }
+        
+        # Allowlist of permitted RPC functions
+        allowed_functions = {
+            "assign_admin_role",
+            "remove_admin_role"
+        }
+        
+        if function_name not in allowed_functions:
+            logger.error(f"RPC function '{function_name}' not in allowlist", 
+                        function=function_name, 
+                        allowed_functions=list(allowed_functions),
+                        caller_context="database_manager_v4")
+            return {
+                "success": False,
+                "error": f"RPC function '{function_name}' not permitted",
+                "error_type": "auth_error",
+                "status_code": 403,
+            }
+        
         if not self.supabase_enabled:
             logger.error("Supabase not configured for role management")
-            raise ExternalServiceError(
-                message="Role management service unavailable",
-                service="supabase",
-                details={"reason": "Supabase not configured"}
-            )
+            return {
+                "success": False,
+                "error": "Supabase not configured",
+                "error_type": "service_error",
+                "status_code": 503,
+            }
         
         try:
             import requests
@@ -461,17 +528,43 @@ class DatabaseManager:
                 logger.info(f"Supabase RPC call successful", function=function_name)
                 return result
             else:
+                error_text = response.text
                 logger.error(
                     f"Supabase RPC call failed",
                     function=function_name,
                     status_code=response.status_code,
-                    response=response.text
+                    response=error_text
                 )
-                return {"error": f"RPC call failed: {response.status_code}"}
+                
+                # Map HTTP status codes to appropriate error types
+                status_code = response.status_code
+                if status_code == 400:
+                    error_type = 'validation_error'
+                elif status_code in [401, 403]:
+                    error_type = 'auth_error'
+                elif status_code == 404:
+                    error_type = 'not_found'
+                elif status_code == 409:
+                    error_type = 'conflict'
+                else:
+                    error_type = 'service_error'
+                    status_code = 503
+                
+                return {
+                    "error": f"RPC call failed: {response.status_code}",
+                    "error_type": error_type,
+                    "status_code": status_code,
+                    "details": error_text
+                }
                 
         except Exception as e:
             logger.exception(f"Error calling Supabase RPC", function=function_name, error=str(e))
-            return {"error": f"RPC call error: {str(e)}"}
+            return {
+                "success": False,
+                "error": f"RPC call error: {str(e)}",
+                "error_type": "service_error",
+                "status_code": 503,
+            }
 
     @handle_database_operation("assign admin role")
     def assign_admin_role(
@@ -481,7 +574,7 @@ class DatabaseManager:
         assigned_by_user_id: str,
         expires_at: Optional[str] = None,
         notes: Optional[str] = None
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """Assign an admin role to a user via Supabase RPC.
         
         Args:
@@ -492,7 +585,7 @@ class DatabaseManager:
             notes: Optional notes about the assignment
             
         Returns:
-            bool: True if role was assigned successfully
+            Dict: { success: bool, error?: str, error_type?: str, status_code?: int }
         """
         try:
             params = {
@@ -508,16 +601,30 @@ class DatabaseManager:
             
             result = self.call_supabase_rpc('assign_admin_role', params)
             
-            if 'error' in result:
-                logger.error("Failed to assign admin role", error=result['error'])
-                return False
+            # Structured audit logging
+            audit_log = {
+                "actor_id": assigned_by_user_id,
+                "target_user_id": target_user_id, 
+                "action": "assign_admin_role",
+                "role": role,
+                "expires_at": expires_at,
+                "notes": notes
+            }
             
-            logger.info("Admin role assigned successfully", target_user_id=target_user_id, role=role)
-            return True
+            if 'error' in result:
+                audit_log["result"] = "failure"
+                audit_log["error"] = result['error']
+                logger.error("AUDIT_ADMIN_ROLE_ASSIGN_FAILED", extra=audit_log)
+                return result
+            
+            audit_log["result"] = "success"
+            logger.info("AUDIT_ADMIN_ROLE_ASSIGN_SUCCESS", extra=audit_log)
+            # Return RPC response when available; default to success
+            return result if isinstance(result, dict) else {"success": True}
             
         except Exception as e:
             logger.exception("Error assigning admin role", error=str(e))
-            return False
+            return {"success": False, "error": str(e), "error_type": "service_error", "status_code": 503}
 
     @handle_database_operation("remove admin role")
     def remove_admin_role(
@@ -525,7 +632,7 @@ class DatabaseManager:
         target_user_id: str,
         role: str,
         removed_by_user_id: str
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """Remove an admin role from a user via Supabase RPC.
         
         Args:
@@ -534,7 +641,7 @@ class DatabaseManager:
             removed_by_user_id: ID of the admin user making the removal
             
         Returns:
-            bool: True if role was removed successfully
+            Dict: { success: bool, error?: str, error_type?: str, status_code?: int }
         """
         try:
             params = {
@@ -545,16 +652,75 @@ class DatabaseManager:
             
             result = self.call_supabase_rpc('remove_admin_role', params)
             
-            if 'error' in result:
-                logger.error("Failed to remove admin role", error=result['error'])
-                return False
+            # Structured audit logging
+            audit_log = {
+                "actor_id": removed_by_user_id,
+                "target_user_id": target_user_id,
+                "action": "remove_admin_role", 
+                "role": role
+            }
             
-            logger.info("Admin role removed successfully", target_user_id=target_user_id, role=role)
-            return True
+            if 'error' in result:
+                audit_log["result"] = "failure"
+                audit_log["error"] = result['error']
+                logger.error("AUDIT_ADMIN_ROLE_REMOVE_FAILED", extra=audit_log)
+                return result
+            
+            audit_log["result"] = "success"
+            logger.info("AUDIT_ADMIN_ROLE_REMOVE_SUCCESS", extra=audit_log)
+            return result if isinstance(result, dict) else {"success": True}
             
         except Exception as e:
             logger.exception("Error removing admin role", error=str(e))
-            return False
+            return {"success": False, "error": str(e), "error_type": "service_error", "status_code": 503}
+
+    def get_active_super_admin_count(self) -> int:
+        """Return precise count of active super_admin roles using Supabase REST Content-Range.
+        Falls back to 0 on errors.
+        """
+        try:
+            if not self.supabase_enabled:
+                logger.error("Supabase not configured for role management")
+                return 0
+
+            import requests
+
+            headers = {
+                'Authorization': f'Bearer {self.supabase_service_role_key}',
+                'apikey': self.supabase_service_role_key,
+                'Prefer': 'count=exact'
+            }
+
+            query_url = f"{self.supabase_url}/rest/v1/admin_roles"
+            params = {
+                'select': 'id',
+                'is_active': 'eq.true',
+                'role': 'eq.super_admin',
+                'limit': 1,
+                'offset': 0,
+                'order': 'assigned_at.desc'
+            }
+
+            response = requests.get(query_url, params=params, headers=headers, timeout=30)
+            if response.status_code != 200:
+                logger.warning("Failed to count super_admins", status=response.status_code, resp=response.text)
+                return 0
+
+            content_range = response.headers.get('Content-Range')
+            if content_range and '/' in content_range:
+                try:
+                    return int(content_range.split('/')[-1])
+                except Exception:
+                    return 0
+            # Fallback to length if header missing
+            try:
+                data = response.json()
+                return len(data) if isinstance(data, list) else 0
+            except Exception:
+                return 0
+        except Exception as e:
+            logger.exception("Error counting super_admins", error=str(e))
+            return 0
 
     @handle_database_operation("get admin roles")
     def get_admin_roles(
@@ -563,7 +729,9 @@ class DatabaseManager:
         limit: int = 50,
         offset: int = 0,
         search: str = "",
-        role_filter: Optional[str] = None
+        role_filter: Optional[str] = None,
+        include_all: bool = False,
+        include_expired: bool = False
     ) -> Dict[str, Any]:
         """Get admin roles from Supabase with optional filtering.
         
@@ -588,33 +756,55 @@ class DatabaseManager:
             
             import requests
             
-            # Construct the query URL
-            query_url = f"{self.supabase_url}/rest/v1/admin_roles"
-            
             # Set up headers with service role key and count preference
             headers = {
                 'Authorization': f'Bearer {self.supabase_service_role_key}',
                 'apikey': self.supabase_service_role_key,
-                'Prefer': 'count=exact'
+                'Prefer': 'count=exact',
+                'Range': f'{offset}-{offset + limit - 1}'  # Add Range header for clarity
             }
             
-            # Build query parameters
-            params = {
-                'select': '*,users:users(id,name,email)',
-                'is_active': 'eq.true',
-                'limit': limit,
-                'offset': offset,
-                'order': 'assigned_at.desc'
-            }
+            if include_all:
+                # Query users table with left join to admin_roles, restrict fields for PII safety
+                query_url = f"{self.supabase_url}/rest/v1/users"
+                params = {
+                    'select': 'id,name,email,admin_roles(*)',
+                    'limit': limit,
+                    'offset': offset,
+                    'order': 'created_at.desc'
+                }
+                # Add search filter for users table
+                if search:
+                    params['or'] = f'(name.ilike.*{search}*,email.ilike.*{search}*)'
+            else:
+                # Query admin_roles table with user data
+                query_url = f"{self.supabase_url}/rest/v1/admin_roles"
+                params = {
+                    'select': '*,users:users!inner(id,name,email)',
+                    'limit': limit,
+                    'offset': offset,
+                    'order': 'assigned_at.desc'
+                }
+                
+                # Filter by active/non-expired roles unless include_expired is True
+                if not include_expired:
+                    params['is_active'] = 'eq.true'
+                    # Also filter out expired roles based on expires_at
+                    params['or'] = '(expires_at.is.null,expires_at.gt.now())'
+                
+                # Add search filter for admin_roles table (searches linked user table)
+                if search:
+                    search_filter = f'(users.name.ilike.*{search}*,users.email.ilike.*{search}*)'
+                    if 'or' in params:
+                        # Combine with existing or filter
+                        params['or'] = f'({params["or"]},and.{search_filter})'
+                    else:
+                        params['or'] = search_filter
             
             if user_id:
                 params['user_id'] = f'eq.{user_id}'
             if role_filter:
                 params['role'] = f'eq.{role_filter}'
-            
-            # Add search filter if provided
-            if search:
-                params['or'] = f'(users.name.ilike.%{search}%,users.email.ilike.%{search}%)'
             
             # Make the request
             response = requests.get(
@@ -630,35 +820,67 @@ class DatabaseManager:
                 # Get total count from Content-Range header
                 total_count = len(roles_data)  # Fallback
                 content_range = response.headers.get('Content-Range')
+                header_present = bool(content_range)
                 if content_range:
                     try:
                         # Content-Range format: "0-9/100" where 100 is total count
                         total_count = int(content_range.split('/')[-1])
-                    except (ValueError, IndexError):
-                        pass
+                        logger.debug("Content-Range header parsed successfully", content_range=content_range, total_count=total_count)
+                    except (ValueError, IndexError) as e:
+                        logger.warning("Failed to parse Content-Range header, using fallback", content_range=content_range, error=str(e))
+                        total_count = len(roles_data)
+                else:
+                    logger.warning("Content-Range header missing, using fallback count", returned_count=len(roles_data))
                 
                 # Format the response - flatten nested user data
                 flattened_users = []
-                for role_record in roles_data:
-                    user_data = role_record.get('users', {})
-                    flattened_users.append({
-                        'id': role_record.get('user_id'),
-                        'name': user_data.get('name'),
-                        'email': user_data.get('email'),
-                        'role': role_record.get('role'),
-                        'role_level': role_record.get('role_level'),
-                        'assigned_at': role_record.get('assigned_at'),
-                        'expires_at': role_record.get('expires_at'),
-                        'notes': role_record.get('notes'),
-                        'assigned_by': role_record.get('assigned_by')
-                    })
+                if include_all:
+                    # Process users query with admin_roles join
+                    for user_record in roles_data:
+                        admin_role_data = user_record.get('admin_roles', [])
+                        # Get the most recent active role if any
+                        active_role = None
+                        if admin_role_data:
+                            active_roles = [r for r in admin_role_data if r.get('is_active', True)]
+                            if active_roles:
+                                # Sort by assigned_at and take most recent
+                                active_role = sorted(active_roles, 
+                                                   key=lambda x: x.get('assigned_at', ''), 
+                                                   reverse=True)[0]
+                        
+                        flattened_users.append({
+                            'id': user_record.get('id'),
+                            'name': user_record.get('name'),
+                            'email': user_record.get('email'),
+                            'role': active_role.get('role') if active_role else None,
+                            'role_level': active_role.get('role_level') if active_role else None,
+                            'assigned_at': active_role.get('assigned_at') if active_role else None,
+                            'expires_at': active_role.get('expires_at') if active_role else None,
+                            'notes': active_role.get('notes') if active_role else None,
+                            'assigned_by': active_role.get('assigned_by') if active_role else None
+                        })
+                else:
+                    # Process admin_roles query with users join
+                    for role_record in roles_data:
+                        user_data = role_record.get('users', {})
+                        flattened_users.append({
+                            'id': role_record.get('user_id'),
+                            'name': user_data.get('name'),
+                            'email': user_data.get('email'),
+                            'role': role_record.get('role'),
+                            'role_level': role_record.get('role_level'),
+                            'assigned_at': role_record.get('assigned_at'),
+                            'expires_at': role_record.get('expires_at'),
+                            'notes': role_record.get('notes'),
+                            'assigned_by': role_record.get('assigned_by')
+                        })
                 
                 result = {
                     "users": flattened_users,
                     "total": total_count,
-                    "page": (offset // limit) + 1,
+                    "page": (offset // limit) + 1 if limit else 1,
                     "limit": limit,
-                    "has_more": len(roles_data) == limit
+                    "has_more": (((offset + len(roles_data)) < total_count) if header_present else (len(roles_data) == limit))
                 }
                 
                 logger.info("Admin roles retrieved successfully", count=len(roles_data))
@@ -669,11 +891,11 @@ class DatabaseManager:
                     status_code=response.status_code,
                     response=response.text
                 )
-                return {"users": [], "total": 0, "page": 1, "limit": limit}
+                return {"users": [], "total": 0, "page": 1, "limit": limit, "has_more": False}
                 
         except Exception as e:
             logger.exception("Error retrieving admin roles", error=str(e))
-            return {"users": [], "total": 0, "page": 1, "limit": limit}
+            return {"users": [], "total": 0, "page": 1, "limit": limit, "has_more": False}
 
     # Helper methods for data conversion
     def _restaurant_to_dict(self, restaurant) -> Dict[str, Any]:
@@ -720,10 +942,7 @@ class DatabaseManager:
                 "image_url": restaurant.image_url,
                 "specials": self._safe_json_loads(restaurant.specials, []),
                 "status": restaurant.status,
-                "google_rating": restaurant.google_rating,
-                "google_review_count": restaurant.google_review_count,
-                "google_reviews": self._safe_json_loads(restaurant.google_reviews, []),
-                "user_email": restaurant.user_email,
+                "place_id": restaurant.place_id,
                 "created_at": (
                     restaurant.created_at.isoformat() if restaurant.created_at else None
                 ),
@@ -736,6 +955,7 @@ class DatabaseManager:
                     else None
                 ),
                 "hours_parsed": restaurant.hours_parsed,
+                "google_reviews": getattr(restaurant, 'google_reviews', None),
                 "images": image_dicts,
                 "is_open": status_info.get("is_open", False),
                 "status_info": status_info,
@@ -771,6 +991,30 @@ class DatabaseManager:
             }
         except Exception as e:
             logger.exception("Error converting review to dict", error=str(e))
+            return {}
+
+    def _google_review_to_dict(self, review) -> Dict[str, Any]:
+        """Convert Google review model to dictionary."""
+        try:
+            return {
+                "id": review.id,
+                "restaurant_id": review.restaurant_id,
+                "place_id": review.place_id,
+                "google_review_id": review.google_review_id,
+                "author_name": review.author_name,
+                "author_url": review.author_url,
+                "profile_photo_url": review.profile_photo_url,
+                "rating": review.rating,
+                "text": review.text,
+                "time": review.time.isoformat() if review.time else None,
+                "relative_time_description": review.relative_time_description,
+                "language": review.language,
+                "created_at": review.created_at.isoformat() if review.created_at else None,
+                "updated_at": review.updated_at.isoformat() if review.updated_at else None,
+                "source": "google",  # Add source identifier
+            }
+        except Exception as e:
+            logger.exception("Error converting Google review to dict", error=str(e))
             return {}
 
     def _user_to_dict(self, user) -> Dict[str, Any]:

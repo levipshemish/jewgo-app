@@ -32,6 +32,7 @@ class ReviewRepository(BaseRepository[Review]):
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Review]:
         """Get reviews with optional filtering and pagination."""
+        self.logger.info(f"ReviewRepository: Getting reviews for restaurant_id={restaurant_id}, status={status}, limit={limit}, offset={offset}")
         try:
             session = self.connection_manager.get_session()
             query = session.query(Review)
@@ -65,6 +66,7 @@ class ReviewRepository(BaseRepository[Review]):
             # Add ordering for consistent results
             query = query.order_by(Review.created_at.desc())
             reviews = query.limit(limit).offset(offset).all()
+            self.logger.info(f"ReviewRepository: Found {len(reviews)} reviews in database")
             session.close()
             return reviews
         except Exception as e:

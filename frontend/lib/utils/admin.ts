@@ -10,7 +10,7 @@ import 'server-only';
 // - Server components: import from '@/lib/server/admin-utils'
 // - Client components: use useAuth hook with isAdmin property
 
-console.warn('[ADMIN] lib/utils/admin.ts is deprecated. Use lib/server/admin-utils.ts instead.');
+// Deprecation warning will be shown when functions are called
 
 // Import types (safe for server)
 import type { TransformedUser } from '@/lib/utils/auth-utils';

@@ -21,7 +21,7 @@ interface FeatureFlagFormData {
 
 export default function FeatureFlagManager() {
   const { flags, environment, loading, error, refreshFlags } = useFeatureFlags({ autoRefresh: true });
-  const { session } = useSupabase();
+  const { session, loading: supaLoading } = useSupabase();
   const { isAdmin } = useAuth();
   const [editingFlag, setEditingFlag] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -37,6 +37,15 @@ export default function FeatureFlagManager() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const environments = ['development', 'staging', 'production'];
+
+  // Show loading state while Supabase session is loading
+  if (supaLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   // Check if user is authenticated and has admin privileges
   if (!session) {
@@ -193,7 +202,7 @@ export default function FeatureFlagManager() {
       }
 
       const response = await fetch(`${backendUrl}/api/feature-flags/${flagName}`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`

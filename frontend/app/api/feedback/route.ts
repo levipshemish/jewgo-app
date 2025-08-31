@@ -5,6 +5,11 @@ import { join } from 'path';
 
 import { FeedbackData } from '@/types';
 import { appLogger } from '@/lib/utils/logger';
+import { handleRoute } from '@/lib/server/route-helpers';
+import { requireAdminOrThrow, getAdminUser } from '@/lib/server/admin-auth';
+
+// Ensure Node.js runtime for admin auth
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,13 +123,12 @@ export async function POST(request: NextRequest) {
       referrer: request.headers.get('referer') ?? null,
     };
 
-    // Send to backend API
+    // Send to backend API (public POST - no Authorization header)
     const startTime = Date.now();
     const backendResponse = await fetch(`${process.env['NEXT_PUBLIC_BACKEND_URL']}/api/feedback`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env['ADMIN_TOKEN']}`,
       },
       body: JSON.stringify(backendData),
     });
@@ -231,47 +235,53 @@ async function sendAdminNotification(feedbackData: FeedbackData) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') ?? '50');
-    const offset = parseInt(searchParams.get('offset') ?? '0');
+  return handleRoute(async () => {
+    await requireAdminOrThrow(request);
+    const admin = await getAdminUser();
+    const token = admin?.token || '';
 
-    // Build query parameters
-    const params = new URLSearchParams();
-    if (restaurantId) {params.append('restaurant_id', restaurantId);}
-    if (status) {params.append('status', status);}
-    params.append('limit', limit.toString());
-    params.append('offset', offset.toString());
+    try {
+      const { searchParams } = new URL(request.url);
+      const restaurantId = searchParams.get('restaurantId');
+      const status = searchParams.get('status');
+      const limit = parseInt(searchParams.get('limit') ?? '50');
+      const offset = parseInt(searchParams.get('offset') ?? '0');
 
-    // Fetch feedback from backend
-    const backendResponse = await fetch(
-      `${process.env['NEXT_PUBLIC_BACKEND_URL']}/api/feedback?${params.toString()}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env['ADMIN_TOKEN']}`,
-        },
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (restaurantId) {params.append('restaurant_id', restaurantId);}
+      if (status) {params.append('status', status);}
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
+
+      // Fetch feedback from backend with admin JWT
+      const backendResponse = await fetch(
+        `${process.env['NEXT_PUBLIC_BACKEND_URL']}/api/feedback?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!backendResponse.ok) {
+        return NextResponse.json(
+          { error: 'Failed to fetch feedback' },
+          { status: 500 }
+        );
       }
-    );
 
-    if (!backendResponse.ok) {
+      const data = await backendResponse.json();
+      return NextResponse.json(data);
+
+    } catch (error) {
+      appLogger.error('Error fetching feedback', { 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch feedback' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    const data = await backendResponse.json();
-    return NextResponse.json(data);
-
-  } catch (error) {
-    appLogger.error('Error fetching feedback', { 
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  });
 } 

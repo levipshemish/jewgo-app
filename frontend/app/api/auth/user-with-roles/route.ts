@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
-import { BACKEND_URL } from '@/lib/config/environment';
-import { ROLE_PERMISSIONS, Role, Permission, normalizeAdminRole } from '@/lib/constants/permissions';
-import { createTimeoutSignal } from '@/lib/utils/timeout-utils';
+import { ROLE_PERMISSIONS, Permission, normalizeAdminRole } from '@/lib/constants/permissions';
+import { isValidPermission } from '@/lib/server/admin-constants';
+import { validatePermissions } from '@/lib/server/security';
 
 // Force Node.js runtime to support AbortSignal.timeout
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
+    // Invariant: This route always returns normalized adminRole strings
+    // and a filtered, deduplicated Permission[] list.
+    // Normalization performed here removes the need for client-side normalization.
+
+    let authWarning: string | null = null;
+
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { 
           success: false, 
           error: 'Supabase not configured',
@@ -22,20 +28,20 @@ export async function GET(request: NextRequest) {
         },
         { status: 500 }
       );
+      return res;
     }
 
+    // Use environment variable for backend URL
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    
     // Validate BACKEND_URL in production
-    if (process.env.NODE_ENV === 'production' && !BACKEND_URL) {
+    if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
       console.error('[Auth] BACKEND_URL not configured in production');
-      return NextResponse.json(
-        { 
-          success: true, 
-          adminRole: null,
-          roleLevel: 0,
-          permissions: []
-        },
-        { status: 200 }
+      const res = NextResponse.json(
+        { success: false, error: 'BACKEND_URL not configured' },
+        { status: 500 }
       );
+      return res;
     }
 
     const supabase = await createServerSupabaseClient();
@@ -57,6 +63,12 @@ export async function GET(request: NextRequest) {
         const { data: { user: cookieUser } } = await supabase.auth.getUser();
         if (cookieUser && cookieUser.id !== data.user.id) {
           console.warn('[Auth] User mismatch between header token and cookie session');
+          authWarning = 'user-mismatch';
+          if (process.env.ENFORCE_STRICT_AUTH_MATCH === 'true') {
+            const res = NextResponse.json({ success: false, error: 'Unauthorized (user mismatch)' }, { status: 401 });
+            res.headers.set('X-Auth-Warning', 'user-mismatch');
+            return res;
+          }
           // Prefer header token as it's more explicit
           // Continue with header user, but log the mismatch
         }
@@ -73,13 +85,14 @@ export async function GET(request: NextRequest) {
         } else {
           // Both Authorization header and cookie failed
           console.error('[Auth] Both Authorization header and cookie failed');
-          return NextResponse.json(
+          const res = NextResponse.json(
             { 
               success: false, 
               error: 'Unauthorized'
             },
             { status: 401 }
           );
+          return res;
         }
       }
     } else {
@@ -89,13 +102,14 @@ export async function GET(request: NextRequest) {
       
       if (error) {
         console.error('[Auth] Error getting user from cookie session:', error);
-        return NextResponse.json(
+        const res = NextResponse.json(
           { 
             success: false, 
             error: 'Unauthorized'
           },
           { status: 401 }
         );
+        return res;
       }
       
       // Get token from session for backend call
@@ -105,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     // No session/user is a valid state, not an error
     if (!user) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { 
           success: true, 
           adminRole: null,
@@ -114,11 +128,13 @@ export async function GET(request: NextRequest) {
         },
         { status: 200 }
       );
+      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+      return res;
     }
 
     if (!accessToken) {
       console.warn('[Auth] Missing access token but user exists, returning default role payload');
-      return NextResponse.json(
+      const res = NextResponse.json(
         { 
           success: true, 
           adminRole: null,
@@ -127,24 +143,26 @@ export async function GET(request: NextRequest) {
         },
         { status: 200 }
       );
+      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+      return res;
     }
 
     // Call backend role management system
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/user-role`, {
+      const response = await fetch(`${backendUrl}/api/auth/user-role`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         // Add timeout to prevent hanging with fallback support
-        signal: createTimeoutSignal(5000)
+        signal: AbortSignal.timeout(5000)
       });
 
       if (!response.ok) {
         console.warn(`Backend role fetch failed: ${response.status}`);
         // Return default values instead of failing
-        return NextResponse.json(
+        const res = NextResponse.json(
           { 
             success: true, 
             adminRole: null,
@@ -153,6 +171,8 @@ export async function GET(request: NextRequest) {
           },
           { status: 200 }
         );
+        if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+        return res;
       }
 
       const roleData = await response.json();
@@ -161,15 +181,14 @@ export async function GET(request: NextRequest) {
       const adminRole = normalizeAdminRole(roleData.role);
       const roleLevel = roleData.level || 0;
       
-      // Merge backend permissions with role-based permissions (deduplicated)
-      const rolePermissions = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];
-      const backendPermissions = roleData.permissions || [];
-      
-      // Combine and deduplicate permissions
-      const allPermissions = new Set([...rolePermissions, ...backendPermissions]);
-      const permissions = Array.from(allPermissions);
+      // Merge backend permissions with role-based permissions
+      const rolePermissionsRaw = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];
+      const backendPermissionsRaw: unknown[] = roleData.permissions || [];
 
-      return NextResponse.json(
+      // Use validatePermissions for consistent normalization and fallback handling
+      const { permissions } = validatePermissions(backendPermissionsRaw, rolePermissionsRaw);
+
+      const res = NextResponse.json(
         { 
           success: true, 
           adminRole,
@@ -178,11 +197,13 @@ export async function GET(request: NextRequest) {
         },
         { status: 200 }
       );
+      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+      return res;
 
     } catch (backendError) {
       console.error('[Auth] Backend role fetch error:', backendError);
       // Fail gracefully - return user without roles
-      return NextResponse.json(
+      const res = NextResponse.json(
         { 
           success: true, 
           adminRole: null,
@@ -191,17 +212,19 @@ export async function GET(request: NextRequest) {
         },
         { status: 200 }
       );
+      if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
+      return res;
     }
 
   } catch (error) {
     console.error('[Auth] Unexpected error in user-with-roles:', error);
-    return NextResponse.json(
+    const res = NextResponse.json(
       { 
         success: false, 
         error: 'Internal server error'
       },
       { status: 500 }
     );
+    return res;
   }
 }
-

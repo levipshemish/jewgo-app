@@ -38,39 +38,21 @@ def setup_neon_database() -> bool | None:
             stats = db.get_statistics()
             # Offer migration
             if stats.get("total_restaurants", 0) == 0:
-                migrate_choice = input("Migrate data from SQLite? (y/n): ").lower()
-                if migrate_choice == "y":
-                    migrate_from_sqlite(database_url)
+                        migrate_choice = input("Migrate data from legacy database? (y/n): ").lower()
+        if migrate_choice == "y":
+            print("No legacy migration needed - using PostgreSQL directly")
             return True
         return False
     except Exception as e:
         return False
 
 
-def migrate_from_sqlite(database_url) -> bool | None:
-    """Migrate data from SQLite to Neon PostgreSQL."""
+def migrate_from_legacy(database_url) -> bool | None:
+    """Migrate data from legacy database to Neon PostgreSQL."""
     try:
-        # Connect to old SQLite database
-        old_db = OldDB()
-        if not old_db.connect():
-            return False
-        # Connect to new Neon PostgreSQL database
-        new_db = NewDB(database_url)
-        if not new_db.connect():
-            return False
-        # Get all restaurants from SQLite
-        restaurants = old_db.search_restaurants(limit=10000)
-        # Migrate each restaurant
-        migrated_count = 0
-        for i, restaurant in enumerate(restaurants, 1):
-            if new_db.add_restaurant(restaurant):
-                migrated_count += 1
-                if i % 50 == 0:  # Progress indicator
-                    pass
-            else:
-                pass
-        # Show final statistics
-        stats = new_db.get_statistics()
+        # This function is kept for potential future migrations
+        # Currently no legacy migration is needed
+        print("No legacy migration required - using PostgreSQL directly")
         return True
     except Exception as e:
         return False

@@ -1,8 +1,8 @@
 "use client"
 
-import { X, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
-import styles from "./listing.module.css"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
 
 interface ImageCarouselPopupProps {
   images: string[]
@@ -21,13 +21,13 @@ export function ImageCarouselPopup({ images, onClose }: ImageCarouselPopupProps)
   }
 
   return (
-    <div className={styles.listingPopup} onClick={onClose}>
-      <div className={styles.listingPopupContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.listingPopupHeader}>
-          <h3 className={styles.listingPopupTitle}>Gallery</h3>
-          <button className={styles.listingPopupClose} onClick={onClose}>
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Gallery</h3>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
-          </button>
+          </Button>
         </div>
         
         <div className="relative">
@@ -40,18 +40,18 @@ export function ImageCarouselPopup({ images, onClose }: ImageCarouselPopupProps)
           {/* Navigation buttons */}
           {images.length > 1 && (
             <>
-              <button
+              <Button
                 onClick={prevImage}
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={nextImage}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </Button>
             </>
           )}
           
@@ -63,9 +63,9 @@ export function ImageCarouselPopup({ images, onClose }: ImageCarouselPopupProps)
 
         {/* Thumbnail navigation */}
         {images.length > 1 && (
-          <div className="flex gap-2 mt-4 overflow-x-auto">
+          <div className="flex gap-2 mt-4 overflow-x-auto p-4">
             {images.map((image, index) => (
-              <button
+              <Button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
                 className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
@@ -77,7 +77,7 @@ export function ImageCarouselPopup({ images, onClose }: ImageCarouselPopupProps)
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
-              </button>
+              </Button>
             ))}
           </div>
         )}

@@ -83,21 +83,28 @@ export interface ListingApiResponse {
   message?: string
 }
 
+// Updated to match listing utility interface exactly
 export interface ListingData {
+  title?: string
   image?: {
-    imageUrl?: string
-    imageAlt?: string
-    imageActionLabel?: string
-    viewCount?: number
-    images?: string[]
+    src?: string
+    alt?: string
+    actionLabel?: string
+    onAction?: () => void
+    allImages?: string[]
   }
   content?: {
     leftText?: string
     rightText?: string
-    leftActionLabel?: string
-    rightActionLabel?: string
-    leftIcon?: string | React.ReactNode
-    rightIcon?: string | React.ReactNode
+    leftAction?: string
+    rightAction?: string
+    leftBold?: boolean
+    rightBold?: boolean
+    leftIcon?: React.ReactNode | string
+    rightIcon?: React.ReactNode | string
+    onLeftAction?: () => void
+    onRightAction?: () => void
+    onRightTextClick?: () => void
   }
   actions?: {
     primaryAction?: {
@@ -107,8 +114,9 @@ export interface ListingData {
     secondaryActions?: Array<{
       label?: string
       onClick?: () => void
-      disabled?: boolean
     }>
+    tags?: string[]
+    onTagClick?: (tag: string) => void
     bottomAction?: {
       label?: string
       onClick?: () => void
@@ -120,25 +128,30 @@ export interface ListingData {
         }>
       }
     }
-    kosherTags?: string[]
   }
   header?: {
+    title?: string
     kosherType?: string
     kosherAgency?: string
+    kosherAgencyWebsite?: string
+    viewCount?: number
     shareCount?: number
     onBack?: () => void
     onFavorite?: () => void
+    onShare?: () => void
     isFavorited?: boolean
   }
+  // Additional text sections
   address?: string
   description?: string
-  reviews?: Array<{
-    id: string
-    user: string
-    rating: number
-    comment: string
-    date: string
-  }>
+  location?: {
+    latitude: number
+    longitude: number
+  }
+  userLocation?: {
+    latitude: number
+    longitude: number
+  }
 }
 
 export interface UserLocation {
@@ -150,32 +163,63 @@ export interface EateryDB {
   id: string
   name: string
   description: string
-  short_description: string
+  short_description?: string
   address: string
-  rating: number
-  price_range: string
-  kosher_type: string
-  kosher_agency: string
-  kosher_certification?: string
-  is_open: boolean
+  city: string
+  state: string
+  zip_code: string
   phone_number: string
-  email?: string
+  website?: string
   website_url?: string
-  image_url: string
+  email?: string
+  rating?: number
+  price_range?: string
+  kosher_type?: string
+  kosher_agency?: string
+  kosher_agency_website?: string
+  kosher_certification?: string // Additional certification like "Pas Yisroel" or "Cholov Yisroel"
+  image_url?: string
   additional_images?: string[]
-  latitude: number
-  longitude: number
+  images: string[]
+  hours_of_operation?: string
+  hours_json?: string
+  hours_last_updated?: string
+  timezone?: string
+  latitude?: number
+  longitude?: number
+  is_open?: boolean
+  is_cholov_yisroel?: boolean
+  is_pas_yisroel?: boolean
+  listing_type: string
+  status?: string
+  hours: {
+    [day: string]: {
+      open: string
+      close: string
+      closed?: boolean
+    }
+  }
+  contact: {
+    phone?: string
+    email?: string
+    website?: string
+  }
+  location: {
+    latitude: number
+    longitude: number
+  }
+  admin_settings: {
+    show_order_button?: boolean
+    order_url?: string
+  }
   stats: {
     view_count: number
     share_count: number
   }
-  hours: {
-    monday: string
-    tuesday: string
-    wednesday: string
-    thursday: string
-    friday: string
-    saturday: string
-    sunday: string
+  reviews?: {
+    google_reviews?: string
+    review_snippets?: string
+    google_review_count?: number
+    review_count?: number
   }
 }

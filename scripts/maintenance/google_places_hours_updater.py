@@ -4,7 +4,7 @@ Google Places Hours Updater
 Fetches missing hours data from Google Places API and Google Knowledge Graph
 """
 
-import sqlite3
+import psycopg2
 import requests
 import json
 import time
@@ -24,13 +24,13 @@ GOOGLE_KNOWLEDGE_GRAPH_API_KEY = os.getenv("GOOGLE_KNOWLEDGE_GRAPH_API_KEY")
 
 
 class GoogleHoursUpdater:
-    def __init__(self, db_path: str = "restaurants.db"):
-        self.db_path = db_path
+    def __init__(self, database_url: str = None):
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.session = requests.Session()
 
     def get_restaurants_without_hours(self) -> List[Dict]:
         """Get restaurants that don't have hours data or have incomplete hours data"""
-        conn = sqlite3.connect(self.db_path)
+        conn = psycopg2.connect(self.database_url)
         cursor = conn.cursor()
 
         cursor.execute(
@@ -153,7 +153,7 @@ class GoogleHoursUpdater:
         self, restaurant_id: int, hours_open: str, hours_of_operation: str = None
     ):
         """Update restaurant hours in the database"""
-        conn = sqlite3.connect(self.db_path)
+        conn = psycopg2.connect(self.database_url)
         cursor = conn.cursor()
 
         if hours_of_operation:

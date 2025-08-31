@@ -17,6 +17,8 @@ interface User {
     username?: string;
     avatar_url?: string;
     picture?: string;
+    email_verified?: boolean;
+    phone_verified?: boolean;
   };
   app_metadata?: {
     provider?: string;
@@ -51,7 +53,7 @@ export function isSupabaseConfigured(): boolean {
 export async function getUserWithRoles(userToken: string): Promise<{
   adminRole: string | null;
   roleLevel: number;
-  permissions: readonly Permission[];
+  permissions: Permission[];
 } | null> {
   try {
     // Call backend endpoint that uses the new SupabaseRoleManager
@@ -102,10 +104,10 @@ function transformSupabaseUserBase(user: User | null): Omit<TransformedUser, 'ad
     avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
     provider: provider as AuthProvider,
     providerInfo,
-    createdAt: user.created_at || new Date().toISOString(),
-    updatedAt: user.updated_at || new Date().toISOString(),
-    isEmailVerified: true, // Default to true for now
-    isPhoneVerified: false, // Default to false for now
+    createdAt: user.created_at || undefined,
+    updatedAt: user.updated_at || undefined,
+    isEmailVerified: user.user_metadata?.email_verified || false,
+    isPhoneVerified: user.user_metadata?.phone_verified || false,
     role: 'user', // Default role
     subscriptionTier: 'free', // Default subscription tier
   };
@@ -198,7 +200,7 @@ export function hasUserPermission(user: TransformedUser | null, permission: Perm
   if (!user) {
     return false;
   }
-  return user.isSuperAdmin || (user.permissions || []).includes(permission as Permission);
+  return user.isSuperAdmin || (user.permissions || []).includes(permission);
 }
 
 /**
@@ -275,8 +277,8 @@ export function createMockUser(): TransformedUser {
       color: 'text-gray-600',
       displayName: 'Email',
       },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: undefined,
+    updatedAt: undefined,
     isEmailVerified: true,
     isPhoneVerified: false,
     role: 'user',

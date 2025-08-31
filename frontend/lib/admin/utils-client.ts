@@ -1,6 +1,7 @@
 // Client-safe admin utilities (no server-only imports)
 import type { TransformedUser } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
+import type { Permission } from '@/lib/constants/permissions';
 import { getPermissionsForRole } from './constants-client';
 
 /**
@@ -14,27 +15,27 @@ export function isAdmin(user: TransformedUser | null): user is AdminUser {
 /**
  * Check if user has a specific permission - client-safe
  */
-export function hasPermission(user: AdminUser, permission: string): boolean {
+export function hasPermission(user: AdminUser, permission: Permission): boolean {
   if (!user || !user.permissions) return false;
-  return user.permissions.includes(permission.toLowerCase()) || user.isSuperAdmin;
+  return user.permissions.includes(permission) || user.isSuperAdmin;
 }
 
 /**
  * Check if user has any of the specified permissions - client-safe
  */
-export function hasAnyPermission(user: AdminUser, permissions: string[]): boolean {
+export function hasAnyPermission(user: AdminUser, permissions: Permission[]): boolean {
   if (!user || !user.permissions) return false;
   if (user.isSuperAdmin) return true;
-  return permissions.some(perm => user.permissions.includes(perm.toLowerCase()));
+  return permissions.some(perm => user.permissions.includes(perm));
 }
 
 /**
  * Check if user has all of the specified permissions - client-safe
  */
-export function hasAllPermissions(user: AdminUser, permissions: string[]): boolean {
+export function hasAllPermissions(user: AdminUser, permissions: Permission[]): boolean {
   if (!user || !user.permissions) return false;
   if (user.isSuperAdmin) return true;
-  return permissions.every(perm => user.permissions.includes(perm.toLowerCase()));
+  return permissions.every(perm => user.permissions.includes(perm));
 }
 
 /**
@@ -72,7 +73,7 @@ export function getRoleLevel(user: TransformedUser | null): number {
 /**
  * Get user's permissions array - client-safe
  */
-export function getUserPermissions(user: TransformedUser | null): string[] {
+export function getUserPermissions(user: TransformedUser | null): Permission[] {
   if (!user || !isAdmin(user)) return [];
   return user.permissions || [];
 }
@@ -80,9 +81,9 @@ export function getUserPermissions(user: TransformedUser | null): string[] {
 /**
  * Get permissions for user's role - client-safe
  */
-export function getRolePermissions(user: TransformedUser | null): string[] {
+export function getRolePermissions(user: TransformedUser | null): Permission[] {
   if (!user || !user.adminRole) return [];
-  return getPermissionsForRole(user.adminRole as AdminRole);
+  return getPermissionsForRole(user.adminRole as AdminRole) as Permission[];
 }
 
 /**
@@ -97,19 +98,19 @@ export function canPerformAction(user: TransformedUser | null, requiredLevel: nu
 /**
  * Filter permissions by category - client-safe
  */
-export function filterPermissionsByCategory(permissions: string[], category: string): string[] {
-  const categoryMap: Record<string, string[]> = {
-    restaurant: permissions.filter(p => p.startsWith('restaurant:')),
-    review: permissions.filter(p => p.startsWith('review:')),
-    user: permissions.filter(p => p.startsWith('user:')),
-    system: permissions.filter(p => p.startsWith('system:')),
-    audit: permissions.filter(p => p.startsWith('audit:')),
-    operations: permissions.filter(p => p.startsWith('bulk:') || p.startsWith('data:')),
-    roles: permissions.filter(p => p.startsWith('role:')),
-    image: permissions.filter(p => p.startsWith('image:')),
-    synagogue: permissions.filter(p => p.startsWith('synagogue:')),
-    kosher_place: permissions.filter(p => p.startsWith('kosher_place:')),
-    analytics: permissions.filter(p => p.startsWith('analytics:'))
+export function filterPermissionsByCategory(permissions: Permission[], category: string): Permission[] {
+  const categoryMap: Record<string, Permission[]> = {
+    restaurant: permissions.filter(p => p.startsWith('restaurant:')) as Permission[],
+    review: permissions.filter(p => p.startsWith('review:')) as Permission[],
+    user: permissions.filter(p => p.startsWith('user:')) as Permission[],
+    system: permissions.filter(p => p.startsWith('system:')) as Permission[],
+    audit: permissions.filter(p => p.startsWith('audit:')) as Permission[],
+    operations: permissions.filter(p => p.startsWith('bulk:') || p.startsWith('data:')) as Permission[],
+    roles: permissions.filter(p => p.startsWith('role:')) as Permission[],
+    image: permissions.filter(p => p.startsWith('image:')) as Permission[],
+    synagogue: permissions.filter(p => p.startsWith('synagogue:')) as Permission[],
+    kosher_place: permissions.filter(p => p.startsWith('kosher_place:')) as Permission[],
+    analytics: permissions.filter(p => p.startsWith('analytics:')) as Permission[]
   };
   
   return categoryMap[category] || [];

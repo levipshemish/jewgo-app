@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -76,6 +77,26 @@ except ImportError:
     def require_admin_auth(f):
         return f
 
+# Super admin auth decorator
+def require_super_admin_auth(f):
+    """Decorator to require super_admin role for endpoints."""
+    def decorated_function(*args, **kwargs):
+        # First check admin auth
+        admin_result = require_admin_auth(lambda: None)()
+        
+        # Get current user from JWT
+        current_user = get_current_supabase_user()
+        if not current_user:
+            return error_response('Authentication required', 401)
+        
+        # Check if user has super_admin role
+        user_role = current_user.get('role') or current_user.get('adminRole')
+        if user_role != 'super_admin':
+            return error_response('Insufficient permissions: super_admin role required', 403)
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 # Import Supabase authentication decorators
 try:
@@ -149,6 +170,23 @@ missing_essential = [
 ]
 if all(essential_dependencies):
     api_v4 = Blueprint("api_v4", __name__, url_prefix="/api/v4")
+
+    # Simple in-memory rate limiter for sensitive role mutation endpoints (dev safeguard only)
+    _rate_limits: dict = {}
+    def _allow_rate(user_key: str, max_ops: int = 30, window_sec: int = 60) -> bool:
+        # Only apply rate limiting in development when explicitly enabled
+        if os.getenv('NODE_ENV') != 'development' or os.getenv('ENABLE_DEV_RATE_LIMITING') != 'true':
+            return True
+        
+        import time
+        now = int(time.time())
+        bucket = _rate_limits.get(user_key)
+        if not bucket or now - bucket['ts'] >= window_sec:
+            bucket = {'count': 0, 'ts': now}
+        bucket['count'] += 1
+        _rate_limits[user_key] = bucket
+        return bucket['count'] <= max_ops
+
     logger.info("API v4 blueprint created successfully")
     # Log which optional dependencies are missing
     optional_dependencies = [
@@ -555,6 +593,63 @@ def create_restaurant():
         return error_response("Failed to create restaurant", 500)
 
 
+@safe_route("/restaurants/by-name/<name>", methods=["GET"])
+@require_api_v4_flag("api_v4_restaurants")
+def get_restaurant_by_name(name: str):
+    """Get a restaurant by URL-friendly name."""
+    try:
+        # Use the same approach as the working restaurants endpoint
+        # Get database manager from the app context
+        from flask import current_app
+        
+        # Try to get the database manager from the app context
+        db_manager = None
+        try:
+            # Try to access the database manager through the app context
+            if hasattr(current_app, 'deps') and 'get_db_manager' in current_app.deps:
+                db_manager = current_app.deps['get_db_manager']()
+            else:
+                # Fallback: create a new database manager instance
+                from database.database_manager_v3 import EnhancedDatabaseManager
+                db_manager = EnhancedDatabaseManager()
+                if not db_manager.connect():
+                    return error_response("Database connection failed", 503)
+        except Exception as e:
+            logger.error(f"Failed to get database manager: {e}")
+            return error_response("Database connection failed", 503)
+        
+        try:
+            # Get all restaurants using the database manager
+            restaurants = db_manager.get_restaurants(limit=1000, as_dict=True)
+            logger.info(f"Retrieved {len(restaurants)} restaurants from database")
+            
+            # Find restaurant by URL-friendly name
+            for restaurant in restaurants:
+                restaurant_url_name = restaurant.get('name', '').lower()
+                restaurant_url_name = re.sub(r'[^a-z0-9\s-]', '', restaurant_url_name)
+                restaurant_url_name = re.sub(r'\s+', '-', restaurant_url_name)
+                restaurant_url_name = re.sub(r'-+', '-', restaurant_url_name).strip()
+                
+                if restaurant_url_name == name.lower():
+                    logger.info(f"Found restaurant: {restaurant.get('name')} (ID: {restaurant.get('id')})")
+                    return success_response({"restaurant": restaurant})
+            
+            logger.warning(f"No restaurant found with name: {name}")
+            return not_found_response(f"Restaurant with name '{name}'", "restaurant")
+            
+        finally:
+            # Close database connection if we created it
+            try:
+                if hasattr(db_manager, 'close'):
+                    db_manager.close()
+            except Exception as e:
+                logger.warning(f"Error closing database connection: {e}")
+                
+    except Exception as e:
+        logger.exception("Error fetching restaurant by name", name=name, error=str(e))
+        return error_response("Failed to fetch restaurant", 500)
+
+
 @safe_route("/restaurants/<int:restaurant_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_restaurants")
 def update_restaurant(restaurant_id: int):
@@ -781,26 +876,53 @@ def get_reviews():
         status = request.args.get("status", "approved")
         limit = int(request.args.get("limit", 10))
         offset = int(request.args.get("offset", 0))
+        include_google_reviews = request.args.get("includeGoogleReviews", "true").lower() == "true"
+        
         # Build filters
         filters = {}
         if restaurant_id:
             filters["restaurant_id"] = int(restaurant_id)
         if status:
             filters["status"] = status
+        
         service = create_review_service()
+        logger.info(f"Fetching reviews for restaurant_id={restaurant_id}, status={status}, limit={limit}, offset={offset}, include_google_reviews={include_google_reviews}")
+        
+        # Get reviews with pagination
         reviews = service.get_reviews(
             restaurant_id=int(restaurant_id) if restaurant_id else None,
             status=status,
             limit=limit,
             offset=offset,
             filters=filters,
+            include_google_reviews=include_google_reviews,
         )
+        
+        logger.info(f"Found {len(reviews)} total reviews")
+        
         # Get total count for pagination
         total_count = service.get_reviews_count(
             restaurant_id=int(restaurant_id) if restaurant_id else None,
             status=status,
             filters=filters,
         )
+        
+        # Count Google reviews separately if needed
+        if include_google_reviews and restaurant_id:
+            try:
+                restaurant = service.db_manager.get_restaurant_by_id(int(restaurant_id))
+                if restaurant and restaurant.get('place_id'):
+                    google_count = service.db_manager.get_google_reviews_count(
+                        restaurant_id=int(restaurant_id),
+                        place_id=restaurant['place_id']
+                    )
+                    total_count += google_count
+            except Exception as e:
+                logger.warning(f"Error getting Google reviews count: {e}")
+        
+        # Calculate if there are more reviews
+        has_more = offset + limit < total_count
+        
         return success_response(
             {
                 "reviews": reviews,
@@ -808,7 +930,9 @@ def get_reviews():
                     "total": total_count,
                     "limit": limit,
                     "offset": offset,
-                    "hasMore": offset + limit < total_count,
+                    "hasMore": has_more,
+                    "currentPage": (offset // limit) + 1,
+                    "totalPages": (total_count + limit - 1) // limit,
                 },
             }
         )
@@ -819,6 +943,52 @@ def get_reviews():
     except Exception as e:
         logger.exception("Error fetching reviews", error=str(e))
         return error_response("Failed to fetch reviews", 500)
+
+
+@safe_route("/reviews/sync-google", methods=["POST"])
+@require_api_v4_flag("api_v4_reviews")
+def sync_google_reviews():
+    """Sync Google reviews for restaurants."""
+    try:
+        from services.google_review_sync_service import GoogleReviewSyncService
+        
+        data = request.get_json(silent=True) or {}
+        restaurant_id = data.get("restaurantId")
+        place_id = data.get("placeId")
+        max_reviews = int(data.get("maxReviews", 20))
+        
+        service = GoogleReviewSyncService()
+        
+        if restaurant_id and place_id:
+            # Sync for specific restaurant
+            success = service.sync_restaurant_google_reviews(
+                restaurant_id=int(restaurant_id),
+                place_id=place_id,
+                max_reviews=max_reviews
+            )
+            
+            if success:
+                return success_response(
+                    {"message": f"Successfully synced Google reviews for restaurant {restaurant_id}"}
+                )
+            else:
+                return error_response(f"Failed to sync Google reviews for restaurant {restaurant_id}", 500)
+        else:
+            # Sync for all restaurants
+            results = service.sync_all_restaurants_google_reviews(max_reviews=max_reviews)
+            
+            return success_response({
+                "message": "Google review sync completed",
+                "results": results
+            })
+            
+    except ValidationError as e:
+        return error_response(str(e), 400, {"validation_errors": e.details})
+    except DatabaseError as e:
+        return error_response(str(e), 503)
+    except Exception as e:
+        logger.exception("Error syncing Google reviews", error=str(e))
+        return error_response("Failed to sync Google reviews", 500)
 
 
 @safe_route("/reviews", methods=["POST"])
@@ -1006,7 +1176,7 @@ def admin_delete_user():
 
 # Role Management Routes
 @api_v4.route('/admin/roles/assign', methods=['POST'])
-@require_admin_auth
+@require_super_admin_auth
 def assign_admin_role():
     """Assign an admin role to a user"""
     try:
@@ -1025,23 +1195,38 @@ def assign_admin_role():
         # Get current admin user from JWT
         current_user = get_current_supabase_user()
         if not current_user:
-            return error_response('Admin authentication required', 401)
+            return error_response('Authentication required', 401)
         
         # Validate role is allowed
         allowed_roles = ['moderator', 'data_admin', 'system_admin', 'super_admin']
         if role not in allowed_roles:
             return error_response(f'Invalid role. Must be one of: {", ".join(allowed_roles)}', 400)
         
-        # Only super_admin can assign any admin role
-        if current_user.get('role') != 'super_admin':
-            return error_response('Only super_admin can assign admin roles', 403)
+        # Only super_admin can assign any admin role (normalize role field)
+        user_role = current_user.get('role') or current_user.get('adminRole')
+        if user_role != 'super_admin':
+            return error_response('Insufficient permissions: super_admin role required', 403)
         
+        # Validate expires_at format if provided (ISO8601)
+        if expires_at:
+            try:
+                from datetime import datetime
+                # Allow 'Z' suffix
+                iso = expires_at.replace('Z', '+00:00')
+                datetime.fromisoformat(iso)
+            except Exception:
+                return error_response('Invalid expires_at format. Use ISO8601 UTC.', 400)
+        
+        # Rate limit guard
+        if not _allow_rate(f"roles_assign_{current_user['id']}"):
+            return error_response('Too many requests', 429)
+
         # Create user service instance
         user_service = create_user_service() if UserServiceV4 else None
         if not user_service:
             return error_response('User service not available', 503)
         
-        success = user_service.assign_user_role(
+        result = user_service.assign_user_role(
             target_user_id=user_id,
             role=role,
             assigned_by_user_id=current_user['id'],
@@ -1049,13 +1234,29 @@ def assign_admin_role():
             notes=notes
         )
         
-        if success:
+        if isinstance(result, dict) and result.get('success'):
+            # Invalidate role cache after successful change
+            try:
+                from utils.supabase_role_manager import get_role_manager
+                rm = get_role_manager()
+                rm.invalidate_user_role(user_id)
+            except Exception:
+                pass
             return success_response({
                 'user_id': user_id,
                 'role': role,
                 'assigned_by': current_user['id'],
                 'assigned_at': datetime.utcnow().isoformat()
             }, 'Role assigned successfully')
+        elif isinstance(result, dict) and 'error' in result:
+            # Map error types precisely
+            error_type = result.get('error_type')
+            if error_type == 'conflict':
+                return error_response(result.get('error', 'Conflict'), 409)
+            if error_type == 'not_found':
+                return error_response(result.get('error', 'Not found'), 404)
+            status_code = result.get('status_code', 500)
+            return error_response(result.get('error', 'Failed to assign role'), status_code)
         else:
             return error_response('Failed to assign role', 500)
             
@@ -1069,7 +1270,7 @@ def assign_admin_role():
 
 
 @api_v4.route('/admin/roles/revoke', methods=['POST'])
-@require_admin_auth
+@require_super_admin_auth
 def revoke_admin_role():
     """Revoke an admin role from a user"""
     try:
@@ -1086,34 +1287,68 @@ def revoke_admin_role():
         # Get current admin user from JWT
         current_user = get_current_supabase_user()
         if not current_user:
-            return error_response('Admin authentication required', 401)
+            return error_response('Authentication required', 401)
         
-        # Only super_admin can revoke admin roles
-        if current_user.get('role') != 'super_admin':
-            return error_response('Only super_admin can revoke admin roles', 403)
+        # Only super_admin can revoke admin roles (normalize role field)
+        user_role = current_user.get('role') or current_user.get('adminRole')
+        if user_role != 'super_admin':
+            return error_response('Insufficient permissions: super_admin role required', 403)
         
         # Prevent self-revocation of super_admin
         if role == 'super_admin' and user_id == current_user['id']:
-            return error_response('Cannot revoke your own super_admin role', 400)
+            return error_response('Cannot revoke your own super_admin role', 409)
         
+        # Rate limit guard
+        if not _allow_rate(f"roles_revoke_{current_user['id']}"):
+            return error_response('Too many requests', 429)
+
         # Create user service instance
         user_service = create_user_service() if UserServiceV4 else None
         if not user_service:
             return error_response('User service not available', 503)
         
-        success = user_service.revoke_user_role(
+        # Prevent removing the last super_admin
+        if role == 'super_admin':
+            try:
+                # Use dedicated precise count method from service/DB
+                super_admin_count = 0
+                if hasattr(user_service, 'get_active_super_admin_count'):
+                    super_admin_count = user_service.get_active_super_admin_count()
+                if super_admin_count <= 1:
+                    return error_response('Cannot remove the last super_admin', 409)
+            except Exception as e:
+                logger.warning(f"Could not verify super_admin count: {str(e)}")
+                # Fail-safe: prevent removal if we can't verify count
+                return error_response('Cannot verify super_admin count for safe removal', 503)
+        
+        result = user_service.revoke_user_role(
             target_user_id=user_id,
             role=role,
             removed_by_user_id=current_user['id']
         )
         
-        if success:
+        if isinstance(result, dict) and result.get('success'):
+            # Invalidate role cache after successful change
+            try:
+                from utils.supabase_role_manager import get_role_manager
+                rm = get_role_manager()
+                rm.invalidate_user_role(user_id)
+            except Exception:
+                pass
             return success_response({
                 'user_id': user_id,
                 'role': role,
                 'removed_by': current_user['id'],
                 'removed_at': datetime.utcnow().isoformat()
             }, 'Role revoked successfully')
+        elif isinstance(result, dict) and 'error' in result:
+            error_type = result.get('error_type')
+            if error_type == 'conflict':
+                return error_response(result.get('error', 'Conflict'), 409)
+            if error_type == 'not_found':
+                return error_response(result.get('error', 'Not found'), 404)
+            status_code = result.get('status_code', 500)
+            return error_response(result.get('error', 'Failed to revoke role'), status_code)
         else:
             return error_response('Failed to revoke role', 500)
             
@@ -1136,6 +1371,8 @@ def get_admin_roles():
         search = request.args.get('search', '')
         user_id = request.args.get('user_id')
         role_filter = request.args.get('role')
+        include_all = request.args.get('include_all', 'false').lower() == 'true'
+        include_expired = request.args.get('include_expired', 'false').lower() == 'true'
         
         # Validate pagination parameters
         if page < 1:
@@ -1153,7 +1390,9 @@ def get_admin_roles():
             page=page,
             limit=limit,
             search=search,
-            role_filter=role_filter
+            role_filter=role_filter,
+            include_all=include_all,
+            include_expired=include_expired
         )
         
         return success_response(users_with_roles, 'Users with roles retrieved successfully')
@@ -1979,3 +2218,32 @@ def run_marketplace_migration():
     except Exception as e:
         logger.exception("Error running marketplace migration")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@safe_route("/proxy-image", methods=["GET"])
+def proxy_image():
+    """Proxy external images to avoid CORS issues."""
+    try:
+        image_url = request.args.get("url")
+        if not image_url:
+            return error_response("Image URL is required", 400)
+        
+        # Validate URL to prevent SSRF attacks
+        if not image_url.startswith(("http://", "https://")):
+            return error_response("Invalid image URL", 400)
+        
+        # Only allow Google profile images for security
+        if not any(domain in image_url for domain in ["googleusercontent.com", "lh3.googleusercontent.com"]):
+            return error_response("Only Google profile images are allowed", 403)
+        
+        # For now, return a redirect to the original URL with CORS headers
+        # This is a simpler approach that should work for most cases
+        from flask import redirect
+        response = redirect(image_url)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error proxying image: {e}")
+        return error_response("Internal server error", 500)

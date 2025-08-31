@@ -23,7 +23,10 @@ class GooglePlacesService(BaseService):
 
     def __init__(self, db_manager=None, config=None) -> None:
         super().__init__(db_manager, config)
-        self.api_key = ConfigManager.get_google_places_api_key()
+        from utils.config_manager import ConfigManager
+        config_manager = ConfigManager()
+        external_services = config_manager.get_external_services_config()
+        self.api_key = external_services.get('google_places_api_key')
         self.base_url = "https://maps.googleapis.com/maps/api/place"
         if not self.api_key:
             logger.warning("Google Places API key not found in environment")

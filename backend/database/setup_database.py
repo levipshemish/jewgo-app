@@ -12,10 +12,13 @@ from sqlalchemy import create_engine
 load_dotenv()
 
 
-def test_sqlite_connection() -> bool | None:
-    """Test SQLite connection (fallback)."""
+def test_postgresql_connection() -> bool | None:
+    """Test PostgreSQL connection (fallback)."""
     try:
-        db = EnhancedDatabaseManager("sqlite:///restaurants.db")
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            return False
+        db = EnhancedDatabaseManager(database_url)
         return bool(db.connect())
     except Exception as e:
         return False
@@ -40,30 +43,12 @@ def create_tables(database_url) -> bool | None:
         return False
 
 
-def migrate_data_from_sqlite() -> bool | None:
-    """Migrate data from existing SQLite database."""
+def migrate_data_from_legacy() -> bool | None:
+    """Migrate data from existing legacy database."""
     try:
-        # Connect to old SQLite database
-        old_db = OldDB()
-        if not old_db.connect():
-            return False
-        # Get database URL from environment
-        database_url = os.environ.get("DATABASE_URL")
-        if not database_url:
-            return False
-        # Connect to new PostgreSQL database
-        new_db = EnhancedDatabaseManager(database_url)
-        if not new_db.connect():
-            return False
-        # Get all restaurants from SQLite
-        restaurants = old_db.search_restaurants(limit=10000)
-        # Migrate each restaurant
-        migrated_count = 0
-        for restaurant in restaurants:
-            if new_db.add_restaurant(restaurant):
-                migrated_count += 1
-            else:
-                pass
+        # This function is kept for potential future migrations
+        # Currently no legacy migration is needed
+        print("No legacy migration required")
         return True
     except Exception as e:
         return False
@@ -91,20 +76,20 @@ def main() -> None:
     if "postgresql" in database_url:
         if not test_postgresql_connection(database_url):
             return
-    elif not test_sqlite_connection():
+    else:
+        print("Unsupported database type")
         return
     # Create tables
     if not create_tables(database_url):
         return
     # Show database info
     show_database_info(database_url)
-    # Offer migration if using PostgreSQL
-    if "postgresql" in database_url:
-        migrate_choice = input(
-            "🔄 Would you like to migrate data from SQLite? (y/n): ",
-        ).lower()
-        if migrate_choice == "y":
-            migrate_data_from_sqlite()
+    # Offer migration if needed
+    migrate_choice = input(
+        "🔄 Would you like to migrate data from legacy database? (y/n): ",
+    ).lower()
+    if migrate_choice == "y":
+        migrate_data_from_legacy()
 
 
 if __name__ == "__main__":

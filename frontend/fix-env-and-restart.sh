@@ -36,8 +36,9 @@ CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
 CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
 CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
 
-# Admin Configuration
-NEXT_PUBLIC_ADMIN_EMAIL=${NEXT_PUBLIC_ADMIN_EMAIL}
+# Admin Configuration - DEPRECATED: Use Supabase admin roles instead
+# Admin access is now managed through the admin_roles table in Supabase
+# See docs/setup/ADMIN_SETUP.md for role-based admin configuration
 
 # reCAPTCHA (Optional - replace with your actual keys)
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=${NEXT_PUBLIC_RECAPTCHA_SITE_KEY}

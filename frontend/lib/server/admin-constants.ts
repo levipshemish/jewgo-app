@@ -1,11 +1,6 @@
 import 'server-only';
 import type { AdminRole } from '@/lib/admin/types';
 
-// Runtime guard for Node-only usage
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Admin constants require Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
-}
-
 // Permission definitions (server-only)
 export const ADMIN_PERMISSIONS = {
   // Restaurant management

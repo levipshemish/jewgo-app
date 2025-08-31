@@ -81,7 +81,7 @@ function Tab({ label, icon, isActive, onClick, badge }: TabProps) {
 // Main dashboard component
 function ShtelDashboardContent() {
   const router = useRouter();
-  const { session } = useSupabase();
+  const { session, loading: supaLoading } = useSupabase();
   const { user, isAdmin } = useAuth();
   const { isMobile } = useMobileOptimization();
   
@@ -111,6 +111,11 @@ function ShtelDashboardContent() {
 
   // Check authentication
   useEffect(() => {
+    // Wait for Supabase session to load before making auth decisions
+    if (supaLoading) {
+      return;
+    }
+    
     if (!session) {
       router.push('/auth/signin?redirect=/shtel/dashboard');
       return;
@@ -123,7 +128,7 @@ function ShtelDashboardContent() {
     }
     
     loadStoreData();
-  }, [session, router, isAdmin]);
+  }, [session, router, isAdmin, supaLoading]);
 
   // Load store data
   const loadStoreData = async () => {

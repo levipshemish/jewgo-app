@@ -56,6 +56,11 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
     try {
       setSaving(true);
       
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot save settings for mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}`, {
         method: 'PUT',
         headers: {
@@ -81,6 +86,11 @@ export default function StoreSettings({ storeData, onRefresh }: StoreSettingsPro
     
     try {
       setLoading(true);
+      
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot delete mock store');
+      }
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}`, {
         method: 'DELETE',

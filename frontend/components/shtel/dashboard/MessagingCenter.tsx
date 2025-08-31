@@ -76,6 +76,13 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     try {
       setLoading(true);
       
+      // Guard against admin context - admins don't have real store data
+      if (storeData.is_admin) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+      
       const params = new URLSearchParams({
         type: filterType === 'all' ? '' : filterType,
         priority: filterPriority === 'all' ? '' : filterPriority,
@@ -96,6 +103,12 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
 
   const loadMessages = async (conversationId: string) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        setMessages([]);
+        return;
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`);
       if (!response.ok) {throw new Error('Failed to load messages');}
       
@@ -111,6 +124,11 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
 
   const markMessagesAsRead = async (conversationId: string) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        return;
+      }
+      
       await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/read`, {
         method: 'PUT'
       });
@@ -132,6 +150,11 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     if (!newMessage.trim() || !selectedConversation) {return;}
     
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot send messages in mock store');
+      }
+      
       setSending(true);
       
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${selectedConversation.conversation_id}/messages`, {
@@ -172,6 +195,11 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
 
   const archiveConversation = async (conversationId: string) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot archive conversations in mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/archive`, {
         method: 'PUT',
         headers: {

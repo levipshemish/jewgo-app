@@ -301,7 +301,7 @@ class UserServiceV4(BaseService):
         assigned_by_user_id: str,
         expires_at: Optional[str] = None,
         notes: Optional[str] = None
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """Assign an admin role to a user.
         
         Args:
@@ -312,7 +312,7 @@ class UserServiceV4(BaseService):
             notes: Optional notes about the assignment
             
         Returns:
-            bool: True if role was assigned successfully, False otherwise
+            Dict: { success: boolean, error?: string, error_type?: string, status_code?: number }
         """
         self.log_operation("assign_user_role")
         try:
@@ -322,15 +322,15 @@ class UserServiceV4(BaseService):
                 raise ValidationError(f"Invalid role. Must be one of: {', '.join(allowed_roles)}")
             
             # Call database manager to assign role via Supabase RPC
-            success = self.db_manager.assign_admin_role(
+            result = self.db_manager.assign_admin_role(
                 target_user_id=target_user_id,
                 role=role,
                 assigned_by_user_id=assigned_by_user_id,
                 expires_at=expires_at,
                 notes=notes
             )
-            
-            if success:
+            normalized = result if isinstance(result, dict) else { 'success': False, 'error': 'Unknown result' }
+            if normalized.get('success'):
                 self.logger.info(
                     "Successfully assigned admin role",
                     target_user_id=target_user_id,
@@ -344,8 +344,7 @@ class UserServiceV4(BaseService):
                     role=role,
                     assigned_by=assigned_by_user_id
                 )
-            
-            return success
+            return normalized
             
         except Exception as e:
             self.logger.exception(
@@ -361,7 +360,7 @@ class UserServiceV4(BaseService):
         target_user_id: str,
         role: str,
         removed_by_user_id: str
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """Revoke an admin role from a user.
         
         Args:
@@ -370,18 +369,18 @@ class UserServiceV4(BaseService):
             removed_by_user_id: ID of the admin user making the revocation
             
         Returns:
-            bool: True if role was revoked successfully, False otherwise
+            Dict: { success: boolean, error?: string, error_type?: string, status_code?: number }
         """
         self.log_operation("revoke_user_role")
         try:
             # Call database manager to revoke role via Supabase RPC
-            success = self.db_manager.remove_admin_role(
+            result = self.db_manager.remove_admin_role(
                 target_user_id=target_user_id,
                 role=role,
                 removed_by_user_id=removed_by_user_id
             )
-            
-            if success:
+            normalized = result if isinstance(result, dict) else { 'success': False, 'error': 'Unknown result' }
+            if normalized.get('success'):
                 self.logger.info(
                     "Successfully revoked admin role",
                     target_user_id=target_user_id,
@@ -395,8 +394,7 @@ class UserServiceV4(BaseService):
                     role=role,
                     removed_by=removed_by_user_id
                 )
-            
-            return success
+            return normalized
             
         except Exception as e:
             self.logger.exception(
@@ -413,7 +411,9 @@ class UserServiceV4(BaseService):
         page: int = 1,
         limit: int = 50,
         search: str = "",
-        role_filter: Optional[str] = None
+        role_filter: Optional[str] = None,
+        include_all: bool = False,
+        include_expired: bool = False
     ) -> Dict[str, Any]:
         """Get users with their admin roles.
         
@@ -423,6 +423,8 @@ class UserServiceV4(BaseService):
             limit: Number of users per page
             search: Search term for user name or email
             role_filter: Filter by specific role
+            include_all: Whether to include all users or just those with roles
+            include_expired: Whether to include expired roles
             
         Returns:
             Dict containing users with roles and pagination info
@@ -437,7 +439,9 @@ class UserServiceV4(BaseService):
                 limit=limit,
                 offset=offset,
                 search=search,
-                role_filter=role_filter
+                role_filter=role_filter,
+                include_all=include_all,
+                include_expired=include_expired
             )
             
             self.logger.info(
@@ -517,6 +521,18 @@ class UserServiceV4(BaseService):
         except Exception as e:
             self.logger.exception("Error retrieving available roles", error=str(e))
             raise
+
+    def get_active_super_admin_count(self) -> int:
+        """Return precise count of active super_admin roles."""
+        try:
+            count = 0
+            if hasattr(self.db_manager, 'get_active_super_admin_count'):
+                count = self.db_manager.get_active_super_admin_count()
+            self.logger.info("Retrieved active super_admin count", count=count)
+            return count
+        except Exception as e:
+            self.logger.exception("Error getting super_admin count", error=str(e))
+            return 0
 
     # Helper methods
     def _validate_user_data(self, data: Dict[str, Any]) -> None:

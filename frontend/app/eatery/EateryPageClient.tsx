@@ -15,7 +15,7 @@ import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
-import styles from './EateryPageClient.module.css';
+
 
 // One canonical cleaner for filters (use it everywhere)
 function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
@@ -812,7 +812,17 @@ export function EateryPageClient() {
                   imageTag: restaurant.kosher_category || '',
                 }}
                 showStarInBadge={true}
-                onCardClick={() => router.push(`/restaurant/${restaurant.id}`)}
+                onCardClick={() => {
+                  // Create URL-friendly eatery name
+                  const eateryName = restaurant.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+                    .replace(/\s+/g, '-') // Replace spaces with hyphens
+                    .replace(/-+/g, '-') // Replace multiple hyphens with single
+                    .trim()
+                  
+                  router.push(`/eatery/${eateryName}`)
+                }}
                 priority={index < 4}
                 className="w-full h-full"
               />
@@ -822,7 +832,7 @@ export function EateryPageClient() {
           enableInfiniteScroll={isHydrated && isMobileView}
           hasNextPage={hasMore}
           isLoadingMore={isLoadingMore}
-          gridClassName={styles.eateryPageGrid}
+          gridClassName=""
           minColumnWidth="150px"
           sentinelRef={loadingRef}
           getItemKey={(restaurant, index) => restaurant ? restaurant.id : index}

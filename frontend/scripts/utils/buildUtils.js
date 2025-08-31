@@ -66,7 +66,6 @@ const ENV_TEMPLATES = {
     DATABASE_URL: 'postgresql://username:password@host:5432/database_name?sslmode=require',
     
     // Security Tokens
-    ADMIN_TOKEN: 'your-secure-admin-token',
     SCRAPER_TOKEN: 'your-secure-scraper-token',
     
     // Application URLs
@@ -111,7 +110,6 @@ const REQUIRED_ENV_VARS = {
   
   BACKEND: [
     'DATABASE_URL',
-    'ADMIN_TOKEN',
     'SCRAPER_TOKEN',
     'FRONTEND_URL',
     'BACKEND_URL',
@@ -240,7 +238,6 @@ function checkHardcodedSecrets(platform = 'FRONTEND') {
     /your-smtp-password/,
     /your-smtp-user@example\.com/,
     /noreply@example\.com/,
-    /your-secure-admin-token/,
     /your-secure-scraper-token/,
     /your-google-maps-api-key/,
     /your-sentry-dsn/

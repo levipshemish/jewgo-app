@@ -45,6 +45,13 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
     try {
       setLoading(true);
       
+      // Guard against admin context - admins don't have real store data
+      if (storeData.is_admin) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products`);
       if (!response.ok) {throw new Error('Failed to load products');}
       
@@ -59,6 +66,11 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
 
   const handleAddProduct = async (productData: Partial<Product>) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot add products to mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products`, {
         method: 'POST',
         headers: {
@@ -79,6 +91,11 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
 
   const handleUpdateProduct = async (productId: string, productData: Partial<Product>) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot update products in mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products/${productId}`, {
         method: 'PUT',
         headers: {
@@ -101,6 +118,11 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
     if (!confirm('Are you sure you want to delete this product?')) {return;}
     
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot delete products from mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/products/${productId}`, {
         method: 'DELETE',
       });

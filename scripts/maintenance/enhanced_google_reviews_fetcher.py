@@ -4,7 +4,7 @@ Enhanced Google Reviews Fetcher
 Fetches restaurant reviews and ratings from Google Places API with review text
 """
 
-import sqlite3
+import psycopg2
 import time
 import json
 import os
@@ -24,14 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 class EnhancedGoogleReviewsFetcher:
-    def __init__(self, api_key: str, db_path: str = "restaurants.db"):
+    def __init__(self, api_key: str, database_url: str = None):
         self.api_key = api_key
-        self.db_path = db_path
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.base_url = "https://maps.googleapis.com/maps/api/place"
 
-    def connect_db(self) -> sqlite3.Connection:
-        """Connect to the SQLite database"""
-        return sqlite3.connect(self.db_path)
+    def connect_db(self) -> psycopg2.Connection:
+        """Connect to the PostgreSQL database"""
+        return psycopg2.connect(self.database_url)
 
     def search_place_by_address(
         self, name: str, address: str, city: str, state: str

@@ -224,6 +224,17 @@ class AdminAuthDecorator:
                 # Check removal date first
                 _check_removal_date()
                 
+                # Check if legacy admin auth is enabled (mirroring require_legacy_admin_auth behavior)
+                enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+                if not enable_legacy:
+                    logger.warning("DEPRECATED: Legacy admin auth disabled - use Supabase admin roles")
+                    return jsonify({"error": "Legacy admin authentication is disabled. Use Supabase admin roles instead."}), 401
+                
+                # Production safety check
+                if os.getenv("NODE_ENV") == "production" and enable_legacy:
+                    logger.error("CRITICAL: Legacy admin authentication cannot be enabled in production")
+                    return jsonify({"error": "Legacy admin authentication is disabled in production"}), 401
+                
                 # Get token from Authorization header
                 auth_header = request.headers.get("Authorization")
                 if not auth_header:
@@ -311,6 +322,17 @@ class SimpleAdminTokenDecorator:
                 # Check removal date first
                 _check_removal_date()
                 
+                # Check if legacy admin auth is enabled (mirroring require_legacy_admin_auth behavior)
+                enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+                if not enable_legacy:
+                    logger.warning("DEPRECATED: Legacy simple admin auth disabled - use Supabase admin roles")
+                    return jsonify({"error": "Legacy simple admin authentication is disabled. Use Supabase admin roles instead."}), 401
+                
+                # Production safety check
+                if os.getenv("NODE_ENV") == "production" and enable_legacy:
+                    logger.error("CRITICAL: Legacy admin authentication cannot be enabled in production")
+                    return jsonify({"error": "Legacy admin authentication is disabled in production"}), 401
+                
                 auth_header = request.headers.get("Authorization")
                 if not auth_header:
                     return jsonify({"error": "Authorization header required"}), 401
@@ -359,6 +381,21 @@ def require_simple_admin_token():
     logger.warning("DEPRECATED: Using legacy simple admin auth - migrate to Supabase admin roles")
     return SimpleAdminTokenDecorator()
 
+
+# Import require_admin_auth from security module for compatibility
+try:
+    from utils.security import require_admin_auth
+    logger.debug("Successfully imported require_admin_auth from utils.security")
+except ImportError:
+    # Fallback: create a basic admin auth decorator if security module not available
+    def require_admin_auth(f):
+        """Fallback admin auth decorator when security module not available."""
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            logger.warning("require_admin_auth fallback used - security module not available")
+            return f(*args, **kwargs)
+        return wrapper
+    logger.warning("Using fallback require_admin_auth - security module not available")
 
 # Backward compatibility alias - will be removed in future release
 def require_legacy_admin_auth_compat(permission: str = "read"):

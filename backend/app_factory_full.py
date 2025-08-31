@@ -181,6 +181,35 @@ def _initialize_sentry() -> None:
 def _configure_logging() -> None:
     """Configure structured logging using unified logging configuration."""
     configure_logging()
+
+def _validate_supabase_config() -> None:
+    """Validate that Supabase authentication configuration is present."""
+    try:
+        required_supabase_vars = {
+            'SUPABASE_URL': os.environ.get('SUPABASE_URL'),
+            'SUPABASE_SERVICE_ROLE_KEY': os.environ.get('SUPABASE_SERVICE_ROLE_KEY'),
+            'SUPABASE_JWT_SECRET': os.environ.get('SUPABASE_JWT_SECRET'),
+        }
+        
+        missing_vars = [var for var, value in required_supabase_vars.items() if not value]
+        
+        if missing_vars:
+            logger.warning(
+                f"Missing Supabase configuration variables: {', '.join(missing_vars)}. "
+                "Admin authentication may not work properly."
+            )
+        else:
+            logger.info("Supabase authentication configuration validated successfully")
+            
+        # Check for deprecated ADMIN_TOKEN usage
+        if os.environ.get('ADMIN_TOKEN'):
+            logger.warning(
+                "DEPRECATED: ADMIN_TOKEN environment variable detected. "
+                "Please migrate to Supabase role-based authentication."
+            )
+            
+    except Exception as e:
+        logger.error(f"Error validating Supabase configuration: {e}")
 def _load_dependencies():
     """Load all required dependencies."""
     # Get logger for this function
@@ -247,6 +276,9 @@ def create_app(config_class=None):
     _initialize_sentry()
     # Configure logging
     _configure_logging()
+    
+    # Validate Supabase authentication configuration
+    _validate_supabase_config()
     # Import required decorators early to avoid NameError
     try:
         from utils.feature_flags import require_feature_flag
@@ -260,6 +292,26 @@ def create_app(config_class=None):
         require_feature_flag = lambda flag, default=True: lambda f: f
     # Create Flask app
     app = Flask(__name__)
+
+    # Pre-warm JWKS and schedule refresh (guarded)
+    try:
+        from utils.supabase_auth import supabase_auth
+        # Pre-warm JWKS cache on startup
+        supabase_auth.pre_warm_jwks()
+        # Schedule periodic refresh if APScheduler available
+        supabase_auth.schedule_jwks_refresh()
+        logger.info("JWKS pre-warm and refresh scheduling initialized")
+    except Exception as e:
+        logger.warning(f"JWKS pre-warm/refresh setup failed: {e}")
+
+    # Start admin role cache invalidation listener (guarded by env/psycopg2)
+    try:
+        from utils.supabase_role_manager import get_role_manager
+        rm = get_role_manager()
+        rm.start_cache_invalidation_listener()
+        logger.info("Admin role cache invalidation listener started (if enabled)")
+    except Exception as e:
+        logger.warning(f"Admin role cache invalidation listener not started: {e}")
     # Debug routes removed to avoid conflicts
     # Temporarily disable middleware for debugging
     # @app.before_request
@@ -388,7 +440,7 @@ def create_app(config_class=None):
         app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
         app.config["DATABASE_URL"] = os.environ.get(
             "DATABASE_URL",
-            "sqlite:///jewgo.db",
+            "postgresql://postgres:postgres@localhost:5432/postgres",
         )
     # Configure CORS
     # Get CORS origins from environment or use defaults
@@ -845,7 +897,7 @@ def create_app(config_class=None):
                 "DATABASE_URL",
                 "REDIS_URL",
                 "REDIS_PASSWORD",
-                "ADMIN_TOKEN",
+                # "ADMIN_TOKEN", # DEPRECATED: Removed in favor of Supabase auth
                 "SCRAPER_TOKEN",
                 "SECRET_KEY",
             ]
@@ -1961,6 +2013,18 @@ def create_app(config_class=None):
         except Exception as e:
             logger.exception("Error creating marketplace tables")
             return jsonify({"success": False, "error": str(e)}), 500
+    # Register teardown handler to clear user context
+    try:
+        from utils.security import clear_user_context
+
+        @app.teardown_request
+        def _teardown(req_or_exc):
+            return clear_user_context(req_or_exc)
+
+        logger.info("Registered user context cleanup handler")
+    except Exception as e:
+        logger.warning(f"Failed to register user context cleanup: {e}")
+
     # Error handlers
     @app.errorhandler(404)
     def not_found(error):

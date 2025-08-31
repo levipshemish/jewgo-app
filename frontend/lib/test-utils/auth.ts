@@ -25,7 +25,7 @@ export const mockAdmin = () => {
       role: 'admin',
       permissions: ['restaurant:edit', 'restaurant:delete', 'user:manage'] as Permission[],
       subscriptionTier: 'admin',
-      adminRole: 'admin',
+      adminRole: 'system_admin',
       roleLevel: 3,
       isSuperAdmin: true
     },

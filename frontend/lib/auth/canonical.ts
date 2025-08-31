@@ -3,47 +3,51 @@ import 'server-only';
 // DEPRECATED: This file is deprecated and will be removed in the next phase
 // Use lib/server/canonical-auth.ts instead
 
-console.warn('[ADMIN] lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
+// Deprecation warning will be shown when functions are called
 
 // Re-export from new server module with deprecation warnings
-export async function requireAdminAuth(...args: any[]) {
+export async function requireAdminAuth(request?: Request) {
   console.warn('[ADMIN] requireAdminAuth from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { requireAdminAuth: newRequireAdminAuth } = await import('../server/canonical-auth');
-  return newRequireAdminAuth();
+  return newRequireAdminAuth(request!);
 }
 
-export async function checkAdminAuth(...args: any[]) {
+export async function checkAdminAuth(request?: Request) {
   console.warn('[ADMIN] checkAdminAuth from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { checkAdminAuth: newCheckAdminAuth } = await import('../server/canonical-auth');
-  return newCheckAdminAuth();
+  return newCheckAdminAuth(request!);
 }
 
-export async function requireAdminPermission(...args: any[]) {
+export async function requireAdminPermission(permission: string) {
   console.warn('[ADMIN] requireAdminPermission from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { requireAdminPermission: newRequireAdminPermission } = await import('../server/canonical-auth');
-  return newRequireAdminPermission(args[0]);
+  return newRequireAdminPermission(permission);
 }
 
-export async function requireMinimumRoleLevel(...args: any[]) {
+export async function requireMinimumRoleLevel(minLevel: number) {
   console.warn('[ADMIN] requireMinimumRoleLevel from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { requireMinimumRoleLevel: newRequireMinimumRoleLevel } = await import('../server/canonical-auth');
-  return newRequireMinimumRoleLevel(args[0]);
+  return newRequireMinimumRoleLevel(minLevel);
 }
 
-export async function validateAdminAccess(...args: any[]) {
+export async function validateAdminAccess(options: {
+  permissions?: string[];
+  minRoleLevel?: number;
+  allowedRoles?: string[];
+}) {
   console.warn('[ADMIN] validateAdminAccess from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { validateAdminAccess: newValidateAdminAccess } = await import('../server/canonical-auth');
-  return newValidateAdminAccess(args[0]);
+  return newValidateAdminAccess(options);
 }
 
-export async function assertAdminUser(...args: any[]) {
+export async function assertAdminUser() {
   console.warn('[ADMIN] assertAdminUser from lib/auth/canonical.ts is deprecated. Use lib/server/canonical-auth.ts instead.');
   const { assertAdminUser: newAssertAdminUser } = await import('../server/canonical-auth');
   return newAssertAdminUser();
 }
 
 // Legacy function with feature flag
-export async function requireAdminAuthLegacy(...args: any[]) {
+export async function requireAdminAuthLegacy() {
   console.warn('[ADMIN] requireAdminAuthLegacy is deprecated and feature-flagged. Use requireAdminAuth instead.');
   const { requireAdminAuthLegacy: newRequireAdminAuthLegacy } = await import('../server/canonical-auth');
   return newRequireAdminAuthLegacy();

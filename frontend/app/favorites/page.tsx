@@ -59,7 +59,7 @@ function FavoritesPageContent() {
   };
 
   const handleCardClick = (restaurantId: string) => {
-    router.push(`/restaurant/${restaurantId}`);
+          router.push(`/eatery/${restaurantId}`);
   };
 
   // Show loading state while checking authentication

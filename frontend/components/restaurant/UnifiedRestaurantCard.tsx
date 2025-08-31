@@ -72,7 +72,7 @@ export default function UnifiedRestaurantCard({
     if (onCardClick) {
       onCardClick();
     } else {
-      router.push(`/restaurant/${restaurant.id}`);
+      router.push(`/eatery/${restaurant.id}`);
     }
   });
 

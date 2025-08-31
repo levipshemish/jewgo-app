@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useSupabase } from '@/lib/contexts/SupabaseContext';
 
 export interface FeatureFlag {
   enabled: boolean;
@@ -28,6 +29,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
     onError
   } = options;
 
+  const { session } = useSupabase();
   const [flags, setFlags] = useState<Record<string, FeatureFlag>>({});
   const [environment, setEnvironment] = useState<string>('');
   const [userId, setUserId] = useState<string | undefined>();
@@ -40,7 +42,18 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
       setError(null);
 
       const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
-      const response = await fetch(`${backendUrl}/api/feature-flags`);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Include authorization header if session is available
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
+      const response = await fetch(`${backendUrl}/api/feature-flags`, {
+        headers
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch feature flags: ${response.status}`);

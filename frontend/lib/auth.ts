@@ -110,7 +110,7 @@ export async function checkUserPermission(permission: Permission): Promise<boole
     return false;
   }
   
-  return user.isSuperAdmin || (user.permissions || []).includes(permission as Permission);
+  return user.isSuperAdmin || (user.permissions || []).includes(permission);
 }
 
 /**

@@ -1,5 +1,7 @@
 # Authentication System Implementation Guide
 
+> 🚨 **MIGRATION NOTICE:** This guide contains deprecated ADMIN_TOKEN and email-based authentication instructions. The application now uses **Supabase role-based authentication**. Please see [`docs/setup/ADMIN_SETUP.md`](../setup/ADMIN_SETUP.md) for current admin setup instructions.
+
 ## Overview
 
 JewGo now has a comprehensive authentication system that supports both **Supabase Auth** (primary) and **NextAuth.js** (fallback) across the entire application. This guide explains the implementation, configuration, and usage.
@@ -87,9 +89,15 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
-#### **Admin Configuration**
-```bash
-NEXT_PUBLIC_ADMIN_EMAIL=admin@jewgo.com
+#### **Admin Configuration** (🚨 DEPRECATED)
+
+**⚠️ DEPRECATED:** Email-based admin authentication is no longer used.
+
+**Current system:** Supabase role-based admin authentication
+```sql
+-- Set up admin roles in Supabase instead:
+INSERT INTO admin_roles (user_id, role, is_active, assigned_by, assigned_at)
+VALUES ('user-uuid', 'super_admin', true, 'system', NOW());
 ```
 
 ### **Database Setup**

@@ -1,24 +1,65 @@
-import { NextRequest } from 'next/server';
 import { createHash } from 'crypto';
 import { getRequestId } from './memo';
 
-// Runtime guard for Node-only features
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Security utilities require Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
+/**
+ * Assert Node.js runtime for admin operations
+ */
+export function assertNodeRuntime(): void {
+  if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
+    throw new Error('[ADMIN] Admin operations require Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
+  }
 }
 
-// Allowed origins for admin operations (include dev and prod variants)
-const ALLOWED_ORIGINS = new Set([
-  process.env.APP_ORIGIN!,
-  process.env.NEXT_PUBLIC_APP_URL!,
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://localhost:3000',
-  'https://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-  'https://127.0.0.1:3000'
-].filter(Boolean));
+/**
+ * Build allowed origins from environment variables with proper URL parsing
+ */
+function buildAllowedOrigins(): Set<string> {
+  const origins = new Set<string>();
+  
+  // Add base URLs from environment
+  const baseUrls = [
+    process.env.APP_ORIGIN,
+    process.env.NEXT_PUBLIC_APP_URL
+  ].filter(Boolean);
+  
+  baseUrls.forEach(url => {
+    try {
+      const parsed = new URL(url!);
+      // Add both http and https variants for localhost
+      if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+        origins.add(`http://${parsed.host}`);
+        origins.add(`https://${parsed.host}`);
+      } else {
+        origins.add(`${parsed.protocol}//${parsed.host}`);
+      }
+    } catch (error) {
+      console.warn(`[ADMIN] Invalid URL in environment: ${url}`);
+    }
+  });
+  
+  // Add common localhost variants
+  const localhostVariants = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://localhost:3000',
+    'https://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'https://127.0.0.1:3000'
+  ];
+  
+  localhostVariants.forEach(origin => origins.add(origin));
+  
+  // Log resolved origins in development
+  if (process.env.NODE_ENV === 'development') {
+    console.info('[ADMIN] Allowed origins:', Array.from(origins));
+  }
+  
+  return origins;
+}
+
+// Allowed origins for admin operations
+const ALLOWED_ORIGINS = buildAllowedOrigins();
 
 /**
  * Admin authentication error class
@@ -215,7 +256,7 @@ export function sanitizeLogData(data: Record<string, any>): Record<string, any> 
     }
   });
   
-  // Truncate long strings that might contain sensitive data
+  // Truncate long strings that might contain sensitive data (global size limit)
   Object.keys(sanitized).forEach(key => {
     if (typeof sanitized[key] === 'string' && sanitized[key].length > 200) {
       sanitized[key] = sanitized[key].slice(0, 200) + '...[truncated]';
@@ -284,6 +325,15 @@ export function validatePermissions(
     };
   }
   
+  // Treat empty array as authoritative (no permissions)
+  if (backendPermissions.length === 0) {
+    return { 
+      permissions: [], 
+      hasUnknown: false, 
+      fallbackUsed: false 
+    };
+  }
+  
   const validPermissions: string[] = [];
   const unknownPermissions: string[] = [];
   
@@ -307,7 +357,8 @@ export function validatePermissions(
     });
   }
   
-  if (validPermissions.length === 0) {
+  // Only fallback if we have no valid permissions and some invalid ones
+  if (validPermissions.length === 0 && unknownPermissions.length > 0) {
     secureLog('warn', 'ADMIN', {
       code: 'AUTHZ_PERMS_BACKEND_MISSING',
       requestId: getRequestId()

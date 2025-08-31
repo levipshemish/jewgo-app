@@ -1,10 +1,5 @@
 import 'server-only';
-import { AsyncLocalStorage } from 'async_hooks';
-
-// Runtime guard for Node-only features
-if (typeof process !== 'undefined' && process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('[ADMIN] Memo utilities require Node.js runtime. Add "export const runtime = \'nodejs\'" to your route.');
-}
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 // AsyncLocalStorage for per-request isolation
 const requestStore = new AsyncLocalStorage<Map<string, any>>();

@@ -492,6 +492,24 @@ def parse_sub_from_verified_token(token: str) -> Optional[str]:
         return None
 
 
+def parse_sub_unverified_payload(token: str) -> Optional[str]:
+    """
+    Parse sub claim from JWT token payload without signature verification.
+    This is used to avoid redundant JWT verification in role lookup.
+    Args:
+        token: JWT token to parse
+    Returns:
+        Sub claim value or None if parsing fails
+    """
+    try:
+        # Decode without verification to get the payload
+        payload = jwt.decode(token, options={"verify_signature": False})
+        return payload.get('sub')
+    except Exception as e:
+        logger.error(f"Error parsing sub from unverified payload: {e}")
+        return None
+
+
 # Global instance
 supabase_auth = SupabaseAuthManager()
 
@@ -532,7 +550,12 @@ def verify_supabase_admin_role(
             logger.error(f"role-manager-init-error: {e}")
             raise RoleLookupDependencyError("role-manager-init-failed")
         # Use optimized lookup to avoid JWT re-verification
-        role_data = role_manager.get_user_admin_role(token)
+        verified_sub = payload.get('sub')
+        if verified_sub:
+            role_data = role_manager.get_user_admin_role_checked(token, verified_sub)
+        else:
+            # Fallback to original method if sub is missing from payload
+            role_data = role_manager.get_user_admin_role(token)
         if role_data is None:
             # Dependency failure - raise to trigger 503
             raise RoleLookupDependencyError("role-lookup-failed")
@@ -562,8 +585,8 @@ def verify_supabase_admin_role(
 
 def _get_role_level(role: str) -> int:
     """Get numeric level for admin role."""
-    role_levels = {"moderator": 1, "data_admin": 2, "system_admin": 3, "super_admin": 4}
-    return role_levels.get(role, 0)
+    from utils.supabase_role_manager import ROLE_LEVELS
+    return ROLE_LEVELS.get(role, 0)
 
 
 def require_supabase_auth(f):
@@ -597,7 +620,7 @@ def require_supabase_auth(f):
         except AuthenticationError as e:
             req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex
             logger.warning(
-                f"AUTH_401_SIG: {e.message}", extra={"endpoint": request.endpoint, "request_id": req_id}
+                f"AUTH_401_SIG: {getattr(e, 'message', str(e))}", extra={"endpoint": request.endpoint, "request_id": req_id}
             )
             response = jsonify({"error": "unauthorized"})
             response.headers["WWW-Authenticate"] = 'Bearer realm="api"'

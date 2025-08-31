@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
-import { requireAdminOrThrow } from '@/lib/server/admin-auth';
-import { handleRoute } from '@/lib/server/route-helpers';
+import { requireAdminOrThrow, getAdminUser } from '@/lib/server/admin-auth';
+import { handleRoute, json } from '@/lib/server/route-helpers';
+import { getBackendUrl } from '@/lib/utils/apiRouteUtils';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   // Apply rate limiting
   const rateLimitResponse = await withRateLimit(request, rateLimitConfigs.api, 'restaurant-detail');
@@ -18,19 +19,19 @@ export async function GET(
     return rateLimitResponse;
   }
 
-  const { id } = await params;
+  const { id } = params;
   try {
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'Invalid restaurant ID'
-      }, { status: 400 });
+      }, 400);
     }
 
     // Fetch restaurant data from backend
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
     const response = await fetch(apiUrl, {
@@ -45,7 +46,7 @@ export async function GET(
         if (response.status >= 500) {
           try {
             // Fetch all restaurants and find the one we need
-            const restaurantsResponse = await fetch(`${backendUrl}/api/restaurants?limit=1000`, {
+            const restaurantsResponse = await fetch(`${getBackendUrl()}/api/restaurants?limit=1000`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ export async function GET(
               
               if (restaurant) {
                 const sanitizedRestaurant = sanitizeRestaurantData([restaurant])[0];
-                return NextResponse.json({
+                return json({
                   success: true,
                   data: sanitizedRestaurant,
                   fallback: true,
@@ -124,7 +125,7 @@ export async function GET(
         };
 
         const sanitizedMock = sanitizeRestaurantData([mockRestaurant]);
-        return NextResponse.json({
+        return json({
           success: true,
           data: sanitizedMock[0],
           fallback: true,
@@ -133,10 +134,10 @@ export async function GET(
       }
       
       // For other errors (404, 400), return the error
-      return NextResponse.json({
+      return json({
         success: false,
         message: `Restaurant not found`
-      }, { status: response.status });
+      }, response.status);
     }
 
     const data = await response.json();
@@ -153,16 +154,16 @@ export async function GET(
     }
 
     if (!restaurant) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'Invalid restaurant data received'
-      }, { status: 500 });
+      }, 500);
     }
 
     // Sanitize image URLs before returning
     const sanitizedRestaurant = sanitizeRestaurantData([restaurant])[0];
 
-    return NextResponse.json({
+    return json({
       success: true,
       data: sanitizedRestaurant
     });
@@ -203,47 +204,59 @@ export async function GET(
     };
 
     const sanitizedMock = sanitizeRestaurantData([mockRestaurant]);
-    return NextResponse.json({
+    return json({
       success: true,
       data: sanitizedMock[0],
       fallback: true,
       message: 'Using fallback data - network error'
-    }, { status: 200 });
+    }, 200);
   }
 }
 
 export async function PUT(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   return handleRoute(async () => {
     const admin = await requireAdminOrThrow(request);
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'Invalid restaurant ID'
-      }, { status: 400 });
+      }, 400);
     }
 
     const body = await request.json();
 
-    // Validate required fields
-    if (!body.name || !body.address || !body.phone) {
-      return NextResponse.json({
+    // Validate required fields - accept both phone and phone_number for compatibility
+    if (!body.name || !body.address || (!body.phone && !body.phone_number)) {
+      return json({
         success: false,
         message: 'Name, address, and phone are required fields'
-      }, { status: 400 });
+      }, 400);
     }
 
+    // Normalize phone field to phone_number for backend consistency
+    const normalizedBody = {
+      ...body,
+      phone_number: body.phone_number || body.phone
+    };
+    // Remove the old phone field if it exists to avoid confusion
+    delete normalizedBody.phone;
+
     // Update restaurant data via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Forward the user's authorization header to backend
-    const authHeader = request.headers.get('Authorization');
+    // Use admin JWT for backend authorization
+    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
+    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
+    // The backend expects a specific admin JWT format, not the Supabase access token.
+    // As a fallback, we could support forwarding: request.headers.get('Authorization')
+    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
 
     const response = await fetch(apiUrl, {
       method: 'PUT',
@@ -252,27 +265,27 @@ export async function PUT(
         ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify({
-        ...body,
+        ...normalizedBody,
         updated_at: new Date().toISOString()
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json({
+      return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, { status: response.status });
+      }, response.status);
     }
 
     const result = await response.json();
 
-    return NextResponse.json({
+    return json({
       success: true,
       message: 'Restaurant updated successfully',
       data: result.data || {
         id: restaurantId,
-        ...body,
+        ...normalizedBody,
         updated_at: new Date().toISOString()
       }
     });
@@ -281,26 +294,30 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   return handleRoute(async () => {
     const admin = await requireAdminOrThrow(request);
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'Invalid restaurant ID'
-      }, { status: 400 });
+      }, 400);
     }
 
     // Delete restaurant via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Forward the user's authorization header to backend
-    const authHeader = request.headers.get('Authorization');
+    // Use admin JWT for backend authorization
+    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
+    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
+    // The backend expects a specific admin JWT format, not the Supabase access token.
+    // As a fallback, we could support forwarding: request.headers.get('Authorization')
+    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
 
     const response = await fetch(apiUrl, {
       method: 'DELETE',
@@ -312,15 +329,15 @@ export async function DELETE(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json({
+      return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, { status: response.status });
+      }, response.status);
     }
 
     const result = await response.json();
 
-    return NextResponse.json({
+    return json({
       success: true,
       message: 'Restaurant deleted successfully',
       data: result.data || {
@@ -333,36 +350,40 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   return handleRoute(async () => {
     const admin = await requireAdminOrThrow(request);
-    const { id } = await params;
+    const { id } = params;
     const restaurantId = parseInt(id);
     
     if (isNaN(restaurantId)) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'Invalid restaurant ID'
-      }, { status: 400 });
+      }, 400);
     }
 
     const body = await request.json();
 
     // Validate that at least one field is provided
     if (Object.keys(body).length === 0) {
-      return NextResponse.json({
+      return json({
         success: false,
         message: 'At least one field must be provided for update'
-      }, { status: 400 });
+      }, 400);
     }
 
     // Partial update restaurant data via backend API
-    const backendUrl = process.env['NEXT_PUBLIC_BACKEND_URL'] || 'https://jewgo-app-oyoh.onrender.com';
+    const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Forward the user's authorization header to backend
-    const authHeader = request.headers.get('Authorization');
+    // Use admin JWT for backend authorization
+    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
+    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
+    // The backend expects a specific admin JWT format, not the Supabase access token.
+    // As a fallback, we could support forwarding: request.headers.get('Authorization')
+    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
 
     const response = await fetch(apiUrl, {
       method: 'PATCH',
@@ -378,15 +399,15 @@ export async function PATCH(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json({
+      return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
-      }, { status: response.status });
+      }, response.status);
     }
 
     const result = await response.json();
 
-    return NextResponse.json({
+    return json({
       success: true,
       message: 'Restaurant partially updated successfully',
       data: result.data || {

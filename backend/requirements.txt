@@ -20,7 +20,6 @@ sentry-sdk==2.35.0
 
 # Utilities
 requests==2.31.0
-pytz==2023.3
 structlog==24.1.0
 python-dateutil==2.8.2
 playwright==1.54.0

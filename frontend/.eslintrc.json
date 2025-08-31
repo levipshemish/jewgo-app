@@ -34,7 +34,32 @@
     "no-redeclare": "warn",
     "no-shadow": "warn",
     "no-shadow-restricted-names": "warn",
-    "react/no-unescaped-entities": "warn"
+    "react/no-unescaped-entities": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/lib/utils/admin",
+            "message": "Import from '@/lib/server/admin-utils' for server components or use 'useAuth' hook for client components. See migration guide in lib/utils/admin.ts"
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["@/lib/utils/admin/*"],
+            "message": "Import from '@/lib/server/admin-utils' for server components or use 'useAuth' hook for client components. See migration guide in lib/utils/admin.ts"
+          },
+          {
+            "group": ["@/lib/server/**"],
+            "message": "Server-only modules cannot be imported in client components. Use 'use server' directive or move to server components. See migration guide in docs/MIGRATION.md"
+          },
+          {
+            "group": ["@/lib/admin/**"],
+            "message": "Admin modules cannot be imported in client components. Use 'use server' directive or move to server components. See migration guide in docs/MIGRATION.md"
+          }
+        ]
+      }
+    ]
   },
   "env": {
     "browser": true,

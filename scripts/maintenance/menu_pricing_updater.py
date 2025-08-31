@@ -4,7 +4,7 @@ Menu Pricing Updater
 Updates restaurants with detailed menu section pricing information.
 """
 
-import sqlite3
+import psycopg2
 import json
 import logging
 from typing import Dict, List, Any, Optional
@@ -17,13 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class MenuPricingUpdater:
-    def __init__(self, db_path: str = "restaurants.db"):
-        self.db_path = db_path
+    def __init__(self, database_url: str = None):
+        self.database_url = database_url or os.getenv("DATABASE_URL")
 
     def connect_db(self):
         """Connect to the database."""
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            self.conn = psycopg2.connect(self.database_url)
             self.cursor = self.conn.cursor()
             return True
         except Exception as e:

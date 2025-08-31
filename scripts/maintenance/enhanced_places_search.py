@@ -4,7 +4,7 @@ Enhanced Google Places Search
 Tries multiple search strategies to find restaurants that failed with the original approach.
 """
 
-import sqlite3
+import psycopg2
 import requests
 import time
 import logging
@@ -24,14 +24,14 @@ logger = logging.getLogger(__name__)
 
 
 class EnhancedPlacesSearch:
-    def __init__(self, db_path: str = "restaurants.db", api_key: str = None):
-        self.db_path = db_path
+    def __init__(self, database_url: str = None, api_key: str = None):
+        self.database_url = database_url or os.getenv("DATABASE_URL")
         self.api_key = api_key or "your_google_places_api_key_here"
 
     def connect_db(self):
         """Connect to the database."""
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            self.conn = psycopg2.connect(self.database_url)
             self.cursor = self.conn.cursor()
             return True
         except Exception as e:

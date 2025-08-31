@@ -9,11 +9,10 @@ export async function GET(request: NextRequest) {
   return handleRoute(async () => {
     const admin = await requireAdminOrThrow(request);
     
-    // Build backend URL
-    const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/available`;
-    
     try {
       // Forward request to backend
+      const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/available`;
+      
       const response = await fetch(backendUrl, {
         method: 'GET',
         headers: {
@@ -22,16 +21,30 @@ export async function GET(request: NextRequest) {
         },
       });
       
+      const status = response.status;
+      const payload = await response.json().catch(() => ({}));
+      
       if (!response.ok) {
-        const status = response.status;
-        const payload = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        return NextResponse.json(payload, { status });
+        const err = typeof payload === 'object' && payload ? payload : { error: 'Failed to fetch available roles' };
+        return NextResponse.json(
+          {
+            success: false,
+            error: err.error || 'Failed to fetch available roles',
+            message: err.message || 'Request failed',
+            status_code: status,
+          },
+          { status }
+        );
       }
-      
-      const data = await response.json();
-      
-      // Return backend response directly since it already has the correct format
-      return NextResponse.json(data);
+
+      // Normalize response to { success, data, message } format
+      if (payload && payload.success === true && payload.data) {
+        return NextResponse.json(payload);
+      }
+      if (payload && Array.isArray(payload)) {
+        return NextResponse.json({ success: true, data: payload, message: 'Success' });
+      }
+      return NextResponse.json({ success: true, data: payload, message: 'Success' });
       
     } catch (error) {
       console.error('Error fetching available roles:', error);
@@ -39,7 +52,8 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: 'Failed to fetch available roles',
-          details: error instanceof Error ? error.message : 'Unknown error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          status_code: 503,
         },
         { status: 503 }
       );

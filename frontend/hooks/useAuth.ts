@@ -157,6 +157,14 @@ export function useAuth() {
           });
           dispatch({ type: 'SET_USER', payload: transformedUser });
           dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+        } else if (event === 'USER_UPDATED' && session?.user) {
+          // Update user details after profile change
+          const transformedUser = await transformSupabaseUser(session.user, {
+            includeRoles: !!session?.access_token,
+            userToken: session?.access_token || undefined
+          });
+          dispatch({ type: 'SET_USER', payload: transformedUser });
+          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
         }
       }
     );

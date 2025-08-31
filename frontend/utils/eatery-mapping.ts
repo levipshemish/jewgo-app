@@ -81,13 +81,17 @@ function formatRating(rating?: number): string {
  */
 export function mapEateryToListingData(
   eatery: EateryDB, 
-  userLocation?: UserLocation | null
+  userLocation?: UserLocation | null,
+  reviews?: any[],
+  onLocationRequest?: () => void,
+  locationPermission?: 'granted' | 'denied' | 'prompt' | 'unknown'
 ): ListingData {
-  return {
+  const result = {
     // Header Section - Remove title from header, only show kosher info and stats
     header: {
       kosherType: eatery.kosher_type,
       kosherAgency: eatery.kosher_agency,
+      viewCount: eatery.stats.view_count,
       shareCount: eatery.stats.share_count,
       onBack: () => {
         // This would typically use Next.js router
@@ -101,49 +105,49 @@ export function mapEateryToListingData(
 
     // Image Section
     image: {
-      imageUrl: eatery.image_url, // Main image
-      imageAlt: `${eatery.name} restaurant`,
-      imageActionLabel: "View Gallery",
-      images: [eatery.image_url, ...(eatery.additional_images || [])], // Pass all images for carousel
-      viewCount: eatery.stats.view_count, // Pass view count for image overlay
+      src: eatery.image_url || '/placeholder-eatery.jpg',
+      alt: `${eatery.name} - ${eatery.kosher_type || 'Kosher'} Restaurant`,
+      allImages: eatery.additional_images || [eatery.image_url].filter(Boolean),
     },
 
     // Content Section
     content: {
-      leftText: eatery.name, // Will be bolded in component
+      leftText: eatery.name,
       rightText: formatRating(eatery.rating),
-      leftActionLabel: formatPriceRange(eatery.price_range),
-      rightActionLabel: userLocation ? formatDistance(calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, { latitude: userLocation.lat, longitude: userLocation.lng })) : undefined,
-      leftIcon: undefined,
-      rightIcon: undefined, // Remove icon from rating line
+      leftAction: formatPriceRange(eatery.price_range),
+      rightAction: userLocation && eatery.latitude && eatery.longitude ? calculateDistance({ latitude: eatery.latitude, longitude: eatery.longitude }, userLocation) : undefined,
+      rightIcon: "map-pin",
+      onRightAction: onLocationRequest,
+      leftBold: true,
+      leftTextSize: 'lg',
     },
 
     // Actions Section
     actions: {
-      // Primary Action (Order Now - conditional)
-      primaryAction: eatery.is_open ? {
+      // Primary Action - Order button if restaurant has order functionality enabled
+      primaryAction: eatery.admin_settings?.show_order_button ? {
         label: "Order Now",
-        onClick: () => handleOrder(eatery.website_url),
+        onClick: () => handleOrder(eatery.admin_settings?.order_url || eatery.contact?.website || ''),
       } : undefined,
 
       // Secondary Actions - Website, Call, Email in order
       secondaryActions: [
-        ...(eatery.website_url ? [{
+        ...(eatery.contact?.website ? [{
           label: "Website",
-          onClick: () => window.open(eatery.website_url, '_blank'),
+          onClick: () => window.open(eatery.contact.website, '_blank'),
         }] : []),
-        ...(eatery.phone_number ? [{
+        ...(eatery.contact?.phone ? [{
           label: "Call",
-          onClick: () => window.location.href = `tel:${eatery.phone_number}`,
+          onClick: () => window.location.href = `tel:${eatery.contact.phone}`,
         }] : []),
-        {
+        ...(eatery.contact?.email ? [{
           label: "Email",
-          onClick: () => handleEmail(eatery.email),
-        },
+          onClick: () => handleEmail(eatery.contact.email),
+        }] : []),
       ].slice(0, 3), // Max 3 secondary actions
 
       // Kosher Tags
-      kosherTags: [
+      tags: [
         eatery.kosher_type,
         eatery.kosher_agency,
         eatery.kosher_certification,
@@ -160,13 +164,33 @@ export function mapEateryToListingData(
           title: eatery.name,
           hours: formatHoursForPopup(eatery.hours)
         }
-      }
+      },
+
+      // Location request handler
+      onLocationRequest: onLocationRequest,
     },
 
     // Additional sections
     address: eatery.address,
-    description: eatery.short_description
+    description: eatery.short_description,
+                    reviews: reviews?.map(review => ({
+                  id: review.id?.toString() || review.review_id?.toString() || Math.random().toString(),
+                  user: review.user_name || review.author_name || review.user || 'Anonymous',
+                  rating: review.rating || 0,
+                  comment: review.content || review.text || review.comment || '',
+                  date: review.created_at || review.time || review.date || new Date().toISOString(),
+                  source: review.source || 'user', // 'user' or 'google'
+                  profile_photo_url: review.profile_photo_url || null,
+                  relative_time_description: review.relative_time_description || null
+                })) || [],
+                reviewsPagination: undefined, // Will be set by the page component
+                onLoadMoreReviews: undefined, // Will be set by the page component
+                reviewsLoading: false
   }
+  
+  console.log('Mapping reviews:', reviews)
+  console.log('Mapped reviews:', result.reviews)
+  return result
 }
 
 /**
@@ -183,10 +207,39 @@ function formatHoursForPopup(hours: EateryDB['hours']): Array<{ day: string; tim
     sunday: 'Sunday'
   }
 
-  return Object.entries(hours).map(([day, time]) => ({
-    day: dayNames[day as keyof typeof dayNames] || day,
-    time: time
-  }))
+  // Check if this is the "no hours available" case
+  const hasNoHoursData = Object.values(hours).every(day => 
+    !day.closed && !day.open && !day.close
+  );
+
+  if (hasNoHoursData) {
+    return [{
+      day: 'Hours',
+      time: 'No hours available'
+    }];
+  }
+
+  return Object.entries(hours).map(([day, timeData]) => {
+    const dayName = dayNames[day as keyof typeof dayNames] || day;
+    
+    // Handle the time data object structure
+    if (timeData.closed) {
+      return {
+        day: dayName,
+        time: 'Closed'
+      };
+    } else if (timeData.open && timeData.close) {
+      return {
+        day: dayName,
+        time: `${timeData.open} - ${timeData.close}`
+      };
+    } else {
+      return {
+        day: dayName,
+        time: 'Hours not available'
+      };
+    }
+  })
 }
 
 /**
@@ -199,31 +252,43 @@ export function createMockEateryData(): EateryDB {
     description: "A wonderful kosher restaurant serving delicious traditional and modern Jewish cuisine.",
     short_description: "Authentic kosher dining experience",
     address: "123 Main Street, New York, NY 10001",
+    city: "New York",
+    state: "NY",
+    zip_code: "10001",
+    phone_number: "+1-555-123-4567",
     rating: 4.5,
     price_range: "$$",
     kosher_type: "Glatt Kosher",
     kosher_agency: "OU",
     kosher_certification: "Pas Yisroel",
-    is_open: true,
+    listing_type: "restaurant",
     image_url: "/modern-product-showcase-with-clean-background.png",
     additional_images: [
       "/placeholder.svg?height=400&width=400",
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: "9:00 AM - 10:00 PM",
-      tuesday: "9:00 AM - 10:00 PM",
-      wednesday: "9:00 AM - 10:00 PM",
-      thursday: "9:00 AM - 11:00 PM",
-      friday: "9:00 AM - 3:00 PM",
-      saturday: "Closed",
-      sunday: "10:00 AM - 9:00 PM",
+      monday: { open: "9:00 AM", close: "10:00 PM" },
+      tuesday: { open: "9:00 AM", close: "10:00 PM" },
+      wednesday: { open: "9:00 AM", close: "10:00 PM" },
+      thursday: { open: "9:00 AM", close: "11:00 PM" },
+      friday: { open: "9:00 AM", close: "3:00 PM" },
+      saturday: { open: "Closed", close: "Closed", closed: true },
+      sunday: { open: "10:00 AM", close: "9:00 PM" },
     },
-    phone_number: "+1-555-123-4567",
-    email: "info@kosherdelight.com",
-    website_url: "https://kosherdelight.com",
-    latitude: 40.7128,
-    longitude: -74.0060,
+    contact: {
+      phone: "+1-555-123-4567",
+      email: "info@kosherdelight.com",
+      website: "https://kosherdelight.com",
+    },
+    location: {
+      latitude: 40.7128,
+      longitude: -74.0060,
+    },
+    admin_settings: {
+      show_order_button: true,
+      order_url: "https://kosherdelight.com/order",
+    },
     stats: {
       view_count: 1250,
       share_count: 89,
@@ -241,30 +306,40 @@ export function createMockEateryDataNoEmail(): EateryDB {
     description: "Delicious kosher pizza and Italian cuisine.",
     short_description: "Kosher pizza and Italian food",
     address: "456 Oak Avenue, Brooklyn, NY 11201",
+    city: "Brooklyn",
+    state: "NY",
+    zip_code: "11201",
+    phone_number: "+1-555-987-6543",
     rating: 4.2,
     price_range: "$",
     kosher_type: "Dairy",
     kosher_agency: "Kof-K",
     kosher_certification: "Cholov Yisroel",
-    is_open: false, // No order button
+    listing_type: "restaurant",
     image_url: "/placeholder.svg?height=400&width=400",
     additional_images: [
       "/placeholder.svg?height=400&width=400",
     ],
     hours: {
-      monday: "11:00 AM - 9:00 PM",
-      tuesday: "11:00 AM - 9:00 PM",
-      wednesday: "11:00 AM - 9:00 PM",
-      thursday: "11:00 AM - 9:00 PM",
-      friday: "11:00 AM - 3:00 PM",
-      saturday: "Closed",
-      sunday: "12:00 PM - 8:00 PM",
+      monday: { open: "11:00 AM", close: "9:00 PM" },
+      tuesday: { open: "11:00 AM", close: "9:00 PM" },
+      wednesday: { open: "11:00 AM", close: "9:00 PM" },
+      thursday: { open: "11:00 AM", close: "9:00 PM" },
+      friday: { open: "11:00 AM", close: "3:00 PM" },
+      saturday: { open: "Closed", close: "Closed", closed: true },
+      sunday: { open: "12:00 PM", close: "8:00 PM" },
     },
-    phone_number: "+1-555-987-6543",
-    email: undefined, // No email for testing
-    website_url: "https://shalompizza.com",
-    latitude: 40.7589,
-    longitude: -73.9851,
+    contact: {
+      phone: "+1-555-987-6543",
+      website: "https://shalompizza.com",
+    },
+    location: {
+      latitude: 40.7589,
+      longitude: -73.9851,
+    },
+    admin_settings: {
+      show_order_button: false,
+    },
     stats: {
       view_count: 890,
       share_count: 45,

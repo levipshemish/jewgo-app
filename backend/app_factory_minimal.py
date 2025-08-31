@@ -14,6 +14,23 @@ logger = logging.getLogger(__name__)
 def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
+    
+    # Pre-warm JWKS and schedule refresh at startup
+    try:
+        from utils.supabase_auth import supabase_auth
+        supabase_auth.pre_warm_jwks()
+        supabase_auth.schedule_jwks_refresh()
+    except Exception:
+        # Keep minimal factory resilient if optional deps missing
+        pass
+    
+    # Start role cache invalidation listener (if enabled and deps present)
+    try:
+        from utils.supabase_role_manager import get_role_manager
+        rm = get_role_manager()
+        rm.start_cache_invalidation_listener()
+    except Exception:
+        pass
     # Configure CORS
     CORS(
         app,
@@ -103,6 +120,16 @@ def create_app():
             ),
             500,
         )
+
+    # Register teardown handler to clear user context
+    try:
+        from utils.security import clear_user_context
+
+        @app.teardown_request
+        def _teardown(req_or_exc):
+            return clear_user_context(req_or_exc)
+    except Exception:
+        pass
 
     logger.info("JewGo Backend application created successfully")
     return app

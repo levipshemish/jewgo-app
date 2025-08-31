@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 """
-Generate Admin Token Script
+🚨 DEPRECATED: Generate Admin Token Script
 
-This script generates a secure admin token for the JewGo application.
-The token can be used to authenticate admin API requests.
+⚠️  WARNING: This script is DEPRECATED and should not be used in production.
 
-Usage:
+This script generates static admin tokens, which are less secure than the new
+Supabase JWT-based role authentication system.
+
+🔄 MIGRATION: Use Supabase Admin Roles Instead
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Set up Supabase admin roles in your database:
+   INSERT INTO admin_roles (user_id, role, is_active) 
+   VALUES ('your-user-id', 'super_admin', true);
+
+2. Users authenticate via Supabase (Google, email, etc.)
+3. Admin access is determined by roles in admin_roles table
+4. JWTs are automatically validated by the backend
+
+For setup instructions, see:
+- docs/setup/ADMIN_SETUP.md
+- docs/authentication/SUPABASE_ROLES.md
+
+🚫 This script will be removed in the next version.
+
+Legacy Usage:
     python scripts/generate_admin_token.py
 """
 
@@ -33,7 +52,31 @@ def generate_admin_token():
 
 def main():
     """Main function to generate and display admin token."""
-    print("🔐 Generating Admin Token for JewGo Application")
+    print("🚨 DEPRECATED: Admin Token Generator")
+    print("⚠️  This script is deprecated. Use Supabase admin roles instead.")
+    print("\n" + "=" * 60)
+    print("📖 MIGRATION GUIDE: Supabase Role-Based Authentication")
+    print("=" * 60)
+    print("")
+    print("Instead of using static tokens, set up Supabase admin roles:")
+    print("")
+    print("1. Create admin role in Supabase:")
+    print("   INSERT INTO admin_roles (user_id, role, is_active, assigned_by, assigned_at)")
+    print("   VALUES ('user-uuid', 'super_admin', true, 'system', NOW());")
+    print("")
+    print("2. User signs in via Supabase (Google, email, etc.)")
+    print("3. Backend validates JWT and checks admin_roles table")
+    print("4. No static tokens needed - more secure & trackable")
+    print("")
+    print("See docs/setup/ADMIN_SETUP.md for complete setup guide.")
+    print("\n" + "=" * 60)
+    print("")
+    response = input("⚠️  Continue generating deprecated token? (y/N): ")
+    if response.lower() not in ['y', 'yes']:
+        print("✅ Cancelled. Please migrate to Supabase admin roles.")
+        return None
+    print("")
+    print("🔐 Generating DEPRECATED Admin Token")
     print("=" * 50)
     
     # Generate token
@@ -45,9 +88,11 @@ def main():
     print(f"📋 Type: {token_info['type']}")
     print(f"🔓 Permissions: {', '.join(token_info['permissions'])}")
     
-    print("\n" + "=" * 50)
-    print("📝 SETUP INSTRUCTIONS:")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("📝 DEPRECATED SETUP INSTRUCTIONS:")
+    print("⚠️  These instructions are for legacy systems only!")
+    print("🔄 Migrate to Supabase admin roles for production use.")
+    print("=" * 60)
     
     print("1. Backend Environment (.env):")
     print(f"   ADMIN_TOKEN={token_info['token']}")
@@ -63,13 +108,23 @@ def main():
     print(f"     -H 'Authorization: Bearer {token_info['token']}' \\")
     print(f"     -H 'Content-Type: application/json'")
     
-    print("\n" + "=" * 50)
-    print("⚠️  SECURITY NOTES:")
-    print("=" * 50)
-    print("• Keep this token secure and confidential")
-    print("• Don't commit it to version control")
-    print("• Rotate the token regularly")
-    print("• Use different tokens for different environments")
+    print("\n" + "=" * 60)
+    print("🚨 SECURITY & MIGRATION NOTES:")
+    print("=" * 60)
+    print("⚠️  DEPRECATED TOKEN - SECURITY RISKS:")
+    print("• Static tokens cannot be easily revoked")
+    print("• No user tracking or audit trail")
+    print("• Manual rotation required")
+    print("• Single point of failure")
+    print("")
+    print("✅ SUPABASE ADMIN ROLES - SECURE ALTERNATIVE:")
+    print("• JWT tokens automatically expire")
+    print("• Full user audit trail")
+    print("• Granular role management")
+    print("• Easy revocation via database")
+    print("• Integration with OAuth providers")
+    print("")
+    print("🔄 MIGRATE NOW: See docs/setup/ADMIN_SETUP.md")
     
     # Save token info to file (optional)
     try:

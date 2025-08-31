@@ -74,6 +74,14 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
     try {
       setLoading(true);
       
+      // Guard against admin context - admins don't have real store data
+      if (storeData.is_admin) {
+        setOrders([]);
+        setTotalPages(1);
+        setLoading(false);
+        return;
+      }
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
@@ -95,6 +103,11 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot update orders in mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
@@ -114,6 +127,11 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
 
   const handleUpdateTracking = async (orderId: string, trackingNumber: string) => {
     try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        throw new Error('Admin users cannot update tracking in mock store');
+      }
+      
       const response = await fetch(`/api/shtel/store/${storeData.store_id}/orders/${orderId}/tracking`, {
         method: 'PUT',
         headers: {

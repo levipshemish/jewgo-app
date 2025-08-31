@@ -133,13 +133,10 @@ export default function RootLayout({
             <NotificationsProvider>
               <LocationProvider>
                 <div 
-                    className="min-h-full bg-[#f4f4f4] flex flex-col"
+                    className="min-h-full flex flex-col"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
-                      WebkitTouchCallout: 'none',
-                      WebkitUserSelect: 'none',
-                      userSelect: 'none',
-                      touchAction: 'manipulation'
+                      WebkitTouchCallout: 'none'
                     }}
                   >
                     <RelayEmailBanner />

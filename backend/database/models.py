@@ -66,6 +66,8 @@ class Restaurant(Base):
     listing_type = Column(String(100), nullable=False)  # Business category
     # 📍 Enriched via Google Places API (on creation or scheduled)
     google_listing_url = Column(String(500))  # Optional (1-time fetch)
+    place_id = Column(String(255))  # Google Places place ID for fetching reviews
+    google_reviews = Column(Text)  # JSONB for recent reviews (limited)
     price_range = Column(String(20))  # Optional
     short_description = Column(Text)  # Optional (e.g. from GMB or internal AI)
     hours_of_operation = Column(Text)  # Optional (check every 7 days)
@@ -190,6 +192,33 @@ class Review(Base):
     verified_purchase = Column(Boolean, nullable=False, default=False)
     helpful_count = Column(Integer, nullable=False, default=0)
     report_count = Column(Integer, nullable=False, default=0)
+
+
+class GoogleReview(Base):
+    """Google Review model for storing Google Places reviews.
+    This model represents Google reviews fetched from Google Places API.
+    These reviews are read-only and updated via scheduled jobs.
+    """
+    __tablename__ = "google_reviews"
+    id = Column(String(50), primary_key=True)
+    restaurant_id = Column(Integer, nullable=False)
+    place_id = Column(String(255), nullable=False)
+    google_review_id = Column(String(255), nullable=False)  # Google's review ID
+    author_name = Column(String(255), nullable=False)
+    author_url = Column(String(500), nullable=True)  # Google profile URL
+    profile_photo_url = Column(String(500), nullable=True)
+    rating = Column(Integer, nullable=False)
+    text = Column(Text, nullable=True)  # Review text
+    time = Column(DateTime, nullable=False)  # Google timestamp
+    relative_time_description = Column(String(100), nullable=True)  # "2 weeks ago"
+    language = Column(String(10), nullable=True)  # Review language
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+        nullable=False,
+    )
 class RestaurantImage(Base):
     """Restaurant Image model for multiple images per restaurant.
     This model represents the restaurant_images table that stores

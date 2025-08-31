@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { requireAdminUser } from '@/lib/server/admin-auth';
+import type { AdminUser } from '@/lib/admin/types';
 import RoleManagementTable from '@/components/admin/RoleManagementTable';
 
 // Force dynamic rendering for admin routes to prevent static generation issues
@@ -16,7 +18,7 @@ export default async function RoleManagementPage() {
   const admin = await requireAdminUser();
   
   // Only super_admin users can access role management
-  if (admin.role !== 'super_admin') {
+  if (admin.adminRole !== 'super_admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
@@ -48,15 +50,16 @@ export default async function RoleManagementPage() {
   let initialData = { users: [], total: 0, page: 1, limit: 50, has_more: false };
   
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/roles?limit=50`, {
-      headers: {
-        'Cookie': `auth-token=${admin.token}`, // Pass token via cookie for server-side auth
-      },
+    const response = await fetch(new URL('/api/admin/roles?limit=50', process.env.NEXT_PUBLIC_APP_URL), { 
+      cache: 'no-store',
+      headers: headers() // Include auth context from Next.js headers
     });
     
     if (response.ok) {
       const data = await response.json();
       initialData = data.data || initialData;
+    } else {
+      console.warn('Failed to fetch initial role data:', response.status, response.statusText);
     }
   } catch (error) {
     console.error('Error fetching initial role data:', error);

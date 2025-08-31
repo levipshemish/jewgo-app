@@ -184,14 +184,12 @@ class DatabaseConnectionManager:
         """Setup SQLAlchemy connection event listeners."""
 
         @event.listens_for(engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            """Set SQLite pragmas for better performance."""
-            if engine.dialect.name == "sqlite":
+        def set_postgresql_optimizations(dbapi_connection, connection_record):
+            """Set PostgreSQL optimizations for better performance."""
+            if engine.dialect.name == "postgresql":
                 cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-                cursor.execute("PRAGMA cache_size=10000")
-                cursor.execute("PRAGMA temp_store=MEMORY")
+                cursor.execute("SET statement_timeout = 30000")  # 30 seconds
+                cursor.execute("SET idle_in_transaction_session_timeout = 60000")  # 60 seconds
                 cursor.close()
 
         @event.listens_for(engine, "checkout")

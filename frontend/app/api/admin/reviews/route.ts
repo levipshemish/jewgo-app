@@ -10,15 +10,18 @@ import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { v4 as uuidv4 } from 'uuid';
+import { handleRoute, json } from '@/lib/server/route-helpers';
+import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+
+// Ensure Node.js runtime for admin auth
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  try {
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  return handleRoute(async () => {
+    const adminUser = await requireAdminOrThrow(request);
+    
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_VIEW)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return json({ error: 'Insufficient permissions' }, 403);
     }
 
     const { searchParams } = new URL(request.url);
@@ -40,18 +43,12 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json(result);
-  } catch (error) {
-    adminLogger.error('Review list error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
-      { status: 500 }
-    );
-  }
+    return json(result);
+  });
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
     if (rateLimitResponse) {
@@ -59,20 +56,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const adminUser = await requireAdminOrThrow(request);
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_MODERATE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return json({ error: 'Insufficient permissions' }, 403);
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return json({ error: 'Forbidden', code: 'CSRF' }, 403);
     }
 
     // Parse request body
@@ -99,29 +93,26 @@ export async function POST(request: NextRequest) {
       'review',
       toCreate,
       adminUser,
-      'review'
+      'review',
+      false
     );
 
-    return NextResponse.json({ data: review }, { status: 201 });
-  } catch (error) {
-    adminLogger.error('Review create error', { error: String(error) });
-    
-    if ((error as any).name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Failed to create review' },
-      { status: 500 }
+    // Log admin action
+    await logAdminAction(
+      adminUser.id,
+      'CREATE',
+      ENTITY_TYPES.REVIEW,
+      review.id,
+      toCreate,
+      AUDIT_FIELD_ALLOWLISTS.REVIEW
     );
-  }
+
+    return json({ success: true, data: review });
+  });
 }
 
 export async function PUT(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
     if (rateLimitResponse) {
@@ -129,20 +120,17 @@ export async function PUT(request: NextRequest) {
     }
 
     // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const adminUser = await requireAdminOrThrow(request);
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_MODERATE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return json({ error: 'Insufficient permissions' }, 403);
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return json({ error: 'Forbidden', code: 'CSRF' }, 403);
     }
 
     // Parse request body
@@ -150,7 +138,7 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return json({ error: 'Review ID is required' }, 400);
     }
 
     // Validate data (update operation)
@@ -169,26 +157,12 @@ export async function PUT(request: NextRequest) {
       'review'
     );
 
-    return NextResponse.json({ data: review });
-  } catch (error) {
-    adminLogger.error('Review update error', { error: String(error) });
-    
-    if ((error as any).name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: validationUtils.formatValidationErrors(error as any) },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Failed to update review' },
-      { status: 500 }
-    );
-  }
+    return json({ data: review });
+  });
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
+  return handleRoute(async () => {
     // Apply rate limiting
     const rateLimitResponse = await rateLimit(RATE_LIMITS.STRICT)(request);
     if (rateLimitResponse) {
@@ -196,20 +170,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Authenticate admin user
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const adminUser = await requireAdminOrThrow(request);
 
     // Check permissions
     if (!hasPermission(adminUser, ADMIN_PERMISSIONS.REVIEW_DELETE)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      return json({ error: 'Insufficient permissions' }, 403);
     }
 
     // Validate CSRF token
     const headerToken = request.headers.get('x-csrf-token');
     if (!headerToken || !validateSignedCSRFToken(headerToken, adminUser.id)) {
-      return NextResponse.json({ error: 'Forbidden', code: 'CSRF' }, { status: 403 });
+      return json({ error: 'Forbidden', code: 'CSRF' }, 403);
     }
 
     // Get review ID from query params (deprecated)
@@ -217,7 +188,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 });
+      return json({ error: 'Review ID is required' }, 400);
     }
     // eslint-disable-next-line no-console
     console.warn('[DEPRECATED] Use DELETE /api/admin/reviews/{id} instead of query param id');
@@ -229,7 +200,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!existingReview) {
-      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+      return json({ error: 'Review not found' }, 404);
     }
 
     // Delete review (hard delete)
@@ -242,12 +213,6 @@ export async function DELETE(request: NextRequest) {
       false // hard delete
     );
 
-    return NextResponse.json({ message: 'Review deleted successfully' });
-  } catch (error) {
-    adminLogger.error('Review delete error', { error: String(error) });
-    return NextResponse.json(
-      { error: 'Failed to delete review' },
-      { status: 500 }
-    );
-  }
+    return json({ message: 'Review deleted successfully' });
+  });
 }

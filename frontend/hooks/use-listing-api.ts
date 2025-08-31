@@ -19,46 +19,33 @@ export function useListingApi(options: UseListingApiOptions = {}) {
 
   // Convert backend data to frontend format
   const transformToListingData = useCallback((backendData: BackendListingData): ListingData => {
-    return {
-      image: backendData.imageUrl
-        ? {
-            imageUrl: backendData.imageUrl,
-            imageAlt: backendData.imageAlt || backendData.title || "Listing image",
-            imageActionLabel: backendData.imageActionLabel || "View",
-          }
-        : undefined,
-      content:
-        backendData.leftText || backendData.rightText || backendData.leftActionLabel || backendData.rightActionLabel
-          ? {
-              leftText: backendData.leftText,
-              rightText: backendData.rightText,
-              leftActionLabel: backendData.leftActionLabel,
-              rightActionLabel: backendData.rightActionLabel,
-            }
-          : undefined,
+    const mappedData: ListingData = {
+      title: backendData.title,
+      image: backendData.imageUrl ? {
+        src: backendData.imageUrl,
+        alt: backendData.imageAlt || '',
+        actionLabel: backendData.imageActionLabel,
+      } : undefined,
+      content: backendData.leftText || backendData.rightText ? {
+        leftText: backendData.leftText,
+        rightText: backendData.rightText,
+        leftAction: backendData.leftActionLabel,
+        rightAction: backendData.rightActionLabel,
+      } : undefined,
       actions: {
-        primaryAction: backendData.primaryActionLabel
-          ? {
-              label: backendData.primaryActionLabel,
-              onClick: () => console.log("Primary action clicked"),
-            }
-          : undefined,
-        secondaryActions: backendData.secondaryActionLabels?.map((label) => ({
+        primaryAction: backendData.primaryActionLabel ? {
+          label: backendData.primaryActionLabel,
+        } : undefined,
+        secondaryActions: backendData.secondaryActionLabels?.map(label => ({
           label,
-          onClick: () => console.log(`Secondary action: ${label}`),
         })),
-        kosherTags: backendData.tags,
-        bottomAction: backendData.bottomActionLabel
-          ? {
-              label: backendData.bottomActionLabel,
-              onClick: () => console.log("Bottom action clicked"),
-            }
-          : undefined,
+        tags: backendData.tags,
       },
-      header: {
-        isFavorited: backendData.isFavorited || false,
-      },
-    }
+      // header: backendData.header,
+      address: backendData.address,
+      description: backendData.description,
+    };
+    return mappedData;
   }, [])
 
   // Fetch listing data from API

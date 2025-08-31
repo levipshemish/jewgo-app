@@ -7,7 +7,7 @@ import { Search } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
 
 import { supabaseClient } from '@/lib/supabase/client-secure';
-import { transformSupabaseUserWithRoles } from '@/lib/utils/auth-utils-client';
+import { transformSupabaseUserWithRoles } from '@/lib/utils/auth-utils';
 import { type TransformedUser } from '@/lib/types/supabase-auth';
 
 interface MarketplaceHeaderProps {

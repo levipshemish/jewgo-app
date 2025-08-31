@@ -6,7 +6,7 @@
  */
 
 import { User, Session, AuthError, AuthChangeEvent } from '@supabase/supabase-js';
-import type { Permission } from '@/lib/constants/permissions';
+import type { Permission, Role } from '@/lib/constants/permissions';
 
 // Core Supabase Auth Types
 export interface SupabaseAuthConfig {
@@ -53,8 +53,8 @@ export interface TransformedUser {
   provider: AuthProvider;
   avatar_url: string | null;
   providerInfo: ProviderInfo;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | undefined;
+  updatedAt: string | undefined;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   role: string;
@@ -62,7 +62,7 @@ export interface TransformedUser {
   subscriptionTier: string;
   // New role fields
   /** Nullable role string when present */
-  adminRole: string | null;
+  adminRole: Role | null;
   /** Numeric rank, defaults to 0 */
   roleLevel: number;
   /** Always boolean defaulting to false */
