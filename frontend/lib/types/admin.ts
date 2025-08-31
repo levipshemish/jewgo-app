@@ -59,6 +59,7 @@ export interface AdminUser {
   emailVerified?: boolean;
   avatarUrl?: string;
   provider?: string;
+  token?: string; // Optional token for admin operations
 }
 
 // Update request types

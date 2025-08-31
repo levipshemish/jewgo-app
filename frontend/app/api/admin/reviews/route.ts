@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       'CREATE',
       ENTITY_TYPES.REVIEW,
       {
-        entityId: review.id.toString(),
+        entityId: (review as any).id?.toString() || 'unknown',
         newData: toCreate,
         whitelistFields: AUDIT_FIELD_ALLOWLISTS.REVIEW
       }
