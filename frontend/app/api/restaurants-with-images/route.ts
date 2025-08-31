@@ -101,6 +101,10 @@ function getSampleRestaurantsWithImages() {
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  // Declare these variables outside try block so they're accessible in catch
+  let backendUrl = '';
+  let apiUrl = '';
+  
   try {
     const { searchParams } = request.nextUrl;
     
@@ -226,10 +230,10 @@ export async function GET(request: NextRequest) {
     
     // Call the backend API (normalize URL and default to local in dev)
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
-    const backendUrl = raw && raw.trim().length > 0
+    backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
       : (process.env.NODE_ENV === 'production' ? 'https://api.jewgo.app' : 'http://127.0.0.1:8082');
-    const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
+    apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
