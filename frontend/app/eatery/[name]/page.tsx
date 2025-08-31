@@ -7,6 +7,8 @@ import { ListingPage } from "@/components/listing-details-utility/listing-page"
 import { mapEateryToListingData } from "@/utils/eatery-mapping"
 import { EateryDB, UserLocation } from "@/types/listing"
 
+
+
 /**
  * Parse hours from the backend JSON format into EateryDB format
  */
@@ -173,8 +175,8 @@ export default function EateryNamePage() {
       setReviewsLoading(true)
       console.log('Fetching reviews for restaurant:', restaurantId, 'offset:', offset, 'limit:', limit)
       
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
-      const response = await fetch(`${backendUrl}/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
+      // Use the frontend API route for reviews
+      const response = await fetch(`/api/reviews?restaurantId=${restaurantId}&status=approved&limit=${limit}&offset=${offset}&includeGoogleReviews=true`)
       if (!response.ok) {
         console.log('No reviews found or error fetching reviews')
         if (offset === 0) {
@@ -237,10 +239,17 @@ export default function EateryNamePage() {
 
         // Try to find the restaurant by name first (for URL slug to restaurant mapping)
         console.log('Fetching restaurants list...')
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.jewgo.app'
-        const searchResponse = await fetch(`${backendUrl}/api/restaurants?limit=1000`)
+        // Use the frontend API route which handles the backend connection
+        const searchUrl = `/api/restaurants?limit=1000`
+        console.log('Fetching from:', searchUrl)
+        
+        const searchResponse = await fetch(searchUrl)
+        console.log('Search response status:', searchResponse.status)
+        
         if (!searchResponse.ok) {
-          throw new Error(`Failed to fetch restaurants: ${searchResponse.status}`)
+          const errorText = await searchResponse.text()
+          console.error('Search response error:', errorText)
+          throw new Error(`Failed to fetch restaurants: ${searchResponse.status} - ${errorText}`)
         }
         
         const searchData = await searchResponse.json()
@@ -297,9 +306,17 @@ export default function EateryNamePage() {
 
         // Now use the backend's ID-based search utility
         console.log('Fetching restaurant details...')
-        const detailResponse = await fetch(`${backendUrl}/api/restaurants/${foundRestaurant.id}`)
+        // Use the frontend API route for details
+        const detailUrl = `/api/restaurants/${foundRestaurant.id}`
+        console.log('Fetching details from:', detailUrl)
+        
+        const detailResponse = await fetch(detailUrl)
+        console.log('Detail response status:', detailResponse.status)
+        
         if (!detailResponse.ok) {
-          throw new Error(`Failed to fetch restaurant details: ${detailResponse.status}`)
+          const errorText = await detailResponse.text()
+          console.error('Detail response error:', errorText)
+          throw new Error(`Failed to fetch restaurant details: ${detailResponse.status} - ${errorText}`)
         }
         
         const detailData = await detailResponse.json()
@@ -386,7 +403,18 @@ export default function EateryNamePage() {
         }
       } catch (err) {
         console.error('Error fetching eatery data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load eatery data')
+        console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')
+        
+        // More detailed error message
+        let errorMessage = 'Failed to load eatery data'
+        if (err instanceof Error) {
+          errorMessage = err.message
+          if (err.message.includes('fetch')) {
+            errorMessage = `Network error: ${err.message}. Please check your connection.`
+          }
+        }
+        
+        setError(errorMessage)
         setLoading(false)
       }
     }
