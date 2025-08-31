@@ -86,8 +86,6 @@ interface ApiResponse {
 }
 
 export function EateryPageClient() {
-  console.log('🚀 EateryPageClient: Component mounting');
-  
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +158,13 @@ export function EateryPageClient() {
 
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(() => {
+    // Check sessionStorage to see if we've already shown the prompt this session
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('hasShownLocationPrompt') === 'true';
+    }
+    return false;
+  });
 
   // Build query parameters consistently
   const buildQueryParams = useCallback((page: number, query: string, filters?: AppliedFilters) => {
@@ -451,12 +455,6 @@ export function EateryPageClient() {
 
 
   useEffect(() => {
-    console.log('🔄 EateryPageClient: UseEffect triggered - calling fetchRestaurants', {
-      queryKey,
-      currentPage,
-      searchQuery,
-      activeFilters
-    });
     prefetchRef.current = null;
     prefetchAbortRef.current?.abort();
     fetchRestaurants(currentPage, searchQuery, activeFilters);
@@ -488,25 +486,35 @@ export function EateryPageClient() {
 
   // Show location prompt when page loads and user doesn't have location
   useEffect(() => {
-    const checkAndShowLocationPrompt = async () => {
+    // Add delay to prevent popup from showing too early
+    const timeoutId = setTimeout(async () => {
       // Only show prompt if we haven't shown it before and user doesn't have location
-      if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
-        // Refresh permission status to ensure we have the latest state
-        await refreshPermissionStatus();
-        
+      if (!hasShownLocationPrompt && !userLocation && !locationLoading && isHydrated) {
         // Check the actual browser permission status
         const actualPermissionStatus = await checkPermissionStatus();
+        
+        console.log('🌍 Location prompt check:', {
+          hasShownLocationPrompt,
+          userLocation: !!userLocation,
+          locationLoading,
+          isHydrated,
+          actualPermissionStatus
+        });
         
         // Only show prompt if permission is not denied and not granted
         if (actualPermissionStatus === 'prompt') {
           setShowLocationPrompt(true);
           setHasShownLocationPrompt(true);
+          // Store in sessionStorage to prevent showing again this session
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('hasShownLocationPrompt', 'true');
+          }
         }
       }
-    };
+    }, 1500); // 1.5 second delay to let the page settle
 
-    checkAndShowLocationPrompt();
-  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus, refreshPermissionStatus]);
+    return () => clearTimeout(timeoutId);
+  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus, isHydrated]);
 
   // Close location prompt when user gets location
   useEffect(() => {

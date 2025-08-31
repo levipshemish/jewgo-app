@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { MapPin, X, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -30,6 +30,17 @@ export default function LocationPromptPopup({
     onSkip();
     onClose();
   };
+
+  // Auto-close popup when permission is granted
+  useEffect(() => {
+    if (isOpen && permissionStatus === 'granted') {
+      // Small delay to show success message
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, permissionStatus, onClose]);
 
   if (!isOpen) {
     return null;
