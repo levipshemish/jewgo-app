@@ -115,9 +115,13 @@ export async function GET(request: NextRequest) {
     };
     
     // Pagination
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const page = parseInt(searchParams.get('page') || '1');
+    const rawLimit = parseInt(searchParams.get('limit') || '50');
+    const rawPage = parseInt(searchParams.get('page') || '1');
     const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Validate and clamp pagination parameters
+    const limit = Math.min(Math.max(rawLimit, 1), 100); // Clamp between 1 and 100
+    const page = Math.max(rawPage, 1); // Clamp to minimum 1
     
     // Convert page to offset if page is provided
     const calculatedOffset = page > 1 ? (page - 1) * limit : offset;
