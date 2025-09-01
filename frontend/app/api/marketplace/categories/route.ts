@@ -61,6 +61,7 @@ export async function GET() {
     }
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error in marketplace categories API route:', error);
     return NextResponse.json(
       { 
