@@ -137,9 +137,9 @@ describe('/api/restaurants-with-images', () => {
     const data = await response.json();
 
     expect(data.data).toHaveLength(10);
-    expect(data.pagination.page).toBe(2);
-    expect(data.pagination.limit).toBe(10);
-    expect(data.pagination.offset).toBe(10);
+    expect(data.page).toBe(2);
+    expect(data.limit).toBe(10);
+    expect(data.offset).toBe(10);
   });
 
   it('should handle backend errors gracefully', async () => {
@@ -192,8 +192,8 @@ describe('/api/restaurants-with-images', () => {
     const data = await response.json();
 
     // Should use default values for invalid parameters
-    expect(data.pagination.page).toBe(1);
-    expect(data.pagination.limit).toBe(100); // Max limit
+    expect(data.page).toBe(1);
+    expect(data.limit).toBe(100); // Max limit
   });
 
   it('should handle timeout errors', async () => {

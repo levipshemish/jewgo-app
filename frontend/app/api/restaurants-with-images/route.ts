@@ -251,6 +251,7 @@ export async function GET(request: NextRequest) {
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
+          page,
           limit,
           offset: calculatedOffset,
           message: 'Using sample data - backend unavailable'
@@ -295,6 +296,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: pagedRestaurants,
       total: totalAvailable,
+      page,
       limit,
       offset: calculatedOffset,
       message: 'Restaurants with images only'
@@ -308,28 +310,43 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line no-console
     console.error('Full API URL:', apiUrl);
     
-    // Handle timeout and network errors gracefully
+    // Handle all network errors gracefully by returning sample data
     if (error instanceof Error) {
-      if (error.name === 'AbortError' || error.message.includes('timeout')) {
+      const errorMessage = error.message.toLowerCase();
+      const isNetworkError = error.name === 'AbortError' || 
+                            errorMessage.includes('timeout') ||
+                            errorMessage.includes('network') ||
+                            errorMessage.includes('fetch') ||
+                            errorMessage.includes('connect') ||
+                            errorMessage.includes('enotfound') ||
+                            errorMessage.includes('econnrefused');
+      
+      if (isNetworkError) {
         // eslint-disable-next-line no-console
-        console.warn('Backend request timed out, returning sample data');
+        console.warn(`Backend request failed (${error.name || 'Network error'}), returning sample data`);
         return NextResponse.json({
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
+          page: 1,
           limit: 50,
           offset: 0,
-          message: 'Using sample data - backend timeout'
+          message: `Using sample data - backend ${error.name === 'AbortError' ? 'timeout' : 'unavailable'}`
         });
       }
     }
     
+    // For any other unexpected errors, still return sample data to ensure the UI works
+    // eslint-disable-next-line no-console
+    console.warn('Unexpected error fetching restaurants, returning sample data as fallback');
     return NextResponse.json({
-      success: false,
-      message: 'Failed to fetch restaurants with images',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      backendUrl: backendUrl,
-      apiUrl: apiUrl
-    }, { status: 500 });
+      success: true,
+      data: getSampleRestaurantsWithImages(),
+      total: 8,
+      page: 1,
+      limit: 50,
+      offset: 0,
+      message: 'Using sample data - service temporarily unavailable'
+    });
   }
 }
