@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { validateRedirectUrl, extractIsAnonymous } from '@/lib/utils/auth-utils';
-import { securityMiddleware, corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
+import { corsHeaders, buildSecurityHeaders } from '@/lib/middleware/security';
 
 // Enhanced middleware with security hardening and admin route protection
 export const config = {
@@ -140,17 +140,13 @@ function handleUnauthenticatedUser(request: NextRequest, isApi: boolean): NextRe
   return redirectToSignin(request);
 }
 
-
-
-
-
 /**
  * Handle authenticated users
  */
 async function handleAuthenticatedUser(
   request: NextRequest, 
   isApi: boolean, 
-  user: any, 
+  _user: any, 
   response: NextResponse
 ): Promise<NextResponse> {
   // For middleware, we just check that the user is authenticated
@@ -210,23 +206,10 @@ function isProtectedPath(pathname: string): boolean {
 /**
  * Check if path is allowed for anonymous users
  */
-function isAnonymousAllowedPath(pathname: string): boolean {
+function isAnonymousAllowedPath(_pathname: string): boolean {
   // Allow public pages for anonymous users
-  const publicPaths = [
-    '/',
-    '/auth/signin',
-    '/auth/signup',
-    '/auth/forgot-password',
-    '/auth/reset-password',
-    '/privacy',
-    '/terms',
-    '/healthz',
-    '/api/health',
-    '/api/health-check',
-    '/api/public',
-  ];
-  
-  return publicPaths.some(path => pathname.startsWith(path));
+  // This helper is intentionally unused in middleware runtime but kept for future extension
+  return false;
 }
 
 

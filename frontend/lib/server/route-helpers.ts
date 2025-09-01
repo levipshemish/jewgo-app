@@ -1,6 +1,5 @@
 import { withReqStore, setRequestId } from './memo';
-import { AdminAuthError, assertNodeRuntime, getNoStoreHeaders } from './security';
-import { secureLog } from './security';
+import { AdminAuthError, assertNodeRuntime, getNoStoreHeaders, secureLog } from './security';
 import { randomUUID } from 'node:crypto';
 
 /**

@@ -35,7 +35,7 @@ interface AdminLayoutProps {
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   // Server-side authentication + RBAC check
-  let adminUser;
+  let adminUser: AdminUser | null;
   try {
     adminUser = await getAdminUser();
   } catch (error) {

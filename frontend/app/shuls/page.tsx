@@ -283,14 +283,14 @@ function ShulsPageContent() {
     hasActiveFilters,
     setFilter,
     clearFilter,
-    clearAllFilters
+    clearAllFilters: _clearAllFilters
   } = useAdvancedFilters();
   
   // Location state from context
   const {
     userLocation,
     isLoading: locationLoading,
-    requestLocation
+    requestLocation: _requestLocation
   } = useLocation();
 
   // Location prompt popup state

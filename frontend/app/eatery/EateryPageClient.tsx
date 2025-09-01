@@ -322,7 +322,7 @@ export function EateryPageClient() {
   }, [currentPage, searchQuery, activeFilters, buildQueryParams]);
 
   // Separate state for infinite scroll to avoid conflicts
-  const [infiniteScrollPage, setInfiniteScrollPage] = useState(1);
+  const [_infiniteScrollPage, setInfiniteScrollPage] = useState(1);
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [totalRestaurants, setTotalRestaurants] = useState(0);
   const prefetchRef = useRef<{ offset: number; items: Restaurant[]; total: number } | null>(null);

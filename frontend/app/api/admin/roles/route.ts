@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { handleRoute } from '@/lib/server/route-helpers';
-import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+// import { requireAdminOrThrow } from '@/lib/server/admin-auth';
 import { requireSuperAdmin, withPermission } from '@/lib/server/rbac-middleware';
 
 export const runtime = 'nodejs';

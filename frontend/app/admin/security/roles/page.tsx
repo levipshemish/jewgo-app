@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { requireAdminUser } from '@/lib/server/admin-auth';
-import type { AdminUser } from '@/lib/admin/types';
 import RoleManagementTable from '@/components/admin/RoleManagementTable';
 
 // Force dynamic rendering for admin routes to prevent static generation issues

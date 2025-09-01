@@ -1,59 +1,59 @@
-import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { EateryPageClient } from '../app/eatery/EateryPageClient';
 
 // Mock the hooks and components
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: vi.fn(),
   }),
 }));
 
-jest.mock('@/hooks/useAdvancedFilters', () => ({
+vi.mock('@/hooks/useAdvancedFilters', () => ({
   useAdvancedFilters: () => ({
     activeFilters: {},
     hasActiveFilters: false,
-    setFilter: jest.fn(),
-    clearFilter: jest.fn(),
-    clearAllFilters: jest.fn(),
+    setFilter: vi.fn(),
+    clearFilter: vi.fn(),
+    clearAllFilters: vi.fn(),
     getFilterCount: () => 0,
   }),
 }));
 
-jest.mock('@/lib/contexts/LocationContext', () => ({
+vi.mock('@/lib/contexts/LocationContext', () => ({
   useLocation: () => ({
     userLocation: null,
     permissionStatus: 'prompt',
     isLoading: false,
     error: null,
-    requestLocation: jest.fn(),
-    checkPermissionStatus: jest.fn(),
-    refreshPermissionStatus: jest.fn(),
+    requestLocation: vi.fn(),
+    checkPermissionStatus: vi.fn(),
+    refreshPermissionStatus: vi.fn(),
   }),
 }));
 
-jest.mock('@/lib/mobile-optimization', () => ({
+vi.mock('@/lib/mobile-optimization', () => ({
   useMobileOptimization: () => ({
     isMobile: false,
     viewportWidth: 1024,
   }),
 }));
 
-jest.mock('@/lib/hooks/useInfiniteScroll', () => ({
+vi.mock('@/lib/hooks/useInfiniteScroll', () => ({
   useInfiniteScroll: () => ({
     hasMore: false,
     isLoadingMore: false,
     loadingRef: { current: null },
-    setHasMore: jest.fn(),
+    setHasMore: vi.fn(),
   }),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('EateryPageClient Filter Integration', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock successful API response
     (global.fetch as any).mockResolvedValue({
@@ -115,13 +115,13 @@ describe('EateryPageClient Filter Integration', () => {
   });
 
   it('should abort previous requests when new filters are applied', async () => {
-    const mockAbort = jest.fn();
+    const mockAbort = vi.fn();
     const mockAbortController = {
       signal: {},
       abort: mockAbort,
     };
     
-    jest.spyOn(global, 'AbortController').mockImplementation(() => mockAbortController as any);
+    vi.spyOn(global, 'AbortController').mockImplementation(() => mockAbortController as any);
     
     render(<EateryPageClient />);
     

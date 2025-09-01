@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';

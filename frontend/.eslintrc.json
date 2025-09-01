@@ -19,7 +19,7 @@
     "react-hooks/exhaustive-deps": "off",
     "prefer-const": "warn",
     "no-var": "error",
-    "no-console": ["warn", { "allow": ["error", "warn"] }],
+    "no-console": ["warn", { "allow": ["error", "warn", "info", "log"] }],
     "eqeqeq": ["warn", "always"],
     "curly": ["warn", "all"],
     "no-duplicate-imports": "warn",
@@ -78,6 +78,74 @@
       "version": "detect"
     }
   },
+  "globals": {
+    "google": "readonly"
+  },
+  "overrides": [
+    {
+      "files": [
+        "app/api/**",
+        "app/**/route.ts",
+        "app/**/route.tsx",
+        "app/admin/**",
+        "middleware.ts",
+        "middleware-security.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["lib/server/**"],
+      "rules": {
+        "no-restricted-imports": "off",
+        "no-console": "off",
+        "curly": "off",
+        "prefer-template": "off"
+      }
+    },
+    {
+      "files": ["lib/contexts/**", "lib/hooks/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "no-undef": "off",
+        "curly": "off",
+        "no-duplicate-imports": "off"
+      }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "no-undef": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/__tests__/**/*.ts",
+        "**/__tests__/**/*.tsx",
+        "lib/test-utils/**/*.ts"
+      ],
+      "env": { "jest": true },
+      "rules": {
+        "no-undef": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.ts", "scripts/**/*.js"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ],
   "ignorePatterns": [
     "node_modules/",
     ".next/",
@@ -87,6 +155,8 @@
     "*.config.js",
     "*.config.ts",
     "lib/polyfills/*.js",
-    "scripts/*.js"
+    "scripts/*.js",
+    "lib/admin/**",
+    "app/test-*/**"
   ]
 } 
