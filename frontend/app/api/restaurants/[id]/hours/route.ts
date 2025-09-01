@@ -22,19 +22,21 @@ export async function GET(
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      // For server errors, return default hours
+      // For server errors, return hours not available
       if (response.status >= 500) {
         return NextResponse.json({
-          hours: {
-            monday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-            tuesday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-            wednesday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-            thursday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-            friday: { open: '9:00 AM', close: '3:00 PM', closed: false },
-            saturday: { closed: true },
-            sunday: { open: '9:00 AM', close: '10:00 PM', closed: false }
-          },
-          message: 'Using default hours - service temporarily unavailable'
+          hours: null,
+          message: 'Hours information temporarily unavailable',
+          available: false
+        }, { status: 200 });
+      }
+      
+      // For 404, hours don't exist in database
+      if (response.status === 404) {
+        return NextResponse.json({
+          hours: null,
+          message: 'Hours not available for this restaurant',
+          available: false
         }, { status: 200 });
       }
       
@@ -46,22 +48,15 @@ export async function GET(
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    // For network errors, return default hours to ensure UI works
+    // For network errors, return hours not available
     return NextResponse.json({
-      hours: {
-        monday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-        tuesday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-        wednesday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-        thursday: { open: '9:00 AM', close: '10:00 PM', closed: false },
-        friday: { open: '9:00 AM', close: '3:00 PM', closed: false },
-        saturday: { closed: true },
-        sunday: { open: '9:00 AM', close: '10:00 PM', closed: false }
-      },
+      hours: null,
       message: error instanceof Error && (
         error.name === 'AbortError' || 
         error.message.toLowerCase().includes('fetch') ||
         error.message.toLowerCase().includes('network')
-      ) ? 'Hours service temporarily unavailable' : 'Using default hours'
+      ) ? 'Hours service temporarily unavailable' : 'Hours information not available',
+      available: false
     }, { status: 200 });
   }
 }
