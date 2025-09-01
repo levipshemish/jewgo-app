@@ -57,20 +57,39 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // For server errors, return empty orders
+    if (!backendResponse.ok && backendResponse.status >= 500) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          orders: [],
+          total: 0
+        },
+        message: 'Orders service temporarily unavailable'
+      });
+    }
+
     const data = await backendResponse.json();
 
     // Return the same status and data from the backend
     return NextResponse.json(data, { status: backendResponse.status });
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error in shtel orders API route:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Internal server error',
-        message: 'Failed to fetch orders data'
+    
+    // For network errors, return empty orders
+    return NextResponse.json({
+      success: true,
+      data: {
+        orders: [],
+        total: 0
       },
-      { status: 500 }
-    );
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Orders service temporarily unavailable' : 'No orders available'
+    });
   }
 }
