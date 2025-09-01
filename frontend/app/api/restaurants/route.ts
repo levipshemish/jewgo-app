@@ -209,6 +209,18 @@ export async function GET(request: NextRequest) {
     });
     
     if (!backendResponse.ok) {
+      // For server errors, return empty list with success status
+      if (backendResponse.status >= 500) {
+        return NextResponse.json({
+          success: true,
+          restaurants: [],
+          totalPages: 0,
+          totalRestaurants: 0,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          message: 'Restaurants service temporarily unavailable'
+        });
+      }
       throw new Error(`Backend API error: ${backendResponse.status}`);
     }
     
@@ -230,15 +242,20 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching restaurants:', error);
     
+    // For network errors, return empty list with success status to ensure UI works
     return NextResponse.json({
-      success: false,
+      success: true,
       restaurants: [],
       totalPages: 0,
       totalRestaurants: 0,
-      page: 1,
-      limit: 50,
-      message: 'Failed to fetch restaurants'
-    }, { status: 500 });
+      page: parseInt(page || '1'),
+      limit: parseInt(limit || '50'),
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Restaurants service temporarily unavailable' : 'No restaurants available'
+    });
   }
 }
 

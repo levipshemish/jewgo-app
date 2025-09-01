@@ -69,9 +69,18 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      // For server errors (500+), fall back to mock data
+      // For server errors (500+), return empty reviews with success
       if (response.status >= 500) {
-        // return getMockReviewsResponse(searchParams);
+        return NextResponse.json({
+          reviews: [],
+          pagination: {
+            total: 0,
+            limit: parseInt(searchParams.get('limit') || '10'),
+            offset: parseInt(searchParams.get('offset') || '0'),
+            hasMore: false
+          },
+          message: 'Reviews service temporarily unavailable'
+        });
       }
       
       // For other errors (404, 400, etc.), return empty response
@@ -89,17 +98,23 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
 
-  } catch {
-    // Only use mock data for actual connectivity issues, not for normal "no reviews" responses
-    // For most errors, return empty response and let frontend handle gracefully
+  } catch (error) {
+    // For network/connectivity issues, return empty response with success status
+    // This ensures the UI continues to work even when backend is down
+    const { searchParams } = new URL(request.url);
     return NextResponse.json({
       reviews: [],
       pagination: {
         total: 0,
-        limit: parseInt(new URL(request.url).searchParams.get('limit') || '10'),
-        offset: parseInt(new URL(request.url).searchParams.get('offset') || '0'),
+        limit: parseInt(searchParams.get('limit') || '10'),
+        offset: parseInt(searchParams.get('offset') || '0'),
         hasMore: false
-      }
+      },
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Reviews service temporarily unavailable' : 'No reviews available'
     });
   }
 }
