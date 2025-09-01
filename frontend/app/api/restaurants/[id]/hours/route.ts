@@ -22,6 +22,24 @@ export async function GET(
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      // For server errors, return hours not available
+      if (response.status >= 500) {
+        return NextResponse.json({
+          hours: null,
+          message: 'Hours information temporarily unavailable',
+          available: false
+        }, { status: 200 });
+      }
+      
+      // For 404, hours don't exist in database
+      if (response.status === 404) {
+        return NextResponse.json({
+          hours: null,
+          message: 'Hours not available for this restaurant',
+          available: false
+        }, { status: 200 });
+      }
+      
       return NextResponse.json(
         { message: data?.message || 'Failed to fetch hours' },
         { status: response.status }
@@ -29,10 +47,16 @@ export async function GET(
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (_error) {
-    return NextResponse.json(
-      { message: _error instanceof Error ? _error.message : 'Failed to fetch hours' },
-      { status: 500 }
-    );
+  } catch (error) {
+    // For network errors, return hours not available
+    return NextResponse.json({
+      hours: null,
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Hours service temporarily unavailable' : 'Hours information not available',
+      available: false
+    }, { status: 200 });
   }
 }

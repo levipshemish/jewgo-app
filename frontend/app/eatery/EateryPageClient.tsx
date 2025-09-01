@@ -82,6 +82,7 @@ interface ApiResponse {
   data: Restaurant[];
   total: number;
   error: string | null;
+  message?: string;
 }
 
 export function EateryPageClient() {
@@ -132,8 +133,11 @@ export function EateryPageClient() {
   }, [isHydrated, viewportWidth]);
   
   // Unified mobile detection for infinite scroll and UI gating
+  // Include tablets (up to 1024px) in mobile view for better infinite scroll experience
   const isMobileView = useMemo(() => {
-    return isHydrated && (isMobile || viewportWidth <= 768);
+    // Consider tablets as mobile for infinite scroll (up to 1024px)
+    const isTabletOrMobile = viewportWidth <= 1024;
+    return isHydrated && (isMobile || isTabletOrMobile);
   }, [isHydrated, isMobile, viewportWidth]);
 
   // Advanced filters hook
@@ -157,7 +161,13 @@ export function EateryPageClient() {
 
   // Location prompt popup state
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(false);
+  const [hasShownLocationPrompt, setHasShownLocationPrompt] = useState(() => {
+    // Check sessionStorage to see if we've already shown the prompt this session
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('hasShownLocationPrompt') === 'true';
+    }
+    return false;
+  });
 
   // Build query parameters consistently
   const buildQueryParams = useCallback((page: number, query: string, filters?: AppliedFilters) => {
@@ -236,17 +246,28 @@ export function EateryPageClient() {
       const data: ApiResponse = await response.json();
       
       if (data.success) {
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          // eslint-disable-next-line no-console
+          console.log('🎯 EateryPageClient: API Response Success', {
+            dataLength: data.data?.length,
+            total: data.total,
+            firstRestaurant: data.data?.[0]?.name
+          });
+        }
+        
         setRestaurants(data.data);
         setTotalPages(Math.ceil(data.total / mobileOptimizedItemsPerPage));
         setTotalRestaurants(data.total);
 
+        // Always populate allRestaurants for mobile view
+        // This ensures data is available even if hydration hasn't completed
+        const uniqueRestaurants = data.data.filter((restaurant, index, self) => 
+          index === self.findIndex(r => r.id === restaurant.id)
+        );
+        setAllRestaurants(uniqueRestaurants); // Always set this for mobile
+        
         // Reset infinite scroll state for mobile
         if (isMobileView) {
-          // Ensure no duplicates in initial data
-          const uniqueRestaurants = data.data.filter((restaurant, index, self) => 
-            index === self.findIndex(r => r.id === restaurant.id)
-          );
-          setAllRestaurants(uniqueRestaurants); // Start with initial data
           setInfiniteScrollPage(1); // Reset to page 1
           // Set hasMore based on whether we've loaded all items
           const totalLoadedItems = data.data.length;
@@ -269,6 +290,14 @@ export function EateryPageClient() {
           console.log('Initial load: Page', page, 'items:', data.data.length, 'total pages:', Math.ceil(data.total / mobileOptimizedItemsPerPage));
         }
       } else {
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+          // eslint-disable-next-line no-console
+          console.error('🚨 EateryPageClient: API Response Failed', {
+            success: data.success,
+            error: data.error,
+            message: data.message
+          });
+        }
         setError(data.error || 'Failed to fetch restaurants');
       }
     } catch (err) {
@@ -276,6 +305,7 @@ export function EateryPageClient() {
         return; // Request was aborted, ignore
       }
       setError('Failed to fetch restaurants');
+      // eslint-disable-next-line no-console
       console.error('Error fetching restaurants:', err);
     } finally {
       setLoading(false);
@@ -409,6 +439,7 @@ export function EateryPageClient() {
         if (err instanceof Error && err.name === 'AbortError') {
           return; // Request was aborted, ignore
         }
+        // eslint-disable-next-line no-console
         console.error('Error fetching more restaurants:', err);
         // Back off after repeated failures to avoid infinite loading loop
         loadErrorCountRef.current += 1;
@@ -442,7 +473,8 @@ export function EateryPageClient() {
   useEffect(() => {
     if (isMobileView) {
       setHasMore(true);
-      setAllRestaurants([]); // Clear previous data
+      // Don't clear allRestaurants here - let fetchRestaurants handle it
+      // setAllRestaurants([]); // This was causing the mobile view to show no data
       setInfiniteScrollPage(1); // Reset page
       loadErrorCountRef.current = 0; // Reset error count
       // kick off prefetch after new query change
@@ -461,25 +493,38 @@ export function EateryPageClient() {
 
   // Show location prompt when page loads and user doesn't have location
   useEffect(() => {
-    const checkAndShowLocationPrompt = async () => {
+    // Add delay to prevent popup from showing too early
+    const timeoutId = setTimeout(async () => {
       // Only show prompt if we haven't shown it before and user doesn't have location
-      if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
-        // Refresh permission status to ensure we have the latest state
-        await refreshPermissionStatus();
-        
+      if (!hasShownLocationPrompt && !userLocation && !locationLoading && isHydrated) {
         // Check the actual browser permission status
         const actualPermissionStatus = await checkPermissionStatus();
+        
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.log('🌍 Location prompt check:', {
+            hasShownLocationPrompt,
+            userLocation: !!userLocation,
+            locationLoading,
+            isHydrated,
+            actualPermissionStatus
+          });
+        }
         
         // Only show prompt if permission is not denied and not granted
         if (actualPermissionStatus === 'prompt') {
           setShowLocationPrompt(true);
           setHasShownLocationPrompt(true);
+          // Store in sessionStorage to prevent showing again this session
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('hasShownLocationPrompt', 'true');
+          }
         }
       }
-    };
+    }, 1500); // 1.5 second delay to let the page settle
 
-    checkAndShowLocationPrompt();
-  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus, refreshPermissionStatus]);
+    return () => clearTimeout(timeoutId);
+  }, [hasShownLocationPrompt, userLocation, locationLoading, checkPermissionStatus, isHydrated]);
 
   // Close location prompt when user gets location
   useEffect(() => {
@@ -509,6 +554,23 @@ export function EateryPageClient() {
   const restaurantsWithDistance = useMemo(() => {
     // Use the appropriate data source based on device type
     const dataSource = isMobileView ? allRestaurants : restaurants;
+    
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      // eslint-disable-next-line no-console
+      console.log('📍 EateryPage: RestaurantsWithDistance Calculation', {
+        isMobileView,
+        isHydrated,
+        isMobile,
+        viewportWidth,
+        deviceType: viewportWidth > 1024 ? 'desktop' : viewportWidth > 768 ? 'tablet' : 'mobile',
+        allRestaurantsLength: allRestaurants.length,
+        restaurantsLength: restaurants.length,
+        dataSourceLength: dataSource.length,
+        dataSourceUsed: isMobileView ? 'allRestaurants' : 'restaurants',
+        hasUserLocation: !!userLocation,
+        permissionStatus
+      });
+    }
     
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console

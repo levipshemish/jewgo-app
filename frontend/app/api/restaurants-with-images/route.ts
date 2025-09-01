@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
@@ -101,6 +100,10 @@ function getSampleRestaurantsWithImages() {
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  // Declare these variables outside try block so they're accessible in catch
+  let backendUrl = '';
+  let apiUrl = '';
+  
   try {
     const { searchParams } = request.nextUrl;
     
@@ -112,9 +115,13 @@ export async function GET(request: NextRequest) {
     };
     
     // Pagination
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const page = parseInt(searchParams.get('page') || '1');
+    const rawLimit = parseInt(searchParams.get('limit') || '50');
+    const rawPage = parseInt(searchParams.get('page') || '1');
     const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Validate and clamp pagination parameters
+    const limit = Math.min(Math.max(rawLimit, 1), 100); // Clamp between 1 and 100
+    const page = Math.max(rawPage, 1); // Clamp to minimum 1
     
     // Convert page to offset if page is provided
     const calculatedOffset = page > 1 ? (page - 1) * limit : offset;
@@ -224,12 +231,12 @@ export async function GET(request: NextRequest) {
       queryParams.append('dietary', dietary);
     });
     
-    // Call the backend API (normalize URL and default to local in dev)
+    // Call the backend API (normalize URL and default to production API)
     const raw = process.env["NEXT_PUBLIC_BACKEND_URL"];
-    const backendUrl = raw && raw.trim().length > 0
+    backendUrl = raw && raw.trim().length > 0
       ? raw.replace(/\/+$/, '')
-      : (process.env.NODE_ENV === 'production' ? 'https://api.jewgo.app' : 'http://127.0.0.1:8082');
-    const apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
+      : 'https://api.jewgo.app';
+    apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -242,11 +249,13 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       // If backend is down, return sample data instead of throwing error
       if (response.status === 500 || response.status === 503) {
+        // eslint-disable-next-line no-console
         console.warn(`Backend API unavailable (${response.status}), returning sample data`);
         return NextResponse.json({
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
+          page,
           limit,
           offset: calculatedOffset,
           message: 'Using sample data - backend unavailable'
@@ -261,19 +270,24 @@ export async function GET(request: NextRequest) {
     const allRestaurants = data.restaurants || data.data || data || [];
     const sanitizedRestaurants = sanitizeRestaurantData(allRestaurants);
     
+
+    
     // Check if this is sample data (either from message or by checking if all restaurants have default images)
     const isSampleData = data.message && data.message.includes('sample data') || 
                         (sanitizedRestaurants.length > 0 && 
                          sanitizedRestaurants.every((r: any) => r.image_url === '/images/default-restaurant.webp'));
     
+        // Filter restaurants to only include those with valid images
     const restaurantsWithImages = isSampleData 
       ? sanitizedRestaurants // Include all restaurants for sample data
-      : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) => 
+      : sanitizedRestaurants.filter((restaurant: { image_url?: string | null }) =>
           restaurant.image_url && 
           restaurant.image_url !== null && 
           restaurant.image_url !== '' && 
           restaurant.image_url !== '/images/default-restaurant.webp'  // Exclude default placeholders
         );
+    
+
 
     // Respect pagination even if backend ignores limit/offset
     const totalAvailable = data.total || data.count || restaurantsWithImages.length;
@@ -286,34 +300,57 @@ export async function GET(request: NextRequest) {
       success: true,
       data: pagedRestaurants,
       total: totalAvailable,
+      page,
       limit,
       offset: calculatedOffset,
       message: 'Restaurants with images only'
     });
 
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error fetching restaurants with images:', error);
+    // eslint-disable-next-line no-console
+    console.error('Backend URL used:', backendUrl);
+    // eslint-disable-next-line no-console
+    console.error('Full API URL:', apiUrl);
     
-    // Handle timeout and network errors gracefully
+    // Handle all network errors gracefully by returning sample data
     if (error instanceof Error) {
-      if (error.name === 'AbortError' || error.message.includes('timeout')) {
-        console.warn('Backend request timed out, returning sample data');
+      const errorMessage = error.message.toLowerCase();
+      const isNetworkError = error.name === 'AbortError' || 
+                            errorMessage.includes('timeout') ||
+                            errorMessage.includes('network') ||
+                            errorMessage.includes('fetch') ||
+                            errorMessage.includes('connect') ||
+                            errorMessage.includes('enotfound') ||
+                            errorMessage.includes('econnrefused');
+      
+      if (isNetworkError) {
+        // eslint-disable-next-line no-console
+        console.warn(`Backend request failed (${error.name || 'Network error'}), returning sample data`);
         return NextResponse.json({
           success: true,
           data: getSampleRestaurantsWithImages(),
           total: 8,
+          page: 1,
           limit: 50,
           offset: 0,
-          message: 'Using sample data - backend timeout'
+          message: `Using sample data - backend ${error.name === 'AbortError' ? 'timeout' : 'unavailable'}`
         });
       }
     }
     
+    // For any other unexpected errors, still return sample data to ensure the UI works
+    // eslint-disable-next-line no-console
+    console.warn('Unexpected error fetching restaurants, returning sample data as fallback');
     return NextResponse.json({
-      success: false,
-      message: 'Failed to fetch restaurants with images',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+      success: true,
+      data: getSampleRestaurantsWithImages(),
+      total: 8,
+      page: 1,
+      limit: 50,
+      offset: 0,
+      message: 'Using sample data - service temporarily unavailable'
+    });
   }
-} 
-/* eslint-disable no-console */
+}

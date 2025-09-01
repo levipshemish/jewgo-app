@@ -30,13 +30,35 @@ export async function GET() {
     // Check if response is JSON
     const contentType = backendResponse.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      return NextResponse.json(
-        { 
-          error: 'Backend service unavailable',
-          message: 'Statistics service is currently unavailable'
+      // Return default statistics for non-JSON responses
+      return NextResponse.json({
+        totalRestaurants: 0,
+        totalReviews: 0,
+        totalUsers: 0,
+        averageRating: 0,
+        restaurantsByCategory: {
+          meat: 0,
+          dairy: 0,
+          pareve: 0
         },
-        { status: 503 }
-      );
+        message: 'Statistics service temporarily unavailable'
+      });
+    }
+
+    // For server errors, return default statistics
+    if (!backendResponse.ok && backendResponse.status >= 500) {
+      return NextResponse.json({
+        totalRestaurants: 0,
+        totalReviews: 0,
+        totalUsers: 0,
+        averageRating: 0,
+        restaurantsByCategory: {
+          meat: 0,
+          dairy: 0,
+          pareve: 0
+        },
+        message: 'Statistics service temporarily unavailable'
+      });
     }
 
     const data = await backendResponse.json();
@@ -44,14 +66,23 @@ export async function GET() {
     // Return the same status and data from the backend
     return NextResponse.json(data, { status: backendResponse.status });
 
-  } catch {
-    // // console.error('Error in statistics API route:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        message: 'Failed to fetch statistics'
+  } catch (error) {
+    // For any network errors, return default statistics to ensure UI works
+    return NextResponse.json({
+      totalRestaurants: 0,
+      totalReviews: 0,
+      totalUsers: 0,
+      averageRating: 0,
+      restaurantsByCategory: {
+        meat: 0,
+        dairy: 0,
+        pareve: 0
       },
-      { status: 500 }
-    );
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Statistics service temporarily unavailable' : 'Statistics not available'
+    });
   }
 } 

@@ -39,19 +39,46 @@ export async function GET() {
       );
     }
 
+    // For server errors, return default kosher types
+    if (!backendResponse.ok && backendResponse.status >= 500) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          categories: ['Meat', 'Dairy', 'Pareve'],
+          certifiers: ['OU', 'OK', 'Star-K', 'CRC', 'Other'],
+          types: {
+            meat: ['Glatt', 'Beit Yosef', 'Regular'],
+            dairy: ['Cholov Yisroel', 'Cholov Stam'],
+            general: ['Pas Yisroel', 'Yoshon', 'Kemach Yoshon']
+          }
+        },
+        message: 'Using default kosher types'
+      });
+    }
+
     const data = await backendResponse.json();
 
     // Return the same status and data from the backend
     return NextResponse.json(data, { status: backendResponse.status });
 
-  } catch {
-    // // console.error('Error in kosher-types API route:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        message: 'Failed to fetch kosher types'
+  } catch (error) {
+    // Return default kosher types for any error
+    return NextResponse.json({
+      success: true,
+      data: {
+        categories: ['Meat', 'Dairy', 'Pareve'],
+        certifiers: ['OU', 'OK', 'Star-K', 'CRC', 'Other'],
+        types: {
+          meat: ['Glatt', 'Beit Yosef', 'Regular'],
+          dairy: ['Cholov Yisroel', 'Cholov Stam'],
+          general: ['Pas Yisroel', 'Yoshon', 'Kemach Yoshon']
+        }
       },
-      { status: 500 }
-    );
+      message: error instanceof Error && (
+        error.name === 'AbortError' || 
+        error.message.toLowerCase().includes('fetch') ||
+        error.message.toLowerCase().includes('network')
+      ) ? 'Kosher types service temporarily unavailable' : 'Using default kosher types'
+    });
   }
 } 

@@ -107,6 +107,17 @@ global.Response = class Response {
     }
     return Promise.resolve(this.body);
   }
+  
+  // Add the static json method that Next.js expects
+  static json(data, options = {}) {
+    return new Response(JSON.stringify(data), {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    });
+  }
 }
 
 // Mock IntersectionObserver
