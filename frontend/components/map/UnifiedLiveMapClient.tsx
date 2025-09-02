@@ -168,7 +168,7 @@ export default function UnifiedLiveMapClient() {
 
       checkLocationPermission();
     }
-  }, [mounted, userLocation, locationPromptShown, permissionStatus, CACHE_DURATION]);
+  }, [mounted, userLocation, locationPromptShown, permissionStatus]);
 
   // Optimized data fetching with intelligent caching
   const fetchRestaurantsData = useCallback(async () => {
@@ -306,7 +306,7 @@ export default function UnifiedLiveMapClient() {
       setLoading(false);
       lastFetchTime.current = now;
     }
-  }, [allRestaurants.length, startTransition]);
+  }, [allRestaurants.length, startTransition, CACHE_DURATION]);
 
   // Fetch data when component mounts
   useEffect(() => {

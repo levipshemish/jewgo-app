@@ -385,110 +385,6 @@ function ShulsPageContent() {
 
 
 
-  // Handle search functionality
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-    // Trigger data fetch with search query
-    startTransition(() => {
-      fetchShulsData();
-    });
-  }, [setSearchQuery, setCurrentPage, fetchShulsData]);
-
-  // Infinite scroll with proper mobile detection
-  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => fetchMoreShuls(),
-    { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
-    }
-  );
-
-  // Mobile-optimized state
-  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
-  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
-
-  // Handle page changes for desktop pagination
-  const handlePageChange = async (page: number) => {
-    if (page === currentPage || loading) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-      
-      // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', page.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setShuls(response.shuls);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error('Error fetching page:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-  // Handle location changes and update filters
-  useEffect(() => {
-    if (userLocation) {
-      // Update filters with location
-      setFilter('lat', userLocation.latitude);
-      setFilter('lng', userLocation.longitude);
-      setFilter('nearMe', true);
-              setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
-      
-      // Send location update via WebSocket
-      if (isConnected) {
-        sendMessage({
-          type: 'location_update',
-          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
-        });
-      }
-    } else {
-      // Clear distance-related filters when no location is available
-      clearFilter('lat');
-      clearFilter('lng');
-      clearFilter('nearMe');
-              clearFilter('maxDistanceMi');
-    }
-  }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
-
-  // Show location prompt when page loads and user doesn't have location
-  useEffect(() => {
-    // Only show prompt if we haven't shown it before and user doesn't have location
-    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
-      setShowLocationPrompt(true);
-      setHasShownLocationPrompt(true);
-    }
-  }, [hasShownLocationPrompt, userLocation, locationLoading]);
-
-  // Close location prompt when user gets location
-  useEffect(() => {
-    if (showLocationPrompt && userLocation) {
-      setShowLocationPrompt(false);
-    }
-  }, [showLocationPrompt, userLocation]);
-
   // Fetch shuls with mobile optimization
   const fetchShulsData = useCallback(async (filters: Filters = activeFilters) => {
     try {
@@ -533,9 +429,8 @@ function ShulsPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
+      // Note: hasMore state will be updated by the infinite scroll hook
+      // We don't need to call setHasMore here as it's not available yet
     } catch (err) {
       console.error('Error fetching shuls:', err);
       if (err instanceof Error) {
@@ -549,13 +444,87 @@ function ShulsPageContent() {
     }
   }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  const fetchMoreShuls = useCallback(async () => {
-    if (isLoadingMore || !hasMore) {
+  // Infinite scroll with proper mobile detection
+  const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
+    () => {
+      // Define fetchMoreShuls inline to avoid dependency issues
+      const fetchMoreShuls = async () => {
+        if (isLoadingMore || !hasMore) {
+          return;
+        }
+
+        try {
+          const nextPage = currentPage + 1;
+          const params = new URLSearchParams();
+          
+          // Add search query if present
+          if (searchQuery && searchQuery.trim() !== '') {
+            params.append('search', searchQuery.trim());
+          }
+          
+          // Add current filters
+          Object.entries(activeFilters).forEach(([key, value]) => {
+            if (value !== undefined && value !== '' && value !== null) {
+              params.append(key, String(value));
+            }
+          });
+
+          params.append('page', nextPage.toString());
+          params.append('limit', mobileOptimizedItemsPerPage.toString());
+          params.append('mobile_optimized', 'true');
+
+          const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+          
+          setShuls(prev => [...prev, ...response.shuls]);
+          setCurrentPage(nextPage);
+          
+          // Update hasMore state
+          const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
+          setHasMore(hasMoreContent);
+        } catch (err) {
+          console.error('Error fetching more shuls:', err);
+        }
+      };
+      
+      return fetchMoreShuls();
+    },
+    { 
+      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
+      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
+      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
+    }
+  );
+
+  // Update hasMore state when shuls data changes
+  useEffect(() => {
+    if (shuls.length > 0) {
+      const hasMoreContent = shuls.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    }
+  }, [shuls.length, mobileOptimizedItemsPerPage, setHasMore]);
+
+  // Handle search functionality
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+    // Trigger data fetch with search query
+    startTransition(() => {
+      fetchShulsData();
+    });
+  }, [setSearchQuery, setCurrentPage, fetchShulsData]);
+
+  // Mobile-optimized state
+  const [showFilters, setShowFilters] = useState(false); // Filters start hidden
+  const { isScrolling } = useScrollDetection({ debounceMs: 100 });
+
+  // Handle page changes for desktop pagination
+  const handlePageChange = async (page: number) => {
+    if (page === currentPage || loading) {
       return;
     }
 
     try {
-      const nextPage = currentPage + 1;
+      setLoading(true);
       const params = new URLSearchParams();
       
       // Add search query if present
@@ -570,22 +539,61 @@ function ShulsPageContent() {
         }
       });
 
-      params.append('page', nextPage.toString());
+      params.append('page', page.toString());
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
       const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
-      setShuls(prev => [...prev, ...response.shuls]);
-      setCurrentPage(nextPage);
-      
-      // Update hasMore state
-      const hasMoreContent = response.shuls.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
+      setShuls(response.shuls);
+      setCurrentPage(page);
     } catch (err) {
-      console.error('Error fetching more shuls:', err);
+      console.error('Error fetching page:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [isLoadingMore, hasMore, currentPage, activeFilters, searchQuery, mobileOptimizedItemsPerPage, setHasMore, fetchTimeoutMs]);
+  };
+
+  // Handle location changes and update filters
+  useEffect(() => {
+    if (userLocation) {
+      // Update filters with location
+      setFilter('lat', userLocation.latitude);
+      setFilter('lng', userLocation.longitude);
+      setFilter('nearMe', true);
+      setFilter('maxDistanceMi', 25); // Set default distance filter when location is available
+      
+      // Send location update via WebSocket
+      if (isConnected) {
+        sendMessage({
+          type: 'location_update',
+          data: { latitude: userLocation.latitude, longitude: userLocation.longitude }
+        });
+      }
+    } else {
+      // Clear distance-related filters when no location is available
+      clearFilter('lat');
+      clearFilter('lng');
+      clearFilter('nearMe');
+      clearFilter('maxDistanceMi');
+    }
+  }, [userLocation, setFilter, clearFilter, isConnected, sendMessage]);
+
+  // Show location prompt when page loads and user doesn't have location
+  useEffect(() => {
+    // Only show prompt if we haven't shown it before and user doesn't have location
+    if (!hasShownLocationPrompt && !userLocation && !locationLoading) {
+      setShowLocationPrompt(true);
+      setHasShownLocationPrompt(true);
+    }
+  }, [hasShownLocationPrompt, userLocation, locationLoading]);
+
+  // Close location prompt when user gets location
+  useEffect(() => {
+    if (showLocationPrompt && userLocation) {
+      setShowLocationPrompt(false);
+    }
+  }, [showLocationPrompt, userLocation]);
 
   // Subscribe to real-time updates
   useEffect(() => {

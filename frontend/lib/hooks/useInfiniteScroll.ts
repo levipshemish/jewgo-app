@@ -136,7 +136,7 @@ export function useInfiniteScroll(
         observerRef.current.disconnect();
       }
     };
-  }, [threshold, rootMargin, root, disabled, hasMore, loadMore]); // Include loadMore in dependencies
+  }, [threshold, rootMargin, root, disabled, hasMore, loadMore, isLoadingMore]); // Include loadMore in dependencies
 
 
 

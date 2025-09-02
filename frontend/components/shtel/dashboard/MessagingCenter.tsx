@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { appLogger } from '@/lib/utils/logger';
 
 interface MessagingCenterProps {
@@ -60,19 +60,19 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
 
   useEffect(() => {
     loadConversations();
-  }, [storeData.store_id, filterType, filterPriority, showArchived]);
+  }, [storeData.store_id, filterType, filterPriority, showArchived, loadConversations]);
 
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.conversation_id);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, loadMessages]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -99,9 +99,9 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeData.store_id, filterType, filterPriority, showArchived, storeData.is_admin]);
 
-  const loadMessages = async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string) => {
     try {
       // Guard against admin context
       if (storeData.is_admin) {
@@ -120,9 +120,9 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     } catch (err) {
       appLogger.error('Error loading messages:', { error: err instanceof Error ? err.message : String(err) });
     }
-  };
+  }, [storeData.store_id, storeData.is_admin, markMessagesAsRead]);
 
-  const markMessagesAsRead = async (conversationId: string) => {
+  const markMessagesAsRead = useCallback(async (conversationId: string) => {
     try {
       // Guard against admin context
       if (storeData.is_admin) {
@@ -144,9 +144,9 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     } catch (err) {
       appLogger.error('Error marking messages as read:', { error: err instanceof Error ? err.message : String(err) });
     }
-  };
+  }, [storeData.store_id, storeData.is_admin, onRefresh]);
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || !selectedConversation) {return;}
     
     try {
@@ -191,7 +191,7 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     } finally {
       setSending(false);
     }
-  };
+  }, [newMessage, selectedConversation, storeData.store_id, storeData.is_admin]);
 
   const archiveConversation = async (conversationId: string) => {
     try {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 interface ShtelFiltersProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ const FLORIDA_CITIES = [
   'Jacksonville'
 ];
 
-export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, currentFilters }: ShtelFiltersProps) {
+export default function ShtelFilters({ isOpen, onClose, onFiltersChange, currentFilters }: ShtelFiltersProps) {
   const [localFilters, setLocalFilters] = useState<ShtelFilters>(currentFilters);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
@@ -132,7 +133,7 @@ export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, curren
     value !== undefined && value !== '' && value !== null && value !== false
   ).length;
 
-  return (
+  return typeof window !== 'undefined' ? createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -142,7 +143,8 @@ export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, curren
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="fixed inset-0 bg-black bg-opacity-50 z-[9999]"
+            style={{ zIndex: 9999 }}
           />
 
           {/* Filter Panel */}
@@ -151,7 +153,8 @@ export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, curren
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 overflow-y-auto"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-[9999] overflow-y-auto"
+            style={{ zIndex: 9999 }}
           >
             <div className="flex flex-col h-full">
               {/* Header */}
@@ -429,6 +432,7 @@ export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, curren
           </motion.div>
         </>
       )}
-    </AnimatePresence>
-  );
+    </AnimatePresence>,
+    document.body
+  ) : null;
 }

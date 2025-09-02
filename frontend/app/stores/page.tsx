@@ -329,13 +329,114 @@ function StoresPageContent() {
 
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
-    () => fetchMoreStores(),
+    () => {
+      // Define fetchMoreStores inline to avoid dependency issues
+      const fetchMoreStores = async () => {
+        if (isLoadingMore || !hasMore) {
+          return;
+        }
+
+        try {
+          const nextPage = currentPage + 1;
+          const params = new URLSearchParams();
+          
+          // Add search query if present
+          if (searchQuery && searchQuery.trim() !== '') {
+            params.append('search', searchQuery.trim());
+          }
+          
+          // Add current filters
+          Object.entries(activeFilters).forEach(([key, value]) => {
+            if (value !== undefined && value !== '' && value !== null) {
+              params.append(key, String(value));
+            }
+          });
+
+          params.append('page', nextPage.toString());
+          params.append('limit', mobileOptimizedItemsPerPage.toString());
+          params.append('mobile_optimized', 'true');
+
+          const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+          
+          setStores(prev => [...prev, ...response.stores]);
+          setCurrentPage(nextPage);
+          
+          // Update hasMore state
+          const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
+          setHasMore(hasMoreContent);
+        } catch (err) {
+          console.error('Error fetching more stores:', err);
+        }
+      };
+      
+      return fetchMoreStores();
+    },
     { 
       threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
       rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
       disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
     }
   );
+
+  // Fetch stores with mobile optimization
+  const fetchStoresData = useCallback(async (filters: Filters = activeFilters) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Mobile-optimized parameters
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+
+      // Add filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      // Mobile-specific optimizations
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+      
+      if (isLowPowerMode) {
+        params.append('low_power_mode', 'true');
+      }
+      
+      if (isSlowConnection) {
+        params.append('slow_connection', 'true');
+      }
+
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+      
+      setStores(response.stores);
+      setCurrentPage(1);
+      
+      // Update pagination state
+      const total = response.total || response.stores.length;
+      setTotalStores(total);
+      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+      setTotalPages(calculatedTotalPages);
+      
+      // Update hasMore state for infinite scroll (mobile only)
+      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    } catch (err) {
+      console.error('Error fetching stores:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unable to load stores. Please try again later.');
+      }
+      setStores([]); // Clear any existing stores
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs, setHasMore]);
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden
@@ -421,103 +522,9 @@ function StoresPageContent() {
     }
   }, [showLocationPrompt, userLocation]);
 
-  // Fetch stores with mobile optimization
-  const fetchStoresData = useCallback(async (filters: Filters = activeFilters) => {
-    try {
-      setLoading(true);
-      setError(null);
 
-      // Mobile-optimized parameters
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
 
-      // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
 
-      // Mobile-specific optimizations
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-      
-      if (isLowPowerMode) {
-        params.append('low_power_mode', 'true');
-      }
-      
-      if (isSlowConnection) {
-        params.append('slow_connection', 'true');
-      }
-
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setStores(response.stores);
-      setCurrentPage(1);
-      
-      // Update pagination state
-      const total = response.total || response.stores.length;
-      setTotalStores(total);
-      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-      setTotalPages(calculatedTotalPages);
-      
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-    } catch (err) {
-      console.error('Error fetching stores:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unable to load stores. Please try again later.');
-      }
-      setStores([]); // Clear any existing stores
-    } finally {
-      setLoading(false);
-    }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
-
-  const fetchMoreStores = useCallback(async () => {
-    if (isLoadingMore || !hasMore) {
-      return;
-    }
-
-    try {
-      const nextPage = currentPage + 1;
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-      
-      // Add current filters
-      Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      params.append('page', nextPage.toString());
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setStores(prev => [...prev, ...response.stores]);
-      setCurrentPage(nextPage);
-      
-      // Update hasMore state
-      const hasMoreContent = response.stores.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-    } catch (err) {
-      console.error('Error fetching more stores:', err);
-    }
-  }, [isLoadingMore, hasMore, currentPage, activeFilters, searchQuery, mobileOptimizedItemsPerPage, setHasMore, fetchTimeoutMs]);
 
   // Subscribe to real-time updates
   useEffect(() => {
