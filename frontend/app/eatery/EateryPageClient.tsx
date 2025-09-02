@@ -611,7 +611,7 @@ export default function EateryPageClient() {
       // Keep original order for restaurants without coordinates
       return 0;
     });
-  }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus, isHydrated, viewportWidth, calculateDistance]);
+  }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus, isHydrated, viewportWidth, calculateDistance, isMobileView]);
 
   const displayedRestaurants = useMemo<(Restaurant | null)[]>(() => {
     const items: (Restaurant | null)[] = [...restaurantsWithDistance];

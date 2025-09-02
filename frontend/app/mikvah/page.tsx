@@ -417,7 +417,7 @@ function MikvahPageContent() {
       
       // Update hasMore state for infinite scroll (mobile only)
       const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
+      // Note: setHasMore is not available here due to hook order, will be set by useInfiniteScroll
     } catch (err) {
       appLogger.error('Mikvah fetch error', { error: String(err) });
       if (err instanceof Error) {

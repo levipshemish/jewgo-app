@@ -18,9 +18,6 @@ const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
 const isCI = process.env.CI === 'true' || isVercel || isProduction;
 
-// Webpack optimization utilities (commented out due to missing file)
-// const { optimizeWebpackConfig } = require('./scripts/webpack-optimization');
-
 const nextConfig = {
   // Enable modern features for better performance
   experimental: {
@@ -29,10 +26,12 @@ const nextConfig = {
     // Disable webpackBuildWorker to avoid flaky missing vendor-chunks during dev
     webpackBuildWorker: false,
     // Disable CSS script injection to prevent CSS files from being loaded as scripts
-    optimizeCss: false
+    optimizeCss: false,
     // Optimize webpack cache performance
     // Note: turbo config moved to turbopack (stable in Next.js 15)
   },
+  // Ensure proper build output for Vercel
+  outputFileTracingRoot: process.cwd(),
   eslint: {
     // Fail builds in CI/production; allow relaxed checks locally
     ignoreDuringBuilds: !isCI,
@@ -104,10 +103,7 @@ const nextConfig = {
   },
 
   // Webpack configuration to fix eval errors and CSS issues
-  webpack: (config, { isServer, dev }) => {
-    // Temporarily disable webpack optimizations to fix module issues
-    // config = optimizeWebpackConfig(config, { isServer });
-
+  webpack: (config, { isServer, dev, webpack }) => {
     // Disable filesystem cache in development to prevent cache corruption issues
     if (dev) {
       config.cache = false;
@@ -125,31 +121,31 @@ const nextConfig = {
       },
     };
 
-                      // Configure CSS processing to prevent syntax errors
-                  config.module.rules.forEach((rule) => {
-                    if (rule.oneOf) {
-                      rule.oneOf.forEach((oneOfRule) => {
-                        if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
-                          // Ensure CSS loaders are properly configured
-                          if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
-                            oneOfRule.use.forEach((loader) => {
-                              if (loader.loader && loader.loader.includes('css-loader')) {
-                                // Configure CSS loader to handle syntax errors gracefully
-                                loader.options = {
-                                  ...loader.options,
-                                  sourceMap: false, // Disable source maps to prevent comment issues
-                                  importLoaders: 1,
-                                  // Add options to handle long comments and special characters
-                                  url: false,
-                                  import: false,
-                                };
-                              }
-                            });
-                          }
-                        }
-                      });
-                    }
-                  });
+    // Configure CSS processing to prevent syntax errors
+    config.module.rules.forEach((rule) => {
+      if (rule.oneOf) {
+        rule.oneOf.forEach((oneOfRule) => {
+          if (oneOfRule.test && oneOfRule.test.toString().includes('css')) {
+            // Ensure CSS loaders are properly configured
+            if (oneOfRule.use && Array.isArray(oneOfRule.use)) {
+              oneOfRule.use.forEach((loader) => {
+                if (loader.loader && loader.loader.includes('css-loader')) {
+                  // Configure CSS loader to handle syntax errors gracefully
+                  loader.options = {
+                    ...loader.options,
+                    sourceMap: false, // Disable source maps to prevent comment issues
+                    importLoaders: 1,
+                    // Add options to handle long comments and special characters
+                    url: false,
+                    import: false,
+                  };
+                }
+              });
+            }
+          }
+        });
+      }
+    });
 
     // Suppress eval-related warnings and errors
     config.ignoreWarnings = [
@@ -203,61 +199,59 @@ const nextConfig = {
       }
     });
 
+    // Ensure proper output for Vercel builds
+    if (isVercel) {
+      config.output = {
+        ...config.output,
+        // Ensure proper chunk naming for Vercel
+        chunkFilename: isServer 
+          ? 'static/chunks/[id].js' 
+          : 'static/chunks/[name].[chunkhash].js',
+        // Ensure proper asset naming
+        assetModuleFilename: 'static/media/[name].[hash][ext]',
+      };
+    }
+
     return config;
   },
 
-  // Disable prerendering to avoid build errors
-  trailingSlash: false,
-  generateEtags: false,
-  
-  // CDN and caching headers for static assets
+  // Headers configuration for better caching and security
   async headers() {
     return [
-      // CSS files with proper MIME type and CDN headers
+      // Security headers
       {
-        source: '/static/css/:path*',
+        source: '/(.*)',
         headers: [
           {
-            key: 'Content-Type',
-            value: 'text/css; charset=utf-8',
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
           },
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
+            key: 'X-Frame-Options',
+            value: 'DENY',
           },
           {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
           },
         ],
       },
       
-      // JavaScript files with CDN headers
+      // Static assets with long-term caching
       {
-        source: '/_next/static/js/:path*',
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
+            value: 'public, max-age=31536000, immutable', // 1 year, immutable
           },
           {
             key: 'CDN-Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
-          },
-        ],
-      },
-      
-      // CSS files with CDN headers
-      {
-        source: '/_next/static/css/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
-          },
-          {
-            key: 'CDN-Cache-Control',
-            value: 'public, max-age=604800, stale-while-revalidate=86400',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -360,3 +354,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+

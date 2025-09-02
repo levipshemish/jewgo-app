@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/build-env-check.js && prisma generate --schema=./prisma/schema.prisma && next build --no-lint",
-    "build:no-prisma": "next build --no-lint",
+    "build": "node scripts/build-env-check.js && node scripts/vercel-build-fix.js && prisma generate --schema=./prisma/schema.prisma && next build",
+    "build:no-prisma": "next build",
     "export": "next build",
     "start": "next start",
     "lint": "next lint",

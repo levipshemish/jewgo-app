@@ -19,7 +19,7 @@ import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 // NextAuth removed - using Supabase only
 import { roboto } from './fonts'
 import { CustomHead } from './head'
-import { initializeFeatureGuard } from '@/lib/feature-guard';
+import { featureGuard } from '@/lib/feature-guard';
 import { ScrollProvider } from '@/lib/hooks/useScrollDetection';
 
 export const metadata: Metadata = {
@@ -88,7 +88,7 @@ export default function RootLayout({
   // Initialize Feature Guard at boot time
   if (typeof window !== 'undefined') {
     // Client-side initialization
-    initializeFeatureGuard().catch(error => {
+    featureGuard.validateFeatures().catch(error => {
       appLogger.error('Failed to initialize Feature Guard', { error: String(error) });
     });
   }

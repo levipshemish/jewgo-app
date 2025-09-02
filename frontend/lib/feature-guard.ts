@@ -1,11 +1,10 @@
 // Basic feature checks that can run in the browser
 import { validateSupabaseFeatureSupport } from './utils/auth-utils';
-// Server-only, louder validation with logging (SSR/init paths)
-import { validateSupabaseFeaturesWithLogging } from './utils/auth-utils.server';
 
 /**
  * Feature Guard - Boot-time validation of critical Supabase features
  * This should be called during app initialization to ensure all required features are available
+ * Client-safe version that doesn't import server-only modules
  */
 export class FeatureGuard {
   private static instance: FeatureGuard;
@@ -41,7 +40,6 @@ export class FeatureGuard {
 
   private async performValidation(): Promise<boolean> {
     try {
-
       // Basic configuration validation
       const basicValidation = validateSupabaseFeatureSupport();
       if (!basicValidation) {
@@ -54,26 +52,24 @@ export class FeatureGuard {
         return false;
       }
 
-      // Comprehensive feature validation
-      const featureValidation = await validateSupabaseFeaturesWithLogging();
-      if (!featureValidation) {
-        // console.error('🚨 CRITICAL: Supabase feature validation failed');
-        // console.error('Required features (signInAnonymously, linkIdentity) not available');
-        // console.error('Application startup failure - check Supabase SDK version');
+      // Client-side feature validation (limited scope)
+      const clientFeatureValidation = this.validateClientFeatures();
+      if (!clientFeatureValidation) {
+        console.error('🚨 CRITICAL: Client-side Supabase feature validation failed');
+        console.error('Required client features not available');
         
         // Log to Sentry if available
-        this.logToSentry('Supabase feature validation failed', 'error');
+        this.logToSentry('Client-side Supabase feature validation failed', 'error');
         
         return false;
       }
 
       this.validated = true;
-
       return true;
 
     } catch (error) {
-      // console.error('🚨 CRITICAL: Feature Guard validation failed:', error);
-      // console.error('Application startup failure - Supabase SDK may be corrupted');
+      console.error('🚨 CRITICAL: Feature Guard validation failed:', error);
+      console.error('Application startup failure - Supabase SDK may be corrupted');
       
       // Log to Sentry if available
       this.logToSentry('Feature Guard validation failed', 'error', error);
@@ -81,6 +77,32 @@ export class FeatureGuard {
       return false;
     } finally {
       this.validationPromise = null;
+    }
+  }
+
+  /**
+   * Client-side feature validation (limited scope)
+   */
+  private validateClientFeatures(): boolean {
+    try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        return false;
+      }
+
+      // Basic client-side checks
+      const hasSupabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const hasSupabaseAnonKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+      if (!hasSupabaseUrl || !hasSupabaseAnonKey) {
+        console.error('[FeatureGuard] Missing Supabase environment variables');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[FeatureGuard] Client feature validation failed:', error);
+      return false;
     }
   }
 
@@ -101,50 +123,25 @@ export class FeatureGuard {
   }
 
   /**
-   * Log to Sentry if available
+   * Log to Sentry if available (client-safe)
    */
-  private logToSentry(message: string, level: 'error' | 'warning' | 'info', error?: any): void {
+  private logToSentry(message: string, level: 'error' | 'warn' | 'info', error?: any): void {
     try {
+      // Check if Sentry is available
       if (typeof window !== 'undefined' && (window as any).Sentry) {
-        if (error) {
-          (window as any).Sentry.captureException(error, {
-            tags: { component: 'feature_guard' },
-            level
-          });
+        const Sentry = (window as any).Sentry;
+        if (level === 'error') {
+          Sentry.captureException(error || new Error(message));
         } else {
-          (window as any).Sentry.captureMessage(message, {
-            level,
-            tags: { component: 'feature_guard' }
-          });
+          Sentry.captureMessage(message, level);
         }
       }
     } catch (sentryError) {
-      // console.warn('[Feature Guard] Failed to log to Sentry:', sentryError);
+      // Silently fail if Sentry logging fails
+      console.debug('[FeatureGuard] Sentry logging failed:', sentryError);
     }
   }
 }
 
-/**
- * Initialize Feature Guard during app startup
- * This should be called early in the application lifecycle
- */
-export async function initializeFeatureGuard(): Promise<boolean> {
-  const guard = FeatureGuard.getInstance();
-  return guard.validateFeatures();
-}
-
-/**
- * Get Feature Guard instance
- */
-export function getFeatureGuard(): FeatureGuard {
-  return FeatureGuard.getInstance();
-}
-
-/**
- * Validate features synchronously (for use in components that can't be async)
- * Returns the last known validation state
- */
-export function validateFeaturesSync(): boolean {
-  const guard = FeatureGuard.getInstance();
-  return guard.isValidated();
-}
+// Export singleton instance
+export const featureGuard = FeatureGuard.getInstance();

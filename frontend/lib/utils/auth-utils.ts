@@ -192,8 +192,7 @@ function isValidIP(ip: string): boolean {
 }
 
 /**
- * Comprehensive CSRF validation with strict Origin+Referer checks and signed token fallback
- * Accepts valid signed CSRF token when Origin/Referer are missing
+ * Validate CSRF token
  * Client-side implementation - throws on server use
  */
 export function validateCSRF(
@@ -247,7 +246,7 @@ export function validateCSRF(
 
 /**
  * Verify signed CSRF token using HMAC
- * Client-side implementation - throws on server use or delegates to server variant
+ * Client-side implementation - throws on server use
  */
 function verifySignedCSRFToken(token: string): boolean {
   // Check if we're on the server side
@@ -277,9 +276,6 @@ function verifySignedCSRFToken(token: string): boolean {
     return false;
   }
 }
-
-
-
 
 /**
  * Validate redirect URL with corrected security logic

@@ -52,6 +52,14 @@ if (isBuildTime) {
   console.log('✅ SKIP_DB_ACCESS set for build time');
 }
 
+// Ensure proper build environment for Vercel
+if (isVercel) {
+  // Set environment variables that might be needed for Vercel builds
+  process.env.NEXT_TELEMETRY_DISABLED = '1';
+  process.env.NODE_ENV = 'production';
+  console.log('✅ Vercel-specific environment variables set');
+}
+
 console.log('✅ Build environment check completed');
 
 module.exports = {
