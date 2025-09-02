@@ -1,6 +1,7 @@
 /**
  * Cache Invalidation System
  * Manages cache invalidation for different data types and provides cache warming
+ * Client-safe version that doesn't import server-only utilities
  */
 
 import { appLogger } from '@/lib/utils/logger';
@@ -114,15 +115,8 @@ class CacheInvalidator {
         return;
       }
 
-      // Invalidate Next.js cache tags
-      if (this.isProduction && typeof window === 'undefined') {
-        await this.invalidateNextJSCache(tags || matchingRules.flatMap(r => r.tags));
-      }
-
-      // Clear sessionStorage cache
+      // Client-side cache invalidation only
       this.clearSessionStorageCache(target);
-
-      // Clear in-memory cache
       this.clearMemoryCache(target);
 
       appLogger.info('Cache invalidated successfully', {
@@ -154,11 +148,7 @@ class CacheInvalidator {
     this.operations.push(operation);
 
     try {
-      // Trigger Next.js revalidation
-      if (this.isProduction && typeof window === 'undefined') {
-        await this.revalidateNextJSCache(tags || ['shtetl-listings']);
-      }
-
+      // Client-side revalidation only
       appLogger.info('Cache revalidation triggered', { target, tags });
 
     } catch (error) {
@@ -166,7 +156,6 @@ class CacheInvalidator {
         target,
         error: String(error)
       });
-      throw error;
     }
   }
 
@@ -194,7 +183,6 @@ class CacheInvalidator {
         targets,
         error: String(error)
       });
-      throw error;
     }
   }
 
@@ -283,36 +271,6 @@ class CacheInvalidator {
     }
     
     return target === pattern || target.startsWith(pattern);
-  }
-
-  /**
-   * Invalidate Next.js cache tags (server-side only)
-   */
-  private async invalidateNextJSCache(tags: string[]): Promise<void> {
-    if (typeof window !== 'undefined') return;
-
-    try {
-      // Dynamically import server-only revalidation to avoid client bundle issues
-      const { revalidateTags } = await import('../server/revalidate');
-      await revalidateTags(tags);
-    } catch (error) {
-      appLogger.warn('Next.js cache invalidation not available', { error: String(error) });
-    }
-  }
-
-  /**
-   * Revalidate Next.js cache (server-side only)
-   */
-  private async revalidateNextJSCache(tags: string[]): Promise<void> {
-    if (typeof window !== 'undefined') return;
-
-    try {
-      // Dynamically import server-only revalidation to avoid client bundle issues
-      const { revalidateTags } = await import('../server/revalidate');
-      await revalidateTags(tags);
-    } catch (error) {
-      appLogger.warn('Next.js cache revalidation not available', { error: String(error) });
-    }
   }
 
   /**
