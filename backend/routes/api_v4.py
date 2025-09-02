@@ -149,10 +149,7 @@ Author: JewGo Development Team
 Version: 4.0
 Last Updated: 2024
 """
-# Add the backend directory to the path for imports
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 # Create Blueprint for v4 API routes - be more lenient with dependencies
-# Only require the most essential dependencies
 essential_dependencies = [
     APIError,
     ValidationError,
@@ -1182,7 +1179,7 @@ def admin_delete_user():
 
 
 # Role Management Routes
-@api_v4.route('/admin/roles/assign', methods=['POST'])
+@safe_route('/admin/roles/assign', methods=['POST'])
 @limiter.limit("30/minute")
 @require_super_admin_auth
 def assign_admin_role():
@@ -1277,7 +1274,8 @@ def assign_admin_role():
         return error_response('Internal server error', 500)
 
 
-@api_v4.route('/admin/roles/revoke', methods=['POST'])
+@safe_route('/admin/roles/revoke', methods=['POST'])
+@limiter.limit("30/minute")
 @require_super_admin_auth
 def revoke_admin_role():
     """Revoke an admin role from a user"""
@@ -1369,7 +1367,7 @@ def revoke_admin_role():
         return error_response('Internal server error', 500)
 
 
-@api_v4.route('/admin/roles', methods=['GET'])
+@safe_route('/admin/roles', methods=['GET'])
 @require_admin_auth
 def get_admin_roles():
     """Get list of users with their admin roles"""
@@ -1412,7 +1410,7 @@ def get_admin_roles():
         return error_response('Internal server error', 500)
 
 
-@api_v4.route('/admin/roles/available', methods=['GET'])
+@safe_route('/admin/roles/available', methods=['GET'])
 @require_admin_auth
 def get_available_roles():
     """Get list of available admin roles and their descriptions"""
@@ -2261,3 +2259,13 @@ def proxy_image():
     except Exception as e:
         logger.error(f"Error proxying image: {e}")
         return error_response("Internal server error", 500)
+
+# Test endpoint for CI/CD (no authentication required)
+@safe_route('/test/health', methods=['GET'])
+def test_health():
+    """Simple health check endpoint for testing."""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'API v4 is working',
+        'timestamp': datetime.now().isoformat()
+    })

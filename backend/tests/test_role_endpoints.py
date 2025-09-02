@@ -11,7 +11,8 @@ def create_test_client(monkeypatch, super_admin: bool = True):
     def passthrough(f):
         return f
 
-    monkeypatch.setattr(sec, 'require_admin_auth', passthrough, raising=False)
+    # Patch the correct decorator that's actually used by the route
+    monkeypatch.setattr(sec, 'require_super_admin_auth', passthrough, raising=False)
 
     # Patch current user accessor used in routes
     def get_user():
@@ -26,7 +27,7 @@ def create_test_client(monkeypatch, super_admin: bool = True):
     monkeypatch.setattr(api_v4, 'get_current_supabase_user', get_user, raising=False)
 
     from backend.app_factory_full import create_app
-    app = create_app()
+    app, socketio = create_app()  # Unpack the tuple
     app.config['TESTING'] = True
     return app.test_client()
 

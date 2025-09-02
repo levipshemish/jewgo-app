@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback, useContext, createContext } from 'react';
+"use client";
+import React, { useEffect, useRef, useState, useCallback, useContext, createContext } from 'react';
 
 interface UseScrollDetectionOptions {
   threshold?: number;
@@ -18,7 +19,7 @@ const ScrollContext = createContext<ScrollContextType | null>(null);
 
 // Provider component for shared scroll state
 export function ScrollProvider({ children }: { children: React.ReactNode }) {
-  const [isScrolling, setIsScrolling] = useState(false);
+  const [contextIsScrolling, setContextIsScrolling] = useState(false);
   const listeners = useRef<Set<(isScrolling: boolean) => void>>(new Set());
   const timeoutRef = useRef<NodeJS.Timeout>();
   const lastScrollY = useRef(0);
@@ -44,7 +45,7 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
     if (Math.abs(currentScrollY - lastScrollY.current) > 5) {
       if (!isScrollingRef.current) {
         isScrollingRef.current = true;
-        setIsScrolling(true);
+        setContextIsScrolling(true);
         scrollStartTime.current = currentTime;
         notifyListeners(true);
         
@@ -65,7 +66,7 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
       const timeSinceLastScroll = currentTime - scrollStartTime.current;
       if (timeSinceLastScroll >= 150) {
         isScrollingRef.current = false;
-        setIsScrolling(false);
+        setContextIsScrolling(false);
         notifyListeners(false);
         document.body.classList.remove('scrolling');
       }
@@ -85,7 +86,7 @@ export function ScrollProvider({ children }: { children: React.ReactNode }) {
   }, [handleScroll]);
 
   return (
-    <ScrollContext.Provider value={{ isScrolling, addListener }}>
+    <ScrollContext.Provider value={{ isScrolling: contextIsScrolling, addListener }}>
       {children}
     </ScrollContext.Provider>
   );

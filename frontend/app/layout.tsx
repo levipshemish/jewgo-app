@@ -99,6 +99,9 @@ export default function RootLayout({
         {/* Google Analytics */}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' && (
           <>
+            {/* Preconnects instead of preload to avoid unused-preload warning */}
+            <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="" />
+            <link rel="preconnect" href="https://www.google-analytics.com" crossOrigin="" />
             <Script
               id="ga-loader"
               strategy="afterInteractive"

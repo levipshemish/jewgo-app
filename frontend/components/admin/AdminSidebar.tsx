@@ -18,29 +18,14 @@ import {
   LogOut,
   User,
   BarChart3,
-  Shield
+  Shield,
+  ShoppingBag,
+  Package,
+  ShoppingCart,
+  Mail
 } from 'lucide-react';
-// Local type definition to avoid restricted import
-type AdminUser = {
-  id: string;
-  email: string | undefined;
-  name: string | null;
-  username: string | undefined;
-  provider: string;
-  avatar_url: string | null;
-  providerInfo: any;
-  createdAt: string | undefined;
-  updatedAt: string | undefined;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  role: string;
-  permissions: string[];
-  subscriptionTier: string;
-  adminRole: 'moderator' | 'data_admin' | 'system_admin' | 'super_admin' | null;
-  roleLevel: number;
-  isSuperAdmin: boolean;
-  token?: string;
-};
+import { SignOutButton } from '@/components/auth';
+import type { AdminUser } from '@/lib/admin/types';
 
 // Local permission constants
 const ADMIN_PERMISSIONS = {
@@ -54,14 +39,18 @@ const ADMIN_PERMISSIONS = {
   SYNAGOGUE_VIEW: 'synagogue:view',
   KOSHER_PLACE_VIEW: 'kosher_place:view',
   AUDIT_VIEW: 'audit:view',
-  SYSTEM_SETTINGS: 'system:settings'
+  SYSTEM_SETTINGS: 'system:settings',
+  STORE_VIEW: 'store:view',
+  STORE_PRODUCTS: 'store:products',
+  STORE_ORDERS: 'store:orders',
+  STORE_MESSAGES: 'store:messages',
+  STORE_ANALYTICS: 'store:analytics'
 } as const;
 
 // Local permission check function
 const hasPermission = (userPermissions: string[], requiredPermission: string): boolean => {
   return userPermissions.includes(requiredPermission);
 };
-import { SignOutButton } from '@/components/auth';
 
 interface AdminSidebarProps {
   adminUser: AdminUser;
@@ -153,6 +142,43 @@ export default function AdminSidebar({ adminUser }: AdminSidebarProps) {
           href: '/admin/database/kosher-places', 
           icon: Star,
           permission: ADMIN_PERMISSIONS.KOSHER_PLACE_VIEW
+        }
+      ]
+    },
+    {
+      section: 'store',
+      title: 'Store Management',
+      icon: ShoppingBag,
+      items: [
+        { 
+          title: 'Store Dashboard', 
+          href: '/shtel/dashboard', 
+          icon: LayoutDashboard,
+          permission: ADMIN_PERMISSIONS.STORE_VIEW
+        },
+        { 
+          title: 'Products', 
+          href: '/admin/store/products', 
+          icon: Package,
+          permission: ADMIN_PERMISSIONS.STORE_PRODUCTS
+        },
+        { 
+          title: 'Orders', 
+          href: '/admin/store/orders', 
+          icon: ShoppingCart,
+          permission: ADMIN_PERMISSIONS.STORE_ORDERS
+        },
+        { 
+          title: 'Messages', 
+          href: '/admin/store/messages', 
+          icon: Mail,
+          permission: ADMIN_PERMISSIONS.STORE_MESSAGES
+        },
+        { 
+          title: 'Store Analytics', 
+          href: '/admin/store/analytics', 
+          icon: BarChart3,
+          permission: ADMIN_PERMISSIONS.STORE_ANALYTICS
         }
       ]
     },

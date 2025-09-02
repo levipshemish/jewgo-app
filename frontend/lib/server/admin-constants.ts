@@ -1,6 +1,6 @@
 import 'server-only';
 // Local type definition to avoid restricted import
-type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
+type AdminRole = 'moderator' | 'data_admin' | 'store_admin' | 'system_admin' | 'super_admin';
 
 // Permission definitions (server-only)
 export const ADMIN_PERMISSIONS = {
@@ -53,6 +53,15 @@ export const ADMIN_PERMISSIONS = {
   
   // Analytics
   ANALYTICS_VIEW: 'analytics:view',
+  
+  // Store/Marketplace management (store_admin specific)
+  STORE_VIEW: 'store:view',
+  STORE_EDIT: 'store:edit',
+  STORE_DELETE: 'store:delete',
+  STORE_PRODUCTS: 'store:products',
+  STORE_ORDERS: 'store:orders',
+  STORE_MESSAGES: 'store:messages',
+  STORE_ANALYTICS: 'store:analytics',
 } as const;
 
 // Role-based permission mapping (server-only)
@@ -75,6 +84,18 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
     ADMIN_PERMISSIONS.BULK_OPERATIONS,
     ADMIN_PERMISSIONS.DATA_EXPORT,
     ADMIN_PERMISSIONS.ANALYTICS_VIEW,
+  ],
+  store_admin: [
+    ADMIN_PERMISSIONS.STORE_VIEW,
+    ADMIN_PERMISSIONS.STORE_EDIT,
+    ADMIN_PERMISSIONS.STORE_DELETE,
+    ADMIN_PERMISSIONS.STORE_PRODUCTS,
+    ADMIN_PERMISSIONS.STORE_ORDERS,
+    ADMIN_PERMISSIONS.STORE_MESSAGES,
+    ADMIN_PERMISSIONS.STORE_ANALYTICS,
+    ADMIN_PERMISSIONS.RESTAURANT_VIEW,
+    ADMIN_PERMISSIONS.REVIEW_VIEW,
+    ADMIN_PERMISSIONS.USER_VIEW,
   ],
   system_admin: [
     ADMIN_PERMISSIONS.RESTAURANT_VIEW,
@@ -99,6 +120,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
 export const ROLE_HIERARCHY = {
   MODERATOR: 1,
   DATA_ADMIN: 2,
+  STORE_ADMIN: 2, // Same level as DATA_ADMIN but specialized
   SYSTEM_ADMIN: 3,
   SUPER_ADMIN: 4
 } as const;
@@ -134,6 +156,7 @@ export function getRoleLevelForRole(role: AdminRole): number {
   const roleLevels: Record<AdminRole, number> = {
     moderator: ROLE_HIERARCHY.MODERATOR,
     data_admin: ROLE_HIERARCHY.DATA_ADMIN,
+    store_admin: ROLE_HIERARCHY.STORE_ADMIN,
     system_admin: ROLE_HIERARCHY.SYSTEM_ADMIN,
     super_admin: ROLE_HIERARCHY.SUPER_ADMIN
   };
@@ -151,7 +174,7 @@ export function isRoleHigherOrEqual(roleA: AdminRole, roleB: AdminRole): boolean
  * Validate if string is a valid admin role
  */
 export function isValidAdminRole(role: string): role is AdminRole {
-  return ['moderator', 'data_admin', 'system_admin', 'super_admin'].includes(role);
+  return ['moderator', 'data_admin', 'store_admin', 'system_admin', 'super_admin'].includes(role);
 }
 
 /**

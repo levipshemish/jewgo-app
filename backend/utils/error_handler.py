@@ -291,3 +291,15 @@ def create_success_response(
         "status_code": status_code,
     }
     return response, status_code
+
+# Simple ErrorHandler class for compatibility with app_factory_full.py
+class ErrorHandler:
+    """Simple error handler class for compatibility."""
+    
+    def __init__(self):
+        pass
+    
+    def handle_error(self, error):
+        """Handle an error."""
+        logger.error(f"Error handled: {error}")
+        return {"error": str(error)}

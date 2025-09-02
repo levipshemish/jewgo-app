@@ -2,9 +2,25 @@
 Pytest configuration and fixtures for backend tests.
 """
 
+import os
 import pytest
 from flask import Flask
 from app_factory import create_app
+
+
+@pytest.fixture(autouse=True)
+def setup_test_env():
+    """Set up test environment variables."""
+    # Disable Supabase authentication for testing
+    os.environ['ENABLE_SUPABASE_ADMIN_ROLES'] = 'false'
+    # Disable JWKS pre-warming for testing
+    os.environ['ENABLE_JWKS_PREWARM'] = 'false'
+    yield
+    # Clean up
+    if 'ENABLE_SUPABASE_ADMIN_ROLES' in os.environ:
+        del os.environ['ENABLE_SUPABASE_ADMIN_ROLES']
+    if 'ENABLE_JWKS_PREWARM' in os.environ:
+        del os.environ['ENABLE_JWKS_PREWARM']
 
 
 @pytest.fixture

@@ -72,8 +72,10 @@
   text-size-adjust: 100% !important;
   transition: all 0.2s ease-out !important;
   transform: none !important;
-  backdrop-filter: blur(8px) !important;
+  /* Remove backdrop-filter to reduce repaint/flicker on some browsers */
+  /* backdrop-filter: blur(8px) !important; */
   z-index: 10 !important;
+  contain: layout paint !important;
 }
 
 .unified-card-tag:hover {
@@ -96,7 +98,7 @@
     background-color: rgba(255, 255, 255, 0.14) !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.22) !important;
-    backdrop-filter: blur(8px) !important;
+    /* backdrop-filter: blur(8px) !important; */
   }
   .unified-card-tag:hover {
     background-color: rgba(255, 255, 255, 0.22) !important;
@@ -169,11 +171,9 @@
 
 /* Card base styles with flicker prevention */
 .unified-card {
-  /* Hardware acceleration to prevent flickering */
-  transform: translateZ(0);
+  /* Keep base simple; avoid forcing 3D context on whole card */
   backface-visibility: hidden;
-  perspective: 1000px;
-  will-change: transform;
+  will-change: auto;
   
   /* Smooth transitions */
   transition: all 0.2s ease-out;
@@ -184,10 +184,9 @@
 
 /* Optimize image rendering during scroll */
 .unified-card img {
-  /* Hardware acceleration for images */
-  transform: translateZ(0);
+  /* Keep default inexpensive; only promote on hover */
   backface-visibility: hidden;
-  
+  will-change: auto;
   /* Smooth image transitions */
   transition: transform 0.2s ease-out;
 }
@@ -195,6 +194,13 @@
 /* Prevent flickering on hover during scroll */
 .unified-card:hover img {
   transform: scale(1.05) translateZ(0);
+  will-change: transform;
+}
+
+/* On desktop scroll, suppress hover transforms entirely to prevent flicker */
+.scrolling .unified-card:hover img {
+  transform: none !important;
+  will-change: auto !important;
 }
 
 /* Optimize tag and heart button positioning */
@@ -213,7 +219,7 @@
 .scrolling .unified-card * {
   transition: none !important;
   animation: none !important;
-  transform: none !important;
+  /* Avoid resetting transform; components already minimize transform during scroll */
 }
 
 /* Ensure smooth scrolling behavior */

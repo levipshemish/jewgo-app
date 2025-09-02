@@ -5,23 +5,21 @@
 /* Global scroll optimizations to prevent flickering */
 html {
   scroll-behavior: smooth;
-  /* Hardware acceleration for smooth scrolling */
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 body {
   /* Prevent scroll chaining and improve performance */
   overscroll-behavior: contain;
-  /* Hardware acceleration */
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 /* Optimize scrolling performance */
-* {
-  /* Prevent layout thrashing during scroll */
+*:not(html):not(body) {
+  /* Scope containment to most elements; avoid on html/body to preserve scrolling */
   contain: layout style;
+}
+
+html, body {
+  contain: none;
 }
 
 /* Smooth scrolling for all scrollable elements */
@@ -34,15 +32,12 @@ body {
 .scrolling * {
   transition: none !important;
   animation: none !important;
-  transform: none !important;
+  /* Do NOT reset transform globally; it causes layer thrash/flicker */
 }
 
 /* Optimize image rendering during scroll */
 img {
-  /* Hardware acceleration */
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  /* Prevent layout shifts */
+  /* Keep images simple; specific components handle perf hints */
   contain: layout style paint;
 }
 

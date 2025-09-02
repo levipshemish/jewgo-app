@@ -445,3 +445,21 @@ def clear_user_context(_):
             delattr(g, attr)
         except Exception:
             pass
+
+# Simple SecurityManager class for compatibility with app_factory_full.py
+class SecurityManager:
+    """Simple security manager class for compatibility."""
+    
+    def __init__(self):
+        self.admin_tokens = {}
+    
+    def get_admin_token(self, token_id):
+        """Get admin token."""
+        return self.admin_tokens.get(token_id)
+    
+    def set_admin_token(self, token_id, token_data):
+        """Set admin token."""
+        self.admin_tokens[token_id] = token_data
+
+# Create a global instance
+security_manager = SecurityManager()

@@ -13,28 +13,8 @@ import {
 } from 'lucide-react';
 import Clock from './Clock';
 import NotificationSystem from './NotificationSystem';
-// Local type definition to avoid restricted import
-type AdminUser = {
-  id: string;
-  email: string | undefined;
-  name: string | null;
-  username: string | undefined;
-  provider: string;
-  avatar_url: string | null;
-  providerInfo: any;
-  createdAt: string | undefined;
-  updatedAt: string | undefined;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  role: string;
-  permissions: string[];
-  subscriptionTier: string;
-  adminRole: 'moderator' | 'data_admin' | 'system_admin' | 'super_admin' | null;
-  roleLevel: number;
-  isSuperAdmin: boolean;
-  token?: string;
-};
 import { SignOutButton } from '@/components/auth';
+import type { AdminUser } from '@/lib/admin/types';
 
 interface AdminHeaderProps {
   adminUser: AdminUser;

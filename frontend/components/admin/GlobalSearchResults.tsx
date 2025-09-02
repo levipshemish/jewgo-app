@@ -31,7 +31,7 @@ type AdminUser = {
   role: string;
   permissions: string[];
   subscriptionTier: string;
-  adminRole: 'moderator' | 'data_admin' | 'system_admin' | 'super_admin' | null;
+  adminRole: 'moderator' | 'data_admin' | 'store_admin' | 'system_admin' | 'super_admin' | null;
   roleLevel: number;
   isSuperAdmin: boolean;
   token?: string;

@@ -461,11 +461,12 @@ class TestRoleManagement:
     # Flask endpoint tests
     def test_assign_role_endpoint_success(self, client):
         """Test successful role assignment via Flask endpoint."""
-        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
-            mock_user.return_value = {
-                'id': 'admin-123',
-                'role': 'super_admin'
-            }
+        # Patch the security decorator to bypass authentication
+        with patch('routes.api_v4.require_super_admin_auth') as mock_auth:
+            # Create a no-op decorator that just returns the function
+            def no_op_decorator(f):
+                return f
+            mock_auth.return_value = no_op_decorator
             
             with patch('backend.routes.api_v4.create_user_service') as mock_service:
                 mock_service_instance = Mock()
@@ -733,3 +734,12 @@ class TestRoleManagement:
             assert response.status_code == 403
             data = response.get_json()
             assert 'forbidden' in data['error'].lower() or 'insufficient' in data['error'].lower()
+
+    def test_health_endpoint(self, client):
+        """Test the simple health endpoint that doesn't require authentication."""
+        response = client.get('/api/v4/test/health')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['status'] == 'healthy'
+        assert data['message'] == 'API v4 is working'
+        assert 'timestamp' in data

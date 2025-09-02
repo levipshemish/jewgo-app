@@ -360,52 +360,12 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     </>
   );
 
-  // Use regular div during scroll to prevent flickering
-  if (isScrolling) {
-    return (
-      <div
-        className={cn(
-          'relative bg-transparent cursor-pointer group unified-card',
-          'h-full flex flex-col',
-          'border-0',
-          'shadow-none',
-          variantStyles.cardClass,
-          sanitizedClassName
-        )}
-        style={{ 
-          background: 'transparent', 
-          boxShadow: 'none', 
-          border: 0,
-          transform: 'none',
-          transition: 'none',
-          animation: 'none',
-          willChange: 'auto',
-          paddingBottom: 0,
-          margin: 0,
-          // Add these properties to prevent any potential flickering
-          backfaceVisibility: 'hidden',
-          perspective: '1000px',
-          transformStyle: 'preserve-3d'
-        }}
-        onClick={handleCardClick}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`View details for ${cardData.title}`}
-        aria-live="polite"
-        aria-describedby={`card-${cardData.id.toString()}`}
-      >
-        {cardContent}
-      </div>
-    );
-  }
-
-  // Use motion.div when not scrolling - optimized to prevent flickering
+  // Always render a single motion.div to avoid remounts during scroll
   return (
     <motion.div
       variants={cardVariants}
       initial={false}
-      animate="visible"
+      animate={isScrolling ? 'scroll' : 'visible'}
       exit="exit"
       // Disable hover lift to avoid layout/compositing thrash in dense grids
       whileHover={undefined}
@@ -423,11 +383,9 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         paddingBottom: 0, 
         margin: 0, 
         boxShadow: 'none',
-        // Add these properties to prevent flickering
+        // Keep styles minimal to avoid layer thrash
         backfaceVisibility: 'hidden',
-        perspective: '1000px',
-        transformStyle: 'preserve-3d',
-        willChange: 'transform'
+        willChange: isScrolling ? 'auto' : 'transform'
       }}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}

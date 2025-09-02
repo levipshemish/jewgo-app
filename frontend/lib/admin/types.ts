@@ -2,8 +2,9 @@ import { TransformedUser } from '@/lib/utils/auth-utils';
 
 /**
  * Admin role hierarchy from lowest to highest privilege
+ * Note: store_admin is a specialized role for marketplace store management
  */
-export type AdminRole = 'moderator' | 'data_admin' | 'system_admin' | 'super_admin';
+export type AdminRole = 'moderator' | 'data_admin' | 'store_admin' | 'system_admin' | 'super_admin';
 
 /**
  * Enhanced user type with guaranteed admin fields
@@ -63,7 +64,15 @@ export type AdminPermission =
   | 'synagogue:view'
   | 'kosher_place:view'
   // Analytics
-  | 'analytics:view';
+  | 'analytics:view'
+  // Store management
+  | 'store:view'
+  | 'store:edit'
+  | 'store:delete'
+  | 'store:products'
+  | 'store:orders'
+  | 'store:messages'
+  | 'store:analytics';
 
 /**
  * Role hierarchy type

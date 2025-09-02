@@ -19,7 +19,7 @@ export default async function AdminSearchPage({ searchParams }: SearchPageProps)
     }
 
     // Check if user has minimal admin role (moderator or higher)
-    if (!adminUser.adminRole || !['moderator', 'data_admin', 'system_admin', 'super_admin'].includes(adminUser.adminRole)) {
+    if (!adminUser.adminRole || !['moderator', 'data_admin', 'store_admin', 'system_admin', 'super_admin'].includes(adminUser.adminRole)) {
       redirect('/?error=not_authorized&message=insufficient_admin_permissions');
     }
 
