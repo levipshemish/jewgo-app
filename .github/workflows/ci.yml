@@ -50,7 +50,8 @@ jobs:
         # Node.js script validation
         echo "📝 Validating Node.js scripts..."
         # Node does not support a compile-only flag; emulate syntax check without executing the script
-        node -e "new Function(require('fs').readFileSync('frontend/scripts/validate-env-unified.js','utf8'))" || (echo "❌ Frontend validation script failed" && exit 1)
+        node -e "new Function(require('fs').readFileSync('frontend/scripts/validate-env-unified.js','utf8'))" || \
+          (echo "❌ Frontend validation script failed" && exit 1)
         
         # Test script help commands (basic functionality)
         echo "🧪 Testing script basic functionality..."
@@ -284,7 +285,9 @@ jobs:
         pytest --cov=. --cov-report=xml --cov-report=term-missing --cov-fail-under=70
         
     - name: Upload coverage to Codecov
-      if: ${{ secrets.CODECOV_TOKEN != '' }}
+      if: ${{ env.CODECOV_TOKEN != '' }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       uses: codecov/codecov-action@v4
       with:
         file: backend/coverage.xml
