@@ -1,9 +1,8 @@
 'use client';
 
-import { SlidersHorizontal} from 'lucide-react';
-import React, { useState } from 'react';
-
-import { Logo } from '@/components/ui';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
+import Logo from '@/components/ui/Logo';
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
@@ -15,6 +14,36 @@ interface HeaderProps {
 export default function Header({
   onSearch, placeholder = "Find your Eatery", showFilters = true, onShowFilters, }: HeaderProps = {}) {
   const [query, setQuery] = useState('');
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced search to prevent excessive API calls
+  const debouncedSearch = useCallback((searchQuery: string) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchQuery.trim() && onSearch) {
+        onSearch(searchQuery.trim());
+      }
+    }, 300); // 300ms debounce delay
+  }, [onSearch]);
+
+  // Handle input change with debouncing
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    debouncedSearch(value);
+  }, [debouncedSearch]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +88,7 @@ export default function Header({
                   <input
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={handleInputChange}
                     placeholder={placeholder}
                     className="w-full pl-36 sm:pl-52 lg:pl-56 pr-12 sm:pr-14 py-3 sm:py-4 lg:py-5 rounded-2xl sm:rounded-3xl bg-gray-100 text-base sm:text-lg lg:text-xl placeholder-gray-400 focus:outline-none focus:ring-0 focus:bg-gray-100 transition-all duration-200 border-0 font-normal"
                     style={{

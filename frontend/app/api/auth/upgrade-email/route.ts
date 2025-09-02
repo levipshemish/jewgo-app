@@ -34,13 +34,13 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const correlationId = generateCorrelationId();
   // const startTime = Date.now();
-  const origin = request.headers.get('origin');
+  const origin = request.headers.get('origin') || '';
   
   try {
     // Get request details for security validation
-    const referer = request.headers.get('referer');
-    const csrfToken = request.headers.get('x-csrf-token');
-    const forwardedFor = request.headers.get('x-forwarded-for');
+    const referer = request.headers.get('referer') || '';
+    const csrfToken = request.headers.get('x-csrf-token') || '';
+    const forwardedFor = request.headers.get('x-forwarded-for') || '';
     const platformIP = (request as any).ip || (request as any).cf?.connectingIP;
     const realIPHeader = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
     const realIP = platformIP || realIPHeader || 'unknown';

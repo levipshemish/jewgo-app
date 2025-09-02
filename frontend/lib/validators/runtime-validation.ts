@@ -210,7 +210,7 @@ export function validateData<T>(
       });
       return { success: false, errors };
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       errors: { _error: 'Validation failed unexpectedly' }

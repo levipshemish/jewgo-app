@@ -294,6 +294,14 @@ def create_app(config_class=None):
     # Create Flask app
     app = Flask(__name__)
 
+    # Register teardown handler to clear flask.g per request
+    try:
+        from utils.security import clear_user_context
+        app.teardown_request(clear_user_context)
+        logger.info("Registered user context cleanup handler")
+    except Exception as e:
+        logger.warning(f"Failed to register user context cleanup: {e}")
+
     # Pre-warm JWKS and schedule refresh (guarded)
     try:
         from utils.supabase_auth import supabase_auth

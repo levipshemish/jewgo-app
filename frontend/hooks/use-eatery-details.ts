@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { EateryDB } from '@/types/listing'
 
 interface UseEateryDetailsReturn {
@@ -129,7 +129,7 @@ export function useEateryDetails(eateryId: string): UseEateryDetailsReturn {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchEateryDetails = async () => {
+  const fetchEateryDetails = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -149,13 +149,13 @@ export function useEateryDetails(eateryId: string): UseEateryDetailsReturn {
     } finally {
       setLoading(false)
     }
-  }
+  }, [eateryId])
 
   useEffect(() => {
     if (eateryId) {
       fetchEateryDetails()
     }
-  }, [eateryId])
+  }, [eateryId, fetchEateryDetails])
 
   return {
     data,

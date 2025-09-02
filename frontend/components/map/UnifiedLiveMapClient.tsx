@@ -64,7 +64,6 @@ export default function UnifiedLiveMapClient() {
   const {
     activeFilters,
     setFilter,
-    toggleFilter,
     clearAllFilters
   } = useAdvancedFilters();
   
@@ -412,8 +411,13 @@ export default function UnifiedLiveMapClient() {
   }, [setFilter]);
 
   const handleToggleFilter = useCallback((filterType: keyof typeof activeFilters) => {
-    toggleFilter(filterType);
-  }, [toggleFilter]);
+    const currentValue = activeFilters[filterType];
+    if (currentValue) {
+      setFilter(filterType, undefined);
+    } else {
+      setFilter(filterType, true as any);
+    }
+  }, [activeFilters, setFilter]);
 
   const handleClearAll = useCallback(() => {
     setSearchQuery('');

@@ -786,20 +786,17 @@ class DatabaseManager:
                     'order': 'assigned_at.desc'
                 }
                 
-                # Filter by active/non-expired roles unless include_expired is True
+                # Build filters
+                and_filters = []
                 if not include_expired:
                     params['is_active'] = 'eq.true'
-                    # Also filter out expired roles based on expires_at
-                    params['or'] = '(expires_at.is.null,expires_at.gt.now())'
-                
-                # Add search filter for admin_roles table (searches linked user table)
+                    expires_filter = 'or(expires_at.is.null,expires_at.gt.now())'
+                    and_filters.append(expires_filter)
                 if search:
-                    search_filter = f'(users.name.ilike.*{search}*,users.email.ilike.*{search}*)'
-                    if 'or' in params:
-                        # Combine with existing or filter
-                        params['or'] = f'({params["or"]},and.{search_filter})'
-                    else:
-                        params['or'] = search_filter
+                    search_filter = f'or(users.name.ilike.*{search}*,users.email.ilike.*{search}*)'
+                    and_filters.append(search_filter)
+                if and_filters:
+                    params['and'] = f"and({','.join(and_filters)})"
             
             if user_id:
                 params['user_id'] = f'eq.{user_id}'

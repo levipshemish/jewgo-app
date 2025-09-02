@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserApi } from '@/lib/api/user-api';
 
@@ -34,9 +34,9 @@ export default function UserProfile() {
     if (user && !authLoading) {
       loadProfile();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, loadProfile]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) {
       return;
     }
@@ -56,7 +56,7 @@ export default function UserProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userApi.profile]);
 
   const handleSave = async () => {
     if (!user) {

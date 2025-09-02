@@ -52,8 +52,9 @@ class SupabaseRoleManager:
         self._fallback_cache_lock = threading.Lock()
         self._fallback_cache_ttl = 60  # Short 60-second TTL for in-process cache
         
-        if not self.supabase_url or not self.supabase_anon_key:
-            raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
+        # Require URL, but allow missing anon key (optional header)
+        if not self.supabase_url:
+            raise ValueError("SUPABASE_URL must be set")
 
     def get_user_admin_role(self, user_token: str) -> Optional[Dict[str, Any]]:
         """
@@ -258,9 +259,11 @@ class SupabaseRoleManager:
             url = f"{self.supabase_url}/rest/v1/rpc/get_current_admin_role"
             headers = {
                 "Authorization": f"Bearer {user_token}",
-                "apikey": self.supabase_anon_key,
                 "Content-Type": "application/json",
             }
+            # Only include apikey header if anon key is available
+            if self.supabase_anon_key:
+                headers["apikey"] = self.supabase_anon_key
             # Strict timeout: connect 200ms, read 400ms, total ≤600ms
             response = requests.post(
                 url,

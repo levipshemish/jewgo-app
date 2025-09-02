@@ -1,4 +1,7 @@
-import { validateSupabaseFeatureSupport, validateSupabaseFeaturesWithLogging } from './utils/auth-utils.server';
+// Basic feature checks that can run in the browser
+import { validateSupabaseFeatureSupport } from './utils/auth-utils';
+// Server-only, louder validation with logging (SSR/init paths)
+import { validateSupabaseFeaturesWithLogging } from './utils/auth-utils.server';
 
 /**
  * Feature Guard - Boot-time validation of critical Supabase features

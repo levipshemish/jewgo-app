@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui-listing-utility/button"
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import { ChevronDown, Clock, X, MapPin } from "lucide-react"
 import { Stack, Cluster } from "@/components/ui-listing-utility/spacing"
 
@@ -237,8 +238,9 @@ export function ListingActions({
       </div>
 
       {bottomAction?.hoursInfo && showHours && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
+        typeof window !== 'undefined' ? createPortal(
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
             {/* Header */}
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -269,7 +271,9 @@ export function ListingActions({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      ) : null
       )}
     </>
   )

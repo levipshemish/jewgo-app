@@ -89,7 +89,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     subtitle: data.subtitle || '',
     additionalText: data.additionalText || '',
     showHeart: data.showHeart !== false
-  }), [data.id, data.imageTag, data.badge, data.subtitle, data.additionalText, data.showHeart]);
+  }), [data]);
 
   // Get safe image URL using existing utility
   const heroImageUrl = useMemo(() => {

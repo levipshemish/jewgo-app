@@ -180,6 +180,7 @@ function StoresPageContent() {
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
   // Performance optimizations based on device capabilities
+  const imageQuality = isLowPowerMode || isSlowConnection ? 'low' : 'high';
   const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
   const shouldLazyLoad = isSlowConnection;
   const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
@@ -293,7 +294,7 @@ function StoresPageContent() {
       isCholovYisroel: store.is_cholov_yisroel,
       isPasYisroel: store.is_pas_yisroel,
     };
-  }, []); // Empty dependency array since imageQuality is constant
+  }, [imageQuality]); // Include imageQuality dependency since it can change based on device state
 
   // Memoize filter change handlers to prevent unnecessary re-renders
   const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
@@ -703,7 +704,7 @@ function StoresPageContent() {
                 data={transformStoreToCardData(store)}
                 variant="default"
                 showStarInBadge={true}
-                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
+                priority={index < 4} // Always prioritize first 4 images for LCP optimization
                 onCardClick={() => router.push(`/store/${store.id}`)}
                 className="w-full h-full"
                 isScrolling={shouldReduceAnimations} // Disable animations when in low power mode

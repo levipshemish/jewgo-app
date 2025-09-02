@@ -11,7 +11,7 @@ from utils.logging_config import get_logger
 from utils.response_helpers import success_response, error_response, not_found_response
 from utils.feature_flags_v4 import require_api_v4_flag
 from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
-from utils.admin_auth import require_admin_auth
+from utils.security import require_admin as require_admin_auth
 from utils.limiter import limiter
 
 # Service imports

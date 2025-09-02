@@ -1,4 +1,4 @@
-import { Filters, FilterState, AppliedFilters, DraftFilters } from './filters.types';
+// Types removed as they were not used in this file
 
 /**
  * Distance field names in order of precedence (highest to lowest)

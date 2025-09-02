@@ -1,20 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { X, MapPin, Star, DollarSign, Shield, Utensils } from 'lucide-react';
 import { useLocalFilters } from '@/lib/hooks/useLocalFilters';
 import { useLazyFilterOptions } from '@/lib/hooks/useFilterOptions';
-import { DraftFilters, AppliedFilters } from '@/lib/filters/filters.types';
-import { cn } from '@/lib/utils/classNames';
+import { AppliedFilters } from '@/lib/filters/filters.types';
 
-// Helper function to normalize UI state ↔ form control
-const toSelectValue = (v?: string | null) => {
-  // Handle undefined, null, and empty string cases
-  if (v === undefined || v === null || v === '') {
-    return '';
-  }
-  return v;
-};
+// TODO: Implement UI state normalization when needed
 
 // Helper function to ensure dropdown value is always valid
 const getDropdownValue = (value?: string | null) => {
@@ -25,17 +17,7 @@ const getDropdownValue = (value?: string | null) => {
   return value;
 };
 
-// One canonical cleaner for filters (use it everywhere)
-function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
-  const out: Partial<T> = {};
-  for (const [k, v] of Object.entries(raw)) {
-    if (v === undefined || v === null) {continue;}
-    if (typeof v === "string" && v.trim() === "") {continue;}
-    if (Array.isArray(v) && v.length === 0) {continue;}
-    out[k as keyof T] = v as any;
-  }
-  return out;
-}
+// TODO: Implement filter cleaning when needed
 
 interface ModernFilterPopupProps {
   isOpen: boolean;
@@ -114,12 +96,12 @@ export function ModernFilterPopup({
   };
 
   const handleApply = () => {
-    // Combine draft filters with quick filters
-    const finalFilters = {
-      ...draftFilters,
-      openNow: quickFilters.includes('openNow'),
-      // Add other quick filter mappings as needed
-    };
+    // TODO: Combine draft filters with quick filters when needed
+    // const finalFilters = {
+    //   ...draftFilters,
+    //   openNow: quickFilters.includes('openNow'),
+    //   // Add other quick filter mappings as needed
+    // };
     
     applyFilters((filters) => onApplyFilters(filters), true);
     onClose();
@@ -285,7 +267,7 @@ export function ModernFilterPopup({
               </div>
               {quickFilterOptions.some(filter => !filter.supported) && (
                 <p className="text-xs text-gray-500">
-                  More filters coming soon! We're working on adding hours, Wi-Fi, and parking information.
+                  More filters coming soon! We&apos;re working on adding hours, Wi-Fi, and parking information.
                 </p>
               )}
             </div>

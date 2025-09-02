@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Restaurant } from '@/lib/types/restaurant';
 import { getRestaurant } from '@/lib/api/restaurants';
 
@@ -14,7 +14,7 @@ export function useRestaurantDetails(restaurantId: string | number): UseRestaura
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRestaurant = async () => {
+  const fetchRestaurant = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -44,13 +44,13 @@ export function useRestaurantDetails(restaurantId: string | number): UseRestaura
     } finally {
       setLoading(false);
     }
-  };
+  }, [restaurantId]);
 
   useEffect(() => {
     if (restaurantId) {
       fetchRestaurant();
     }
-  }, [restaurantId]);
+  }, [restaurantId, fetchRestaurant]);
 
   return {
     data,

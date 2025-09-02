@@ -69,20 +69,20 @@ export function ListingHeader({
                     }
                     
                     // If no specific website, check for known agencies
-                    const lowerAgency = kosherAgency.toLowerCase()
+                    const agencyLower = kosherAgency.toLowerCase()
                     
                     // Check for ORB (Orthodox Rabbinical Board) variations
-                    if (lowerAgency.includes('orb') || 
-                        lowerAgency.includes('orthodox rabbinical board')) {
+                    if (agencyLower.includes('orb') || 
+                        agencyLower.includes('orthodox rabbinical board')) {
                       window.open('https://www.orbkosher.com/', '_blank')
                       return
                     }
                     
                     // Check for Kosher Miami variations
-                    if (lowerAgency.includes('kosher miami') || 
-                        lowerAgency.includes('vaad hakashrus') ||
-                        lowerAgency.includes('vaad') ||
-                        lowerAgency.includes('miami-dade')) {
+                    if (agencyLower.includes('kosher miami') || 
+                        agencyLower.includes('vaad hakashrus') ||
+                        agencyLower.includes('vaad') ||
+                        agencyLower.includes('miami-dade')) {
                       window.open('https://koshermiami.org/', '_blank')
                       return
                     }

@@ -172,7 +172,8 @@ class TestRoleManagement:
                 offset=0,
                 search='',
                 role_filter=None,
-                include_all=False
+                include_all=False,
+                include_expired=False
             )
 
     def test_get_user_roles_with_pagination(self, user_service):
@@ -195,7 +196,8 @@ class TestRoleManagement:
                 offset=25,  # (page - 1) * limit
                 search='',
                 role_filter=None,
-                include_all=False
+                include_all=False,
+                include_expired=False
             )
 
     def test_get_user_roles_with_search(self, user_service):
@@ -219,8 +221,28 @@ class TestRoleManagement:
                 offset=0,
                 search=search_term,
                 role_filter=None,
-                include_all=False
+                include_all=False,
+                include_expired=False
             )
+\n+    def test_prevent_last_super_admin_revocation(self, client):
+        """Ensure revoking the last super_admin returns 409."""
+        # Patch auth to bypass and set current user as super_admin
+        with patch('backend.routes.api_v4.get_current_supabase_user') as mock_user:
+            mock_user.return_value = {
+                'id': 'admin-1',
+                'role': 'super_admin'
+            }
+            with patch('backend.routes.api_v4.create_user_service') as mock_service:
+                svc = MagicMock()
+                svc.get_active_super_admin_count.return_value = 1
+                mock_service.return_value = svc
+\n+                resp = client.post('/api/v4/admin/roles/revoke', json={
+                    'user_id': 'admin-1',
+                    'role': 'super_admin'
+                })
+                assert resp.status_code == 409
+                data = resp.get_json()
+                assert 'super_admin' in (data.get('error') or '').lower()
 
     def test_get_available_roles(self, user_service):
         """Test getting available roles."""
@@ -462,7 +484,7 @@ class TestRoleManagement:
     def test_assign_role_endpoint_success(self, client):
         """Test successful role assignment via Flask endpoint."""
         # Patch the security decorator to bypass authentication
-        with patch('routes.api_v4.require_super_admin_auth') as mock_auth:
+        with patch('backend.routes.api_v4.require_super_admin_auth') as mock_auth:
             # Create a no-op decorator that just returns the function
             def no_op_decorator(f):
                 return f

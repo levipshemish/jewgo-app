@@ -3,8 +3,6 @@ import type { TransformedUser } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole, AdminSummary } from '@/lib/admin/types';
 import { 
   ADMIN_PERMISSIONS, 
-  ROLE_PERMISSIONS,
-  getRoleLevelForRole,
   getAllPermissions 
 } from './admin-constants';
 import { secureLog, hashUserId, normalizePermission } from './security';

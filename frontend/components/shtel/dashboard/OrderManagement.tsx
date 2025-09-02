@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { appLogger } from '@/lib/utils/logger';
 
 interface OrderManagementProps {
@@ -66,11 +66,7 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadOrders();
-  }, [storeData.store_id, statusFilter, currentPage]);
-
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -99,7 +95,11 @@ export default function OrderManagement({ storeData, onRefresh }: OrderManagemen
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeData.store_id, statusFilter, currentPage, storeData.is_admin]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [storeData.store_id, statusFilter, currentPage, loadOrders]);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {

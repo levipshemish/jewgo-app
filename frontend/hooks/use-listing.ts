@@ -41,7 +41,7 @@ export function useListing(initialData: ListingData) {
       })
       return newValue
     })
-  }, [listingData.header, updateListing])
+  }, [updateListing, listingData.header])
 
   const handleShare = useCallback(() => {
     if (navigator.share) {
@@ -54,7 +54,7 @@ export function useListing(initialData: ListingData) {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href)
     }
-  }, [listingData])
+  }, [])
 
   return {
     listingData: {

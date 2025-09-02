@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
@@ -18,6 +18,11 @@ import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { appLogger } from '@/lib/utils/logger';
 import { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation';
+import { requestDeduplicator as _requestDeduplicator } from '@/lib/utils/requestDedupe';
+import { usePerformanceMonitor } from '@/lib/hooks/usePerformanceMonitor';
+import { ShtelListSkeleton } from '@/components/shtel/ShtelSkeleton';
+import { useBackgroundPrefetch } from '@/lib/hooks/useBackgroundPrefetch';
+import { cacheInvalidator } from '@/lib/utils/cacheInvalidation';
 
 import { MarketplaceListing } from '@/lib/types/marketplace';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
@@ -44,6 +49,23 @@ function ShtelPageContent() {
   const [activeTab, setActiveTab] = useState('shtel');
   const [hasMore, setHasMore] = useState(true);
   
+  // Performance monitoring
+  const { trackApiCall, metrics: performanceMetrics } = usePerformanceMonitor({
+    enabled: process.env.NODE_ENV === 'development',
+    logToConsole: true,
+    componentName: 'ShtelPage'
+  });
+  
+  // Background prefetching for better performance
+  const { prefetch, getStats: prefetchStats } = useBackgroundPrefetch({
+    enabled: true,
+    delay: 2000, // Start prefetching after 2 seconds
+    priority: 'low'
+  });
+  
+  // In-flight request tracking to prevent duplicates
+  const _inFlightRequests = useRef(new Map<string, boolean>());
+  
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
@@ -56,21 +78,36 @@ function ShtelPageContent() {
   const shouldLazyLoad = isSlowConnection;
   const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
   
-  // Ensure mobile detection is working correctly
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  // Optimize mobile detection to prevent unnecessary re-renders
+  const [_isMobileDevice, setIsMobileDevice] = useState(false);
   
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobileDevice(typeof window !== 'undefined' && window.innerWidth <= 768);
+      const mobileCheck = typeof window !== 'undefined' && window.innerWidth <= 768;
+      setIsMobileDevice(prev => {
+        if (prev !== mobileCheck) {
+          return mobileCheck;
+        }
+        return prev; // Prevent unnecessary state updates
+      });
     };
     
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    window.addEventListener('orientationchange', checkMobile);
+    
+    // Debounce resize events to prevent excessive updates
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(checkMobile, 100);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
     
     return () => {
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('orientationchange', checkMobile);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      clearTimeout(resizeTimeout);
     };
   }, []);
   
@@ -92,7 +129,7 @@ function ShtelPageContent() {
   } = useAdvancedFilters();
 
   // Create a stable key for filters to prevent effect loops due to object identity
-  const filtersKey = useMemo(() => {
+  const _filtersKey = useMemo(() => {
     const entries = Object.entries(activeFilters)
       .filter(([, value]) => value !== undefined && value !== '' && value !== null)
       .sort(([a], [b]) => a.localeCompare(b));
@@ -115,7 +152,7 @@ function ShtelPageContent() {
   // Responsive grid with maximum 4 rows and up to 8 columns
   const mobileOptimizedItemsPerPage = useMemo(() => {
     // Calculate items per page to ensure exactly 4 rows on every screen size
-    if (isMobile || isMobileDevice) {
+    if (isMobile || _isMobileDevice) {
       return 8; // 4 rows × 2 columns = 8 items
     } else {
       // For desktop, calculate based on viewport width to ensure 4 rows
@@ -135,7 +172,7 @@ function ShtelPageContent() {
       
       appLogger.debug('Mobile optimization', {
         isMobile,
-        isMobileDevice,
+        _isMobileDevice,
         viewportWidth,
         columnsPerRow,
         result
@@ -143,7 +180,7 @@ function ShtelPageContent() {
       
       return result;
     }
-  }, [isMobile, isMobileDevice, viewportWidth]);
+  }, [isMobile, _isMobileDevice, viewportWidth]);
 
   // Memoize listing transformation to prevent unnecessary re-renders
   const transformListingToCardData = useCallback((listing: MarketplaceListing) => {
@@ -253,9 +290,9 @@ function ShtelPageContent() {
   const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
     () => fetchMoreListings(),
     { 
-      threshold: (isMobile || isMobileDevice) ? 0.2 : 0.3, 
-      rootMargin: (isMobile || isMobileDevice) ? '100px' : '200px',
-      disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
+      threshold: (isMobile || _isMobileDevice) ? 0.2 : 0.3, 
+      rootMargin: (isMobile || _isMobileDevice) ? '100px' : '200px',
+      disabled: !(isMobile || _isMobileDevice) // Only enable infinite scroll on mobile
     }
   );
 
@@ -290,6 +327,14 @@ function ShtelPageContent() {
       return;
     }
     
+    // Add request deduplication
+    const requestKey = JSON.stringify({ filters: filters || activeFilters, searchQuery, userLocation });
+    if (_inFlightRequests.current.has(requestKey)) {
+      return; // Request already in flight
+    }
+    
+    _inFlightRequests.current.set(requestKey, true);
+    
     try {
       setLoading(true);
       setError(null);
@@ -302,15 +347,31 @@ function ShtelPageContent() {
       params.set('mobile_optimized', 'true');
       params.set('community_focus', 'true'); // Add community focus flag
 
+      // Track API call start
+      const apiCallStart = performance.now();
+      trackApiCall('/api/shtel-listings');
+
       // Call the shtel-specific API endpoint with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
       
       try {
         const response = await fetch(`/api/shtel-listings?${params.toString()}`, {
-          signal: controller.signal
+          signal: controller.signal,
+          // Add caching headers for better performance
+          headers: {
+            'Cache-Control': 'max-age=300', // 5 minutes
+          }
         });
         clearTimeout(timeoutId);
+        
+        // Track API call completion
+        const apiCallDuration = performance.now() - apiCallStart;
+        appLogger.debug('Shtel fetch: API call completed', { 
+          duration: `${apiCallDuration.toFixed(2)}ms`,
+          status: response.status 
+        });
+        
         const data = await response.json();
 
         if (!data.success) {
@@ -368,6 +429,8 @@ function ShtelPageContent() {
       } finally {
         clearTimeout(timeoutId);
         setLoading(false);
+        // Clean up in-flight request
+        _inFlightRequests.current.delete(requestKey);
       }
     } catch (err) {
       appLogger.error('Shtel fetch error', { error: String(err) });
@@ -378,8 +441,21 @@ function ShtelPageContent() {
       }
     } finally {
       setLoading(false);
+      // Clean up in-flight request on error
+      _inFlightRequests.current.delete(requestKey);
     }
-  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation, activeFilters, setInfiniteScrollHasMore, calculateDistance, formatDistance, fetchTimeoutMs]);
+  }, [
+    searchQuery, 
+    mobileOptimizedItemsPerPage, 
+    isSettingLocationFilters, 
+    userLocation, 
+    activeFilters, 
+    setInfiniteScrollHasMore, 
+    calculateDistance, 
+    formatDistance, 
+    fetchTimeoutMs,
+    trackApiCall
+  ]);
 
   const fetchMoreListings = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
@@ -411,10 +487,14 @@ function ShtelPageContent() {
     }
   }, [isLoadingMore, hasMore, currentPage, fetchTimeoutMs]);
 
+  // Guard one-time effects under StrictMode
+  const didInit = useRef(false);
+  const didFetchInitial = useRef(false);
+
   // Handle location-based data fetching after filters are set
   useEffect(() => {
-    // Only fetch data if we're not currently setting location filters and we have a location
-    if (!isSettingLocationFilters && userLocation) {
+    if (!isSettingLocationFilters && userLocation && !didFetchInitial.current) {
+      didFetchInitial.current = true;
       // Small delay to ensure filters have been applied
       const timeout = setTimeout(() => {
         fetchShtełListingsData();
@@ -424,10 +504,36 @@ function ShtelPageContent() {
     }
   }, [userLocation, isSettingLocationFilters, fetchShtełListingsData]);
 
-  // Initial data load
+  // Initial data load - only once
   useEffect(() => {
-    fetchShtełListingsData();
-  }, [filtersKey, fetchShtełListingsData]);
+    if (!didInit.current) {
+      didInit.current = true;
+      fetchShtełListingsData();
+    }
+  }, [fetchShtełListingsData]);
+
+  // Background prefetching for related data
+  useEffect(() => {
+    if (userLocation && listings.length > 0) {
+      // Prefetch related store data
+      prefetch('/api/shtel/store', 'low');
+      
+      // Prefetch popular categories
+      prefetch('/api/shtel-listings?category=Judaica&limit=10', 'low');
+      prefetch('/api/shtel-listings?category=Religious Books&limit=10', 'low');
+      
+      // Prefetch nearby listings if we have location
+      if (userLocation.latitude && userLocation.longitude) {
+        const locationParams = new URLSearchParams({
+          lat: userLocation.latitude.toString(),
+          lng: userLocation.longitude.toString(),
+          radius: '25',
+          limit: '20'
+        });
+        prefetch(`/api/shtel-listings?${locationParams.toString()}`, 'low');
+      }
+    }
+  }, [userLocation, listings.length, prefetch]);
 
   // Show location prompt when page loads and user doesn't have location
   useEffect(() => {
@@ -502,12 +608,14 @@ function ShtelPageContent() {
   };
 
   const handleAddListing = () => {
+    // Invalidate cache when adding new listing
+    cacheInvalidator.invalidateListingsCache('create');
     router.push('/shtel/add');
   };
 
   // Consistent responsive styles
   const responsiveStyles = useMemo(() => {
-    const isMobileView = isMobile || isMobileDevice;
+    const isMobileView = isMobile || _isMobileDevice;
     return {
       container: {
         minHeight: isMobileView ? viewportHeight : 'auto',
@@ -518,7 +626,7 @@ function ShtelPageContent() {
         margin: isMobileView ? '16px 8px' : '16px',
       }
     };
-  }, [isMobile, isMobileDevice, viewportHeight]);
+  }, [isMobile, _isMobileDevice, viewportHeight]);
 
   if (error) {
     return (
@@ -622,6 +730,34 @@ function ShtelPageContent() {
         </div>
       )}
 
+      {/* Performance Metrics (Development Only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-100 text-xs">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <span className="text-blue-800">
+              API Calls: {performanceMetrics.apiCalls} | 
+              Renders: {performanceMetrics.renderCount} | 
+              Avg Render: {performanceMetrics.averageRenderTime.toFixed(2)}ms |
+              Prefetch: {prefetchStats().completed}/{prefetchStats().total}
+            </span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="text-blue-600 hover:text-blue-800 text-xs underline"
+              >
+                Reset Metrics
+              </button>
+              <button
+                onClick={() => cacheInvalidator.clearHistory()}
+                className="text-blue-600 hover:text-blue-800 text-xs underline"
+              >
+                Clear Cache History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Shtel listings grid */}
       {sortedListings.length === 0 && !loading ? (
         <div className="text-center py-10 px-5" role="status" aria-live="polite">
@@ -676,22 +812,22 @@ function ShtelPageContent() {
         </div>
       )}
 
-      {/* Loading states with consistent spacing */}
+      {/* Loading states with skeleton loading for better UX */}
       {loading && (
-        <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading community listings{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
+        <div className="py-5" role="status" aria-live="polite">
+          <ShtelListSkeleton count={mobileOptimizedItemsPerPage} />
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
-      {(isMobile || isMobileDevice) && isLoadingMore && (
+      {(isMobile || _isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
           <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 
       {/* Infinite scroll trigger element - only on mobile */}
-      {(isMobile || isMobileDevice) && hasMore && (
+      {(isMobile || _isMobileDevice) && hasMore && (
         <div 
           ref={loadingRef}
           className="h-5 w-full my-5"
@@ -700,7 +836,7 @@ function ShtelPageContent() {
       )}
 
       {/* Desktop pagination - only show on desktop */}
-      {!(isMobile || isMobileDevice) && totalPages > 1 && (
+      {!(isMobile || _isMobileDevice) && totalPages > 1 && (
         <div className="mt-8 mb-24" role="navigation" aria-label="Pagination">
           <Pagination
             currentPage={currentPage}

@@ -4,6 +4,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Upload, Phone } from 'lucide-react';
@@ -1558,8 +1559,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        typeof window !== 'undefined' ? createPortal(
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]" style={{ zIndex: 9999 }}>
+            <div className="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
             <div className="text-6xl mb-4">✅</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Submission Successful!</h2>
             <p className="text-gray-600 mb-6">
@@ -1587,7 +1589,9 @@ export default function EnhancedAddEateryForm({ onClose, className = '' }: Enhan
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      ) : null
       )}
     </div>
   );

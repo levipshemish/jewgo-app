@@ -106,8 +106,8 @@ class RestaurantStatusCalculator:
 
     def _get_timezone(
         self,
-        latitude: float | None,  # noqa: ARG002
-        longitude: float | None,  # noqa: ARG002
+        latitude: float | None,
+        longitude: float | None,
         city: str | None,
         state: str | None,
     ) -> str:
@@ -120,9 +120,38 @@ class RestaurantStatusCalculator:
         Returns:
             Timezone string (e.g., 'America/New_York')
         """
-        # For now, use a simple mapping based on state
-        # In a production environment, you might want to use a geocoding service
-        # to get the exact timezone based on coordinates
+        # Prefer a rough heuristic from latitude/longitude when available
+        # (keeps behavior dependency-free; for production use a TZ service)
+        if latitude is not None and longitude is not None:
+            try:
+                # Approximate US contiguous timezones by longitude bands
+                # Pacific, Mountain, Central, Eastern (very rough cutoffs)
+                if -125.0 <= longitude < -114.0:
+                    return "America/Los_Angeles"
+                if -114.0 <= longitude < -100.0:
+                    return "America/Denver"
+                if -100.0 <= longitude < -85.0:
+                    return "America/Chicago"
+                if -85.0 <= longitude <= -66.0:
+                    return "America/New_York"
+                # Hawaii (very rough)
+                if -161.0 <= longitude <= -154.0 and 15.0 <= latitude <= 25.0:
+                    return "Pacific/Honolulu"
+                # Alaska (very rough)
+                if -170.0 <= longitude < -130.0 and latitude >= 50.0:
+                    return "America/Anchorage"
+                # Fall back to UTC if outside simple bands
+                logger.debug(
+                    "Timezone heuristic fell back to UTC for lat=%s, lng=%s",
+                    latitude,
+                    longitude,
+                )
+            except Exception:
+                # If any error occurs, continue to state-based mapping below
+                logger.debug("Timezone heuristic error; falling back to state mapping")
+
+        # Fallback: simple mapping based on state
+        # In a production environment, prefer geocoding for precise TZ
         if state:
             state_lower = state.lower()
             if state_lower in ["fl", "florida"] or state_lower in ["ny", "new york"]:
@@ -195,7 +224,7 @@ class RestaurantStatusCalculator:
 
     def _parse_day_hours(
         self, match: tuple, pattern: str
-    ) -> list[dict]:  # noqa: ARG002
+    ) -> list[dict]:
         """Parse hours for specific day(s) from regex match.
         Args:
             match: Regex match groups
@@ -204,6 +233,8 @@ class RestaurantStatusCalculator:
             List of parsed hour dictionaries
         """
         try:
+            # Log which pattern we are using to keep the arg meaningful and aid debugging
+            logger.debug("Parsing hours with pattern: %s", pattern)
             if len(match) == 1 and match[0].lower() in [
                 "daily",
                 "24 hours",

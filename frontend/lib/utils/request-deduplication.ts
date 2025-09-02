@@ -12,7 +12,7 @@ interface PendingRequest<T> {
 
 class RequestDeduplicator {
   private pendingRequests = new Map<string, PendingRequest<any>>();
-  private readonly CACHE_TTL = 5000; // 5 seconds TTL for deduplication
+  private readonly CACHE_TTL = 2000; // Increased to 2 seconds TTL for better deduplication
 
   /**
    * Generate a unique key for the request based on URL and options

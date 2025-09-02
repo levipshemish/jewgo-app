@@ -254,7 +254,7 @@ export default function UserProfileManager({ userId, onClose, onUserUpdated }: U
     if (userId) {
       loadUserData();
     }
-  }, [userId]);
+  }, [userId, generateMockUser]);
 
   const handleFieldUpdate = (field: string, value: any) => {
     if (user) {

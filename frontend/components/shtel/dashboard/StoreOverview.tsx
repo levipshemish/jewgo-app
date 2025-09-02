@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { appLogger } from '@/lib/utils/logger';
 
 interface StoreOverviewProps {
@@ -39,9 +39,9 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
 
   useEffect(() => {
     loadAnalytics();
-  }, [storeData.store_id, timeRange]);
+  }, [storeData.store_id, timeRange, loadAnalytics]);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -55,7 +55,7 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeData.store_id, timeRange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

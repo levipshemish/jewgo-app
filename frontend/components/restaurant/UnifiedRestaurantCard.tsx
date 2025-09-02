@@ -38,6 +38,7 @@ interface UnifiedRestaurantCardProps {
   showDetails?: boolean;
   onLike?: (restaurant: Restaurant) => void;
   isLiked?: boolean;
+  priority?: boolean;
 }
 
 export default function UnifiedRestaurantCard({ 
@@ -50,7 +51,8 @@ export default function UnifiedRestaurantCard({
   showReviewCount = true,
   showDetails = false,
   onLike,
-  isLiked: externalIsLiked
+  isLiked: externalIsLiked,
+  priority = false
 }: UnifiedRestaurantCardProps) {
   const router = useRouter();
   const { isFavorite } = useFavorites();
@@ -243,7 +245,7 @@ export default function UnifiedRestaurantCard({
             onError={handleImageError}
             sizes="200px"
             unoptimized={heroSrc.includes('cloudinary.com') || heroSrc.includes('googleusercontent.com') || heroSrc.includes('unsplash.com')}
-            priority={false}
+            priority={priority}
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">

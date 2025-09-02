@@ -37,12 +37,6 @@ export default function CategoryPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (categoryId) {
-      loadCategoryData();
-    }
-  }, [categoryId, loadCategoryData]);
-
   const loadCategoryData = useCallback(async () => {
     try {
       setLoading(true);
@@ -60,6 +54,12 @@ export default function CategoryPage() {
       setLoading(false);
     }
   }, [categoryId]);
+
+  useEffect(() => {
+    if (categoryId) {
+      loadCategoryData();
+    }
+  }, [categoryId, loadCategoryData]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {

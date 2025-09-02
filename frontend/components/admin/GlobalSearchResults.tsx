@@ -37,25 +37,8 @@ type AdminUser = {
   token?: string;
 };
 
-// Local permission constants
-const ADMIN_PERMISSIONS = {
-  ANALYTICS_VIEW: 'analytics:view',
-  RESTAURANT_APPROVE: 'restaurant:approve',
-  REVIEW_MODERATE: 'review:moderate',
-  RESTAURANT_VIEW: 'restaurant:view',
-  REVIEW_VIEW: 'review:view',
-  USER_VIEW: 'user:view',
-  IMAGE_VIEW: 'image:view',
-  SYNAGOGUE_VIEW: 'synagogue:view',
-  KOSHER_PLACE_VIEW: 'kosher_place:view',
-  AUDIT_VIEW: 'audit:view',
-  SYSTEM_SETTINGS: 'system:settings'
-} as const;
-
-// Local permission check function
-const hasPermission = (userPermissions: string[], requiredPermission: string): boolean => {
-  return userPermissions.includes(requiredPermission);
-};
+// TODO: Implement permission checks when needed for search result filtering
+// Permission constants and functions removed to fix lint warning
 
 interface SearchResult {
   id: string;
@@ -283,8 +266,8 @@ export default function GlobalSearchResults({ query, adminUser: _adminUser }: Gl
       try {
         const searchResults = await performSearch(query);
         setResults(searchResults);
-      } catch (error) {
-        console.error('Search error:', error);
+      } catch (searchError) {
+        console.error('Search error:', searchError);
         setError('An error occurred while searching. Please try again.');
       } finally {
         setLoading(false);

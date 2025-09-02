@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { 
   MagnifyingGlassIcon, 
-  FunnelIcon,
   PlusIcon,
   TrashIcon,
-  PencilIcon,
-  EyeIcon
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { useAdminRoles, useAssignRole, useRevokeRole, useAvailableRoles } from '@/hooks/useAdminRoles';
 
@@ -43,6 +41,8 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
   const [page, setPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [showBulkAssignmentModal, setShowBulkAssignmentModal] = useState(false);
+  const [bulkRole, setBulkRole] = useState<string>('');
   const [showRevocationModal, setShowRevocationModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -57,6 +57,7 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
     search: searchTerm,
     role: roleFilter,
     include_all: includeAll,
+    include_expired: includeExpired,
 
   }, initialData);
 
@@ -90,12 +91,12 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
       setSelectedUser(null);
       setSelectedRole('');
       mutate(); // Refresh data
-    } catch (error) {
-      const message = (error instanceof Error && error.message) ? error.message : 'Failed to assign role';
+    } catch (assignError) {
+      const message = (assignError instanceof Error && assignError.message) ? assignError.message : 'Failed to assign role';
       toast.error(message);
       // Ensure rollback revalidation for optimistic updates (Comment 6)
       mutate();
-      console.error('Role assignment error:', error);
+      console.error('Role assignment error:', assignError);
     }
   };
 
@@ -112,12 +113,12 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
       setSelectedUser(null);
       setSelectedRole('');
       mutate(); // Refresh data
-    } catch (error) {
-      const message = (error instanceof Error && error.message) ? error.message : 'Failed to revoke role';
+    } catch (revokeError) {
+      const message = (revokeError instanceof Error && revokeError.message) ? revokeError.message : 'Failed to revoke role';
       toast.error(message);
       // Ensure rollback revalidation (Comment 6)
       mutate();
-      console.error('Role revocation error:', error);
+      console.error('Role revocation error:', revokeError);
     }
   };
 
@@ -317,8 +318,7 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
                   </div>
                   <button
                     onClick={() => {
-                      setSelectedUser(null);
-                      setShowAssignmentModal(true);
+                      setShowBulkAssignmentModal(true);
                     }}
                     className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
                     disabled={bulkLoading}
@@ -485,6 +485,68 @@ export default function RoleManagementTable({ initialData }: RoleManagementTable
         </div>
       )}
 
+      {/* Bulk Assignment Modal */}
+      {showBulkAssignmentModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" role="dialog" aria-modal="true">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Assign Role to Selected Users</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Role</label>
+                  <select
+                    value={bulkRole}
+                    onChange={(e) => setBulkRole(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  >
+                    <option value="">Select role...</option>
+                    {rolesLoading ? (
+                      <option disabled>Loading roles...</option>
+                    ) : rolesError ? (
+                      <option disabled>Error loading roles</option>
+                    ) : (
+                      availableRoles.map((role) => (
+                        <option key={role.id || role.name} value={role.name}>
+                          {role.display_name || role.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  {bulkRole === 'super_admin' && (
+                    <p className="mt-1 text-xs text-red-600">Bulk assignment of super_admin is not allowed. Assign individually with confirmation.</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end space-x-2">
+                <button onClick={() => { setShowBulkAssignmentModal(false); setBulkRole(''); }} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                  disabled={bulkLoading || !bulkRole || bulkRole === 'super_admin'}
+                  onClick={async () => {
+                    if (!bulkRole) { return; }
+                    setBulkLoading(true);
+                    const ids = [...selectedUsers];
+                    const promises = ids.map(uid => assignRoleMutation.mutateAsync({ user_id: uid, role: bulkRole }));
+                    const results = await Promise.allSettled(promises);
+                    const failures = results.filter(r => r.status === 'rejected');
+                    if (failures.length > 0) {
+                      toast.error(`${failures.length} assignments failed`);
+                    } else {
+                      toast.success('Roles assigned');
+                    }
+                    await mutate();
+                    setSelectedUsers([]);
+                    setBulkLoading(false);
+                    setBulkRole('');
+                    setShowBulkAssignmentModal(false);
+                  }}
+                >{bulkLoading ? 'Working...' : 'Assign'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Role Assignment Modal */}
       {showAssignmentModal && (
         <RoleAssignmentModal
@@ -549,7 +611,8 @@ function RoleAssignmentModal({ user, onAssign, onClose, isLoading, availableUser
       node.focus();
     }
   }, [mounted]);
-  // Focus trap
+  // Focus trap with cleanup to prevent leaks
+  const handlerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
   const modalRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -563,7 +626,9 @@ function RoleAssignmentModal({ user, onAssign, onClose, isLoading, availableUser
         if (document.activeElement === last) { (first as HTMLElement)?.focus(); e.preventDefault(); }
       }
     };
+    handlerRef.current = handleKeyDown;
     node.addEventListener('keydown', handleKeyDown);
+    return () => node.removeEventListener('keydown', handleKeyDown);
   }, []);
   // Mount flag for focus
   useEffect(() => { setMounted(true); }, []);
@@ -586,7 +651,7 @@ function RoleAssignmentModal({ user, onAssign, onClose, isLoading, availableUser
         const json = await resp.json();
         const users: User[] = json?.data?.users || [];
         setUserOptions(users);
-      } catch (e) {
+      } catch (_e) {
         setSearchError('Failed to search users');
       } finally {
         setIsSearching(false);

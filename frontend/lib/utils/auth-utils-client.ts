@@ -4,8 +4,7 @@
  */
 
 import { type TransformedUser, type AuthProvider, AUTH_PROVIDERS } from "@/lib/types/supabase-auth";
-import type { Permission } from '@/lib/constants/permissions';
-import { normalizeAdminRole } from '@/lib/constants/permissions';
+import type { Permission, Role } from '@/lib/constants/permissions';
 
 // User type definition - moved here to avoid circular dependencies
 interface User {
@@ -51,7 +50,7 @@ export function isSupabaseConfigured(): boolean {
  * Integrates with the new JWT-based role system
  */
 export async function getUserWithRoles(userToken: string): Promise<{
-  adminRole: string | null;
+  adminRole: Role | null;
   roleLevel: number;
   permissions: Permission[];
 } | null> {
@@ -73,7 +72,7 @@ export async function getUserWithRoles(userToken: string): Promise<{
 
     const data = await response.json();
     return {
-      adminRole: data.adminRole || null,
+      adminRole: (data.adminRole ?? null) as Role | null,
       roleLevel: data.roleLevel || 0,
       permissions: data.permissions || []
     };
@@ -140,13 +139,10 @@ export async function transformSupabaseUserWithRoles(
     try {
       const roleData = await getUserWithRoles(options.userToken);
       if (roleData) {
-        // Normalize role string using consistent helper
-        const adminRole = normalizeAdminRole(roleData.adminRole);
-        
-        transformedUser.adminRole = adminRole;
+        transformedUser.adminRole = roleData.adminRole;
         transformedUser.roleLevel = roleData.roleLevel;
         transformedUser.permissions = [...roleData.permissions];
-        transformedUser.isSuperAdmin = adminRole === 'super_admin';
+        transformedUser.isSuperAdmin = roleData.adminRole === 'super_admin';
       }
     } catch (error) {
       console.warn('Failed to fetch role data, continuing without roles:', error);

@@ -118,7 +118,7 @@ export function CategoryNav({
     setOverflowState(newState);
     setShowPrevControl(newShowPrevControl);
     setShowNextControl(newShowNextControl);
-  }, []);
+  }, [allDisabled]);
 
   // Throttled overflow check
   const throttledCheckOverflow = useCallback(() => {

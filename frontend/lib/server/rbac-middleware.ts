@@ -43,18 +43,20 @@ export const ROLE_PERMISSIONS = {
 } as const;
 
 // Permission inheritance - higher roles inherit lower role permissions
+const _permCache = new Map<keyof typeof ROLE_LEVELS, string[]>();
 const getAllPermissionsForRole = (role: keyof typeof ROLE_LEVELS): string[] => {
+  const cached = _permCache.get(role);
+  if (cached) return cached;
   const roleLevel = ROLE_LEVELS[role];
   const permissions: string[] = [];
-  
-  // Add permissions from current role and all lower roles
   Object.entries(ROLE_LEVELS).forEach(([roleName, level]) => {
     if (level <= roleLevel) {
       permissions.push(...ROLE_PERMISSIONS[roleName as keyof typeof ROLE_PERMISSIONS]);
     }
   });
-  
-  return Array.from(new Set(permissions)); // Remove duplicates
+  const deduped = Array.from(new Set(permissions));
+  _permCache.set(role, deduped);
+  return deduped;
 };
 
 // Higher-order function for minimum role level validation
@@ -62,8 +64,8 @@ export function withMinRole(minRoleLevel: number) {
   return async function(request: NextRequest) {
     const admin = await requireAdminOrThrow(request);
     
-    // Get user's role level - normalize to use adminRole property
-    const userRole = admin.adminRole || admin.role;
+    // Prefer standardized admin.adminRole; legacy admin.role kept for backward-compat
+    const userRole = (admin as any).adminRole || (admin as any).role; // TODO: drop fallback once all callers normalized
     const userRoleLevel = ROLE_LEVELS[userRole as keyof typeof ROLE_LEVELS] || 0;
     
     if (userRoleLevel < minRoleLevel) {
@@ -80,7 +82,7 @@ export function withPermission(requiredPermission: string) {
     const admin = await requireAdminOrThrow(request);
     
     // Super admin has all permissions
-    const userRole = admin.adminRole || admin.role;
+    const userRole = (admin as any).adminRole || (admin as any).role; // TODO legacy fallback
     if (userRole === 'super_admin') {
       return admin;
     }
@@ -89,13 +91,19 @@ export function withPermission(requiredPermission: string) {
     const userPermissions = getAllPermissionsForRole(userRole as keyof typeof ROLE_LEVELS);
     
     // Check if user has the required permission
+    const reqLower = requiredPermission.toLowerCase();
     const hasPermission = userPermissions.some(permission => {
+      const permLower = permission.toLowerCase();
       // Handle wildcard permissions (both :* and :all)
-      if (permission.endsWith(':*') || permission.endsWith(':all')) {
-        const basePermission = permission.slice(0, -2);
-        return requiredPermission.startsWith(basePermission);
+      if (permLower.endsWith(':*')) {
+        const basePermission = permLower.slice(0, -2);
+        return reqLower.startsWith(basePermission);
       }
-      return permission === requiredPermission;
+      if (permLower.endsWith(':all')) {
+        const basePermission = permLower.slice(0, -4);
+        return reqLower.startsWith(basePermission);
+      }
+      return permLower === reqLower;
     });
     
     if (!hasPermission) {
@@ -122,13 +130,18 @@ export function withAnyPermission(requiredPermissions: string[]) {
     
     // Check if user has at least one of the required permissions
     const hasAnyPermission = requiredPermissions.some(requiredPermission => {
+      const reqLower = requiredPermission.toLowerCase();
       return userPermissions.some(permission => {
-        // Handle wildcard permissions (both :* and :all)
-        if (permission.endsWith(':*') || permission.endsWith(':all')) {
-          const basePermission = permission.slice(0, -2);
-          return requiredPermission.startsWith(basePermission);
+        const permLower = permission.toLowerCase();
+        if (permLower.endsWith(':*')) {
+          const basePermission = permLower.slice(0, -2);
+          return reqLower.startsWith(basePermission);
         }
-        return permission === requiredPermission;
+        if (permLower.endsWith(':all')) {
+          const basePermission = permLower.slice(0, -4);
+          return reqLower.startsWith(basePermission);
+        }
+        return permLower === reqLower;
       });
     });
     
@@ -168,18 +181,56 @@ export function hasPermission(userRole: string, requiredPermission: string): boo
   
   const userPermissions = getAllPermissionsForRole(userRole as keyof typeof ROLE_LEVELS);
   
+  const reqLower = requiredPermission.toLowerCase();
   return userPermissions.some(permission => {
-    if (permission.endsWith(':*') || permission.endsWith(':all')) {
-      const basePermission = permission.slice(0, -2);
-      return requiredPermission.startsWith(basePermission);
+    const permLower = permission.toLowerCase();
+    if (permLower.endsWith(':*')) {
+      const basePermission = permLower.slice(0, -2);
+      return reqLower.startsWith(basePermission);
     }
-    return permission === requiredPermission;
+    if (permLower.endsWith(':all')) {
+      const basePermission = permLower.slice(0, -4);
+      return reqLower.startsWith(basePermission);
+    }
+    return permLower === reqLower;
   });
 }
 
 export function hasMinRoleLevel(userRole: string, minRoleLevel: number): boolean {
   const userRoleLevel = getRoleLevel(userRole);
   return userRoleLevel >= minRoleLevel;
+}
+
+// Optional helpers: normalize permission wildcards to a single standard (:* only)
+// These are non-breaking utilities that callers can use to cleanup role maps/data.
+
+/**
+ * Normalize a single permission wildcard by converting ":all" suffix to ":*".
+ * Examples: "admin:all" -> "admin:*", "system:*" -> "system:*" (unchanged)
+ */
+export function normalizeWildcardPermission(permission: string): string {
+  if (typeof permission !== 'string') return permission as any;
+  if (permission.endsWith(':all')) return permission.slice(0, -4) + ':*';
+  return permission;
+}
+
+/**
+ * Normalize a list of permissions to use only ":*" wildcards and dedupe results.
+ */
+export function normalizePermissionList(permissions: string[]): string[] {
+  const out = (permissions || []).map(normalizeWildcardPermission);
+  return Array.from(new Set(out));
+}
+
+/**
+ * Normalize a role->permissions map to replace all ":all" with ":*" and dedupe.
+ */
+export function normalizeRolePermissionMap<T extends Record<string, string[]>>(roleMap: T): T {
+  const entries = Object.entries(roleMap || {}).map(([role, perms]) => [
+    role,
+    normalizePermissionList(perms || []),
+  ] as const);
+  return Object.fromEntries(entries) as T;
 }
 
 // Development helpers

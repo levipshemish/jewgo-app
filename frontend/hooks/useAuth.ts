@@ -73,9 +73,12 @@ export function useAuth() {
   
   // Guard against concurrent anonymous signin calls
   const isStartingAnonRef = useRef(false);
+  // Prevent stale updates by tracking the latest load id
+  const currentLoadId = useRef(0);
 
   // Enhanced user loading with role information
   const loadUserWithRoles = useCallback(async () => {
+    const loadId = ++currentLoadId.current;
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
@@ -98,29 +101,41 @@ export function useAuth() {
           includeRoles: !!session?.access_token,
           userToken: session?.access_token || undefined
         });
-        
-        dispatch({ type: 'SET_USER', payload: transformedUser });
-        dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
+        // Only update state if this is the latest load
+        if (loadId === currentLoadId.current) {
+          dispatch({ type: 'SET_USER', payload: transformedUser });
+          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(user) });
+        }
       } else if (error) {
         // Handle specific auth session missing error
         if (error.message.includes('Auth session missing')) {
           console.warn('Auth session missing, user needs to sign in');
-          dispatch({ type: 'SET_USER', payload: null });
-          dispatch({ type: 'SET_ANONYMOUS', payload: false });
+          if (loadId === currentLoadId.current) {
+            dispatch({ type: 'SET_USER', payload: null });
+            dispatch({ type: 'SET_ANONYMOUS', payload: false });
+          }
         } else {
-          dispatch({ type: 'SET_ERROR', payload: error.message });
+          if (loadId === currentLoadId.current) {
+            dispatch({ type: 'SET_ERROR', payload: error.message });
+          }
           handleUserLoadError(error, router);
         }
       } else {
-        dispatch({ type: 'SET_USER', payload: null });
-        dispatch({ type: 'SET_ANONYMOUS', payload: false });
+        if (loadId === currentLoadId.current) {
+          dispatch({ type: 'SET_USER', payload: null });
+          dispatch({ type: 'SET_ANONYMOUS', payload: false });
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load user';
-      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      if (loadId === currentLoadId.current) {
+        dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      }
       handleUserLoadError(err, router);
     } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      if (loadId === currentLoadId.current) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
     }
   }, [router]);
 
@@ -137,6 +152,7 @@ export function useAuth() {
 
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event: any, session: any) => {
+        const loadId = ++currentLoadId.current;
 
         if (event === 'SIGNED_IN' && session?.user) {
           // Transform user with role information on sign in
@@ -144,9 +160,11 @@ export function useAuth() {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
-          dispatch({ type: 'SET_USER', payload: transformedUser });
-          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
-          dispatch({ type: 'SET_ERROR', payload: null });
+          if (loadId === currentLoadId.current) {
+            dispatch({ type: 'SET_USER', payload: transformedUser });
+            dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+            dispatch({ type: 'SET_ERROR', payload: null });
+          }
         } else if (event === 'SIGNED_OUT') {
           dispatch({ type: 'RESET_STATE' });
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
@@ -155,16 +173,20 @@ export function useAuth() {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
-          dispatch({ type: 'SET_USER', payload: transformedUser });
-          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+          if (loadId === currentLoadId.current) {
+            dispatch({ type: 'SET_USER', payload: transformedUser });
+            dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+          }
         } else if (event === 'USER_UPDATED' && session?.user) {
           // Update user details after profile change
           const transformedUser = await transformSupabaseUser(session.user, {
             includeRoles: !!session?.access_token,
             userToken: session?.access_token || undefined
           });
-          dispatch({ type: 'SET_USER', payload: transformedUser });
-          dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+          if (loadId === currentLoadId.current) {
+            dispatch({ type: 'SET_USER', payload: transformedUser });
+            dispatch({ type: 'SET_ANONYMOUS', payload: extractIsAnonymous(session.user) });
+          }
         }
       }
     );
@@ -259,7 +281,7 @@ export function useAuth() {
     } catch (err) {
       console.error('Token rotation verification error:', err);
     }
-  }, [state.user, refreshUser]);
+  }, [state.user]);
 
   // Verify token rotation on mount and periodically
   useEffect(() => {
@@ -297,8 +319,6 @@ export function useAuth() {
     hasPermission: (permission: Permission) => {
       return state.user?.isSuperAdmin || (state.user?.permissions || []).includes(permission);
     },
-    hasMinimumRoleLevel: (minLevel: number) => {
-      return (state.user?.roleLevel || 0) >= minLevel;
-    }
+    hasMinimumRoleLevel: (minLevel: number) => (state.user?.roleLevel || 0) >= minLevel
   };
 }

@@ -87,15 +87,11 @@ def create_app():
         logger.warning(f"Failed to start admin role cache invalidation listener: {e}")
     
     app = Flask(__name__)
-    
-    # Register teardown handler to clear user context (once per process)
+
+    # Register teardown handler to clear user context per request
     try:
         from utils.security import clear_user_context
-
-        @app.teardown_request
-        def _teardown(req_or_exc):
-            return clear_user_context(req_or_exc)
-
+        app.teardown_request(clear_user_context)
         logger.info("Registered user context cleanup handler")
     except Exception as e:
         logger.warning(f"Failed to register user context cleanup: {e}")
@@ -149,6 +145,7 @@ def create_app():
             "Content-Length",
             "Cache-Control",
             "Pragma",
+            "Authorization",
         ],
         supports_credentials=True,
         max_age=86400,  # Cache preflight for 24 hours

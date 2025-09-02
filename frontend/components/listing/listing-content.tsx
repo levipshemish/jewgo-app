@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Star, MapPin } from "lucide-react"
 import { useState } from "react"
-import { ReviewsPopup } from "./reviews-popup"
+import ReviewsPopup from "./reviews-popup"
 
 interface ListingContentProps {
   leftText?: string

@@ -1,7 +1,7 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, User, MessageSquare, Bell, Search, Store, Settings } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MessageSquare, Bell, Search, Store, Settings } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 

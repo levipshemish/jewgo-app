@@ -47,19 +47,19 @@ export default function LocationPermissionPrompt({
         };
         onLocationGranted(location);
       },
-      (error: GeolocationPositionError) => {
-        // // console.error('LocationPermissionPrompt: Geolocation error:', error);
+      (geolocationError: GeolocationPositionError) => {
+        // // console.error('LocationPermissionPrompt: Geolocation error:', geolocationError);
         setIsRequesting(false);
         let errorMessage = 'Unable to get your location';
         
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
+        switch (geolocationError.code) {
+          case geolocationError.PERMISSION_DENIED:
             errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
             break;
-          case error.POSITION_UNAVAILABLE:
+          case geolocationError.POSITION_UNAVAILABLE:
             errorMessage = 'Location information is unavailable. Please try again.';
             break;
-          case error.TIMEOUT:
+          case geolocationError.TIMEOUT:
             errorMessage = 'Location request timed out. Please try again.';
             break;
         }

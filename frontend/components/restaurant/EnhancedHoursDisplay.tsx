@@ -102,7 +102,7 @@ export default function EnhancedHoursDisplay({
     if (restaurantId) {
       fetchHoursStatus();
     }
-  }, [restaurantId]);
+  }, [restaurantId, fetchHoursStatus]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

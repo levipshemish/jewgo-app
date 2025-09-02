@@ -164,3 +164,14 @@ Properly configured all React Hook dependency arrays:
 ## Conclusion
 
 This effort significantly improved code quality by eliminating all critical lint errors and establishing proper React Hook patterns. The codebase is now more maintainable, follows React best practices, and prevents potential runtime issues from missing dependencies.
+
+---
+
+## Unused Variables Cleanup (2025‑09‑02)
+
+- Frontend: Removed a legacy mocked reviews variable and its related eslint suppression in `frontend/app/api/reviews/route.ts` to avoid `@typescript-eslint/no-unused-vars` noise.
+- Backend: Eliminated `ARG002` unused-argument suppressions in `backend/utils/restaurant_status.py` by:
+  - Using `latitude`/`longitude` in a lightweight, dependency‑free timezone heuristic (falls back to state mapping), and
+  - Referencing the `pattern` parameter during hours parsing for clearer debug logs.
+
+Result: Fewer suppressions and clearer intent, with small, safe behavior improvements (timezone detection prefers lat/lng when present).

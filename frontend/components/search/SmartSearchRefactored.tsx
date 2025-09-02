@@ -124,7 +124,7 @@ export default function SmartSearchRefactored({
     } finally {
       setIsLoadingGoogle(false);
     }
-  }, [useGoogleAPI, onLocationSelect, handleSearchSelect, setSuggestions, setIsLoadingGoogle, setGoogleError]);
+  }, [useGoogleAPI, setSuggestions, setIsLoadingGoogle, setGoogleError]);
 
   // Generate suggestions based on query
   useEffect(() => {

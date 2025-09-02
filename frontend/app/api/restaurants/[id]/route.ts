@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { sanitizeRestaurantData } from '@/lib/utils/imageUrlValidator';
 import { withRateLimit, rateLimitConfigs } from '@/lib/utils/rateLimiter';
 import { requireAdminOrThrow } from '@/lib/server/admin-auth';
-import { handleRoute, json } from '@/lib/server/route-helpers';
+import { handleRoute, json, forwardAuthHeader } from '@/lib/server/route-helpers';
 import { getBackendUrl } from '@/lib/utils/apiRouteUtils';
 
 // Ensure Node.js runtime for admin auth
@@ -251,12 +251,8 @@ export async function PUT(
     const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Use admin JWT for backend authorization
-    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
-    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
-    // The backend expects a specific admin JWT format, not the Supabase access token.
-    // As a fallback, we could support forwarding: request.headers.get('Authorization')
-    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
+    // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
+    const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);
 
     const response = await fetch(apiUrl, {
       method: 'PUT',
@@ -270,15 +266,20 @@ export async function PUT(
       }),
     });
 
+    async function parseJsonSafe(res: Response) {
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    }
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await parseJsonSafe(response);
       return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
       }, response.status);
     }
 
-    const result = await response.json();
+    const result = response.status === 204 ? {} : await parseJsonSafe(response);
 
     return json({
       success: true,
@@ -312,12 +313,8 @@ export async function DELETE(
     const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Use admin JWT for backend authorization
-    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
-    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
-    // The backend expects a specific admin JWT format, not the Supabase access token.
-    // As a fallback, we could support forwarding: request.headers.get('Authorization')
-    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
+    // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
+    const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);
 
     const response = await fetch(apiUrl, {
       method: 'DELETE',
@@ -328,14 +325,14 @@ export async function DELETE(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
       return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
       }, response.status);
     }
 
-    const result = await response.json();
+    const result = response.status === 204 ? {} : await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
 
     return json({
       success: true,
@@ -378,12 +375,8 @@ export async function PATCH(
     const backendUrl = getBackendUrl();
     const apiUrl = `${backendUrl}/api/restaurants/${restaurantId}`;
 
-    // Use admin JWT for backend authorization
-    // Note: We use getAdminUser() instead of forwarding the incoming Authorization header
-    // because the frontend admin auth (Supabase) differs from backend admin auth (JWT).
-    // The backend expects a specific admin JWT format, not the Supabase access token.
-    // As a fallback, we could support forwarding: request.headers.get('Authorization')
-    const authHeader = admin?.token ? `Bearer ${admin.token}` : '';
+    // Prefer incoming Authorization header; fallback to admin token (Supabase access token)
+    const authHeader = forwardAuthHeader(request, admin?.token ? `Bearer ${admin.token}` : undefined);
 
     const response = await fetch(apiUrl, {
       method: 'PATCH',
@@ -398,14 +391,14 @@ export async function PATCH(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
       return json({
         success: false,
         message: errorData.message || `Backend API error: ${response.status}`
       }, response.status);
     }
 
-    const result = await response.json();
+    const result = response.status === 204 ? {} : await (async () => { const t = await response.text(); try { return t ? JSON.parse(t) : {}; } catch { return {}; } })();
 
     return json({
       success: true,

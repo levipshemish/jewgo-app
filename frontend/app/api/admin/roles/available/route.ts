@@ -1,63 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleRoute } from '@/lib/server/route-helpers';
-import { requireAdminOrThrow } from '@/lib/server/admin-auth';
+import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
+import { getBackendAuthHeader } from '@/lib/server/admin-auth';
 
 export const runtime = 'nodejs';
 
-// GET handler - fetch available roles
 export async function GET(request: NextRequest) {
   return handleRoute(async () => {
-    const admin = await requireAdminOrThrow(request);
-    
+    // Ensure caller has role management permission
+    await requireSuperAdmin(request);
+
+    const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/available`;
+    const authHeader = await getBackendAuthHeader();
+    if (!authHeader) {
+      return NextResponse.json({ success: false, error: 'Authorization header required', message: 'No authorization header found' }, { status: 401 });
+    }
+
     try {
-      // Forward request to backend
-      const backendUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/v4/admin/roles/available`;
-      
-      const authHeader = admin.token ? `Bearer ${admin.token}` : '';
       const response = await fetch(backendUrl, {
         method: 'GET',
         headers: {
-          'Authorization': authHeader,
+          Authorization: authHeader,
           'Content-Type': 'application/json',
         },
       });
-      
       const status = response.status;
       const payload = await response.json().catch(() => ({}));
-      
       if (!response.ok) {
-        const err = typeof payload === 'object' && payload ? payload : { error: 'Failed to fetch available roles' };
-        return NextResponse.json(
-          {
-            success: false,
-            error: err.error || 'Failed to fetch available roles',
-            message: err.message || 'Request failed',
-            status_code: status,
-          },
-          { status }
-        );
+        return NextResponse.json({ success: false, error: payload?.error || 'Failed to fetch available roles', message: payload?.message || 'Request failed' }, { status });
       }
-
-      // Normalize response to { success, data, message } format
-      if (payload && payload.success === true && payload.data) {
+      // Normalize to { success, data, message }
+      if (payload && payload.success === true && 'data' in payload) {
         return NextResponse.json(payload);
       }
-      if (payload && Array.isArray(payload)) {
-        return NextResponse.json({ success: true, data: payload, message: 'Success' });
-      }
       return NextResponse.json({ success: true, data: payload, message: 'Success' });
-      
     } catch (error) {
-      console.error('Error fetching available roles:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch available roles',
-          message: error instanceof Error ? error.message : 'Unknown error',
-          status_code: 503,
-        },
-        { status: 503 }
-      );
+      return NextResponse.json({ success: false, error: 'Failed to fetch available roles', message: error instanceof Error ? error.message : 'Unknown error' }, { status: 503 });
     }
   });
 }

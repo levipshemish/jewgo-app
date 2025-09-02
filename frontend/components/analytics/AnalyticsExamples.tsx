@@ -50,8 +50,8 @@ export function RestaurantCardWithAnalytics({
           <span className="text-gray-500">({reviewCount} reviews)</span>
         </div>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={(_e) => {
+            _e.stopPropagation();
             handleFavoriteClick();
           }}
           className={`p-2 rounded-full ${
@@ -89,9 +89,9 @@ export function SearchFormWithAnalytics() {
       });
       
       trackFormComplete('restaurant_search', 'search', 1000);
-    } catch (error) {
+    } catch (_error) {
       // Track form error
-      // trackFormError('restaurant_search', 'search', 'api_error', error.message);
+      // trackFormError('restaurant_search', 'search', 'api_error', _error.message);
     } finally {
       setIsSearching(false);
     }
@@ -103,7 +103,7 @@ export function SearchFormWithAnalytics() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(_e) => setQuery(_e.target.value)}
           placeholder="Search for kosher restaurants..."
           className="w-full p-3 border rounded-lg"
           disabled={isSearching}
@@ -155,8 +155,8 @@ export function MarketplaceListingWithAnalytics({
       <div className="flex items-center justify-between mt-3">
         <span className="text-xl font-bold text-green-600">${price}</span>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={(_e) => {
+            _e.stopPropagation();
             handlePurchase();
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"

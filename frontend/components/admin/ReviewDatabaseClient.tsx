@@ -96,7 +96,7 @@ export default function ReviewDatabaseClient({
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, search, sortBy, sortOrder]);
+  }, [page, pageSize, search, sortBy, sortOrder, fetchData]);
 
   const onPageChange = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());

@@ -8,6 +8,7 @@ import {
   isAdminUser
 } from "@/lib/utils/auth-utils";
 import { Permission } from "@/lib/constants/permissions";
+import { hasUserPermission, hasMinimumRoleLevel } from "@/lib/utils/auth-utils";
 
 // Enhanced Supabase authentication system with role integration
 export async function getSessionUser(): Promise<TransformedUser | null> {
@@ -110,7 +111,7 @@ export async function checkUserPermission(permission: Permission): Promise<boole
     return false;
   }
   
-  return user.isSuperAdmin || (user.permissions || []).includes(permission);
+  return hasUserPermission(user, permission);
 }
 
 /**
@@ -123,7 +124,7 @@ export async function checkMinimumRoleLevel(minLevel: number): Promise<boolean> 
     return false;
   }
   
-  return (user.roleLevel || 0) >= minLevel;
+  return hasMinimumRoleLevel(user, minLevel);
 }
 
 /**

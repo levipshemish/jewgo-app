@@ -109,26 +109,45 @@ function ShtelDashboardContent() {
     setLoading(false);
   };
 
-  // Check authentication
-  useEffect(() => {
-    // Wait for Supabase session to load before making auth decisions
-    if (supaLoading) {
-      return;
+  // Load notifications
+  const loadNotifications = useCallback(async () => {
+    try {
+      // Check if user is admin using role-based authentication
+      if (isAdmin) {
+        // Admin users don't need notifications for now
+        setNotifications({
+          orders: 0,
+          messages: 0,
+          products: 0
+        });
+        return;
+      }
+      
+      const [ordersRes, messagesRes] = await Promise.all([
+        fetch('/api/shtel/orders?status=pending&limit=1', {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        }),
+        fetch('/api/shtel/messages?unread=true&limit=1', {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`
+          }
+        })
+      ]);
+      
+      const ordersData = await ordersRes.json();
+      const messagesData = await messagesRes.json();
+      
+      setNotifications({
+        orders: ordersData.total || 0,
+        messages: messagesData.total || 0,
+        products: 0 // Will be updated by ProductManagement component
+      });
+    } catch (err) {
+      appLogger.error('Error loading notifications:', { error: err });
     }
-    
-    if (!session) {
-      router.push('/auth/signin?redirect=/shtel/dashboard');
-      return;
-    }
-    
-    // Check if user is admin using role-based authentication
-    if (isAdmin) {
-      initializeForAdmin();
-      return;
-    }
-    
-    loadStoreData();
-  }, [session, router, isAdmin, supaLoading, loadStoreData]);
+  }, [isAdmin, session?.access_token]);
 
   // Load store data
   const loadStoreData = useCallback(async () => {
@@ -171,45 +190,28 @@ function ShtelDashboardContent() {
     }
   }, [isAdmin, session?.access_token, router, loadNotifications]);
 
-  // Load notifications
-  const loadNotifications = useCallback(async () => {
-    try {
-      // Check if user is admin using role-based authentication
-      if (isAdmin) {
-        // Admin users don't need notifications for now
-        setNotifications({
-          orders: 0,
-          messages: 0,
-          products: 0
-        });
-        return;
-      }
-      
-      const [ordersRes, messagesRes] = await Promise.all([
-        fetch('/api/shtel/orders?status=pending&limit=1', {
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`
-          }
-        }),
-        fetch('/api/shtel/messages?unread=true&limit=1', {
-          headers: {
-            'Authorization': `Bearer ${session?.access_token}`
-          }
-        })
-      ]);
-      
-      const ordersData = await ordersRes.json();
-      const messagesData = await messagesRes.json();
-      
-      setNotifications({
-        orders: ordersData.total || 0,
-        messages: messagesData.total || 0,
-        products: 0 // Will be updated by ProductManagement component
-      });
-    } catch (err) {
-      appLogger.error('Error loading notifications:', { error: err });
+  // Check authentication
+  useEffect(() => {
+    // Wait for Supabase session to load before making auth decisions
+    if (supaLoading) {
+      return;
     }
-  }, [isAdmin, session?.access_token]);
+    
+    if (!session) {
+      router.push('/auth/signin?redirect=/shtel/dashboard');
+      return;
+    }
+    
+    // Check if user is admin using role-based authentication
+    if (isAdmin) {
+      initializeForAdmin();
+      return;
+    }
+    
+    loadStoreData();
+  }, [session, router, isAdmin, supaLoading, loadStoreData]);
+
+
 
   // Tab configuration
   const tabs = [

@@ -29,6 +29,7 @@ interface RoleParams {
   role?: string;
   user_id?: string;
   include_all?: boolean;
+  include_expired?: boolean;
 }
 
 interface AssignRoleParams {
@@ -73,7 +74,7 @@ const roleApiCall = async (url: string, options: RequestInit) => {
 
 // Main data fetching hook
 export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
-  const { page = 1, limit = 50, search = '', role = '', user_id = '', include_all = false } = params;
+  const { page = 1, limit = 50, search = '', role = '', user_id = '', include_all = false, include_expired } = params;
   
   // Build query string
   const queryParams = new URLSearchParams();
@@ -83,6 +84,7 @@ export function useAdminRoles(params: RoleParams = {}, initialData?: RoleData) {
   if (role) { queryParams.set('role', role); }
   if (user_id) { queryParams.set('user_id', user_id); }
   if (include_all !== undefined) { queryParams.set('include_all', include_all.toString()); }
+  if (include_expired !== undefined) { queryParams.set('include_expired', include_expired.toString()); }
   
   const url = `/api/admin/roles?${queryParams.toString()}`;
   

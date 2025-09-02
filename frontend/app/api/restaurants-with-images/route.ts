@@ -238,12 +238,18 @@ export async function GET(request: NextRequest) {
       : 'https://api.jewgo.app';
     apiUrl = `${backendUrl}/api/restaurants?${queryParams.toString()}`;
     
+    // Configurable timeout to avoid long hangs in dev; faster fallback improves UX
+    const timeoutEnv = process.env.NEXT_PUBLIC_BACKEND_TIMEOUT_MS;
+    const timeoutMs = Number.isFinite(Number(timeoutEnv)) && Number(timeoutEnv) > 0
+      ? Number(timeoutEnv)
+      : (process.env.NODE_ENV === 'production' ? 8000 : 5000);
+
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      signal: AbortSignal.timeout(timeoutMs),
     });
     
     if (!response.ok) {

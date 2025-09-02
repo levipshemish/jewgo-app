@@ -27,7 +27,7 @@ export default function SharePopup({ restaurant, isOpen, onClose }: SharePopupPr
     setShareUrl(`${window.location.origin}/eatery/${eateryName}`);
       setLinkCopied(false);
     }
-  }, [isOpen, restaurant.id]);
+  }, [isOpen, restaurant.id, restaurant.name]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

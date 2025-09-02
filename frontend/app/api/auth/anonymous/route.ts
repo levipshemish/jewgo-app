@@ -20,9 +20,9 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const referer = request.headers.get('referer');
-  const csrfToken = request.headers.get('x-csrf-token');
+  const origin = request.headers.get('origin') || '';
+  const referer = request.headers.get('referer') || '';
+  const csrfToken = request.headers.get('x-csrf-token') || '';
   const forwardedFor = request.headers.get('x-forwarded-for') || undefined;
   const realIP = request.headers.get('x-real-ip') || forwardedFor?.split(',')[0]?.trim() || '0.0.0.0';
 

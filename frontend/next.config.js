@@ -210,15 +210,99 @@ const nextConfig = {
   trailingSlash: false,
   generateEtags: false,
   
-  // Ensure proper MIME types for CSS files
+  // CDN and caching headers for static assets
   async headers() {
     return [
+      // CSS files with proper MIME type and CDN headers
       {
         source: '/static/css/:path*',
         headers: [
           {
             key: 'Content-Type',
             value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      
+      // JavaScript files with CDN headers
+      {
+        source: '/_next/static/js/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      
+      // CSS files with CDN headers
+      {
+        source: '/_next/static/css/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400', // 7 days + 1 day revalidation
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'public, max-age=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      
+      // Font files with long-term caching
+      {
+        source: '/_next/static/media/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable', // 1 year, immutable
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      
+      // Images with moderate caching
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, stale-while-revalidate=86400', // 30 days + 1 day revalidation
+          },
+          {
+            key: 'CDN-Cache-Control',
+            value: 'public, max-age=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      
+      // API responses with short caching
+      {
+        source: '/api/shtel-listings',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, stale-while-revalidate=60', // 5 minutes + 1 minute revalidation
+          },
+          {
+            key: 'Vary',
+            value: 'Accept, Accept-Encoding, Accept-Language',
           },
         ],
       },

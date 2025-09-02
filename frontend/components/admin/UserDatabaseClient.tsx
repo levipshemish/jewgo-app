@@ -105,7 +105,7 @@ export default function UserDatabaseClient({
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, search, sortByParam, sortOrder]);
+  }, [page, pageSize, search, sortByParam, sortOrder, fetchData]);
 
   const onPageChange = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());

@@ -8,6 +8,7 @@ Audience: agents. For contributor workflow, see `docs/AGENTS.md`.
 > • All other app data in **PostgreSQL on Ubuntu** behind the Flask API.
 > • Agents must **never run npm** and **never run any command expected to exceed 90 seconds** (G‑OPS‑1).
 > • Use **Context7 MCP** for latest docs or ask the user to confirm before altering behavior (G‑DOCS‑2).
+> • **Use MCP servers when needed**: Serena for search and planning, Context7 for documentation details (G‑MCP‑1).
 
 ---
 
@@ -16,9 +17,9 @@ Audience: agents. For contributor workflow, see `docs/AGENTS.md`.
 * **Security**: G‑SEC‑1 secrets; G‑SEC‑2 redaction; G‑SEC‑3 CORS/CSRF; G‑SEC‑4 rate‑limit; G‑SEC‑5 token verify; G‑SEC‑6 secret scanning.
 * **Ops**: G‑OPS‑1 ≤90s & no npm; G‑OPS‑2 egress control; G‑OPS‑3 destructive‑ops safety; G‑OPS‑4 path rules; G‑OPS‑5 read caps.
 * **Database**: G‑DB‑1 migrations‑only; G‑DB‑2 rollback notes; G‑DB‑3 backward‑compat.
-* **Docs/Process**: G‑DOCS‑1 docs in same patch; G‑DOCS‑2 Context7 MCP; G‑DOCS‑3 ADRs for arch.
+* **Docs/Process**: G‑DOCS‑1 docs in same patch; G‑DOCS‑2 Context7 MCP; G‑DOCS‑3 ADRs for arch; G‑MCP‑1 MCP server usage.
 * **CI/CD**: G‑CI‑1 required checks; G‑CI‑2 lockfile drift; G‑CI‑3 global timeouts; G‑CI‑4 artifacts & reports.
-* **Workflow**: G‑WF‑1 plan; G‑WF‑2 preamble; G‑WF‑3 search; G‑WF‑4 surgical patch; G‑WF‑5 quick validate; G‑WF‑6 docs update; G‑WF‑7 exit checklist; G‑WF‑8 TypeScript errors.
+* **Workflow**: G‑WF‑1 plan; G‑WF‑2 preamble; G‑WF‑3 search; G‑WF‑4 surgical patch; G‑WF‑5 quick validate; G‑WF‑6 docs update; G‑WF‑7 exit checklist; G‑WF‑8 TypeScript errors; G‑WF‑9 MCP integration.
 * **Logging/Obs**: G‑LOG‑1 JSON logs; G‑LOG‑2 redaction middleware; G‑OBS‑1 health/ready; G‑OBS‑2 error tracking.
 
 ---
@@ -49,6 +50,7 @@ Audience: agents. For contributor workflow, see `docs/AGENTS.md`.
 * **G‑LOG‑2 Redaction Middleware <a id="G-LOG-2"></a>** — Auto‑sanitize logs for common secret keys before output.
 * **G‑OBS‑1 Health/Ready <a id="G-OBS-1"></a>** — Provide `/healthz` and `/readyz` endpoints.
 * **G‑OBS‑2 Error Tracking <a id="G-OBS-2"></a>** — Instrument error tracking (e.g., Sentry) across backend and frontend.
+* **G‑MCP‑1 MCP Server Usage <a id="G-MCP-1"></a>** — Use MCP servers when needed: Serena for search and planning, Context7 for documentation details. Prefer MCP tools over manual search when available.
 
 > **Duplication policy:** When other sections need these concepts, reference the ID (e.g., “respect **G‑OPS‑1**”), not the full rule.
 
@@ -83,6 +85,7 @@ Invariants: tests live in `frontend/__tests__/` and `backend/tests/`; no generat
 * **G‑WF‑6 Doc Update** — Update `docs/` (and env examples if shape changed) **in the same patch** (see **G‑DOCS‑1**).
 * **G‑WF‑7 Exit Checklist** — Confirm: path allowlist (G‑OPS‑4), no secrets (G‑SEC‑1), ≤90s (G‑OPS‑1), docs updated (G‑DOCS‑1), migrations + rollback when schema touched (G‑DB‑1/2).
 * **G‑WF‑8 TypeScript Errors <a id="G-WF-8"></a>** — Use `npx tsc --noEmit` for fast TypeScript error checking. Fix all type errors before proceeding. For complex interface changes, update mapping functions and mock data together.
+* **G‑WF‑9 MCP Integration <a id="G-WF-9"></a>** — Integrate MCP servers into workflow: use Serena for codebase search and planning, Context7 for up-to-date documentation. Prefer MCP tools over manual file operations when available.
 
 ---
 
@@ -113,7 +116,16 @@ Per G‑OPS‑1 (≤90s & no npm), please run locally:
 
 cd frontend && npm run build && npm test && npm run lint && npm run type-check
 
-Reply here with the output, and I’ll proceed.
+Reply here with the output, and I'll proceed.
+```
+
+**MCP Usage Examples (G‑WF‑9)**
+
+```
+• Serena for codebase search: Use mcp_serena_search_for_pattern for complex queries
+• Serena for file operations: Use mcp_serena_find_symbol for targeted symbol lookup  
+• Context7 for docs: Use mcp_context7_resolve-library-id then mcp_context7_get-library-docs
+• Prefer MCP tools over manual file operations when available
 ```
 
 ---
@@ -245,7 +257,9 @@ VIOLATION[G-OPS-1]: attempted npm command "npm run X"
 
 **Prime Directive** — Supabase for auth; Postgres behind Flask; respect **G‑OPS‑1**.
 
-**Default Flow** — G‑WF‑1→G‑WF‑2→G‑WF‑3→G‑WF‑4→G‑WF‑5→G‑WF‑6→G‑WF‑7.
+**Default Flow** — G‑WF‑1→G‑WF‑2→G‑WF‑3→G‑WF‑4→G‑WF‑5→G‑WF‑6→G‑WF‑7→G‑WF‑8→G‑WF‑9.
+
+**MCP Integration** — G‑MCP‑1: Use Serena for search/planning, Context7 for docs.
 
 **Security** — G‑SEC‑1/3/4/5, G‑LOG‑2.
 

@@ -100,3 +100,28 @@ The frontend and backend are now properly configured to handle all verification 
 3. **Integration**: Frontend treats 401 responses gracefully and continues with default role values
 
 The system now supports both authenticated and anonymous users with proper role management and graceful degradation.
+
+---
+
+## Additional Verification Comments (Follow-up) — IMPLEMENTED
+
+### Comment 1: Teardown handler to clear flask.g
+- Registered `clear_user_context` via `app.teardown_request(clear_user_context)` in both `backend/app_factory.py` and `backend/app_factory_full.py` to prevent per-request context leakage.
+
+### Comment 2: JWKS pre-warm and periodic refresh at startup
+- App factory already invoked JWKS pre-warm and scheduled refresh; verified placement right after config load. No further change needed in behavior; logs retained.
+
+### Comment 3: Cache invalidation listener behind feature flag
+- Startup wiring present. Listener starts only when `ENABLE_CACHE_INVALIDATION_LISTENER=true`; function internally checks env and prerequisites.
+
+### Comment 4: Remove unreachable fallback in `require_admin`
+- Removed unreachable warning `AUTH_401_NO_LEGACY` and raise in `backend/utils/security.py::require_admin` to simplify control flow.
+
+### Comment 5: Optional PostgREST call without `apikey`
+- Relaxed `SupabaseRoleManager` to not require `SUPABASE_ANON_KEY` at init; only `SUPABASE_URL` is required.
+- In `_fetch_role_from_supabase`, include `apikey` header only when anon key is present.
+
+### Rollback Notes
+- Teardown registration: safe to remove by deleting the `app.teardown_request(clear_user_context)` lines.
+- `require_admin` cleanup: revert by re-adding the removed lines; no schema impact.
+- Role manager anon-key optionality: revert by restoring the init check and unconditional header.

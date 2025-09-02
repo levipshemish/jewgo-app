@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 from datetime import datetime
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -1277,7 +1276,6 @@ def assign_admin_role():
         # Validate expires_at format if provided (ISO8601)
         if expires_at:
             try:
-                from datetime import datetime
                 # Allow 'Z' suffix
                 iso = expires_at.replace('Z', '+00:00')
                 datetime.fromisoformat(iso)

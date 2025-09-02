@@ -13,7 +13,31 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-import type { AdminUser } from '@/lib/admin/types';
+// Local type definition to avoid restricted import warning
+interface AdminUser {
+  id: string;
+  email: string | undefined;
+  name: string | null;
+  username: string | undefined;
+  provider: string;
+  avatar_url: string | null;
+  providerInfo: {
+    name: string;
+    icon: string;
+    color: string;
+    displayName: string;
+  };
+  createdAt: string | undefined;
+  updatedAt: string | undefined;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  role: string;
+  permissions: string[];
+  subscriptionTier: string;
+  adminRole: string | null;
+  roleLevel: number;
+  isSuperAdmin: boolean;
+}
 
 interface StoreMetrics {
   totalProducts: number;
@@ -117,8 +141,8 @@ export default function StoreAdminDashboard({ adminUser }: StoreAdminDashboardPr
       const data: StoreMetrics = await res.json();
       setMetrics(data);
       setError(null);
-    } catch (error) {
-      console.error('Error fetching store metrics:', error);
+    } catch (fetchError) {
+      console.error('Error fetching store metrics:', fetchError);
       setError('Failed to load store metrics');
       // Graceful fallback
       setMetrics({

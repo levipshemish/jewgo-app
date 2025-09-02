@@ -8,16 +8,10 @@ import {
   TrendingUp,
   UserCheck,
   UserX,
-  Clock,
-  Eye,
-  Edit,
-  Trash2,
-  MoreVertical,
-  Mail
+  Clock
 } from 'lucide-react';
 import UserDatabaseClient from './UserDatabaseClient';
 import UserActivityDashboard from './UserActivityDashboard';
-import UserProfileManager from './UserProfileManager';
 
 interface User {
   id: string;
@@ -213,8 +207,7 @@ export default function AdvancedUserManagement({
   initialSortBy,
   initialSortOrder
 }: AdvancedUserManagementProps) {
-  const [activeView, setActiveView] = useState<'table' | 'activity' | 'profile'>('table');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'table' | 'activity'>('table');
   const [filters, setFilters] = useState<Record<string, any>>({});
 
   // Mock statistics
@@ -249,29 +242,8 @@ export default function AdvancedUserManagement({
     }
   ];
 
-  const handleViewUser = (userId: string) => {
-    setSelectedUserId(userId);
-    setActiveView('profile');
-  };
-
-  const handleEditUser = (userId: string) => {
-    setSelectedUserId(userId);
-    setActiveView('profile');
-  };
-
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      // Handle user deletion - would call API in real implementation
-      // TODO: Implement user deletion API call
-      alert(`User ${userId} would be deleted`);
-    }
-  };
-
-  const handleSendEmail = (userId: string) => {
-    // Handle sending email to user - would open email modal in real implementation
-    // TODO: Implement email composition modal
-    alert(`Email would be sent to user ${userId}`);
-  };
+  // TODO: Implement user action handlers when UserActionsMenu is implemented
+  // These handlers were defined but not used - removed to fix lint warning
 
   const handleAddUser = () => {
     // Handle adding new user - would open user creation modal in real implementation
@@ -351,16 +323,8 @@ export default function AdvancedUserManagement({
         <UserActivityDashboard />
       )}
 
-      {activeView === 'profile' && selectedUserId && (
-        <UserProfileManager
-          userId={selectedUserId}
-          onClose={() => setActiveView('table')}
-          onUserUpdated={(_user) => {
-            // Refresh user data if needed - would trigger data refetch in real implementation
-            // TODO: Implement user data refresh after update
-          }}
-        />
-      )}
+      {/* TODO: Implement profile view when user selection is implemented */}
+      {/* Profile view removed to fix lint warning - no way to set selectedUserId */}
     </div>
   );
 }

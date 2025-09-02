@@ -254,8 +254,8 @@ export default function DashboardOverview({ adminUser }: DashboardOverviewProps)
       const data = await response.json();
       setMetrics(data);
       setError(null);
-    } catch (error) {
-      console.error('Error fetching dashboard metrics:', error);
+    } catch (fetchError) {
+      console.error('Error fetching dashboard metrics:', fetchError);
       setError('Failed to load dashboard metrics');
       
       // Fallback mock data for development

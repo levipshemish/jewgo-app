@@ -266,7 +266,6 @@ function MikvahPageContent() {
     activeFilters,
     hasActiveFilters,
     setFilter,
-    toggleFilter,
     clearFilter,
     clearAllFilters
   } = useAdvancedFilters();
@@ -357,8 +356,13 @@ function MikvahPageContent() {
   }, [setFilter, isConnected, sendMessage, userLocation, activeFilters]);
 
   const _handleToggleFilter = useCallback((filterType: keyof Filters) => {
-    toggleFilter(filterType);
-  }, [toggleFilter]);
+    const currentValue = activeFilters[filterType];
+    if (currentValue) {
+      clearFilter(filterType);
+    } else {
+      setFilter(filterType, true as any);
+    }
+  }, [activeFilters, clearFilter, setFilter]);
 
   const _handleClearAllFilters = useCallback(() => {
     clearAllFilters();
@@ -367,6 +371,66 @@ function MikvahPageContent() {
   
 
   // Handle search functionality
+  // Fetch mikvah with mobile optimization
+  const fetchMikvahData = useCallback(async (filters: Filters = activeFilters) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Mobile-optimized parameters
+      const params = new URLSearchParams();
+      
+      // Add search query if present
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.append('search', searchQuery.trim());
+      }
+
+      // Add filter parameters
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '' && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+
+      // Mobile-specific optimizations
+      params.append('limit', mobileOptimizedItemsPerPage.toString());
+      params.append('mobile_optimized', 'true');
+      
+      if (isLowPowerMode) {
+        params.append('low_power_mode', 'true');
+      }
+      
+      if (isSlowConnection) {
+        params.append('slow_connection', 'true');
+      }
+
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
+      
+      setMikvah(response.mikvah);
+      setCurrentPage(1);
+      
+      // Update pagination state
+      const total = response.total || response.mikvah.length;
+      setTotalMikvah(total);
+      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
+      setTotalPages(calculatedTotalPages);
+      
+      // Update hasMore state for infinite scroll (mobile only)
+      const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
+      setHasMore(hasMoreContent);
+    } catch (err) {
+      appLogger.error('Mikvah fetch error', { error: String(err) });
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Unable to load mikvah facilities. Please try again later.');
+      }
+      setMikvah([]); // Clear any existing mikvah
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
+
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
@@ -426,66 +490,6 @@ function MikvahPageContent() {
       disabled: !(isMobile || isMobileDevice) // Only enable infinite scroll on mobile
     }
   );
-
-  // Fetch mikvah with mobile optimization
-  const fetchMikvahData = useCallback(async (filters: Filters = activeFilters) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Mobile-optimized parameters
-      const params = new URLSearchParams();
-      
-      // Add search query if present
-      if (searchQuery && searchQuery.trim() !== '') {
-        params.append('search', searchQuery.trim());
-      }
-
-      // Add filter parameters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== '' && value !== null) {
-          params.append(key, String(value));
-        }
-      });
-
-      // Mobile-specific optimizations
-      params.append('limit', mobileOptimizedItemsPerPage.toString());
-      params.append('mobile_optimized', 'true');
-      
-      if (isLowPowerMode) {
-        params.append('low_power_mode', 'true');
-      }
-      
-      if (isSlowConnection) {
-        params.append('slow_connection', 'true');
-      }
-
-      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
-      
-      setMikvah(response.mikvah);
-      setCurrentPage(1);
-      
-      // Update pagination state
-      const total = response.total || response.mikvah.length;
-      setTotalMikvah(total);
-      const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
-      setTotalPages(calculatedTotalPages);
-      
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = response.mikvah.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-    } catch (err) {
-      appLogger.error('Mikvah fetch error', { error: String(err) });
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unable to load mikvah facilities. Please try again later.');
-      }
-      setMikvah([]); // Clear any existing mikvah
-    } finally {
-      setLoading(false);
-    }
-  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs, setHasMore]);
 
   // Mobile-optimized state
   const [showFilters, setShowFilters] = useState(false); // Filters start hidden

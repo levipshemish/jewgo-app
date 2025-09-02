@@ -67,7 +67,33 @@ export async function transformSupabaseUser(
   user: User | null, 
   options: { includeRoles?: boolean; userToken?: string } = {}
 ): Promise<TransformedUser | null> {
-  // Delegate to the consolidated client-safe implementation
+  // If running on the server, use server-aware role fetcher to avoid relative URL issues
+  if (typeof window === 'undefined') {
+    const { transformSupabaseUserWithRoles } = await import('./auth-utils-client');
+    const { getUserWithRolesServer } = await import('./auth-utils.server');
+    // Monkey-patch only the role fetch for server path by calling server fetcher directly
+    if (!user) return null;
+    const base = await transformSupabaseUserWithRoles(user, { includeRoles: false });
+    if (!base) return null;
+    if (options.includeRoles && options.userToken) {
+      try {
+        const rd = await getUserWithRolesServer(options.userToken);
+        if (rd) {
+          return {
+            ...base,
+            adminRole: rd.adminRole,
+            roleLevel: rd.roleLevel,
+            permissions: rd.permissions,
+            isSuperAdmin: rd.adminRole === 'super_admin'
+          };
+        }
+      } catch {
+        // fall through to base without roles
+      }
+    }
+    return base as TransformedUser;
+  }
+  // Client path delegates to client-safe implementation
   const { transformSupabaseUserWithRoles } = await import('./auth-utils-client');
   return transformSupabaseUserWithRoles(user, options);
 }

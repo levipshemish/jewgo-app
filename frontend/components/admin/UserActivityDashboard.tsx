@@ -286,7 +286,7 @@ export default function UserActivityDashboard({ userId, className = '' }: UserAc
     };
 
     loadData();
-  }, [userId, timeRange]);
+  }, [userId, timeRange, generateMockActivities]);
 
   const filteredActivities = activities.filter(activity => {
     if (filterAction !== 'all' && activity.action !== filterAction) {

@@ -428,3 +428,64 @@ export function getNoStoreHeaders(): Record<string, string> {
     'Expires': '0'
   };
 }
+
+/**
+ * CSRF validation for admin API routes
+ * Enforces Origin/Referer validation and rejects cross-site requests
+ */
+export function validateCSRFHeaders(request: Request): { valid: boolean; reason?: string } {
+  const origin = request.headers.get('origin');
+  const referer = request.headers.get('referer');
+  const secFetchSite = request.headers.get('sec-fetch-site');
+  
+  // Get allowed origins from environment
+  const allowedOrigins = process.env.ADMIN_ALLOWED_ORIGINS?.split(',') || [];
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    allowedOrigins.push(process.env.NEXT_PUBLIC_APP_URL);
+  }
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    allowedOrigins.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`);
+  }
+  
+  // Always allow same-origin requests
+  const requestOrigin = new URL(request.url).origin;
+  allowedOrigins.push(requestOrigin);
+  
+  // Check Origin header first (preferred)
+  if (origin) {
+    if (!allowedOrigins.includes(origin)) {
+      return { 
+        valid: false, 
+        reason: `Origin '${origin}' not in allowlist: ${allowedOrigins.join(', ')}` 
+      };
+    }
+    return { valid: true };
+  }
+  
+  // If Origin is missing, check Referer header
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      if (allowedOrigins.includes(refererUrl.origin)) {
+        return { valid: true };
+      }
+      return { 
+        valid: false, 
+        reason: `Referer origin '${refererUrl.origin}' not in allowlist` 
+      };
+    } catch {
+      return { valid: false, reason: 'Invalid Referer header format' };
+    }
+  }
+  
+  // Reject cross-site requests without proper headers
+  if (secFetchSite === 'cross-site') {
+    return { 
+      valid: false, 
+      reason: 'Cross-site request without Origin/Referer headers' 
+    };
+  }
+  
+  // Allow same-origin requests without Origin/Referer
+  return { valid: true };
+}

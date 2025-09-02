@@ -1,164 +1,129 @@
-import { useEffect, useRef, useCallback } from 'react';
+/**
+ * Performance Monitoring Hook
+ * Tracks API calls, render performance, and provides debugging information
+ */
+
+import { useRef, useCallback, useEffect } from 'react';
 
 interface PerformanceMetrics {
-  fcp: number | null;
-  lcp: number | null;
-  fid: number | null;
-  cls: number | null;
-  ttfb: number | null;
-  navigation: number | null;
+  apiCalls: number;
+  renderCount: number;
+  lastRenderTime: number;
+  totalRenderTime: number;
+  averageRenderTime: number;
 }
 
 interface UsePerformanceMonitorOptions {
-  trackCoreWebVitals?: boolean;
-  trackNavigation?: boolean;
-  onMetricUpdate?: (metrics: PerformanceMetrics) => void;
-  onError?: (error: Error) => void;
+  enabled?: boolean;
+  logToConsole?: boolean;
+  componentName?: string;
 }
 
 export function usePerformanceMonitor(options: UsePerformanceMonitorOptions = {}) {
   const {
-    trackCoreWebVitals = true,
-    trackNavigation = true,
-    onMetricUpdate,
-    onError
+    enabled = process.env.NODE_ENV === 'development',
+    logToConsole = false,
+    componentName = 'Component'
   } = options;
 
   const metricsRef = useRef<PerformanceMetrics>({
-    fcp: null,
-    lcp: null,
-    fid: null,
-    cls: null,
-    ttfb: null,
-    navigation: null,
+    apiCalls: 0,
+    renderCount: 0,
+    lastRenderTime: 0,
+    totalRenderTime: 0,
+    averageRenderTime: 0
   });
 
-  const observerRef = useRef<PerformanceObserver | null>(null);
-  const webVitalsCleanupRef = useRef<(() => void) | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const isDev = process.env.NODE_ENV === 'development';
 
-  const updateMetric = useCallback((key: keyof PerformanceMetrics, value: number) => {
-    metricsRef.current[key] = value;
-    onMetricUpdate?.(metricsRef.current);
-  }, [onMetricUpdate]);
-
-  const trackNavigationMetrics = useCallback(() => {
-    if (!trackNavigation || typeof window === 'undefined' || !('performance' in window)) {
-      return;
-    }
-
-    try {
-      const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      if (navigationEntry) {
-        updateMetric('ttfb', navigationEntry.responseStart - navigationEntry.requestStart);
-        updateMetric('navigation', navigationEntry.loadEventEnd - navigationEntry.fetchStart);
-      }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to track navigation metrics');
-      onError?.(err);
-    }
-  }, [trackNavigation, updateMetric, onError]);
-
-  const trackCoreWebVitalsMetrics = useCallback(() => {
-    if (!trackCoreWebVitals || typeof window === 'undefined') {
-      return;
-    }
-
-    try {
-      // Use PerformanceObserver for Core Web Vitals
-      if ('PerformanceObserver' in window) {
-        observerRef.current = new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            switch (entry.entryType) {
-              case 'first-contentful-paint':
-                updateMetric('fcp', entry.startTime);
-                break;
-              case 'largest-contentful-paint':
-                updateMetric('lcp', entry.startTime);
-                break;
-              case 'layout-shift':
-                const layoutShiftEntry = entry as any;
-                updateMetric('cls', layoutShiftEntry.value);
-                break;
-            }
-          }
-        });
-
-        observerRef.current.observe({ 
-          entryTypes: ['first-contentful-paint', 'largest-contentful-paint', 'layout-shift'] 
-        });
-      }
-
-      // Load web-vitals for more detailed metrics
-      import('web-vitals').then((webVitals) => {
-        const cleanupFunctions: (() => void)[] = [];
-
-        if (typeof webVitals.onCLS === 'function') {
-          webVitals.onCLS((metric) => updateMetric('cls', metric.value));
-        }
-        if (typeof webVitals.onFCP === 'function') {
-          webVitals.onFCP((metric) => updateMetric('fcp', metric.value));
-        }
-        if (typeof webVitals.onLCP === 'function') {
-          webVitals.onLCP((metric) => updateMetric('lcp', metric.value));
-        }
-        if (typeof webVitals.onTTFB === 'function') {
-          webVitals.onTTFB((metric) => updateMetric('ttfb', metric.value));
-        }
-        if (typeof webVitals.onINP === 'function') {
-          webVitals.onINP((metric) => updateMetric('fid', metric.value));
-        }
-
-        webVitalsCleanupRef.current = () => {
-          cleanupFunctions.forEach(cleanup => cleanup());
-        };
-      }).catch((error) => {
-        const err = error instanceof Error ? error : new Error('Failed to load web-vitals');
-        onError?.(err);
-      });
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Failed to track Core Web Vitals');
-      onError?.(err);
-    }
-  }, [trackCoreWebVitals, updateMetric, onError]);
-
-  // Initialize performance monitoring
+  // Track render performance - only in dev and throttle logging
   useEffect(() => {
-    trackNavigationMetrics();
-    trackCoreWebVitalsMetrics();
+    if (!enabled || !isDev) return;
+
+    const startTime = performance.now();
+    startTimeRef.current = startTime;
 
     return () => {
-      // Cleanup observers
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
+      const endTime = performance.now();
+      const renderTime = endTime - startTime;
 
-      // Cleanup web-vitals
-      if (webVitalsCleanupRef.current) {
-        webVitalsCleanupRef.current();
-        webVitalsCleanupRef.current = null;
+      metricsRef.current.renderCount++;
+      metricsRef.current.lastRenderTime = renderTime;
+      metricsRef.current.totalRenderTime += renderTime;
+      metricsRef.current.averageRenderTime = 
+        metricsRef.current.totalRenderTime / metricsRef.current.renderCount;
+
+      // Throttle logging to every 10th render to reduce console spam
+      if (logToConsole && metricsRef.current.renderCount % 10 === 0) {
+        console.log(`[${componentName}] Render #${metricsRef.current.renderCount}:`, {
+          renderTime: `${renderTime.toFixed(2)}ms`,
+          averageRenderTime: `${metricsRef.current.averageRenderTime.toFixed(2)}ms`,
+          totalRenderTime: `${metricsRef.current.totalRenderTime.toFixed(2)}ms`
+        });
       }
     };
-  }, [trackNavigationMetrics, trackCoreWebVitalsMetrics]);
+  });
 
+  // Track API calls - stable function reference
+  const trackApiCall = useCallback((endpoint: string, duration?: number) => {
+    if (!enabled) return;
+
+    metricsRef.current.apiCalls++;
+    
+    // Only log in dev and throttle to reduce spam
+    if (logToConsole && isDev && metricsRef.current.apiCalls % 5 === 0) {
+      console.log(`[${componentName}] API Call #${metricsRef.current.apiCalls}:`, {
+        endpoint,
+        duration: duration ? `${duration.toFixed(2)}ms` : 'unknown',
+        totalApiCalls: metricsRef.current.apiCalls
+      });
+    }
+  }, [enabled, logToConsole, componentName, isDev]);
+
+  // Get current metrics
   const getMetrics = useCallback(() => {
     return { ...metricsRef.current };
   }, []);
 
+  // Reset metrics
   const resetMetrics = useCallback(() => {
     metricsRef.current = {
-      fcp: null,
-      lcp: null,
-      fid: null,
-      cls: null,
-      ttfb: null,
-      navigation: null,
+      apiCalls: 0,
+      renderCount: 0,
+      lastRenderTime: 0,
+      totalRenderTime: 0,
+      averageRenderTime: 0
     };
   }, []);
 
+  // Performance wrapper for async functions
+  const withPerformanceTracking = useCallback(<T extends any[], R>(
+    fn: (...args: T) => Promise<R>,
+    endpoint: string
+  ) => {
+    return async (...args: T): Promise<R> => {
+      if (!enabled) return fn(...args);
+
+      const startTime = performance.now();
+      try {
+        const result = await fn(...args);
+        const duration = performance.now() - startTime;
+        trackApiCall(endpoint, duration);
+        return result;
+      } catch (error) {
+        const duration = performance.now() - startTime;
+        trackApiCall(`${endpoint} (error)`, duration);
+        throw error;
+      }
+    };
+  }, [enabled, trackApiCall]);
+
   return {
+    trackApiCall,
     getMetrics,
     resetMetrics,
-    updateMetric,
+    withPerformanceTracking,
+    metrics: metricsRef.current
   };
 }

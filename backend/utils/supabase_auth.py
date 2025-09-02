@@ -64,12 +64,13 @@ class SupabaseAuthManager:
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
         self.project_id = os.getenv("SUPABASE_PROJECT_ID")
         self.expected_audience = os.getenv("SUPABASE_JWT_AUD", "authenticated")
-        # Primary JWKS endpoint and well-known fallback (no auth required)
+        # Use well-known JWKS endpoint (no auth required, more secure)
         self.jwks_url = (
-            f"{self.supabase_url}/auth/v1/keys" if self.supabase_url else None
+            f"{self.supabase_url}/auth/v1/.well-known/jwks.json" if self.supabase_url else None
         )
-        self.jwks_well_known_url = (
-            f"{self.supabase_url}/.well-known/jwks.json" if self.supabase_url else None
+        # Fallback to legacy endpoint only if well-known fails
+        self.jwks_fallback_url = (
+            f"{self.supabase_url}/auth/v1/keys" if self.supabase_url else None
         )
         self.cache_ttl = int(os.getenv("JWKS_CACHE_TTL", "86400"))  # 24 hours
         self.refresh_interval = int(
@@ -348,10 +349,10 @@ class SupabaseAuthManager:
         """
         last_err = None
         urls = []
-        if self.jwks_well_known_url:
-            urls.append(self.jwks_well_known_url)
         if self.jwks_url:
-            urls.append(self.jwks_url)
+            urls.append(self.jwks_url)  # Try well-known first
+        if self.jwks_fallback_url:
+            urls.append(self.jwks_fallback_url)  # Fallback to legacy endpoint
         for idx, url in enumerate(urls):
             try:
                 resp = requests.get(url, timeout=timeout)

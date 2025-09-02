@@ -136,16 +136,18 @@ export default function FeatureFlagManager() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save feature flag');
+        const text = await response.text();
+        let errorMsg = 'Failed to save feature flag';
+        try { errorMsg = JSON.parse(text).message || errorMsg; } catch {}
+        throw new Error(errorMsg);
       }
 
       setMessage({ type: 'success', text: `Feature flag ${editingFlag ? 'updated' : 'created'} successfully` });
       handleCancel();
       refreshFlags();
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setMessage({ type: 'error', text: error.message });
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setSaving(false);
     }
@@ -175,15 +177,17 @@ export default function FeatureFlagManager() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete feature flag');
+        const text = await response.text();
+        let errorMsg = 'Failed to delete feature flag';
+        try { errorMsg = JSON.parse(text).message || errorMsg; } catch {}
+        throw new Error(errorMsg);
       }
 
       setMessage({ type: 'success', text: 'Feature flag deleted successfully' });
       refreshFlags();
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
-      setMessage({ type: 'error', text: error.message });
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setSaving(false);
     }
@@ -211,15 +215,17 @@ export default function FeatureFlagManager() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update feature flag');
+        const text = await response.text();
+        let errorMsg = 'Failed to update feature flag';
+        try { errorMsg = JSON.parse(text).message || errorMsg; } catch {}
+        throw new Error(errorMsg);
       }
 
       setMessage({ type: 'success', text: `Feature flag ${enabled ? 'enabled' : 'disabled'} successfully` });
       refreshFlags();
     } catch (_err) {
-      const error = _err instanceof Error ? _err : new Error('Unknown error');
-      setMessage({ type: 'error', text: error.message });
+      const errorMessage = _err instanceof Error ? _err.message : 'Unknown error';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setSaving(false);
     }

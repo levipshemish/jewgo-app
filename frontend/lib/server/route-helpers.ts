@@ -24,6 +24,13 @@ export function json(data: any, status: number = 200): Response {
 }
 
 /**
+ * Forward Authorization header from incoming request with optional fallback
+ */
+export function forwardAuthHeader(request: Request, fallback?: string): string | undefined {
+  return request.headers.get('Authorization') ?? fallback;
+}
+
+/**
  * Standard route handler wrapper with AsyncLocalStorage and error handling
  * Mandatory for all admin routes to prevent cross-request leaks
  */

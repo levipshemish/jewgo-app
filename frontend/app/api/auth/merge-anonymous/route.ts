@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   }
   
   // Validate origin against allowlist
-  const origin = request.headers.get('origin');
+  const origin = request.headers.get('origin') || '';
   if (origin && !ALLOWED_ORIGINS.includes(origin)) {
     return NextResponse.json(
       { error: 'CSRF' },
@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
   
   try {
     // Get request details for security validation
-    const referer = request.headers.get('referer');
-    const csrfToken = request.headers.get('x-csrf-token');
-    const forwardedFor = request.headers.get('x-forwarded-for');
+    const referer = request.headers.get('referer') || '';
+    const csrfToken = request.headers.get('x-csrf-token') || '';
+    const forwardedFor = request.headers.get('x-forwarded-for') || '';
     const realIP = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     
     // Trusted IP validation with left-most X-Forwarded-For parsing

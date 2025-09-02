@@ -56,7 +56,7 @@ export function useFilterOptions(): UseFilterOptionsReturn {
 
   useEffect(() => {
     fetchFilterOptions();
-  }, []);
+  }, [fetchFilterOptions]);
 
   return {
     filterOptions,

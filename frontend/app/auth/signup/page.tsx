@@ -79,8 +79,8 @@ function SignUpForm({ redirectTo }: { redirectTo: string }) {
       } else {
         appLogger.info('reCAPTCHA not configured for signup - proceeding without reCAPTCHA');
       }
-    } catch (error) {
-      appLogger.error('reCAPTCHA execution failed for signup', { error: String(error) });
+    } catch (recaptchaError) {
+      appLogger.error('reCAPTCHA execution failed for signup', { error: String(recaptchaError) });
       // Non-fatal; continue with signup
     }
     

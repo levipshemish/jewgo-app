@@ -47,19 +47,19 @@ export default function LocationAccess({
             router.push(redirectTo);
           }, 1000);
         },
-        (error) => {
+        (geolocationError) => {
           // eslint-disable-next-line no-console
-          console.error('Geolocation error:', error);
+          console.error('Geolocation error:', geolocationError);
           setStatus('denied');
           
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
+          switch (geolocationError.code) {
+            case geolocationError.PERMISSION_DENIED:
               setError('Location access was denied. You can still use the app without location services.');
               break;
-            case error.POSITION_UNAVAILABLE:
+            case geolocationError.POSITION_UNAVAILABLE:
               setError('Location information is unavailable.');
               break;
-            case error.TIMEOUT:
+            case geolocationError.TIMEOUT:
               setError('Location request timed out.');
               break;
             default:
@@ -101,7 +101,7 @@ export default function LocationAccess({
   useEffect(() => {
     // Auto-request location when component mounts
     requestLocation();
-  }, []);
+  }, [requestLocation]);
 
   return (
     <div className="min-h-screen bg-neutral-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

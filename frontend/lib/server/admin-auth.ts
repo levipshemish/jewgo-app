@@ -3,7 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { 
   transformSupabaseUser, 
   isSupabaseConfigured,
-  type TransformedUser 
+  type TransformedUser,
+  isAdminUser,
+  hasMinimumRoleLevel,
+  hasUserPermission 
 } from '@/lib/utils/auth-utils';
 import type { AdminUser, AdminRole } from '@/lib/admin/types';
 import type { Permission } from '@/lib/constants/permissions';
@@ -26,7 +29,8 @@ import {
   validatePermissions,
   getNoStoreHeaders,
   normalizePermissions,
-  assertNodeRuntime
+  assertNodeRuntime,
+  validateCSRFHeaders
 } from './security';
 
 
@@ -140,6 +144,21 @@ async function getSessionUserWithRoles(): Promise<TransformedUser | null> {
 export async function requireAdmin(request: Request): Promise<AdminUser | null> {
   assertNodeRuntime();
   try {
+    // CSRF protection for mutation operations
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+      const csrfValidation = validateCSRFHeaders(request);
+      if (!csrfValidation.valid) {
+        secureLog('warn', 'ADMIN', {
+          code: 'CSRF_VIOLATION',
+          reason: csrfValidation.reason,
+          requestId: getRequestId(),
+          method: request.method,
+          url: request.url
+        });
+        return null; // Reject CSRF violations
+      }
+    }
+
     // Development rate limiting (never in production)
     if (process.env.NODE_ENV === 'development') {
       // Simple rate limiting for dev only - no global state
@@ -190,7 +209,7 @@ export async function requireAdmin(request: Request): Promise<AdminUser | null> 
     }
 
     // Check if user has admin role from JWT validation
-    if (!user.adminRole || (user.roleLevel || 0) === 0) {
+    if (!isAdminUser(user)) {
       secureLog('info', 'ADMIN', {
         code: 'USER_NOT_ADMIN',
         hasRole: !!user.adminRole,
@@ -259,7 +278,7 @@ export async function requireAdmin(request: Request): Promise<AdminUser | null> 
     const adminUser: TransformedUser = {
       ...user,
       adminRole,
-      roleLevel: user.roleLevel || getRoleLevelForRole(adminRole),
+      roleLevel: hasMinimumRoleLevel(user, 1) ? (user.roleLevel || getRoleLevelForRole(adminRole)) : getRoleLevelForRole(adminRole),
       isSuperAdmin: user.isSuperAdmin || adminRole === 'super_admin',
       permissions: permissions as any
     };
@@ -378,7 +397,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     }
 
     // Check if user has admin role from JWT validation
-    if (!user.adminRole || (user.roleLevel || 0) === 0) {
+    if (!isAdminUser(user)) {
       return null;
     }
 
@@ -391,7 +410,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     const adminUser: AdminUser = {
       ...user,
       adminRole: user.adminRole as AdminRole,
-      roleLevel: user.roleLevel || getRoleLevelForRole(user.adminRole as AdminRole),
+      roleLevel: hasMinimumRoleLevel(user, 1) ? (user.roleLevel || getRoleLevelForRole(user.adminRole as AdminRole)) : getRoleLevelForRole(user.adminRole as AdminRole),
       isSuperAdmin: user.isSuperAdmin || user.adminRole === 'super_admin',
       permissions: permissions as Permission[]
     };
@@ -429,4 +448,18 @@ export async function requireAdminUser(): Promise<AdminUser> {
  */
 export function getAdminHeaders(): Record<string, string> {
   return getNoStoreHeaders();
+}
+
+/**
+ * Get backend Authorization header (Bearer Supabase access token) for proxying calls
+ */
+export async function getBackendAuthHeader(): Promise<string | null> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return token ? `Bearer ${token}` : null;
+  } catch {
+    return null;
+  }
 }

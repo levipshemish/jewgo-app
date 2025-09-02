@@ -3,6 +3,7 @@ import { json } from '@/lib/server/route-helpers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
 import { ROLE_PERMISSIONS, normalizeAdminRole } from '@/lib/constants/permissions';
+import { getRoleLevelForRole } from '@/lib/server/admin-constants';
 import { validatePermissions } from '@/lib/server/security';
 
 // Force Node.js runtime to support AbortSignal.timeout
@@ -18,16 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
-      const res = json(
-        { 
-          success: false, 
-          error: 'Supabase not configured',
-          adminRole: null,
-          roleLevel: 0,
-          permissions: []
-        },
-        500
-      );
+      const res = json({ success: false, error: 'Supabase not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
       return res;
     }
 
@@ -37,10 +29,7 @@ export async function GET(request: NextRequest) {
     // Validate BACKEND_URL in production
     if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
       console.error('[Auth] BACKEND_URL not configured in production');
-      const res = json(
-        { success: false, error: 'BACKEND_URL not configured' },
-        500
-      );
+      const res = json({ success: false, error: 'BACKEND_URL not configured', adminRole: null, roleLevel: 0, permissions: [] }, 500);
       return res;
     }
 
@@ -85,13 +74,7 @@ export async function GET(request: NextRequest) {
         } else {
           // Both Authorization header and cookie failed
           console.error('[Auth] Both Authorization header and cookie failed');
-          const res = json(
-            { 
-              success: false, 
-              error: 'Unauthorized'
-            },
-            401
-          );
+          const res = json({ success: false, error: 'Unauthorized', adminRole: null, roleLevel: 0, permissions: [] }, 401);
           return res;
         }
       }
@@ -179,7 +162,7 @@ export async function GET(request: NextRequest) {
       
       // Map backend role data to frontend format with normalization
       const adminRole = normalizeAdminRole(roleData.role);
-      const roleLevel = roleData.level || 0;
+      const roleLevel = roleData.level ?? getRoleLevelForRole(adminRole) ?? 0;
       
       // Merge backend permissions with role-based permissions
       const rolePermissionsRaw = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];
@@ -218,13 +201,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[Auth] Unexpected error in user-with-roles:', error);
-    const res = json(
-      { 
-        success: false, 
-        error: 'Internal server error'
-      },
-      500
-    );
+    const res = json({ success: false, error: 'Internal server error', adminRole: null, roleLevel: 0, permissions: [] }, 500);
     return res;
   }
 }

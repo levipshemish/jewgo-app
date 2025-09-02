@@ -4,4 +4,6 @@ export { useSearchInput } from './useSearchInput';
 export { useIsMobile } from './useIsMobile';
 export { useInfiniteScroll } from './useInfiniteScroll';
 export { useScrollDetection } from './useScrollDetection';
-export { useCaptcha } from '../../hooks/useCaptcha'; 
+export { useCaptcha } from '../../hooks/useCaptcha';
+export { usePerformanceMonitor } from './usePerformanceMonitor';
+export { useBackgroundPrefetch } from './useBackgroundPrefetch'; 

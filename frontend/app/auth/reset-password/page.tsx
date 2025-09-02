@@ -98,12 +98,12 @@ function ResetPasswordForm() {
     }
 
     try {
-      const { error } = await supabaseClient.auth.updateUser({
+      const { error: updateError } = await supabaseClient.auth.updateUser({
         password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (updateError) {
+        setError(updateError.message);
       } else {
         setIsSuccess(true);
         // Redirect to sign in after 3 seconds

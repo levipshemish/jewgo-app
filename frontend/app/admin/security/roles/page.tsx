@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { requireAdminUser } from '@/lib/server/admin-auth';
 import RoleManagementTable from '@/components/admin/RoleManagementTable';
 
@@ -49,10 +48,8 @@ export default async function RoleManagementPage() {
   let initialData = { users: [], total: 0, page: 1, limit: 50, has_more: false };
   
   try {
-    const response = await fetch(new URL('/api/admin/roles?limit=50', process.env.NEXT_PUBLIC_APP_URL), { 
-      cache: 'no-store',
-      headers: await headers() // Include auth context from Next.js headers
-    });
+    // Best-effort server fetch; relies on server-side auth context available to Next API route
+    const response = await fetch('/api/admin/roles?limit=50', { cache: 'no-store' });
     
     if (response.ok) {
       const data = await response.json();

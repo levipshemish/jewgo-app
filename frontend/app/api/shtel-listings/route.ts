@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MarketplaceSearchParams, MarketplaceSearchResponse } from '@/lib/types/marketplace';
+import { generateAPIHeaders } from '@/lib/utils/cdnHeaders';
 
 /**
  * Shtel Listings API - Jewish Community Focused Marketplace
@@ -155,7 +156,12 @@ export async function GET(request: NextRequest) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      cache: 'no-store' // Ensure fresh data for community listings
+      // Optimize caching strategy for better performance
+      cache: 'force-cache', // Use Next.js caching
+      next: {
+        revalidate: 300, // Revalidate every 5 minutes
+        tags: ['shtetl-listings'] // Cache tag for selective invalidation
+      }
     });
 
     if (!response.ok) {
@@ -293,13 +299,28 @@ export async function GET(request: NextRequest) {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      return NextResponse.json({
+      const apiResponse = NextResponse.json({
         success: true,
         data: {
           ...data.data,
           listings: enhancedListings
         }
       });
+
+      // Apply CDN headers for better caching
+      const cdnHeaders = generateAPIHeaders('/api/shtel-listings', {
+        customMaxAge: 300, // 5 minutes
+        vary: 'Accept, Accept-Encoding, Accept-Language'
+      });
+
+      // Apply headers to response
+      Object.entries(cdnHeaders).forEach(([key, value]) => {
+        if (value) {
+          apiResponse.headers.set(key, value);
+        }
+      });
+
+      return apiResponse;
     }
 
     return NextResponse.json(data);
@@ -308,7 +329,7 @@ export async function GET(request: NextRequest) {
     console.error('Shtel listings API error:', error);
     
     // Return basic error response
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch community listings',
@@ -316,6 +337,20 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
+
+    // Apply CDN headers for error responses (shorter cache)
+    const cdnHeaders = generateAPIHeaders('/api/shtel-listings', {
+      customMaxAge: 60, // 1 minute for error responses
+      vary: 'Accept, Accept-Encoding, Accept-Language'
+    });
+
+    Object.entries(cdnHeaders).forEach(([key, value]) => {
+      if (value) {
+        errorResponse.headers.set(key, value);
+      }
+    });
+
+    return errorResponse;
   }
 }
 
@@ -337,7 +372,7 @@ export async function POST(request: NextRequest) {
     // Call the backend shtetl marketplace API
     const backendUrl = `${BACKEND_BASE_URL}/api/v4/shtetl/listings`;
     
-    const response = await fetch(backendUrl, {
+    const postResponse = await fetch(backendUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -350,16 +385,16 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(communityListing)
     });
 
-    const data = await response.json();
+    const data = await postResponse.json();
 
-    if (!response.ok) {
+    if (!postResponse.ok) {
       return NextResponse.json(
         {
           success: false,
           error: data.error || 'Failed to create community listing',
           details: data.details
         },
-        { status: response.status }
+        { status: postResponse.status }
       );
     }
 

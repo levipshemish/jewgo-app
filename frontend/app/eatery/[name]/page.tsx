@@ -276,7 +276,6 @@ export default function EateryNamePage() {
           
           // Normalize both names for comparison (remove apostrophes and hyphens)
           const normalizedRestaurantName = restaurantName.replace(/['-]/g, '')
-          const normalizedEateryName = eateryName.toLowerCase().replace(/['-]/g, '')
           
           console.log(`Comparing URL slug: "${eateryName}" with restaurant: "${restaurantName}"`)
           console.log(`  - URL with spaces: "${eateryNameWithSpaces}"`)
@@ -424,101 +423,11 @@ export default function EateryNamePage() {
     }
   }, [eateryName])
 
-  // Check location permission status
-  const checkLocationPermission = async (): Promise<'granted' | 'denied' | 'prompt'> => {
-    if (!navigator.geolocation) {
-      return 'denied';
-    }
-
-    try {
-      // Use the Permissions API if available
-      if ('permissions' in navigator) {
-        const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
-        return permission.state as 'granted' | 'denied' | 'prompt';
-      }
-      
-      // Fallback: try to get current position to check permission
-      return new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => resolve('granted'),
-          (error) => {
-            if (error.code === error.PERMISSION_DENIED) {
-              resolve('denied');
-            } else {
-              resolve('prompt');
-            }
-          },
-          { timeout: 1000, maximumAge: 0 }
-        );
-      });
-    } catch {
-      return 'prompt';
-    }
-  };
-
-  // Get user location with proper permission handling
-  const getUserLocation = useCallback(async () => {
-    if (!navigator.geolocation) {
-      setLocationPermission('denied');
-      setLocationError('Geolocation is not supported by this browser');
-      return;
-    }
-
-    const permission = await checkLocationPermission();
-    setLocationPermission(permission);
-
-    if (permission === 'denied') {
-      setLocationError('Location access was denied. Please enable location services in your browser settings.');
-      setUserLocation(null);
-      return;
-    }
-
-    if (permission === 'prompt') {
-      // Don't automatically request location, wait for user action
-      setUserLocation(null);
-      return;
-    }
-
-    // Permission is granted, get location
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setLocationError(null);
-        setLocationPermission('granted');
-      },
-      (error) => {
-        console.log('Location error:', error.message);
-        let errorMessage = 'Unable to get your location';
-        
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
-            setLocationPermission('denied');
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable. Please try again.';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Location request timed out. Please try again.';
-            break;
-        }
-        
-        setLocationError(errorMessage);
-        setUserLocation(null);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
-  }, []);
+  // TODO: Implement location permission checking when needed
+  // Function removed to fix lint warning - not used in current implementation
 
   // Handle location request from distance button
-  const handleLocationRequest = async () => {
+  const handleLocationRequest = useCallback(async () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by this browser');
       return;
@@ -535,25 +444,24 @@ export default function EateryNamePage() {
         setLocationError(null);
         setLocationPermission('granted');
       },
-      (error) => {
+      (geolocationError) => {
         let errorMessage = 'Unable to get your location';
         
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
+        switch (geolocationError.code) {
+          case geolocationError.PERMISSION_DENIED:
             errorMessage = 'Location access was denied. Please enable location services in your browser settings.';
             setLocationPermission('denied');
             break;
-          case error.POSITION_UNAVAILABLE:
+          case geolocationError.POSITION_UNAVAILABLE:
             errorMessage = 'Location information is unavailable. Please try again.';
             break;
-          case error.TIMEOUT:
+          case geolocationError.TIMEOUT:
             errorMessage = 'Location request timed out. Please try again.';
             break;
         }
         
         setLocationError(errorMessage);
         setUserLocation(null);
-        alert(errorMessage);
       },
       {
         enableHighAccuracy: true,
@@ -561,7 +469,7 @@ export default function EateryNamePage() {
         maximumAge: 300000, // 5 minutes
       }
     );
-  };
+  }, []);
 
   // Monitor location permission changes and set up location watching
   useEffect(() => {
@@ -587,7 +495,7 @@ export default function EateryNamePage() {
           
           // If permission was granted, try to get location and start watching
           if (result.state === 'granted') {
-            getUserLocation();
+            handleLocationRequest();
             
             // Start watching for location changes
             if (navigator.geolocation && !watchId) {
@@ -600,9 +508,9 @@ export default function EateryNamePage() {
                   });
                   setLocationError(null);
                 },
-                (error) => {
-                  console.log('Location watch error:', error.message);
-                  if (error.code === error.PERMISSION_DENIED) {
+                (watchError) => {
+                  console.log('Location watch error:', watchError.message);
+                  if (watchError.code === watchError.PERMISSION_DENIED) {
                     setLocationPermission('denied');
                     setUserLocation(null);
                     setLocationError('Location access was denied. Please enable location services in your browser settings.');
@@ -622,7 +530,7 @@ export default function EateryNamePage() {
         
         // Initial setup
         if (result.state === 'granted' && !userLocation) {
-          getUserLocation();
+          handleLocationRequest();
         }
         
         return () => {
@@ -640,7 +548,7 @@ export default function EateryNamePage() {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [userLocation]);
+  }, [userLocation, handleLocationRequest]);
 
   // Note: getUserLocation function was removed, location is handled by handleLocationRequest
 
@@ -692,12 +600,12 @@ export default function EateryNamePage() {
   // Render eatery details
   if (eatery) {
     try {
-      const listingData = mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission)
-      console.log('Final listing data with reviews:', listingData)
+      const finalListingData = mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission)
+      console.log('Final listing data with reviews:', finalListingData)
       
       // Add pagination and load more props
       const listingDataWithPagination = {
-        ...listingData,
+        ...finalListingData,
         reviewsPagination,
         onLoadMoreReviews: handleLoadMoreReviews,
         reviewsLoading

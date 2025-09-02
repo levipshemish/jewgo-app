@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { handleRoute } from '@/lib/server/route-helpers';
+import { getBackendAuthHeader } from '@/lib/server/admin-auth';
 // import { requireAdminOrThrow } from '@/lib/server/admin-auth';
-import { requireSuperAdmin, withPermission } from '@/lib/server/rbac-middleware';
+import { requireSuperAdmin } from '@/lib/server/rbac-middleware';
 
 export const runtime = 'nodejs';
 
@@ -24,8 +25,8 @@ const RoleRevocationSchema = z.object({
 const RoleActionSchema = z.union([RoleAssignmentSchema, RoleRevocationSchema]);
 
 const QuerySchema = z.object({
-  page: z.string().optional().transform(val => parseInt(val || '1')),
-  limit: z.string().optional().transform(val => parseInt(val || '50')),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
   search: z.string().optional(),
   user_id: z.string().optional(),
   role: z.string().optional(),
@@ -36,8 +37,9 @@ const QuerySchema = z.object({
 // GET handler - fetch users with roles
 export async function GET(request: NextRequest) {
   return handleRoute(async () => {
-    // Use RBAC middleware to ensure user has role management permissions
-    const admin = await withPermission('role:manage')(request);
+    // Intentional narrowing: restrict to super admins for parity with the UI gating
+    // If broader admin access is desired, switch to requireAdminOrThrow and update tests accordingly.
+    const admin = await requireSuperAdmin(request);
     
     // Add rate limiting for GET requests (dev safeguard only)
     if (process.env.NODE_ENV === 'development' && process.env.ENABLE_DEV_RATE_LIMITING === 'true') {
@@ -57,13 +59,13 @@ export async function GET(request: NextRequest) {
     const backendUrl = new URL('/api/v4/admin/roles', process.env.BACKEND_URL || 'http://localhost:5000');
     Object.entries(validatedQuery).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        backendUrl.searchParams.set(key, value.toString());
+        backendUrl.searchParams.set(key, String(value));
       }
     });
     
     try {
-      // Forward request to backend with original Authorization header
-      const authHeader = request.headers.get('Authorization');
+      // Forward request to backend with backend auth header (Supabase access token)
+      const authHeader = await getBackendAuthHeader();
       if (!authHeader) {
         return NextResponse.json(
           {
@@ -157,7 +159,7 @@ export async function POST(request: NextRequest) {
       };
 
       // Forward request to backend with original Authorization header
-      const authHeader = request.headers.get('Authorization');
+      const authHeader = await getBackendAuthHeader();
       if (!authHeader) {
         return NextResponse.json(
           {

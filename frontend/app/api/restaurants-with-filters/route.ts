@@ -4,6 +4,13 @@ import { NextRequest, NextResponse } from 'next/server';
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 3 * 60 * 1000; // 3 minutes for combined data
 const FILTER_CACHE_KEY = 'filter-options-only';
+const SUPPRESS_WINDOW_MS = 400; // Short suppression window for near-back-to-back identical requests
+
+// In-flight request coalescing map to merge identical concurrent requests
+// Value resolves to the payload and headers to produce a fresh NextResponse per caller
+const inflight = new Map<string, Promise<{ payload: any; headers: Record<string, string>; status?: number }>>();
+// Recently served responses for sequential suppression
+const recentlyServed = new Map<string, { payload: any; headers: Record<string, string>; status?: number; timestamp: number }>();
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,109 +28,135 @@ export async function GET(request: NextRequest) {
       .join('&');
     const cacheKey = `restaurants-with-filters:${queryParams}`;
     
+    // Short sequential suppression before full cache check
+    const recent = recentlyServed.get(cacheKey);
+    if (recent && Date.now() - recent.timestamp < SUPPRESS_WINDOW_MS) {
+      return NextResponse.json(recent.payload, { headers: recent.headers, status: recent.status });
+    }
+
     // Check cache first
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return NextResponse.json({
-        success: true,
-        ...cached.data,
-        cached: true
-      }, {
-        headers: {
-          'Cache-Control': 'public, max-age=180', // 3 minutes browser cache
-          'CDN-Cache-Control': 'public, max-age=180',
-          'Vercel-CDN-Cache-Control': 'public, max-age=180'
-        }
-      });
+      const payload = { success: true, ...cached.data, cached: true };
+      const headers = {
+        'Cache-Control': 'public, max-age=180', // 3 minutes browser cache
+        'CDN-Cache-Control': 'public, max-age=180',
+        'Vercel-CDN-Cache-Control': 'public, max-age=180'
+      } as Record<string, string>;
+      // Record as recently served to absorb micro-bursts
+      recentlyServed.set(cacheKey, { payload, headers, status: undefined, timestamp: Date.now() });
+      return NextResponse.json(payload, { headers });
+    }
+
+    // If an identical request is already being processed, reuse its result
+    const existing = inflight.get(cacheKey);
+    if (existing) {
+      const { payload, headers, status } = await existing;
+      return NextResponse.json(payload, { headers, status });
     }
 
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? 'http://localhost:3000' 
       : `https://${request.headers.get('host')}`;
     
-    // Make requests to both endpoints in parallel for better performance
-    const [restaurantsResponse, filterOptionsResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/restaurants-with-images?${searchParams.toString()}`, {
-        headers: { 'Content-Type': 'application/json' }
-      }),
-      // Check if we have cached filter options to avoid redundant calls
-      cache.has(FILTER_CACHE_KEY) && Date.now() - cache.get(FILTER_CACHE_KEY)!.timestamp < CACHE_TTL * 2
-        ? Promise.resolve({ ok: true, json: () => Promise.resolve(cache.get(FILTER_CACHE_KEY)!.data) })
-        : fetch(`${baseUrl}/api/restaurants/filter-options`, {
-            headers: { 'Content-Type': 'application/json' }
-          })
-    ]);
+    // Create in-flight promise and register before starting network calls
+    const p = (async (): Promise<{ payload: any; headers: Record<string, string>; status?: number }> => {
+      // Make requests to both endpoints in parallel for better performance
+      const [restaurantsResponse, filterOptionsResponse] = await Promise.all([
+        fetch(`${baseUrl}/api/restaurants-with-images?${searchParams.toString()}`, {
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        // Check if we have cached filter options to avoid redundant calls
+        cache.has(FILTER_CACHE_KEY) && Date.now() - cache.get(FILTER_CACHE_KEY)!.timestamp < CACHE_TTL * 2
+          ? Promise.resolve({ ok: true, json: () => Promise.resolve(cache.get(FILTER_CACHE_KEY)!.data) } as any)
+          : fetch(`${baseUrl}/api/restaurants/filter-options`, {
+              headers: { 'Content-Type': 'application/json' }
+            })
+      ]);
 
-    // Handle restaurants response
-    if (!restaurantsResponse.ok) {
-      throw new Error(`Restaurants API error: ${restaurantsResponse.status}`);
-    }
-    
-    const restaurantsData = await restaurantsResponse.json();
-    
-    // Handle filter options response  
-    let filterOptionsData;
-    if (!filterOptionsResponse.ok) {
-      // Fallback filter options if backend is unavailable
-      filterOptionsData = {
-        success: true,
+      // Handle restaurants response
+      if (!restaurantsResponse.ok) {
+        throw new Error(`Restaurants API error: ${restaurantsResponse.status}`);
+      }
+
+      const restaurantsData = await restaurantsResponse.json();
+
+      // Handle filter options response
+      let filterOptionsData;
+      if (!filterOptionsResponse.ok) {
+        // Fallback filter options if backend is unavailable
+        filterOptionsData = {
+          success: true,
+          data: {
+            agencies: ['ORB', 'Kosher Miami', 'Other'],
+            kosherCategories: ['Dairy', 'Meat', 'Pareve'],
+            listingTypes: ['Restaurant', 'Catering', 'Food Truck'],
+            priceRanges: ['$', '$$', '$$$', '$$$$'],
+            cities: [],
+            states: []
+          }
+        };
+      } else {
+        filterOptionsData = await filterOptionsResponse.json();
+
+        // Cache filter options separately for reuse
+        if (filterOptionsData.success) {
+          cache.set(FILTER_CACHE_KEY, {
+            data: filterOptionsData,
+            timestamp: Date.now()
+          });
+        }
+      }
+
+      // Combine the responses
+      const combinedData = {
         data: {
-          agencies: ['ORB', 'Kosher Miami', 'Other'],
-          kosherCategories: ['Dairy', 'Meat', 'Pareve'],
-          listingTypes: ['Restaurant', 'Catering', 'Food Truck'],
-          priceRanges: ['$', '$$', '$$$', '$$$$'],
-          cities: [],
-          states: []
+          restaurants: restaurantsData.data || [],
+          total: restaurantsData.total || 0,
+          filterOptions: filterOptionsData.data || filterOptionsData
+        },
+        pagination: {
+          limit,
+          offset,
+          page,
+          totalPages: Math.ceil((restaurantsData.total || 0) / limit)
         }
       };
-    } else {
-      filterOptionsData = await filterOptionsResponse.json();
-      
-      // Cache filter options separately for reuse
-      if (filterOptionsData.success) {
-        cache.set(FILTER_CACHE_KEY, {
-          data: filterOptionsData,
-          timestamp: Date.now()
-        });
-      }
-    }
 
-    // Combine the responses
-    const combinedData = {
-      data: {
-        restaurants: restaurantsData.data || [],
-        total: restaurantsData.total || 0,
-        filterOptions: filterOptionsData.data || filterOptionsData
-      },
-      pagination: {
-        limit,
-        offset,
-        page,
-        totalPages: Math.ceil((restaurantsData.total || 0) / limit)
-      }
-    };
+      // Cache the combined response
+      cache.set(cacheKey, {
+        data: combinedData,
+        timestamp: Date.now()
+      });
 
-    // Cache the combined response
-    cache.set(cacheKey, {
-      data: combinedData,
-      timestamp: Date.now()
-    });
-
-    return NextResponse.json({
-      success: true,
-      ...combinedData
-    }, {
-      headers: {
-        'Cache-Control': 'public, max-age=180', // 3 minutes browser cache
+      const headers = {
+        'Cache-Control': 'public, max-age=180',
         'CDN-Cache-Control': 'public, max-age=180',
         'Vercel-CDN-Cache-Control': 'public, max-age=180'
-      }
-    });
+      } as Record<string, string>;
+
+      return {
+        payload: { success: true, ...combinedData },
+        headers
+      };
+    })();
+
+    inflight.set(cacheKey, p);
+    try {
+      const { payload, headers, status } = await p;
+      // Record as recently served
+      recentlyServed.set(cacheKey, { payload, headers, status, timestamp: Date.now() });
+      return NextResponse.json(payload, { headers, status });
+    } finally {
+      inflight.delete(cacheKey);
+    }
 
   } catch (error) {
     console.error('Error in combined restaurants-with-filters API:', error);
-    
-    return NextResponse.json({
+    const urlObj = new URL(request.url);
+    const limitVal = parseInt(urlObj.searchParams.get('limit') || '24');
+    const offsetVal = parseInt(urlObj.searchParams.get('offset') || '0');
+    const payload = {
       success: false,
       error: 'Failed to fetch data',
       data: {
@@ -139,11 +172,15 @@ export async function GET(request: NextRequest) {
         }
       },
       pagination: {
-        limit: parseInt(new URL(request.url).searchParams.get('limit') || '24'),
-        offset: parseInt(new URL(request.url).searchParams.get('offset') || '0'),
+        limit: limitVal,
+        offset: offsetVal,
         page: 1,
         totalPages: 0
       }
-    }, { status: 500 });
+    };
+    const headers = {} as Record<string, string>;
+    // Briefly suppress repeated failures for the same key
+    recentlyServed.set(`err:${request.url}`, { payload, headers, status: 500, timestamp: Date.now() });
+    return NextResponse.json(payload, { status: 500 });
   }
 }

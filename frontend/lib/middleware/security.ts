@@ -23,6 +23,8 @@ export function buildSecurityHeaders(req: NextRequest): HeadersInit {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': "camera=(), microphone=(), geolocation=()",
     'Vary': 'Origin',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-site',
   };
 
   // CORS: only reflect allowed origins, never '*'

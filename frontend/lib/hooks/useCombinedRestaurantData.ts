@@ -56,6 +56,7 @@ interface UseCombinedRestaurantDataReturn {
   totalRestaurants: number;
   totalPages: number;
   fetchCombinedData: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number) => Promise<void>;
+  buildQueryParams: (page: number, query: string, filters?: AppliedFilters, itemsPerPage?: number) => URLSearchParams;
 }
 
 /**
@@ -74,7 +75,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
   // Collapse duplicate calls with the same params within a short window (dev/StrictMode, hydration)
   const lastKeyRef = useRef<string | null>(null);
   const lastStartAtRef = useRef<number>(0);
-  const SUPPRESS_WINDOW_MS = 750;
+  const SUPPRESS_WINDOW_MS = 1500; // Increased from 750ms to 1500ms for better deduplication
 
   // Clean filters utility (copied from EateryPageClient)
   const cleanFilters = useCallback(<T extends Record<string, any>>(raw: T): Partial<T> => {
@@ -173,6 +174,9 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
       
       // If an identical request was just started recently, skip it
       if (lastKeyRef.current === key && (now - lastStartAtRef.current) < SUPPRESS_WINDOW_MS) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚫 useCombinedRestaurantData: Skipping duplicate request within suppress window');
+        }
         return;
       }
       lastKeyRef.current = key;
@@ -221,6 +225,7 @@ export function useCombinedRestaurantData(): UseCombinedRestaurantDataReturn {
     error,
     totalRestaurants,
     totalPages,
-    fetchCombinedData
+    fetchCombinedData,
+    buildQueryParams
   };
 }

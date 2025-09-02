@@ -1,7 +1,7 @@
 """
-Admin Authentication Module
-This module provides robust authentication for admin endpoints, replacing
-the simple token-based authentication with a more secure system.
+Admin Authentication Module (DEPRECATED)
+This legacy module is deprecated in favor of Supabase JWT + role-based auth.
+Use utils.security.require_admin for new endpoints.
 """
 
 import os
@@ -23,6 +23,7 @@ except ImportError:
     logger = get_logger(__name__)
     logger.warning("SupabaseRoleManager not available - admin roles disabled")
 logger = get_logger(__name__)
+logger.warning("DEPRECATION: utils.admin_auth is deprecated. Use utils.security.require_admin.")
 
 # Legacy admin auth kill-switch configuration
 REMOVAL_DAYS = int(os.getenv('LEGACY_REMOVE_AFTER_DAYS', '90'))
@@ -49,6 +50,13 @@ class AdminAuthManager:
     """Manages admin authentication and authorization."""
 
     def __init__(self):
+        # Legacy admin auth may be disabled; enforce guardrails
+        enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+        if not enable_legacy:
+            logger.warning("Legacy admin auth disabled - use Supabase roles (see utils.security)")
+        if os.getenv("NODE_ENV") == "production" and enable_legacy:
+            logger.error("CRITICAL: Legacy admin auth cannot be enabled in production")
+            raise RuntimeError("Legacy admin auth cannot be enabled in production")
         self.secret_key = os.getenv(
             "ADMIN_JWT_SECRET", os.getenv("JWT_SECRET", "fallback-secret")
         )
@@ -87,6 +95,9 @@ class AdminAuthManager:
 
     def generate_admin_token(self, email: str, password: str) -> Optional[str]:
         """Generate an admin JWT token if credentials are valid."""
+        enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+        if not enable_legacy:
+            raise RuntimeError("Legacy admin authentication is disabled. Use Supabase roles.")
         if email not in self.admin_users:
             # Mask email for security - only log first 2 characters + domain
             masked_email = email[:2] + "*****@" + email.split("@")[-1] if "@" in email else "***"
@@ -147,6 +158,10 @@ class AdminAuthManager:
 
     def verify_admin_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Verify an admin JWT token and return user info."""
+        enable_legacy = os.getenv("ENABLE_LEGACY_ADMIN_AUTH", "false").lower() == "true"
+        if not enable_legacy:
+            logger.warning("Legacy admin token verification disabled - use Supabase JWT")
+            return None
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             # Check if token is expired

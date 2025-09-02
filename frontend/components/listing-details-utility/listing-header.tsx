@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Heart, Share, Eye, Star } from "lucide-react"
+import { ArrowLeft, Heart, Share } from "lucide-react"
 import { Button } from "@/components/ui-listing-utility/button"
 
 interface ListingHeaderProps {

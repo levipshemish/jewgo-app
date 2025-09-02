@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { transformSupabaseUser, isSupabaseConfigured } from '@/lib/utils/auth-utils';
+import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
+import type { TransformedUser } from '@/lib/types/supabase-auth';
+import { ROLE_PERMISSIONS, normalizeAdminRole, type Permission } from '@/lib/constants/permissions';
+import { validatePermissions } from '@/lib/server/security';
 
 export async function GET(_request: NextRequest) {
   try {
@@ -42,23 +45,60 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    // Get user's JWT token for role fetching
+    // Build base transformed user inline to avoid internal HTTP hops
+    const baseUser: TransformedUser = {
+      id: user.id,
+      email: user.email || undefined,
+      name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+      username: user.user_metadata?.username,
+      avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+      provider: (user.app_metadata?.provider ?? 'unknown') as any,
+      providerInfo: { name: 'Supabase', icon: '🔐', color: '#0EA5E9', displayName: 'Supabase' },
+      createdAt: user.created_at || undefined,
+      updatedAt: user.updated_at || undefined,
+      isEmailVerified: (user.user_metadata as any)?.email_verified || false,
+      isPhoneVerified: (user.user_metadata as any)?.phone_verified || false,
+      role: 'user',
+      subscriptionTier: 'free',
+      permissions: [],
+      adminRole: null,
+      roleLevel: 0,
+      isSuperAdmin: false
+    };
+
+    // If we have a token, enrich with roles inline
     const { data: { session } } = await supabase.auth.getSession();
-    const userToken = session?.access_token;
+    const accessToken = session?.access_token;
 
-    // Transform the user with role information if token is available
-    const transformedUser = await transformSupabaseUser(user, {
-      includeRoles: !!userToken,
-      userToken: userToken || undefined
-    });
+    if (accessToken) {
+      try {
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+        const resp = await fetch(`${backendUrl}/api/auth/user-role`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(5000)
+        });
+        if (resp.ok) {
+          const roleData = await resp.json();
+          const adminRole = normalizeAdminRole(roleData.role);
+          const roleLevel = roleData.level || 0;
+          const rolePermissionsRaw = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];
+          const backendPermissionsRaw: unknown[] = roleData.permissions || [];
+          const { permissions } = validatePermissions(backendPermissionsRaw, [...rolePermissionsRaw]);
+          baseUser.adminRole = adminRole;
+          baseUser.roleLevel = roleLevel;
+          baseUser.permissions = permissions as Permission[];
+          baseUser.isSuperAdmin = adminRole === 'super_admin';
+        }
+      } catch (_e) {
+        // proceed without roles
+      }
+    }
 
-    return NextResponse.json(
-      { 
-        success: true, 
-        user: transformedUser 
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, user: baseUser }, { status: 200 });
 
   } catch (error) {
     console.error('[Auth] Unexpected error in sync-user:', error);

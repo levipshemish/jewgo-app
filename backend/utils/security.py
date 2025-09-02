@@ -192,9 +192,7 @@ def require_admin(min_level='system_admin'):
                     )
                     raise
                 
-                # No legacy fallback - pure fail-closed policy
-                logger.warning("AUTH_401_NO_LEGACY", extra={"endpoint": request.endpoint})
-                raise AuthenticationError("Legacy admin authentication disabled")
+                # All control paths above return or raise; no legacy fallback
 
             except AuthenticationError as e:
                 req_id = request.headers.get('X-Request-ID') or uuid.uuid4().hex

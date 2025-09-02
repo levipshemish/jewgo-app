@@ -58,19 +58,50 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
   const [showArchived, setShowArchived] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadConversations();
-  }, [storeData.store_id, filterType, filterPriority, showArchived, loadConversations]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.conversation_id);
+  const markMessagesAsRead = useCallback(async (conversationId: string) => {
+    try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        return;
+      }
+      
+      await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/read`, {
+        method: 'PUT'
+      });
+      
+      // Update conversation unread count
+      setConversations(prev => prev.map(conv => 
+        conv.conversation_id === conversationId 
+          ? { ...conv, unread_count: 0 }
+          : conv
+      ));
+      
+      onRefresh();
+    } catch (err) {
+      appLogger.error('Error marking messages as read:', { error: err instanceof Error ? err.message : String(err) });
     }
-  }, [selectedConversation, loadMessages]);
+  }, [storeData.store_id, storeData.is_admin, onRefresh]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const loadMessages = useCallback(async (conversationId: string) => {
+    try {
+      // Guard against admin context
+      if (storeData.is_admin) {
+        setMessages([]);
+        return;
+      }
+      
+      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`);
+      if (!response.ok) {throw new Error('Failed to load messages');}
+      
+      const data = await response.json();
+      setMessages(data.messages || []);
+      
+      // Mark messages as read
+      markMessagesAsRead(conversationId);
+    } catch (err) {
+      appLogger.error('Error loading messages:', { error: err instanceof Error ? err.message : String(err) });
+    }
+  }, [storeData.store_id, storeData.is_admin, markMessagesAsRead]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -101,50 +132,21 @@ export default function MessagingCenter({ storeData, onRefresh }: MessagingCente
     }
   }, [storeData.store_id, filterType, filterPriority, showArchived, storeData.is_admin]);
 
-  const loadMessages = useCallback(async (conversationId: string) => {
-    try {
-      // Guard against admin context
-      if (storeData.is_admin) {
-        setMessages([]);
-        return;
-      }
-      
-      const response = await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/messages`);
-      if (!response.ok) {throw new Error('Failed to load messages');}
-      
-      const data = await response.json();
-      setMessages(data.messages || []);
-      
-      // Mark messages as read
-      markMessagesAsRead(conversationId);
-    } catch (err) {
-      appLogger.error('Error loading messages:', { error: err instanceof Error ? err.message : String(err) });
-    }
-  }, [storeData.store_id, storeData.is_admin, markMessagesAsRead]);
+  useEffect(() => {
+    loadConversations();
+  }, [storeData.store_id, filterType, filterPriority, showArchived, loadConversations]);
 
-  const markMessagesAsRead = useCallback(async (conversationId: string) => {
-    try {
-      // Guard against admin context
-      if (storeData.is_admin) {
-        return;
-      }
-      
-      await fetch(`/api/shtel/store/${storeData.store_id}/conversations/${conversationId}/read`, {
-        method: 'PUT'
-      });
-      
-      // Update conversation unread count
-      setConversations(prev => prev.map(conv => 
-        conv.conversation_id === conversationId 
-          ? { ...conv, unread_count: 0 }
-          : conv
-      ));
-      
-      onRefresh();
-    } catch (err) {
-      appLogger.error('Error marking messages as read:', { error: err instanceof Error ? err.message : String(err) });
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.conversation_id);
     }
-  }, [storeData.store_id, storeData.is_admin, onRefresh]);
+  }, [selectedConversation, loadMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+
 
   const sendMessage = useCallback(async () => {
     if (!newMessage.trim() || !selectedConversation) {return;}

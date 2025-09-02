@@ -19,12 +19,21 @@ export default function MarketplaceSearch({
   const [query, setQuery] = useState(initialValue);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearchRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced search
   const debouncedSearch = useCallback(
-    debounce((searchQuery: string) => {
-      onSearch(searchQuery);
-    }, 300),
+    (searchQuery: string) => {
+      const timeoutId = setTimeout(() => {
+        onSearch(searchQuery);
+      }, 300);
+      
+      // Clear previous timeout
+      if (debouncedSearchRef.current) {
+        clearTimeout(debouncedSearchRef.current);
+      }
+      debouncedSearchRef.current = timeoutId;
+    },
     [onSearch]
   );
 
@@ -39,11 +48,11 @@ export default function MarketplaceSearch({
     onSearch(query);
   };
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setQuery('');
     onSearch('');
     inputRef.current?.focus();
-  };
+  }, [onSearch]);
 
   const handleFocus = () => {
     setIsFocused(true);
@@ -70,7 +79,7 @@ export default function MarketplaceSearch({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleClear]);
 
   return (
     <div className={`relative ${className}`}>

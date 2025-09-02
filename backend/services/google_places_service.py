@@ -23,7 +23,6 @@ class GooglePlacesService(BaseService):
 
     def __init__(self, db_manager=None, config=None) -> None:
         super().__init__(db_manager, config)
-        from utils.config_manager import ConfigManager
         config_manager = ConfigManager()
         external_services = config_manager.get_external_services_config()
         self.api_key = external_services.get('google_places_api_key')

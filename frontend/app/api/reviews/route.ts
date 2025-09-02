@@ -19,36 +19,7 @@ export interface Review {
   moderator_notes?: string;
 }
 
-// Mock reviews data for development (unused but kept for reference)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// const _mockReviews: Review[] = [
-//   {
-//     id: '1',
-//     restaurant_id: 1,
-//     user_id: 'user1',
-//     user_name: 'John Doe',
-//     rating: 5,
-//     title: 'Great kosher food!',
-//     content: 'Amazing experience, highly recommend.',
-//     status: 'approved',
-//     helpful_count: 3,
-//     created_at: new Date().toISOString(),
-//     updated_at: new Date().toISOString(),
-//   },
-//   {
-//     id: '2',
-//     restaurant_id: 1,
-//     user_id: 'user2',
-//     user_name: 'Jane Smith',
-//     rating: 4,
-//     title: 'Good food, friendly staff',
-//     content: 'Nice atmosphere and good service.',
-//     status: 'approved',
-//     helpful_count: 1,
-//     created_at: new Date().toISOString(),
-//     updated_at: new Date().toISOString(),
-//   },
-// ];
+// Removed legacy mock reviews to avoid unused variable noise.
 
 export async function GET(request: NextRequest) {
   try {

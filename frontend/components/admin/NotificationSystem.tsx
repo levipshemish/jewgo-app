@@ -8,7 +8,6 @@ import {
   CheckCircle, 
   Info, 
   MessageSquare,
-  Building2,
   Users,
   Settings,
   Clock

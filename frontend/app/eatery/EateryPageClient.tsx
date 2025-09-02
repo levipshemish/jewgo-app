@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header, GenericPageLayout } from '@/components/layout';
 import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
-import { Pagination } from '@/components/ui/Pagination';
+import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import ActionButtons from '@/components/layout/ActionButtons';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
@@ -15,29 +15,13 @@ import { useAdvancedFilters } from '@/hooks/useAdvancedFilters';
 import { AppliedFilters } from '@/lib/filters/filters.types';
 import { useMobileOptimization } from '@/lib/mobile-optimization';
 import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
-import { toApiFormat, assembleSafeFilters } from '@/lib/filters/distance-validation';
+
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { useCombinedRestaurantData } from '@/lib/hooks/useCombinedRestaurantData';
 import { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation';
 
 
-// One canonical cleaner for filters (use it everywhere)
-function cleanFilters<T extends Record<string, any>>(raw: T): Partial<T> {
-  const out: Partial<T> = {};
-  for (const [k, v] of Object.entries(raw)) {
-    if (v === undefined || v === null) {
-      continue;
-    }
-    if (typeof v === "string" && v.trim() === "") {
-      continue;
-    }
-    if (Array.isArray(v) && v.length === 0) {
-      continue;
-    }
-    out[k as keyof T] = v as any;
-  }
-  return out;
-}
+
 
 interface Restaurant {
   id: string | number;
@@ -66,8 +50,37 @@ interface ApiResponse {
   message?: string;
 }
 
-export function EateryPageClient() {
+interface CombinedApiResponse {
+  success: boolean;
+  data: {
+    restaurants: Restaurant[];
+    total: number;
+  };
+  error: string | null;
+}
+
+export default function EateryPageClient() {
   // DEBUG flag and logger are centralized in debug util
+  
+  // API call tracking for debugging excessive calls
+  const apiCallCountRef = useRef(0);
+  const lastApiCallRef = useRef<{ url: string; timestamp: number; reason: string } | null>(null);
+  
+  // Track API calls for debugging
+  const trackApiCall = useCallback((url: string, reason: string) => {
+    apiCallCountRef.current += 1;
+    lastApiCallRef.current = { url, timestamp: Date.now(), reason };
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔍 API Call #${apiCallCountRef.current}:`, {
+        url,
+        reason,
+        timestamp: new Date().toISOString(),
+        totalCalls: apiCallCountRef.current
+      });
+    }
+  }, []);
+  
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
@@ -167,99 +180,40 @@ export function EateryPageClient() {
     error,
     totalRestaurants,
     totalPages,
-    fetchCombinedData
+    fetchCombinedData,
+    buildQueryParams
   } = useCombinedRestaurantData();
 
   // Separate state for infinite scroll to avoid conflicts
   const [_infiniteScrollPage, setInfiniteScrollPage] = useState(1);
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
-  const prefetchRef = useRef<{ offset: number; items: Restaurant[]; total: number } | null>(null);
+  const prefetchRef = useRef<{ offset: number; items: Restaurant[]; total: number; timestamp: number } | null>(null);
+  const prefetchInFlightOffsetRef = useRef<number | null>(null);
   const prefetchAbortRef = useRef<AbortController | null>(null);
   
   // Ref for setHasMore to avoid dependency cycles
   const setHasMoreRef = useRef<((value: boolean) => void) | null>(null);
 
-  // Build query parameters consistently
-  const buildQueryParams = useCallback((page: number, query: string, filters?: AppliedFilters) => {
-    const params = new URLSearchParams();
-    const limit = mobileOptimizedItemsPerPage;
-    const offset = Math.max(0, (page - 1) * limit);
-    params.set('limit', String(limit));
-    params.set('offset', String(offset)); // ✅ backend expects this
-    
-    if (query && String(query).trim()) {
-      params.set('search', String(query).trim());
-    }
-    
-    if (filters) {
-      const cleaned = cleanFilters(filters);
-      
-      // Use safe filter assembly to handle distance field conflicts
-      const safeFilters = assembleSafeFilters(cleaned);
-      
-      // Convert to API format (always use maxDistanceMi)
-      const apiFilters = toApiFormat(safeFilters);
-      
-      if (typeof apiFilters.agency === "string") {
-        params.set('certifying_agency', apiFilters.agency);
-      }
-      if (typeof apiFilters.category === "string") {
-        params.set('kosher_category', apiFilters.category);
-      }
-      if (Array.isArray(apiFilters.priceRange)) {
-        const [min, max] = apiFilters.priceRange;
-        if (Number.isFinite(min)) {
-          params.set('price_min', min.toString());
-        }
-        if (Number.isFinite(max)) {
-          params.set('price_max', max.toString());
-        }
-      }
-      if (typeof apiFilters.ratingMin === "number") {
-        params.set('min_rating', apiFilters.ratingMin.toString());
-      }
-      // Location filters
-      if (apiFilters.nearMe && Number.isFinite(apiFilters.lat) && Number.isFinite(apiFilters.lng)) {
-        params.set('lat', String(apiFilters.lat!));
-        params.set('lng', String(apiFilters.lng!));
-        // Always use maxDistanceMi for API compatibility
-        if (Number.isFinite(apiFilters.maxDistanceMi)) {
-          params.set('max_distance_mi', String(apiFilters.maxDistanceMi!));
-        }
-      }
-      // Dietary filters (multi-select)
-      if (Array.isArray(apiFilters.dietary) && apiFilters.dietary.length > 0) {
-        apiFilters.dietary.forEach(d => params.append('dietary', d));
-      } else if (apiFilters.dietary && typeof apiFilters.dietary === 'string' && String(apiFilters.dietary).trim() !== '') {
-        // Handle single string dietary for backward compatibility
-        params.set('dietary', String(apiFilters.dietary).trim());
-      }
-    }
-    
-    return params;
-  }, [mobileOptimizedItemsPerPage]);
+
 
   // Track the last fetched URL to prevent immediate duplicates
   const lastFetchedUrlRef = useRef<string | null>(null);
 
+  // Memoized fetch function to prevent recreation on every render
   const fetchRestaurants = useCallback(async (page: number = 1, query: string = '', filters?: AppliedFilters) => {
+    const params = buildQueryParams(page, query, filters, mobileOptimizedItemsPerPage);
+    const url = `/api/restaurants-with-filters?${params.toString()}`;
+    
+    // Track API call
+    trackApiCall(url, `fetchRestaurants - page: ${page}, query: "${query}"`);
+    
     // Use the combined API hook which handles deduplication and caching internally
     await fetchCombinedData(page, query, filters, mobileOptimizedItemsPerPage);
-    
     if (DEBUG) {
-      debugLog('🎯 EateryPageClient: Combined API Response Success', {
-        dataLength: restaurants?.length,
-        totalRestaurants,
-        firstRestaurant: restaurants?.[0]?.name,
-        hasFilterOptions: !!filterOptions
-      });
+      debugLog('🎯 EateryPageClient: Combined API request triggered');
     }
-    
-    // Note: The actual restaurant data and totalRestaurants are now handled 
-    // by the combined hook's state management, so we don't need to access 
-    // the state values directly here to avoid circular dependencies
-  }, [fetchCombinedData, mobileOptimizedItemsPerPage, restaurants, totalRestaurants, filterOptions]);
-
+    // Note: State updates are managed by the hook; avoid referencing them here to keep deps minimal
+  }, [buildQueryParams, mobileOptimizedItemsPerPage, fetchCombinedData, trackApiCall]);
 
   // Reset the last fetched URL when query dependencies change
   useEffect(() => {
@@ -272,41 +226,84 @@ export function EateryPageClient() {
   // Infinite scroll hook - only enabled on mobile  
   const loadErrorCountRef = useRef(0);
 
+  // Use the combined API for infinite scroll instead of separate endpoint
   const fetchRestaurantsPage = useCallback(async (offset: number): Promise<ApiResponse> => {
     const page = Math.floor(offset / mobileOptimizedItemsPerPage) + 1;
-    const params = buildQueryParams(page, searchQuery, activeFilters);
+    const params = buildQueryParams(page, searchQuery, activeFilters, mobileOptimizedItemsPerPage);
     params.set('offset', offset.toString());
-    const url = `/api/restaurants-with-images?${params.toString()}`;
+    
+    // Use the combined API endpoint instead of separate images endpoint
+    const url = `/api/restaurants-with-filters?${params.toString()}`;
+    
+    // Track API call
+    trackApiCall(url, `fetchRestaurantsPage - offset: ${offset}, page: ${page}`);
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
-      const data: ApiResponse = await deduplicatedFetch(url);
-      return data;
+      const data: CombinedApiResponse = await deduplicatedFetch(url);
+      // Transform the response to match the expected ApiResponse format
+      return {
+        success: data.success,
+        data: data.data?.restaurants || [],
+        total: data.data?.total || 0,
+        error: data.error || null
+      };
     } finally {
       clearTimeout(timeoutId);
     }
-  }, [mobileOptimizedItemsPerPage, buildQueryParams, searchQuery, activeFilters]);
+  }, [mobileOptimizedItemsPerPage, buildQueryParams, searchQuery, activeFilters, trackApiCall]);
 
   const schedulePrefetch = useCallback(async () => {
-    if (!isMobileView) {
+    // Enable prefetch for all viewports
+    const nextOffset = allRestaurants.length;
+    
+    // Prevent prefetch if we're still loading initial data
+    if (loading || nextOffset === 0) {
       return;
     }
-    const nextOffset = allRestaurants.length;
+    
+    // Avoid duplicate prefetch for the same offset
+    if (prefetchRef.current?.offset === nextOffset || prefetchInFlightOffsetRef.current === nextOffset) {
+      return;
+    }
+    
+    // Add cooldown to prevent rapid prefetch calls
+    const now = Date.now();
+    const lastPrefetchTime = prefetchRef.current?.timestamp || 0;
+    const PREFETCH_COOLDOWN_MS = 2000; // 2 second cooldown between prefetches
+    
+    if (now - lastPrefetchTime < PREFETCH_COOLDOWN_MS) {
+      if (DEBUG) {
+        debugLog('Prefetch blocked - cooldown period active');
+      }
+      return;
+    }
+    
     // Cancel any in-flight prefetch
     prefetchAbortRef.current?.abort();
     const controller = new AbortController();
     prefetchAbortRef.current = controller;
+    
     try {
+      prefetchInFlightOffsetRef.current = nextOffset;
       const data = await fetchRestaurantsPage(nextOffset);
       if (data.success && Array.isArray(data.data)) {
-        prefetchRef.current = { offset: nextOffset, items: data.data, total: data.total };
+        prefetchRef.current = { 
+          offset: nextOffset, 
+          items: data.data, 
+          total: data.total,
+          timestamp: now // Track when prefetch was made
+        };
       } else {
         prefetchRef.current = null;
       }
     } catch {
       prefetchRef.current = null;
+    } finally {
+      prefetchInFlightOffsetRef.current = null;
     }
-  }, [isMobileView, allRestaurants.length, fetchRestaurantsPage]);
+  }, [allRestaurants.length, loading, fetchRestaurantsPage]);
 
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
     async () => {
@@ -353,9 +350,12 @@ export function EateryPageClient() {
           
           // Debug logging
           if (DEBUG) { debugLog('Infinite scroll: Loaded page', nextPage, 'items:', data.data.length, 'total loaded:', newTotalItems, 'total available:', data.total, 'hasMore:', hasMoreData); }
-          // Prime next prefetch
+          // Prime next prefetch only if we have more data
           if (hasMoreData) {
-            schedulePrefetch();
+            // Delay prefetch to avoid immediate calls
+            setTimeout(() => {
+              schedulePrefetch();
+            }, 1000); // 1 second delay before next prefetch
           }
         } else {
           // No more data available
@@ -379,9 +379,9 @@ export function EateryPageClient() {
       }
     },
     { 
-      threshold: isMobileView ? 0.15 : 0.2,
-      rootMargin: isMobileView ? '200px' : '200px',
-      disabled: loading || !isMobileView
+      threshold: 0.15,
+      rootMargin: '200px',
+      disabled: loading || !isHydrated // Only enable when hydrated and not loading
     }
   );
 
@@ -394,6 +394,7 @@ export function EateryPageClient() {
   const debouncedFetchRef = useRef<NodeJS.Timeout | null>(null);
   
   // Consolidated effect to trigger combined API fetch
+  // Keep dependencies tight to avoid refetch loops
   useEffect(() => {
     // Clear any existing debounced fetch
     if (debouncedFetchRef.current) {
@@ -404,24 +405,15 @@ export function EateryPageClient() {
     prefetchRef.current = null;
     prefetchAbortRef.current?.abort();
     
-    // Reset mobile view state if applicable
-    if (isMobileView) {
-      setHasMore(true);
-      setInfiniteScrollPage(1);
-      loadErrorCountRef.current = 0;
-    }
+    // Reset infinite scroll state for all viewports
+    setHasMore(true);
+    setInfiniteScrollPage(1);
+    loadErrorCountRef.current = 0;
     
     // Debounce the fetch to prevent rapid hydration-induced calls
     debouncedFetchRef.current = setTimeout(() => {
       // Use the combined API directly without wrapper
       fetchCombinedData(currentPage, searchQuery, activeFilters, mobileOptimizedItemsPerPage);
-      
-      // Schedule prefetch for mobile view after main fetch completes
-      if (isMobileView) {
-        setTimeout(() => {
-          schedulePrefetch();
-        }, 100);
-      }
     }, isHydrated ? 25 : 75); // Small delay to allow deduplication to work
     
     return () => {
@@ -429,40 +421,58 @@ export function EateryPageClient() {
         clearTimeout(debouncedFetchRef.current);
       }
     };
-  }, [currentPage, searchQuery, activeFilters, mobileOptimizedItemsPerPage, fetchCombinedData, isMobileView, setHasMore, schedulePrefetch, isHydrated]);
+  }, [currentPage, searchQuery, activeFilters, mobileOptimizedItemsPerPage, fetchCombinedData, isHydrated, setHasMore]);
+
+  // Separate effect: schedule prefetch when data is ready for all viewports
+  useEffect(() => {
+    // Don't schedule prefetch immediately on page load
+    // Wait for user interaction or scroll before starting prefetch
+    if (allRestaurants.length === 0) {
+      return;
+    }
+    
+    // After restaurants update, schedule a single prefetch for next page
+    // But only if we're not in the initial loading state
+    const t = setTimeout(() => {
+      // Only schedule prefetch if we have data and user has scrolled
+      if (allRestaurants.length > 0 && !loading) {
+        schedulePrefetch();
+      }
+    }, 2000); // Increased delay to 2 seconds to prevent immediate prefetch
+    
+    return () => clearTimeout(t);
+  }, [restaurants, totalRestaurants, schedulePrefetch, allRestaurants.length, loading]);
 
   // Update infinite scroll state when combined hook data loads
   useEffect(() => {
     if (restaurants && restaurants.length > 0 && !loading) {
-      // Always populate allRestaurants for mobile view after data loads
+      // Always populate allRestaurants for all viewports after data loads
       const uniqueRestaurants = restaurants.filter((restaurant, index, self) => 
         index === self.findIndex(r => r.id === restaurant.id)
       );
       setAllRestaurants(uniqueRestaurants);
       
-      // Reset infinite scroll state for mobile
-      if (isMobileView) {
-        setInfiniteScrollPage(1);
-        // Set hasMore based on whether we've loaded all items
-        const totalLoadedItems = restaurants.length;
-        const hasMoreData = totalLoadedItems < totalRestaurants;
-        setHasMoreRef.current?.(hasMoreData);
-        
-        if (DEBUG) {
-          debugLog('Initial load for infinite scroll:', { 
-            items: restaurants.length, 
-            total: totalRestaurants, 
-            hasMore: hasMoreData 
-          });
-        }
+      // Reset infinite scroll state for all viewports
+      setInfiniteScrollPage(1);
+      // Set hasMore based on whether we've loaded all items
+      const totalLoadedItems = restaurants.length;
+      const hasMoreData = totalLoadedItems < totalRestaurants;
+      setHasMoreRef.current?.(hasMoreData);
+      
+      if (DEBUG) {
+        debugLog('Initial load for infinite scroll:', { 
+          items: restaurants.length, 
+          total: totalRestaurants, 
+          hasMore: hasMoreData 
+        });
       }
     }
-  }, [restaurants, totalRestaurants, loading, isMobileView]); // Only when loading completes
+  }, [restaurants, totalRestaurants, loading]); // Only when loading completes
 
   // Cleanup AbortController on unmount
   useEffect(() => {
+    const controller = controllerRef.current;
     return () => {
-      const controller = controllerRef.current;
       if (controller) {
         controller.abort();
       }
@@ -525,11 +535,11 @@ export function EateryPageClient() {
   const restaurantsWithDistance = useMemo(() => {
     // Avoid racey calculations/logs before hydration completes
     if (!isHydrated) {
-      const base = isMobileView ? allRestaurants : restaurants;
+      const base = allRestaurants;
       return base.map(r => ({ ...r, distance: undefined }));
     }
-    // Use the appropriate data source based on device type
-    const dataSource = isMobileView ? allRestaurants : restaurants;
+    // Use allRestaurants for all viewports
+    const dataSource = allRestaurants;
     
     if (DEBUG) {
       debugLog('📍 EateryPage: RestaurantsWithDistance Calculation', {
@@ -541,7 +551,7 @@ export function EateryPageClient() {
         allRestaurantsLength: allRestaurants.length,
         restaurantsLength: restaurants.length,
         dataSourceLength: dataSource.length,
-        dataSourceUsed: isMobileView ? 'allRestaurants' : 'restaurants',
+        dataSourceUsed: 'allRestaurants',
         hasUserLocation: !!userLocation,
         permissionStatus
       });
@@ -553,7 +563,7 @@ export function EateryPageClient() {
         permissionStatus,
         restaurantCount: dataSource.length,
         isMobile,
-        dataSource: isMobile ? 'allRestaurants' : 'restaurants'
+        dataSource: 'allRestaurants'
       });
     }
 
@@ -601,11 +611,11 @@ export function EateryPageClient() {
       // Keep original order for restaurants without coordinates
       return 0;
     });
-  }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus, isHydrated, isMobileView, viewportWidth, calculateDistance]);
+  }, [restaurants, allRestaurants, isMobile, userLocation, permissionStatus, isHydrated, viewportWidth, calculateDistance]);
 
   const displayedRestaurants = useMemo<(Restaurant | null)[]>(() => {
     const items: (Restaurant | null)[] = [...restaurantsWithDistance];
-    if (isHydrated && isMobileView && isLoadingMore) {
+    if (isHydrated && isLoadingMore) {
       items.push(
         ...Array.from({ length: Math.min(mobileOptimizedItemsPerPage, 8) }).map(() => null)
       );
@@ -614,7 +624,6 @@ export function EateryPageClient() {
   }, [
     restaurantsWithDistance,
     isHydrated,
-    isMobileView,
     isLoadingMore,
     mobileOptimizedItemsPerPage,
   ]);
@@ -639,27 +648,34 @@ export function EateryPageClient() {
   }, []);
 
   const handleApplyFilters = useCallback((filters: AppliedFilters) => {
-    // Check if this is a "Clear All" operation (empty object)
-    if (Object.keys(filters).length === 0) {
-      // Clear all filters
-      clearAllFilters();
-    } else {
-      // Clean the filters before applying
-      const cleaned = cleanFilters(filters);
-      
-      // Remove keys that no longer exist in the new filters
-      const keysToRemove = Object.keys(activeFilters).filter(k => !(k in cleaned));
-      keysToRemove.forEach(k => {
-        clearFilter(k as keyof typeof activeFilters);
-      });
-      
-      // Set updated keys
-      Object.entries(cleaned).forEach(([key, value]) => {
-        if (value !== undefined) {
-          setFilter(key as keyof typeof activeFilters, value);
-        }
-      });
-    }
+          // Check if this is a "Clear All" operation (empty object)
+      if (Object.keys(filters).length === 0) {
+        // Clear all filters
+        clearAllFilters();
+      } else {
+        // Clean the filters before applying - remove undefined/null/empty values
+        const cleaned: Partial<typeof filters> = {};
+        Object.entries(filters).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && 
+              !(typeof v === "string" && v.trim() === "") &&
+              !(Array.isArray(v) && v.length === 0)) {
+            cleaned[k as keyof typeof filters] = v;
+          }
+        });
+        
+        // Remove keys that no longer exist in the new filters
+        const keysToRemove = Object.keys(activeFilters).filter(k => !(k in cleaned));
+        keysToRemove.forEach(k => {
+          clearFilter(k as keyof typeof activeFilters);
+        });
+        
+        // Set updated keys
+        Object.entries(cleaned).forEach(([key, value]) => {
+          if (value !== undefined) {
+            setFilter(key as keyof typeof activeFilters, value);
+          }
+        });
+      }
     
     // Reset to first page when applying filters
     setCurrentPage(1);
@@ -680,6 +696,27 @@ export function EateryPageClient() {
         <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
           <CategoryTabs activeTab="eatery" />
         </div>
+        
+        {/* Development API Call Counter */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-100 text-xs">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <span className="text-blue-800">
+                🔍 API Calls: {apiCallCountRef.current} | 
+                Last Call: {lastApiCallRef.current ? `${lastApiCallRef.current.reason} (${new Date(lastApiCallRef.current.timestamp).toLocaleTimeString()})` : 'None'}
+              </span>
+              <button
+                onClick={() => {
+                  apiCallCountRef.current = 0;
+                  lastApiCallRef.current = null;
+                }}
+                className="text-blue-600 hover:text-blue-800 text-xs underline"
+              >
+                Reset Counter
+              </button>
+            </div>
+          </div>
+        )}
         
         <div className="flex flex-col items-center justify-center min-h-[50vh] px-4">
           <div className="text-red-500 mb-4">
@@ -713,6 +750,27 @@ export function EateryPageClient() {
         <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
           <CategoryTabs activeTab="eatery" />
         </div>
+        
+        {/* Development API Call Counter */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-100 text-xs">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <span className="text-blue-800">
+                🔍 API Calls: {apiCallCountRef.current} | 
+                Last Call: {lastApiCallRef.current ? `${lastApiCallRef.current.reason} (${new Date(lastApiCallRef.current.timestamp).toLocaleTimeString()})` : 'None'}
+              </span>
+              <button
+                onClick={() => {
+                  apiCallCountRef.current = 0;
+                  lastApiCallRef.current = null;
+                }}
+                className="text-blue-600 hover:text-blue-800 text-xs underline"
+              >
+                Reset Counter
+              </button>
+            </div>
+          </div>
+        )}
         
         <ActionButtons 
           onShowFilters={handleShowFilters}
@@ -864,7 +922,7 @@ export function EateryPageClient() {
             );
           }}
           pageTitle="Kosher Eateries"
-          enableInfiniteScroll={isHydrated && isMobileView}
+          enableInfiniteScroll={isHydrated}
           hasNextPage={hasMore}
           isLoadingMore={isLoadingMore}
           gridClassName=""
@@ -874,28 +932,11 @@ export function EateryPageClient() {
         />
       )}
       
-      {isHydrated && !isMobile && totalPages > 1 && (
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="mt-4 mb-8" role="navigation" aria-label="Pagination">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                isLoading={loading}
-                className="mb-2"
-              />
-              <div className="text-center text-sm text-gray-600">
-                Showing {(currentPage - 1) * mobileOptimizedItemsPerPage + restaurantsWithDistance.length} of {totalRestaurants} restaurants
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
 
 
-      {isHydrated && isMobileView && isLoadingMore && (
+
+      {isHydrated && isLoadingMore && (
         <div className="loading-toast" role="status" aria-live="polite">
           <div className="spinner" />
           <span>Loading more…</span>
@@ -926,6 +967,9 @@ export function EateryPageClient() {
           setShowLocationPrompt(false);
         }}
       />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop threshold={0.25} />
     </div>
   );
 }

@@ -1,179 +1,178 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+/**
+ * Advanced Filters Hook
+ * Manages complex filter state with URL synchronization and performance optimizations
+ */
+
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Filters } from '@/lib/filters/schema';
 
-import { Filters, FiltersSchema, toSearchParams, fromSearchParams, DEFAULT_FILTERS, hasActiveFilters, getFilterCount } from '@/lib/filters/schema';
-
-export interface UseAdvancedFiltersReturn {
-  activeFilters: Filters;
-  hasActiveFilters: boolean;
-  setFilter: (filterType: keyof Filters, value: Filters[keyof Filters]) => void;
-  toggleFilter: (filterType: keyof Filters) => void;
-  clearFilter: (filterType: keyof Filters) => void;
-  clearAllFilters: () => void;
-  getFilterCount: () => number;
-  updateFilters: (newFilters: Partial<Filters>) => void;
+interface UseAdvancedFiltersOptions {
+  enableUrlSync?: boolean;
+  debounceMs?: number;
 }
 
-export const useAdvancedFilters = (initialFilters: Partial<Filters> = {}): UseAdvancedFiltersReturn => {
+export function useAdvancedFilters(options: UseAdvancedFiltersOptions = {}) {
+  const {
+    enableUrlSync = true,
+    debounceMs = 300
+  } = options;
+
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Parse filters from URL, with fallback to defaults
+  // Initialize filters from URL or defaults
   const [activeFilters, setActiveFilters] = useState<Filters>(() => {
-    try {
-      if (searchParams.toString()) {
-        return fromSearchParams(searchParams);
+    if (typeof window === 'undefined') return {};
+    
+    const urlFilters: Filters = {};
+    const params = new URLSearchParams(window.location.search);
+    
+    // Parse URL parameters into filter state
+    Array.from(params.entries()).forEach(([key, value]) => {
+      if (key in urlFilters) {
+        try {
+          // Try to parse as JSON for complex values
+          const parsed = JSON.parse(value);
+          (urlFilters as any)[key] = parsed;
+        } catch {
+          // Fallback to string value
+          (urlFilters as any)[key] = value;
+        }
       }
-    } catch (error) {
-      console.warn('Failed to parse filters from URL:', error);
-    }
-    return { ...DEFAULT_FILTERS, ...initialFilters };
+    });
+    
+    return urlFilters;
   });
 
-  // Track pending URL updates and debounce to avoid churn
-  const [pendingURLUpdate, setPendingURLUpdate] = useState<Filters | null>(null);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  // Debounced filter updates
+  const [debouncedFilters, setDebouncedFilters] = useState<Filters>(activeFilters);
+  
+  // Prevent URL updates during initial render
+  const isInitialRender = useRef(true);
+  
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedFilters(activeFilters);
+    }, debounceMs);
+    
+    return () => clearTimeout(timeoutId);
+  }, [activeFilters, debounceMs]);
 
-  // Update URL when filters change - deferred to useEffect
-  const updateURL = useCallback((filters: Filters) => {
-    setPendingURLUpdate(filters);
+  // Update URL when filters change (debounced) - prevent excessive updates
+  useEffect(() => {
+    if (!enableUrlSync || typeof window === 'undefined') return;
+    
+    // Prevent URL updates during initial render
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    
+    const params = new URLSearchParams();
+    Object.entries(debouncedFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        if (Array.isArray(value)) {
+          params.set(key, value.join(','));
+        } else if (typeof value === 'object') {
+          params.set(key, JSON.stringify(value));
+        } else {
+          params.set(key, String(value));
+        }
+      }
+    });
+    
+    // Only update URL if it actually changed
+    const currentUrl = window.location.search;
+    const newUrl = params.toString() ? `?${params.toString()}` : '';
+    
+    if (currentUrl !== newUrl) {
+      const fullNewUrl = newUrl ? `${window.location.pathname}${newUrl}` : window.location.pathname;
+      window.history.replaceState({}, '', fullNewUrl);
+    }
+  }, [debouncedFilters, enableUrlSync]);
+
+  // Set individual filter
+  const setFilter = useCallback((key: keyof Filters, value: any) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
   }, []);
 
-  // Apply pending URL updates in useEffect to avoid render-time router calls
-  useEffect(() => {
-    if (!pendingURLUpdate) return;
+  // Set multiple filters at once
+  const setFilters = useCallback((newFilters: Partial<Filters>) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      ...newFilters
+    }));
+  }, []);
 
-    try {
-      const params = toSearchParams(pendingURLUpdate);
-      const nextQueryString = params.toString();
-      const currentQueryString = searchParams.toString();
-
-      // Skip if no actual change
-      if (nextQueryString === currentQueryString) {
-        setPendingURLUpdate(null);
-        return;
-      }
-
-      // Debounce updates to prevent churn (e.g., range sliders)
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-    const timer = setTimeout(() => {
-      try {
-        // Validate the query string to prevent malformed URLs
-        if (nextQueryString && !/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(nextQueryString)) {
-          console.warn('Invalid characters in query string, skipping URL update:', nextQueryString);
-          setPendingURLUpdate(null);
-          return;
-        }
-
-        // Additional safety check to prevent URLs that could be interpreted as JavaScript
-        if (nextQueryString && (
-          nextQueryString.includes('<script') || 
-          nextQueryString.includes('javascript:') ||
-          nextQueryString.includes('data:text/html') ||
-          nextQueryString.includes('vbscript:')
-        )) {
-          console.warn('Potentially dangerous URL content detected, skipping URL update:', nextQueryString);
-          setPendingURLUpdate(null);
-          return;
-        }
-
-        const newURL = nextQueryString ? `?${nextQueryString}` : '';
-        router.replace(newURL, { scroll: false });
-      } catch (error) {
-        console.error('Failed to update URL:', error);
-      }
-      setPendingURLUpdate(null);
-    }, 200);
-    setDebounceTimer(timer);
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-    } catch (error) {
-      console.error('Error in URL update effect:', error);
-      setPendingURLUpdate(null);
-    }
-  }, [pendingURLUpdate, router, searchParams]); // Removed debounceTimer from dependencies
-
-  // Sync URL with filter state
-  useEffect(() => {
-    try {
-      if (searchParams.toString()) {
-        // Validate the search params before parsing
-        const queryString = searchParams.toString();
-        if (!/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]*$/.test(queryString)) {
-          console.warn('Invalid characters in search params, skipping sync:', queryString);
-          return;
-        }
-        
-        const urlFilters = fromSearchParams(searchParams);
-        setActiveFilters(prev => ({ ...prev, ...urlFilters }));
-      }
-    } catch (error) {
-      console.warn('Failed to sync filters from URL:', error);
-      // Don't update filters if URL parsing fails to prevent cascading errors
-    }
-  }, [searchParams]);
-
-  const setFilter = useCallback((filterType: keyof Filters, value: Filters[keyof Filters]) => {
-    setActiveFilters(prev => {
-      const newFilters = { ...prev, [filterType]: value };
-      updateURL(newFilters);
-      return newFilters;
-    });
-  }, [updateURL]);
-
-  const toggleFilter = useCallback((filterType: keyof Filters) => {
-    setActiveFilters(prev => {
-      const currentValue = prev[filterType];
-      const newValue = typeof currentValue === 'boolean' ? !currentValue : true;
-      const newFilters = { ...prev, [filterType]: newValue };
-      updateURL(newFilters);
-      return newFilters;
-    });
-  }, [updateURL]);
-
-  const clearFilter = useCallback((filterType: keyof Filters) => {
+  // Clear specific filter
+  const clearFilter = useCallback((key: keyof Filters) => {
     setActiveFilters(prev => {
       const newFilters = { ...prev };
-      delete newFilters[filterType];
-      updateURL(newFilters);
+      delete newFilters[key];
       return newFilters;
     });
-  }, [updateURL]);
+  }, []);
 
+  // Clear all filters
   const clearAllFilters = useCallback(() => {
-    const defaultFilters = { ...DEFAULT_FILTERS };
-    setActiveFilters(defaultFilters);
-    updateURL(defaultFilters);
-  }, [updateURL]);
+    setActiveFilters({});
+  }, []);
 
-  const updateFilters = useCallback((newFilters: Partial<Filters>) => {
-    setActiveFilters(prev => {
-      const updatedFilters = { ...prev, ...newFilters };
-      updateURL(updatedFilters);
-      return updatedFilters;
+  // Reset filters to URL state
+  const resetToUrlFilters = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlFilters: Filters = {};
+    const params = new URLSearchParams(window.location.search);
+    
+    Array.from(params.entries()).forEach(([key, value]) => {
+      if (key in urlFilters) {
+        try {
+          const parsed = JSON.parse(value);
+          (urlFilters as any)[key] = parsed;
+        } catch {
+          (urlFilters as any)[key] = value;
+        }
+      }
     });
-  }, [updateURL]);
+    
+    setActiveFilters(urlFilters);
+  }, []);
 
-  const hasActiveFiltersState = useMemo(() => {
-    return hasActiveFilters(activeFilters);
+  // Get filter value with type safety
+  const getFilter = useCallback((key: keyof Filters) => {
+    return activeFilters[key];
   }, [activeFilters]);
 
-  const getFilterCountState = useCallback(() => {
-    return getFilterCount(activeFilters);
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return Object.values(activeFilters).some(value => 
+      value !== undefined && value !== null && value !== ''
+    );
+  }, [activeFilters]);
+
+  // Get active filter count
+  const activeFilterCount = useMemo(() => {
+    return Object.values(activeFilters).filter(value => 
+      value !== undefined && value !== null && value !== ''
+    ).length;
   }, [activeFilters]);
 
   return {
     activeFilters,
-    hasActiveFilters: hasActiveFiltersState,
     setFilter,
-    toggleFilter,
+    setFilters,
     clearFilter,
     clearAllFilters,
-    getFilterCount: getFilterCountState,
-    updateFilters,
+    resetToUrlFilters,
+    getFilter,
+    hasActiveFilters,
+    activeFilterCount,
+    // For debugging
+    debouncedFilters
   };
-}; 
+} 

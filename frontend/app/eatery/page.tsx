@@ -1,8 +1,5 @@
-// Remove the 'use client' directive and dynamic = 'force-dynamic' to prevent SSR bailout
-// export const dynamic = 'force-dynamic';
-
 import React, { Suspense } from 'react';
-import { EateryPageClient } from './EateryPageClient';
+import EateryPageClient from './EateryPageClient';
 
 // Loading component for Suspense fallback
 function EateryPageLoading() {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Package, Clock, CheckCircle, AlertCircle, Truck, MapPin } from 'lucide-react';
 import { orderAPI } from '@/lib/api/orders';
 import { OrderDetails } from '@/lib/api/orders';
@@ -114,8 +115,8 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ onClose }) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  return typeof window !== 'undefined' ? createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" style={{ zIndex: 9999 }}>
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <div>
@@ -320,8 +321,9 @@ export const OrderTracking: React.FC<OrderTrackingProps> = ({ onClose }) => {
           )}
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 };
 
 export default OrderTracking;

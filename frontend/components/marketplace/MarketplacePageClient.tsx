@@ -2,7 +2,7 @@
 
 import { MapPin, Zap, ChevronDown, MessageCircle, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
 import { BottomNavigation } from "@/components/navigation/ui"
 import { MarketplaceAPI } from "@/lib/api/marketplace"
@@ -190,11 +190,20 @@ export default function MarketplacePageClient() {
     loadMarketplaceData()
   }, [])
 
+  const loadFilteredProducts = useCallback(async () => {
+    try {
+      const filteredProducts = await MarketplaceAPI.getProducts(filters)
+      setProducts(filteredProducts)
+    } catch (error) {
+      console.error("Failed to load filtered products:", error)
+    }
+  }, [filters])
+
   useEffect(() => {
     if (Object.keys(filters).length > 0) {
       loadFilteredProducts()
     }
-  }, [filters])
+  }, [filters, loadFilteredProducts])
 
   const loadMarketplaceData = async () => {
     try {
@@ -205,15 +214,6 @@ export default function MarketplacePageClient() {
       console.error("Failed to load marketplace data:", error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadFilteredProducts = async () => {
-    try {
-      const filteredProducts = await MarketplaceAPI.getProducts(filters)
-      setProducts(filteredProducts)
-    } catch (error) {
-      console.error("Failed to load filtered products:", error)
     }
   }
 
