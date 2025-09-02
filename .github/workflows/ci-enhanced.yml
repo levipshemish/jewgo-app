@@ -55,7 +55,7 @@ jobs:
     - name: Run ESLint
       run: |
         cd $GITHUB_WORKSPACE/frontend
-        npm run lint:check || echo "Lint completed with warnings"
+        npm run lint
       
     - name: Run TypeScript type checking
       continue-on-error: true

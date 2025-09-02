@@ -49,9 +49,8 @@ jobs:
         
         # Node.js script validation
         echo "📝 Validating Node.js scripts..."
-        # Node does not support a compile-only flag; emulate syntax check without executing the script
-        node -e "new Function(require('fs').readFileSync('frontend/scripts/validate-env-unified.js','utf8'))" || \
-          (echo "❌ Frontend validation script failed" && exit 1)
+        
+        node -c frontend/scripts/validate-env-unified.js || (echo "❌ Frontend validation script failed" && exit 1)
         
         # Test script help commands (basic functionality)
         echo "🧪 Testing script basic functionality..."
@@ -94,33 +93,28 @@ jobs:
         npx prisma generate
         npm run build
         
-    - name: Mendel Mode v3 - Progressive Enhancement Tracking
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Progressive Enhancement Tracking
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/phase_tracking.sh
       
-    - name: Mendel Mode v3 - Temporary & Deprecated Date Enforcement
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement
       run: |
         cd $GITHUB_WORKSPACE
         chmod +x ci-scripts/temp_deprecated_check.js
         node ci-scripts/temp_deprecated_check.js
       
-    - name: Mendel Mode v3 - Duplication Scan
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Duplication Scan
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/dup_scan.js
       
-    - name: Mendel Mode v3 - Root Litter Check
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Root Litter Check
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/root_litter_check.sh
       
-    - name: Mendel Mode v3 - Coverage Gate Enforcement (Global 80% + Module 70%)
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Coverage Gate Enforcement (Global 80% + Module 70%)
       run: |
         cd $GITHUB_WORKSPACE/frontend
         if [ -f coverage/coverage-summary.json ]; then
@@ -129,8 +123,7 @@ jobs:
           echo "No coverage summary found. If FE has tests, ensure coverage is generated."
         fi
         
-    - name: Mendel Mode v3 - Performance Budget Enforcement
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Performance Budget Enforcement
       run: |
         cd $GITHUB_WORKSPACE/frontend
         if [ -f dist/stats.json ]; then
@@ -139,8 +132,7 @@ jobs:
           echo "No bundle stats found. Performance budgets will be checked in production."
         fi
         
-    - name: Mendel Mode v3 - Performance Regression Tracking
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Performance Regression Tracking
       run: |
         cd $GITHUB_WORKSPACE/frontend
         if [ -f current-metrics.json ]; then
@@ -295,69 +287,58 @@ jobs:
         name: backend-coverage
         token: ${{ secrets.CODECOV_TOKEN }}
         
-    - name: Mendel Mode v3 - Progressive Enhancement Tracking (Backend)
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Progressive Enhancement Tracking (Backend)
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/phase_tracking.sh
       
-    - name: Mendel Mode v3 - Temporary & Deprecated Date Enforcement (Backend)
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Temporary & Deprecated Date Enforcement (Backend)
       run: |
         cd $GITHUB_WORKSPACE
         chmod +x ci-scripts/temp_deprecated_check.js
         node ci-scripts/temp_deprecated_check.js
       
-    - name: Mendel Mode v3 - Duplication Scan (Backend)
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Duplication Scan (Backend)
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/dup_scan.js
       
-    - name: Mendel Mode v3 - Deprecation Check
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Deprecation Check
       run: |
         cd $GITHUB_WORKSPACE
         bash ci-scripts/deprecation_check.sh
       
-    - name: Mendel Mode v3 - Database Performance Guardrails
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Database Performance Guardrails
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/db_performance_check.js
       
-    - name: Mendel Mode v3 - Deprecation Ownership Enforcement
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Deprecation Ownership Enforcement
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/deprecation_ownership_check.js
       
-    - name: Mendel Mode v3 - Context7 Validation
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Context7 Validation
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/context7_validation.js
       
-    - name: Mendel Mode v3 - Duplication Prevention
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Duplication Prevention
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/duplication_prevention.js
       
-    - name: Mendel Mode v3 - Rollback Script Validation
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - Rollback Script Validation
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/rollback_validation.js
       
-    - name: Mendel Mode v3 - File Placement Validation
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - File Placement Validation
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/file_placement_check.js
       
-    - name: Mendel Mode v3 - PR Template Validation
-      continue-on-error: true
+    - name: Mendel Mode v4.2 - PR Template Validation
       run: |
         cd $GITHUB_WORKSPACE
         node ci-scripts/pr_template_validation.js
@@ -629,9 +610,9 @@ jobs:
         echo "- Performance: ${{ needs.performance.result }}"
         echo "📧 Slack notification would be sent here if configured."
 
-  # Mendel Mode v3 Governance
+  # Mendel Mode v4.2 Governance
   governance:
-    name: Mendel Mode v3 Governance
+    name: Mendel Mode v4.2 Governance
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     
