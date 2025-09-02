@@ -166,3 +166,69 @@
   fill: rgb(239, 68, 68) !important; /* red fill when liked */
   stroke: #ffffff !important; /* keep white outline */
 }
+
+/* Card base styles with flicker prevention */
+.unified-card {
+  /* Hardware acceleration to prevent flickering */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+  
+  /* Smooth transitions */
+  transition: all 0.2s ease-out;
+  
+  /* Prevent layout shifts */
+  contain: layout style paint;
+}
+
+/* Optimize image rendering during scroll */
+.unified-card img {
+  /* Hardware acceleration for images */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  /* Smooth image transitions */
+  transition: transform 0.2s ease-out;
+}
+
+/* Prevent flickering on hover during scroll */
+.unified-card:hover img {
+  transform: scale(1.05) translateZ(0);
+}
+
+/* Optimize tag and heart button positioning */
+.unified-card-tag,
+.unified-card-heart {
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+  /* Smooth transitions */
+  transition: all 0.2s ease-out;
+}
+
+/* Prevent flickering during scroll by disabling transitions */
+.scrolling .unified-card,
+.scrolling .unified-card * {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Ensure smooth scrolling behavior */
+@media (prefers-reduced-motion: no-preference) {
+  .unified-card {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .unified-card,
+  .unified-card * {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

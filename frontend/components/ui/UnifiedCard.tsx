@@ -381,7 +381,11 @@ const UnifiedCard = memo<UnifiedCardProps>(({
           animation: 'none',
           willChange: 'auto',
           paddingBottom: 0,
-          margin: 0
+          margin: 0,
+          // Add these properties to prevent any potential flickering
+          backfaceVisibility: 'hidden',
+          perspective: '1000px',
+          transformStyle: 'preserve-3d'
         }}
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
@@ -396,7 +400,7 @@ const UnifiedCard = memo<UnifiedCardProps>(({
     );
   }
 
-  // Use motion.div when not scrolling
+  // Use motion.div when not scrolling - optimized to prevent flickering
   return (
     <motion.div
       variants={cardVariants}
@@ -415,7 +419,16 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         variantStyles.cardClass,
         sanitizedClassName
       )}
-      style={{ paddingBottom: 0, margin: 0, boxShadow: 'none' }}
+      style={{ 
+        paddingBottom: 0, 
+        margin: 0, 
+        boxShadow: 'none',
+        // Add these properties to prevent flickering
+        backfaceVisibility: 'hidden',
+        perspective: '1000px',
+        transformStyle: 'preserve-3d',
+        willChange: 'transform'
+      }}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}

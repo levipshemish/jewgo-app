@@ -2,6 +2,50 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Global scroll optimizations to prevent flickering */
+html {
+  scroll-behavior: smooth;
+  /* Hardware acceleration for smooth scrolling */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+body {
+  /* Prevent scroll chaining and improve performance */
+  overscroll-behavior: contain;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize scrolling performance */
+* {
+  /* Prevent layout thrashing during scroll */
+  contain: layout style;
+}
+
+/* Smooth scrolling for all scrollable elements */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable transitions during scroll to prevent flickering */
+.scrolling * {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Optimize image rendering during scroll */
+img {
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Prevent layout shifts */
+  contain: layout style paint;
+}
+
 /* Design System CSS Variables for Listing Utility Components */
 :root {
   --background: oklch(1 0 0);

@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import wraps
 from typing import Any, Dict, Optional
 from utils.logging_config import get_logger
+from utils.limiter import limiter
 from werkzeug.exceptions import HTTPException
 
 logger = get_logger(__name__)
@@ -79,25 +80,17 @@ except ImportError:
         return f
 
 # Super admin auth decorator
-def require_super_admin_auth(f):
-    """Decorator to require super_admin role for endpoints."""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # First check admin auth
-        admin_result = require_admin_auth(lambda: None)()
-        
-        # Get current user from JWT
-        current_user = get_current_supabase_user()
-        if not current_user:
-            return error_response('Authentication required', 401)
-        
-        # Check if user has super_admin role
-        user_role = current_user.get('role') or current_user.get('adminRole')
-        if user_role != 'super_admin':
-            return error_response('Insufficient permissions: super_admin role required', 403)
-        
-        return f(*args, **kwargs)
-    return decorated_function
+try:
+    # Use the canonical security decorator to ensure consistent, fail-closed checks
+    from utils.security import require_admin as _require_admin
+
+    def require_super_admin_auth(f):
+        """Require super_admin using the central security decorator."""
+        return _require_admin('super_admin')(f)
+except Exception:
+    # Fallback: if security module unavailable, leave endpoint unmodified
+    def require_super_admin_auth(f):
+        return f
 
 
 # Import Supabase authentication decorators
@@ -544,6 +537,7 @@ def get_restaurant(restaurant_id: int):
 
 @safe_route("/restaurants", methods=["POST"])
 @require_api_v4_flag("api_v4_restaurants")
+@limiter.limit("120/minute")
 def create_restaurant():
     """Create a new restaurant using v4 service."""
     try:
@@ -654,6 +648,7 @@ def get_restaurant_by_name(name: str):
 
 @safe_route("/restaurants/<int:restaurant_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_restaurants")
+@limiter.limit("120/minute")
 def update_restaurant(restaurant_id: int):
     """Update a restaurant using v4 service."""
     try:
@@ -683,6 +678,7 @@ def update_restaurant(restaurant_id: int):
 
 @safe_route("/restaurants/<int:restaurant_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_restaurants")
+@limiter.limit("120/minute")
 def delete_restaurant(restaurant_id: int):
     """Delete a restaurant using v4 service."""
     try:
@@ -764,6 +760,7 @@ def get_restaurant_filter_options():
 # Restaurant Approval/Rejection Routes
 @safe_route("/restaurants/<int:restaurant_id>/approve", methods=["PUT"])
 @require_api_v4_flag("api_v4_restaurants")
+@limiter.limit("30/minute")
 def approve_restaurant(restaurant_id: int):
     """Approve a restaurant submission using v4 service."""
     try:
@@ -795,6 +792,7 @@ def approve_restaurant(restaurant_id: int):
 
 @safe_route("/restaurants/<int:restaurant_id>/reject", methods=["PUT"])
 @require_api_v4_flag("api_v4_restaurants")
+@limiter.limit("30/minute")
 def reject_restaurant(restaurant_id: int):
     """Reject a restaurant submission using v4 service."""
     try:
@@ -949,6 +947,7 @@ def get_reviews():
 
 @safe_route("/reviews/sync-google", methods=["POST"])
 @require_api_v4_flag("api_v4_reviews")
+@limiter.limit("30/minute")
 def sync_google_reviews():
     """Sync Google reviews for restaurants."""
     try:
@@ -995,6 +994,7 @@ def sync_google_reviews():
 
 @safe_route("/reviews", methods=["POST"])
 @require_api_v4_flag("api_v4_reviews")
+@limiter.limit("120/minute")
 def create_review():
     """Create a new review using v4 service."""
     try:
@@ -1041,6 +1041,7 @@ def get_review(review_id: int):
 
 @safe_route("/reviews/<int:review_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_reviews")
+@limiter.limit("120/minute")
 def update_review(review_id: int):
     """Update a review using v4 service."""
     try:
@@ -1066,6 +1067,7 @@ def update_review(review_id: int):
 
 @safe_route("/reviews/<int:review_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_reviews")
+@limiter.limit("120/minute")
 def delete_review(review_id: int):
     """Delete a review using v4 service."""
     try:
@@ -1086,6 +1088,7 @@ def delete_review(review_id: int):
 
 # User Routes (Admin only)
 @safe_route("/admin/users", methods=["GET"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_get_users():
@@ -1124,6 +1127,7 @@ def admin_get_users():
 
 
 @safe_route("/admin/users", methods=["PUT"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_update_user():
@@ -1150,6 +1154,7 @@ def admin_update_user():
 
 
 @safe_route("/admin/users", methods=["DELETE"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_users")
 @require_admin_auth
 def admin_delete_user():
@@ -1178,6 +1183,7 @@ def admin_delete_user():
 
 # Role Management Routes
 @api_v4.route('/admin/roles/assign', methods=['POST'])
+@limiter.limit("30/minute")
 @require_super_admin_auth
 def assign_admin_role():
     """Assign an admin role to a user"""
@@ -1609,6 +1615,7 @@ def get_marketplace_listing(listing_id):
 
 
 @safe_route("/marketplace/listings", methods=["POST"])
+@limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
 @require_supabase_auth
 def create_marketplace_listing():
@@ -1645,6 +1652,7 @@ def create_marketplace_listing():
 
 
 @safe_route("/marketplace/listings/<listing_id>", methods=["PUT"])
+@limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
 @require_supabase_auth
 def update_marketplace_listing(listing_id: str):
@@ -1682,6 +1690,7 @@ def update_marketplace_listing(listing_id: str):
 
 
 @safe_route("/marketplace/listings/<listing_id>", methods=["DELETE"])
+@limiter.limit("120/minute")
 @require_api_v4_flag("api_v4_marketplace")
 @require_supabase_auth
 def delete_marketplace_listing(listing_id: str):
@@ -2007,6 +2016,7 @@ def create_order_service():
 # Order Routes
 @safe_route("/orders", methods=["POST"])
 @require_api_v4_flag("api_v4_orders")
+@limiter.limit("60/minute")
 def create_order():
     """Create a new order."""
     try:
@@ -2126,6 +2136,7 @@ def get_customer_orders(email: str):
 
 @safe_route("/orders/<int:order_id>/status", methods=["PUT"])
 @require_api_v4_flag("api_v4_orders")
+@limiter.limit("60/minute")
 def update_order_status(order_id: int):
     """Update order status."""
     try:
@@ -2188,6 +2199,7 @@ if api_v4 is not None:
 
 @safe_route("/admin/run-marketplace-migration", methods=["POST"])
 @require_admin_auth
+@limiter.limit("5/minute")
 def run_marketplace_migration():
     """Temporary admin endpoint to run marketplace migration."""
     try:

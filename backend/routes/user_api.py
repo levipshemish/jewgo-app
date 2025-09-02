@@ -6,6 +6,7 @@ the backend. These endpoints require Supabase authentication.
 
 from flask import Blueprint, request, jsonify
 from utils.logging_config import get_logger
+from utils.limiter import limiter
 from utils.supabase_auth import require_user_auth, get_current_user, get_user_id, optional_user_auth
 from utils.error_handler import ValidationError, NotFoundError
 from utils.config_manager import config_manager
@@ -45,6 +46,7 @@ def get_user_profile():
 
 
 @user_api.route("/profile", methods=["PUT"])
+@limiter.limit("120/minute")
 @require_user_auth
 def update_user_profile():
     """
@@ -139,6 +141,7 @@ def get_user_favorites():
 
 
 @user_api.route("/favorites/<restaurant_id>", methods=["POST"])
+@limiter.limit("120/minute")
 @require_user_auth
 def add_favorite(restaurant_id):
     """
@@ -175,6 +178,7 @@ def add_favorite(restaurant_id):
 
 
 @user_api.route("/favorites/<restaurant_id>", methods=["DELETE"])
+@limiter.limit("120/minute")
 @require_user_auth
 def remove_favorite(restaurant_id):
     """
@@ -251,6 +255,7 @@ def get_user_reviews():
 
 
 @user_api.route("/reviews/<restaurant_id>", methods=["POST"])
+@limiter.limit("120/minute")
 @require_user_auth
 def create_review(restaurant_id):
     """
@@ -326,6 +331,7 @@ def create_review(restaurant_id):
 
 
 @user_api.route("/reviews/<review_id>", methods=["PUT"])
+@limiter.limit("120/minute")
 @require_user_auth
 def update_review(review_id):
     """
@@ -360,6 +366,7 @@ def update_review(review_id):
 
 
 @user_api.route("/reviews/<review_id>", methods=["DELETE"])
+@limiter.limit("120/minute")
 @require_user_auth
 def delete_review(review_id):
     """

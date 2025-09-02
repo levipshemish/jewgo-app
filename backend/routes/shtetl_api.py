@@ -13,6 +13,7 @@ from utils.response_helpers import success_response, error_response
 from utils.feature_flags_v4 import require_api_v4_flag
 from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
 from utils.admin_auth import require_admin_auth
+from utils.limiter import limiter
 
 # Service imports
 from services.shtetl_marketplace_service import ShtetlMarketplaceService
@@ -158,6 +159,7 @@ def get_shtetl_listing(listing_id):
 
 @shtetl_bp.route("/listings", methods=["POST"])
 @require_api_v4_flag("shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def create_shtetl_listing():
     """Create a new shtetl marketplace listing."""
@@ -283,6 +285,7 @@ def get_shtetl_stats():
 # ============================================================================
 @shtetl_bp.route("/stores", methods=["POST"])
 @require_api_v4_flag("shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def create_store():
     """Create a new store."""
@@ -387,6 +390,7 @@ def get_store(store_id):
 
 @shtetl_bp.route("/stores/<store_id>", methods=["PUT"])
 @require_api_v4_flag("shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def update_store(store_id):
     """Update a store."""
@@ -418,6 +422,7 @@ def update_store(store_id):
 
 @shtetl_bp.route("/stores/<store_id>", methods=["DELETE"])
 @require_api_v4_flag("shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def delete_store(store_id):
     """Delete a store."""
@@ -685,6 +690,7 @@ def get_plan_limits():
 # ADMIN ROUTES
 # ============================================================================
 @shtetl_bp.route("/stores/admin/stores", methods=["GET"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_get_stores():
@@ -708,6 +714,7 @@ def admin_get_stores():
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/approve", methods=["POST"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_approve_store(store_id):
@@ -726,6 +733,7 @@ def admin_approve_store(store_id):
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/suspend", methods=["POST"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_suspend_store(store_id):
@@ -746,6 +754,7 @@ def admin_suspend_store(store_id):
 
 
 @shtetl_bp.route("/stores/admin/stores/<store_id>/analytics", methods=["GET"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("shtetl")
 @require_admin_auth
 def admin_get_store_analytics(store_id):

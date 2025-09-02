@@ -7,6 +7,7 @@ import sentry_sdk
 from flask import Flask, jsonify, request
 from flask_caching import Cache
 from flask_cors import CORS
+import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_session import Session
@@ -492,6 +493,26 @@ def create_app(config_class=None):
         max_age=86400,  # Cache preflight for 24 hours
         send_wildcard=False,  # Don't send wildcard, send specific origin
     )
+    # Attach minimal redaction filter to prevent sensitive values in logs
+    try:
+        from utils.log_redaction import RedactingFilter
+
+        redaction_filter = RedactingFilter()
+        # Ensure app logger handlers redact
+        for h in app.logger.handlers:
+            h.addFilter(redaction_filter)
+        # Also add a stream handler with redaction to root logger if none present
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            sh = logging.StreamHandler()
+            sh.addFilter(redaction_filter)
+            root_logger.addHandler(sh)
+        else:
+            for h in root_logger.handlers:
+                h.addFilter(redaction_filter)
+        logger.info("Log redaction filter attached")
+    except Exception as e:
+        logger.warning("Failed to attach log redaction filter", error=str(e))
     # Configure rate limiting with Redis storage
     redis_url = os.environ.get("REDIS_URL", "memory://")
     limiter = Limiter(
@@ -503,6 +524,13 @@ def create_app(config_class=None):
         ],  # Very high limits for testing
         storage_uri=redis_url,
     )
+    # Expose limiter to route modules via bridge
+    try:
+        from utils.limiter import set_limiter as _set_shared_limiter
+        _set_shared_limiter(limiter)
+        logger.info("Shared limiter bridge initialized")
+    except Exception as e:
+        logger.warning("Failed to initialize shared limiter bridge", error=str(e))
     logger.info(
         f"Rate limiter configured with storage: {redis_url} (high limits for testing)"
     )

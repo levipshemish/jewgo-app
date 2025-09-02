@@ -20,6 +20,7 @@ import RelayEmailBanner from '@/components/ui/RelayEmailBanner'
 import { roboto } from './fonts'
 import { CustomHead } from './head'
 import { initializeFeatureGuard } from '@/lib/feature-guard';
+import { ScrollProvider } from '@/lib/hooks/useScrollDetection';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jewgo.app'),
@@ -136,20 +137,21 @@ export default function RootLayout({
           <SupabaseProvider>
             <NotificationsProvider>
               <LocationProvider>
-                <div 
-                    className="min-h-full flex flex-col"
-                    style={{
-                      WebkitTapHighlightColor: 'transparent',
-                      WebkitTouchCallout: 'none'
-                    }}
-                  >
-                    <RelayEmailBanner />
-                    {children}
-                  </div>
-                <Analytics />
-                <ServiceWorkerRegistration />
-                <DevNavigation />
-        
+                <ScrollProvider>
+                  <div 
+                      className="min-h-full flex flex-col"
+                      style={{
+                        WebkitTapHighlightColor: 'transparent',
+                        WebkitTouchCallout: 'none'
+                      }}
+                    >
+                      <RelayEmailBanner />
+                      {children}
+                    </div>
+                  <Analytics />
+                  <ServiceWorkerRegistration />
+                  <DevNavigation />
+                </ScrollProvider>
               </LocationProvider>
             </NotificationsProvider>
           </SupabaseProvider>

@@ -12,6 +12,7 @@ from utils.response_helpers import success_response, error_response, not_found_r
 from utils.feature_flags_v4 import require_api_v4_flag
 from utils.supabase_auth import require_supabase_auth, get_current_supabase_user
 from utils.admin_auth import require_admin_auth
+from utils.limiter import limiter
 
 # Service imports
 from services.shtetl_store_service import ShtetlStoreService, StoreData
@@ -43,6 +44,7 @@ def create_shtetl_store_service():
 
 @shtetl_store_bp.route("/", methods=["POST"])
 @require_api_v4_flag("api_v4_shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def create_store():
     """Create a new store."""
@@ -237,6 +239,7 @@ def get_store(store_id):
 
 @shtetl_store_bp.route("/<store_id>", methods=["PUT"])
 @require_api_v4_flag("api_v4_shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def update_store(store_id):
     """Update store information."""
@@ -272,6 +275,7 @@ def update_store(store_id):
 
 @shtetl_store_bp.route("/<store_id>", methods=["DELETE"])
 @require_api_v4_flag("api_v4_shtetl")
+@limiter.limit("120/minute")
 @require_supabase_auth
 def delete_store(store_id):
     """Delete store."""
@@ -620,6 +624,7 @@ def get_plan_limits():
 
 # Admin endpoints
 @shtetl_store_bp.route("/admin/stores", methods=["GET"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_shtetl")
 @require_admin_auth
 def admin_get_stores():
@@ -685,6 +690,7 @@ def admin_get_stores():
 
 
 @shtetl_store_bp.route("/admin/stores/<store_id>/approve", methods=["POST"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_shtetl")
 @require_admin_auth
 def admin_approve_store(store_id):
@@ -710,6 +716,7 @@ def admin_approve_store(store_id):
 
 
 @shtetl_store_bp.route("/admin/stores/<store_id>/suspend", methods=["POST"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_shtetl")
 @require_admin_auth
 def admin_suspend_store(store_id):
@@ -742,6 +749,7 @@ def admin_suspend_store(store_id):
 
 
 @shtetl_store_bp.route("/admin/stores/<store_id>/analytics", methods=["GET"])
+@limiter.limit("30/minute")
 @require_api_v4_flag("api_v4_shtetl")
 @require_admin_auth
 def admin_get_store_analytics(store_id):

@@ -14,6 +14,7 @@ from utils.api_response import redis_health_response, redis_stats_response
 from utils.cache_manager import cache_manager
 from utils.config_manager import ConfigManager
 from utils.logging_config import get_logger
+from utils.limiter import limiter
 
 logger = get_logger(__name__)
 redis_bp = Blueprint("redis_health", __name__, url_prefix="/api/redis")
@@ -126,6 +127,7 @@ def redis_stats():
 
 
 @redis_bp.route("/test", methods=["POST"])
+@limiter.limit("10/minute")
 def redis_test():
     """Test Redis operations with custom data."""
     try:
