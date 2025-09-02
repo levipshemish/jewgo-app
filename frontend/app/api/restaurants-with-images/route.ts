@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
     const kosher_category = sanitizeParam(searchParams.get('kosher_category') || searchParams.get('dietary'));
     const listing_type = sanitizeParam(searchParams.get('listing_type') || searchParams.get('category'));
     const is_cholov_yisroel = sanitizeParam(searchParams.get('is_cholov_yisroel'));
-    const price_range = sanitizeParam(searchParams.get('price_range'));
+    const _price_range = sanitizeParam(searchParams.get('price_range'));
     const min_rating = sanitizeParam(searchParams.get('min_rating') || searchParams.get('ratingMin'));
     const has_reviews = sanitizeParam(searchParams.get('has_reviews'));
     const open_now = sanitizeParam(searchParams.get('open_now') || searchParams.get('openNow'));

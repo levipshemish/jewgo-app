@@ -77,8 +77,8 @@ export default function SharePopup({ restaurant, isOpen, onClose }: SharePopupPr
         // if (typeof window !== 'undefined' && window.showToast) {
         //   window.showToast('Link copied using fallback method!', 'info');
         // }
-      } catch (fallbackError) {
-        // // console.error('Fallback copy also failed:', fallbackError);
+      } catch (_fallbackError) {
+        // // console.error('Fallback copy also failed:', _fallbackError);
         // if (typeof window !== 'undefined' && window.showToast) {
         //   window.showToast('Please copy the link manually', 'error');
         // }

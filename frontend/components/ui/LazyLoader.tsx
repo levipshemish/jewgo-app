@@ -30,4 +30,4 @@ export function LazyLoader({
 export const LazyMap = lazy(() => import('@/components/map/InteractiveRestaurantMap'));
 export const LazyAnalytics = lazy(() => import('@/components/analytics/Analytics'));
 export const LazyImageCarousel = lazy(() => import('@/components/restaurant/ImageCarousel'));
-export const LazyReviews = lazy(() => import('@/components/reviews/ReviewForm'));
+// LazyReviews removed - component archived (not used in current implementation)

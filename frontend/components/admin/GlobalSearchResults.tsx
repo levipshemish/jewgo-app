@@ -178,7 +178,7 @@ const SearchResultCard: React.FC<{ result: SearchResult }> = ({ result }) => {
   );
 };
 
-export default function GlobalSearchResults({ query, adminUser }: GlobalSearchResultsProps) {
+export default function GlobalSearchResults({ query, adminUser: _adminUser }: GlobalSearchResultsProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('all');

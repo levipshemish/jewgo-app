@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 import { ArrowLeft, Search, Filter, Grid, List } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { Header } from '@/components/layout';
 
@@ -41,9 +41,9 @@ export default function CategoryPage() {
     if (categoryId) {
       loadCategoryData();
     }
-  }, [categoryId]);
+  }, [categoryId, loadCategoryData]);
 
-  const loadCategoryData = async () => {
+  const loadCategoryData = useCallback(async () => {
     try {
       setLoading(true);
       const [categoryData, productsData] = await Promise.all([
@@ -59,7 +59,7 @@ export default function CategoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryId]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {

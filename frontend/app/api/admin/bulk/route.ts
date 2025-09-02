@@ -8,6 +8,7 @@ import { AdminDatabaseService } from '@/lib/admin/database';
 import { logBulkOperation, logBulkProgress } from '@/lib/admin/audit';
 import { validationUtils } from '@/lib/admin/validation';
 import { prisma } from '@/lib/db/prisma';
+import { invalidateStoreMetrics } from '@/lib/server/cache';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -97,6 +98,18 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Invalidate caches for marketplace updates
+    if (validatedData.entityType === 'marketplace') {
+      try {
+        const vendorIds = new Set<string>();
+        for (const item of validatedData.data as any[]) {
+          const vid = item.vendor_id || item.vendorId || item.vendorID;
+          if (vid && typeof vid === 'string') vendorIds.add(vid);
+        }
+        await Promise.all(Array.from(vendorIds).map((vid) => invalidateStoreMetrics(vid)));
+      } catch {}
+    }
 
     return NextResponse.json({
       message: 'Bulk operation completed',

@@ -218,7 +218,7 @@ export function UnifiedCategoryNav({
   variant = 'auto',
   scrollBehavior = 'smooth',
   showBorder = true,
-  showScrollControls = true,
+  showScrollControls: _showScrollControls = true,
   className = '',
   itemClassName = '',
   activeItemClassName = '',

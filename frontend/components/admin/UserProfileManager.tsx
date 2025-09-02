@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   User, 
   Calendar, 
@@ -176,7 +176,7 @@ export default function UserProfileManager({ userId, onClose, onUserUpdated }: U
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Generate mock user data
-  const generateMockUser = (): UserProfile => {
+  const generateMockUser = useCallback((): UserProfile => {
     const statuses: UserProfile['status'][] = ['active', 'suspended', 'banned', 'pending_verification'];
     const providers = ['google', 'apple', 'email'];
     
@@ -210,7 +210,7 @@ export default function UserProfileManager({ userId, onClose, onUserUpdated }: U
         }
       }
     };
-  };
+  }, [userId]);
 
   const generateMockRoles = (): UserRole[] => {
     return [

@@ -79,7 +79,12 @@ interface Shul {
 }
 
 // Mock API function for shuls - will be replaced with actual API
-const fetchShuls = async (limit: number, _params?: string) => {
+const fetchShuls = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
+  // Simulate network delay for testing timeout functionality
+  if (timeoutMs) {
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
+  }
+  
   // For now, return mock data
   const mockShuls: Shul[] = [
     {
@@ -248,6 +253,11 @@ function ShulsPageContent() {
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Performance optimizations based on device capabilities
+  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
+  const shouldLazyLoad = isSlowConnection;
+  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
+  
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
@@ -383,7 +393,7 @@ function ShulsPageContent() {
     startTransition(() => {
       fetchShulsData();
     });
-  }, [setSearchQuery, setCurrentPage]);
+  }, [setSearchQuery, setCurrentPage, fetchShulsData]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
@@ -425,7 +435,7 @@ function ShulsPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setShuls(response.shuls);
       setCurrentPage(page);
@@ -480,7 +490,7 @@ function ShulsPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch shuls with mobile optimization
-  const fetchShulsData = async (filters: Filters = activeFilters) => {
+  const fetchShulsData = useCallback(async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -512,7 +522,7 @@ function ShulsPageContent() {
         params.append('slow_connection', 'true');
       }
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setShuls(response.shuls);
       setCurrentPage(1);
@@ -537,9 +547,9 @@ function ShulsPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  const fetchMoreShuls = async () => {
+  const fetchMoreShuls = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -564,7 +574,7 @@ function ShulsPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchShuls(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setShuls(prev => [...prev, ...response.shuls]);
       setCurrentPage(nextPage);
@@ -575,7 +585,7 @@ function ShulsPageContent() {
     } catch (err) {
       console.error('Error fetching more shuls:', err);
     }
-  };
+  }, [isLoadingMore, hasMore, currentPage, activeFilters, searchQuery, mobileOptimizedItemsPerPage, setHasMore, fetchTimeoutMs]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -591,7 +601,7 @@ function ShulsPageContent() {
   // Initial data fetch
   useEffect(() => {
     fetchShulsData();
-  }, []);
+  }, [fetchShulsData]);
 
   // Mobile-optimized filter changes
   useEffect(() => {
@@ -600,7 +610,7 @@ function ShulsPageContent() {
         fetchShulsData();
       });
     }
-  }, [activeFilters]);
+  }, [activeFilters, hasActiveFilters, fetchShulsData]);
 
   // Mobile-specific effects
   useEffect(() => {
@@ -639,7 +649,7 @@ function ShulsPageContent() {
     };
 
     return styles;
-  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight]);
 
   if (error) {
     return (
@@ -754,9 +764,10 @@ function ShulsPageContent() {
                 data={transformShulToCardData(shul)}
                 variant="default"
                 showStarInBadge={true}
-                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
                 onCardClick={() => router.push(`/shul/${shul.id}`)}
                 className="w-full h-full"
+                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
               />
             </div>
           ))}
@@ -766,14 +777,14 @@ function ShulsPageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading synagogues...</p>
+          <p>Loading synagogues{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more...</p>
+          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 

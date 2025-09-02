@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Database, 
   Activity, 
@@ -87,7 +87,7 @@ export default function SystemSettingsPage() {
   const { token: csrf } = useAdminCsrf();
 
   // Fetch system data
-  const fetchSystemData = async () => {
+  const fetchSystemData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -150,41 +150,37 @@ export default function SystemSettingsPage() {
       }
     } catch (error) {
       console.error('Error fetching system data:', error);
-      // Ensure minimal UI state to avoid broken page
-      if (!stats) {
-        setStats({
-          totalUsers: 0,
-          totalRestaurants: 0,
-          totalReviews: 0,
-          totalSynagogues: 0,
-          totalKosherPlaces: 0,
-          pendingApprovals: 0,
-          systemHealth: 'warning',
-          lastBackup: 'unknown',
-          uptime: 'unknown',
-          activeSessions: 0,
-        });
-      }
-      if (!config) {
-        setConfig({
-          maintenanceMode: false,
-          debugMode: false,
-          emailNotifications: true,
-          auditLogging: true,
-          rateLimiting: true,
-          backupFrequency: 'daily',
-          sessionTimeout: 60,
-          maxFileSize: 10,
-        });
-      }
+      // Always set fallback values in error case to ensure UI state
+      setStats({
+        totalUsers: 0,
+        totalRestaurants: 0,
+        totalReviews: 0,
+        totalSynagogues: 0,
+        totalKosherPlaces: 0,
+        pendingApprovals: 0,
+        systemHealth: 'warning',
+        lastBackup: 'unknown',
+        uptime: 'unknown',
+        activeSessions: 0,
+      });
+      setConfig({
+        maintenanceMode: false,
+        debugMode: false,
+        emailNotifications: true,
+        auditLogging: true,
+        rateLimiting: true,
+        backupFrequency: 'daily',
+        sessionTimeout: 60,
+        maxFileSize: 10,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [csrf, adminUser?.isSuperAdmin]);
 
   useEffect(() => {
     fetchSystemData();
-  }, [adminUser?.isSuperAdmin]);
+  }, [adminUser?.isSuperAdmin, fetchSystemData]);
 
   // Save system configuration
   const saveConfig = async () => {

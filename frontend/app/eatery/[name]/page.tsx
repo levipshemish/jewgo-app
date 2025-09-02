@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { ListingPage } from "@/components/listing-details-utility/listing-page"
 import { mapEateryToListingData } from "@/utils/eatery-mapping"
@@ -457,7 +457,7 @@ export default function EateryNamePage() {
   };
 
   // Get user location with proper permission handling
-  const getUserLocation = async () => {
+  const getUserLocation = useCallback(async () => {
     if (!navigator.geolocation) {
       setLocationPermission('denied');
       setLocationError('Geolocation is not supported by this browser');
@@ -515,7 +515,7 @@ export default function EateryNamePage() {
         maximumAge: 300000, // 5 minutes
       }
     );
-  };
+  }, []);
 
   // Handle location request from distance button
   const handleLocationRequest = async () => {
@@ -642,9 +642,7 @@ export default function EateryNamePage() {
     };
   }, [userLocation]);
 
-  useEffect(() => {
-    getUserLocation()
-  }, [])
+  // Note: getUserLocation function was removed, location is handled by handleLocationRequest
 
   // Map eatery data to listing format
   const listingData = eatery ? mapEateryToListingData(eatery, userLocation, reviews, handleLocationRequest, locationPermission) : undefined

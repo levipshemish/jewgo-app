@@ -85,8 +85,8 @@ export default function SmartSearchRefactored({
   }, [setQuery, onSearch, saveRecentSearch]);
 
   // Fetch Google Places suggestions
-  const fetchGooglePlacesSuggestions = useCallback(async (query: string) => {
-    if (!useGoogleAPI || !query.trim() || query.length < 3) {
+  const fetchGooglePlacesSuggestions = useCallback(async (_query: string) => {
+    if (!useGoogleAPI || !_query.trim() || _query.length < 3) {
       return;
     }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { DEBUG, debugLog } from '@/lib/utils/debug';
 
 interface UserLocation {
   latitude: number;
@@ -58,10 +59,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const checkBrowserPermission = async () => {
       if (!navigator.geolocation) {
         setPermissionStatus('unsupported');
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('📍 LocationContext: Geolocation not supported');
-        }
+        if (DEBUG) { debugLog('📍 LocationContext: Geolocation not supported'); }
         return 'unsupported';
       }
 
@@ -69,19 +67,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
         // Check if we can get the permission state (modern browsers)
         if ('permissions' in navigator && 'query' in navigator.permissions) {
           const permission = await navigator.permissions.query({ name: 'geolocation' });
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.log('📍 LocationContext: Browser permission state:', permission.state);
-          }
+          if (DEBUG) { debugLog('📍 LocationContext: Browser permission state:', permission.state); }
           setPermissionStatus(permission.state);
           
           // Create permission change handler
           const handlePermissionChange = () => {
             const newState = permission.state;
-            if (process.env.NODE_ENV === 'development') {
-              // eslint-disable-next-line no-console
-              console.log('📍 LocationContext: Permission state changed to:', newState);
-            }
+            if (DEBUG) { debugLog('📍 LocationContext: Permission state changed to:', newState); }
             setPermissionStatus(newState);
             
             if (newState === 'denied') {
@@ -89,16 +81,10 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
               setError('Location access was denied');
               // Clear localStorage when permission is denied
               localStorage.removeItem(LOCATION_STORAGE_KEY);
-              if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.log('📍 LocationContext: Permission denied, cleared location data');
-              }
+              if (DEBUG) { debugLog('📍 LocationContext: Permission denied, cleared location data'); }
             } else if (newState === 'granted') {
               setError(null);
-              if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.log('📍 LocationContext: Permission granted');
-              }
+              if (DEBUG) { debugLog('📍 LocationContext: Permission granted'); }
             }
           };
           
@@ -108,19 +94,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           return permission.state;
         } else {
           // Fallback for older browsers - we'll check when user actually requests location
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.log('📍 LocationContext: Permissions API not supported, defaulting to prompt');
-          }
+          if (DEBUG) { debugLog('📍 LocationContext: Permissions API not supported, defaulting to prompt'); }
           setPermissionStatus('prompt');
           return 'prompt';
         }
       } catch (error) {
         // If permission query fails, default to prompt
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('📍 LocationContext: Permission query failed:', error);
-        }
+        if (DEBUG) { debugLog('📍 LocationContext: Permission query failed:', error); }
         setPermissionStatus('prompt');
         return 'prompt';
       }
@@ -142,17 +122,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
             
             if (age < maxAge) {
               setUserLocation(data.userLocation);
-              if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.log('📍 LocationContext: Loaded saved location data');
-              }
+              if (DEBUG) { debugLog('📍 LocationContext: Loaded saved location data'); }
             } else {
               // Location is too old, clear it
               localStorage.removeItem(LOCATION_STORAGE_KEY);
-              if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.log(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`);
-              }
+              if (DEBUG) { debugLog(`📍 LocationContext: Cleared expired location data (age: ${Math.floor(age / (1000 * 60))} minutes)`); }
             }
           }
         } catch (error) {
@@ -162,10 +136,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       } else if (permissionState === 'denied') {
         // Clear any saved location data if permission is denied
         localStorage.removeItem(LOCATION_STORAGE_KEY);
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('📍 LocationContext: Cleared location data due to denied permission');
-        }
+        if (DEBUG) { debugLog('📍 LocationContext: Cleared location data due to denied permission'); }
       }
     };
 
@@ -183,14 +154,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
     
     // Don't save if permission is denied
-    if (permissionStatus === 'denied') {
-      localStorage.removeItem(LOCATION_STORAGE_KEY);
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log('📍 LocationContext: Removed location data due to denied permission');
-      }
-      return;
-    }
+        if (permissionStatus === 'denied') {
+          localStorage.removeItem(LOCATION_STORAGE_KEY);
+          if (DEBUG) { debugLog('📍 LocationContext: Removed location data due to denied permission'); }
+          return;
+        }
     
     // Only save to localStorage if we have actual location data
     if (userLocation) {
@@ -202,15 +170,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       
       try {
         localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(locationData));
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.log('📍 LocationContext: Saved location data to localStorage');
-        }
+        if (DEBUG) { debugLog('📍 LocationContext: Saved location data to localStorage'); }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.error('❌ LocationContext: Failed to save location data:', error);
-        }
+        if (DEBUG) { console.error('❌ LocationContext: Failed to save location data:', error); }
       }
     }
   }, [hasInitialized, userLocation, permissionStatus]);
@@ -228,10 +190,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     const minRequestInterval = 2000; // Allow retry after 2 seconds
     
     if (isLoading || timeSinceLastRequest < minRequestInterval) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.log('📍 LocationContext: Skipping request - too soon or already loading');
-      }
+      if (DEBUG) { debugLog('📍 LocationContext: Skipping request - too soon or already loading'); }
       return;
     }
     
@@ -282,9 +241,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           longitude: position.coords.longitude,
           timestamp: Date.now(),
         };
-        if (process.env.NODE_ENV === 'development') {
-          // console.log('📍 LocationContext: Location obtained successfully');
-        }
+        if (DEBUG) { /* location obtained successfully */ }
         setUserLocation(location);
       } catch (error: any) {
         setIsLoading(false);
@@ -294,10 +251,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
           errorMessage = 'Location request timed out. Please try again.';
           // Keep permission status as prompt so user can retry
           setPermissionStatus('prompt');
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.log('📍 LocationContext: Location request timed out after 10 seconds');
-          }
+          if (DEBUG) { debugLog('📍 LocationContext: Location request timed out after 10 seconds'); }
         } else if (error.code) {
           switch (error.code) {
             case error.PERMISSION_DENIED:
@@ -327,10 +281,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setPermissionStatus('prompt');
     setError(null);
     localStorage.removeItem(LOCATION_STORAGE_KEY);
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('📍 LocationContext: Manually cleared all location data');
-    }
+    if (DEBUG) { debugLog('📍 LocationContext: Manually cleared all location data'); }
   }, []);
 
   const setPermissionStatusHandler = useCallback((status: LocationState['permissionStatus']) => {
@@ -364,18 +315,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   }, []);
 
   const refreshPermissionStatus = useCallback(async (): Promise<void> => {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('📍 LocationContext: Refreshing permission status...');
-    }
+    if (DEBUG) { debugLog('📍 LocationContext: Refreshing permission status...'); }
     
     const newStatus = await checkPermissionStatus();
     setPermissionStatus(newStatus);
     
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.log('📍 LocationContext: Permission status refreshed to:', newStatus);
-    }
+    if (DEBUG) { debugLog('📍 LocationContext: Permission status refreshed to:', newStatus); }
     
     // If permission is denied, clear any saved location data
     if (newStatus === 'denied') {

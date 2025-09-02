@@ -360,10 +360,10 @@ export function validateRedirectUrl(url: string | null | undefined): string {
     const allowedExactParams = ['tab', 'ref'];
     
     // Use Array.from to avoid iteration issues
-    Array.from(urlObj.searchParams.entries()).forEach(([key, value]) => {
-      if (allowedExactParams.includes(key) || 
-          allowedParamPrefixes.some(prefix => key.startsWith(prefix))) {
-        safeParams.set(key, value);
+    Array.from(urlObj.searchParams.entries()).forEach(([paramKey, value]) => {
+      if (allowedExactParams.includes(paramKey) || 
+          allowedParamPrefixes.some(prefix => paramKey.startsWith(prefix))) {
+        safeParams.set(paramKey, value);
       }
     });
 

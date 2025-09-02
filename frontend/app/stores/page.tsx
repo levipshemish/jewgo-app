@@ -61,7 +61,12 @@ interface Store {
 }
 
 // Mock API function for stores - will be replaced with actual API
-const fetchStores = async (limit: number, _params?: string) => {
+const fetchStores = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
+  // Simulate network delay for testing timeout functionality
+  if (timeoutMs) {
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
+  }
+  
   // For now, return mock data
   const mockStores: Store[] = [
     {
@@ -174,6 +179,11 @@ function StoresPageContent() {
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Performance optimizations based on device capabilities
+  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
+  const shouldLazyLoad = isSlowConnection;
+  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
+  
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
@@ -258,9 +268,16 @@ function StoresPageContent() {
     // Store type as subtitle
     const storeType = store.store_type && store.store_type.trim() !== '' ? store.store_type : '';
     
+    // Adjust image quality based on device capabilities
+    let optimizedImageUrl = store.image_url;
+    if (imageQuality === 'low' && store.image_url) {
+      // For low power mode or slow connections, use lower quality images
+      optimizedImageUrl = store.image_url.replace('/300/200', '/150/100');
+    }
+    
     return {
       id: String(store.id),
-      imageUrl: store.image_url,
+      imageUrl: optimizedImageUrl,
       imageTag: store.kosher_category,
       title: store.name,
       badge: ratingText, // Use the enhanced rating text
@@ -276,7 +293,7 @@ function StoresPageContent() {
       isCholovYisroel: store.is_cholov_yisroel,
       isPasYisroel: store.is_pas_yisroel,
     };
-  }, []); // Empty dependency array to prevent recreation
+  }, []); // Empty dependency array since imageQuality is constant
 
   // Memoize filter change handlers to prevent unnecessary re-renders
   const handleFilterChange = useCallback((newFilters: Partial<Filters>) => {
@@ -307,10 +324,7 @@ function StoresPageContent() {
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
-    // Trigger data fetch with search query
-    startTransition(() => {
-      fetchStoresData();
-    });
+    // Note: Data will be refetched via useEffect dependency on searchQuery
   }, [setSearchQuery, setCurrentPage]);
 
   // Infinite scroll with proper mobile detection
@@ -353,7 +367,7 @@ function StoresPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setStores(response.stores);
       setCurrentPage(page);
@@ -408,7 +422,7 @@ function StoresPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch stores with mobile optimization
-  const fetchStoresData = async (filters: Filters = activeFilters) => {
+  const fetchStoresData = useCallback(async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -440,7 +454,7 @@ function StoresPageContent() {
         params.append('slow_connection', 'true');
       }
 
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setStores(response.stores);
       setCurrentPage(1);
@@ -465,9 +479,9 @@ function StoresPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  const fetchMoreStores = async () => {
+  const fetchMoreStores = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -492,7 +506,7 @@ function StoresPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchStores(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setStores(prev => [...prev, ...response.stores]);
       setCurrentPage(nextPage);
@@ -503,7 +517,7 @@ function StoresPageContent() {
     } catch (err) {
       console.error('Error fetching more stores:', err);
     }
-  };
+  }, [isLoadingMore, hasMore, currentPage, activeFilters, searchQuery, mobileOptimizedItemsPerPage, setHasMore, fetchTimeoutMs]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -519,7 +533,7 @@ function StoresPageContent() {
   // Initial data fetch
   useEffect(() => {
     fetchStoresData();
-  }, []);
+  }, [fetchStoresData]);
 
   // Mobile-optimized filter changes
   useEffect(() => {
@@ -528,7 +542,7 @@ function StoresPageContent() {
         fetchStoresData();
       });
     }
-  }, [activeFilters]);
+  }, [activeFilters, hasActiveFilters, fetchStoresData]);
 
   // Mobile-specific effects
   useEffect(() => {
@@ -567,7 +581,7 @@ function StoresPageContent() {
     };
 
     return styles;
-  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight]);
 
   if (error) {
     return (
@@ -682,9 +696,10 @@ function StoresPageContent() {
                 data={transformStoreToCardData(store)}
                 variant="default"
                 showStarInBadge={true}
-                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
                 onCardClick={() => router.push(`/store/${store.id}`)}
                 className="w-full h-full"
+                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
               />
             </div>
           ))}
@@ -694,14 +709,14 @@ function StoresPageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading stores...</p>
+          <p>Loading stores{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more...</p>
+          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 

@@ -43,13 +43,33 @@ class SupabaseAuthManager:
     """Manages Supabase JWT verification and user authentication with explicit JWKS management."""
 
     def __init__(self):
-        self.supabase_url = os.getenv("SUPABASE_URL")
+        # Normalize and validate SUPABASE_URL early
+        raw_url = (os.getenv("SUPABASE_URL") or "").strip()
+        raw_url = raw_url.rstrip("/")
+        if raw_url and ".supabase.co" not in raw_url:
+            logger.error(f"Invalid SUPABASE_URL (expected *.supabase.co): {raw_url!r}")
+        # Strip any path/query; we only want the origin
+        try:
+            from urllib.parse import urlparse
+            p = urlparse(raw_url)
+            if p.scheme and p.netloc:
+                origin = f"{p.scheme}://{p.netloc}"
+            else:
+                origin = raw_url
+        except Exception:
+            origin = raw_url
+        if origin != raw_url and raw_url:
+            logger.info(f"Normalized SUPABASE_URL origin: {origin}")
+        self.supabase_url = origin or None
         self.supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
         self.project_id = os.getenv("SUPABASE_PROJECT_ID")
         self.expected_audience = os.getenv("SUPABASE_JWT_AUD", "authenticated")
-        # Use the correct Supabase JWKS endpoint
+        # Primary JWKS endpoint and well-known fallback (no auth required)
         self.jwks_url = (
             f"{self.supabase_url}/auth/v1/keys" if self.supabase_url else None
+        )
+        self.jwks_well_known_url = (
+            f"{self.supabase_url}/.well-known/jwks.json" if self.supabase_url else None
         )
         self.cache_ttl = int(os.getenv("JWKS_CACHE_TTL", "86400"))  # 24 hours
         self.refresh_interval = int(
@@ -119,13 +139,8 @@ class SupabaseAuthManager:
         got_lock = self.redis.set(lock_key, "1", nx=True, ex=10)
         if got_lock:
             try:
-                # Fetch JWKS from Supabase with proper headers
-                headers = {
-                    'apikey': self.supabase_anon_key,
-                    'Authorization': f'Bearer {self.supabase_anon_key}'
-                }
-                response = requests.get(self.jwks_url, headers=headers, timeout=5)
-                response.raise_for_status()
+                # Fetch JWKS from Supabase WITHOUT any auth headers (public endpoint)
+                response = self._get_jwks_unauthenticated(timeout=5)
                 jwks = response.json()
                 # Cache each key by kid
                 for key in jwks.get("keys", []):
@@ -202,12 +217,8 @@ class SupabaseAuthManager:
                     if cached_key and cached_key.get("expires_at", 0) > time.time():
                         return cached_key.get("key")
                 # Fetch JWKS with proper headers
-                headers = {
-                    'apikey': self.supabase_anon_key,
-                    'Authorization': f'Bearer {self.supabase_anon_key}'
-                }
-                response = requests.get(self.jwks_url, headers=headers, timeout=5)
-                response.raise_for_status()
+                # Fetch JWKS WITHOUT auth headers; fallback to well-known if needed
+                response = self._get_jwks_unauthenticated(timeout=5)
                 jwks = response.json()
                 # Initialize cache if needed
                 if not hasattr(self, "_jwks_fallback_cache"):
@@ -256,15 +267,14 @@ class SupabaseAuthManager:
 
     def pre_warm_jwks(self):
         """Pre-warm JWKS cache on application boot."""
+        if os.getenv("ENABLE_JWKS_PREWARM", "true").lower() != "true":
+            logger.info("JWKS pre-warm disabled by ENABLE_JWKS_PREWARM=false")
+            return
         if not self.redis or not self.jwks_url:
             return
         try:
-            headers = {
-                'apikey': self.supabase_anon_key,
-                'Authorization': f'Bearer {self.supabase_anon_key}'
-            }
-            response = requests.get(self.jwks_url, headers=headers, timeout=10)
-            response.raise_for_status()
+            # Unauthenticated fetch; try well-known first for compatibility, then /auth/v1/keys
+            response = self._get_jwks_unauthenticated(timeout=10)
             jwks = response.json()
             cache_ttl = self._get_cache_ttl(response.headers)
             expires_at = time.time() + cache_ttl
@@ -322,14 +332,53 @@ class SupabaseAuthManager:
             if not self.jwks_url:
                 logger.error("SUPABASE_URL not configured")
                 return None
-            response = requests.get(self.jwks_url, timeout=10)
-            response.raise_for_status()
+            response = self._get_jwks_unauthenticated(timeout=10)
             jwks = response.json()
             logger.debug("JWKS fetched successfully")
             return jwks
         except Exception as e:
             logger.error(f"Failed to fetch JWKS: {e}")
             return None
+
+    def _get_jwks_unauthenticated(self, timeout: int = 5):
+        """Fetch JWKS without sending Authorization/apikey headers. Tries well-known first.
+
+        Per Supabase/GoTrue, JWKS endpoints are public and must be called without auth.
+        This bypasses any client wrappers that might inject headers.
+        """
+        last_err = None
+        urls = []
+        if self.jwks_well_known_url:
+            urls.append(self.jwks_well_known_url)
+        if self.jwks_url:
+            urls.append(self.jwks_url)
+        for idx, url in enumerate(urls):
+            try:
+                resp = requests.get(url, timeout=timeout)
+                if resp.status_code == 200:
+                    return resp
+                # Helpful hint if a proxy/PostgREST is being hit
+                body = resp.text[:200]
+                if resp.status_code in (401, 403) and "No API key" in body:
+                    logger.error(
+                        f"JWKS 401/403 with 'No API key' from {url}. Hint: SUPABASE_URL must be the project origin (https://<ref>.supabase.co), not /rest/v1."
+                    )
+                    # Optional guarded retry with anon key if explicitly allowed
+                    if os.getenv("SUPABASE_JWKS_ALLOW_APIKEY", "false").lower() == "true" and self.supabase_anon_key:
+                        try:
+                            hdrs = {"apikey": self.supabase_anon_key}
+                            resp2 = requests.get(url, headers=hdrs, timeout=timeout)
+                            if resp2.status_code == 200:
+                                logger.info("JWKS fetched with apikey fallback per SUPABASE_JWKS_ALLOW_APIKEY=true")
+                                return resp2
+                        except Exception as e:
+                            logger.warning(f"JWKS apikey fallback failed: {e}")
+                last_err = f"{resp.status_code} {body}"
+            except Exception as e:
+                last_err = str(e)
+            # brief backoff between attempts
+            time.sleep(0.1 * (idx + 1))
+        raise RuntimeError(f"JWKS unauthenticated fetch failed: {last_err}")
 
     def verify_jwt_token(self, token: str) -> Optional[Dict[str, Any]]:
         """

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminLogger } from '@/lib/admin/logger';
 import { requireAdmin } from '@/lib/admin/auth';
 import { logAdminAction } from '@/lib/admin/audit';
-import { Permission } from '@/lib/constants/permissions';
 
 export async function POST(
   request: NextRequest,

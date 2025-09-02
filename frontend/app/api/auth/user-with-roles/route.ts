@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { json } from '@/lib/server/route-helpers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/utils/auth-utils';
-import { ROLE_PERMISSIONS, Permission, normalizeAdminRole } from '@/lib/constants/permissions';
-import { isValidPermission } from '@/lib/server/admin-constants';
+import { ROLE_PERMISSIONS, normalizeAdminRole } from '@/lib/constants/permissions';
 import { validatePermissions } from '@/lib/server/security';
 
 // Force Node.js runtime to support AbortSignal.timeout
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
-      const res = NextResponse.json(
+      const res = json(
         { 
           success: false, 
           error: 'Supabase not configured',
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           roleLevel: 0,
           permissions: []
         },
-        { status: 500 }
+        500
       );
       return res;
     }
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     // Validate BACKEND_URL in production
     if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
       console.error('[Auth] BACKEND_URL not configured in production');
-      const res = NextResponse.json(
+      const res = json(
         { success: false, error: 'BACKEND_URL not configured' },
-        { status: 500 }
+        500
       );
       return res;
     }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
           console.warn('[Auth] User mismatch between header token and cookie session');
           authWarning = 'user-mismatch';
           if (process.env.ENFORCE_STRICT_AUTH_MATCH === 'true') {
-            const res = NextResponse.json({ success: false, error: 'Unauthorized (user mismatch)' }, { status: 401 });
+            const res = json({ success: false, error: 'Unauthorized (user mismatch)' }, 401);
             res.headers.set('X-Auth-Warning', 'user-mismatch');
             return res;
           }
@@ -85,12 +85,12 @@ export async function GET(request: NextRequest) {
         } else {
           // Both Authorization header and cookie failed
           console.error('[Auth] Both Authorization header and cookie failed');
-          const res = NextResponse.json(
+          const res = json(
             { 
               success: false, 
               error: 'Unauthorized'
             },
-            { status: 401 }
+            401
           );
           return res;
         }
@@ -102,12 +102,12 @@ export async function GET(request: NextRequest) {
       
       if (error) {
         console.error('[Auth] Error getting user from cookie session:', error);
-        const res = NextResponse.json(
+        const res = json(
           { 
             success: false, 
             error: 'Unauthorized'
           },
-          { status: 401 }
+          401
         );
         return res;
       }
@@ -119,14 +119,14 @@ export async function GET(request: NextRequest) {
 
     // No session/user is a valid state, not an error
     if (!user) {
-      const res = NextResponse.json(
+      const res = json(
         { 
           success: true, 
           adminRole: null,
           roleLevel: 0,
           permissions: []
         },
-        { status: 200 }
+        200
       );
       if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
       return res;
@@ -134,14 +134,14 @@ export async function GET(request: NextRequest) {
 
     if (!accessToken) {
       console.warn('[Auth] Missing access token but user exists, returning default role payload');
-      const res = NextResponse.json(
+      const res = json(
         { 
           success: true, 
           adminRole: null,
           roleLevel: 0,
           permissions: []
         },
-        { status: 200 }
+        200
       );
       if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
       return res;
@@ -162,14 +162,14 @@ export async function GET(request: NextRequest) {
       if (!response.ok) {
         console.warn(`Backend role fetch failed: ${response.status}`);
         // Return default values instead of failing
-        const res = NextResponse.json(
+        const res = json(
           { 
             success: true, 
             adminRole: null,
             roleLevel: 0,
             permissions: []
           },
-          { status: 200 }
+          200
         );
         if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
         return res;
@@ -188,14 +188,14 @@ export async function GET(request: NextRequest) {
       // Use validatePermissions for consistent normalization and fallback handling
       const { permissions } = validatePermissions(backendPermissionsRaw, [...rolePermissionsRaw]);
 
-      const res = NextResponse.json(
+      const res = json(
         { 
           success: true, 
           adminRole,
           roleLevel,
           permissions
         },
-        { status: 200 }
+        200
       );
       if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
       return res;
@@ -203,14 +203,14 @@ export async function GET(request: NextRequest) {
     } catch (backendError) {
       console.error('[Auth] Backend role fetch error:', backendError);
       // Fail gracefully - return user without roles
-      const res = NextResponse.json(
+      const res = json(
         { 
           success: true, 
           adminRole: null,
           roleLevel: 0,
           permissions: []
         },
-        { status: 200 }
+        200
       );
       if (authWarning) res.headers.set('X-Auth-Warning', authWarning);
       return res;
@@ -218,12 +218,12 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('[Auth] Unexpected error in user-with-roles:', error);
-    const res = NextResponse.json(
+    const res = json(
       { 
         success: false, 
         error: 'Internal server error'
       },
-      { status: 500 }
+      500
     );
     return res;
   }

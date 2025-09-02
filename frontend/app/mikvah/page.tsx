@@ -75,7 +75,12 @@ interface Mikvah {
 }
 
 // Mock API function for mikvah - will be replaced with actual API
-const fetchMikvah = async (limit: number, _params?: string) => {
+const fetchMikvah = async (limit: number, _params?: string, timeoutMs: number = 5000) => {
+  // Simulate network delay for testing timeout functionality
+  if (timeoutMs) {
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000)); // Random delay up to 1s
+  }
+  
   // For now, return mock data
   const mockMikvah: Mikvah[] = [
     {
@@ -222,6 +227,11 @@ function MikvahPageContent() {
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Performance optimizations based on device capabilities
+  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
+  const shouldLazyLoad = isSlowConnection;
+  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
+  
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
@@ -362,7 +372,7 @@ function MikvahPageContent() {
     startTransition(() => {
       fetchMikvahData();
     });
-  }, [setSearchQuery, setCurrentPage]);
+  }, [setSearchQuery, setCurrentPage, fetchMikvahData]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore, isLoadingMore, loadingRef, setHasMore } = useInfiniteScroll(
@@ -463,7 +473,7 @@ function MikvahPageContent() {
   }, [showLocationPrompt, userLocation]);
 
   // Fetch mikvah with mobile optimization
-  const fetchMikvahData = async (filters: Filters = activeFilters) => {
+  const fetchMikvahData = useCallback(async (filters: Filters = activeFilters) => {
     try {
       setLoading(true);
       setError(null);
@@ -495,7 +505,7 @@ function MikvahPageContent() {
         params.append('slow_connection', 'true');
       }
 
-      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setMikvah(response.mikvah);
       setCurrentPage(1);
@@ -520,9 +530,9 @@ function MikvahPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeFilters, searchQuery, mobileOptimizedItemsPerPage, isLowPowerMode, isSlowConnection, fetchTimeoutMs]);
 
-  const fetchMoreMikvah = async () => {
+  const fetchMoreMikvah = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
       return;
     }
@@ -547,7 +557,7 @@ function MikvahPageContent() {
       params.append('limit', mobileOptimizedItemsPerPage.toString());
       params.append('mobile_optimized', 'true');
 
-      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString());
+      const response = await fetchMikvah(mobileOptimizedItemsPerPage, params.toString(), fetchTimeoutMs);
       
       setMikvah(prev => [...prev, ...response.mikvah]);
       setCurrentPage(nextPage);
@@ -558,7 +568,7 @@ function MikvahPageContent() {
     } catch (err) {
       appLogger.error('Mikvah fetch more error', { error: String(err) });
     }
-  };
+  }, [isLoadingMore, hasMore, currentPage, activeFilters, searchQuery, mobileOptimizedItemsPerPage, setHasMore, fetchTimeoutMs]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -574,7 +584,7 @@ function MikvahPageContent() {
   // Initial data fetch
   useEffect(() => {
     fetchMikvahData();
-  }, []);
+  }, [fetchMikvahData]);
 
   // Mobile-optimized filter changes
   useEffect(() => {
@@ -583,7 +593,7 @@ function MikvahPageContent() {
         fetchMikvahData();
       });
     }
-  }, [activeFilters]);
+  }, [activeFilters, hasActiveFilters, fetchMikvahData]);
 
   // Mobile-specific effects
   useEffect(() => {
@@ -622,7 +632,7 @@ function MikvahPageContent() {
     };
 
     return styles;
-  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight]);
 
   if (error) {
     return (
@@ -737,9 +747,10 @@ function MikvahPageContent() {
                 data={transformMikvahToCardData(mikvahFacility)}
                 variant="default"
                 showStarInBadge={true}
-                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
                 onCardClick={() => router.push(`/mikvah/${mikvahFacility.id}`)}
                 className="w-full h-full"
+                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
               />
             </div>
           ))}
@@ -749,14 +760,14 @@ function MikvahPageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading mikvah facilities...</p>
+          <p>Loading mikvah facilities{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more...</p>
+          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 

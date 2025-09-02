@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { DEBUG, debugLog } from '@/lib/utils/debug';
 
 export interface InfiniteScrollOptions {
   threshold?: number;
@@ -37,9 +38,7 @@ export function useInfiniteScroll(
   // Load more function with loading state management
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore || disabled) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Load more blocked', { isLoadingMore, hasMore, disabled });
-      }
+      if (DEBUG) { debugLog('Infinite scroll: Load more blocked', { isLoadingMore, hasMore, disabled }); }
       return;
     }
 
@@ -47,15 +46,11 @@ export function useInfiniteScroll(
     const now = Date.now();
     const timeSinceLastLoad = now - lastLoadTimeRef.current;
     if (timeSinceLastLoad < 300) { // Minimum 300ms between loads
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Load more blocked - too soon', { timeSinceLastLoad });
-      }
+      if (DEBUG) { debugLog('Infinite scroll: Load more blocked - too soon', { timeSinceLastLoad }); }
       return;
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Infinite scroll: Starting load more');
-    }
+    if (DEBUG) { debugLog('Infinite scroll: Starting load more'); }
 
     lastLoadTimeRef.current = now;
     setIsLoadingMore(true);
@@ -66,18 +61,21 @@ export function useInfiniteScroll(
       console.error('Error in infinite scroll load more:', error);
     } finally {
       setIsLoadingMore(false);
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Load more completed');
-      }
+      if (DEBUG) { debugLog('Infinite scroll: Load more completed'); }
     }
   }, [onLoadMore, isLoadingMore, hasMore, disabled]);
 
   // Set up intersection observer
+  const prevDisabledRef = useRef(disabled);
+  const prevHasMoreRef = useRef(hasMore);
+
   useEffect(() => {
+    if (DEBUG && (prevDisabledRef.current !== disabled || prevHasMoreRef.current !== hasMore)) {
+      debugLog('Infinite scroll: Disabled or no more items', { disabled, hasMore });
+      prevDisabledRef.current = disabled;
+      prevHasMoreRef.current = hasMore;
+    }
     if (disabled || !hasMore) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Infinite scroll: Disabled or no more items', { disabled, hasMore });
-      }
       return;
     }
 
@@ -91,8 +89,8 @@ export function useInfiniteScroll(
       (entries) => {
         const [entry] = entries;
 
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Intersection observed', { 
+        if (DEBUG) {
+          debugLog('Infinite scroll: Intersection observed', { 
             isIntersecting: entry.isIntersecting, 
             isLoadingMore, 
             hasMore,
@@ -101,9 +99,7 @@ export function useInfiniteScroll(
         }
 
         if (entry.isIntersecting && !isLoadingMore && hasMore) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Infinite scroll: Triggering load more');
-          }
+          if (DEBUG) { debugLog('Infinite scroll: Triggering load more'); }
           loadMore();
         }
       },
@@ -120,20 +116,14 @@ export function useInfiniteScroll(
     const checkAndObserve = () => {
       if (loadingRef.current) {
         observer.observe(loadingRef.current);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: Observer attached to element');
-        }
+        if (DEBUG) { debugLog('Infinite scroll: Observer attached to element'); }
       } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Infinite scroll: No loading ref element found, retrying...');
-        }
+        if (DEBUG) { debugLog('Infinite scroll: No loading ref element found, retrying...'); }
         // Retry after a short delay
         setTimeout(() => {
           if (loadingRef.current && observerRef.current) {
             observerRef.current.observe(loadingRef.current);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Infinite scroll: Observer attached to element (retry)');
-            }
+            if (DEBUG) { debugLog('Infinite scroll: Observer attached to element (retry)'); }
           }
         }, 100);
       }

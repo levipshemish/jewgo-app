@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface LocationAccessProps {
@@ -20,7 +20,7 @@ export default function LocationAccess({
   const [error, setError] = useState<string>('');
   const router = useRouter();
 
-  const requestLocation = async () => {
+  const requestLocation = useCallback(async () => {
     setStatus('requesting');
     setError('');
 
@@ -86,7 +86,7 @@ export default function LocationAccess({
       setError('Failed to request location access.');
       setStatus('error');
     }
-  };
+  }, [onLocationGranted, onLocationDenied, redirectTo, router]);
 
   const skipLocation = () => {
     setStatus('denied');

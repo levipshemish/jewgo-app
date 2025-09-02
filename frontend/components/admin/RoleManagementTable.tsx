@@ -37,7 +37,7 @@ interface RoleManagementTableProps {
 }
 
 export default function RoleManagementTable({ initialData }: RoleManagementTableProps) {
-  const router = useRouter();
+  const _router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [page, setPage] = useState(1);

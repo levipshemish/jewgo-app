@@ -87,7 +87,7 @@ const FLORIDA_CITIES = [
   'Jacksonville'
 ];
 
-export default function ShtelFilters({ isOpen, onClose, onFiltersChange, currentFilters }: ShtelFiltersProps) {
+export default function _ShtelFilters({ isOpen, onClose, onFiltersChange, currentFilters }: ShtelFiltersProps) {
   const [localFilters, setLocalFilters] = useState<ShtelFilters>(currentFilters);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);

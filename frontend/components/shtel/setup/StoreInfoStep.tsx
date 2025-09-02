@@ -163,7 +163,7 @@ export default function StoreInfoStep({
           <p className="mt-1 text-sm text-red-600">{errors.storeName}</p>
         )}
         <p className="mt-1 text-xs text-gray-500">
-          Choose a name that's easy to remember and reflects your business
+          Choose a name that&apos;s easy to remember and reflects your business
         </p>
       </div>
 

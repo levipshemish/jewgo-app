@@ -96,7 +96,7 @@ export default function EnhancedHoursDisplay({
     } finally {
       setIsLoading(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, setHoursStatus, setIsLoading, setError]);
 
   useEffect(() => {
     if (restaurantId) {

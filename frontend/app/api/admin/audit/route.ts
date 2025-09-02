@@ -32,9 +32,10 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
     const correlationId = searchParams.get('correlationId') || undefined;
+    const roleScope = searchParams.get('roleScope') || undefined; // 'self' | 'store'
 
     // Query audit logs
-    const result = await queryAuditLogs({
+    const effectiveFilters: any = {
       userId,
       action,
       entityType,
@@ -45,7 +46,16 @@ export async function GET(request: NextRequest) {
       page,
       pageSize,
       correlationId,
-    });
+    };
+
+    // Apply simple server-side role scoping
+    if (roleScope === 'self') {
+      effectiveFilters.userId = adminUser.id;
+    } else if (roleScope === 'store') {
+      effectiveFilters.entityType = 'marketplace';
+    }
+
+    const result = await queryAuditLogs(effectiveFilters);
 
     // Normalize response to match UI expectations
     return NextResponse.json({

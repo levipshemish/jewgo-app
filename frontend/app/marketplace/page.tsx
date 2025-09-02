@@ -21,6 +21,7 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { appLogger } from '@/lib/utils/logger';
+import { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation';
 
 import { MarketplaceListing, MarketplaceCategory, MarketplaceFilters as MarketplaceFiltersType } from '@/lib/types/marketplace';
 
@@ -33,29 +34,6 @@ function MarketplacePageLoading() {
     </div>
   );
 }
-
-// Calculate distance between two coordinates using Haversine formula
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 3959; // Earth's radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-};
-
-// Utility function to format distance for display
-const formatDistance = (distance: number) => {
-  if (distance < 0.1) {
-    return `${Math.round(distance * 5280)}ft`; // Convert to feet
-  } else if (distance < 1) {
-    return `${distance.toFixed(1)}mi`; // Show as 0.2mi, 0.5mi, etc.
-  } else {
-    return `${distance.toFixed(1)}mi`; // Show as 1.2mi, 2.5mi, etc.
-  }
-};
 
 // Sample marketplace data with images for demonstration (expanded for pagination testing)
 const sampleMarketplaceData: MarketplaceListing[] = [
@@ -360,6 +338,14 @@ function MarketplacePageContent() {
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
   
+  // Centralized distance calculation hook
+  const { calculateDistance, formatDistance } = useDistanceCalculation();
+
+  // Performance optimizations based on device capabilities
+  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
+  const imageQuality = isLowPowerMode || isSlowConnection ? 'low' : 'high';
+  const shouldLazyLoad = isSlowConnection;
+  
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
@@ -490,7 +476,16 @@ function MarketplacePageContent() {
 
     const transformedData = {
     id: listing.id,
-      imageUrl: listing.thumbnail || listing.images?.[0] || null,
+      imageUrl: (() => {
+        // Adjust image quality based on device capabilities
+        let baseImageUrl = listing.thumbnail || listing.images?.[0] || null;
+        if (imageQuality === 'low' && baseImageUrl) {
+          // For low power mode or slow connections, use lower quality images
+          // This is a placeholder - in a real implementation, you'd adjust the URL based on your image service
+          baseImageUrl = baseImageUrl.replace(/\/w=\d+/, '/w=150').replace(/\/h=\d+/, '/h=100');
+        }
+        return baseImageUrl;
+      })(),
     imageTag: formatCondition(listing.condition),
     title: listing.title,
     badge: formatDate(listing.created_at),
@@ -502,7 +497,7 @@ function MarketplacePageContent() {
     
     appLogger.debug('Transformed marketplace data', { id: transformedData.id });
     return transformedData;
-  }, [userLocation]); // Empty dependency array to prevent recreation
+    }, [userLocation, calculateDistance, formatDistance, imageQuality]); // Include imageQuality dependency
 
 
 
@@ -534,7 +529,7 @@ function MarketplacePageContent() {
 
       return distanceA - distanceB;
     });
-  }, [listings, permissionStatus, userLocation]);
+  }, [listings, permissionStatus, userLocation, calculateDistance]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
@@ -866,7 +861,7 @@ function MarketplacePageContent() {
     } else {
       fetchMarketplaceData();
     }
-  }, [fetchMarketplaceData, mobileOptimizedItemsPerPage]);
+  }, [fetchMarketplaceData, mobileOptimizedItemsPerPage, setInfiniteScrollHasMore]);
 
   // Mobile-specific effects
   useEffect(() => {
@@ -905,7 +900,7 @@ function MarketplacePageContent() {
     };
 
     return styles;
-  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight]);
 
   // Show marketplace not available message
   if (!marketplaceAvailable) {
@@ -1115,10 +1110,11 @@ function MarketplacePageContent() {
                   imageUrl: transformMarketplaceToCardData(listing).imageUrl || undefined,
                 }}
                     variant="default"
-                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
                 onCardClick={() => router.push(`/marketplace/product/${listing.id}`)}
                 className="w-full h-full"
                 showStarInBadge={true}
+                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
                   />
                 </div>
               ))}
@@ -1128,16 +1124,16 @@ function MarketplacePageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading listings...</p>
-            </div>
-          )}
+          <p>Loading listings{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
+        </div>
+      )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more...</p>
-            </div>
-          )}
+          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
+        </div>
+      )}
 
       {/* Infinite scroll trigger element - only on mobile */}
       {(isMobile || isMobileDevice) && hasMore && (

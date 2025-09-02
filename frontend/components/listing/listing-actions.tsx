@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { ChevronDown, Clock, X, MapPin } from "lucide-react"
+import { ChevronDown, Clock, X } from "lucide-react"
 import { Stack, Cluster } from "@/components/ui/spacing"
 
 interface ListingActionsProps {

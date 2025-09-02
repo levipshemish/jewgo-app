@@ -19,7 +19,7 @@ interface ListingImageProps {
 export function ListingImage({ 
   src, 
   alt, 
-  actionLabel = "action", 
+  actionLabel: _actionLabel = "action", 
   onAction, 
   className = "",
   restaurantName = "Restaurant",

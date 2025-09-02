@@ -163,7 +163,7 @@ export class WriteGates {
    * Get comprehensive user permissions
    */
   async getUserPermissions(): Promise<UserPermissions> {
-    const correlationId = generateCorrelationId();
+    const _correlationId = generateCorrelationId();
     
     try {
 
@@ -185,7 +185,7 @@ export class WriteGates {
       const isAnonymous = extractIsAnonymous(user);
       const canWrite = !isAnonymous && !!user.email_confirmed_at;
 
-      // console.log(`[Write Gates] User permissions calculated (${correlationId})`, {
+      // console.log(`[Write Gates] User permissions calculated (${_correlationId})`, {
       //   userId: user.id,
       //   isAnonymous,
       //   canWrite,
@@ -203,7 +203,7 @@ export class WriteGates {
       };
 
     } catch (error) {
-      // console.error(`[Write Gates] Error getting permissions (${correlationId})`, error);
+      // console.error(`[Write Gates] Error getting permissions (${_correlationId})`, error);
       return {
         canWrite: false,
         canCreateReviews: false,

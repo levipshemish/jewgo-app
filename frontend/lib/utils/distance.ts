@@ -10,7 +10,7 @@ export interface RestaurantWithDistance {
   distance: number;
 }
 
-// Calculate distance between two points using Haversine formula
+// Legacy functions that maintain backward compatibility
 export function calculateDistance(
   lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the Earth in kilometers
@@ -31,8 +31,6 @@ export function sortRestaurantsByDistance(
   if (!userLocation) {
     return restaurants;
   }
-
-
 
   const restaurantsWithDistance: RestaurantWithDistance[] = restaurants
     .filter(restaurant => restaurant.latitude && restaurant.longitude)
@@ -56,7 +54,6 @@ export function sortRestaurantsByDistance(
         lngNum
       );
 
-      
       return {
         restaurant,
         distance: calculatedDistance
@@ -64,8 +61,6 @@ export function sortRestaurantsByDistance(
     })
     .filter((item): item is RestaurantWithDistance => item !== null)
     .sort((a, b) => a.distance - b.distance);
-
-
 
   // Add formatted distance to each restaurant
   return restaurantsWithDistance.map(item => ({
@@ -100,24 +95,10 @@ export function getRestaurantDistance(
   return calculateDistance(
     userLocation.latitude,
     userLocation.longitude,
-    parseFloat(restaurant.latitude.toString()),
-    parseFloat(restaurant.longitude.toString())
+    restaurant.latitude,
+    restaurant.longitude
   );
 }
 
-// Get restaurants within a certain radius
-export function getRestaurantsWithinRadius(
-  restaurants: Restaurant[], userLocation: Location, radiusKm: number): Restaurant[] {
-  return restaurants.filter(restaurant => {
-    if (!restaurant.latitude || !restaurant.longitude) {return false;}
-    
-    const distance = calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      parseFloat(restaurant.latitude.toString()),
-      parseFloat(restaurant.longitude.toString())
-    );
-    
-    return distance <= radiusKm;
-  });
-} 
+// Export the hook for components to use
+export { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation'; 

@@ -45,12 +45,12 @@ function ResetPasswordForm() {
 
     // Establish session so we can update the password
     (async () => {
-      const { error } = await supabaseClient.auth.setSession({
+      const { error: err } = await supabaseClient.auth.setSession({
         access_token: accessToken as string,
         refresh_token: refreshToken as string,
       } as any);
 
-      if (error) {
+      if (err) {
         setError("Reset link is invalid or expired. Please request a new one.");
         setHasValidTokens(false);
         return;

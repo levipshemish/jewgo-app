@@ -49,8 +49,8 @@ export function ListingActions({
   address,
   location,
   userLocation,
-  onLocationRequest,
-  priceRange,
+  onLocationRequest: _onLocationRequest,
+  priceRange: _priceRange,
 }: ListingActionsProps) {
   const [showHours, setShowHours] = useState(false)
 
@@ -90,7 +90,7 @@ export function ListingActions({
     : null;
 
   // Only show distance if we have valid user location and restaurant location
-  const shouldShowDistance = userLocation && location && distance && 
+  const _shouldShowDistance = userLocation && location && distance && 
     typeof userLocation.latitude === 'number' && 
     typeof userLocation.longitude === 'number' &&
     typeof location.latitude === 'number' && 

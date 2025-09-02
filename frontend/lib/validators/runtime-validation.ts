@@ -3,13 +3,7 @@
 
 import { z } from 'zod';
 import type { 
-  LoadingState, 
-  AsyncResult, 
-  ApiResponse, 
-  Email, 
-  PhoneNumber,
-  UserId,
-  RestaurantId 
+  AsyncResult
 } from '@/lib/types/advanced-patterns';
 
 // ============================================================================

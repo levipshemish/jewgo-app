@@ -168,7 +168,7 @@ export default function UnifiedLiveMapClient() {
 
       checkLocationPermission();
     }
-  }, [mounted, userLocation, locationPromptShown, permissionStatus]);
+  }, [mounted, userLocation, locationPromptShown, permissionStatus, CACHE_DURATION]);
 
   // Optimized data fetching with intelligent caching
   const fetchRestaurantsData = useCallback(async () => {

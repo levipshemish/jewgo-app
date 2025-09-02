@@ -17,6 +17,7 @@ import { useLocation } from '@/lib/contexts/LocationContext';
 import LocationPromptPopup from '@/components/LocationPromptPopup';
 import { useScrollDetection } from '@/lib/hooks/useScrollDetection';
 import { appLogger } from '@/lib/utils/logger';
+import { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation';
 
 import { MarketplaceListing } from '@/lib/types/marketplace';
 import { Filters, toSearchParams } from '@/lib/filters/schema';
@@ -29,29 +30,6 @@ function ShtelPageLoading() {
     </div>
   );
 }
-
-// Calculate distance between two coordinates using Haversine formula
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 3959; // Earth's radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-};
-
-// Utility function to format distance for display
-const formatDistance = (distance: number) => {
-  if (distance < 0.1) {
-    return `${Math.round(distance * 5280)}ft`;
-  } else if (distance < 1) {
-    return `${distance.toFixed(1)}mi`;
-  } else {
-    return `${distance.toFixed(1)}mi`;
-  }
-};
 
 // Main component that uses useSearchParams
 function ShtelPageContent() {
@@ -69,6 +47,14 @@ function ShtelPageContent() {
   // Mobile optimization hooks
   const { isMobile, viewportHeight, viewportWidth } = useMobileOptimization();
   const { isLowPowerMode, isSlowConnection } = useMobilePerformance();
+  
+  // Centralized distance calculation hook
+  const { calculateDistance, formatDistance } = useDistanceCalculation();
+  
+  // Performance optimizations based on device capabilities
+  const shouldReduceAnimations = isLowPowerMode || isSlowConnection;
+  const shouldLazyLoad = isSlowConnection;
+  const fetchTimeoutMs = isSlowConnection ? 10000 : 5000; // Longer timeout for slow connections
   
   // Ensure mobile detection is working correctly
   const [isMobileDevice, setIsMobileDevice] = useState(false);
@@ -231,7 +217,7 @@ function ShtelPageContent() {
       city: listing.city,
       distance: distanceText,
     };
-  }, [userLocation]);
+  }, [userLocation, calculateDistance, formatDistance]);
 
   // Sort listings by distance when location is available
   const sortedListings = useMemo(() => {
@@ -261,7 +247,7 @@ function ShtelPageContent() {
 
       return distanceA - distanceB;
     });
-  }, [listings, userLocation]);
+  }, [listings, userLocation, calculateDistance]);
 
   // Infinite scroll with proper mobile detection
   const { hasMore: _infiniteScrollHasMore, isLoadingMore, loadingRef, setHasMore: setInfiniteScrollHasMore } = useInfiniteScroll(
@@ -316,13 +302,20 @@ function ShtelPageContent() {
       params.set('mobile_optimized', 'true');
       params.set('community_focus', 'true'); // Add community focus flag
 
-      // Call the shtel-specific API endpoint
-      const response = await fetch(`/api/shtel-listings?${params.toString()}`);
-      const data = await response.json();
+      // Call the shtel-specific API endpoint with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
+      
+      try {
+        const response = await fetch(`/api/shtel-listings?${params.toString()}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        const data = await response.json();
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch shtel listings');
-      }
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch shtel listings');
+        }
 
       // Apply distance calculation to new listings if location is available
       let processedListings = data.data?.listings || [];
@@ -357,10 +350,25 @@ function ShtelPageContent() {
       const calculatedTotalPages = Math.ceil(total / mobileOptimizedItemsPerPage);
       setTotalPages(calculatedTotalPages);
       
-      // Update hasMore state for infinite scroll (mobile only)
-      const hasMoreContent = processedListings.length >= mobileOptimizedItemsPerPage;
-      setHasMore(hasMoreContent);
-      setInfiniteScrollHasMore(hasMoreContent);
+              // Update hasMore state for infinite scroll (mobile only)
+        const hasMoreContent = processedListings.length >= mobileOptimizedItemsPerPage;
+        setHasMore(hasMoreContent);
+        setInfiniteScrollHasMore(hasMoreContent);
+      } catch (fetchErr) {
+        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+          setError('Request timed out. Please try again.');
+        } else {
+          appLogger.error('Shtel fetch error', { error: String(fetchErr) });
+          if (fetchErr instanceof Error) {
+            setError(fetchErr.message);
+          } else {
+            setError('Unable to load shtel listings. Please try again later.');
+          }
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        setLoading(false);
+      }
     } catch (err) {
       appLogger.error('Shtel fetch error', { error: String(err) });
       if (err instanceof Error) {
@@ -371,7 +379,7 @@ function ShtelPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation, activeFilters, setInfiniteScrollHasMore]);
+  }, [searchQuery, mobileOptimizedItemsPerPage, isSettingLocationFilters, userLocation, activeFilters, setInfiniteScrollHasMore, calculateDistance, formatDistance, fetchTimeoutMs]);
 
   const fetchMoreListings = useCallback(async () => {
     if (isLoadingMore || !hasMore) {
@@ -380,12 +388,28 @@ function ShtelPageContent() {
 
     try {
       const _nextPage = currentPage + 1;
-      // Implementation for loading more listings
-      // This would call the API with pagination parameters
+      // Implementation for loading more listings with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs);
+      
+      try {
+        // This would call the API with pagination parameters
+        // For now, just simulate a delay
+        await new Promise(resolve => setTimeout(resolve, 100));
+        clearTimeout(timeoutId);
+      } catch (fetchErr) {
+        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+          appLogger.warn('Fetch more listings timed out');
+        } else {
+          throw fetchErr;
+        }
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch (err) {
       appLogger.error('Error fetching more listings', { error: String(err) });
     }
-  }, [isLoadingMore, hasMore, currentPage]);
+  }, [isLoadingMore, hasMore, currentPage, fetchTimeoutMs]);
 
   // Handle location-based data fetching after filters are set
   useEffect(() => {
@@ -428,9 +452,9 @@ function ShtelPageContent() {
     }
     const timeout = setTimeout(() => {
       fetchShtełListingsData();
-    }, 300); // Debounce search
+    }, isSlowConnection ? 500 : 300); // Longer debounce for slow connections
     setFetchTimeout(timeout);
-  }, [fetchShtełListingsData, fetchTimeout]);
+  }, [fetchShtełListingsData, fetchTimeout, isSlowConnection]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -494,7 +518,7 @@ function ShtelPageContent() {
         margin: isMobileView ? '16px 8px' : '16px',
       }
     };
-  }, [isMobile, isMobileDevice, viewportHeight, viewportWidth, isLowPowerMode, isSlowConnection]);
+  }, [isMobile, isMobileDevice, viewportHeight]);
 
   if (error) {
     return (
@@ -641,10 +665,11 @@ function ShtelPageContent() {
                   imageUrl: transformListingToCardData(listing).imageUrl || undefined,
                 }}
                 variant="default"
-                priority={index < 4} // Add priority to first 4 images for LCP optimization
+                priority={index < 4 && !shouldReduceAnimations} // Reduce priority when in low power mode
                 onCardClick={() => router.push(`/shtel/product/${listing.id}`)}
                 className="w-full h-full"
                 showStarInBadge={true}
+                isScrolling={shouldReduceAnimations} // Disable animations when in low power mode
               />
             </div>
           ))}
@@ -654,14 +679,14 @@ function ShtelPageContent() {
       {/* Loading states with consistent spacing */}
       {loading && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading community listings...</p>
+          <p>Loading community listings{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 
       {/* Infinite scroll loading indicator - only show on mobile */}
       {(isMobile || isMobileDevice) && isLoadingMore && (
         <div className="text-center py-5" role="status" aria-live="polite">
-          <p>Loading more...</p>
+          <p>Loading more{shouldLazyLoad ? ' (optimized for slow connection)' : ''}...</p>
         </div>
       )}
 

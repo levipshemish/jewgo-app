@@ -71,7 +71,7 @@ export function useFeatureFlags(options: UseFeatureFlagsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [onError]);
+  }, [session, onError]);
 
   // Initial fetch
   useEffect(() => {

@@ -6,8 +6,8 @@
 import { supabaseClient } from '@/lib/supabase/client-secure';
 
 // Global flag to track if we're in a Docker environment
-const isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
-const isRealtimeEnabled = process.env.NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED !== 'false';
+const _isDocker = process.env.DOCKER === 'true' || process.env.DOCKER === '1';
+const _isRealtimeEnabled = process.env.NEXT_PUBLIC_SUPABASE_REALTIME_ENABLED !== 'false';
 
 /**
  * Create a safe Supabase client that works in all environments
@@ -21,7 +21,7 @@ export function createSafeSupabaseClient() {
 /**
  * Create a mock client for SSR or error fallback
  */
-function createMockClient() {
+function _createMockClient() {
   return {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),

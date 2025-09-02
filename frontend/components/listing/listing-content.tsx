@@ -52,7 +52,7 @@ export function ListingContent({
   rightBold = false,
   leftIcon,
   rightIcon,
-  onLeftAction,
+  onLeftAction: _onLeftAction,
   onRightAction,
   onRightTextClick,
 }: ListingContentProps) {

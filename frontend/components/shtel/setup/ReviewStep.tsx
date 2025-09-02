@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckCircle, Star, MapPin, Clock, Truck, Award } from 'lucide-react';
+import { CheckCircle, Star, MapPin, Award } from 'lucide-react';
 
 interface StoreSetupData {
   storeType: string;

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/server/admin-auth';
+import { getSystemHealth } from '@/lib/server/system-health';
+import { cacheGet, cacheSet, keyDashboardMetrics } from '@/lib/server/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +22,7 @@ interface DashboardMetrics {
 }
 
 async function calculateGrowthPercentage(
-  currentCount: number
+  _currentCount: number
 ): Promise<number> {
   // For now, return a mock growth percentage
   // TODO: Implement actual database queries when prisma setup is complete
@@ -41,6 +43,12 @@ export async function GET(request: NextRequest) {
     }
 
     const startTime = Date.now();
+
+    // Try cache first
+    const cached = await cacheGet<DashboardMetrics>(keyDashboardMetrics());
+    if (cached) {
+      return NextResponse.json(cached);
+    }
     
     // Mock data for now - TODO: Replace with actual database queries
     const totalUsers = 1247;
@@ -55,16 +63,7 @@ export async function GET(request: NextRequest) {
       calculateGrowthPercentage(totalReviews)
     ]);
 
-    const responseTime = Date.now() - startTime;
-
-    // System health calculation
-    const systemHealth = {
-      status: (responseTime < 1000 && totalUsers > 0) ? 'healthy' as const : 
-              (responseTime < 3000) ? 'warning' as const : 'error' as const,
-      uptime: '99.8%', // This would come from monitoring service
-      responseTime,
-      errorRate: 0.02 // This would come from error tracking service
-    };
+    const systemHealth = await getSystemHealth(startTime);
 
     const metrics: DashboardMetrics = {
       totalUsers,
@@ -76,6 +75,9 @@ export async function GET(request: NextRequest) {
       reviewGrowth: Math.round(reviewGrowth * 100) / 100,
       systemHealth
     };
+
+    // Cache response
+    await cacheSet(keyDashboardMetrics(), metrics);
 
     return NextResponse.json(metrics);
 
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return NextResponse.json(
     { error: 'Method not allowed' },
     { status: 405 }

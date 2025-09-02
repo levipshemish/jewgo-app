@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DataTable, { Column } from '@/components/admin/DataTable';
 // Local hook and fetch function to avoid restricted imports
 const useAdminCsrf = () => {
@@ -66,7 +66,7 @@ export default function ImageDatabaseClient({
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
 
   // Fetch server data based on URL params
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -87,11 +87,11 @@ export default function ImageDatabaseClient({
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, search, sortBy, sortOrder, showError]);
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize, search, sortBy, sortOrder]);
+  }, [page, pageSize, search, sortBy, sortOrder, fetchData]);
 
   const onPageChange = (nextPage: number) => {
     const p = new URLSearchParams(searchParams.toString());

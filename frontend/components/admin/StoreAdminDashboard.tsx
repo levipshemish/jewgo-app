@@ -8,7 +8,6 @@ import {
   Mail,
   DollarSign,
   TrendingUp,
-  Users,
   Star,
   Clock,
   AlertCircle
@@ -113,29 +112,26 @@ export default function StoreAdminDashboard({ adminUser }: StoreAdminDashboardPr
   const fetchStoreMetrics = async () => {
     try {
       setLoading(true);
-      // For now, use mock data since store metrics API isn't built yet
-      // TODO: Replace with actual API call to /api/admin/store/metrics
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mock store metrics data
-      setMetrics({
-        totalProducts: 45,
-        totalOrders: 128,
-        totalRevenue: 15420.50,
-        averageRating: 4.7,
-        pendingOrders: 8,
-        unreadMessages: 3,
-        productsGrowth: 12.5,
-        ordersGrowth: 18.3,
-        revenueGrowth: 22.1
-      });
-      
+      const res = await fetch('/api/admin/store/metrics');
+      if (!res.ok) throw new Error('Failed to load store metrics');
+      const data: StoreMetrics = await res.json();
+      setMetrics(data);
       setError(null);
     } catch (error) {
       console.error('Error fetching store metrics:', error);
       setError('Failed to load store metrics');
+      // Graceful fallback
+      setMetrics({
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageRating: 0,
+        pendingOrders: 0,
+        unreadMessages: 0,
+        productsGrowth: 0,
+        ordersGrowth: 0,
+        revenueGrowth: 0,
+      });
     } finally {
       setLoading(false);
     }

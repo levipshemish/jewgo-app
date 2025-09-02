@@ -96,7 +96,7 @@ export default function SettingsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return <LoadingState message="Loading settings..." />;

@@ -5,6 +5,7 @@ import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { prisma } from '@/lib/db/prisma';
+import { invalidateDashboardMetrics } from '@/lib/server/cache';
 import { rateLimit, RATE_LIMITS } from '@/lib/admin/rate-limit';
 import { AdminErrors } from '@/lib/admin/errors';
 import { corsHeaders } from '@/lib/middleware/security';
@@ -73,6 +74,11 @@ export async function POST(
       message: 'Restaurant approved successfully',
       data: updatedRestaurant 
     });
+
+    // Invalidate dashboard metrics cache (best-effort)
+    // Note: follows response to minimize latency
+    // eslint-disable-next-line no-console
+    invalidateDashboardMetrics().catch(() => {});
 
   } catch (error) {
     console.error('[ADMIN] Restaurant approval error:', error);

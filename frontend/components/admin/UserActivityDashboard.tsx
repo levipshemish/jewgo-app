@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   User, 
   Activity, 
@@ -188,7 +188,7 @@ export default function UserActivityDashboard({ userId, className = '' }: UserAc
   const [timeRange, setTimeRange] = useState<string>('7d');
 
   // Generate mock activity data
-  const generateMockActivities = (): UserActivity[] => {
+  const generateMockActivities = useCallback((): UserActivity[] => {
     const actions: UserActivity['action'][] = [
       'login', 'logout', 'review_created', 'review_updated', 
       'restaurant_visited', 'profile_updated', 'password_changed'
@@ -242,7 +242,7 @@ export default function UserActivityDashboard({ userId, className = '' }: UserAc
     }
 
     return mockActivities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  };
+  }, [userId]);
 
   const generateMockStats = (): UserStats => {
     return {

@@ -4,6 +4,7 @@ import { hasPermission } from '@/lib/server/admin-utils';
 import { ADMIN_PERMISSIONS } from '@/lib/server/admin-constants';
 import { validateSignedCSRFToken } from '@/lib/admin/csrf';
 import { prisma } from '@/lib/db/prisma';
+import { invalidateDashboardMetrics } from '@/lib/server/cache';
 import { logAdminAction, ENTITY_TYPES, AUDIT_ACTIONS, AUDIT_FIELD_ALLOWLISTS } from '@/lib/admin/audit';
 import { corsHeaders } from '@/lib/middleware/security';
 
@@ -68,6 +69,10 @@ export async function POST(
       message: 'Restaurant rejected successfully',
       data: updatedRestaurant 
     });
+
+    // Invalidate dashboard metrics cache (best-effort)
+    // eslint-disable-next-line no-console
+    invalidateDashboardMetrics().catch(() => {});
   } catch (error) {
     console.error('[ADMIN] Restaurant reject error:', error);
     return NextResponse.json(

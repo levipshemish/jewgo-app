@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 
 interface FilterCounts {
   cities: Record<string, number>;
@@ -32,18 +33,12 @@ export function useFilterOptions(): UseFilterOptionsReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchFilterOptions = async () => {
+  const fetchFilterOptions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/restaurants/filter-options');
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch filter options: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await deduplicatedFetch('/api/restaurants/filter-options');
       
       if (data.success && data.data) {
         setFilterOptions(data.data);
@@ -57,7 +52,7 @@ export function useFilterOptions(): UseFilterOptionsReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFilterOptions();
@@ -68,5 +63,49 @@ export function useFilterOptions(): UseFilterOptionsReturn {
     loading,
     error,
     refetch: fetchFilterOptions
+  };
+}
+
+// Lazy version that only fetches when explicitly triggered
+export function useLazyFilterOptions(): UseFilterOptionsReturn & { trigger: () => void } {
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasTriggered, setHasTriggered] = useState(false);
+
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await deduplicatedFetch('/api/restaurants/filter-options');
+      
+      if (data.success && data.data) {
+        setFilterOptions(data.data);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch filter options';
+      setError(errorMessage);
+      console.error('Error fetching filter options:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const trigger = useCallback(() => {
+    if (!hasTriggered) {
+      setHasTriggered(true);
+      fetchFilterOptions();
+    }
+  }, [hasTriggered, fetchFilterOptions]);
+
+  return {
+    filterOptions,
+    loading,
+    error,
+    refetch: fetchFilterOptions,
+    trigger
   };
 }

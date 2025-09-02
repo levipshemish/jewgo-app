@@ -17,6 +17,8 @@
     "lint:check": "eslint . --ext .ts,.tsx --format=compact",
     "lint:ci": "eslint . --ext .ts,.tsx --format=compact || echo 'ESLint completed with non-zero status'",
     "lint:unused": "eslint . --ext .ts,.tsx --rule '@typescript-eslint/no-unused-vars: error'",
+    "lint:hooks": "eslint . --ext .ts,.tsx --rule 'react-hooks/exhaustive-deps: error' --format=compact",
+    "lint:hooks:fix": "eslint . --ext .ts,.tsx --rule 'react-hooks/exhaustive-deps: error' --fix",
     "type-check": "tsc --noEmit --project tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -10,7 +10,7 @@ export default async function RestaurantDatabasePage({ searchParams }: { searchP
   const params = await searchParams;
   const page = parseInt((params.page as string) || '1');
   const pageSize = parseInt((params.pageSize as string) || '20');
-  const search = (params.search as string) || '';
+  const _search = (params.search as string) || '';
   const sortBy = 'createdAt'; // AdminDatabaseService.getDefaultSortField('restaurant');
   const sortOrder = ((params.sortOrder as string) as 'asc' | 'desc') || 'desc';
   

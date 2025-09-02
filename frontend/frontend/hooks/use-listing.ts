@@ -47,7 +47,7 @@ export function useListing(initialData: ListingData) {
     const title = listingData.content?.leftText || 'Listing';
     if (navigator.share) {
       navigator.share({
-        title: title,
+        title,
         text: `Check out this listing: ${title}`,
         url: window.location.href,
       })

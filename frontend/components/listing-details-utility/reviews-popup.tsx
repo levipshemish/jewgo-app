@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui-listing-utility/button"
 import { ProfileImage } from "@/components/ui-listing-utility/profile-image"
-import { Star, X, User, ChevronDown, Plus, MessageSquare } from "lucide-react"
+import { Star, X, ChevronDown, MessageSquare } from "lucide-react"
 import { useState } from "react"
+import { createPortal } from "react-dom"
 
 interface Review {
   id: string
@@ -100,8 +101,8 @@ export function ReviewsPopup({
 
   const sortedReviews = getSortedReviews()
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+  return typeof window !== 'undefined' ? createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-2 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200 max-h-[80vh]">
         {/* Header */}
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-200">
@@ -241,6 +242,7 @@ export function ReviewsPopup({
           </div>
         </div>
       </div>
-    </div>
-  )
+    </div>,
+    document.body
+  ) : null
 }

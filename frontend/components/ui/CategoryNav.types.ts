@@ -1,4 +1,4 @@
-import { ReactNode, HTMLAttributes } from 'react';
+import { ReactNode } from 'react';
 
 /**
  * Represents a single category navigation item

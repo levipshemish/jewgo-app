@@ -96,7 +96,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return (

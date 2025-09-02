@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { User, Calendar, Filter } from 'lucide-react';
@@ -45,7 +45,7 @@ function AuditLogContent() {
   });
 
   // Fetch audit logs
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -85,11 +85,11 @@ function AuditLogContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.pageSize, searchParams]);
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [pagination.page, pagination.pageSize, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchParams, fetchAuditLogs]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {

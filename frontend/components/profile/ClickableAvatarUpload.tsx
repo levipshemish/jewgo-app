@@ -133,8 +133,8 @@ export default function ClickableAvatarUpload({
 
         setError(result.error || "Failed to delete avatar");
       }
-    } catch (error) {
-      console.error('Delete error:', error);
+    } catch (_error) {
+      console.error('Delete error:', _error);
       setError("Failed to delete avatar. Please try again.");
     } finally {
 

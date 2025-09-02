@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/admin/DataTable';
 import { Building2, MapPin, Phone, Mail, Globe, Eye, Star } from 'lucide-react';
@@ -65,7 +65,7 @@ function SynagogueDatabaseContent() {
   const { token: csrfToken } = useAdminCsrf();
 
   // Fetch synagogues
-  const fetchSynagogues = async () => {
+  const fetchSynagogues = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -105,11 +105,11 @@ function SynagogueDatabaseContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
 
   useEffect(() => {
     fetchSynagogues();
-  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams]);
+  }, [pagination.page, pagination.pageSize, searchQuery, sortKey, sortOrder, searchParams, fetchSynagogues]);
 
   // Handle pagination
   const handlePageChange = (page: number) => {

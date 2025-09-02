@@ -240,7 +240,7 @@ export function CategoryNav({
                   inline: 'nearest',
                 });
               }
-            } catch (error) {
+            } catch (err) {
               // Fallback to manual scroll
               scrollItemIntoViewX(scrollerRef.current, selectedElement);
             }
@@ -275,7 +275,7 @@ export function CategoryNav({
                 inline: 'nearest',
               });
             }
-          } catch (error) {
+          } catch (err) {
             // Fallback to manual scroll
             scrollItemIntoViewX(scrollerRef.current, focusedElement);
           }

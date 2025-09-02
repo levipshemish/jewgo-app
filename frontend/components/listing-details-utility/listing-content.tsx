@@ -84,7 +84,7 @@ export function ListingContent({
   rightTextSize = 'sm',
   leftIcon,
   rightIcon,
-  onLeftAction,
+  onLeftAction: _onLeftAction,
   onRightAction,
   onRightTextClick,
   reviews = [],

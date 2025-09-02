@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleRoute } from '@/lib/server/route-helpers';
-import { requireAdminOrThrow, getAdminUser } from '@/lib/server/admin-auth';
+import { requireAdminOrThrow } from '@/lib/server/admin-auth';
 
 // Ensure Node.js runtime for admin auth
 export const runtime = 'nodejs';

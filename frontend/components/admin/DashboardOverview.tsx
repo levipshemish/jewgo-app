@@ -5,8 +5,6 @@ import {
   Users, 
   Building2, 
   MessageSquare, 
-  Star,
-  Activity,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
@@ -186,6 +184,7 @@ export default function DashboardOverview({ adminUser }: DashboardOverviewProps)
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<Array<{ id: string; action: string; entityType: string; timestamp: string }>>([]);
 
   useEffect(() => {
     fetchMetrics();
@@ -193,6 +192,55 @@ export default function DashboardOverview({ adminUser }: DashboardOverviewProps)
     const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Live recent activity for system admins and above (SSE with polling fallback)
+  useEffect(() => {
+    if (adminUser.roleLevel < 3) return;
+    let cleanup: (() => void) | null = null;
+
+    try {
+      const es = new EventSource('/api/admin/audit/stream?limit=5');
+      es.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          const logs = (data || []).map((l: any) => ({
+            id: String(l.id),
+            action: l.action,
+            entityType: l.entityType,
+            timestamp: l.timestamp,
+          }));
+          setRecent(logs);
+        } catch {}
+      };
+      es.onerror = () => {
+        es.close();
+      };
+      cleanup = () => es.close();
+    } catch {
+      // no-op; fallback below
+    }
+
+    // Fallback polling every 30s
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/admin/audit?page=1&pageSize=5');
+        if (!res.ok) return;
+        const data = await res.json();
+        const logs = (data.logs || []).map((l: any) => ({
+          id: String(l.id),
+          action: l.action,
+          entityType: l.entityType,
+          timestamp: l.timestamp,
+        }));
+        setRecent(logs);
+      } catch {}
+    }, 30_000);
+
+    return () => {
+      if (cleanup) cleanup();
+      clearInterval(interval);
+    };
+  }, [adminUser.roleLevel]);
 
   const fetchMetrics = async () => {
     try {
@@ -387,26 +435,24 @@ export default function DashboardOverview({ adminUser }: DashboardOverviewProps)
         )}
       </div>
 
-      {/* Recent Activity (placeholder for future implementation) */}
+      {/* Recent Activity (live, polled) */}
       {adminUser.roleLevel >= 3 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">New restaurant submission approved</span>
-              <span className="text-gray-400">2 hours ago</span>
-            </div>
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-gray-600">User promoted to moderator</span>
-              <span className="text-gray-400">4 hours ago</span>
-            </div>
-            <div className="flex items-center space-x-3 text-sm">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-gray-600">Review flagged for moderation</span>
-              <span className="text-gray-400">6 hours ago</span>
-            </div>
+            {recent.length === 0 ? (
+              <p className="text-sm text-gray-500">No recent activity.</p>
+            ) : (
+              recent.map((item) => (
+                <div key={item.id} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span className="text-gray-600">{item.action.replace(/_/g, ' ')}</span>
+                  </div>
+                  <span className="text-gray-400">{new Date(item.timestamp).toLocaleString()}</span>
+                </div>
+              ))
+            )}
           </div>
           <div className="mt-4">
             <a href="/admin/audit" className="text-blue-600 hover:text-blue-800 text-sm font-medium">

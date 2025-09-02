@@ -68,9 +68,9 @@ export function LoadingButton({
     try {
       await onClick();
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('An error occurred');
-      onError?.(error);
-      showError(error.message);
+      const _error = err instanceof Error ? err : new Error('An error occurred');
+      onError?.(_error);
+      showError(_error.message);
     } finally {
       setIsLoading(false);
     }
@@ -213,10 +213,10 @@ export function useAsyncOperation<T>(
       onSuccess?.(data);
       return data;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('An error occurred');
-      setError(error.message);
-      onError?.(error);
-      throw error;
+      const _error = err instanceof Error ? err : new Error('An error occurred');
+      setError(_error.message);
+      onError?.(_error);
+      throw _error;
     } finally {
       setLoading(false);
     }

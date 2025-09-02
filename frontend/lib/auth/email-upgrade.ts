@@ -200,7 +200,7 @@ export class EmailUpgradeFlow {
    * Verify email after upgrade
    */
   async verifyEmail(token: string, type: string): Promise<{ success: boolean; error?: string }> {
-    const correlationId = generateCorrelationId();
+    const _correlationId = generateCorrelationId();
     
     try {
 
@@ -210,7 +210,7 @@ export class EmailUpgradeFlow {
       });
 
       if (error) {
-        // console.error(`[Email Upgrade] Email verification failed (${correlationId})`, error);
+        // console.error(`[Email Upgrade] Email verification failed (${_correlationId})`, error);
         return {
           success: false,
           error: error.message
@@ -220,7 +220,7 @@ export class EmailUpgradeFlow {
       return { success: true };
 
     } catch (error) {
-      // console.error(`[Email Upgrade] Email verification error (${correlationId})`, error);
+      // console.error(`[Email Upgrade] Email verification error (${_correlationId})`, error);
       return {
         success: false,
         error: 'Unexpected error during email verification'
@@ -232,7 +232,7 @@ export class EmailUpgradeFlow {
    * Set password after email verification
    */
   async setPassword(password: string): Promise<{ success: boolean; error?: string }> {
-    const correlationId = generateCorrelationId();
+    const _correlationId = generateCorrelationId();
     
     try {
 
@@ -241,7 +241,7 @@ export class EmailUpgradeFlow {
       });
 
       if (error) {
-        // console.error(`[Email Upgrade] Set password failed (${correlationId})`, error);
+        // console.error(`[Email Upgrade] Set password failed (${_correlationId})`, error);
         return {
           success: false,
           error: error.message
@@ -251,7 +251,7 @@ export class EmailUpgradeFlow {
       return { success: true };
 
     } catch (error) {
-      // console.error(`[Email Upgrade] Set password error (${correlationId})`, error);
+      // console.error(`[Email Upgrade] Set password error (${_correlationId})`, error);
       return {
         success: false,
         error: 'Unexpected error while setting password'

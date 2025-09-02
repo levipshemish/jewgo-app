@@ -13,7 +13,6 @@ import {
   Edit,
   Trash2,
   MoreVertical,
-  Shield,
   Mail
 } from 'lucide-react';
 import UserDatabaseClient from './UserDatabaseClient';
@@ -74,57 +73,8 @@ const QuickStatsCard: React.FC<{
   </div>
 );
 
-const UserActionsMenu: React.FC<{
-  user: User;
-  onView: (userId: string) => void;
-  onEdit: (userId: string) => void;
-  onDelete: (userId: string) => void;
-  onSendEmail: (userId: string) => void;
-}> = ({ user, onView, onEdit, onDelete, onSendEmail }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const actions = [
-    { icon: Eye, label: 'View Profile', onClick: () => onView(user.id), color: 'text-blue-600' },
-    { icon: Edit, label: 'Edit User', onClick: () => onEdit(user.id), color: 'text-green-600' },
-    { icon: Mail, label: 'Send Email', onClick: () => onSendEmail(user.id), color: 'text-purple-600' },
-    { icon: Trash2, label: 'Delete User', onClick: () => onDelete(user.id), color: 'text-red-600' },
-  ];
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
-      >
-        <MoreVertical className="h-4 w-4" />
-      </button>
-
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-20">
-            {actions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={index}
-                  onClick={() => {
-                    action.onClick();
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2 ${action.color}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
+// TODO: Implement UserActionsMenu component when needed
+// This component was defined but not used - removed to fix lint warning
 
 const AdvancedFilters: React.FC<{
   onFilterChange: (filters: Record<string, any>) => void;
@@ -335,90 +285,8 @@ export default function AdvancedUserManagement({
     alert(`Export would include filters: ${JSON.stringify(filters)}`);
   };
 
-  const enhancedColumns = [
-    { key: 'id', title: 'ID', sortable: true, width: 'sm' },
-    { 
-      key: 'name', 
-      title: 'User', 
-      sortable: true,
-      render: (value: any, row: User) => (
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-            {row.avatarUrl ? (
-              <img src={row.avatarUrl} alt={row.name || row.email} className="w-full h-full object-cover" />
-            ) : (
-              <Users className="h-4 w-4 text-gray-400" />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-gray-900">{row.name || 'Unnamed User'}</p>
-            <p className="text-sm text-gray-500">{row.email}</p>
-          </div>
-        </div>
-      )
-    },
-    { 
-      key: 'status', 
-      title: 'Status', 
-      sortable: true,
-      render: (value: User['status']) => {
-        const statusConfig = {
-          active: { color: 'bg-green-100 text-green-800', label: 'Active' },
-          suspended: { color: 'bg-yellow-100 text-yellow-800', label: 'Suspended' },
-          banned: { color: 'bg-red-100 text-red-800', label: 'Banned' },
-          pending_verification: { color: 'bg-blue-100 text-blue-800', label: 'Pending' }
-        };
-        const config = statusConfig[value] || statusConfig.active;
-        return (
-          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-            {config.label}
-          </span>
-        );
-      }
-    },
-    { 
-      key: 'isSuperAdmin', 
-      title: 'Role', 
-      sortable: true,
-      render: (value: boolean, row: User) => (
-        <div className="flex items-center space-x-1">
-          {value && <Shield className="h-4 w-4 text-purple-500" />}
-          <span className={`text-sm ${value ? 'text-purple-800 font-medium' : 'text-gray-600'}`}>
-            {value ? 'Super Admin' : 'User'}
-          </span>
-        </div>
-      )
-    },
-    { 
-      key: 'emailVerified', 
-      title: 'Verified', 
-      sortable: true,
-      render: (value: boolean) => (
-        <div className="flex items-center">
-          {value ? (
-            <UserCheck className="h-4 w-4 text-green-500" />
-          ) : (
-            <Clock className="h-4 w-4 text-yellow-500" />
-          )}
-        </div>
-      )
-    },
-    { key: 'createdAt', title: 'Created', sortable: true, width: 'md' },
-    {
-      key: 'actions',
-      title: 'Actions',
-      width: 'sm',
-      render: (value: any, row: User) => (
-        <UserActionsMenu
-          user={row}
-          onView={handleViewUser}
-          onEdit={handleEditUser}
-          onDelete={handleDeleteUser}
-          onSendEmail={handleSendEmail}
-        />
-      )
-    }
-  ];
+  // TODO: Implement enhanced table columns for future DataTable component
+  // These columns were defined but not used - removed to fix lint warning
 
   return (
     <div className="space-y-6">

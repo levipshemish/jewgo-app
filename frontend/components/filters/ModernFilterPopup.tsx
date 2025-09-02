@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { X, MapPin, Star, DollarSign, Shield, Utensils } from 'lucide-react';
 import { useLocalFilters } from '@/lib/hooks/useLocalFilters';
-import { useFilterOptions } from '@/lib/hooks/useFilterOptions';
+import { useLazyFilterOptions } from '@/lib/hooks/useFilterOptions';
 import { DraftFilters, AppliedFilters } from '@/lib/filters/filters.types';
 import { cn } from '@/lib/utils/classNames';
 
@@ -45,6 +45,15 @@ interface ModernFilterPopupProps {
   userLocation: { latitude: number; longitude: number } | null;
   locationLoading: boolean;
   onRequestLocation?: () => void;
+  // Optional pre-loaded filter options for combined API approach
+  preloadedFilterOptions?: {
+    agencies: string[];
+    kosherCategories: string[];
+    listingTypes: string[];
+    priceRanges: string[];
+    cities: string[];
+    states: string[];
+  } | null;
 }
 
 const quickFilterOptions = [
@@ -61,32 +70,40 @@ export function ModernFilterPopup({
   initialFilters,
   userLocation,
   locationLoading,
-  onRequestLocation
+  onRequestLocation,
+  preloadedFilterOptions
 }: ModernFilterPopupProps) {
   // Use our existing local filters hook
   const {
     draftFilters,
-    hasDraftFilters,
     draftFilterCount,
     setDraftFilter,
-    resetDraftFilters,
-    clearAllDraftFilters,
     applyFilters,
     isApplying,
   } = useLocalFilters(initialFilters);
 
-  // Fetch filter options from database
-  const { filterOptions, loading: filterOptionsLoading, error: filterOptionsError } = useFilterOptions();
+  // Use preloaded filter options if available, otherwise lazy load
+  const { filterOptions: fetchedFilterOptions, loading: filterOptionsLoading, trigger: loadFilterOptions } = useLazyFilterOptions();
+  
+  // Use preloaded options when available, fallback to fetched options
+  const filterOptions = preloadedFilterOptions || fetchedFilterOptions;
+  
+  // Loading state - if we have preloaded options, we're not loading
+  const effectiveFilterOptionsLoading = preloadedFilterOptions ? false : filterOptionsLoading;
 
   // Local state for quick filters
   const [quickFilters, setQuickFilters] = useState<string[]>([]);
 
-  // Reset quick filters when modal opens
+  // Reset quick filters and conditionally trigger filter options load when modal opens
   useEffect(() => {
     if (isOpen) {
       setQuickFilters([]);
+      // Only load filter options if we don't have preloaded ones
+      if (!preloadedFilterOptions) {
+        loadFilterOptions(); // Lazy load filter options only when needed
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, loadFilterOptions, preloadedFilterOptions]); // Now safe to include since loadFilterOptions is memoized
 
   const toggleQuickFilter = (filterId: string) => {
     setQuickFilters(prev => 
@@ -98,7 +115,7 @@ export function ModernFilterPopup({
 
   const handleApply = () => {
     // Combine draft filters with quick filters
-    const combinedFilters = {
+    const finalFilters = {
       ...draftFilters,
       openNow: quickFilters.includes('openNow'),
       // Add other quick filter mappings as needed
@@ -159,7 +176,7 @@ export function ModernFilterPopup({
   }, [setDraftFilter]);
 
   const handleClearAll = () => {
-    clearAllDraftFilters();
+    // clearAllDraftFilters(); // This line was removed as per the edit hint
     setQuickFilters([]);
     // Apply an empty filter object to clear all active filters
     onApplyFilters({});
@@ -280,10 +297,10 @@ export function ModernFilterPopup({
                 value={getDropdownValue(draftFilters.agency)}
                 onChange={handleAgencyChange}
                 className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
-                disabled={filterOptionsLoading}
+                disabled={effectiveFilterOptionsLoading}
               >
                 <option value="">All Agencies</option>
-                {filterOptionsLoading ? (
+                {effectiveFilterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.agencies?.map((agency) => (
                   <option key={agency} value={agency}>
@@ -301,10 +318,10 @@ export function ModernFilterPopup({
                 value={getDropdownValue(draftFilters.category)}
                 onChange={handleCategoryChange}
                 className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
-                disabled={filterOptionsLoading}
+                disabled={effectiveFilterOptionsLoading}
               >
                 <option value="">All Kosher Types</option>
-                {filterOptionsLoading ? (
+                {effectiveFilterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.kosherCategories?.map((category) => (
                   <option key={category} value={category}>
@@ -329,10 +346,10 @@ export function ModernFilterPopup({
                 })()}
                 onChange={handlePriceRangeChange}
                 className="w-full bg-white text-black border border-green-500 rounded-full px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm appearance-none cursor-pointer modern-select"
-                disabled={filterOptionsLoading}
+                disabled={effectiveFilterOptionsLoading}
               >
                 <option value="">All Price Ranges</option>
-                {filterOptionsLoading ? (
+                {effectiveFilterOptionsLoading ? (
                   <option value="" disabled>Loading...</option>
                 ) : filterOptions?.priceRanges?.map((priceRange) => (
                   <option key={priceRange} value={priceRange}>

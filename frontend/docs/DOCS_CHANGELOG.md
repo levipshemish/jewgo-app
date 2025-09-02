@@ -18,7 +18,17 @@ Additional updates:
 - Admin Settings APIs: Implemented `/api/admin/user`, `/api/admin/system/stats`, `/api/admin/system/config`, and `/api/admin/roles` with RBAC + CSRF and audit logging.
  - Store Metrics API: Added `/api/admin/store/metrics` (RBAC: `store:analytics`, role ≥ store_admin). Uses Prisma marketplace data; orders/messages pending schema.
  - Dashboard Metrics Health: Metrics API now uses pluggable `getSystemHealth()` provider (`lib/server/system-health.ts`).
+    - Providers: `HEALTH_PROVIDER` supports `sentry`, `datadog`, `upstash`.
+    - Env vars (examples):
+      - Sentry: `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_API_TOKEN`
+      - Datadog: `DATADOG_API_KEY`, `DATADOG_APP_KEY`
+      - Upstash: `UPSTASH_HEALTH_URL` (and optional `UPSTASH_HEALTH_TOKEN`)
  - RBAC Validation (dev): Added `/api/admin/rbac/validate` (development only; super_admin) to surface mapping drift via `validateRolePermissions()`.
+ - Audit SSE: Added `/api/admin/audit/stream` (server-sent events) for live recent activity; supports optional `roleScope=self|store`.
+ - Audit Filters: `/api/admin/audit` now accepts `roleScope=self|store` for simple server-side scoping.
+ - Vendor Scoping: Store metrics enforce `vendorId` for `store_admin`; higher roles may query without vendor scope.
+ - Redis Caching: Added cache helper `lib/server/cache.ts` and wired caching for `/api/admin/dashboard/metrics` and `/api/admin/store/metrics` with invalidation helpers.
+ - DB Draft: Added Prisma models for `marketplace_orders`, `marketplace_messages`, and `vendor_admins` plus a draft migration sketch with rollback in `frontend/prisma/migrations/20250902_add_marketplace_entities/README.md`.
 - CSRF: Added `GET /api/admin/csrf` to fetch a signed stateless token. Route applies strict security + CORS headers.
 - Users API: Removed unsupported `provider` filter; rejects unknown filters; added `userUpdateSchema` to allow partial updates.
 - Synagogues Export: Implemented `POST /api/admin/synagogues/export` (CSV) with RBAC + CSRF.

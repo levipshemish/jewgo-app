@@ -22,7 +22,7 @@ export function ListingHeader({
   onBack, 
   onFavorite, 
   isFavorited = false,
-  tags = []
+  tags: _tags = []
 }: ListingHeaderProps) {
   const handleAgencyClick = () => {
     // First check if there's a specific website provided

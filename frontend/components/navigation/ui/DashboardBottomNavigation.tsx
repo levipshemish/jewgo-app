@@ -17,7 +17,7 @@ const DashboardBottomNavigation: React.FC<DashboardBottomNavigationProps> = ({
   maxWidth: _maxWidth = 'max-w-lg' 
 }) => {
   const router = useRouter();
-  const pathname = usePathname();
+  const _pathname = usePathname();
   const { unreadCount } = useNotifications();
 
   // Check if we're on mobile - ensure it's always detected correctly
@@ -45,7 +45,7 @@ const DashboardBottomNavigation: React.FC<DashboardBottomNavigationProps> = ({
   
   // Use motion components consistently to avoid hydration mismatch
   const ButtonContainer = motion.button;
-  const DivContainer = motion.div;
+  const _DivContainer = motion.div;
 
   // Dashboard navigation items
   const navItems = [

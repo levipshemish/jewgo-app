@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   TrendingUp, 
-  TrendingDown, 
   Users, 
   Building2, 
   MessageSquare, 
@@ -11,7 +10,6 @@ import {
   Activity,
   Calendar,
   BarChart3,
-  PieChart,
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
@@ -191,7 +189,7 @@ export default function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState('7d');
 
   // Generate sample data for demonstration
-  const generateSampleData = (): AnalyticsData => {
+  const generateSampleData = useCallback((): AnalyticsData => {
     const today = new Date();
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
     
@@ -235,7 +233,7 @@ export default function AnalyticsDashboard() {
         activeConnections: 247
       }
     };
-  };
+  }, [timeRange]);
 
   useEffect(() => {
     // In a real app, fetch analytics data from API
@@ -254,7 +252,7 @@ export default function AnalyticsDashboard() {
     };
 
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, generateSampleData]);
 
   if (loading) {
     return (
@@ -281,7 +279,7 @@ export default function AnalyticsDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h2>
-          <p className="text-gray-600">Monitor your platform's performance and growth</p>
+          <p className="text-gray-600">Monitor your platform&apos;s performance and growth</p>
         </div>
         
         <div className="flex items-center space-x-2">

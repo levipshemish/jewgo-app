@@ -1,39 +1,27 @@
 'use client';
 
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, CheckCircle, AlertCircle } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { LoadingButton } from '@/components/ui/LoadingStates';
 import { Restaurant } from '@/lib/types/restaurant';
 import { validatePhone } from '@/lib/utils/formValidation';
+import { orderAPI } from '@/lib/api/orders';
+import { OrderFormData, OrderItem, OrderConfirmation } from '@/lib/types/order';
+import { useAnalytics } from '@/lib/hooks/useAnalytics';
+import OrderTracking from './OrderTracking';
 
-interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  specialInstructions?: string;
-}
-
-interface OrderFormData {
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  deliveryAddress: string;
-  deliveryInstructions: string;
-  orderType: 'pickup' | 'delivery';
-  paymentMethod: 'cash' | 'card' | 'online';
-  estimatedTime: string;
-}
+// Using types from @/lib/types/order
 
 interface OrderFormProps {
   restaurant: Restaurant;
-  onOrderSubmit: (order: OrderFormData & { items: OrderItem[] }) => Promise<void>;
+  onOrderSubmit?: (order: OrderFormData & { items: OrderItem[] }) => Promise<void>;
   onClose: () => void;
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({
   restaurant, onOrderSubmit, onClose, }) => {
+  const { trackEvent, trackRestaurantView, trackUserEngagement } = useAnalytics();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [formData, setFormData] = useState<OrderFormData>({
     customerName: '',
@@ -47,6 +35,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmation | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showOrderTracking, setShowOrderTracking] = useState(false);
 
   // Mock menu items - in a real app, this would come from the restaurant data
   const menuItems = [
@@ -163,13 +154,96 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onOrderSubmit({
-        ...formData,
-        items: orderItems,
+      // Track order submission event
+      trackEvent('order_submit_started', {
+        restaurant_id: restaurant.id,
+        restaurant_name: restaurant.name,
+        order_type: formData.orderType,
+        payment_method: formData.paymentMethod,
+        item_count: orderItems.length,
+        total_amount: calculateTotal(),
       });
-      onClose();
+
+      // Prepare order data for backend
+      const orderData = {
+        restaurant_id: Number(restaurant.id),
+        customer_name: formData.customerName,
+        customer_phone: formData.customerPhone,
+        customer_email: formData.customerEmail,
+        delivery_address: formData.orderType === 'delivery' ? formData.deliveryAddress : undefined,
+        delivery_instructions: formData.deliveryInstructions,
+        order_type: formData.orderType,
+        payment_method: formData.paymentMethod,
+        estimated_time: formData.estimatedTime,
+        items: orderItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          special_instructions: item.specialInstructions,
+        })),
+      };
+
+      // Submit order to backend
+      const response = await orderAPI.createOrder(orderData);
+      
+      // Track successful order submission
+      trackEvent('order_submit_success', {
+        order_id: response.order.id,
+        order_number: response.order.order_number,
+        restaurant_id: restaurant.id,
+        restaurant_name: restaurant.name,
+        total_amount: response.order.total,
+      });
+
+      // Set order confirmation
+      const confirmation: OrderConfirmation = {
+        orderNumber: response.order.order_number,
+        orderId: response.order.id,
+        restaurantName: restaurant.name,
+        customerName: response.order.customer_name,
+        customerEmail: response.order.customer_email,
+        customerPhone: response.order.customer_phone,
+        orderType: response.order.order_type as 'pickup' | 'delivery',
+        deliveryAddress: response.order.delivery_address,
+        deliveryInstructions: response.order.delivery_instructions,
+        items: response.order.items.map(item => ({
+          id: item.item_id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          specialInstructions: item.special_instructions,
+        })),
+        subtotal: response.order.subtotal,
+        tax: response.order.tax,
+        deliveryFee: response.order.delivery_fee,
+        total: response.order.total,
+        estimatedTime: response.order.estimated_time,
+        status: response.order.status,
+        createdAt: response.order.created_at,
+        paymentMethod: response.order.payment_method as 'cash' | 'card' | 'online',
+      };
+
+      setOrderConfirmation(confirmation);
+      setShowConfirmation(true);
+
+      // Call custom onOrderSubmit if provided
+      if (onOrderSubmit) {
+        await onOrderSubmit({
+          ...formData,
+          items: orderItems,
+        });
+      }
     } catch (error) {
-      // // console.error('Order submission error:', error);
+      console.error('Order submission error:', error);
+      
+      // Track order submission failure
+      trackEvent('order_submit_failed', {
+        restaurant_id: restaurant.id,
+        restaurant_name: restaurant.name,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+      });
+
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to submit order',
       });
@@ -471,6 +545,123 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Order Confirmation Modal */}
+      {showConfirmation && orderConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h2>
+                <p className="text-gray-600">Your order has been successfully placed</p>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-green-800">Order #{orderConfirmation.orderNumber}</p>
+                  <p className="text-sm text-green-600">{orderConfirmation.restaurantName}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Customer Details</h4>
+                    <p className="text-sm text-gray-600">{orderConfirmation.customerName}</p>
+                    <p className="text-sm text-gray-600">{orderConfirmation.customerEmail}</p>
+                    <p className="text-sm text-gray-600">{orderConfirmation.customerPhone}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">Order Details</h4>
+                    <p className="text-sm text-gray-600">Type: {orderConfirmation.orderType}</p>
+                    <p className="text-sm text-gray-600">Payment: {orderConfirmation.paymentMethod}</p>
+                    {orderConfirmation.estimatedTime && (
+                      <p className="text-sm text-gray-600">Est. Time: {orderConfirmation.estimatedTime}</p>
+                    )}
+                  </div>
+                </div>
+
+                {orderConfirmation.orderType === 'delivery' && orderConfirmation.deliveryAddress && (
+                  <div>
+                    <h4 className="font-medium text-gray-900">Delivery Address</h4>
+                    <p className="text-sm text-gray-600">{orderConfirmation.deliveryAddress}</p>
+                    {orderConfirmation.deliveryInstructions && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        <strong>Instructions:</strong> {orderConfirmation.deliveryInstructions}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Order Items</h4>
+                  <div className="space-y-2">
+                    {orderConfirmation.items.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                          {item.specialInstructions && (
+                            <p className="text-sm text-gray-500 italic">{item.specialInstructions}</p>
+                          )}
+                        </div>
+                        <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span>${orderConfirmation.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tax:</span>
+                      <span>${orderConfirmation.tax.toFixed(2)}</span>
+                    </div>
+                    {orderConfirmation.deliveryFee > 0 && (
+                      <div className="flex justify-between">
+                        <span>Delivery Fee:</span>
+                        <span>${orderConfirmation.deliveryFee.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                      <span>Total:</span>
+                      <span>${orderConfirmation.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    onClose();
+                  }}
+                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Done
+                </button>
+                <button
+                  onClick={() => setShowOrderTracking(true)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Track Order
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Tracking Modal */}
+      {showOrderTracking && (
+        <OrderTracking onClose={() => setShowOrderTracking(false)} />
+      )}
     </div>
   );
 }; 

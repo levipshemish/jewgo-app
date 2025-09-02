@@ -136,8 +136,8 @@ const UnifiedCard = memo<UnifiedCardProps>(({
         onLikeToggle?.(data.id.toString(), newIsLiked);
       }
       
-    } catch (error) {
-      // console.error('Error toggling favorite:', error);
+    } catch (_error) {
+      // console.error('Error toggling favorite:', _error);
     }
   }, [liked, data.id, data.title, toggleFavorite, onLikeToggle]);
 

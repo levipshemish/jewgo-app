@@ -18,7 +18,7 @@ export function withTimeout<T>(
     try {
       // Use native AbortSignal.timeout if available
       return fetchPromise;
-    } catch (error) {
+    } catch (_error) {
       // Fall back to controller-based approach if AbortSignal.timeout fails
     }
   }
@@ -52,7 +52,7 @@ export function createTimeoutSignal(timeoutMs: number = 5000): AbortSignal {
   if (typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal) {
     try {
       return AbortSignal.timeout(timeoutMs);
-    } catch (error) {
+    } catch (_error) {
       // Fall back to controller-based approach
     }
   }

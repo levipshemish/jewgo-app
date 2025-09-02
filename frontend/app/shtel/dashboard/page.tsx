@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardHeader } from '@/components/layout';
 import { DashboardBottomNavigation } from '@/components/navigation/ui';
@@ -82,7 +82,7 @@ function Tab({ label, icon, isActive, onClick, badge }: TabProps) {
 function ShtelDashboardContent() {
   const router = useRouter();
   const { session, loading: supaLoading } = useSupabase();
-  const { user, isAdmin } = useAuth();
+  const { user: _user, isAdmin } = useAuth();
   const { isMobile } = useMobileOptimization();
   
   // State
@@ -128,10 +128,10 @@ function ShtelDashboardContent() {
     }
     
     loadStoreData();
-  }, [session, router, isAdmin, supaLoading]);
+  }, [session, router, isAdmin, supaLoading, loadStoreData]);
 
   // Load store data
-  const loadStoreData = async () => {
+  const loadStoreData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -169,10 +169,10 @@ function ShtelDashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, session?.access_token, router, loadNotifications]);
 
   // Load notifications
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       // Check if user is admin using role-based authentication
       if (isAdmin) {
@@ -209,7 +209,7 @@ function ShtelDashboardContent() {
     } catch (err) {
       appLogger.error('Error loading notifications:', { error: err });
     }
-  };
+  }, [isAdmin, session?.access_token]);
 
   // Tab configuration
   const tabs = [

@@ -15,18 +15,18 @@ const SpecialsSection: React.FC<SpecialsSectionProps> = ({
 }) => {
   const getSpecialImage = (special: RestaurantSpecial, _index: number) => {
     // Use real restaurant images from your Cloudinary account
-    const title = special.title.toLowerCase();
+    const _title = special.title.toLowerCase();
     
     // Get appropriate fallback images based on special type
     let fallbackImages: string[] = [];
     
-    if (title.includes('burger') || title.includes('fries') || title.includes('steak') || title.includes('bbq')) {
+    if (_title.includes('burger') || _title.includes('fries') || _title.includes('steak') || _title.includes('bbq')) {
       // Meat category
       fallbackImages = getFallbackImages('meat');
-    } else if (title.includes('pizza') || title.includes('pasta') || title.includes('cheese') || title.includes('dairy')) {
+    } else if (_title.includes('pizza') || _title.includes('pasta') || _title.includes('cheese') || _title.includes('dairy')) {
       // Dairy category
       fallbackImages = getFallbackImages('dairy');
-    } else if (title.includes('sushi') || title.includes('fish') || title.includes('salad') || title.includes('vegan')) {
+    } else if (_title.includes('sushi') || _title.includes('fish') || _title.includes('salad') || _title.includes('vegan')) {
       // Pareve category
       fallbackImages = getFallbackImages('pareve');
     } else {

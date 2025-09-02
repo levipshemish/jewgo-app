@@ -1,6 +1,7 @@
-import { ListingData, EateryDB, UserLocation } from '@/types/listing'
+import { EateryDB, UserLocation, ListingData } from "@/types/listing"
 
 // Helper function to calculate distance using Haversine formula
+// This will be replaced by the centralized hook in components
 function calculateDistance(location1: { latitude: number; longitude: number }, location2: { lat: number; lng: number }): number {
   const R = 3959 // Earth's radius in miles
   const dLat = (location2.lat - location1.latitude) * Math.PI / 180
@@ -212,7 +213,7 @@ export function mapEateryToListingData(
       },
 
       // Location request handler
-      onLocationRequest: onLocationRequest,
+      onLocationRequest,
     },
 
     // Additional sections
