@@ -20,7 +20,7 @@ def make_client(monkeypatch, role='super_admin', authed=True):
     monkeypatch.setattr(api_v4, 'get_current_supabase_user', get_user, raising=False)
 
     from backend.app_factory_full import create_app
-    app = create_app()
+    app, socketio = create_app()  # Unpack the tuple
     app.config['TESTING'] = True
     return app.test_client()
 

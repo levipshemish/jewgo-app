@@ -6,21 +6,81 @@ import os
 import pytest
 from flask import Flask
 from app_factory import create_app
+from unittest.mock import Mock, patch
+import importlib
 
+# Test configuration
+def pytest_configure(config):
+    """Configure pytest with custom markers."""
+    config.addinivalue_line(
+        "markers", "auth_required: mark test as requiring authentication"
+    )
+    config.addinivalue_line(
+        "markers", "core_only: mark test as testing core functionality only"
+    )
+    config.addinivalue_line(
+        "markers", "integration: mark test as integration test"
+    )
+
+@pytest.fixture(scope="session")
+def test_config():
+    """Test configuration fixture."""
+    return {
+        'skip_auth_tests': os.getenv('SKIP_AUTH_TESTS', 'false').lower() == 'true',
+        'test_mode': os.getenv('TEST_MODE', 'core'),
+        'enable_mocking': os.getenv('ENABLE_MOCKING', 'true').lower() == 'true'
+    }
 
 @pytest.fixture(autouse=True)
-def setup_test_env():
+def setup_test_env(test_config):
     """Set up test environment variables."""
     # Disable Supabase authentication for testing
     os.environ['ENABLE_SUPABASE_ADMIN_ROLES'] = 'false'
     # Disable JWKS pre-warming for testing
     os.environ['ENABLE_JWKS_PREWARM'] = 'false'
+    
+    # Set test mode
+    os.environ['TEST_MODE'] = test_config['test_mode']
+    
     yield
+    
     # Clean up
     if 'ENABLE_SUPABASE_ADMIN_ROLES' in os.environ:
         del os.environ['ENABLE_SUPABASE_ADMIN_ROLES']
     if 'ENABLE_JWKS_PREWARM' in os.environ:
         del os.environ['ENABLE_JWKS_PREWARM']
+    if 'TEST_MODE' in os.environ:
+        del os.environ['TEST_MODE']
+
+@pytest.fixture
+def mock_auth(test_config):
+    """Mock authentication for tests."""
+    if not test_config['enable_mocking']:
+        return None
+    
+    with patch('utils.supabase_auth.verify_supabase_admin_role') as mock_verify:
+        mock_verify.return_value = {
+            'id': 'test-user-id',
+            'email': 'test@example.com',
+            'role': 'super_admin',
+            'permissions': ['all']
+        }
+        yield mock_verify
+
+@pytest.fixture
+def mock_supabase_user(test_config):
+    """Mock Supabase user for tests."""
+    if not test_config['enable_mocking']:
+        return None
+    
+    with patch('utils.supabase_auth.get_current_supabase_user') as mock_user:
+        mock_user.return_value = {
+            'id': 'test-user-id',
+            'email': 'test@example.com',
+            'role': 'super_admin',
+            'permissions': ['all']
+        }
+        yield mock_user
 
 
 @pytest.fixture

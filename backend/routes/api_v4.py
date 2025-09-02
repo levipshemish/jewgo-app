@@ -703,52 +703,114 @@ def delete_restaurant(restaurant_id: int):
 @safe_route("/restaurants/filter-options", methods=["GET"])
 @require_api_v4_flag("api_v4_restaurants")
 def get_restaurant_filter_options():
-    """Get filter options for restaurants using v4 service."""
+    """Get filter options for restaurants using v4 service with caching and optimized queries."""
     try:
-        service = create_restaurant_service()
-        # Get all restaurants to extract filter options
-        restaurants = service.get_all_restaurants()
-        # Extract unique values for each filter category
-        agencies = sorted(
-            list(
-                set(
-                    r.get("certifying_agency")
-                    for r in restaurants
-                    if r.get("certifying_agency")
-                )
+        db_manager, cache_manager, config = get_service_dependencies()
+        cache_key = "restaurant_filter_options"
+        
+        # Try to get from cache first (15 minutes TTL)
+        if cache_manager:
+            cached_options = cache_manager.get(cache_key)
+            if cached_options:
+                logger.debug("Returning cached filter options")
+                return success_response(cached_options)
+        
+        # Use optimized direct database query instead of loading all restaurants
+        try:
+            # Get database connection
+            connection = db_manager.get_connection()
+            cursor = connection.cursor()
+            
+            # Single optimized query to get distinct values for all filter categories
+            query = """
+                SELECT DISTINCT 
+                    certifying_agency,
+                    kosher_category,
+                    listing_type,
+                    price_range,
+                    city,
+                    state
+                FROM restaurants 
+                WHERE status = 'active' 
+                AND (certifying_agency IS NOT NULL 
+                     OR kosher_category IS NOT NULL 
+                     OR listing_type IS NOT NULL 
+                     OR price_range IS NOT NULL 
+                     OR city IS NOT NULL 
+                     OR state IS NOT NULL)
+            """
+            
+            cursor.execute(query)
+            results = cursor.fetchall()
+            
+            # Extract unique values for each category using sets for efficiency
+            agencies = set()
+            kosher_categories = set()
+            listing_types = set()
+            price_ranges = set()
+            cities = set()
+            states = set()
+            
+            for row in results:
+                if row[0]:  # certifying_agency
+                    agencies.add(row[0])
+                if row[1]:  # kosher_category
+                    kosher_categories.add(row[1])
+                if row[2]:  # listing_type
+                    listing_types.add(row[2])
+                if row[3]:  # price_range
+                    price_ranges.add(row[3])
+                if row[4]:  # city
+                    cities.add(row[4])
+                if row[5]:  # state
+                    states.add(row[5])
+            
+            cursor.close()
+            connection.close()
+            
+        except Exception as db_error:
+            logger.warning(f"Optimized DB query failed, falling back to service method: {db_error}")
+            # Fallback to original method if optimized query fails
+            service = create_restaurant_service()
+            restaurants = service.get_all_restaurants()
+            
+            # Extract unique values using sets for efficiency
+            agencies = set(
+                r.get("certifying_agency")
+                for r in restaurants
+                if r.get("certifying_agency")
             )
-        )
-        kosher_categories = sorted(
-            list(
-                set(
-                    r.get("kosher_category")
-                    for r in restaurants
-                    if r.get("kosher_category")
-                )
+            kosher_categories = set(
+                r.get("kosher_category")
+                for r in restaurants
+                if r.get("kosher_category")
             )
-        )
-        listing_types = sorted(
-            list(
-                set(r.get("listing_type") for r in restaurants if r.get("listing_type"))
+            listing_types = set(
+                r.get("listing_type") for r in restaurants if r.get("listing_type")
             )
-        )
-        price_ranges = sorted(
-            list(set(r.get("price_range") for r in restaurants if r.get("price_range")))
-        )
-        cities = sorted(list(set(r.get("city") for r in restaurants if r.get("city"))))
-        states = sorted(
-            list(set(r.get("state") for r in restaurants if r.get("state")))
-        )
-        return success_response(
-            {
-                "agencies": agencies,
-                "kosherCategories": kosher_categories,
-                "listingTypes": listing_types,
-                "priceRanges": price_ranges,
-                "cities": cities,
-                "states": states,
-            }
-        )
+            price_ranges = set(
+                r.get("price_range") for r in restaurants if r.get("price_range")
+            )
+            cities = set(r.get("city") for r in restaurants if r.get("city"))
+            states = set(r.get("state") for r in restaurants if r.get("state"))
+        
+        # Convert sets to sorted lists
+        filter_options = {
+            "agencies": sorted(list(agencies)),
+            "kosherCategories": sorted(list(kosher_categories)),
+            "listingTypes": sorted(list(listing_types)),
+            "priceRanges": sorted(list(price_ranges)),
+            "cities": sorted(list(cities)),
+            "states": sorted(list(states)),
+        }
+        
+        # Cache the result for 15 minutes
+        if cache_manager:
+            cache_manager.set(cache_key, filter_options, ttl=900)  # 15 minutes
+            logger.debug("Cached filter options for 15 minutes")
+            
+        return success_response(filter_options)
+        
     except Exception as e:
         logger.exception("Error fetching filter options", error=str(e))
         return error_response("Failed to fetch filter options", 500)
@@ -2269,3 +2331,87 @@ def test_health():
         'message': 'API v4 is working',
         'timestamp': datetime.now().isoformat()
     })
+
+# Additional test endpoints for comprehensive testing
+@safe_route('/test/info', methods=['GET'])
+def test_info():
+    """Test endpoint that returns system information."""
+    return jsonify({
+        'version': '4.0',
+        'environment': os.getenv('NODE_ENV', 'development'),
+        'timestamp': datetime.now().isoformat(),
+        'endpoints': [
+            '/api/v4/test/health',
+            '/api/v4/test/info',
+            '/api/v4/test/status',
+            '/api/v4/test/echo'
+        ]
+    })
+
+@safe_route('/test/status', methods=['GET'])
+def test_status():
+    """Test endpoint that returns detailed status information."""
+    return jsonify({
+        'status': 'operational',
+        'uptime': 'running',
+        'version': '4.0.0',
+        'build_date': '2024-01-01',
+        'features': {
+            'authentication': 'enabled',
+            'rate_limiting': 'enabled',
+            'caching': 'enabled'
+        },
+        'timestamp': datetime.now().isoformat()
+    })
+
+@safe_route('/test/echo', methods=['POST'])
+def test_echo():
+    """Test endpoint that echoes back the request data."""
+    try:
+        data = request.get_json() or {}
+        return jsonify({
+            'echo': data,
+            'method': request.method,
+            'headers': dict(request.headers),
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 400
+
+@safe_route('/test/validate', methods=['POST'])
+def test_validate():
+    """Test endpoint that validates JSON data."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'error': 'No JSON data provided',
+                'timestamp': datetime.now().isoformat()
+            }), 400
+        
+        # Simple validation
+        if 'name' not in data:
+            return jsonify({
+                'error': 'Missing required field: name',
+                'timestamp': datetime.now().isoformat()
+            }), 400
+        
+        if 'email' not in data:
+            return jsonify({
+                'error': 'Missing required field: email',
+                'timestamp': datetime.now().isoformat()
+            }), 400
+        
+        return jsonify({
+            'valid': True,
+            'data': data,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 400
