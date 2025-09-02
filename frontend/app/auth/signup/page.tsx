@@ -9,7 +9,7 @@ import Script from "next/script";
 // Use SSR-aware browser client so PKCE + cookies work with server callback
 import { supabaseClient } from "@/lib/supabase/client-secure";
 import { validatePassword } from "@/lib/utils/password-validation";
-import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils";
+import { validateRedirectUrl, mapAppleOAuthError } from "@/lib/utils/auth-utils.public";
 import { AppleSignInButton } from "@/components/ui/AppleSignInButton";
 import { getClientConfig } from "@/lib/config/client-config";
 

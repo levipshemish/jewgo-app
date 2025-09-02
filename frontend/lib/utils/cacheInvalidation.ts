@@ -4,7 +4,6 @@
  */
 
 import { appLogger } from '@/lib/utils/logger';
-import { revalidateTag } from 'next/cache';
 
 export interface CacheInvalidationRule {
   pattern: string;
@@ -293,12 +292,9 @@ class CacheInvalidator {
     if (typeof window !== 'undefined') return;
 
     try {
-      // Use Next.js revalidateTag if available
-      if (typeof revalidateTag === 'function') {
-        for (const tag of tags) {
-          await revalidateTag(tag);
-        }
-      }
+      // Dynamically import server-only revalidation to avoid client bundle issues
+      const { revalidateTags } = await import('../server/revalidate');
+      await revalidateTags(tags);
     } catch (error) {
       appLogger.warn('Next.js cache invalidation not available', { error: String(error) });
     }
@@ -311,12 +307,9 @@ class CacheInvalidator {
     if (typeof window !== 'undefined') return;
 
     try {
-      // Use Next.js revalidateTag if available
-      if (typeof revalidateTag === 'function') {
-        for (const tag of tags) {
-          await revalidateTag(tag);
-        }
-      }
+      // Dynamically import server-only revalidation to avoid client bundle issues
+      const { revalidateTags } = await import('../server/revalidate');
+      await revalidateTags(tags);
     } catch (error) {
       appLogger.warn('Next.js cache revalidation not available', { error: String(error) });
     }

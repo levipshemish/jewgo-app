@@ -1,5 +1,14 @@
 # Documentation Changelog
 
+## September 2025
+
+### 🔧 Technical Improvements
+
+#### Client Auth Utils Split (build fix)
+- Date: September 2025
+- Change: Added `frontend/lib/utils/auth-utils.public.ts` exporting client-safe helpers (`validateRedirectUrl`, `mapAppleOAuthError`). Updated `app/auth/signup/page.tsx` to import from the new public module to avoid pulling `server-only` code into Client Components.
+- Benefit: Fixes Next.js build error caused by `server-only` imports in client bundles.
+
 ## August 2025
 
 ### 🆕 New Features

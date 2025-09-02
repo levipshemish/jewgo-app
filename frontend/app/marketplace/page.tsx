@@ -974,7 +974,7 @@ function MarketplacePageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] marketplace-page pb-20"
+      className="min-h-screen bg-[#f4f4f4] marketplace-page page-with-bottom-nav"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}

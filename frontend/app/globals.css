@@ -63,6 +63,29 @@ img {
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
+
+  /* Bottom Navigation Variables */
+  --bottom-nav-height: 80px;
+  --z-bottom-nav: 50;
+  --z-modal: 100;
+  --z-toast: 150;
+}
+
+/* Print styles to hide fixed bottom navigation */
+@media print {
+  .fixed.bottom-0 {
+    display: none !important;
+  }
+  
+  /* Remove bottom padding when printing */
+  .pageContainer {
+    padding-bottom: 1rem !important;
+  }
+}
+
+/* Utility class for pages that need bottom padding for fixed navigation */
+.page-with-bottom-nav {
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 }
 
 .dark {

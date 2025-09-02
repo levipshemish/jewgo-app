@@ -662,13 +662,13 @@ function ShtelPageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] shtel-page pb-20"
+      className="min-h-screen bg-[#f4f4f4] shtel-page page-with-bottom-nav"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       role="main"
-      aria-label="Shtel community marketplace listings"
+      aria-label="Shtel listings"
     >
       <div className="sticky top-0 z-50 bg-white">
         <Header

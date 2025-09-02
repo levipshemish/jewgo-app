@@ -63,27 +63,6 @@ export default function ProductManagement({ storeData, onRefresh }: ProductManag
   useEffect(() => {
     loadProducts();
   }, [storeData.store_id, loadProducts]);
-    try {
-      setLoading(true);
-      
-      // Guard against admin context - admins don't have real store data
-      if (storeData.is_admin) {
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-      
-      const response = await fetch(`/api/shtel/store/${storeData.store_id}/products`);
-      if (!response.ok) {throw new Error('Failed to load products');}
-      
-      const data = await response.json();
-      setProducts(data.products || []);
-    } catch (err) {
-      appLogger.error('Error loading products:', { error: err instanceof Error ? err.message : String(err) });
-    } finally {
-      setLoading(false);
-    }
-  }, [storeData.store_id, storeData.is_admin]);
 
   const handleAddProduct = async (productData: Partial<Product>) => {
     try {

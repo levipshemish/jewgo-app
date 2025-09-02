@@ -19,11 +19,9 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   // Check if we're on mobile - ensure it's always detected correctly
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   
   useEffect(() => {
-    setIsClient(true);
     setIsHydrated(true);
     const checkMobile = () => {
       const mobile = typeof window !== 'undefined' && window.innerWidth <= 768;
@@ -84,7 +82,14 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ maxWidth: _maxWidth
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg" style={{ backgroundColor: '#ffffff', opacity: 1, zIndex: 9999 }}>
+    <div 
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[var(--z-bottom-nav)]"
+      style={{ 
+        backgroundColor: '#ffffff', 
+        opacity: 1,
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+      }}
+    >
       <div className="w-full bg-white" style={{ backgroundColor: '#ffffff' }}>
         <div className={`dynamic-bottom-nav flex items-center justify-around bg-white ${isHydrated && isMobileView ? 'mobile-nav' : ''}`} style={{ backgroundColor: '#ffffff' }}>
           {navItems.map((item) => {

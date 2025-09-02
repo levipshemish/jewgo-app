@@ -20,6 +20,7 @@ interface GenericPageLayoutProps<T> {
   actions?: React.ReactNode;
   beforeItems?: React.ReactNode;
   afterItems?: React.ReactNode;
+  overlayInGrid?: React.ReactNode;
   footer?: React.ReactNode;
   as?: React.ElementType;
   containerClassName?: string;
@@ -47,6 +48,7 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
     actions,
     beforeItems,
     afterItems,
+    overlayInGrid,
     footer,
     as: Wrapper = 'section',
     containerClassName,
@@ -88,6 +90,12 @@ export function GenericPageLayout<T>(props: GenericPageLayoutProps<T>) {
                 {renderItem(item, index)}
               </div>
             ))}
+
+            {overlayInGrid && (
+              <div className={styles.overlayInGrid} data-testid="gpl-overlay">
+                <div className={styles.overlayInner}>{overlayInGrid}</div>
+              </div>
+            )}
           </div>
         ) : (
           emptyRenderer ? emptyRenderer() : null

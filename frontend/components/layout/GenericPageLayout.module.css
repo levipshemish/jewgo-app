@@ -3,6 +3,7 @@
 .pageContainer {
   /* page padding (outer gutters) */
   padding-inline: 1rem;
+  /* Bottom padding is now handled by the page-with-bottom-nav utility class */
   margin-inline: auto;
   width: 100%;
   max-width: 1440px;
@@ -36,6 +37,7 @@
   gap: 8px;
   padding: 0.25rem;
   align-content: start;
+  position: relative; /* allows absolute overlay inside grid */
 }
 
 .sentinel {
@@ -56,6 +58,19 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Absolutely positioned overlay inside the grid (e.g., floating buttons) */
+.overlayInGrid {
+  position: absolute;
+  bottom: clamp(8px, 1.5vw, 14px);
+  right: clamp(8px, 2vw, 16px);
+  z-index: 20;
+  pointer-events: none; /* allow clicks to pass through except on inner */
+}
+
+.overlayInner {
+  pointer-events: auto; /* clickable children */
 }
 
 .pageTitle {
@@ -91,4 +106,3 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-

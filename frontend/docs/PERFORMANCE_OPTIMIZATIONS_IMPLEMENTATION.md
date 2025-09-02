@@ -150,6 +150,11 @@ await cacheInvalidator.invalidateOrdersCache(orderId);
 await cacheInvalidator.invalidateMessagesCache(conversationId);
 ```
 
+Note: Server-only imports
+- `next/cache` APIs such as `revalidateTag` are server-only and cannot be imported in client components.
+- To keep client components safe, server revalidation lives in `frontend/lib/server/revalidate.ts` (which imports `server-only`).
+- `cacheInvalidation.ts` dynamically imports this server helper only when running on the server, preventing Client Components (e.g., `app/shtel/page.tsx` marked with `"use client"`) from triggering server-only import errors.
+
 **Benefits**:
 - Ensures data consistency across the application
 - Prevents stale data from being served

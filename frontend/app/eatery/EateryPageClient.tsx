@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { DEBUG, debugLog } from '@/lib/utils/debug';
 import { useRouter } from 'next/navigation';
 import { Header, GenericPageLayout } from '@/components/layout';
-import { CategoryTabs, BottomNavigation } from '@/components/navigation/ui';
 import UnifiedCard from '@/components/ui/UnifiedCard';
 import { ScrollToTop } from '@/components/ui/ScrollToTop';
 import ActionButtons from '@/components/layout/ActionButtons';
@@ -19,7 +18,8 @@ import { useInfiniteScroll } from '@/lib/hooks/useInfiniteScroll';
 import { deduplicatedFetch } from '@/lib/utils/request-deduplication';
 import { useCombinedRestaurantData } from '@/lib/hooks/useCombinedRestaurantData';
 import { useDistanceCalculation } from '@/lib/hooks/useDistanceCalculation';
-
+import BottomNavigation from '@/components/navigation/ui/BottomNavigation';
+import CategoryTabs from '@/components/navigation/ui/CategoryTabs';
 
 
 
@@ -380,7 +380,7 @@ export default function EateryPageClient() {
     },
     { 
       threshold: 0.15,
-      rootMargin: '200px',
+      rootMargin: '400px', // Increased to provide much more buffer from ScrollToTop button
       disabled: loading || !isHydrated // Only enable when hydrated and not loading
     }
   );
@@ -693,10 +693,6 @@ export default function EateryPageClient() {
           onShowFilters={handleShowFilters}
         />
         
-        <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
-          <CategoryTabs activeTab="eatery" />
-        </div>
-        
         {/* Development API Call Counter */}
         {process.env.NODE_ENV === 'development' && (
           <div className="px-4 sm:px-6 py-2 bg-blue-50 border-b border-blue-100 text-xs">
@@ -738,7 +734,7 @@ export default function EateryPageClient() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent pb-20 eatery-page">
+    <div className="min-h-screen bg-transparent eatery-page page-with-bottom-nav">
       <div className="sticky top-0 z-50 bg-white">
         <Header 
           onSearch={handleSearch}
@@ -746,10 +742,6 @@ export default function EateryPageClient() {
           showFilters={true}
           onShowFilters={handleShowFilters}
         />
-        
-        <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
-          <CategoryTabs activeTab="eatery" />
-        </div>
         
         {/* Development API Call Counter */}
         {process.env.NODE_ENV === 'development' && (
@@ -777,6 +769,11 @@ export default function EateryPageClient() {
           onShowMap={() => router.push('/live-map')}
           onAddEatery={() => router.push('/add-eatery')}
         />
+        
+        {/* Category Tabs */}
+        <div className="px-4 sm:px-6 py-2 bg-transparent border-b border-gray-100">
+          <CategoryTabs activeTab="eatery" />
+        </div>
       </div>
       
       {/* Location Permission Banner */}
@@ -943,7 +940,7 @@ export default function EateryPageClient() {
         </div>
       )}
 
-      {/* Bottom navigation - visible on all screen sizes */}
+      {/* Bottom Navigation - rendered at page level to avoid stacking context issues */}
       <BottomNavigation />
 
       {/* Filter Modal */}
@@ -969,7 +966,15 @@ export default function EateryPageClient() {
       />
 
       {/* Scroll to Top Button */}
-      <ScrollToTop threshold={0.25} />
+      <ScrollToTop
+        threshold={0.15}
+        showAfterRows={2}
+        totalRows={allRestaurants.length}
+        position="bottom-right"
+        bottomOffsetPx={72}
+        size="compact"
+        appearance="translucent"
+      />
     </div>
   );
 }

@@ -91,7 +91,7 @@ function FavoritesPageContent() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 page-with-bottom-nav">
         <Header 
           onSearch={handleSearch}
           placeholder="Search your favorites..."
