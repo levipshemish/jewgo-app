@@ -4,6 +4,7 @@
  */
 
 import { appLogger } from '@/lib/utils/logger';
+import { revalidateTag } from 'next/cache';
 
 export interface CacheInvalidationRule {
   pattern: string;

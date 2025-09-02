@@ -12,10 +12,13 @@ export function parseReviewSnippets(snippetsJson: string | null | undefined): Re
     const parsed = JSON.parse(snippetsJson);
     if (Array.isArray(parsed)) {
       return parsed.map(snippet => ({
-        author: snippet.author || 'Anonymous',
+        id: snippet.id || `snippet_${Date.now()}_${Math.random()}`,
+        user_name: snippet.author || 'Anonymous',
         rating: snippet.rating || 0,
-        text: snippet.text || '',
-        time: snippet.time || Date.now() / 1000
+        title: snippet.title || '',
+        content: snippet.text || '',
+        created_at: new Date(snippet.time * 1000 || Date.now()).toISOString(),
+        verified_purchase: snippet.verified_purchase || false
       }));
     }
     return [];

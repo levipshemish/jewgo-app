@@ -62,24 +62,51 @@ export function ListingContent({
   const mockReviews = [
     {
       id: "1",
-      user: "Sarah M.",
+      restaurant_id: 1,
+      user_id: "user1",
+      user_name: "Sarah M.",
+      user_email: "sarah@example.com",
       rating: 5,
-      comment: "Amazing kosher food! The falafel was perfectly crispy and the hummus was creamy. Highly recommend!",
-      date: "2 days ago"
+      title: "Amazing kosher food!",
+      content: "Amazing kosher food! The falafel was perfectly crispy and the hummus was creamy. Highly recommend!",
+      images: [],
+      status: 'approved' as const,
+      created_at: new Date().toISOString(),
+      helpful_count: 0,
+      report_count: 0,
+      verified_purchase: true
     },
     {
       id: "2",
-      user: "David L.",
+      restaurant_id: 1,
+      user_id: "user2",
+      user_name: "David L.",
+      user_email: "david@example.com",
       rating: 4,
-      comment: "Great atmosphere and friendly staff. The shawarma was delicious, though a bit pricey.",
-      date: "1 week ago"
+      title: "Great atmosphere",
+      content: "Great atmosphere and friendly staff. The shawarma was delicious, though a bit pricey.",
+      images: [],
+      status: 'approved' as const,
+      created_at: new Date().toISOString(),
+      helpful_count: 0,
+      report_count: 0,
+      verified_purchase: true
     },
     {
       id: "3",
-      user: "Rachel K.",
+      restaurant_id: 1,
+      user_id: "user3",
+      user_name: "Rachel K.",
+      user_email: "rachel@example.com",
       rating: 5,
-      comment: "Best kosher restaurant in the area! Everything was fresh and flavorful.",
-      date: "2 weeks ago"
+      title: "Best kosher restaurant",
+      content: "Best kosher restaurant in the area! Everything was fresh and flavorful.",
+      images: [],
+      status: 'approved' as const,
+      created_at: new Date().toISOString(),
+      helpful_count: 0,
+      report_count: 0,
+      verified_purchase: true
     }
   ]
 
@@ -156,8 +183,7 @@ export function ListingContent({
         isOpen={showReviews}
         onClose={() => setShowReviews(false)}
         restaurantName={leftText || "Restaurant"}
-        averageRating={parseFloat(rightText || "0")}
-        totalReviews={mockReviews.length}
+        restaurantId={1}
         reviews={mockReviews}
       />
     </div>

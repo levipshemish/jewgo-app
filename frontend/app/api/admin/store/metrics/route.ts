@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
     // Enforce vendor scoping and ownership for store_admins
     if (admin.adminRole === 'store_admin') {
       try {
-        // @ts-expect-error - model exists after migration
         const mappings = await prisma.vendor_admins.findMany({ where: { user_id: admin.id } });
         if (!vendorId) {
           if (!mappings || mappings.length === 0) {

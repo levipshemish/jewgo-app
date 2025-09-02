@@ -121,11 +121,11 @@ export function validateCSRFServer(origin: string, referer: string, allowedOrigi
     const isOriginAllowed = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
     
     // Check if CSRF token is present
-    const hasCsrfToken = csrfToken && csrfToken.length > 0;
+    const hasCsrfToken = Boolean(csrfToken && csrfToken.length > 0);
     
     // For now, return true if both conditions are met
     // In production, implement proper cryptographic validation
-    return isOriginAllowed && hasCsrfToken;
+    return Boolean(isOriginAllowed && hasCsrfToken);
   } catch (error) {
     console.error('CSRF validation failed:', error);
     return false;
@@ -151,7 +151,7 @@ export function generateSignedCSRFToken(): string {
 export function verifyMergeCookieVersioned(cookieValue: string): { valid: boolean; payload?: any } {
   try {
     // Basic cookie verification - in production, use proper cryptographic validation
-    const isValid = cookieValue && cookieValue.length > 0;
+    const isValid = Boolean(cookieValue && cookieValue.length > 0);
     return {
       valid: isValid,
       payload: isValid ? { data: cookieValue } : undefined

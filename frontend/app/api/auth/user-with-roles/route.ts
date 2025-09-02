@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
       
       // Map backend role data to frontend format with normalization
       const adminRole = normalizeAdminRole(roleData.role);
-      const roleLevel = roleData.level ?? getRoleLevelForRole(adminRole) ?? 0;
+      const roleLevel = roleData.level ?? (adminRole ? getRoleLevelForRole(adminRole) : 0);
       
       // Merge backend permissions with role-based permissions
       const rolePermissionsRaw = adminRole ? ROLE_PERMISSIONS[adminRole] || [] : [];

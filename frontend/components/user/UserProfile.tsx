@@ -26,15 +26,8 @@ export default function UserProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     display_name: '',
-    phone: '',
+    phone: ''
   });
-
-  // Load user profile
-  useEffect(() => {
-    if (user && !authLoading) {
-      loadProfile();
-    }
-  }, [user, authLoading, loadProfile]);
 
   const loadProfile = useCallback(async () => {
     if (!user) {
@@ -57,6 +50,13 @@ export default function UserProfile() {
       setLoading(false);
     }
   }, [user, userApi.profile]);
+
+  // Load user profile
+  useEffect(() => {
+    if (user && !authLoading) {
+      loadProfile();
+    }
+  }, [user, authLoading, loadProfile]);
 
   const handleSave = async () => {
     if (!user) {

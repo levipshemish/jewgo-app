@@ -174,8 +174,13 @@ class BackgroundPrefetcher {
       queueLength: this.queue.length
     };
 
-    for (const task of this.tasks.values()) {
-      stats[task.status]++;
+    // Convert Map values to array for ES5 compatibility
+    const taskValues = Array.from(this.tasks.values());
+    for (const task of taskValues) {
+      if (task.status === 'pending') stats.pending++;
+      else if (task.status === 'in-progress') stats.inProgress++;
+      else if (task.status === 'completed') stats.completed++;
+      else if (task.status === 'failed') stats.failed++;
     }
 
     return stats;

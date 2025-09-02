@@ -37,10 +37,6 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d'); // 7d, 30d, 90d, 1y
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [storeData.store_id, timeRange, loadAnalytics]);
-
   const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
@@ -56,6 +52,10 @@ export default function StoreOverview({ storeData }: StoreOverviewProps) {
       setLoading(false);
     }
   }, [storeData.store_id, timeRange]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -630,7 +630,7 @@ function StoresPageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] pb-20 stores-page"
+      className="min-h-screen bg-[#f4f4f4] stores-page page-with-bottom-nav"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}

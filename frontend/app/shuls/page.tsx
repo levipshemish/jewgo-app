@@ -698,13 +698,13 @@ function ShulsPageContent() {
 
   return (
     <div 
-      className="min-h-screen bg-[#f4f4f4] pb-20 shuls-page"
+      className="min-h-screen bg-[#f4f4f4] shuls-page page-with-bottom-nav"
       style={responsiveStyles.container}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       role="main"
-      aria-label="Synagogue listings"
+      aria-label="Shul listings"
     >
       <div className="sticky top-0 z-50 bg-white">
         <Header 
