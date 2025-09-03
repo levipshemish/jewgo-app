@@ -388,7 +388,7 @@ export default function EateryPageClient() {
     {
       // Match Shuls thresholds/rootMargin for consistent triggering
       threshold: 0.2,
-      rootMargin: '100px',
+      rootMargin: '200px', // Increased from 100px to match working version
       // Enable only when hydrated, not loading, and on mobile view (≤768px)
       disabled: !isHydrated || loading || !isMobileView
     }
@@ -849,7 +849,7 @@ export default function EateryPageClient() {
             </div>
           )}
 
-          {/* Infinite scroll trigger element - only on mobile (top placement like Shuls) */}
+          {/* Infinite scroll trigger element - only on mobile */}
           {isMobileView && hasMore && (
             <div 
               ref={loadingRef}
@@ -873,16 +873,6 @@ export default function EateryPageClient() {
               </div>
             </div>
           )}
-
-          {/* Mobile infinite scroll trigger - second placement like Shuls */}
-          {isMobileView && hasMore && (
-            <div 
-              ref={loadingRef}
-              className="h-3 w-full my-3"
-              aria-hidden="true"
-            />
-          )}
-
 
         </>
       )}
